@@ -149,8 +149,8 @@ export function AuditLogView() {
 
   return (
     <div className="space-y-4">
-      <Card className="grid gap-3 p-4 sm:grid-cols-2 lg:grid-cols-6">
-        <div className="relative lg:col-span-2">
+      <Card className="grid gap-3 p-4 sm:grid-cols-2 xl:grid-cols-[minmax(0,2fr)_repeat(3,minmax(0,1fr))_auto]">
+        <div className="relative sm:col-span-2 xl:col-span-1">
           <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Tìm theo nội dung hoặc người thực hiện" className="pl-9" aria-label="Tìm kiếm" />
         </div>
@@ -178,12 +178,12 @@ export function AuditLogView() {
             </option>
           ))}
         </Select>
-        <div className="flex items-center gap-2 sm:col-span-2 lg:col-span-1">
-          <Input type="date" value={filters.from} onChange={(e) => set({ from: e.target.value })} aria-label="Từ ngày" className="px-2" />
-          <Input type="date" value={filters.to} onChange={(e) => set({ to: e.target.value })} aria-label="Đến ngày" className="px-2" />
+        <div className="flex items-center gap-2 sm:col-span-2 xl:col-span-1">
+          <Input type="date" value={filters.from} onChange={(e) => set({ from: e.target.value })} aria-label="Từ ngày" className="px-2 xl:w-[150px]" />
+          <Input type="date" value={filters.to} onChange={(e) => set({ to: e.target.value })} aria-label="Đến ngày" className="px-2 xl:w-[150px]" />
         </div>
         {filtered && (
-          <div className="sm:col-span-2 lg:col-span-6">
+          <div className="col-span-full">
             <Button
               variant="ghost"
               size="sm"
