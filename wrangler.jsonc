@@ -22,7 +22,7 @@
   // Database connection pooling + TLS to Supabase (lib/prisma.ts prefers this
   // binding over DATABASE_URL). scripts/deploy-cloudflare.sh fills in the id;
   // keep caching disabled on the Hyperdrive config so reads are never stale.
-  // "hyperdrive": [{ "binding": "HYPERDRIVE", "id": "<hyperdrive-id>" }],
+  "hyperdrive": [{ "binding": "HYPERDRIVE", "id": "46f6c26f737e4a8a8383aee503eb068b" }],
   // Native rate limiting for login / password change (lib/rate-limit.ts).
   // Workers isolates do not share memory, so an in-process counter is not enough.
   "ratelimits": [
