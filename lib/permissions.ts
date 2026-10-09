@@ -7,7 +7,7 @@
 export const ROLES = ["ADMIN", "MANAGER", "LEAD", "MEMBER"] as const;
 export type RoleKey = (typeof ROLES)[number];
 
-export const PERMISSIONS = ["PROJECT_CREATE", "PROJECT_VIEW_ALL", "PROJECT_MANAGE_ALL", "USER_MANAGE"] as const;
+export const PERMISSIONS = ["PROJECT_CREATE", "PROJECT_VIEW_ALL", "PROJECT_MANAGE_ALL", "USER_MANAGE", "FINANCE_MANAGE"] as const;
 export type PermissionKey = (typeof PERMISSIONS)[number];
 
 export const PROJECT_ROLES = ["MANAGER", "MEMBER", "VIEWER"] as const;
@@ -28,6 +28,7 @@ export const PERMISSION_INFO: Record<PermissionKey, { label: string; description
   PROJECT_VIEW_ALL: { label: "Xem mọi dự án", description: "Xem tất cả dự án và số liệu tổng hợp, kể cả dự án mình không tham gia." },
   PROJECT_MANAGE_ALL: { label: "Quản lý mọi dự án", description: "Sửa mọi dự án, hạng mục, công việc và duyệt mọi báo cáo." },
   USER_MANAGE: { label: "Quản lý nhân viên", description: "Thêm tài khoản, phân quyền, đặt lại mật khẩu cho người ở cấp thấp hơn." },
+  FINANCE_MANAGE: { label: "Hợp đồng & chi phí", description: "Xem và cập nhật hợp đồng, chi phí, lợi nhuận và công nợ." },
 };
 
 export const PROJECT_ROLE_INFO: Record<ProjectRoleKey, { label: string; description: string }> = {

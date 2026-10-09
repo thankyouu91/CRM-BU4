@@ -31,6 +31,15 @@ enum Permission {
   PROJECT_VIEW_ALL // xem mọi dự án và số liệu tổng hợp
   PROJECT_MANAGE_ALL // quản lý mọi dự án, duyệt mọi báo cáo
   USER_MANAGE // thêm tài khoản, phân quyền, đặt lại mật khẩu cho cấp dưới
+  FINANCE_MANAGE // xem & cập nhật hợp đồng, chi phí, lợi nhuận, công nợ
+}
+
+// Tiến độ thực hiện hợp đồng
+enum ContractStatus {
+  PLANNED // chưa triển khai
+  IN_PROGRESS // đang triển khai
+  TESTING // khảo thí
+  COMPLETED // hoàn thành
 }
 
 // Vai trò trong từng dự án.
@@ -98,6 +107,7 @@ model User {
   taskReports     TaskReport[]    @relation("ReportAuthor")
   reviewedReports TaskReport[]    @relation("ReportReviewer")
   notes           Note[]
+  contracts       Contract[]
 }
 
 model Project {
@@ -117,6 +127,7 @@ model Project {
   tasks      Task[]
   members    ProjectMember[]
   notes      Note[]
+  contracts  Contract[]
 
   @@index([ownerId])
 }
@@ -230,4 +241,33 @@ model Note {
 
   @@index([projectId])
   @@index([createdAt])
+}
+
+// Hợp đồng & chi phí (báo cáo tài chính). Số tiền tính bằng VNĐ, số nguyên.
+// Lợi nhuận, tỷ suất, công nợ và trạng thái thanh toán được tính từ các cột này
+// (lib/finance.ts), không lưu lại.
+model Contract {
+  id             String         @id @default(cuid())
+  code           String? // mã hợp đồng
+  name           String // tên hợp đồng / dự án
+  partner        String? // đối tác / khách hàng
+  value          BigInt // giá trị hợp đồng
+  performedAt    DateTime // ngày (tháng) thực hiện
+  status         ContractStatus @default(IN_PROGRESS)
+  trainingCost   BigInt         @default(0) // chi phí đào tạo
+  examCost       BigInt         @default(0) // chi phí khảo thí
+  otherCost      BigInt         @default(0) // chi phí khác
+  // Tỷ suất lợi nhuận dự kiến (%), dùng để ước tính khi chưa nhập chi phí
+  expectedMargin Float?
+  collected      BigInt         @default(0) // đã thu
+  note           String?
+  projectId      String?
+  project        Project?       @relation(fields: [projectId], references: [id], onDelete: SetNull)
+  createdById    String
+  createdBy      User           @relation(fields: [createdById], references: [id])
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+
+  @@index([performedAt])
+  @@index([projectId])
 }

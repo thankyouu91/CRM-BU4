@@ -1,5 +1,7 @@
 import { z } from "zod";
 import { PERMISSIONS, PROJECT_ROLES, ROLES } from "./permissions";
+import { CONTRACT_STATUSES } from "./finance";
+import { parseDate } from "./period";
 
 const roleEnum = z.enum(ROLES);
 const permissionList = z.array(z.enum(PERMISSIONS)).max(PERMISSIONS.length);
@@ -141,6 +143,46 @@ export const createNoteSchema = z.object({
   content: z.string().min(1, "Nội dung không được trống"),
   type: noteTypeEnum.default("NOTE"),
 });
+
+// ----------------------------------------------------------------------------
+// Contracts & costs (whole VNĐ)
+// ----------------------------------------------------------------------------
+
+const MAX_VND = 999_999_999_999_999;
+const vnd = z.number({ error: "Số tiền không hợp lệ" }).int("Số tiền phải là số nguyên").min(0, "Số tiền không được âm").max(MAX_VND);
+const performedDate = z
+  .string()
+  .min(1, "Chọn ngày thực hiện")
+  // yyyy-mm-dd is a calendar day in the business time zone (APP_TIMEZONE).
+  .transform((v) => (/^\d{4}-\d{2}-\d{2}$/.test(v) ? parseDate(v) : new Date(v)))
+  .refine((d) => !Number.isNaN(d.getTime()), "Ngày không hợp lệ");
+
+const contractFields = {
+  code: z.string().trim().max(120).optional().nullable(),
+  name: z.string().trim().min(1, "Nhập tên hợp đồng").max(300),
+  partner: z.string().trim().max(200).optional().nullable(),
+  value: vnd,
+  performedAt: performedDate,
+  status: z.enum(CONTRACT_STATUSES),
+  trainingCost: vnd,
+  examCost: vnd,
+  otherCost: vnd,
+  expectedMargin: z.number().min(-100).max(100).optional().nullable(),
+  collected: vnd,
+  note: z.string().max(2000).optional().nullable(),
+  projectId: z.string().optional().nullable(),
+};
+
+export const createContractSchema = z.object({
+  ...contractFields,
+  status: contractFields.status.default("IN_PROGRESS"),
+  trainingCost: vnd.default(0),
+  examCost: vnd.default(0),
+  otherCost: vnd.default(0),
+  collected: vnd.default(0),
+});
+export const updateContractSchema = z.object(contractFields).partial();
+export const importContractsSchema = z.object({ rows: z.array(createContractSchema).min(1).max(500) });
 
 export type LoginInput = z.infer<typeof loginSchema>;
 export type CreateProjectInput = z.infer<typeof createProjectSchema>;

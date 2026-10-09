@@ -317,6 +317,7 @@ async function main() {
   if (existing > 0) {
     console.log("SEED_FORCE=1: deleting existing data…");
     await prisma.$transaction([
+      prisma.contract.deleteMany(),
       prisma.taskReport.deleteMany(),
       prisma.note.deleteMany(),
       prisma.task.deleteMany(),
@@ -474,6 +475,42 @@ async function main() {
         data: { projectId: project.id, authorId: ids[n.who], type: n.type, content: n.text, createdAt: daysAgo(n.c) },
       });
     }
+  }
+
+  // Contracts & costs (fictional sample data). m = months ago of implementation.
+  const firstProject = await prisma.project.findFirst({ orderBy: { createdAt: "asc" }, select: { id: true } });
+  const monthsAgo = (m: number) => {
+    const d = new Date(now);
+    d.setDate(10);
+    d.setMonth(d.getMonth() - m);
+    return d;
+  };
+  const CONTRACTS = [
+    { code: "015/HĐKT-2026/ABC", name: "Đào tạo kỹ năng giao tiếp tiếng Anh cho nhân viên", partner: "Công ty TNHH Minh Phát", value: 186_000_000, m: 0, status: "IN_PROGRESS", training: 98_000_000, exam: 0, margin: null, collected: 90_000_000, project: true },
+    { code: "021/HĐMB-2026/XYZ", name: "Cung cấp tài khoản luyện thi trực tuyến", partner: "Trường THPT Nguyễn Trãi", value: 64_500_000, m: 0, status: "COMPLETED", training: 0, exam: 0, margin: 35, collected: 64_500_000 },
+    { code: "009/HĐDV-2026/HTC", name: "Tổ chức khảo thí năng lực ngoại ngữ đầu vào", partner: "Đại học Kỹ thuật Hưng Thịnh", value: 420_000_000, m: 0, status: "TESTING", training: 0, exam: 268_000_000, margin: null, collected: 210_000_000 },
+    { code: "030/HĐKT-2026/SV", name: "Khoá luyện thi chứng chỉ quốc tế cho sinh viên", partner: "Đại học Sao Việt", value: 1_120_000_000, m: 0, status: "IN_PROGRESS", training: 0, exam: 0, margin: 28, collected: 0 },
+    { code: "011/HĐKT-2026/LP", name: "Đánh giá năng lực tiếng Anh đội ngũ lãnh đạo", partner: "Tập đoàn Lam Phương", value: 245_000_000, m: 1, status: "COMPLETED", training: 120_000_000, exam: 85_000_000, margin: null, collected: 245_000_000 },
+    { code: "007/HĐMB-2026/AN", name: "Gói học liệu số cho trung tâm ngoại ngữ", partner: "Trung tâm Anh ngữ An Nhiên", value: 38_000_000, m: 1, status: "COMPLETED", training: 41_500_000, exam: 0, margin: null, collected: 38_000_000 },
+    { code: "002/HĐDV-2026/BT", name: "Khảo thí xếp lớp đầu năm học", partner: "Trường quốc tế Bình Tâm", value: 96_000_000, m: 2, status: "COMPLETED", training: 0, exam: 52_000_000, margin: null, collected: 96_000_000 },
+  ] as const;
+  for (const c of CONTRACTS) {
+    await prisma.contract.create({
+      data: {
+        code: c.code,
+        name: c.name,
+        partner: c.partner,
+        value: BigInt(c.value),
+        performedAt: monthsAgo(c.m),
+        status: c.status,
+        trainingCost: BigInt(c.training),
+        examCost: BigInt(c.exam),
+        expectedMargin: c.margin,
+        collected: BigInt(c.collected),
+        projectId: "project" in c && firstProject ? firstProject.id : null,
+        createdById: ids.an,
+      },
+    });
   }
 
   console.log(

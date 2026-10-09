@@ -17,6 +17,7 @@ import {
   Settings,
   Sparkles,
   Users,
+  Wallet,
   X,
 } from "lucide-react";
 import { toast } from "sonner";
@@ -25,13 +26,15 @@ import { RoleBadge } from "@/components/ui/badge";
 import { ThemeToggle } from "./theme-toggle";
 import type { CurrentUser } from "@/lib/session";
 import { cn } from "@/lib/utils";
+import { hasPermission, type PermissionKey } from "@/lib/permissions";
 
-const NAV = [
+const NAV: { href: string; label: string; icon: typeof Users; badge?: boolean; permission?: PermissionKey }[] = [
   { href: "/dashboard", label: "Tổng quan", icon: LayoutDashboard },
   { href: "/projects", label: "Dự án", icon: FolderKanban },
   { href: "/tasks", label: "Công việc của tôi", icon: ListChecks },
   { href: "/inbox", label: "Hộp báo cáo", icon: Inbox, badge: true },
   { href: "/reports", label: "Trung tâm báo cáo", icon: ChartColumn },
+  { href: "/contracts", label: "Hợp đồng & chi phí", icon: Wallet, permission: "FINANCE_MANAGE" },
   { href: "/ai", label: "Trợ lý AI", icon: Sparkles },
   { href: "/team", label: "Nhân sự", icon: Users },
   { href: "/settings", label: "Cài đặt", icon: Settings },
@@ -51,11 +54,11 @@ function Brand() {
   );
 }
 
-function SidebarNav({ pendingReports, onNavigate }: { pendingReports: number; onNavigate?: () => void }) {
+function SidebarNav({ user, pendingReports, onNavigate }: { user: CurrentUser; pendingReports: number; onNavigate?: () => void }) {
   const pathname = usePathname();
   return (
     <nav className="mt-8 space-y-1">
-      {NAV.map((item) => {
+      {NAV.filter((item) => !item.permission || hasPermission(user, item.permission)).map((item) => {
         const active = pathname === item.href || pathname.startsWith(`${item.href}/`);
         const Icon = item.icon;
         return (
@@ -176,7 +179,7 @@ export function AppShell({
       {/* Desktop sidebar */}
       <aside className="fixed inset-y-0 left-0 z-30 hidden w-64 flex-col bg-sidebar px-4 py-6 lg:flex">
         <Brand />
-        <SidebarNav pendingReports={pendingReports} />
+        <SidebarNav user={user} pendingReports={pendingReports} />
         <div className="mt-auto rounded-xl bg-gradient-to-br from-indigo-500/20 to-violet-500/10 p-4 ring-1 ring-white/10">
           <Sparkles className="h-5 w-5 text-indigo-300" />
           <p className="mt-2 text-sm font-semibold text-white">Báo cáo bằng AI</p>
@@ -213,7 +216,7 @@ export function AppShell({
                   <X className="h-5 w-5" />
                 </button>
               </div>
-              <SidebarNav pendingReports={pendingReports} onNavigate={() => setMobileOpen(false)} />
+              <SidebarNav user={user} pendingReports={pendingReports} onNavigate={() => setMobileOpen(false)} />
             </motion.aside>
           </div>
         )}

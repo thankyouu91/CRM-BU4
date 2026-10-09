@@ -15,24 +15,35 @@ Dashboard quản lý dự án và công việc cho doanh nghiệp: giao việc t
 | 5 | Đăng nhập, tạo tài khoản, đổi mật khẩu, bảo mật | Xem mục [Phân quyền](#phân-quyền) và [Bảo mật](#bảo-mật) |
 | 6 | Ghi chú / phản hồi cho từng dự án | Tab “Ghi chú & phản hồi” trong mỗi dự án |
 | 7 | Theo dõi dự án với biểu đồ, % hoàn thành | Dashboard KPI, vòng tiến độ, xu hướng, phân bổ trạng thái, khối lượng theo nhân sự; tab “Tiến độ” có bảng **tiến độ theo deadline** (thực tế so với kế hoạch đến hôm nay, % đạt kế hoạch, trạng thái Đúng tiến độ / Có rủi ro / Chậm / Trễ hạn), **khối lượng đã làm / cần làm** và timeline (Gantt) gồm cả thời hạn hạng mục; các số liệu này có trong Trung tâm báo cáo, slide trình chiếu, PDF/PowerPoint và prompt AI |
+| 9 | Báo cáo hợp đồng & chi phí (thay file Excel) | Trang **Hợp đồng & chi phí**: giá trị HĐ, chi phí đào tạo / khảo thí / khác, lợi nhuận gộp, tỷ suất LN, đánh giá, đã thu, còn phải thu, trạng thái thanh toán — tính tự động; lọc theo tháng/quý/năm, dòng tổng, 4 ô tổng hợp như mẫu Excel; **dán dữ liệu từ Excel** để nhập nhanh và **xuất Excel** đúng bố cục mẫu |
 | 8 | AI hỗ trợ báo cáo, tích hợp Claude không qua API | Trang **Trợ lý AI**: đóng gói số liệu thật thành prompt → mở Claude.ai điền sẵn / sao chép / tải file cho Claude Code → dán kết quả lại để xem trước, lưu ghi chú dự án, hoặc biến dàn ý thành slide để trình chiếu & xuất file. Không cần API key, không tốn phí API |
 
 ### Phân quyền
 
 **Cấp bậc** (mỗi cấp có sẵn một nhóm quyền):
 
-| Cấp | Tạo dự án | Xem mọi dự án | Quản lý mọi dự án | Quản lý nhân viên |
-|---|:-:|:-:|:-:|:-:|
-| 4 · Quản trị viên | ✓ | ✓ | ✓ | ✓ (mọi tài khoản) |
-| 3 · Quản lý | ✓ | ✓ | ✓ | ✓ (cấp dưới) |
-| 2 · Trưởng nhóm | ✓ | | | |
-| 1 · Nhân viên | | | | |
+| Cấp | Tạo dự án | Xem mọi dự án | Quản lý mọi dự án | Quản lý nhân viên | Hợp đồng & chi phí |
+|---|:-:|:-:|:-:|:-:|:-:|
+| 4 · Quản trị viên | ✓ | ✓ | ✓ | ✓ (mọi tài khoản) | ✓ |
+| 3 · Quản lý | ✓ | ✓ | ✓ | ✓ (cấp dưới) | ✓ |
+| 2 · Trưởng nhóm | ✓ | | | | |
+| 1 · Nhân viên | | | | | |
 
 **Cấp thêm quyền:** người có quyền *Quản lý nhân viên* vào trang **Nhân sự** → biểu tượng khiên để đổi cấp bậc và cấp thêm quyền cho người **ở cấp thấp hơn**, chỉ trong phạm vi quyền mình đang có (ví dụ: quản lý cấp quyền *Tạo dự án* cho một nhân viên). Quyền mới có hiệu lực ngay, không cần đăng nhập lại; đổi cấp bậc thì người đó phải đăng nhập lại.
 
 **Vai trò trong từng dự án:** *Quản lý dự án* (sửa dự án, hạng mục, thành viên, mọi công việc; duyệt báo cáo) · *Thành viên* (tạo công việc, cập nhật và báo cáo việc mình phụ trách) · *Chỉ xem* (xem và gửi ghi chú/phản hồi). Người tạo dự án là chủ dự án và luôn là quản lý dự án; chỉ chủ dự án hoặc người có quyền *Quản lý mọi dự án* mới xoá được dự án.
 
 Mọi quyền được kiểm tra ở phía server cho từng API (`lib/permissions.ts`, `lib/rbac.ts`).
+
+### Hợp đồng & chi phí
+
+Chỉ người có quyền **Hợp đồng & chi phí** thấy mục này (quản lý có thể cấp cho nhân viên kế toán ở trang Nhân sự). Cách tính (`lib/finance.ts`):
+
+- **Lợi nhuận gộp** = Giá trị HĐ − (CP đào tạo + CP khảo thí + CP khác); **Tỷ suất LN** = Lợi nhuận ÷ Giá trị HĐ. Hợp đồng chưa nhập chi phí được **ước tính** theo *Tỷ suất LN dự kiến* (hiển thị chữ nghiêng); không có cả hai thì để trống.
+- **Đánh giá**: ≥ 30% Tốt · 15–30% Khá · 0–15% Thấp · < 0 Lỗ.
+- **Còn phải thu** = Giá trị HĐ − Đã thanh toán; **Trạng thái TT** tự động: chưa thu → *Chưa thanh toán*, thu một phần → *Đã tạm ứng*, thu đủ → *Đã hoàn tất*.
+- Ô tổng hợp: *Tỷ lệ CP* tính trên các HĐ đã nhập chi phí; *Tỷ suất LN TB* tính trên các HĐ có lợi nhuận (thực tế hoặc ước tính).
+- **Dán từ Excel**: chọn các dòng trong file cũ (có thể kèm dòng tiêu đề) → Ctrl+C → dán; các cột tính toán (Tổng giá trị, LN gộp, Đánh giá, Còn phải thu, Trạng thái TT) được tính lại.
 
 ### Tiến độ theo deadline
 
