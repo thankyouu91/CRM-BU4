@@ -1,3 +1,5 @@
+import { updateTaskSafely } from "@/lib/task-service";
+import { withTaskProgress } from "@/lib/task-progress-queries";
 import type { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { auth, badRequest, forbidden, handle, notFound, ok, unauthorized } from "@/lib/api";
@@ -20,7 +22,8 @@ export async function GET(_req: NextRequest, ctx: Ctx) {
   const membership = task.project.members.find((m) => m.user.id === me.id);
   const access = accessFrom(me, task.project.owner.id, membership?.role ?? null);
   if (!access.view) return notFound("Không tìm thấy công việc");
-  return ok({ task, permissions: taskRights(me, access, task) });
+  const [enriched, ...subtasks] = await withTaskProgress([task, ...task.subtasks]);
+  return ok({ task: { ...enriched, subtasks }, permissions: taskRights(me, access, task) });
 }
 
 function loadTaskDetail(id: string) {
@@ -86,10 +89,8 @@ export async function PATCH(req: NextRequest, ctx: Ctx) {
 
     const state = resolveTaskState(task, { status: data.status, progress: data.progress });
 
-    const [updated] = await Promise.all([
-      prisma.task.update({
-        where: { id: task.id },
-        data: {
+    const updated = await prisma.$transaction(async (tx) => {
+      const updated = await updateTaskSafely(tx, task, {
           title: data.title?.trim(),
           description: data.description === undefined ? undefined : data.description?.trim() || null,
           categoryId: data.categoryId === undefined ? undefined : data.categoryId || null,
@@ -98,10 +99,10 @@ export async function PATCH(req: NextRequest, ctx: Ctx) {
           startDate: data.startDate,
           dueDate: data.dueDate,
           ...state,
-        },
-      }),
-      prisma.project.update({ where: { id: task.projectId }, data: { updatedAt: new Date() } }),
-    ]);
+      });
+      await tx.project.update({ where: { id: task.projectId }, data: { updatedAt: new Date() } });
+      return updated;
+    });
     return ok(await withWorkspace(req, me, task.projectId, { task: updated }));
   });
 }

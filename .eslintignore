@@ -1,0 +1,5 @@
+.next/
+.open-next/
+.wrangler/
+coverage/
+next-env.d.ts

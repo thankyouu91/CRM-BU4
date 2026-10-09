@@ -99,9 +99,9 @@ export function useApi<T>(url: string | null, opts?: { initial?: T }) {
   const load = useCallback(async () => {
     if (!url) return;
     const id = ++seq.current;
+    setLoading(true);
     // Cached data stays on screen; only an empty view shows the loading state.
     if (responseCache.has(url)) setDataState(responseCache.get(url) as T);
-    else setLoading(true);
     try {
       const result = await api<T>(url);
       remember(url, result);
