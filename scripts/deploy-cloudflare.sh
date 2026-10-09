@@ -14,8 +14,8 @@
 #   4. write its id into wrangler.jsonc   5. generate JWT_SECRET once
 #   6. build with OpenNext and deploy      7. wait for the public URL
 #
-# Optional: WORKERS_SUBDOMAIN (default bu4cdimex), HYPERDRIVE_NAME (default crm-db),
-# CHANGE_SUBDOMAIN=1 to replace an existing account subdomain.
+# Optional: WORKERS_SUBDOMAIN (default bu4cdimex; only used when the account has no
+# workers.dev subdomain yet), HYPERDRIVE_NAME (default crm-db).
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
@@ -44,7 +44,7 @@ echo "  $CLOUDFLARE_ACCOUNT_ID"
 
 echo "▶ 2/7 workers.dev subdomain"
 SUB="$(cf "$API/accounts/$CLOUDFLARE_ACCOUNT_ID/workers/subdomain" | json "j.result && j.result.subdomain")"
-if [ -z "$SUB" ] || { [ "$SUB" != "$SUBDOMAIN" ] && [ "${CHANGE_SUBDOMAIN:-}" = "1" ]; }; then
+if [ -z "$SUB" ]; then
   res="$(cf -X PUT "$API/accounts/$CLOUDFLARE_ACCOUNT_ID/workers/subdomain" -d "{\"subdomain\":\"$SUBDOMAIN\"}")"
   if [ "$(printf '%s' "$res" | json "j.success")" != "true" ]; then
     echo "  Failed to set subdomain: $(printf '%s' "$res" | cf_errors)" >&2
@@ -52,7 +52,8 @@ if [ -z "$SUB" ] || { [ "$SUB" != "$SUBDOMAIN" ] && [ "${CHANGE_SUBDOMAIN:-}" = 
   fi
   SUB="$SUBDOMAIN"
 elif [ "$SUB" != "$SUBDOMAIN" ]; then
-  echo "  Account already uses '$SUB' (re-run with CHANGE_SUBDOMAIN=1 to switch to '$SUBDOMAIN')."
+  # The API refuses to replace an existing subdomain (10036); the dashboard can.
+  echo "  Account already uses '$SUB'. To use '$SUBDOMAIN': Workers & Pages → Change next to Your subdomain."
 fi
 echo "  $SUB.workers.dev"
 
@@ -87,10 +88,9 @@ echo "▶ 4/7 wrangler.jsonc"
 HD_ID="$HD_ID" node -e '
   const fs = require("fs");
   const text = fs.readFileSync("wrangler.jsonc", "utf8");
-  const line = `"hyperdrive": [{ "binding": "HYPERDRIVE", "id": "${process.env.HD_ID}" }],`;
-  const next = text.replace(/(\/\/\s*)?"hyperdrive":\s*\[[^\]]*\],/, line);
-  if (!next.includes(line)) { console.error("  hyperdrive line not found in wrangler.jsonc"); process.exit(1); }
-  fs.writeFileSync("wrangler.jsonc", next);'
+  const re = /("hyperdrive":\s*\[\s*\{[^\]]*?"id":\s*")[^"]*(")/;
+  if (!re.test(text)) { console.error("  hyperdrive binding not found in wrangler.jsonc"); process.exit(1); }
+  fs.writeFileSync("wrangler.jsonc", text.replace(re, `$1${process.env.HD_ID}$2`));'
 echo "  HYPERDRIVE binding → $HD_ID"
 
 echo "▶ 5/7 Secrets"

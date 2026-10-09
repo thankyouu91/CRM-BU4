@@ -1,6 +1,6 @@
 {
   "$schema": "./node_modules/wrangler/config-schema.json",
-  // Public URL: https://<name>.<account-subdomain>.workers.dev → crm.bu4cdimex.workers.dev
+  // Public URL: https://<name>.<account-subdomain>.workers.dev → crm.votranlong91.workers.dev
   "name": "crm",
   "main": ".open-next/worker.js",
   "compatibility_date": "2026-10-01",
@@ -22,7 +22,15 @@
   // Database connection pooling + TLS to Supabase (lib/prisma.ts prefers this
   // binding over DATABASE_URL). scripts/deploy-cloudflare.sh fills in the id;
   // keep caching disabled on the Hyperdrive config so reads are never stale.
-  "hyperdrive": [{ "binding": "HYPERDRIVE", "id": "46f6c26f737e4a8a8383aee503eb068b" }],
+  // localConnectionString is only used by `npm run preview` (the local Postgres
+  // from .env.example); `opennextjs-cloudflare deploy` refuses to run without one.
+  "hyperdrive": [
+    {
+      "binding": "HYPERDRIVE",
+      "id": "46f6c26f737e4a8a8383aee503eb068b",
+      "localConnectionString": "postgresql://crm:crm_dev_password@localhost:5432/crm_bu4"
+    }
+  ],
   // Native rate limiting for login / password change (lib/rate-limit.ts).
   // Workers isolates do not share memory, so an in-process counter is not enough.
   "ratelimits": [

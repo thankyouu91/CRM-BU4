@@ -45,11 +45,13 @@ Chạy thử đúng runtime của Cloudflare trên máy: `cp .dev.vars.example .
 
 ## Triển khai lên Cloudflare
 
-Kiến trúc: **Cloudflare Workers** chạy app (qua OpenNext) → **Hyperdrive** (gom kết nối, TLS) → **Supabase PostgreSQL** (Singapore). Địa chỉ: **https://crm.bu4cdimex.workers.dev** (Worker `crm`, subdomain tài khoản `bu4cdimex`).
+Kiến trúc: **Cloudflare Workers** chạy app (qua OpenNext) → **Hyperdrive** (gom kết nối, TLS) → **Supabase PostgreSQL** (Singapore).
+
+**Đang chạy tại: https://crm.votranlong91.workers.dev** (Worker `crm`, subdomain tài khoản `votranlong91`). Muốn đổi thành `crm.bu4cdimex.workers.dev`: Cloudflare → *Workers & Pages* → **Change** cạnh *Your subdomain* → nhập `bu4cdimex`. Không cần deploy lại; API của Cloudflare không cho đổi subdomain đã có (lỗi 10036) nên việc này làm trên dashboard.
 
 > **Cần gói Workers Paid.** Gói Free giới hạn 10 ms CPU mỗi request, còn băm mật khẩu an toàn (bcrypt) cần khoảng 300 ms.
 
-Database Supabase `crm-bu4` đã có schema, đã khoá Data API công khai (`prisma/supabase-hardening.sql`) và có role riêng `crm_app` chỉ đọc/ghi dữ liệu (`prisma/supabase-app-role.sql`).
+Database Supabase `crm-bu4` đã có schema, đã khoá Data API công khai (`prisma/supabase-hardening.sql`) và có role riêng `crm_app` chỉ đọc/ghi dữ liệu (`prisma/supabase-app-role.sql`). Hyperdrive `crm-db` (tắt cache) kết nối tới database bằng role `crm_app`; ID của nó đã nằm trong `wrangler.jsonc`.
 
 ### Cách 1 — Script tự động (khuyến nghị)
 
@@ -59,14 +61,14 @@ Database Supabase `crm-bu4` đã có schema, đã khoá Data API công khai (`pr
    node scripts/gen-db-credential.mjs /tmp/crm-db-pass   # in ra SCRAM verifier
    ```
    Chạy `ALTER ROLE crm_app WITH LOGIN PASSWORD '<verifier>';` trong Supabase SQL Editor.
-3. Deploy (tự đăng ký subdomain, tạo Hyperdrive tắt cache, tạo `JWT_SECRET`, build và deploy):
+3. Deploy (đăng ký subdomain nếu tài khoản chưa có, tạo Hyperdrive tắt cache, tạo `JWT_SECRET`, build và deploy):
    ```bash
    export CLOUDFLARE_API_TOKEN=...   # token ở bước 1
    HYPERDRIVE_ORIGIN_URL="postgres://crm_app:$(cat /tmp/crm-db-pass)@db.djxiylyilhwycscnjnkq.supabase.co:5432/postgres" \
      bash scripts/deploy-cloudflare.sh && rm /tmp/crm-db-pass
    ```
    Nếu Hyperdrive không kết nối được host direct (IPv6), dùng Session pooler của Supabase: host `aws-1-ap-southeast-1.pooler.supabase.com` (hoặc `aws-0-…`), cổng `5432`, user `crm_app.djxiylyilhwycscnjnkq`.
-4. Commit `wrangler.jsonc` (đã được điền ID Hyperdrive). Các lần sau chỉ cần `bash scripts/deploy-cloudflare.sh` — script bỏ qua các bước đã làm và giữ nguyên `JWT_SECRET`.
+4. Commit `wrangler.jsonc` nếu ID Hyperdrive thay đổi. Các lần sau chỉ cần `CLOUDFLARE_API_TOKEN=... bash scripts/deploy-cloudflare.sh` (hoặc `npm run deploy` khi đã `wrangler login`): script bỏ qua các bước đã làm và giữ nguyên `JWT_SECRET`.
 
 ### Cách 2 — Workers Builds (tự deploy mỗi lần push)
 
@@ -75,7 +77,7 @@ Sau khi đã có Hyperdrive và ID trong `wrangler.jsonc` (cách 1, hoặc tạo
 ### Vận hành
 
 - **Đổi schema:** `npx prisma migrate dev` trên máy → commit → `DATABASE_URL="<connection string của postgres>" npx prisma migrate deploy`. Bảng mới cần `ENABLE ROW LEVEL SECURITY` và policy cho `crm_app`.
-- **Chạy thử runtime Cloudflare trên máy khi đã bật Hyperdrive:** đặt biến môi trường `CLOUDFLARE_HYPERDRIVE_LOCAL_CONNECTION_STRING_HYPERDRIVE` trỏ tới Postgres local trước `npm run preview`.
+- **Chạy thử runtime Cloudflare trên máy:** `npm run preview` dùng `localConnectionString` của binding Hyperdrive (Postgres local theo `.env.example`); muốn trỏ chỗ khác thì đặt `CLOUDFLARE_HYPERDRIVE_LOCAL_CONNECTION_STRING_HYPERDRIVE`.
 - **Supabase gói Free** tự tạm dừng project sau 7 ngày không hoạt động; bật lại trong Supabase Dashboard nếu cần.
 
 ## Bảo mật
