@@ -57,3 +57,23 @@ it("keeps failed submissions retryable and clears the draft only after success",
   unmount();
   expect(api).not.toHaveBeenCalled();
 });
+
+it("does not start a queued autosave after submission has begun", async () => {
+  vi.useFakeTimers();
+  let finish!: (value: unknown) => void;
+  api.mockImplementationOnce(() => new Promise((resolve) => { finish = resolve; }));
+  const data = { period: { type: "WEEK", key: "2026-W41" }, report: null } as WorkReportData;
+  const { result } = renderHook(() => useNotesDraft(data, vi.fn()));
+  act(() => result.current.change("doneNote", "First"));
+  let first!: Promise<void>;
+  act(() => { first = result.current.save(); });
+  act(() => result.current.change("doneNote", "Second"));
+  let queued!: Promise<void>;
+  act(() => { queued = result.current.save(); });
+  let send!: ReturnType<typeof result.current.take>;
+  act(() => { send = result.current.take(); });
+  api.mockResolvedValue({ report: {} });
+  await act(async () => { finish({ report: {} }); await first; await queued; await send; });
+  expect(api).toHaveBeenCalledTimes(1);
+  expect((await send).doneNote).toBe("Second");
+});

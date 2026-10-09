@@ -25,6 +25,7 @@ export function useNotesDraft(data: WorkReportData, onSaved: (r: WorkReportRecor
     clearTimeout(timer.current);
     if (submitting.current) return;
     if (inflight.current) await inflight.current;
+    if (submitting.current) return;
     const next = pending.current;
     if (!next) return;
     pending.current = null;
