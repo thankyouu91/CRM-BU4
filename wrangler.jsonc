@@ -1,11 +1,12 @@
 {
   "$schema": "./node_modules/wrangler/config-schema.json",
-  // Must match the Worker name used by Workers Builds in the Cloudflare dashboard.
-  "name": "crm-bu4",
+  // Public URL: https://<name>.<account-subdomain>.workers.dev → crm.bu4cdimex.workers.dev
+  "name": "crm",
   "main": ".open-next/worker.js",
   "compatibility_date": "2026-10-01",
   // nodejs_compat: required by Next.js, Prisma's pg adapter and the pg driver.
   "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
+  "workers_dev": true,
   "assets": {
     "directory": ".open-next/assets",
     "binding": "ASSETS"
@@ -13,20 +14,19 @@
   "observability": {
     "enabled": true
   },
-  // Non-secret configuration. Secrets (DATABASE_URL, JWT_SECRET) are set in the
-  // dashboard (Worker → Settings → Variables and Secrets) or with `wrangler secret put`.
+  // Non-secret configuration. Secrets (JWT_SECRET, and DATABASE_URL only when not
+  // using Hyperdrive) live in Cloudflare: Worker → Settings → Variables and Secrets.
   "vars": {
     "APP_TIMEZONE": "Asia/Ho_Chi_Minh"
   },
+  // Database connection pooling + TLS to Supabase (lib/prisma.ts prefers this
+  // binding over DATABASE_URL). scripts/deploy-cloudflare.sh fills in the id;
+  // keep caching disabled on the Hyperdrive config so reads are never stale.
+  // "hyperdrive": [{ "binding": "HYPERDRIVE", "id": "<hyperdrive-id>" }],
   // Native rate limiting for login / password change (lib/rate-limit.ts).
   // Workers isolates do not share memory, so an in-process counter is not enough.
   "ratelimits": [
     { "name": "LOGIN_LIMITER", "namespace_id": "1001", "simple": { "limit": 5, "period": 60 } },
     { "name": "LOGIN_IP_LIMITER", "namespace_id": "1002", "simple": { "limit": 30, "period": 60 } }
   ]
-  // Optional, recommended: pool database connections with Hyperdrive.
-  // Create one (dashboard → Workers & Pages → Hyperdrive, or
-  // `npx wrangler hyperdrive create crm-bu4-db --connection-string="<DATABASE_URL>"`),
-  // then add a comma after the ratelimits array above and uncomment:
-  // "hyperdrive": [{ "binding": "HYPERDRIVE", "id": "<hyperdrive-id>" }]
 }
