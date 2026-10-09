@@ -4,9 +4,10 @@ import { auth, created, forbidden, handle, unauthorized } from "@/lib/api";
 import { canManageProject } from "@/lib/rbac";
 import { createCategorySchema } from "@/lib/validations";
 
-type Ctx = { params: { id: string } };
+type Ctx = { params: Promise<{ id: string }> };
 
-export async function POST(req: NextRequest, { params }: Ctx) {
+export async function POST(req: NextRequest, ctx: Ctx) {
+  const params = await ctx.params;
   return handle(async () => {
     const me = await auth();
     if (!me) return unauthorized();

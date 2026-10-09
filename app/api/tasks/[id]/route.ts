@@ -6,11 +6,12 @@ import { projectMemberIds } from "@/lib/queries";
 import { resolveTaskState } from "@/lib/task-rules";
 import { updateTaskSchema } from "@/lib/validations";
 
-type Ctx = { params: { id: string } };
+type Ctx = { params: Promise<{ id: string }> };
 
 const userBrief = { select: { id: true, name: true, avatarColor: true, jobTitle: true } } as const;
 
-export async function GET(_req: NextRequest, { params }: Ctx) {
+export async function GET(_req: NextRequest, ctx: Ctx) {
+  const params = await ctx.params;
   const me = await auth();
   if (!me) return unauthorized();
 
@@ -48,7 +49,8 @@ export async function GET(_req: NextRequest, { params }: Ctx) {
   return ok({ task, permissions: perms });
 }
 
-export async function PATCH(req: NextRequest, { params }: Ctx) {
+export async function PATCH(req: NextRequest, ctx: Ctx) {
+  const params = await ctx.params;
   return handle(async () => {
     const me = await auth();
     if (!me) return unauthorized();
@@ -97,7 +99,8 @@ export async function PATCH(req: NextRequest, { params }: Ctx) {
   });
 }
 
-export async function DELETE(_req: NextRequest, { params }: Ctx) {
+export async function DELETE(_req: NextRequest, ctx: Ctx) {
+  const params = await ctx.params;
   const me = await auth();
   if (!me) return unauthorized();
   const task = await prisma.task.findUnique({ where: { id: params.id } });

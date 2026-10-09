@@ -1,0 +1,5 @@
+# Secrets for `npm run preview` (local Workers runtime). Copy to .dev.vars.
+# In production, set these in the Cloudflare dashboard (Worker → Settings →
+# Variables and Secrets) — never commit real values.
+DATABASE_URL="postgresql://crm:crm_dev_password@localhost:5432/crm_bu4?schema=public"
+JWT_SECRET="change-me-to-a-long-random-string-at-least-32-chars"

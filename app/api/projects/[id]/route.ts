@@ -5,9 +5,10 @@ import { canAccessProject, canManageProject } from "@/lib/rbac";
 import { getProjectDetail } from "@/lib/queries";
 import { updateProjectSchema } from "@/lib/validations";
 
-type Ctx = { params: { id: string } };
+type Ctx = { params: Promise<{ id: string }> };
 
-export async function GET(_req: NextRequest, { params }: Ctx) {
+export async function GET(_req: NextRequest, ctx: Ctx) {
+  const params = await ctx.params;
   const me = await auth();
   if (!me) return unauthorized();
   if (!(await canAccessProject(me, params.id))) return notFound("Không tìm thấy dự án");
@@ -17,7 +18,8 @@ export async function GET(_req: NextRequest, { params }: Ctx) {
   return ok({ project, canManage: await canManageProject(me, params.id) });
 }
 
-export async function PATCH(req: NextRequest, { params }: Ctx) {
+export async function PATCH(req: NextRequest, ctx: Ctx) {
+  const params = await ctx.params;
   return handle(async () => {
     const me = await auth();
     if (!me) return unauthorized();
@@ -55,7 +57,8 @@ export async function PATCH(req: NextRequest, { params }: Ctx) {
   });
 }
 
-export async function DELETE(_req: NextRequest, { params }: Ctx) {
+export async function DELETE(_req: NextRequest, ctx: Ctx) {
+  const params = await ctx.params;
   const me = await auth();
   if (!me) return unauthorized();
   if (!(await canManageProject(me, params.id))) return forbidden();

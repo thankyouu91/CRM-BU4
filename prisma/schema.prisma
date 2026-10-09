@@ -2,6 +2,8 @@
 // Docs: https://pris.ly/d/prisma-schema
 
 generator client {
+  // Queries go through the `pg` driver adapter, which also runs inside
+  // Cloudflare Workers (see lib/prisma.ts). Driver adapters are GA in Prisma 6.19.
   provider = "prisma-client-js"
 }
 

@@ -5,9 +5,10 @@ import { isAdmin } from "@/lib/rbac";
 import { hashPassword, validatePasswordStrength } from "@/lib/password";
 import { updateUserSchema } from "@/lib/validations";
 
-type Ctx = { params: { id: string } };
+type Ctx = { params: Promise<{ id: string }> };
 
-export async function PATCH(req: NextRequest, { params }: Ctx) {
+export async function PATCH(req: NextRequest, ctx: Ctx) {
+  const params = await ctx.params;
   return handle(async () => {
     const me = await auth();
     if (!me) return unauthorized();

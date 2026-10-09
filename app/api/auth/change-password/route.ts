@@ -10,7 +10,7 @@ export async function POST(req: NextRequest) {
   const me = await auth();
   if (!me) return unauthorized();
 
-  const limit = rateLimit(`chpw:${me.id}`, 5, 15 * 60_000);
+  const limit = await rateLimit(`chpw:${me.id}`, "LOGIN_LIMITER", 5, 15 * 60_000);
   if (!limit.allowed) {
     return NextResponse.json({ error: "Thử quá nhiều lần, vui lòng đợi ít phút." }, { status: 429 });
   }

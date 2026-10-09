@@ -5,10 +5,11 @@ import { canManageProject } from "@/lib/rbac";
 import { resolveTaskState } from "@/lib/task-rules";
 import { reviewReportSchema } from "@/lib/validations";
 
-type Ctx = { params: { id: string } };
+type Ctx = { params: Promise<{ id: string }> };
 
 /** Manager reviews a report: acknowledge with an optional note, optionally approve the task. */
-export async function PATCH(req: NextRequest, { params }: Ctx) {
+export async function PATCH(req: NextRequest, ctx: Ctx) {
+  const params = await ctx.params;
   return handle(async () => {
     const me = await auth();
     if (!me) return unauthorized();

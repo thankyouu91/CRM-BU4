@@ -5,14 +5,15 @@ import { canAccessProject, taskPermissions } from "@/lib/rbac";
 import { resolveTaskState } from "@/lib/task-rules";
 import { createReportSchema } from "@/lib/validations";
 
-type Ctx = { params: { id: string } };
+type Ctx = { params: Promise<{ id: string }> };
 
 /**
  * The person in charge submits a progress report. The task's progress follows
  * the report; reaching 100% moves the task to REVIEW so the project manager
  * can approve it from their inbox.
  */
-export async function POST(req: NextRequest, { params }: Ctx) {
+export async function POST(req: NextRequest, ctx: Ctx) {
+  const params = await ctx.params;
   return handle(async () => {
     const me = await auth();
     if (!me) return unauthorized();

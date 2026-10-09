@@ -3,7 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { verifyPassword } from "@/lib/password";
 import { attachSession } from "@/lib/issue-session";
 import { loginSchema } from "@/lib/validations";
-import { rateLimit, resetRateLimit } from "@/lib/rate-limit";
+import { clientIp, rateLimit, resetRateLimit } from "@/lib/rate-limit";
 import { zodErrors } from "@/lib/api";
 
 // Cost-12 bcrypt hash of a discarded random string: compared against when the
@@ -18,10 +18,12 @@ export async function POST(req: NextRequest) {
   }
 
   const email = parsed.data.email.trim().toLowerCase();
-  const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || req.ip || "unknown";
+  const ip = clientIp(req.headers);
 
-  const perAccount = rateLimit(`login:${ip}:${email}`, 5, 15 * 60_000);
-  const perIp = rateLimit(`login-ip:${ip}`, 30, 15 * 60_000);
+  const [perAccount, perIp] = await Promise.all([
+    rateLimit(`login:${ip}:${email}`, "LOGIN_LIMITER", 5, 15 * 60_000),
+    rateLimit(`login-ip:${ip}`, "LOGIN_IP_LIMITER", 30, 15 * 60_000),
+  ]);
   if (!perAccount.allowed || !perIp.allowed) {
     const retry = Math.max(perAccount.retryAfterSec, perIp.retryAfterSec);
     return NextResponse.json(

@@ -6,9 +6,10 @@ import { ProjectWorkspace } from "./workspace";
 
 export const metadata = { title: "Dự án" };
 
-export default async function ProjectPage({ params }: { params: { id: string } }) {
+export default async function ProjectPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
   const user = (await getCurrentUser())!;
-  if (!(await canAccessProject(user, params.id))) notFound();
+  if (!(await canAccessProject(user, id))) notFound();
 
   const directory = await prisma.user.findMany({
     where: { active: true },
@@ -16,5 +17,5 @@ export default async function ProjectPage({ params }: { params: { id: string } }
     select: { id: true, name: true, avatarColor: true, jobTitle: true, role: true },
   });
 
-  return <ProjectWorkspace projectId={params.id} meId={user.id} directory={directory} />;
+  return <ProjectWorkspace projectId={id} meId={user.id} directory={directory} />;
 }

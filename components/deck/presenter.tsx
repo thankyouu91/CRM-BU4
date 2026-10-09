@@ -68,7 +68,7 @@ export function Presenter({
   const [fullscreen, setFullscreen] = useState(false);
   const [chrome, setChrome] = useState(true);
   const [size, setSize] = useState({ w: 1280, h: 720 });
-  const idle = useRef<ReturnType<typeof setTimeout>>();
+  const idle = useRef<ReturnType<typeof setTimeout>>(undefined);
   const touchX = useRef<number | null>(null);
 
   const total = deck.slides.length;

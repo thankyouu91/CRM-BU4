@@ -11,7 +11,8 @@ export const metadata = { title: "Trình chiếu báo cáo" };
 type SP = { period?: string; date?: string; from?: string; to?: string; projectId?: string };
 
 /** Shareable online presentation: /present?period=quarter&date=…&projectId=… */
-export default async function PresentPage({ searchParams }: { searchParams: SP }) {
+export default async function PresentPage(props: { searchParams: Promise<SP> }) {
+  const searchParams = await props.searchParams;
   const user = await getCurrentUser();
   if (!user) redirect("/login");
   if (user.mustChangePassword) redirect("/change-password");

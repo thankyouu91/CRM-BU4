@@ -19,7 +19,7 @@ export type CurrentUser = {
  * is deactivated, or the token predates the user's last password change.
  */
 export const getCurrentUser = cache(async (): Promise<CurrentUser | null> => {
-  const token = cookies().get(SESSION_COOKIE)?.value;
+  const token = (await cookies()).get(SESSION_COOKIE)?.value;
   if (!token) return null;
 
   const payload = await verifyToken(token);

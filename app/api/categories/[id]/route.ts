@@ -4,13 +4,14 @@ import { auth, forbidden, handle, notFound, ok, unauthorized } from "@/lib/api";
 import { canManageProject } from "@/lib/rbac";
 import { updateCategorySchema } from "@/lib/validations";
 
-type Ctx = { params: { id: string } };
+type Ctx = { params: Promise<{ id: string }> };
 
 async function load(id: string) {
   return prisma.category.findUnique({ where: { id }, select: { id: true, projectId: true } });
 }
 
-export async function PATCH(req: NextRequest, { params }: Ctx) {
+export async function PATCH(req: NextRequest, ctx: Ctx) {
+  const params = await ctx.params;
   return handle(async () => {
     const me = await auth();
     if (!me) return unauthorized();
@@ -28,7 +29,8 @@ export async function PATCH(req: NextRequest, { params }: Ctx) {
 }
 
 /** Deleting a category keeps its tasks; they become uncategorised (onDelete: SetNull). */
-export async function DELETE(_req: NextRequest, { params }: Ctx) {
+export async function DELETE(_req: NextRequest, ctx: Ctx) {
+  const params = await ctx.params;
   const me = await auth();
   if (!me) return unauthorized();
   const category = await load(params.id);

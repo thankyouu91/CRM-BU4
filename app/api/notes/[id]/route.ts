@@ -3,10 +3,11 @@ import { prisma } from "@/lib/prisma";
 import { auth, forbidden, notFound, ok, unauthorized } from "@/lib/api";
 import { canManageProject } from "@/lib/rbac";
 
-type Ctx = { params: { id: string } };
+type Ctx = { params: Promise<{ id: string }> };
 
 /** Authors can delete their own notes; project managers can delete any. */
-export async function DELETE(_req: NextRequest, { params }: Ctx) {
+export async function DELETE(_req: NextRequest, ctx: Ctx) {
+  const params = await ctx.params;
   const me = await auth();
   if (!me) return unauthorized();
   const note = await prisma.note.findUnique({ where: { id: params.id } });

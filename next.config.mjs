@@ -12,6 +12,8 @@ const securityHeaders = [
 
 const nextConfig = {
   poweredByHeader: false,
+  // Bundle Prisma's generated client for the workerd runtime (OpenNext).
+  serverExternalPackages: ["@prisma/client", ".prisma/client"],
   async headers() {
     return [{ source: "/:path*", headers: securityHeaders }];
   },

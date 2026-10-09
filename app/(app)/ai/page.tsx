@@ -7,7 +7,8 @@ export const metadata = { title: "Trợ lý AI" };
 
 type SP = { period?: string; date?: string; from?: string; to?: string; projectId?: string };
 
-export default async function AiPage({ searchParams }: { searchParams: SP }) {
+export default async function AiPage(props: { searchParams: Promise<SP> }) {
+  const searchParams = await props.searchParams;
   const user = (await getCurrentUser())!;
   const projects = await prisma.project.findMany({
     where: projectVisibilityWhere(user),

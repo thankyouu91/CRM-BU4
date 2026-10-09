@@ -4,9 +4,10 @@ import { auth, created, handle, notFound, ok, unauthorized } from "@/lib/api";
 import { canAccessProject } from "@/lib/rbac";
 import { createNoteSchema } from "@/lib/validations";
 
-type Ctx = { params: { id: string } };
+type Ctx = { params: Promise<{ id: string }> };
 
-export async function GET(req: NextRequest, { params }: Ctx) {
+export async function GET(req: NextRequest, ctx: Ctx) {
+  const params = await ctx.params;
   const me = await auth();
   if (!me) return unauthorized();
   if (!(await canAccessProject(me, params.id))) return notFound("Không tìm thấy dự án");
@@ -20,7 +21,8 @@ export async function GET(req: NextRequest, { params }: Ctx) {
   return ok({ notes });
 }
 
-export async function POST(req: NextRequest, { params }: Ctx) {
+export async function POST(req: NextRequest, ctx: Ctx) {
+  const params = await ctx.params;
   return handle(async () => {
     const me = await auth();
     if (!me) return unauthorized();
