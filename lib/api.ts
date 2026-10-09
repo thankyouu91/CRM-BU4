@@ -26,6 +26,10 @@ export function notFound(message = "Không tìm thấy") {
   return NextResponse.json({ error: message }, { status: 404 });
 }
 
+export function payloadTooLarge(message: string) {
+  return NextResponse.json({ error: message }, { status: 413 });
+}
+
 export function serverError(message = "Lỗi máy chủ") {
   return NextResponse.json({ error: message }, { status: 500 });
 }

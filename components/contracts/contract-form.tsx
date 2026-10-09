@@ -20,6 +20,7 @@ import {
 } from "@/lib/finance";
 import type { ContractDto } from "@/lib/contracts";
 import { cn } from "@/lib/utils";
+import { ContractFiles, PendingFiles, uploadContractFiles } from "./contract-files";
 
 export type ProjectOption = { id: string; name: string; color: string };
 
@@ -150,9 +151,13 @@ export function ContractModal({
   const [v, setV] = useState<ContractFormState>(() => emptyForm(defaultDate));
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [busy, setBusy] = useState(false);
+  // PDFs picked for a new contract, uploaded once it is saved.
+  const [pending, setPending] = useState<File[]>([]);
+  const [uploading, setUploading] = useState(false);
 
   useEffect(() => {
     if (open) {
+      setPending([]);
       setV(
         contract
           ? fromContract(contract)
@@ -201,10 +206,24 @@ export function ContractModal({
       note: v.note || null,
     };
     try {
-      if (contract)
+      if (contract) {
         await api(`/api/contracts/${contract.id}`, { method: "PATCH", body });
-      else await api("/api/contracts", { method: "POST", body });
-      toast.success(contract ? "Đã cập nhật hợp đồng" : "Đã thêm hợp đồng");
+        toast.success("Đã cập nhật hợp đồng");
+      } else {
+        const res = await api<{ contract: ContractDto }>("/api/contracts", {
+          method: "POST",
+          body,
+        });
+        if (pending.length) {
+          setUploading(true);
+          const stored = await uploadContractFiles(res.contract.id, pending);
+          toast.success(
+            stored === pending.length
+              ? `Đã thêm hợp đồng và lưu ${stored} file PDF`
+              : `Đã thêm hợp đồng, lưu được ${stored}/${pending.length} file PDF`,
+          );
+        } else toast.success("Đã thêm hợp đồng");
+      }
       onSaved();
       onClose();
     } catch (e) {
@@ -212,8 +231,12 @@ export function ContractModal({
       toast.error(e instanceof ApiError ? e.message : "Không thể lưu");
     } finally {
       setBusy(false);
+      setUploading(false);
     }
   };
+  // A finished contract (or one of a completed project) should have its signed PDF archived.
+  const remind =
+    v.status === "COMPLETED" || contract?.project?.status === "COMPLETED";
 
   return (
     <Modal
@@ -241,7 +264,13 @@ export function ContractModal({
             loading={busy}
             disabled={!v.name.trim() || v.value === null}
           >
-            {contract ? "Lưu thay đổi" : "Thêm hợp đồng"}
+            {contract
+              ? "Lưu thay đổi"
+              : uploading
+                ? "Đang tải file PDF…"
+                : pending.length
+                  ? `Thêm hợp đồng & ${pending.length} file PDF`
+                  : "Thêm hợp đồng"}
           </Button>
         </>
       }
@@ -427,6 +456,27 @@ export function ContractModal({
           )}
         </aside>
       </div>
+
+      <section className="mt-6 border-t pt-5">
+        <div className="mb-3 flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
+          <p className="text-xs font-semibold uppercase tracking-wide text-red-600 dark:text-red-400">
+            Hồ sơ hợp đồng (PDF)
+          </p>
+          <p className="text-[11px] text-muted-foreground">
+            Bản hợp đồng đã ký, phụ lục, biên bản nghiệm thu — lưu trữ để tra
+            cứu và báo cáo.
+          </p>
+        </div>
+        {contract ? (
+          <ContractFiles
+            contractId={contract.id}
+            onChanged={onSaved}
+            remind={remind}
+          />
+        ) : (
+          <PendingFiles files={pending} onChange={setPending} remind={remind} />
+        )}
+      </section>
     </Modal>
   );
 }

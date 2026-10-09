@@ -15,6 +15,7 @@ const GROUPS = [
   { label: "CHI PHÍ CHI TIẾT", span: 4, color: "#c2410c" },
   { label: "LỢI NHUẬN & HIỆU QUẢ", span: 3, color: "#047857" },
   { label: "DÒNG TIỀN & TRẠNG THÁI", span: 4, color: "#6d28d9" },
+  { label: "HỒ SƠ", span: 1, color: "#475569" },
 ];
 const HEADERS = [
   "STT",
@@ -34,8 +35,9 @@ const HEADERS = [
   "Còn phải thu (VNĐ)",
   "Tiến độ thực hiện",
   "Trạng thái TT",
+  "File HĐ",
 ];
-const WIDTHS = [6, 26, 44, 34, 18, 14, 16, 16, 14, 18, 18, 11, 10, 18, 18, 17, 16];
+const WIDTHS = [6, 26, 44, 34, 18, 14, 16, 16, 14, 18, 18, 11, 10, 18, 18, 17, 16, 11];
 
 const monthLabel = (iso: string) => {
   const d = new Date(iso);
@@ -71,7 +73,7 @@ export async function exportContractsXlsx(rows: ContractDto[], totals: ContractT
     { label: "TỔNG GIÁ TRỊ HỢP ĐỒNG", value: totals.value, note: `Tổng số: ${totals.count} hợp đồng`, color: "#1e3a8a", bg: "#eff6ff", span: 5 },
     { label: "TỔNG CHI PHÍ THỰC HIỆN", value: totals.totalCost, note: `Tỷ lệ CP: ${totals.costRatio}%`, color: "#c2410c", bg: "#fff7ed", span: 5 },
     { label: "LỢI NHUẬN GỘP DỰ KIẾN", value: totals.profit, note: `Tỷ suất LN TB: ${totals.margin}%`, color: "#047857", bg: "#ecfdf5", span: 3 },
-    { label: "SỐ DƯ CÒN PHẢI THU", value: totals.receivable, note: `Đã thu: ${totals.collected.toLocaleString("vi-VN")} đ`, color: "#6d28d9", bg: "#f5f3ff", span: 4 },
+    { label: "SỐ DƯ CÒN PHẢI THU", value: totals.receivable, note: `Đã thu: ${totals.collected.toLocaleString("vi-VN")} đ`, color: "#6d28d9", bg: "#f5f3ff", span: 5 },
   ];
   const kpiRow = (pick: (k: (typeof kpis)[number]) => Cell): Cell[] => kpis.flatMap((k) => [pick(k), ...blank(k.span - 1)]);
   const kpiLabels = kpiRow((k) => ({ ...base, value: k.label, fontWeight: "bold", textColor: k.color, backgroundColor: k.bg, align: "center", columnSpan: k.span }));
@@ -132,6 +134,7 @@ export async function exportContractsXlsx(rows: ContractDto[], totals: ContractT
       money(m.receivable, { textColor: m.receivable > 0 ? "#dc2626" : "#334155" }),
       textCell(CONTRACT_STATUS[c.status as keyof typeof CONTRACT_STATUS]?.label ?? c.status, { align: "center" }),
       textCell(PAYMENT_STATUS[m.paymentStatus].label, { align: "center" }),
+      textCell(c.fileCount ? `Có (${c.fileCount})` : "Chưa", { align: "center", textColor: c.fileCount ? "#047857" : "#b45309" }),
     ];
   });
 
@@ -152,6 +155,7 @@ export async function exportContractsXlsx(rows: ContractDto[], totals: ContractT
     money(totals.receivable, totalStyle),
     textCell("", totalStyle),
     textCell("", totalStyle),
+    textCell(`${rows.filter((c) => c.fileCount > 0).length}/${rows.length}`, { ...totalStyle, align: "center" }),
   ];
 
   const note: Cell[] = [

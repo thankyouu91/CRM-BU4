@@ -78,9 +78,12 @@ export function buildReportPrompt(kind: AIPromptKind, s: Summary, scopeLabel: st
     );
     s.finance.byProject.forEach((p) =>
       L.push(
-        `  - ${p.name}${p.progress === null ? "" : ` (tiến độ công việc ${p.progress}%)`}: giá trị ${vnd(p.totals.value)}, chi phí ${vnd(p.totals.totalCost)}, lợi nhuận ${vnd(p.totals.profit)} (${p.totals.margin}%), còn phải thu ${vnd(p.totals.receivable)}`,
+        `  - ${p.name}${p.progress === null ? "" : ` (tiến độ công việc ${p.progress}%)`}: giá trị ${vnd(p.totals.value)}, chi phí ${vnd(p.totals.totalCost)}, lợi nhuận ${vnd(p.totals.profit)} (${p.totals.margin}%), còn phải thu ${vnd(p.totals.receivable)}; hồ sơ PDF ${p.withFiles}/${p.totals.count} HĐ`,
       ),
     );
+    if (s.finance.missingFiles.length) {
+      L.push(`- Dự án đã hoàn thành còn thiếu file PDF hợp đồng: ${s.finance.missingFiles.map((p) => `${p.name} (thiếu ${p.missing}/${p.contracts} HĐ)`).join("; ")}`);
+    }
   }
   L.push("");
   L.push("3. NHÂN SỰ (công việc được giao trong kỳ)");

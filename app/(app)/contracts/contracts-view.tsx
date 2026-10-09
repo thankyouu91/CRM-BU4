@@ -23,6 +23,7 @@ import {
 import type { ContractDto } from "@/lib/contracts";
 import { parseContractPaste, type ParsedRow } from "@/lib/contract-import";
 import { ContractModal, monthOf, ratingBg, toDateInput, type ProjectOption } from "@/components/contracts/contract-form";
+import { ContractFilesModal, FileCountButton } from "@/components/contracts/contract-files";
 import { SummaryCards } from "@/components/contracts/summary-cards";
 import { cn } from "@/lib/utils";
 
@@ -146,7 +147,12 @@ const GROUPS = [
   { label: "Chi phí chi tiết", span: 4, cls: "bg-orange-600 text-white" },
   { label: "Lợi nhuận & hiệu quả", span: 3, cls: "bg-emerald-600 text-white" },
   { label: "Dòng tiền & trạng thái", span: 4, cls: "bg-violet-600 text-white" },
+  { label: "Hồ sơ", span: 1, cls: "bg-slate-600 text-white" },
 ];
+
+// "" = all; contracts without a PDF (all, or of completed projects only); contracts with one.
+type FileFilter = "" | "missing" | "completed-missing" | "has";
+const isCompletedProject = (c: ContractDto) => c.project?.status === "COMPLETED";
 
 export function ContractsView({ projects, initial }: { projects: ProjectOption[]; initial?: ListResponse }) {
   const [period, setPeriod] = useState<PeriodState>(defaultPeriod("month"));
@@ -155,6 +161,8 @@ export function ContractsView({ projects, initial }: { projects: ProjectOption[]
   const [status, setStatus] = useState<"" | ContractStatusKey>("");
   // "" = all, "none" = not linked to a project, otherwise a project id.
   const [projectFilter, setProjectFilter] = useState("");
+  const [fileFilter, setFileFilter] = useState<FileFilter>("");
+  const [filesOf, setFilesOf] = useState<ContractDto | null>(null);
   const [editing, setEditing] = useState<ContractDto | null>(null);
   const [creating, setCreating] = useState(false);
   const [importing, setImporting] = useState(false);
@@ -182,9 +190,11 @@ export function ContractsView({ projects, initial }: { projects: ProjectOption[]
       (c) =>
         (!status || c.status === status) &&
         (!projectFilter || (projectFilter === "none" ? !c.projectId : c.projectId === projectFilter)) &&
+        (!fileFilter ||
+          (fileFilter === "has" ? c.fileCount > 0 : c.fileCount === 0 && (fileFilter === "missing" || isCompletedProject(c)))) &&
         (!term || `${c.code ?? ""} ${c.name} ${c.partner ?? ""}`.toLowerCase().includes(term)),
     );
-  }, [data, q, status, projectFilter]);
+  }, [data, q, status, projectFilter, fileFilter]);
   const filtered = rows.length !== (data?.contracts.length ?? 0);
   // Totals follow the visible rows so search/filters update the summary too.
   const totals = useMemo(() => {
@@ -233,7 +243,7 @@ export function ContractsView({ projects, initial }: { projects: ProjectOption[]
         }
       />
 
-      <div className="mb-5 flex flex-col gap-3 xl:flex-row xl:items-center">
+      <div className="mb-5 flex flex-col gap-3">
         <div className="flex flex-wrap items-center gap-2">
           {!all && <PeriodFilter value={period} onChange={setPeriod} label={data?.period?.label ?? "…"} />}
           <label className="flex h-10 cursor-pointer items-center gap-2 whitespace-nowrap rounded-lg border bg-card px-3 text-xs">
@@ -241,7 +251,7 @@ export function ContractsView({ projects, initial }: { projects: ProjectOption[]
             Tất cả thời gian
           </label>
         </div>
-        <div className="flex flex-1 flex-col gap-2 sm:flex-row xl:justify-end">
+        <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
           <Select value={projectFilter} onChange={(e) => setProjectFilter(e.target.value)} className="sm:w-52">
             <option value="">Mọi dự án</option>
             <option value="none">Chưa gắn dự án</option>
@@ -251,6 +261,12 @@ export function ContractsView({ projects, initial }: { projects: ProjectOption[]
               </option>
             ))}
           </Select>
+          <Select value={fileFilter} onChange={(e) => setFileFilter(e.target.value as FileFilter)} className="sm:w-60">
+            <option value="">Mọi hồ sơ PDF</option>
+            <option value="completed-missing">Dự án xong, chưa có PDF</option>
+            <option value="missing">Chưa có file PDF</option>
+            <option value="has">Đã có file PDF</option>
+          </Select>
           <Select value={status} onChange={(e) => setStatus(e.target.value as "" | ContractStatusKey)} className="sm:w-44">
             <option value="">Mọi tiến độ</option>
             {CONTRACT_STATUSES.map((s) => (
@@ -259,7 +275,7 @@ export function ContractsView({ projects, initial }: { projects: ProjectOption[]
               </option>
             ))}
           </Select>
-          <div className="relative sm:w-64">
+          <div className="relative sm:min-w-[16rem] sm:flex-1">
             <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <input
               value={q}
@@ -303,7 +319,7 @@ export function ContractsView({ projects, initial }: { projects: ProjectOption[]
               />
             ) : (
               <div className="overflow-x-auto">
-                <table className="w-full min-w-[1480px] text-[13px]">
+                <table className="w-full min-w-[1560px] text-[13px]">
                   <thead className="text-[11px]">
                     <tr>
                       {GROUPS.map((g) => (
@@ -330,6 +346,7 @@ export function ContractsView({ projects, initial }: { projects: ProjectOption[]
                         ["Còn phải thu", "text-right"],
                         ["Tiến độ", "text-center"],
                         ["Trạng thái TT", "text-center"],
+                        ["File HĐ", "text-center"],
                       ].map(([label, cls]) => (
                         <th key={label} className={cn("whitespace-nowrap px-3 py-2.5 font-medium", cls)}>
                           {label}
@@ -393,6 +410,9 @@ export function ContractsView({ projects, initial }: { projects: ProjectOption[]
                           <td className="px-3 py-2.5 text-center">
                             <Badge className={PAYMENT_STATUS[m.paymentStatus].bg}>{PAYMENT_STATUS[m.paymentStatus].label}</Badge>
                           </td>
+                          <td className="px-3 py-2.5 text-center">
+                            <FileCountButton count={c.fileCount} warn={isCompletedProject(c)} onClick={() => setFilesOf(c)} />
+                          </td>
                         </tr>
                       );
                     })}
@@ -417,6 +437,9 @@ export function ContractsView({ projects, initial }: { projects: ProjectOption[]
                         <td className="whitespace-nowrap px-3 py-3 text-right tabular-nums">{formatVnd(totals.collected, false)}</td>
                         <td className="whitespace-nowrap px-3 py-3 text-right tabular-nums text-danger">{formatVnd(totals.receivable, false)}</td>
                         <td colSpan={2} />
+                        <td className="whitespace-nowrap px-3 py-3 text-center text-xs tabular-nums" title="Số hợp đồng đã có file PDF">
+                          {rows.filter((c) => c.fileCount > 0).length}/{rows.length}
+                        </td>
                       </tr>
                     </tfoot>
                   )}
@@ -443,6 +466,7 @@ export function ContractsView({ projects, initial }: { projects: ProjectOption[]
         onSaved={reload}
         onDelete={(c) => setDeleting(c)}
       />
+      <ContractFilesModal contract={filesOf} onClose={() => setFilesOf(null)} onChanged={reload} />
       <ImportModal open={importing} defaultDate={defaultDate} onClose={() => setImporting(false)} onImported={reload} />
       <ConfirmDialog
         open={!!deleting}
@@ -452,7 +476,8 @@ export function ContractsView({ projects, initial }: { projects: ProjectOption[]
         confirmLabel="Xoá hợp đồng"
         message={
           <>
-            Hợp đồng <b className="text-foreground">{deleting?.name}</b> và số liệu chi phí, thanh toán của nó sẽ bị xoá vĩnh viễn.
+            Hợp đồng <b className="text-foreground">{deleting?.name}</b> cùng số liệu chi phí, thanh toán
+            {deleting?.fileCount ? ` và ${deleting.fileCount} file PDF` : ""} của nó sẽ bị xoá vĩnh viễn.
           </>
         }
         onConfirm={async () => {

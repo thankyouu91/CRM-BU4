@@ -15,7 +15,7 @@ Dashboard quản lý dự án và công việc cho doanh nghiệp: giao việc t
 | 5 | Đăng nhập, tạo tài khoản, đổi mật khẩu, bảo mật | Xem mục [Phân quyền](#phân-quyền) và [Bảo mật](#bảo-mật) |
 | 6 | Ghi chú / phản hồi cho từng dự án | Tab “Ghi chú & phản hồi” trong mỗi dự án |
 | 7 | Theo dõi dự án với biểu đồ, % hoàn thành | Dashboard KPI, vòng tiến độ, xu hướng, phân bổ trạng thái, khối lượng theo nhân sự; tab “Tiến độ” có bảng **tiến độ theo deadline** (thực tế so với kế hoạch đến hôm nay, % đạt kế hoạch, trạng thái Đúng tiến độ / Có rủi ro / Chậm / Trễ hạn), **khối lượng đã làm / cần làm** và timeline (Gantt) gồm cả thời hạn hạng mục; các số liệu này có trong Trung tâm báo cáo, slide trình chiếu, PDF/PowerPoint và prompt AI |
-| 9 | Báo cáo hợp đồng & chi phí (thay file Excel) | Trang **Hợp đồng & chi phí**: giá trị HĐ, chi phí đào tạo / khảo thí / khác, lợi nhuận gộp, tỷ suất LN, đánh giá, đã thu, còn phải thu, trạng thái thanh toán — tính tự động; lọc theo tháng/quý/năm, dòng tổng, 4 ô tổng hợp như mẫu Excel; **dán dữ liệu từ Excel** để nhập nhanh và **xuất Excel** đúng bố cục mẫu |
+| 9 | Báo cáo hợp đồng & chi phí (thay file Excel) | Trang **Hợp đồng & chi phí**: giá trị HĐ, chi phí đào tạo / khảo thí / khác, lợi nhuận gộp, tỷ suất LN, đánh giá, đã thu, còn phải thu, trạng thái thanh toán — tính tự động; lọc theo tháng/quý/năm, dòng tổng, 4 ô tổng hợp như mẫu Excel; **dán dữ liệu từ Excel** để nhập nhanh và **xuất Excel** đúng bố cục mẫu; **lưu file PDF hợp đồng** để lưu trữ và báo cáo (nhắc riêng cho dự án đã hoàn thành) |
 | 8 | AI hỗ trợ báo cáo, tích hợp Claude không qua API | Trang **Trợ lý AI**: đóng gói số liệu thật thành prompt → mở Claude.ai điền sẵn / sao chép / tải file cho Claude Code → dán kết quả lại để xem trước, lưu ghi chú dự án, hoặc biến dàn ý thành slide để trình chiếu & xuất file. Không cần API key, không tốn phí API |
 | 10 | Báo cáo tuần trước đã làm, tuần này / tuần tới (hoặc tháng) làm gì, gửi sếp | Tab **Báo cáo tuần / tháng** trong *Công việc của tôi*: ba mục lấy trực tiếp từ công việc và dự án của bạn, ghi chú tự lưu, gửi cấp trên, xuất Excel và in / lưu PDF; cấp trên xem cả đội trong *Hộp báo cáo*. Xem [Báo cáo công việc tuần / tháng](#báo-cáo-công-việc-tuần--tháng) |
 
@@ -47,6 +47,15 @@ Chỉ người có quyền **Hợp đồng & chi phí** thấy mục này (quả
 - **Dán từ Excel**: chọn các dòng trong file cũ (có thể kèm dòng tiêu đề) → Ctrl+C → dán; các cột tính toán (Tổng giá trị, LN gộp, Đánh giá, Còn phải thu, Trạng thái TT) được tính lại.
 - **Liên kết với dự án — một nguồn số liệu duy nhất:** mỗi hợp đồng gắn với tối đa một dự án. Nhập số hợp đồng, giá trị, chi phí, đã thu ngay trong form *Tạo/Sửa dự án* hoặc tab **Hợp đồng & chi phí** của dự án — đó chính là bản ghi hợp đồng, nên trang Hợp đồng & chi phí, Trung tâm báo cáo (mục *Tài chính hợp đồng*, bảng *Tiến độ & tài chính theo dự án*), slide trình chiếu, PDF/PowerPoint và prompt AI luôn cùng một số liệu và cùng công thức. Xoá dự án không xoá hợp đồng; hợp đồng chuyển sang nhóm *Chưa gắn dự án*.
 - Trung tâm báo cáo: khi chọn một dự án, mục tài chính tính **toàn bộ hợp đồng của dự án**; khi xem tất cả dự án, tính các hợp đồng có ngày thực hiện trong kỳ đang lọc.
+
+#### Hồ sơ hợp đồng (PDF)
+
+- Mỗi hợp đồng lưu được tối đa **20 file PDF**, mỗi file ≤ **10 MB** (bản ký, phụ lục, biên bản nghiệm thu): mở form hợp đồng → mục *Hồ sơ hợp đồng (PDF)* → kéo thả hoặc chọn file; hợp đồng đang tạo mới thì file được tải lên ngay sau khi lưu. Chỉ nhận file PDF thật (kiểm tra nội dung `%PDF-`, không chỉ đuôi file). Bấm tên file để xem trong tab mới, hoặc tải về / xoá.
+- **Dự án đã hoàn thành:** tab *Hợp đồng & chi phí* của dự án liệt kê các hợp đồng chưa có PDF, mỗi dòng có nút *Tải PDF lên*.
+- Trang Hợp đồng & chi phí: cột **File HĐ** (bấm để xem / tải file lên) và bộ lọc *Dự án xong, chưa có PDF*, *Chưa có file PDF*, *Đã có file PDF*; file Excel xuất ra có cột *File HĐ* (“Có (n)” / “Chưa”), dán lại vào trang vẫn nhập được.
+- Trung tâm báo cáo: cột *Hồ sơ PDF* (số HĐ đã có file / tổng số HĐ) theo từng dự án và danh sách dự án đã hoàn thành còn thiếu PDF (tính trên mọi hợp đồng của dự án, không theo kỳ); prompt AI cũng có số liệu này.
+- Quyền giống dữ liệu hợp đồng: chỉ người có quyền *Hợp đồng & chi phí*. Xoá hợp đồng thì xoá luôn file của nó; xoá dự án vẫn giữ hợp đồng và file.
+- **Lưu trữ:** file nằm trong Postgres (bảng `ContractFile` + `ContractFileBlob`, đọc/ghi qua `lib/file-storage.ts`), tổng tối đa **300 MB** để không làm đầy database Supabase Free (500 MB). Cần nhiều hơn thì bật **Cloudflare R2** và chuyển `lib/file-storage.ts` sang R2; phần còn lại không đổi.
 
 ### Tiến độ theo deadline
 

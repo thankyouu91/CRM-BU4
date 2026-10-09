@@ -4,7 +4,7 @@
 generator client {
   // Queries go through the `pg` driver adapter, which also runs inside
   // Cloudflare Workers (see lib/prisma.ts). Driver adapters are GA in Prisma 6.19.
-  provider = "prisma-client-js"
+  provider        = "prisma-client-js"
   // Lets heavy reads load nested relations in one SQL statement
   // (relationLoadStrategy: "join") instead of one query per relation.
   previewFeatures = ["relationJoins"]
@@ -124,6 +124,7 @@ model User {
   contracts       Contract[]
   workReports     WorkReport[]    @relation("WorkReportAuthor")
   reviewedWork    WorkReport[]    @relation("WorkReportReviewer")
+  contractFiles   ContractFile[]
 }
 
 model Project {
@@ -283,6 +284,7 @@ model Contract {
   createdBy      User           @relation(fields: [createdById], references: [id])
   createdAt      DateTime       @default(now())
   updatedAt      DateTime       @updatedAt
+  files          ContractFile[]
 
   @@index([performedAt])
   @@index([projectId])
@@ -318,4 +320,30 @@ model WorkReport {
 
   @@unique([userId, period, periodStart])
   @@index([period, periodStart])
+}
+
+// Hồ sơ hợp đồng: file PDF (bản ký, bản scan) để lưu trữ và báo cáo. Bảng này
+// chỉ giữ thông tin file; nội dung nằm ở ContractFileBlob nên danh sách và
+// include không bao giờ tải các byte của file. Xoá hợp đồng thì xoá file.
+model ContractFile {
+  id           String            @id @default(cuid())
+  contractId   String
+  contract     Contract          @relation(fields: [contractId], references: [id], onDelete: Cascade)
+  name         String // tên file gốc (đã chuẩn hoá)
+  size         Int // số byte
+  mimeType     String            @default("application/pdf")
+  uploadedById String
+  uploadedBy   User              @relation(fields: [uploadedById], references: [id])
+  createdAt    DateTime          @default(now())
+  blob         ContractFileBlob?
+
+  @@index([contractId])
+}
+
+// Nội dung file, 1:1 với ContractFile, chỉ đọc/ghi qua lib/file-storage.ts
+// (có thể chuyển sang Cloudflare R2 mà không đổi phần còn lại).
+model ContractFileBlob {
+  fileId String       @id
+  file   ContractFile @relation(fields: [fileId], references: [id], onDelete: Cascade)
+  data   Bytes
 }

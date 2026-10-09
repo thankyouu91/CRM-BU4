@@ -15,7 +15,7 @@ import { projectVisibilityWhere } from "./rbac";
 import { scheduleOf, workloadOf, type Schedule, type Workload } from "./schedule";
 import { hasPermission } from "./permissions";
 import { contractTotals, type ContractTotals } from "./finance";
-import { contractDto } from "./contracts";
+import { contractDto, fileCountSelect } from "./contracts";
 import type { DateRange, PeriodType } from "./period";
 import type { CurrentUser } from "./session";
 
@@ -249,7 +249,11 @@ export interface SummaryFinance {
     progress: number | null;
     scheduleStatus: string | null;
     totals: ContractTotals;
+    /** Contracts with at least one PDF attached. */
+    withFiles: number;
   }[];
+  /** Completed projects (any period) with contracts still missing their PDF. */
+  missingFiles: { id: string; name: string; color: string; contracts: number; missing: number }[];
 }
 
 /** One line of the "progress against deadline" table: a project, category or sub-category. */
@@ -359,7 +363,7 @@ export async function getSummary(
   // One parallel wave: tasks, reports and categories filter through the project
   // relation instead of waiting for the project ids.
   const canFinance = hasPermission(user, "FINANCE_MANAGE");
-  const [projects, tasks, reports, categories, contractRows] = await Promise.all([
+  const [projects, tasks, reports, categories, contractRows, completedContracts] = await Promise.all([
     prisma.project.findMany({
       where: projectWhere,
       orderBy: { createdAt: "asc" },
@@ -424,7 +428,14 @@ export async function getSummary(
       ? prisma.contract.findMany({
           where: projectId ? { projectId } : { performedAt: { gte: range.from, lte: range.to } },
           orderBy: { performedAt: "asc" },
-          include: { project: { select: { id: true, name: true, color: true } } },
+          include: { project: { select: { id: true, name: true, color: true } }, ...fileCountSelect },
+        })
+      : Promise.resolve([]),
+    // Contracts of completed projects, to list those whose PDFs are not archived yet.
+    canFinance
+      ? prisma.contract.findMany({
+          where: { project: { ...projectWhere, status: "COMPLETED" } },
+          select: { projectId: true, ...fileCountSelect },
         })
       : Promise.resolve([]),
   ]);
@@ -598,9 +609,15 @@ export async function getSummary(
             progress: p ? p.progress : null,
             scheduleStatus: p ? p.schedule.status : null,
             totals: contractTotals(list),
+            withFiles: list.filter((c) => c.fileCount > 0).length,
           };
         })
         .sort((a, b) => (a.id === null ? 1 : b.id === null ? -1 : b.totals.value - a.totals.value)),
+      missingFiles: projects.flatMap((p) => {
+        const list = completedContracts.filter((c) => c.projectId === p.id);
+        const missing = list.filter((c) => c._count.files === 0).length;
+        return missing ? [{ id: p.id, name: p.name, color: p.color, contracts: list.length, missing }] : [];
+      }),
     };
   }
 

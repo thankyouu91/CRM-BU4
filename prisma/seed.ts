@@ -309,6 +309,35 @@ const REPORT_TEXT = {
 };
 const REVIEW_NOTES = ["Đã xem, tốt.", "Tiếp tục phát huy.", "Ok, lưu ý bám sát deadline.", null, null];
 
+/** A one-page PDF with a few lines of text, accents dropped (demo contract scan). */
+function samplePdf(lines: string[]): Uint8Array<ArrayBuffer> {
+  const ascii = (l: string) =>
+    l
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .replace(/đ/g, "d")
+      .replace(/Đ/g, "D")
+      .replace(/[^\x20-\x7e]|[()\\]/g, "");
+  const text = lines.map((l, i) => `BT /F1 ${i ? 12 : 18} Tf 72 ${760 - i * 28} Td (${ascii(l)}) Tj ET`).join("\n");
+  const objects = [
+    "<< /Type /Catalog /Pages 2 0 R >>",
+    "<< /Type /Pages /Kids [3 0 R] /Count 1 >>",
+    "<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Contents 4 0 R /Resources << /Font << /F1 5 0 R >> >> >>",
+    `<< /Length ${text.length} >>\nstream\n${text}\nendstream`,
+    "<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>",
+  ];
+  let pdf = "%PDF-1.4\n";
+  const offsets = objects.map((body, i) => {
+    const at = pdf.length;
+    pdf += `${i + 1} 0 obj\n${body}\nendobj\n`;
+    return at;
+  });
+  const xref = pdf.length;
+  pdf += `xref\n0 ${objects.length + 1}\n0000000000 65535 f \n${offsets.map((o) => `${String(o).padStart(10, "0")} 00000 n \n`).join("")}`;
+  pdf += `trailer\n<< /Size ${objects.length + 1} /Root 1 0 R >>\nstartxref\n${xref}\n%%EOF\n`;
+  return new Uint8Array(Buffer.from(pdf, "latin1"));
+}
+
 async function main() {
   const existing = await prisma.user.count();
   if (existing > 0 && process.env.SEED_FORCE !== "1") {
@@ -480,6 +509,8 @@ async function main() {
   }
 
   // Contracts & costs (fictional sample data). m = months ago of implementation.
+  // The first project is the completed one: one of its two contracts has its
+  // signed PDF archived (pdf), the other not yet.
   const firstProject = await prisma.project.findFirst({ orderBy: { createdAt: "asc" }, select: { id: true } });
   const monthsAgo = (m: number) => {
     const d = new Date(now);
@@ -492,12 +523,12 @@ async function main() {
     { code: "021/HĐMB-2026/XYZ", name: "Cung cấp tài khoản luyện thi trực tuyến", partner: "Trường THPT Nguyễn Trãi", value: 64_500_000, m: 0, status: "COMPLETED", training: 0, exam: 0, margin: 35, collected: 64_500_000 },
     { code: "009/HĐDV-2026/HTC", name: "Tổ chức khảo thí năng lực ngoại ngữ đầu vào", partner: "Đại học Kỹ thuật Hưng Thịnh", value: 420_000_000, m: 0, status: "TESTING", training: 0, exam: 268_000_000, margin: null, collected: 210_000_000 },
     { code: "030/HĐKT-2026/SV", name: "Khoá luyện thi chứng chỉ quốc tế cho sinh viên", partner: "Đại học Sao Việt", value: 1_120_000_000, m: 0, status: "IN_PROGRESS", training: 0, exam: 0, margin: 28, collected: 0 },
-    { code: "011/HĐKT-2026/LP", name: "Đánh giá năng lực tiếng Anh đội ngũ lãnh đạo", partner: "Tập đoàn Lam Phương", value: 245_000_000, m: 1, status: "COMPLETED", training: 120_000_000, exam: 85_000_000, margin: null, collected: 245_000_000 },
+    { code: "011/HĐKT-2026/LP", name: "Đánh giá năng lực tiếng Anh đội ngũ lãnh đạo", partner: "Tập đoàn Lam Phương", value: 245_000_000, m: 1, status: "COMPLETED", training: 120_000_000, exam: 85_000_000, margin: null, collected: 245_000_000, project: true, pdf: true },
     { code: "007/HĐMB-2026/AN", name: "Gói học liệu số cho trung tâm ngoại ngữ", partner: "Trung tâm Anh ngữ An Nhiên", value: 38_000_000, m: 1, status: "COMPLETED", training: 41_500_000, exam: 0, margin: null, collected: 38_000_000 },
     { code: "002/HĐDV-2026/BT", name: "Khảo thí xếp lớp đầu năm học", partner: "Trường quốc tế Bình Tâm", value: 96_000_000, m: 2, status: "COMPLETED", training: 0, exam: 52_000_000, margin: null, collected: 96_000_000 },
   ] as const;
   for (const c of CONTRACTS) {
-    await prisma.contract.create({
+    const contract = await prisma.contract.create({
       data: {
         code: c.code,
         name: c.name,
@@ -513,6 +544,18 @@ async function main() {
         createdById: ids.an,
       },
     });
+    if ("pdf" in c) {
+      const bytes = samplePdf([`HOP DONG ${c.code}`, c.name, "Ban scan mau - du lieu demo"]);
+      await prisma.contractFile.create({
+        data: {
+          contractId: contract.id,
+          name: `HĐ ${c.code.replace(/\//g, "-")} (bản ký).pdf`,
+          size: bytes.length,
+          uploadedById: ids.cuong,
+          blob: { create: { data: bytes } },
+        },
+      });
+    }
   }
 
   // Weekly work reports: lan.bui sent last week's, dung.pham sent this week's (seen
