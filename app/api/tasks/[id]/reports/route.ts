@@ -1,3 +1,4 @@
+import { updateTaskSafely } from "@/lib/task-service";
 import type { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { auth, created, forbidden, handle, notFound, unauthorized } from "@/lib/api";
@@ -33,8 +34,9 @@ export async function POST(req: NextRequest, ctx: Ctx) {
       data.progress >= 100 && task.status !== "DONE" ? "REVIEW" : undefined;
     const state = resolveTaskState(task, { progress: data.progress, status: nextStatus });
 
-    const [report] = await prisma.$transaction([
-      prisma.taskReport.create({
+    const report = await prisma.$transaction(async (tx) => {
+      await updateTaskSafely(tx, task, state);
+      const report = await tx.taskReport.create({
         data: {
           taskId: task.id,
           authorId: me.id,
@@ -43,10 +45,10 @@ export async function POST(req: NextRequest, ctx: Ctx) {
           hoursSpent: data.hoursSpent,
         },
         include: { author: { select: { id: true, name: true, avatarColor: true, jobTitle: true } } },
-      }),
-      prisma.task.update({ where: { id: task.id }, data: state }),
-      prisma.project.update({ where: { id: task.projectId }, data: { updatedAt: new Date() } }),
-    ]);
+      });
+      await tx.project.update({ where: { id: task.projectId }, data: { updatedAt: new Date() } });
+      return report;
+    });
     await audit(
       { id: me.id, name: me.name },
       {

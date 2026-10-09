@@ -1,5 +1,7 @@
 "use client";
 
+import { Pagination } from "@/components/ui/pagination";
+
 import { useMemo, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { CalendarClock, CheckCircle2, ChevronRight, Clock, GitBranch, ListChecks, Loader2, Search, TriangleAlert } from "lucide-react";
@@ -29,6 +31,8 @@ interface Row {
   _count: { subtasks: number; reports: number };
 }
 
+interface TaskPage { tasks: Row[]; total: number; nextCursor: string | null; stats: { open: number; active: number; overdue: number; doneWeek: number } }
+
 type Bucket = "overdue" | "today" | "week" | "later" | "none" | "done";
 const BUCKETS: { key: Bucket; label: string; icon: React.ComponentType<{ className?: string }>; tone?: string }[] = [
   { key: "overdue", label: "Quá hạn", icon: TriangleAlert, tone: "text-danger" },
@@ -52,17 +56,16 @@ function bucketOf(t: Row): Bucket {
   return "later";
 }
 
-export function MyTasksView({ canSeeAll, initial, tabs }: { canSeeAll: boolean; initial?: { tasks: Row[] }; tabs?: React.ReactNode }) {
+export function MyTasksView({ canSeeAll, initial, tabs }: { canSeeAll: boolean; initial?: TaskPage; tabs?: React.ReactNode }) {
   const [scope, setScope] = useState<"mine" | "all">("mine");
   const [q, setQ] = useState("");
   const [openTask, setOpenTask] = useState<string | null>(null);
   const [collapsed, setCollapsed] = useState<Set<Bucket>>(new Set(["done"]));
-  const { data, loading, reload } = useApi<{ tasks: Row[] }>(`/api/tasks?scope=${scope}`, { initial });
+  const [cursors, setCursors] = useState<(string | null)[]>([null]);
+  const cursor = cursors[cursors.length - 1];
+  const { data, loading, error, reload } = useApi<TaskPage>(`/api/tasks?scope=${scope}&q=${encodeURIComponent(q)}${cursor ? `&cursor=${encodeURIComponent(cursor)}` : ""}`, { initial });
 
-  const tasks = useMemo(
-    () => (data?.tasks ?? []).filter((t) => !q.trim() || t.title.toLowerCase().includes(q.trim().toLowerCase())),
-    [data, q],
-  );
+  const tasks = useMemo(() => data?.tasks ?? [], [data]);
   const grouped = useMemo(() => {
     const g = new Map<Bucket, Row[]>();
     for (const t of tasks) {
@@ -74,14 +77,7 @@ export function MyTasksView({ canSeeAll, initial, tabs }: { canSeeAll: boolean; 
     return g;
   }, [tasks]);
 
-  const all = data?.tasks ?? [];
-  const weekAgo = Date.now() - 7 * 86_400_000;
-  const stats = {
-    open: all.filter((t) => t.status !== "DONE").length,
-    active: all.filter((t) => t.status === "IN_PROGRESS" || t.status === "REVIEW").length,
-    overdue: all.filter((t) => bucketOf(t) === "overdue").length,
-    doneWeek: all.filter((t) => t.status === "DONE" && t.completedAt && new Date(t.completedAt).getTime() >= weekAgo).length,
-  };
+  const stats = data?.stats ?? { open: 0, active: 0, overdue: 0, doneWeek: 0 };
 
   const toggle = async (t: Row) => {
     try {
@@ -111,7 +107,7 @@ export function MyTasksView({ canSeeAll, initial, tabs }: { canSeeAll: boolean; 
             <Segmented
               layoutId="task-scope"
               value={scope}
-              onChange={setScope}
+              onChange={(value) => { setScope(value); setCursors([null]); }}
               options={[
                 { value: "mine", label: "Tôi phụ trách" },
                 { value: "all", label: "Tất cả dự án" },
@@ -133,7 +129,7 @@ export function MyTasksView({ canSeeAll, initial, tabs }: { canSeeAll: boolean; 
         <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
         <input
           value={q}
-          onChange={(e) => setQ(e.target.value)}
+          onChange={(e) => { setQ(e.target.value); setCursors([null]); }}
           placeholder="Tìm công việc…"
           className="h-10 w-full rounded-lg border bg-card pl-9 pr-3 text-sm outline-none focus:border-primary/60 focus:ring-2 focus:ring-primary/20"
         />
@@ -206,6 +202,8 @@ export function MyTasksView({ canSeeAll, initial, tabs }: { canSeeAll: boolean; 
         </div>
       )}
 
+      {error && <p role="alert" className="my-3 text-danger">{error}</p>}
+      <Pagination total={data?.total ?? 0} page={cursors.length} busy={loading} hasNext={!!data?.nextCursor} onPrevious={() => setCursors((s) => s.slice(0, -1))} onNext={() => { if (data?.nextCursor) setCursors((s) => [...s, data.nextCursor]); }} />
       <TaskDrawer taskId={openTask} onClose={() => setOpenTask(null)} onChanged={reload} />
     </div>
   );

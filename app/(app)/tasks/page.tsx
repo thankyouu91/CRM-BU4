@@ -26,7 +26,7 @@ export default async function TasksPage({ searchParams }: { searchParams: Search
     <MyWork
       tab={tab}
       canSeeAll={canSeeAll}
-      initialTasks={tasks ? asJson({ tasks }) : undefined}
+      initialTasks={tasks ? asJson(tasks) : undefined}
       initialReport={report && report !== "forbidden" ? asJson<WorkReportData>(report) : undefined}
       initialPeriod={{ type: period.type, key: period.key }}
     />

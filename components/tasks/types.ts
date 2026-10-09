@@ -12,6 +12,7 @@ export function categoryOptions(categories: CategoryBrief[]): { id: string; labe
 }
 
 export interface TaskBase {
+  effectiveProgress?: number;
   id: string;
   title: string;
   description: string | null;

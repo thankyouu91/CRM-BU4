@@ -1,3 +1,4 @@
+import { updateTaskSafely } from "@/lib/task-service";
 import type { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { auth, forbidden, handle, notFound, ok, unauthorized } from "@/lib/api";
@@ -34,10 +35,8 @@ export async function PATCH(req: NextRequest, ctx: Ctx) {
         data: { reviewerId: me.id, reviewedAt: new Date(), reviewNote: data.reviewNote?.trim() || null },
       });
       if (data.approveTask) {
-        await tx.task.update({
-          where: { id: report.taskId },
-          data: resolveTaskState(report.task, { status: "DONE" }),
-        });
+        await updateTaskSafely(tx, report.task, resolveTaskState(report.task, { status: "DONE" }));
+        await tx.project.update({ where: { id: report.task.projectId }, data: { updatedAt: new Date() } });
       }
     });
     await audit(

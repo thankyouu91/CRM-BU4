@@ -1,48 +1,46 @@
 name: CI
-
 on:
-  push:
-    branches: ["**"]
   pull_request:
-
+  push:
 concurrency:
   group: ci-${{ github.ref }}
   cancel-in-progress: true
-
 permissions:
   contents: read
-
 jobs:
-  check:
-    name: Lint, typecheck, test, build
+  verify:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 15
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: crm
+          POSTGRES_PASSWORD: ci-only-password
+          POSTGRES_DB: crm_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U crm -d crm_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      DATABASE_URL: postgresql://crm:ci-only-password@localhost:5432/crm_test
+      TEST_DATABASE_URL: postgresql://crm:ci-only-password@localhost:5432/crm_test
+      JWT_SECRET: ci-only-secret-at-least-32-characters-long
+      NEXT_TELEMETRY_DISABLED: "1"
     steps:
       - uses: actions/checkout@v4
-
       - uses: actions/setup-node@v4
         with:
           node-version: 22
           cache: npm
-
-      - name: Install
-        run: npm ci
-
-      - name: Lint
-        run: npm run lint
-
-      - name: Typecheck
-        run: npm run typecheck
-
-      - name: Unit tests
-        run: npm test
-
-      # Only what runs in production; build tooling is checked separately below.
-      - name: Audit production dependencies
-        run: npm audit --omit=dev --audit-level=high
-
-      - name: Build (Next.js for Cloudflare Workers)
-        run: npx opennextjs-cloudflare build
-
-      - name: Bundle Worker (dry run, no deploy)
-        run: npx wrangler deploy --dry-run --outdir .wrangler-dry-run
+      - run: npm ci
+      - run: npx prisma migrate deploy
+      - run: npm run lint
+      - run: npm run typecheck
+      - run: npm test
+      - run: npm audit --omit=dev --audit-level=high
+      - run: npx opennextjs-cloudflare build
+      - run: npx wrangler deploy --dry-run --outdir .wrangler-dry-run

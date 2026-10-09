@@ -20,6 +20,8 @@ interface Patch {
  *  - Reporting progress on a TODO task (without an explicit status) starts it.
  */
 export function resolveTaskState(current: Current, patch: Patch) {
+  // Metadata-only edits must not write a snapshot of state read earlier.
+  if (patch.status === undefined && patch.progress === undefined) return {};
   let status = patch.status ?? current.status;
   let progress = patch.progress !== undefined ? clampProgress(patch.progress) : current.progress;
 

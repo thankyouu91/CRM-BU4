@@ -1,6 +1,8 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useNotesDraft, type SaveState } from "./use-notes-draft";
+
+import { useMemo, useState } from "react";
 import Link from "next/link";
 import {
   CalendarClock,
@@ -49,7 +51,7 @@ import {
   zonedText,
 } from "@/lib/work-report";
 
-type SaveState = "saved" | "dirty" | "saving" | "error";
+
 
 /**
  * One person's weekly / monthly report: loads it for `period`, and for the author
@@ -95,77 +97,6 @@ export function WorkReportScreen({
   );
 }
 
-/** The author's notes, saved 1.2 s after typing stops, on demand, and when leaving the report. */
-function useNotesDraft(data: WorkReportData, onSaved: (r: WorkReportRecord) => void) {
-  const [notes, setNotes] = useState<WorkNotes>(() => notesOf(data.report?.notes));
-  const [state, setState] = useState<SaveState>("saved");
-  const latest = useRef(notes);
-  const pending = useRef<WorkNotes | null>(null);
-  const inflight = useRef<Promise<void> | null>(null);
-  const timer = useRef<ReturnType<typeof setTimeout>>(undefined);
-  const saved = useRef(onSaved);
-  saved.current = onSaved;
-  const { type, key } = data.period;
-  const body = useCallback((n: WorkNotes) => ({ period: type.toLowerCase(), key, ...n }), [type, key]);
-
-  const save = useCallback(async () => {
-    clearTimeout(timer.current);
-    if (inflight.current) await inflight.current;
-    const next = pending.current;
-    if (!next) return;
-    pending.current = null;
-    setState("saving");
-    const run = api<{ report: WorkReportRecord }>("/api/work-reports", { method: "PUT", body: body(next) })
-      .then((res) => {
-        saved.current(res.report);
-        setState(pending.current ? "dirty" : "saved");
-      })
-      .catch((e) => {
-        pending.current ??= next;
-        setState("error");
-        toast.error(e instanceof ApiError ? e.message : "Không lưu được ghi chú");
-      });
-    inflight.current = run;
-    await run;
-    inflight.current = null;
-  }, [body]);
-
-  const change = (field: keyof WorkNotes, value: string) => {
-    const next = { ...latest.current, [field]: value };
-    latest.current = next;
-    pending.current = next;
-    setNotes(next);
-    setState("dirty");
-    clearTimeout(timer.current);
-    timer.current = setTimeout(() => void save(), 1200);
-  };
-
-  /** For sending: no save of its own is left pending. */
-  const take = async () => {
-    clearTimeout(timer.current);
-    if (inflight.current) await inflight.current;
-    pending.current = null;
-    setState("saved");
-    return latest.current;
-  };
-
-  // Leaving the report (another period, the other tab, another page) saves what is pending.
-  useEffect(
-    () => () => {
-      clearTimeout(timer.current);
-      if (pending.current) void api("/api/work-reports", { method: "PUT", body: body(pending.current), keepalive: true }).catch(() => {});
-    },
-    [body],
-  );
-  useEffect(() => {
-    if (state === "saved") return;
-    const warn = (e: BeforeUnloadEvent) => e.preventDefault();
-    window.addEventListener("beforeunload", warn);
-    return () => window.removeEventListener("beforeunload", warn);
-  }, [state]);
-
-  return { notes, state, change, save, take };
-}
 
 function ReportBody({
   data,
@@ -196,9 +127,11 @@ function ReportBody({
         method: "POST",
         body: { period: data.period.type.toLowerCase(), key: data.period.key, ...n },
       });
+      draft.acknowledge(n);
       setData(view);
       toast.success(submitted ? "Đã gửi lại báo cáo, cấp trên thấy bản mới nhất" : "Đã gửi báo cáo cho cấp trên");
     } catch (e) {
+      draft.failed();
       toast.error(e instanceof ApiError ? e.message : "Không gửi được báo cáo");
     } finally {
       setSending(false);

@@ -1,5 +1,6 @@
 "use client";
 
+import { Pagination } from "@/components/ui/pagination";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
@@ -136,7 +137,7 @@ export function InboxView({
   tabs,
 }: {
   isManager: boolean;
-  initial?: { reports: InboxReport[]; pendingCount: number };
+  initial?: { reports: InboxReport[]; pendingCount: number; total: number; nextCursor: string | null };
   tabs?: React.ReactNode;
 }) {
   const router = useRouter();
@@ -144,10 +145,13 @@ export function InboxView({
   const [status, setStatus] = useState<Status>(isManager ? "pending" : "all");
   const [openTask, setOpenTask] = useState<string | null>(null);
   const [bulk, setBulk] = useState(false);
-  const { data, loading, reload } = useApi<{ reports: InboxReport[]; pendingCount: number }>(`/api/reports/inbox?box=${box}&status=${status}`, { initial });
+  const [cursors, setCursors] = useState<(string | null)[]>([null]);
+  const cursor = cursors[cursors.length - 1];
+  const { data, loading, error, reload } = useApi<{ reports: InboxReport[]; pendingCount: number; total: number; nextCursor: string | null }>(`/api/reports/inbox?box=${box}&status=${status}${cursor ? `&cursor=${encodeURIComponent(cursor)}` : ""}`, { initial });
 
   const refresh = async () => {
-    await reload();
+    if (cursors.length > 1) setCursors([null]);
+    else await reload();
     router.refresh(); // update the sidebar badge
   };
 
@@ -182,7 +186,7 @@ export function InboxView({
           status !== "reviewed" &&
           reports.some((r) => !r.reviewedAt) && (
             <Button variant="outline" onClick={markAllSeen} loading={bulk}>
-              <CheckCheck className="h-4 w-4" /> Đánh dấu tất cả đã xem
+              <CheckCheck className="h-4 w-4" /> Đánh dấu trang này đã xem
             </Button>
           )
         }
@@ -196,6 +200,7 @@ export function InboxView({
             value={box}
             onChange={(b) => {
               setBox(b);
+              setCursors([null]);
               setStatus(b === "received" ? "pending" : "all");
             }}
             options={[
@@ -219,7 +224,7 @@ export function InboxView({
         <Segmented
           layoutId="inbox-status"
           value={status}
-          onChange={setStatus}
+          onChange={(value) => { setStatus(value); setCursors([null]); }}
           options={[
             { value: "pending", label: "Chờ xem xét" },
             { value: "reviewed", label: "Đã xem" },
@@ -250,6 +255,8 @@ export function InboxView({
         </ul>
       )}
 
+      {error && <p role="alert" className="my-3 text-danger">{error}</p>}
+      <Pagination total={data?.total ?? 0} page={cursors.length} busy={loading || bulk} hasNext={!!data?.nextCursor} onPrevious={() => setCursors((s) => s.slice(0, -1))} onNext={() => { if (data?.nextCursor) setCursors((s) => [...s, data.nextCursor]); }} />
       <TaskDrawer taskId={openTask} onClose={() => setOpenTask(null)} onChanged={refresh} />
     </div>
   );

@@ -1,3 +1,4 @@
+import type { Prisma } from "@prisma/client";
 import { prisma } from "./prisma";
 import { accessFrom, canManageAllProjects, managedProjectsWhere, projectVisibilityWhere } from "./rbac";
 import { categorySchedules, effectiveProgress, indexChildren, projectSchedule } from "./stats";
@@ -117,27 +118,38 @@ const TASK_STATUSES = ["TODO", "IN_PROGRESS", "REVIEW", "DONE", "BLOCKED"] as co
 /** Tasks across visible projects (GET /api/tasks and the "Công việc của tôi" page). */
 export async function listTasks(
   user: CurrentUser,
-  { scope, status, projectId, q }: { scope?: string | null; status?: string | null; projectId?: string | null; q?: string | null },
+  { scope, status, projectId, q, cursor }: { scope?: string | null; status?: string | null; projectId?: string | null; q?: string | null; cursor?: string | null },
 ) {
   const query = q?.trim();
-  return prisma.task.findMany({
-    where: {
-      project: projectVisibilityWhere(user),
-      ...((scope ?? "mine") === "mine" ? { assigneeId: user.id } : {}),
-      ...(status && (TASK_STATUSES as readonly string[]).includes(status) ? { status: status as (typeof TASK_STATUSES)[number] } : {}),
-      ...(projectId ? { projectId } : {}),
-      ...(query ? { title: { contains: query, mode: "insensitive" as const } } : {}),
-    },
-    orderBy: [{ dueDate: { sort: "asc", nulls: "last" } }, { createdAt: "desc" }],
-    take: 500,
-    include: {
-      project: { select: { id: true, name: true, color: true } },
-      category: { select: { id: true, name: true, color: true } },
-      assignee: { select: { id: true, name: true, avatarColor: true } },
-      parent: { select: { id: true, title: true } },
-      _count: { select: { subtasks: true, reports: true } },
-    },
-  });
+  const where: Prisma.TaskWhereInput = {
+    project: projectVisibilityWhere(user),
+    ...((scope ?? "mine") === "mine" ? { assigneeId: user.id } : {}),
+    ...(status && (TASK_STATUSES as readonly string[]).includes(status) ? { status: status as (typeof TASK_STATUSES)[number] } : {}),
+    ...(projectId ? { projectId } : {}),
+    ...(query ? { title: { contains: query, mode: "insensitive" } } : {}),
+  };
+  const now = new Date();
+  const count = (extra: Prisma.TaskWhereInput) => prisma.task.count({ where: { AND: [where, extra] } });
+  const [rows, total, open, active, overdue, doneWeek] = await Promise.all([
+    prisma.task.findMany({
+      where,
+      orderBy: [{ dueDate: { sort: "asc", nulls: "last" } }, { createdAt: "desc" }, { id: "asc" }],
+      take: 101,
+      ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
+      include: {
+        project: { select: { id: true, name: true, color: true } },
+        category: { select: { id: true, name: true, color: true } },
+        assignee: { select: { id: true, name: true, avatarColor: true } },
+        parent: { select: { id: true, title: true } },
+        _count: { select: { subtasks: true, reports: true } },
+      },
+    }),
+    count({}), count({ status: { not: "DONE" } }),
+    count({ status: { in: ["IN_PROGRESS", "REVIEW"] } }),
+    count({ status: { not: "DONE" }, dueDate: { lt: now } }),
+    count({ status: "DONE", completedAt: { gte: new Date(now.getTime() - 7 * 86_400_000) } }),
+  ]);
+  return { tasks: rows.slice(0, 100), nextCursor: rows.length > 100 ? rows[99].id : null, total, stats: { open, active, overdue, doneWeek } };
 }
 
 /**
@@ -146,17 +158,18 @@ export async function listTasks(
  * box=sent:     reports the user has submitted, with their review status.
  * status=pending|reviewed|all filters by review state.
  */
-export async function inboxReports(user: CurrentUser, boxParam?: string | null, statusParam?: string | null) {
+export async function inboxReports(user: CurrentUser, boxParam?: string | null, statusParam?: string | null, cursor?: string | null) {
   const box = boxParam === "sent" ? "sent" : "received";
   const status = statusParam ?? "all";
   const scope = box === "sent" ? { authorId: user.id } : { task: { project: managedProjectsWhere(user) } };
   const reviewFilter = status === "pending" ? { reviewedAt: null } : status === "reviewed" ? { reviewedAt: { not: null } } : {};
 
-  const [reports, pendingCount] = await Promise.all([
+  const [reports, pendingCount, total] = await Promise.all([
     prisma.taskReport.findMany({
       where: { ...scope, ...reviewFilter },
-      orderBy: { createdAt: "desc" },
-      take: 200,
+      orderBy: [{ createdAt: "desc" }, { id: "asc" }],
+      take: 101,
+      ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
       include: {
         author: { select: { id: true, name: true, avatarColor: true, jobTitle: true } },
         reviewer: { select: { id: true, name: true } },
@@ -172,8 +185,9 @@ export async function inboxReports(user: CurrentUser, boxParam?: string | null, 
       },
     }),
     box === "received" ? prisma.taskReport.count({ where: { ...scope, reviewedAt: null } }) : Promise.resolve(0),
+    prisma.taskReport.count({ where: { ...scope, ...reviewFilter } }),
   ]);
-  return { reports, pendingCount };
+  return { reports: reports.slice(0, 100), pendingCount, total, nextCursor: reports.length > 100 ? reports[99].id : null };
 }
 
 /** IDs of the users who can be given work in a project (owner + members who aren't viewers). */

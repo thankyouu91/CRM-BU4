@@ -6,7 +6,7 @@
     "dev": "next dev",
     "build": "prisma generate && next build",
     "start": "next start",
-    "lint": "eslint .",
+    "lint": "eslint . --max-warnings 0",
     "typecheck": "tsc --noEmit",
     "db:migrate": "prisma migrate dev",
     "db:deploy": "prisma migrate deploy",
@@ -61,7 +61,9 @@
     "tsx": "^4.23.15",
     "typescript": "^5",
     "vitest": "^3.2.7",
-    "wrangler": "^4.149.0"
+    "wrangler": "^4.149.0",
+    "@testing-library/react": "^16.3.3",
+    "jsdom": "^26.1.0"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"
