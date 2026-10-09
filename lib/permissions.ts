@@ -104,3 +104,24 @@ export function forbiddenGrantChange(actor: Actor, before: readonly string[], af
   const grantable = new Set(grantablePermissions(actor));
   return PERMISSIONS.find((p) => !grantable.has(p) && before.includes(p) !== after.includes(p)) ?? null;
 }
+
+/**
+ * Weekly/monthly work reports ("sếp" rule): the author, admins, and anyone whose
+ * level is strictly above the author's (MANAGER reads LEAD and MEMBER, LEAD reads
+ * MEMBER). Same-level colleagues and people below never see them. The viewer is an
+ * active account: sessions of deactivated users are rejected before this runs.
+ */
+export function canViewWorkReport(viewer: { id: string; role: string }, author: { id: string; role: string }): boolean {
+  if (viewer.id === author.id || viewer.role === "ADMIN") return true;
+  return roleLevel(viewer.role) > roleLevel(author.role);
+}
+
+/** Marking a work report as seen is for the people who may read it, never the author. */
+export function canReviewWorkReport(viewer: { id: string; role: string }, author: { id: string; role: string }): boolean {
+  return viewer.id !== author.id && canViewWorkReport(viewer, author);
+}
+
+/** Whether this level can read anyone else's work reports (shows the boss views). */
+export function seesTeamWorkReports(role: string): boolean {
+  return role === "ADMIN" || roleLevel(role) > ROLE_LEVEL.MEMBER;
+}

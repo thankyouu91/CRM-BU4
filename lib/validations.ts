@@ -184,6 +184,32 @@ export const createContractSchema = z.object({
 export const updateContractSchema = z.object(contractFields).partial();
 export const importContractsSchema = z.object({ rows: z.array(createContractSchema).min(1).max(500) });
 
+// ----------------------------------------------------------------------------
+// Weekly / monthly work reports
+// ----------------------------------------------------------------------------
+
+// undefined -> leave unchanged; blank -> clear.
+const workNote = z
+  .string()
+  .max(5000, "Tối đa 5000 ký tự")
+  .nullable()
+  .optional()
+  .transform((v) => (v === undefined ? undefined : v?.trim() ? v.trim() : null));
+
+/** The period is `period` (week|month) + `key` (2026-W41 | 2026-10); no key = the current one. */
+export const workReportNotesSchema = z.object({
+  period: z.string().min(1),
+  key: z.string().optional().nullable(),
+  doneNote: workNote,
+  doingNote: workNote,
+  planNote: workNote,
+  issues: workNote,
+});
+
+export const reviewWorkReportSchema = z.object({
+  reviewNote: z.string().max(2000).optional().nullable(),
+});
+
 export type LoginInput = z.infer<typeof loginSchema>;
 export type CreateProjectInput = z.infer<typeof createProjectSchema>;
 export type CreateTaskInput = z.infer<typeof createTaskSchema>;

@@ -80,6 +80,17 @@ enum NoteType {
   FEEDBACK // phản hồi / góp ý
 }
 
+// Kỳ của báo cáo công việc (lib/work-report.ts)
+enum WorkReportPeriod {
+  WEEK // tuần ISO: thứ Hai 00:00 → Chủ nhật 23:59 (APP_TIMEZONE)
+  MONTH
+}
+
+enum WorkReportStatus {
+  DRAFT // đang soạn, chưa gửi
+  SUBMITTED // đã gửi cấp trên
+}
+
 // ----------------------------------------------------------------------------
 // Models
 // ----------------------------------------------------------------------------
@@ -111,6 +122,8 @@ model User {
   reviewedReports TaskReport[]    @relation("ReportReviewer")
   notes           Note[]
   contracts       Contract[]
+  workReports     WorkReport[]    @relation("WorkReportAuthor")
+  reviewedWork    WorkReport[]    @relation("WorkReportReviewer")
 }
 
 model Project {
@@ -273,4 +286,36 @@ model Contract {
 
   @@index([performedAt])
   @@index([projectId])
+}
+
+// Báo cáo công việc tuần / tháng của một người gửi cấp trên. Danh sách công việc
+// luôn được tính trực tiếp từ task của người đó (lib/work-report-queries.ts); bảng
+// này chỉ lưu phần người viết tự ghi và bản chụp danh sách lúc gửi.
+model WorkReport {
+  id          String           @id @default(cuid())
+  userId      String
+  user        User             @relation("WorkReportAuthor", fields: [userId], references: [id], onDelete: Cascade)
+  period      WorkReportPeriod
+  // Đầu kỳ: thứ Hai 00:00 hoặc ngày 1 lúc 00:00 theo APP_TIMEZONE
+  periodStart DateTime
+  doneNote    String? // kỳ trước đã làm: kết quả nổi bật
+  doingNote   String? // kỳ này đang làm: ghi chú
+  planNote    String? // kỳ tới: kế hoạch
+  issues      String? // khó khăn / đề xuất
+  status      WorkReportStatus @default(DRAFT)
+  submittedAt DateTime?
+  // Danh sách công việc và ghi chú lúc gửi (WorkSnapshot), để so với hiện tại
+  snapshot    Json?
+
+  // Cấp trên xem xét
+  reviewedById String?
+  reviewedBy   User?     @relation("WorkReportReviewer", fields: [reviewedById], references: [id], onDelete: SetNull)
+  reviewedAt   DateTime?
+  reviewNote   String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, period, periodStart])
+  @@index([period, periodStart])
 }
