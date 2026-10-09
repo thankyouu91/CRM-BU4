@@ -55,4 +55,3 @@ export function subsetProgress(tasks: ProgressNode[]): number {
   const sum = roots.reduce((acc, t) => acc + effectiveProgress(t, childrenOf), 0);
   return Math.round(sum / roots.length);
 }
-
