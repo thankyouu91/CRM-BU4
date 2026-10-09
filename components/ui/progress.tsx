@@ -91,3 +91,53 @@ export function ProgressRing({
     </div>
   );
 }
+
+/**
+ * Actual completion with a tick at the planned completion for today, so a bar
+ * that stops short of its tick is behind schedule.
+ */
+export function PlanBar({
+  actual,
+  planned,
+  height = 8,
+  className,
+  showLabel,
+}: {
+  actual: number;
+  planned: number | null;
+  height?: number;
+  className?: string;
+  showLabel?: boolean;
+}) {
+  const a = Math.max(0, Math.min(100, Math.round(actual)));
+  const p = planned === null ? null : Math.max(0, Math.min(100, Math.round(planned)));
+  return (
+    <div className={cn("flex items-center gap-2.5", className)}>
+      <div className="relative w-full" style={{ height }}>
+        <div
+          className="absolute inset-0 overflow-hidden rounded-full bg-muted"
+          role="progressbar"
+          aria-valuenow={a}
+          aria-valuemin={0}
+          aria-valuemax={100}
+          aria-label={p === null ? `Hoàn thành ${a}%` : `Hoàn thành ${a}%, kế hoạch ${p}%`}
+        >
+          <motion.div
+            className="absolute inset-y-0 left-0 rounded-full bg-primary"
+            initial={{ width: 0 }}
+            animate={{ width: `${a}%` }}
+            transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
+          />
+        </div>
+        {p !== null && (
+          <span
+            className="absolute -inset-y-1 w-0.5 -translate-x-1/2 rounded-full bg-foreground/70"
+            style={{ left: `${p}%` }}
+            title={`Kế hoạch đến hôm nay: ${p}%`}
+          />
+        )}
+      </div>
+      {showLabel && <span className="w-9 shrink-0 text-right text-xs font-semibold tabular-nums">{a}%</span>}
+    </div>
+  );
+}

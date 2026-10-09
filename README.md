@@ -8,13 +8,13 @@ Dashboard quản lý dự án và công việc cho doanh nghiệp: giao việc t
 
 | # | Yêu cầu | Đã có |
 |---|---|---|
-| 1 | Task, hạng mục, task con, PIC, báo cáo người thực hiện → quản lý | Dự án → hạng mục → task → task con (nhiều cấp); giao PIC; xem dạng danh sách hoặc Kanban kéo-thả; người phụ trách gửi báo cáo (nội dung, % tiến độ, giờ làm); báo cáo vào **Hộp báo cáo** của quản lý để xem, nhận xét, **duyệt hoàn thành** |
+| 1 | Task, hạng mục, task con, PIC, báo cáo người thực hiện → quản lý | Dự án → hạng mục lớn → hạng mục con → task → task con (nhiều cấp); mỗi hạng mục lớn/con có ngày bắt đầu và hạn hoàn thành riêng; giao PIC; xem dạng danh sách hoặc Kanban kéo-thả; người phụ trách gửi báo cáo (nội dung, % tiến độ, giờ làm); báo cáo vào **Hộp báo cáo** của quản lý để xem, nhận xét, **duyệt hoàn thành** |
 | 2 | Xuất PDF / trình chiếu như PPTX với hiệu ứng mượt | Bộ slide tự động từ số liệu; trình chiếu toàn màn hình với 4 hiệu ứng (trượt, mờ dần, phóng to, lật 3D), tự chạy, xem tổng quan, phím tắt; xuất **PDF** và **PowerPoint gốc, chỉnh sửa được** (biểu đồ PowerPoint thật, có hiệu ứng chuyển slide); link trình chiếu online `/present` |
 | 3 | Lọc theo ngày – tháng – quý – năm | Bộ lọc Ngày / Tháng / Quý / Năm / Tuỳ chọn, chuyển kỳ trước/sau; ranh giới kỳ tính theo múi giờ doanh nghiệp (`APP_TIMEZONE`) |
 | 4 | UI/UX thân thiện, chuyên nghiệp | Giao diện sáng/tối, responsive, tiếng Việt; bảng màu biểu đồ đã kiểm tra cho người mù màu; mỗi biểu đồ có chế độ xem bảng |
 | 5 | Đăng nhập, tạo tài khoản, đổi mật khẩu, bảo mật | Xem mục [Phân quyền](#phân-quyền) và [Bảo mật](#bảo-mật) |
 | 6 | Ghi chú / phản hồi cho từng dự án | Tab “Ghi chú & phản hồi” trong mỗi dự án |
-| 7 | Theo dõi dự án với biểu đồ, % hoàn thành | Dashboard KPI, vòng tiến độ, xu hướng, phân bổ trạng thái, khối lượng theo nhân sự; tab “Tiến độ” có timeline (Gantt) và % theo hạng mục |
+| 7 | Theo dõi dự án với biểu đồ, % hoàn thành | Dashboard KPI, vòng tiến độ, xu hướng, phân bổ trạng thái, khối lượng theo nhân sự; tab “Tiến độ” có bảng **tiến độ theo deadline** (thực tế so với kế hoạch đến hôm nay, % đạt kế hoạch, trạng thái Đúng tiến độ / Có rủi ro / Chậm / Trễ hạn), **khối lượng đã làm / cần làm** và timeline (Gantt) gồm cả thời hạn hạng mục; các số liệu này có trong Trung tâm báo cáo, slide trình chiếu, PDF/PowerPoint và prompt AI |
 | 8 | AI hỗ trợ báo cáo, tích hợp Claude không qua API | Trang **Trợ lý AI**: đóng gói số liệu thật thành prompt → mở Claude.ai điền sẵn / sao chép / tải file cho Claude Code → dán kết quả lại để xem trước, lưu ghi chú dự án, hoặc biến dàn ý thành slide để trình chiếu & xuất file. Không cần API key, không tốn phí API |
 
 ### Phân quyền
@@ -33,6 +33,10 @@ Dashboard quản lý dự án và công việc cho doanh nghiệp: giao việc t
 **Vai trò trong từng dự án:** *Quản lý dự án* (sửa dự án, hạng mục, thành viên, mọi công việc; duyệt báo cáo) · *Thành viên* (tạo công việc, cập nhật và báo cáo việc mình phụ trách) · *Chỉ xem* (xem và gửi ghi chú/phản hồi). Người tạo dự án là chủ dự án và luôn là quản lý dự án; chỉ chủ dự án hoặc người có quyền *Quản lý mọi dự án* mới xoá được dự án.
 
 Mọi quyền được kiểm tra ở phía server cho từng API (`lib/permissions.ts`, `lib/rbac.ts`).
+
+### Tiến độ theo deadline
+
+*Kế hoạch đến hôm nay* = phần thời gian đã trôi qua giữa ngày bắt đầu và hạn hoàn thành (giả định công việc tiến triển đều). So sánh với tiến độ thực tế: chậm không quá 10 điểm là **Đúng tiến độ**, 10–25 điểm là **Có rủi ro**, hơn 25 điểm là **Chậm tiến độ**, qua hạn mà chưa xong là **Trễ hạn**. *Đạt KH* = thực tế ÷ kế hoạch. Hạng mục lớn tính cả công việc của các hạng mục con; hạng mục chưa có ngày bắt đầu dùng ngày bắt đầu của hạng mục lớn hoặc của dự án (`lib/schedule.ts`).
 
 ## Chạy trên máy (local)
 

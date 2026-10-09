@@ -16,6 +16,7 @@ import { DeckActions } from "@/components/deck/export-actions";
 import { SlideScaler, SlideView } from "@/components/deck/slides";
 import { DECK_THEMES } from "@/components/deck/theme";
 import { PeriodFilter, defaultPeriod, periodQuery, type PeriodState } from "@/components/reports/period-filter";
+import { DeadlineTable, WorkloadCard } from "@/components/reports/deadline";
 import { useApi } from "@/lib/client";
 import { useChartTheme } from "@/lib/chart-theme";
 import { buildReportDeck, makeDeckMeta, slideTitle } from "@/lib/deck-model";
@@ -136,6 +137,22 @@ export function ReportsView({
             <KpiTile label="Quá hạn" value={k.overdueTasks} icon={TriangleAlert} tone={k.overdueTasks ? "critical" : "default"} sub={`${k.inProgressTasks} việc đang thực hiện`} />
             <KpiTile label="Giờ công" value={k.hoursLogged} sub={`${k.reportsCount} báo cáo tiến độ`} icon={Timer} />
           </div>
+
+          {/* Progress against deadline + work volume (current state, not limited to the period) */}
+          <Card>
+            <CardHeader
+              title="Tiến độ theo deadline"
+              description={
+                data.schedule.some((r) => r.level > 0)
+                  ? "Thực tế so với kế hoạch đến hôm nay (vạch đứng) của dự án, từng hạng mục lớn và hạng mục con"
+                  : "Thực tế so với kế hoạch đến hôm nay (vạch đứng) của từng dự án · chọn một dự án để xem theo hạng mục"
+              }
+            />
+            <div className="mt-4">
+              <DeadlineTable rows={data.schedule} firstColumn={data.schedule.some((r) => r.level > 0) ? "Dự án / hạng mục" : "Dự án"} />
+            </div>
+          </Card>
+          <WorkloadCard workload={data.workload} />
 
           {/* Charts */}
           <div className="grid gap-6 xl:grid-cols-3">

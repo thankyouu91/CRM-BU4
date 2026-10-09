@@ -1,5 +1,6 @@
 import { PRIORITY, PROJECT_STATUS, TASK_STATUS, ROLE_LABELS } from "@/lib/constants";
 import { cn } from "@/lib/utils";
+import { SCHEDULE_STATUS, type ScheduleStatus } from "@/lib/schedule";
 
 export function Badge({ className, children }: { className?: string; children: React.ReactNode }) {
   return (
@@ -47,4 +48,15 @@ export function RoleBadge({ role }: { role: string }) {
           ? "bg-sky-100 text-sky-700 dark:bg-sky-500/15 dark:text-sky-300"
           : "bg-muted text-muted-foreground";
   return <Badge className={cls}>{ROLE_LABELS[role] ?? role}</Badge>;
+}
+
+export function ScheduleBadge({ status, className }: { status: string; className?: string }) {
+  const s = SCHEDULE_STATUS[status as ScheduleStatus];
+  if (!s) return null;
+  return (
+    <Badge className={cn(s.bg, className)}>
+      <span className="h-1.5 w-1.5 rounded-full" style={{ background: s.color }} />
+      {s.label}
+    </Badge>
+  );
 }

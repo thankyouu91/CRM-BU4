@@ -91,6 +91,10 @@ export const createCategorySchema = z.object({
   name: z.string().min(1, "Tên hạng mục không được trống"),
   color: z.string().optional(),
   order: z.number().int().optional(),
+  /** Set to a main category's id to make this a sub-category; null = main category. */
+  parentId: z.string().optional().nullable(),
+  startDate: dateish,
+  dueDate: dateish,
 });
 
 export const createTaskSchema = z.object({

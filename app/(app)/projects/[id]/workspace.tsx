@@ -62,7 +62,10 @@ export function ProjectWorkspace({ projectId, meId, directory }: { projectId: st
   const [filters, setFilters] = useState<TaskFilters>({ mine: false, hideDone: false });
   const [openTask, setOpenTask] = useState<string | null>(params.get("task"));
   const [creating, setCreating] = useState(false);
-  const [categoryModal, setCategoryModal] = useState<{ open: boolean; category: ProjectCategory | null }>({ open: false, category: null });
+  const [categoryModal, setCategoryModal] = useState<{ open: boolean; category: ProjectCategory | null; parentId?: string | null }>({
+    open: false,
+    category: null,
+  });
   const [deletingCategory, setDeletingCategory] = useState<ProjectCategory | null>(null);
   const [editingProject, setEditingProject] = useState(false);
   const [deletingProject, setDeletingProject] = useState(false);
@@ -254,6 +257,7 @@ export function ProjectWorkspace({ projectId, meId, directory }: { projectId: st
             onReload={reload}
             onEditCategory={(c) => setCategoryModal({ open: true, category: c })}
             onDeleteCategory={setDeletingCategory}
+            onAddSubCategory={(parent) => setCategoryModal({ open: true, category: null, parentId: parent.id })}
           />
         ) : (
           <Kanban tasks={p.tasks} categories={p.categories} filters={filters} meId={meId} canManage={canManage} canContribute={canContribute} onOpen={setOpenTask} onReload={reload} />
@@ -279,6 +283,8 @@ export function ProjectWorkspace({ projectId, meId, directory }: { projectId: st
         onClose={() => setCategoryModal({ open: false, category: null })}
         projectId={p.id}
         category={categoryModal.category}
+        categories={p.categories}
+        defaultParentId={categoryModal.parentId ?? null}
         onSaved={reload}
       />
       <ProjectFormModal
@@ -309,8 +315,9 @@ export function ProjectWorkspace({ projectId, meId, directory }: { projectId: st
         confirmLabel="Xoá hạng mục"
         message={
           <>
-            Hạng mục <b className="text-foreground">{deletingCategory?.name}</b> sẽ bị xoá. Các công việc bên trong được giữ lại và chuyển sang
-            “Chưa phân loại”.
+            Hạng mục <b className="text-foreground">{deletingCategory?.name}</b>
+            {deletingCategory && p.categories.some((c) => c.parentId === deletingCategory.id) ? " và các hạng mục con của nó" : ""} sẽ bị xoá. Các công
+            việc bên trong được giữ lại và chuyển sang “Chưa phân loại”.
           </>
         }
         onConfirm={async () => {

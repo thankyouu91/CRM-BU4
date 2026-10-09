@@ -1,6 +1,6 @@
 import { prisma } from "./prisma";
 import { projectVisibilityWhere } from "./rbac";
-import { effectiveProgress, indexChildren, projectProgress } from "./stats";
+import { categorySchedules, effectiveProgress, indexChildren, projectSchedule } from "./stats";
 import type { CurrentUser } from "./session";
 
 const userBrief = { select: { id: true, name: true, avatarColor: true, jobTitle: true } } as const;
@@ -18,14 +18,18 @@ export async function listProjects(user: CurrentUser) {
     },
   });
   const now = new Date();
-  return projects.map(({ tasks, members, ...p }) => ({
-    ...p,
-    members: members.map((m) => ({ ...m.user, projectRole: m.role })),
-    progress: projectProgress(tasks),
-    totalTasks: tasks.length,
-    doneTasks: tasks.filter((t) => t.status === "DONE").length,
-    overdueTasks: tasks.filter((t) => t.status !== "DONE" && t.dueDate && t.dueDate < now).length,
-  }));
+  return projects.map(({ tasks, members, ...p }) => {
+    const { progress, schedule } = projectSchedule(p, tasks, now);
+    return {
+      ...p,
+      members: members.map((m) => ({ ...m.user, projectRole: m.role })),
+      progress,
+      schedule,
+      totalTasks: tasks.length,
+      doneTasks: tasks.filter((t) => t.status === "DONE").length,
+      overdueTasks: tasks.filter((t) => t.status !== "DONE" && t.dueDate && t.dueDate < now).length,
+    };
+  });
 }
 
 /** Full project workspace payload: categories, task tree, members, progress. */
@@ -55,18 +59,18 @@ export async function getProjectDetail(projectId: string) {
     subtaskCount: childrenOf.get(t.id)?.length ?? 0,
   }));
 
-  const categories = project.categories.map((c) => {
-    const ct = project.tasks.filter((t) => t.categoryId === c.id);
-    return { ...c, progress: projectProgress(ct), taskCount: ct.length };
-  });
-
+  const now = new Date();
+  const categories = categorySchedules(project.categories, project.tasks, project.startDate, now);
+  const { progress, workload, schedule } = projectSchedule(project, project.tasks, now);
   const { members, ...rest } = project;
   return {
     ...rest,
     members: members.map((m) => ({ ...m.user, projectRole: m.role })),
     categories,
     tasks,
-    progress: projectProgress(project.tasks),
+    progress,
+    workload,
+    schedule,
   };
 }
 

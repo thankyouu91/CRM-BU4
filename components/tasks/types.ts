@@ -1,5 +1,15 @@
 export type UserBrief = { id: string; name: string; avatarColor: string; jobTitle?: string | null };
-export type CategoryBrief = { id: string; name: string; color: string };
+export type CategoryBrief = { id: string; name: string; color: string; parentId?: string | null };
+
+/** Category picker options: each main category followed by its sub-categories, indented. */
+export function categoryOptions(categories: CategoryBrief[]): { id: string; label: string }[] {
+  const ids = new Set(categories.map((c) => c.id));
+  const mains = categories.filter((c) => !c.parentId || !ids.has(c.parentId));
+  return mains.flatMap((m) => [
+    { id: m.id, label: m.name },
+    ...categories.filter((c) => c.parentId === m.id).map((c) => ({ id: c.id, label: `\u00a0\u00a0\u00a0└ ${c.name}` })),
+  ]);
+}
 
 export interface TaskBase {
   id: string;
@@ -40,7 +50,7 @@ export interface TaskDetail extends TaskBase {
     members: { role: string; user: UserBrief }[];
     categories: CategoryBrief[];
   };
-  category: CategoryBrief | null;
+  category: (CategoryBrief & { parent?: { name: string } | null }) | null;
   parent: { id: string; title: string } | null;
   assignee: UserBrief | null;
   createdBy: UserBrief;

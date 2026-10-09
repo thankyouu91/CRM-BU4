@@ -26,7 +26,7 @@ import { PriorityBadge, TaskStatusBadge } from "@/components/ui/badge";
 import { ProgressBar } from "@/components/ui/progress";
 import { ConfirmDialog } from "@/components/ui/confirm";
 import { StatusToggle } from "./status-toggle";
-import { projectPeople, type TaskDetail, type TaskPermissions, type TaskReportItem } from "./types";
+import { categoryOptions, projectPeople, type TaskDetail, type TaskPermissions, type TaskReportItem } from "./types";
 import { api, ApiError } from "@/lib/client";
 import { PRIORITY, TASK_STATUS } from "@/lib/constants";
 import { fromInputDate, isOverdue, toInputDate } from "@/lib/dates";
@@ -143,7 +143,10 @@ function TaskPanel({
             {task.category && (
               <>
                 <ChevronRight className="h-3 w-3 shrink-0" />
-                <span className="truncate">{task.category.name}</span>
+                <span className="truncate">
+                  {task.category.parent ? `${task.category.parent.name} › ` : ""}
+                  {task.category.name}
+                </span>
               </>
             )}
             {task.parent && (
@@ -226,9 +229,9 @@ function TaskPanel({
               onChange={(e) => patch({ categoryId: e.target.value || null })}
             >
               <option value="">— Chưa phân loại —</option>
-              {task.project.categories.map((c) => (
+              {categoryOptions(task.project.categories).map((c) => (
                 <option key={c.id} value={c.id}>
-                  {c.name}
+                  {c.label}
                 </option>
               ))}
             </Select>

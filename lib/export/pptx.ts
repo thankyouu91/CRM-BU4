@@ -161,6 +161,87 @@ function renderBody(c: Ctx, slide: Slide, s: SlideModel) {
       return;
     }
 
+    case "schedule": {
+      const listW = WIDTH - 348;
+      const tight = s.rows.length > 5;
+      const rowH = tight ? 58 : 70;
+      s.rows.forEach((r, i) => {
+        const y = TOP + i * rowH;
+        const x = LEFT + (r.level === 2 ? 28 : 0);
+        const w = listW - (r.level === 2 ? 28 : 0);
+        slide.addShape(r.level === 0 ? c.pres.ShapeType.ellipse : c.pres.ShapeType.rect, {
+          x: inch(x),
+          y: inch(y + 7),
+          w: inch(12),
+          h: inch(12),
+          fill: { color: hex(r.color) },
+          line: { color: hex(r.color), width: 0 },
+        });
+        text(slide, [
+          { text: `${r.level === 2 ? "└ " : ""}${r.name}`, options: { bold: r.level < 2, color: hex(t.ink), fontSize: pt(r.level === 0 ? 19 : 17) } },
+          { text: `   ● `, options: { color: hex(r.statusColor), fontSize: pt(12) } },
+          { text: r.status, options: { color: hex(t.inkSecondary), fontSize: pt(12), bold: true } },
+        ], { x: x + 22, y, w: w * 0.55, h: 26 }, { fit: "shrink" });
+        text(slide, [
+          { text: r.deadline, options: { color: hex(t.muted), fontSize: pt(13) } },
+          ...(r.planned !== null ? [{ text: `   KH ${r.planned}%`, options: { color: hex(t.muted), fontSize: pt(13) } }] : []),
+          { text: `   ${r.progress}%`, options: { color: hex(t.ink), fontSize: pt(22), bold: true } },
+        ], { x: x + w * 0.55, y: y - 2, w: w * 0.45, h: 30 }, { align: "right" });
+        const barY = y + 34;
+        const barH = tight ? 8 : 10;
+        rect(c, slide, { x, y: barY, w, h: barH }, t.track);
+        if (r.progress > 0) rect(c, slide, { x, y: barY, w: (w * r.progress) / 100, h: barH }, t.accent);
+        if (r.planned !== null) rect(c, slide, { x: x + (w * r.planned) / 100 - 1.5, y: barY - 4, w: 3, h: barH + 8 }, t.ink, false);
+      });
+      text(slide, "Thanh = thực tế · vạch đứng = kế hoạch đến hôm nay (KH)", { x: LEFT, y: TOP + s.rows.length * rowH + 4, w: listW, h: 20 }, { px: 13, color: hex(t.muted) });
+
+      // Work volume panel
+      const px = LEFT + listW + 28;
+      const pw = WIDTH - listW - 28;
+      const wl = s.workload;
+      const pct = (v: number) => (wl.total ? Math.round((v / wl.total) * 100) : 0);
+      panel(c, slide, { x: px, y: TOP, w: pw, h: 468 });
+      text(slide, "Khối lượng công việc", { x: px + 24, y: TOP + 22, w: pw - 48, h: 24 }, { px: 17, bold: true, color: hex(t.ink) });
+      text(slide, "Tổng khối lượng", { x: px + 24, y: TOP + 62, w: pw - 48, h: 20 }, { px: 14, color: hex(t.muted) });
+      text(slide, String(wl.total), { x: px + 24, y: TOP + 82, w: pw - 48, h: 50 }, { px: 44, bold: true, color: hex(t.ink) });
+      const half = (pw - 48) / 2;
+      text(slide, "Đã làm", { x: px + 24, y: TOP + 146, w: half, h: 20 }, { px: 14, color: hex(t.muted) });
+      text(slide, [
+        { text: String(wl.done), options: { color: hex(t.success), bold: true, fontSize: pt(30) } },
+        { text: `  ${pct(wl.done)}%`, options: { color: hex(t.muted), fontSize: pt(15) } },
+      ], { x: px + 24, y: TOP + 166, w: half, h: 40 });
+      text(slide, "Cần làm", { x: px + 24 + half, y: TOP + 146, w: half, h: 20 }, { px: 14, color: hex(t.muted) });
+      text(slide, [
+        { text: String(wl.remaining), options: { color: hex(t.ink), bold: true, fontSize: pt(30) } },
+        { text: `  ${pct(wl.remaining)}%`, options: { color: hex(t.muted), fontSize: pt(15) } },
+      ], { x: px + 24 + half, y: TOP + 166, w: half, h: 40 });
+      const parts = [
+        { label: "Đã hoàn thành", value: wl.done, color: t.chart.status.DONE },
+        { label: "Đang làm", value: wl.inProgress, color: t.chart.status.IN_PROGRESS },
+        { label: "Chưa bắt đầu", value: wl.notStarted, color: t.chart.status.TODO },
+        { label: "Bị chặn", value: wl.blocked, color: t.chart.status.BLOCKED },
+      ].filter((p) => p.value > 0);
+      const barX = px + 24;
+      const barW = pw - 48;
+      rect(c, slide, { x: barX, y: TOP + 222, w: barW, h: 14 }, t.track);
+      let cx = barX;
+      for (const p of parts) {
+        const segW = (barW * p.value) / Math.max(1, wl.total);
+        rect(c, slide, { x: cx, y: TOP + 222, w: Math.max(segW - 2, 0.5), h: 14 }, p.color, false);
+        cx += segW;
+      }
+      parts.forEach((p, i) => {
+        const ly = TOP + 256 + i * 28;
+        rect(c, slide, { x: barX, y: ly + 4, w: 11, h: 11 }, p.color, false);
+        text(slide, p.label, { x: barX + 20, y: ly, w: barW - 80, h: 20 }, { px: 14, color: hex(t.inkSecondary) });
+        text(slide, String(p.value), { x: barX + barW - 60, y: ly, w: 60, h: 20 }, { px: 14, bold: true, color: hex(t.ink), align: "right" });
+      });
+      if (wl.overdue > 0) {
+        text(slide, `${wl.overdue} việc đã quá hạn`, { x: barX, y: TOP + 256 + parts.length * 28 + 10, w: barW, h: 22 }, { px: 15, bold: true, color: hex(t.danger) });
+      }
+      return;
+    }
+
     case "trend":
     case "hours": {
       const chartW = WIDTH - 284;

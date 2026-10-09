@@ -5,7 +5,7 @@ import { motion } from "framer-motion";
 import { TriangleAlert } from "lucide-react";
 import { Card, CardBody, CardHeader } from "@/components/ui/card";
 import { Avatar } from "@/components/ui/avatar";
-import { ProgressBar } from "@/components/ui/progress";
+import { DeadlineTable, WorkloadCard, type DeadlineRow } from "@/components/reports/deadline";
 import { StatusDonut, statusLegend } from "@/components/charts/charts";
 import { useChartTheme } from "@/lib/chart-theme";
 import { isOverdue } from "@/lib/dates";
@@ -15,7 +15,7 @@ import type { ProjectDetailData } from "./types";
 const DAY = 86_400_000;
 
 function Timeline({ project }: { project: ProjectDetailData }) {
-  const { rows, start, span, months, todayPct } = useMemo(() => {
+  const { rows, bands, start, span, months, todayPct } = useMemo(() => {
     const roots = project.tasks.filter((t) => !t.parentId);
     const times: number[] = [Date.now()];
     if (project.startDate) times.push(new Date(project.startDate).getTime());
@@ -23,6 +23,10 @@ function Timeline({ project }: { project: ProjectDetailData }) {
     for (const t of roots) {
       times.push(new Date(t.startDate ?? t.createdAt).getTime());
       if (t.dueDate) times.push(new Date(t.dueDate).getTime());
+    }
+    for (const c of project.categories) {
+      if (c.startDate) times.push(new Date(c.startDate).getTime());
+      if (c.dueDate) times.push(new Date(c.dueDate).getTime());
     }
     const start = Math.min(...times) - 3 * DAY;
     const end = Math.max(...times) + 3 * DAY;
@@ -44,12 +48,18 @@ function Timeline({ project }: { project: ProjectDetailData }) {
         (order.get(a.categoryId ?? "") ?? 999) - (order.get(b.categoryId ?? "") ?? 999) ||
         new Date(a.startDate ?? a.createdAt).getTime() - new Date(b.startDate ?? b.createdAt).getTime(),
     );
-    return { rows, start, span, months, todayPct: ((Date.now() - start) / span) * 100 };
+    // Category bands (main, then its sub-categories) above the tasks.
+    const mains = project.categories.filter((c) => !c.parentId);
+    const bands = mains
+      .flatMap((m) => [m, ...project.categories.filter((c) => c.parentId === m.id)])
+      .filter((c) => c.startDate || c.dueDate);
+    return { rows, bands, start, span, months, todayPct: ((Date.now() - start) / span) * 100 };
   }, [project]);
 
   const catColor = new Map(project.categories.map((c) => [c.id, c.color]));
 
-  if (rows.length === 0) return <p className="py-8 text-center text-sm text-muted-foreground">Chưa có công việc để hiển thị tiến trình.</p>;
+  if (rows.length === 0 && bands.length === 0)
+    return <p className="py-8 text-center text-sm text-muted-foreground">Chưa có công việc để hiển thị tiến trình.</p>;
 
   return (
     <div className="scrollbar-thin overflow-x-auto">
@@ -74,6 +84,36 @@ function Timeline({ project }: { project: ProjectDetailData }) {
               <span className="absolute left-1 top-0 whitespace-nowrap rounded bg-danger px-1 text-[10px] font-semibold text-white">Hôm nay</span>
             </span>
           </div>
+          {bands.map((c, i) => {
+            const s = new Date(c.startDate ?? c.dueDate!).getTime();
+            const e = new Date(c.dueDate ?? c.startDate!).getTime();
+            const left = ((s - start) / span) * 100;
+            const width = Math.max(((Math.max(e, s + DAY) - s) / span) * 100, 0.8);
+            const late = c.schedule.status === "OVERDUE";
+            return (
+              <div key={c.id} className="flex items-center border-b border-border/60 bg-muted/30 py-1.5">
+                <div className={cn("flex w-60 shrink-0 items-center gap-2 pr-3", c.parentId && "pl-4")}>
+                  <span className="h-2.5 w-2.5 shrink-0 rounded-sm" style={{ background: c.color }} />
+                  <span className={cn("truncate text-xs", c.parentId ? "font-medium" : "font-semibold")}>
+                    {c.parentId ? "└ " : ""}
+                    {c.name}
+                  </span>
+                </div>
+                <div className="relative h-5 flex-1">
+                  <motion.div
+                    initial={{ opacity: 0, scaleX: 0.6 }}
+                    animate={{ opacity: 1, scaleX: 1 }}
+                    transition={{ delay: i * 0.02, duration: 0.4 }}
+                    title={`${c.name}\n${formatDate(c.startDate) || "…"} → ${formatDate(c.dueDate) || "…"} · ${c.progress}%`}
+                    className={cn("absolute inset-y-0.5 origin-left overflow-hidden rounded", late && "ring-2 ring-danger")}
+                    style={{ left: `${left}%`, width: `${width}%`, background: `${c.color}26`, border: `1px solid ${c.color}` }}
+                  >
+                    <div className="h-full" style={{ width: `${c.progress}%`, background: `${c.color}99` }} />
+                  </motion.div>
+                </div>
+              </div>
+            );
+          })}
           {rows.map((t, i) => {
             const s = new Date(t.startDate ?? t.createdAt).getTime();
             const e = t.dueDate ? new Date(t.dueDate).getTime() : s + DAY;
@@ -104,7 +144,7 @@ function Timeline({ project }: { project: ProjectDetailData }) {
           })}
         </div>
         <p className="mt-3 flex items-center gap-4 text-[11px] text-muted-foreground">
-          <span>Phần đậm = tiến độ đã hoàn thành · màu theo hạng mục</span>
+          <span>Phần đậm = tiến độ đã hoàn thành · màu theo hạng mục · dải có viền = thời hạn hạng mục</span>
           <span className="flex items-center gap-1">
             <span className="h-2.5 w-4 rounded-sm ring-2 ring-danger" /> Quá hạn
           </span>
@@ -125,34 +165,33 @@ export function ProgressPanel({ project }: { project: ProjectDetailData }) {
     [project.tasks],
   );
   const overdue = project.tasks.filter((t) => isOverdue(t.dueDate, t.status)).length;
+  const deadlineRows: DeadlineRow[] = useMemo(() => {
+    const mains = project.categories.filter((c) => !c.parentId);
+    return [
+      { ...project, name: "Toàn dự án", level: 0 as const },
+      ...mains.flatMap((m) => [
+        { ...m, level: 1 as const },
+        ...project.categories.filter((c) => c.parentId === m.id).map((c) => ({ ...c, level: 2 as const })),
+      ]),
+    ];
+  }, [project]);
 
   return (
     <div className="space-y-6">
+      <Card>
+        <CardHeader
+          title="Tiến độ theo deadline"
+          description="Thực tế so với kế hoạch đến hôm nay (vạch đứng) của dự án, từng hạng mục và hạng mục con"
+        />
+        <DeadlineTable rows={deadlineRows} />
+        {overdue > 0 && (
+          <p className="mx-5 mb-5 flex items-center gap-2 rounded-lg bg-danger/10 px-3 py-2 text-xs text-danger">
+            <TriangleAlert className="h-4 w-4" /> {overdue} công việc đang quá hạn cần được xử lý.
+          </p>
+        )}
+      </Card>
       <div className="grid gap-6 lg:grid-cols-[1fr_340px]">
-        <Card>
-          <CardHeader title="Tiến độ theo hạng mục" description="Trung bình tiến độ các công việc chính trong từng hạng mục" />
-          <CardBody className="space-y-5">
-            {project.categories.length === 0 && <p className="text-sm text-muted-foreground">Dự án chưa có hạng mục.</p>}
-            {project.categories.map((c) => (
-              <div key={c.id}>
-                <div className="mb-2 flex items-center justify-between text-sm">
-                  <span className="flex items-center gap-2 font-medium">
-                    <span className="h-2.5 w-2.5 rounded" style={{ background: c.color }} /> {c.name}
-                  </span>
-                  <span className="text-xs text-muted-foreground">
-                    {c.taskCount} việc · <span className="font-semibold text-foreground">{c.progress}%</span>
-                  </span>
-                </div>
-                <ProgressBar value={c.progress} />
-              </div>
-            ))}
-            {overdue > 0 && (
-              <p className="flex items-center gap-2 rounded-lg bg-danger/10 px-3 py-2 text-xs text-danger">
-                <TriangleAlert className="h-4 w-4" /> {overdue} công việc đang quá hạn cần được xử lý.
-              </p>
-            )}
-          </CardBody>
-        </Card>
+        <WorkloadCard workload={project.workload} />
         <Card>
           <CardHeader title="Trạng thái công việc" description="Toàn bộ công việc & task con" />
           <CardBody className="flex flex-col items-center gap-4">

@@ -4,6 +4,7 @@
 // cost on this server. Claude's answer can be pasted back to be presented or
 // exported as slides (see lib/deck-model.ts parseOutline).
 
+import { daysLeftLabel, SCHEDULE_STATUS } from "./schedule";
 import { PROJECT_STATUS, TASK_STATUS } from "./constants";
 import type { Summary } from "./stats";
 
@@ -53,6 +54,20 @@ export function buildReportPrompt(kind: AIPromptKind, s: Summary, scopeLabel: st
         (p.dueDate ? `; hạn ${new Date(p.dueDate).toLocaleDateString("vi-VN")}` : ""),
     ),
   );
+  L.push("");
+  L.push("2b. TIẾN ĐỘ THEO DEADLINE (thực tế so với kế hoạch đến hôm nay) & KHỐI LƯỢNG");
+  const w = s.workload;
+  L.push(`- Khối lượng hiện tại: ${w.total} việc; đã làm ${w.done}; cần làm ${w.remaining} (đang làm ${w.inProgress}, chưa bắt đầu ${w.notStarted}, bị chặn ${w.blocked}); quá hạn ${w.overdue}`);
+  s.schedule.forEach((r) => {
+    const indent = r.level === 2 ? "    - " : r.level === 1 ? "  - " : "- ";
+    const plan =
+      r.schedule.planned === null
+        ? "chưa đặt hạn"
+        : `kế hoạch ${r.schedule.planned}%, đạt ${r.schedule.achievement ?? "—"}% kế hoạch, ${daysLeftLabel(r.schedule.daysLeft)}`;
+    L.push(
+      `${indent}${r.name}: thực tế ${r.progress}%; ${plan}; trạng thái: ${SCHEDULE_STATUS[r.schedule.status].label}; đã làm ${r.workload.done}/cần làm ${r.workload.remaining}`,
+    );
+  });
   L.push("");
   L.push("3. NHÂN SỰ (công việc được giao trong kỳ)");
   if (!s.people.length) L.push("- (Không có dữ liệu)");

@@ -3,7 +3,23 @@
 
 import { buildInsights, type Insight } from "./insights";
 import { PROJECT_STATUS } from "./constants";
+import { daysLeftLabel, SCHEDULE_STATUS, type Workload } from "./schedule";
 import type { Summary, SummaryPerson } from "./stats";
+
+export interface ScheduleSlideRow {
+  name: string;
+  color: string;
+  /** 0 = project, 1 = main category, 2 = sub-category */
+  level: 0 | 1 | 2;
+  progress: number;
+  planned: number | null;
+  achievement: number | null;
+  status: string;
+  statusColor: string;
+  deadline: string;
+  done: number;
+  remaining: number;
+}
 
 export interface DeckMeta {
   title: string;
@@ -22,6 +38,7 @@ export type SlideModel =
       title: string;
       rows: { name: string; color: string; status: string; progress: number; done: number; total: number; overdue: number }[];
     }
+  | { kind: "schedule"; kicker: string; title: string; rows: ScheduleSlideRow[]; workload: Workload }
   | { kind: "trend"; kicker: string; title: string; data: Summary["trend"]; stats: { label: string; value: string }[] }
   | { kind: "status"; kicker: string; title: string; data: Summary["statusDistribution"] }
   | { kind: "people"; kicker: string; title: string; people: SummaryPerson[] }
@@ -99,6 +116,38 @@ export function buildReportDeck(s: Summary, meta: DeckMeta): Deck {
         total: p.totalTasks,
         overdue: p.overdueTasks,
       })),
+    });
+  }
+
+  const scheduled = s.schedule.filter((r) => r.level === 0 || r.dueDate);
+  if (s.workload.total > 0 || scheduled.some((r) => r.dueDate)) {
+    const short = (iso: string) => {
+      const d = new Date(iso);
+      return `${String(d.getDate()).padStart(2, "0")}/${String(d.getMonth() + 1).padStart(2, "0")}`;
+    };
+    slides.push({
+      kind: "schedule",
+      kicker: "Deadline",
+      title: "Tiến độ theo deadline & khối lượng công việc",
+      rows: scheduled.slice(0, 7).map((r) => ({
+        // Slide rows are one line; long names are shortened rather than clipped.
+        name: r.name.length > 38 ? `${r.name.slice(0, 37).trimEnd()}…` : r.name,
+        color: r.color,
+        level: r.level,
+        progress: r.progress,
+        planned: r.schedule.planned,
+        achievement: r.schedule.achievement,
+        status: SCHEDULE_STATUS[r.schedule.status].label,
+        statusColor: SCHEDULE_STATUS[r.schedule.status].color,
+        deadline: !r.dueDate
+          ? "Chưa đặt hạn"
+          : r.schedule.status === "DONE"
+            ? `Hạn ${short(r.dueDate)} · đã xong`
+            : `Hạn ${short(r.dueDate)} · ${daysLeftLabel(r.schedule.daysLeft)}`,
+        done: r.workload.done,
+        remaining: r.workload.remaining,
+      })),
+      workload: s.workload,
     });
   }
 

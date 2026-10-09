@@ -12,6 +12,7 @@ import {
 } from "date-fns";
 import { prisma } from "./prisma";
 import { projectVisibilityWhere } from "./rbac";
+import { scheduleOf, workloadOf, type Schedule, type Workload } from "./schedule";
 import type { DateRange, PeriodType } from "./period";
 import type { CurrentUser } from "./session";
 
@@ -62,6 +63,81 @@ export function projectProgress(tasks: ProgressNode[]): number {
   if (roots.length === 0) return 0;
   const sum = roots.reduce((acc, t) => acc + effectiveProgress(t, childrenOf), 0);
   return Math.round(sum / roots.length);
+}
+
+/**
+ * Completion % of an arbitrary subset of tasks (e.g. one category): tasks whose
+ * parent is outside the subset count as top-level.
+ */
+export function subsetProgress(tasks: ProgressNode[]): number {
+  const ids = new Set(tasks.map((t) => t.id));
+  const childrenOf = indexChildren(tasks);
+  const roots = tasks.filter((t) => !t.parentId || !ids.has(t.parentId));
+  if (roots.length === 0) return 0;
+  const sum = roots.reduce((acc, t) => acc + effectiveProgress(t, childrenOf), 0);
+  return Math.round(sum / roots.length);
+}
+
+/**
+ * Progress, workload and deadline status for each category. A main category
+ * covers its own tasks plus those of its sub-categories; categories without
+ * their own start date use the main category's, then the project's.
+ */
+export function categorySchedules<
+  C extends { id: string; parentId: string | null; startDate: Date | null; dueDate: Date | null; createdAt: Date },
+>(
+  categories: C[],
+  tasks: (ProgressNode & { categoryId: string | null; dueDate: Date | null })[],
+  projectStart: Date | null,
+  now: Date = new Date(),
+) {
+  const byId = new Map(categories.map((c) => [c.id, c]));
+  const childIds = new Map<string, string[]>();
+  for (const c of categories) {
+    if (c.parentId && byId.has(c.parentId)) childIds.set(c.parentId, [...(childIds.get(c.parentId) ?? []), c.id]);
+  }
+  return categories.map((c) => {
+    const scope = new Set([c.id, ...(childIds.get(c.id) ?? [])]);
+    const ct = tasks.filter((t) => t.categoryId && scope.has(t.categoryId));
+    const progress = subsetProgress(ct);
+    const workload = workloadOf(ct, now);
+    const parent = c.parentId ? byId.get(c.parentId) : undefined;
+    return {
+      ...c,
+      // An orphaned parent link (shouldn't happen) shows as a main category.
+      parentId: parent ? c.parentId : null,
+      progress,
+      taskCount: ct.length,
+      workload,
+      schedule: scheduleOf({
+        start: c.startDate ?? parent?.startDate ?? projectStart,
+        fallbackStart: c.createdAt,
+        due: c.dueDate,
+        actual: progress,
+        finished: workload.total > 0 && workload.remaining === 0,
+        now,
+      }),
+    };
+  });
+}
+
+/** Deadline status of a whole project. */
+export function projectSchedule(
+  project: { startDate: Date | null; dueDate: Date | null; createdAt: Date },
+  tasks: (ProgressNode & { dueDate: Date | null })[],
+  now: Date = new Date(),
+) {
+  const progress = projectProgress(tasks);
+  const workload = workloadOf(tasks, now);
+  const schedule = scheduleOf({
+    start: project.startDate,
+    fallbackStart: project.createdAt,
+    due: project.dueDate,
+    actual: progress,
+    finished: workload.total > 0 && workload.remaining === 0,
+    now,
+  });
+  return { progress, workload, schedule };
 }
 
 // ----------------------------------------------------------------------------
@@ -151,7 +227,24 @@ export interface SummaryProject {
   overdueTasks: number;
   members: number;
   ownerName: string;
+  startDate: string | null;
   dueDate: string | null;
+  schedule: Schedule;
+  workload: Workload;
+}
+
+/** One line of the "progress against deadline" table: a project, category or sub-category. */
+export interface ScheduleRow {
+  id: string;
+  name: string;
+  color: string;
+  /** 0 = project, 1 = main category, 2 = sub-category */
+  level: 0 | 1 | 2;
+  startDate: string | null;
+  dueDate: string | null;
+  progress: number;
+  schedule: Schedule;
+  workload: Workload;
 }
 
 export interface SummaryPerson {
@@ -190,6 +283,10 @@ export interface Summary {
   priorityDistribution: { priority: string; count: number }[];
   trend: { label: string; created: number; completed: number; reports: number; hours: number }[];
   projects: SummaryProject[];
+  /** Projects; for a single-project report, followed by its categories and sub-categories. */
+  schedule: ScheduleRow[];
+  /** Current work volume across the scope: done vs still to do. */
+  workload: Workload;
   people: SummaryPerson[];
   recentReports: {
     id: string;
@@ -246,14 +343,16 @@ export async function getSummary(
       name: true,
       color: true,
       status: true,
+      startDate: true,
       dueDate: true,
+      createdAt: true,
       owner: { select: { name: true } },
       _count: { select: { members: true } },
     },
   });
   const projectIds = projects.map((p) => p.id);
 
-  const [tasks, reports] = await Promise.all([
+  const [tasks, reports, categories] = await Promise.all([
     prisma.task.findMany({
       where: { projectId: { in: projectIds } },
       select: {
@@ -261,6 +360,7 @@ export async function getSummary(
         title: true,
         parentId: true,
         projectId: true,
+        categoryId: true,
         status: true,
         priority: true,
         progress: true,
@@ -289,6 +389,14 @@ export async function getSummary(
         task: { select: { title: true, project: { select: { name: true } } } },
       },
     }),
+    // Category breakdown only for a single-project report.
+    projectId && projectIds.length
+      ? prisma.category.findMany({
+          where: { projectId: projectIds[0] },
+          orderBy: [{ order: "asc" }, { createdAt: "asc" }],
+          select: { id: true, name: true, color: true, parentId: true, startDate: true, dueDate: true, createdAt: true },
+        })
+      : Promise.resolve([]),
   ]);
 
   const inScope = tasks.filter(
@@ -309,20 +417,56 @@ export async function getSummary(
 
   const summaryProjects: SummaryProject[] = projects.map((p) => {
     const pts = tasksByProject.get(p.id) ?? [];
+    const { progress, schedule, workload } = projectSchedule(p, pts, now);
     return {
       id: p.id,
       name: p.name,
       color: p.color,
       status: p.status,
-      progress: projectProgress(pts),
+      progress,
+      schedule,
+      workload,
       totalTasks: pts.length,
       doneTasks: pts.filter((t) => t.status === "DONE").length,
       overdueTasks: pts.filter(isOverdue).length,
       members: p._count.members,
       ownerName: p.owner.name,
+      startDate: p.startDate ? p.startDate.toISOString() : null,
       dueDate: p.dueDate ? p.dueDate.toISOString() : null,
     };
   });
+
+  // --- Progress against deadline ---
+  const iso = (d: Date | null) => (d ? d.toISOString() : null);
+  const scheduleRows: ScheduleRow[] = summaryProjects.map((p) => ({
+    id: p.id,
+    name: p.name,
+    color: p.color,
+    level: 0,
+    startDate: p.startDate,
+    dueDate: p.dueDate,
+    progress: p.progress,
+    schedule: p.schedule,
+    workload: p.workload,
+  }));
+  if (categories.length) {
+    const cats = categorySchedules(categories, tasksByProject.get(projectIds[0]) ?? [], projects[0].startDate, now);
+    for (const m of cats.filter((c) => !c.parentId)) {
+      for (const c of [m, ...cats.filter((x) => x.parentId === m.id)]) {
+        scheduleRows.push({
+          id: c.id,
+          name: c.name,
+          color: c.color,
+          level: c.parentId ? 2 : 1,
+          startDate: iso(c.startDate),
+          dueDate: iso(c.dueDate),
+          progress: c.progress,
+          schedule: c.schedule,
+          workload: c.workload,
+        });
+      }
+    }
+  }
 
   // --- People ---
   const people = new Map<string, SummaryPerson>();
@@ -426,6 +570,8 @@ export async function getSummary(
     })),
     trend: trend.map((b) => ({ ...b, hours: Math.round(b.hours * 10) / 10 })),
     projects: summaryProjects,
+    schedule: scheduleRows,
+    workload: workloadOf(tasks, now),
     people: Array.from(people.values())
       .map((p) => ({ ...p, hours: Math.round(p.hours * 10) / 10 }))
       .sort((a, b) => b.done - a.done || b.hours - a.hours),

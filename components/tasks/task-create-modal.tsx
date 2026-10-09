@@ -8,7 +8,7 @@ import { Field, Input, Select, Textarea } from "@/components/ui/input";
 import { api, ApiError } from "@/lib/client";
 import { PRIORITY } from "@/lib/constants";
 import { fromInputDate } from "@/lib/dates";
-import type { CategoryBrief, UserBrief } from "./types";
+import { categoryOptions, type CategoryBrief, type UserBrief } from "./types";
 
 export function TaskCreateModal({
   open,
@@ -110,9 +110,9 @@ export function TaskCreateModal({
           <Field label="Hạng mục">
             <Select value={categoryId} onChange={(e) => setCategoryId(e.target.value)}>
               <option value="">— Chưa phân loại —</option>
-              {categories.map((c) => (
+              {categoryOptions(categories).map((c) => (
                 <option key={c.id} value={c.id}>
-                  {c.name}
+                  {c.label}
                 </option>
               ))}
             </Select>

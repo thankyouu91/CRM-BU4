@@ -441,11 +441,32 @@ async function main() {
       }
     };
 
+    // Category deadlines span their tasks (+2 days slack). Larger categories get a
+    // sub-category for their final tasks, with its own deadline.
+    const span = (ts: T[]) => {
+      const all = ts.flatMap((t) => [t, ...(t.subs ?? [])]);
+      const start = Math.max(...all.map((t) => t.c));
+      // t.d = due in days from now (negative = past); the category ends with its latest task.
+      const dues = all.filter((t) => t.d !== undefined).map((t) => t.d!);
+      return {
+        startDate: daysAgo(start),
+        dueDate: dues.length ? daysFromNow(Math.max(...dues) + 2) : null,
+      };
+    };
     for (const [order, c] of p.categories.entries()) {
+      const split = c.tasks.length >= 4 ? Math.ceil(c.tasks.length / 2) : c.tasks.length;
+      const own = c.tasks.slice(0, split);
+      const rest = c.tasks.slice(split);
       const category = await prisma.category.create({
-        data: { name: c.name, color: c.color, order, projectId: project.id, createdAt: daysAgo(p.start) },
+        data: { name: c.name, color: c.color, order, projectId: project.id, createdAt: daysAgo(p.start), ...span(c.tasks) },
       });
-      for (const t of c.tasks) await createTask(t, category.id, null);
+      for (const t of own) await createTask(t, category.id, null);
+      if (rest.length) {
+        const sub = await prisma.category.create({
+          data: { name: "Hoàn thiện & bàn giao", color: c.color, order: 0, projectId: project.id, parentId: category.id, createdAt: daysAgo(p.start), ...span(rest) },
+        });
+        for (const t of rest) await createTask(t, sub.id, null);
+      }
     }
 
     for (const n of p.notes) {

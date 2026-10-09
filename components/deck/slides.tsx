@@ -120,6 +120,91 @@ function Body({ slide, ctx }: { slide: SlideModel; ctx: Ctx }) {
         </div>
       );
 
+    case "schedule": {
+      const w = slide.workload;
+      const parts = [
+        { label: "Đã hoàn thành", value: w.done, color: t.chart.status.DONE },
+        { label: "Đang làm", value: w.inProgress, color: t.chart.status.IN_PROGRESS },
+        { label: "Chưa bắt đầu", value: w.notStarted, color: t.chart.status.TODO },
+        { label: "Bị chặn", value: w.blocked, color: t.chart.status.BLOCKED },
+      ].filter((p) => p.value > 0);
+      const pct = (v: number) => (w.total ? Math.round((v / w.total) * 100) : 0);
+      const tight = slide.rows.length > 5;
+      return (
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 320px", gap: 28 }}>
+          <div style={{ display: "flex", flexDirection: "column", gap: tight ? 12 : 18 }}>
+            {slide.rows.map((r, i) => (
+              <Reveal key={`${r.level}-${r.name}-${i}`} i={i} ctx={ctx} style={{ paddingLeft: r.level === 2 ? 28 : 0 }}>
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, marginBottom: 10, lineHeight: 1.3 }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                    <span style={{ width: 12, height: 12, borderRadius: r.level === 0 ? 6 : 3, background: r.color, flexShrink: 0 }} />
+                    <span style={{ fontSize: r.level === 0 ? 19 : 17, fontWeight: r.level === 2 ? 500 : 600, color: t.ink, whiteSpace: "nowrap" }}>
+                      {r.level === 2 ? "└ " : ""}
+                      {r.name}
+                    </span>
+                    <span style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12, padding: "2px 9px", borderRadius: 7, background: t.track, color: t.inkSecondary, fontWeight: 600, whiteSpace: "nowrap" }}>
+                      <span style={{ width: 7, height: 7, borderRadius: 4, background: r.statusColor }} />
+                      {r.status}
+                    </span>
+                  </div>
+                  <div style={{ display: "flex", alignItems: "baseline", gap: 14, whiteSpace: "nowrap" }}>
+                    <span style={{ fontSize: 13, color: t.muted }}>{r.deadline}</span>
+                    {r.planned !== null && <span style={{ fontSize: 13, color: t.muted }}>KH {r.planned}%</span>}
+                    <span style={{ fontSize: 22, fontWeight: 700, color: t.ink, minWidth: 60, textAlign: "right" }}>{r.progress}%</span>
+                  </div>
+                </div>
+                <div style={{ position: "relative" }}>
+                  <Bar value={r.progress} theme={t} height={tight ? 8 : 10} />
+                  {r.planned !== null && (
+                    <span style={{ position: "absolute", top: -4, bottom: -4, left: `calc(${r.planned}% - 1px)`, width: 3, borderRadius: 2, background: t.ink }} />
+                  )}
+                </div>
+              </Reveal>
+            ))}
+            <div style={{ fontSize: 13, color: t.muted, marginTop: 4 }}>Thanh = thực tế · vạch đứng = kế hoạch đến hôm nay (KH)</div>
+          </div>
+          <Reveal i={slide.rows.length} ctx={ctx}>
+            <Panel theme={t} style={{ display: "flex", flexDirection: "column", gap: 16, height: "100%" }}>
+              <div style={{ fontSize: 17, fontWeight: 600, color: t.ink }}>Khối lượng công việc</div>
+              <div>
+                <div style={{ fontSize: 14, color: t.muted }}>Tổng khối lượng</div>
+                <div style={{ fontSize: 44, fontWeight: 700, color: t.ink, lineHeight: 1.1 }}>{w.total}</div>
+              </div>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+                <div>
+                  <div style={{ fontSize: 14, color: t.muted }}>Đã làm</div>
+                  <div style={{ fontSize: 30, fontWeight: 700, color: t.success }}>
+                    {w.done} <span style={{ fontSize: 15, color: t.muted, fontWeight: 500 }}>{pct(w.done)}%</span>
+                  </div>
+                </div>
+                <div>
+                  <div style={{ fontSize: 14, color: t.muted }}>Cần làm</div>
+                  <div style={{ fontSize: 30, fontWeight: 700, color: t.ink }}>
+                    {w.remaining} <span style={{ fontSize: 15, color: t.muted, fontWeight: 500 }}>{pct(w.remaining)}%</span>
+                  </div>
+                </div>
+              </div>
+              <div style={{ display: "flex", height: 14, borderRadius: 7, overflow: "hidden", gap: 2, background: t.track }}>
+                {parts.map((p) => (
+                  <span key={p.label} style={{ width: `${pct(p.value)}%`, background: p.color }} />
+                ))}
+              </div>
+              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                {parts.map((p) => (
+                  <div key={p.label} style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 14, color: t.inkSecondary }}>
+                    <span style={{ width: 11, height: 11, borderRadius: 3, background: p.color }} />
+                    <span style={{ flex: 1 }}>{p.label}</span>
+                    <span style={{ fontWeight: 700, color: t.ink }}>{p.value}</span>
+                  </div>
+                ))}
+              </div>
+              {w.overdue > 0 && <div style={{ fontSize: 15, fontWeight: 600, color: t.danger }}>{w.overdue} việc đã quá hạn</div>}
+            </Panel>
+          </Reveal>
+        </div>
+      );
+    }
+
     case "trend":
       return (
         <div style={{ display: "grid", gridTemplateColumns: "1fr 260px", gap: 24 }}>
