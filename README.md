@@ -12,12 +12,27 @@ Dashboard quản lý dự án và công việc cho doanh nghiệp: giao việc t
 | 2 | Xuất PDF / trình chiếu như PPTX với hiệu ứng mượt | Bộ slide tự động từ số liệu; trình chiếu toàn màn hình với 4 hiệu ứng (trượt, mờ dần, phóng to, lật 3D), tự chạy, xem tổng quan, phím tắt; xuất **PDF** và **PowerPoint gốc, chỉnh sửa được** (biểu đồ PowerPoint thật, có hiệu ứng chuyển slide); link trình chiếu online `/present` |
 | 3 | Lọc theo ngày – tháng – quý – năm | Bộ lọc Ngày / Tháng / Quý / Năm / Tuỳ chọn, chuyển kỳ trước/sau; ranh giới kỳ tính theo múi giờ doanh nghiệp (`APP_TIMEZONE`) |
 | 4 | UI/UX thân thiện, chuyên nghiệp | Giao diện sáng/tối, responsive, tiếng Việt; bảng màu biểu đồ đã kiểm tra cho người mù màu; mỗi biểu đồ có chế độ xem bảng |
-| 5 | Đăng nhập, tạo tài khoản, đổi mật khẩu, bảo mật | Xem mục [Bảo mật](#bảo-mật) |
+| 5 | Đăng nhập, tạo tài khoản, đổi mật khẩu, bảo mật | Xem mục [Phân quyền](#phân-quyền) và [Bảo mật](#bảo-mật) |
 | 6 | Ghi chú / phản hồi cho từng dự án | Tab “Ghi chú & phản hồi” trong mỗi dự án |
 | 7 | Theo dõi dự án với biểu đồ, % hoàn thành | Dashboard KPI, vòng tiến độ, xu hướng, phân bổ trạng thái, khối lượng theo nhân sự; tab “Tiến độ” có timeline (Gantt) và % theo hạng mục |
 | 8 | AI hỗ trợ báo cáo, tích hợp Claude không qua API | Trang **Trợ lý AI**: đóng gói số liệu thật thành prompt → mở Claude.ai điền sẵn / sao chép / tải file cho Claude Code → dán kết quả lại để xem trước, lưu ghi chú dự án, hoặc biến dàn ý thành slide để trình chiếu & xuất file. Không cần API key, không tốn phí API |
 
-**Vai trò:** Quản trị viên (toàn quyền, quản lý tài khoản) · Quản lý (tạo dự án, giao việc, duyệt báo cáo) · Nhân viên (thực hiện việc được giao, gửi báo cáo). Phân quyền được kiểm tra ở phía server cho mọi API.
+### Phân quyền
+
+**Cấp bậc** (mỗi cấp có sẵn một nhóm quyền):
+
+| Cấp | Tạo dự án | Xem mọi dự án | Quản lý mọi dự án | Quản lý nhân viên |
+|---|:-:|:-:|:-:|:-:|
+| 4 · Quản trị viên | ✓ | ✓ | ✓ | ✓ (mọi tài khoản) |
+| 3 · Quản lý | ✓ | ✓ | ✓ | ✓ (cấp dưới) |
+| 2 · Trưởng nhóm | ✓ | | | |
+| 1 · Nhân viên | | | | |
+
+**Cấp thêm quyền:** người có quyền *Quản lý nhân viên* vào trang **Nhân sự** → biểu tượng khiên để đổi cấp bậc và cấp thêm quyền cho người **ở cấp thấp hơn**, chỉ trong phạm vi quyền mình đang có (ví dụ: quản lý cấp quyền *Tạo dự án* cho một nhân viên). Quyền mới có hiệu lực ngay, không cần đăng nhập lại; đổi cấp bậc thì người đó phải đăng nhập lại.
+
+**Vai trò trong từng dự án:** *Quản lý dự án* (sửa dự án, hạng mục, thành viên, mọi công việc; duyệt báo cáo) · *Thành viên* (tạo công việc, cập nhật và báo cáo việc mình phụ trách) · *Chỉ xem* (xem và gửi ghi chú/phản hồi). Người tạo dự án là chủ dự án và luôn là quản lý dự án; chỉ chủ dự án hoặc người có quyền *Quản lý mọi dự án* mới xoá được dự án.
+
+Mọi quyền được kiểm tra ở phía server cho từng API (`lib/permissions.ts`, `lib/rbac.ts`).
 
 ## Chạy trên máy (local)
 
@@ -31,7 +46,7 @@ npm run db:seed               # (tuỳ chọn) dữ liệu mẫu
 npm run dev                   # http://localhost:3000
 ```
 
-Tài khoản mẫu sau khi seed (chỉ dùng cho local): `admin@crm.local` / `Admin@1234`, quản lý `cuong.le@crm.local` / `Demo@1234`, nhân viên `hai.do@crm.local` / `Demo@1234`.
+Tài khoản mẫu sau khi seed (chỉ dùng cho local): `admin@crm.local` / `Admin@1234`, quản lý `cuong.le@crm.local`, trưởng nhóm `hai.do@crm.local`, nhân viên được cấp quyền tạo dự án `dung.pham@crm.local`, nhân viên `em.hoang@crm.local` (mật khẩu `Demo@1234`).
 
 Seed từ chối chạy nếu database đã có người dùng; `SEED_FORCE=1 npm run db:seed` sẽ **xoá toàn bộ dữ liệu** rồi tạo lại — không bao giờ dùng trên production.
 

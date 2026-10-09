@@ -2,12 +2,15 @@ import { cookies } from "next/headers";
 import { cache } from "react";
 import { prisma } from "./prisma";
 import { SESSION_COOKIE, verifyToken } from "./jwt";
+import { effectivePermissions, type PermissionKey } from "./permissions";
 
 export type CurrentUser = {
   id: string;
   email: string;
   name: string;
   role: string;
+  /** Effective permissions: the level's defaults plus individual grants. */
+  permissions: PermissionKey[];
   jobTitle: string | null;
   avatarColor: string;
   mustChangePassword: boolean;
@@ -32,6 +35,7 @@ export const getCurrentUser = cache(async (): Promise<CurrentUser | null> => {
       email: true,
       name: true,
       role: true,
+      permissions: true,
       jobTitle: true,
       avatarColor: true,
       mustChangePassword: true,
@@ -48,6 +52,7 @@ export const getCurrentUser = cache(async (): Promise<CurrentUser | null> => {
     email: user.email,
     name: user.name,
     role: user.role,
+    permissions: effectivePermissions(user.role, user.permissions),
     jobTitle: user.jobTitle,
     avatarColor: user.avatarColor,
     mustChangePassword: user.mustChangePassword,

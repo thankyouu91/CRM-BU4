@@ -43,6 +43,8 @@ export function RoleBadge({ role }: { role: string }) {
       ? "bg-primary/10 text-primary"
       : role === "MANAGER"
         ? "bg-amber-100 text-amber-700 dark:bg-amber-500/15 dark:text-amber-300"
-        : "bg-muted text-muted-foreground";
+        : role === "LEAD"
+          ? "bg-sky-100 text-sky-700 dark:bg-sky-500/15 dark:text-sky-300"
+          : "bg-muted text-muted-foreground";
   return <Badge className={cls}>{ROLE_LABELS[role] ?? role}</Badge>;
 }

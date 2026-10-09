@@ -17,6 +17,8 @@ import {
   Trash2,
   TriangleAlert,
   Users,
+  Eye,
+  ShieldCheck,
 } from "lucide-react";
 import { toast } from "sonner";
 import { AvatarStack } from "@/components/ui/avatar";
@@ -38,6 +40,7 @@ import type { Directory, ProjectCategory, ProjectDetailData } from "@/components
 import { api, ApiError, useApi } from "@/lib/client";
 import { formatDate } from "@/lib/utils";
 import { isOverdue } from "@/lib/dates";
+import { PROJECT_ROLE_INFO, type ProjectRoleKey } from "@/lib/permissions";
 
 type Tab = "tasks" | "progress" | "notes" | "members";
 const TABS: Tab[] = ["tasks", "progress", "notes", "members"];
@@ -45,7 +48,13 @@ const TABS: Tab[] = ["tasks", "progress", "notes", "members"];
 export function ProjectWorkspace({ projectId, meId, directory }: { projectId: string; meId: string; directory: Directory }) {
   const router = useRouter();
   const params = useSearchParams();
-  const { data, error, reload } = useApi<{ project: ProjectDetailData; canManage: boolean }>(`/api/projects/${projectId}`);
+  const { data, error, reload } = useApi<{
+    project: ProjectDetailData;
+    canManage: boolean;
+    canContribute: boolean;
+    canDelete: boolean;
+    projectRole: ProjectRoleKey | null;
+  }>(`/api/projects/${projectId}`);
 
   const initialTab = params.get("tab") as Tab | null;
   const [tab, setTabState] = useState<Tab>(initialTab && TABS.includes(initialTab) ? initialTab : "tasks");
@@ -65,11 +74,16 @@ export function ProjectWorkspace({ projectId, meId, directory }: { projectId: st
     router.replace(`?${sp.toString()}`, { scroll: false });
   };
 
+  // Everyone in the project (avatars), and the people work can be assigned to.
   const people = useMemo(() => {
     if (!data) return [];
     const map = new Map([[data.project.owner.id, data.project.owner], ...data.project.members.map((m) => [m.id, m] as const)]);
     return Array.from(map.values());
   }, [data]);
+  const assignable = useMemo(
+    () => people.filter((u) => u.id === data?.project.ownerId || !("projectRole" in u) || u.projectRole !== "VIEWER"),
+    [people, data],
+  );
 
   if (error) {
     return (
@@ -90,7 +104,7 @@ export function ProjectWorkspace({ projectId, meId, directory }: { projectId: st
     );
   }
 
-  const { project: p, canManage } = data;
+  const { project: p, canManage, canContribute, canDelete, projectRole } = data;
   const done = p.tasks.filter((t) => t.status === "DONE").length;
   const overdue = p.tasks.filter((t) => isOverdue(t.dueDate, t.status)).length;
   const daysLeft = p.dueDate ? Math.ceil((new Date(p.dueDate).getTime() - Date.now()) / 86_400_000) : null;
@@ -114,6 +128,13 @@ export function ProjectWorkspace({ projectId, meId, directory }: { projectId: st
             <div className="mt-4 flex flex-wrap items-center gap-x-6 gap-y-3 text-sm">
               <span className="text-muted-foreground">
                 Chủ dự án: <span className="font-medium text-foreground">{p.owner.name}</span>
+              </span>
+              <span className="flex items-center gap-1.5 text-muted-foreground">
+                <ShieldCheck className="h-4 w-4" />
+                Vai trò của bạn:{" "}
+                <span className="font-medium text-foreground">
+                  {projectRole ? PROJECT_ROLE_INFO[projectRole].label : canManage ? "Quản lý (toàn hệ thống)" : "Người xem (toàn hệ thống)"}
+                </span>
               </span>
               {(p.startDate || p.dueDate) && (
                 <span className="flex items-center gap-1.5 text-muted-foreground">
@@ -148,9 +169,15 @@ export function ProjectWorkspace({ projectId, meId, directory }: { projectId: st
         </div>
 
         <div className="mt-5 flex flex-wrap gap-2 border-t pt-5">
-          <Button size="sm" onClick={() => setCreating(true)}>
-            <Plus className="h-4 w-4" /> Thêm công việc
-          </Button>
+          {canContribute ? (
+            <Button size="sm" onClick={() => setCreating(true)}>
+              <Plus className="h-4 w-4" /> Thêm công việc
+            </Button>
+          ) : (
+            <span className="flex items-center gap-1.5 rounded-lg bg-muted px-3 py-1.5 text-xs text-muted-foreground">
+              <Eye className="h-3.5 w-3.5" /> Bạn đang xem dự án này ở chế độ chỉ xem
+            </span>
+          )}
           {canManage && (
             <>
               <Button size="sm" variant="outline" onClick={() => setCategoryModal({ open: true, category: null })}>
@@ -166,7 +193,7 @@ export function ProjectWorkspace({ projectId, meId, directory }: { projectId: st
               <ChartColumn className="h-4 w-4" /> Báo cáo & trình chiếu
             </Button>
           </Link>
-          {canManage && (
+          {canDelete && (
             <Button size="sm" variant="ghost" className="ml-auto text-danger hover:bg-danger/10 hover:text-danger" onClick={() => setDeletingProject(true)}>
               <Trash2 className="h-4 w-4" /> Xoá dự án
             </Button>
@@ -222,17 +249,18 @@ export function ProjectWorkspace({ projectId, meId, directory }: { projectId: st
             filters={filters}
             meId={meId}
             canManage={canManage}
+            canContribute={canContribute}
             onOpen={setOpenTask}
             onReload={reload}
             onEditCategory={(c) => setCategoryModal({ open: true, category: c })}
             onDeleteCategory={setDeletingCategory}
           />
         ) : (
-          <Kanban tasks={p.tasks} categories={p.categories} filters={filters} meId={meId} canManage={canManage} onOpen={setOpenTask} onReload={reload} />
+          <Kanban tasks={p.tasks} categories={p.categories} filters={filters} meId={meId} canManage={canManage} canContribute={canContribute} onOpen={setOpenTask} onReload={reload} />
         ))}
       {tab === "progress" && <ProgressPanel project={p} />}
       {tab === "notes" && <NotesPanel projectId={p.id} meId={meId} canManage={canManage} />}
-      {tab === "members" && <MembersPanel project={p} canManage={canManage} onEditMembers={() => setEditingProject(true)} />}
+      {tab === "members" && <MembersPanel project={p} canManage={canManage} onEditMembers={() => setEditingProject(true)} onChanged={reload} />}
 
       <TaskDrawer taskId={openTask} onClose={() => setOpenTask(null)} onChanged={reload} />
       <TaskCreateModal
@@ -240,7 +268,7 @@ export function ProjectWorkspace({ projectId, meId, directory }: { projectId: st
         onClose={() => setCreating(false)}
         projectId={p.id}
         categories={p.categories}
-        people={people}
+        people={assignable}
         onCreated={async (id) => {
           await reload();
           setOpenTask(id);
@@ -270,7 +298,7 @@ export function ProjectWorkspace({ projectId, meId, directory }: { projectId: st
           startDate: p.startDate,
           dueDate: p.dueDate,
           ownerId: p.ownerId,
-          memberIds: p.members.map((m) => m.id),
+          members: p.members.map((m) => ({ userId: m.id, role: m.projectRole })),
         }}
       />
       <ConfirmDialog

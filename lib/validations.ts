@@ -1,6 +1,9 @@
 import { z } from "zod";
+import { PERMISSIONS, PROJECT_ROLES, ROLES } from "./permissions";
 
-const roleEnum = z.enum(["ADMIN", "MANAGER", "MEMBER"]);
+const roleEnum = z.enum(ROLES);
+const permissionList = z.array(z.enum(PERMISSIONS)).max(PERMISSIONS.length);
+const projectRoleEnum = z.enum(PROJECT_ROLES);
 const projectStatusEnum = z.enum(["PLANNING", "ACTIVE", "ON_HOLD", "COMPLETED", "CANCELLED"]);
 const taskStatusEnum = z.enum(["TODO", "IN_PROGRESS", "REVIEW", "DONE", "BLOCKED"]);
 const priorityEnum = z.enum(["LOW", "MEDIUM", "HIGH", "URGENT"]);
@@ -33,6 +36,8 @@ export const createUserSchema = z.object({
   name: z.string().min(2, "Tên quá ngắn"),
   password: z.string().min(8, "Mật khẩu phải có ít nhất 8 ký tự"),
   role: roleEnum.default("MEMBER"),
+  /** Extra permissions beyond the level's defaults. */
+  permissions: permissionList.optional(),
   jobTitle: z.string().optional().nullable(),
 });
 
@@ -40,6 +45,7 @@ export const updateUserSchema = z.object({
   email: loginId.optional(),
   name: z.string().min(2).optional(),
   role: roleEnum.optional(),
+  permissions: permissionList.optional(),
   jobTitle: z.string().optional().nullable(),
   active: z.boolean().optional(),
   resetPassword: z.string().min(8).optional(),
@@ -52,6 +58,11 @@ const dateish = z
   .transform((v) => (v === undefined ? undefined : v ? new Date(v) : null))
   .refine((v) => v == null || !Number.isNaN(v.getTime()), "Ngày không hợp lệ");
 
+/** Project members with their role in the project (the owner is always a manager). */
+const projectMembers = z
+  .array(z.object({ userId: z.string().min(1), role: projectRoleEnum.default("MEMBER") }))
+  .max(500);
+
 export const createProjectSchema = z.object({
   name: z.string().min(2, "Tên dự án quá ngắn"),
   description: z.string().optional().nullable(),
@@ -60,6 +71,7 @@ export const createProjectSchema = z.object({
   startDate: dateish,
   dueDate: dateish,
   memberIds: z.array(z.string()).optional(),
+  members: projectMembers.optional(),
 });
 
 export const updateProjectSchema = z.object({
@@ -69,7 +81,10 @@ export const updateProjectSchema = z.object({
   color: z.string().optional(),
   startDate: dateish,
   dueDate: dateish,
+  /** Replace the member list; existing members keep their role. Prefer `members`. */
   memberIds: z.array(z.string()).optional(),
+  /** Replace the member list with explicit project roles. */
+  members: projectMembers.optional(),
 });
 
 export const createCategorySchema = z.object({

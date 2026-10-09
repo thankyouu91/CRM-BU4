@@ -25,7 +25,7 @@ export async function GET(_req: NextRequest, ctx: Ctx) {
           name: true,
           color: true,
           owner: userBrief,
-          members: { select: { user: userBrief } },
+          members: { select: { role: true, user: userBrief } },
           categories: { select: { id: true, name: true, color: true }, orderBy: { order: "asc" } },
         },
       },
@@ -76,7 +76,7 @@ export async function PATCH(req: NextRequest, ctx: Ctx) {
       if (!category || category.projectId !== task.projectId) return badRequest("Hạng mục không hợp lệ");
     }
     if (data.assigneeId && !(await projectMemberIds(task.projectId)).has(data.assigneeId)) {
-      return badRequest("Người phụ trách phải là thành viên dự án", { assigneeId: "Không phải thành viên dự án" });
+      return badRequest("Người phụ trách phải là thành viên dự án (không phải người chỉ xem)", { assigneeId: "Không phải thành viên dự án" });
     }
 
     const state = resolveTaskState(task, { status: data.status, progress: data.progress });

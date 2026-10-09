@@ -9,6 +9,7 @@ import { Field, Input, Select, Textarea } from "@/components/ui/input";
 import { Avatar } from "@/components/ui/avatar";
 import { api, ApiError } from "@/lib/client";
 import { PROJECT_STATUS, SWATCHES } from "@/lib/constants";
+import { PROJECT_ROLE_INFO, PROJECT_ROLES, type ProjectRoleKey } from "@/lib/permissions";
 import { fromInputDate, toInputDate } from "@/lib/dates";
 import { cn } from "@/lib/utils";
 import type { Directory } from "./types";
@@ -22,7 +23,8 @@ export interface ProjectFormValues {
   startDate: string | null;
   dueDate: string | null;
   ownerId?: string;
-  memberIds: string[];
+  /** Members and their role in the project (the owner is always a manager). */
+  members: { userId: string; role: ProjectRoleKey }[];
 }
 
 const EMPTY: ProjectFormValues = {
@@ -32,7 +34,7 @@ const EMPTY: ProjectFormValues = {
   color: SWATCHES[0],
   startDate: null,
   dueDate: null,
-  memberIds: [],
+  members: [],
 };
 
 export function ProjectFormModal({
@@ -67,13 +69,20 @@ export function ProjectFormModal({
     return directory.filter((u) => !q || u.name.toLowerCase().includes(q) || u.jobTitle?.toLowerCase().includes(q));
   }, [directory, query]);
 
+  const roleOf = useMemo(() => new Map(v.members.map((m) => [m.userId, m.role])), [v.members]);
+
   const toggleMember = (id: string) => {
     if (id === v.ownerId) return; // the owner always stays a member
     setV((s) => ({
       ...s,
-      memberIds: s.memberIds.includes(id) ? s.memberIds.filter((m) => m !== id) : [...s.memberIds, id],
+      members: s.members.some((m) => m.userId === id)
+        ? s.members.filter((m) => m.userId !== id)
+        : [...s.members, { userId: id, role: "MEMBER" }],
     }));
   };
+
+  const setRole = (id: string, role: ProjectRoleKey) =>
+    setV((s) => ({ ...s, members: s.members.map((m) => (m.userId === id ? { ...m, role } : m)) }));
 
   const submit = async () => {
     setBusy(true);
@@ -85,7 +94,7 @@ export function ProjectFormModal({
       color: v.color,
       startDate: v.startDate,
       dueDate: v.dueDate,
-      memberIds: v.memberIds,
+      members: v.members,
     };
     try {
       if (initial?.id) {
@@ -177,7 +186,7 @@ export function ProjectFormModal({
 
         <div>
           <p className="mb-1.5 text-xs font-medium text-foreground/80">
-            Thành viên <span className="text-muted-foreground">({v.memberIds.length} đã chọn)</span>
+            Thành viên & vai trò <span className="text-muted-foreground">({v.members.filter((m) => m.userId !== v.ownerId).length} đã chọn)</span>
           </p>
           <div className="rounded-xl border">
             <div className="relative border-b">
@@ -191,14 +200,12 @@ export function ProjectFormModal({
             </div>
             <ul className="scrollbar-thin max-h-[280px] overflow-y-auto p-1">
               {people.map((u) => {
-                const checked = v.memberIds.includes(u.id) || u.id === v.ownerId;
+                const owner = u.id === v.ownerId;
+                const role = roleOf.get(u.id);
+                const checked = owner || role !== undefined;
                 return (
-                  <li key={u.id}>
-                    <button
-                      type="button"
-                      onClick={() => toggleMember(u.id)}
-                      className="flex w-full items-center gap-2.5 rounded-lg px-2 py-1.5 text-left hover:bg-muted"
-                    >
+                  <li key={u.id} className="flex items-center gap-1 rounded-lg pr-1 hover:bg-muted">
+                    <button type="button" onClick={() => toggleMember(u.id)} className="flex min-w-0 flex-1 items-center gap-2.5 px-2 py-1.5 text-left">
                       <span
                         className={cn(
                           "flex h-4 w-4 shrink-0 items-center justify-center rounded border",
@@ -212,14 +219,35 @@ export function ProjectFormModal({
                         <span className="block truncate text-sm">{u.name}</span>
                         {u.jobTitle && <span className="block truncate text-[11px] text-muted-foreground">{u.jobTitle}</span>}
                       </span>
-                      {u.id === v.ownerId && <span className="text-[10px] font-medium text-primary">Chủ dự án</span>}
                     </button>
+                    {owner ? (
+                      <span className="shrink-0 px-1 text-[10px] font-medium text-primary">Chủ dự án</span>
+                    ) : (
+                      role && (
+                        <select
+                          aria-label={`Vai trò của ${u.name} trong dự án`}
+                          value={role}
+                          onChange={(e) => setRole(u.id, e.target.value as ProjectRoleKey)}
+                          className="h-7 shrink-0 rounded-md border bg-card px-1 text-[11px] outline-none focus:border-primary/60"
+                        >
+                          {PROJECT_ROLES.map((r) => (
+                            <option key={r} value={r}>
+                              {PROJECT_ROLE_INFO[r].label}
+                            </option>
+                          ))}
+                        </select>
+                      )
+                    )}
                   </li>
                 );
               })}
             </ul>
           </div>
-          {!editing && <p className="mt-2 text-xs text-muted-foreground">Bạn sẽ tự động là chủ dự án.</p>}
+          <p className="mt-2 text-[11px] leading-relaxed text-muted-foreground">
+            {!editing && "Bạn sẽ tự động là chủ dự án. "}
+            <b className="text-foreground/80">Quản lý dự án</b> sửa dự án & duyệt báo cáo · <b className="text-foreground/80">Thành viên</b> làm & báo cáo việc ·{" "}
+            <b className="text-foreground/80">Chỉ xem</b> xem & góp ý.
+          </p>
         </div>
       </div>
     </Modal>

@@ -16,10 +16,28 @@ datasource db {
 // Enums
 // ----------------------------------------------------------------------------
 
+// Cấp bậc. Mỗi cấp có sẵn một nhóm quyền (lib/permissions.ts); quản lý có thể
+// cấp thêm quyền cho từng người ở cấp thấp hơn qua User.permissions.
 enum Role {
-  ADMIN // toàn quyền: quản trị hệ thống, tạo tài khoản
-  MANAGER // quản lý: tạo dự án, nhận báo cáo
-  MEMBER // nhân viên: thực hiện task, gửi báo cáo
+  ADMIN // quản trị viên: toàn quyền, quản lý mọi tài khoản
+  MANAGER // quản lý: tạo & quản lý mọi dự án, quản lý nhân viên cấp dưới
+  LEAD // trưởng nhóm: tạo dự án và quản lý dự án của mình
+  MEMBER // nhân viên: thực hiện công việc, gửi báo cáo
+}
+
+// Quyền có thể cấp thêm cho từng người (ngoài quyền sẵn có của cấp bậc).
+enum Permission {
+  PROJECT_CREATE // tạo dự án mới (trở thành quản lý dự án đó)
+  PROJECT_VIEW_ALL // xem mọi dự án và số liệu tổng hợp
+  PROJECT_MANAGE_ALL // quản lý mọi dự án, duyệt mọi báo cáo
+  USER_MANAGE // thêm tài khoản, phân quyền, đặt lại mật khẩu cho cấp dưới
+}
+
+// Vai trò trong từng dự án.
+enum ProjectRole {
+  MANAGER // quản lý dự án: sửa dự án, hạng mục, thành viên, mọi công việc; duyệt báo cáo
+  MEMBER // thành viên: tạo công việc, cập nhật & báo cáo việc mình phụ trách
+  VIEWER // chỉ xem: xem dự án và gửi ghi chú / phản hồi
 }
 
 enum ProjectStatus {
@@ -55,29 +73,31 @@ enum NoteType {
 // ----------------------------------------------------------------------------
 
 model User {
-  id           String   @id @default(cuid())
-  email        String   @unique
-  name         String
-  passwordHash String
-  role         Role     @default(MEMBER)
-  jobTitle     String? // chức danh
-  avatarColor  String   @default("#6366f1")
-  active       Boolean  @default(true)
+  id                 String       @id @default(cuid())
+  email              String       @unique
+  name               String
+  passwordHash       String
+  role               Role         @default(MEMBER)
+  // Quyền được cấp thêm ngoài quyền sẵn có của cấp bậc
+  permissions        Permission[] @default([])
+  jobTitle           String? // chức danh
+  avatarColor        String       @default("#6366f1")
+  active             Boolean      @default(true)
   // Bảo mật: buộc đổi mật khẩu ở lần đăng nhập đầu / sau khi admin reset
-  mustChangePassword Boolean @default(false)
+  mustChangePassword Boolean      @default(false)
   // Tăng lên mỗi khi đổi mật khẩu -> vô hiệu hoá mọi phiên đăng nhập cũ
-  tokenVersion       Int     @default(0)
+  tokenVersion       Int          @default(0)
   lastLoginAt        DateTime?
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  createdAt          DateTime     @default(now())
+  updatedAt          DateTime     @updatedAt
 
-  ownedProjects    Project[]       @relation("ProjectOwner")
-  memberships      ProjectMember[]
-  assignedTasks    Task[]          @relation("TaskAssignee")
-  createdTasks     Task[]          @relation("TaskCreator")
-  taskReports      TaskReport[]    @relation("ReportAuthor")
-  reviewedReports  TaskReport[]    @relation("ReportReviewer")
-  notes            Note[]
+  ownedProjects   Project[]       @relation("ProjectOwner")
+  memberships     ProjectMember[]
+  assignedTasks   Task[]          @relation("TaskAssignee")
+  createdTasks    Task[]          @relation("TaskCreator")
+  taskReports     TaskReport[]    @relation("ReportAuthor")
+  reviewedReports TaskReport[]    @relation("ReportReviewer")
+  notes           Note[]
 }
 
 model Project {
@@ -102,11 +122,12 @@ model Project {
 }
 
 model ProjectMember {
-  id        String  @id @default(cuid())
+  id        String      @id @default(cuid())
   projectId String
   userId    String
-  project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  user      User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role      ProjectRole @default(MEMBER)
+  project   Project     @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  user      User        @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([projectId, userId])
   @@index([userId])

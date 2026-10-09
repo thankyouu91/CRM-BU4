@@ -3,11 +3,12 @@ import { getCurrentUser } from "@/lib/session";
 import { prisma } from "@/lib/prisma";
 import { Card, CardBody, CardHeader } from "@/components/ui/card";
 import { Avatar } from "@/components/ui/avatar";
-import { RoleBadge } from "@/components/ui/badge";
+import { Badge, RoleBadge } from "@/components/ui/badge";
 import { PageHeader } from "@/components/ui/misc";
 import { ChangePasswordForm } from "@/components/change-password-form";
 import { ThemeChoice } from "./theme-choice";
 import { formatDateTime } from "@/lib/utils";
+import { PERMISSION_INFO } from "@/lib/permissions";
 
 export const metadata = { title: "Cài đặt" };
 
@@ -40,9 +41,23 @@ export default async function SettingsPage() {
                 <dd className="font-medium">{me.jobTitle ?? "—"}</dd>
               </div>
               <div>
-                <dt className="text-xs text-muted-foreground">Vai trò</dt>
+                <dt className="text-xs text-muted-foreground">Cấp bậc</dt>
                 <dd className="mt-0.5">
                   <RoleBadge role={me.role} />
+                </dd>
+              </div>
+              <div className="sm:col-span-2">
+                <dt className="text-xs text-muted-foreground">Quyền của bạn</dt>
+                <dd className="mt-1 flex flex-wrap gap-1.5">
+                  {me.permissions.length === 0 ? (
+                    <span className="text-sm text-muted-foreground">Thực hiện và báo cáo công việc được giao. Quản lý có thể cấp thêm quyền cho bạn.</span>
+                  ) : (
+                    me.permissions.map((p) => (
+                      <Badge key={p} className="bg-primary/10 text-primary">
+                        {PERMISSION_INFO[p].label}
+                      </Badge>
+                    ))
+                  )}
                 </dd>
               </div>
             </dl>

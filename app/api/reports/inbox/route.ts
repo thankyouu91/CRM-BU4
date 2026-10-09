@@ -1,10 +1,10 @@
 import type { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { auth, ok, unauthorized } from "@/lib/api";
-import { isAdmin } from "@/lib/rbac";
+import { managedProjectsWhere } from "@/lib/rbac";
 
 /**
- * box=received: reports on projects the user manages (admins: all) — the manager inbox.
+ * box=received: reports on projects the user manages (org-wide project managers: all) — the manager inbox.
  * box=sent:     reports the user has submitted, with their review status.
  * status=pending|reviewed|all filters by review state.
  */
@@ -16,12 +16,7 @@ export async function GET(req: NextRequest) {
   const box = sp.get("box") === "sent" ? "sent" : "received";
   const status = sp.get("status") ?? "all";
 
-  const scope =
-    box === "sent"
-      ? { authorId: me.id }
-      : isAdmin(me)
-        ? {}
-        : { task: { project: { ownerId: me.id } } };
+  const scope = box === "sent" ? { authorId: me.id } : { task: { project: managedProjectsWhere(me) } };
 
   const reviewFilter =
     status === "pending" ? { reviewedAt: null } : status === "reviewed" ? { reviewedAt: { not: null } } : {};

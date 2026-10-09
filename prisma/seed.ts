@@ -30,10 +30,11 @@ const USERS = {
   an: { email: "admin@crm.local", name: "Nguyễn Văn An", role: "ADMIN", jobTitle: "Giám đốc vận hành", color: "#6366f1" },
   binh: { email: "binh.tran@crm.local", name: "Trần Thị Bình", role: "MANAGER", jobTitle: "Trưởng phòng Marketing", color: "#ec4899" },
   cuong: { email: "cuong.le@crm.local", name: "Lê Minh Cường", role: "MANAGER", jobTitle: "Trưởng phòng Kỹ thuật", color: "#3b82f6" },
-  dung: { email: "dung.pham@crm.local", name: "Phạm Thu Dung", role: "MEMBER", jobTitle: "UI/UX Designer", color: "#a855f7" },
+  // Nhân viên được quản lý cấp thêm quyền tạo dự án.
+  dung: { email: "dung.pham@crm.local", name: "Phạm Thu Dung", role: "MEMBER", jobTitle: "UI/UX Designer", color: "#a855f7", permissions: ["PROJECT_CREATE"] },
   em: { email: "em.hoang@crm.local", name: "Hoàng Văn Em", role: "MEMBER", jobTitle: "Frontend Developer", color: "#22c55e" },
   giang: { email: "giang.vu@crm.local", name: "Vũ Hương Giang", role: "MEMBER", jobTitle: "Content Marketing", color: "#f59e0b" },
-  hai: { email: "hai.do@crm.local", name: "Đỗ Quang Hải", role: "MEMBER", jobTitle: "Backend Developer", color: "#14b8a6" },
+  hai: { email: "hai.do@crm.local", name: "Đỗ Quang Hải", role: "LEAD", jobTitle: "Trưởng nhóm Backend", color: "#14b8a6" },
   lan: { email: "lan.bui@crm.local", name: "Bùi Ngọc Lan", role: "MEMBER", jobTitle: "Sales Executive", color: "#f97316" },
 } as const;
 type UserKey = keyof typeof USERS;
@@ -336,6 +337,7 @@ async function main() {
         email: u.email,
         name: u.name,
         role: u.role,
+        permissions: "permissions" in u ? [...u.permissions] : [],
         jobTitle: u.jobTitle,
         avatarColor: u.color,
         passwordHash: key === "an" ? adminHash : demoHash,
@@ -360,7 +362,12 @@ async function main() {
         dueDate: p.due >= 0 ? daysFromNow(p.due) : daysAgo(-p.due),
         ownerId: ids[p.owner],
         createdAt: daysAgo(p.start),
-        members: { create: p.members.map((m) => ({ userId: ids[m] })) },
+        members: {
+          create: Array.from(new Set([p.owner, ...p.members])).map((m) => ({
+            userId: ids[m],
+            role: m === p.owner ? ("MANAGER" as const) : ("MEMBER" as const),
+          })),
+        },
       },
     });
 

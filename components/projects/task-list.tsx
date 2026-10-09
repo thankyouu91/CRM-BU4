@@ -2,10 +2,11 @@
 
 import { useMemo, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { ChevronRight, FileText, GitBranch, Loader2, MoreHorizontal, Pencil, Plus, Trash2, TriangleAlert } from "lucide-react";
+import { ChevronRight, FileText, GitBranch, ListChecks, Loader2, MoreHorizontal, Pencil, Plus, Trash2, TriangleAlert } from "lucide-react";
 import { toast } from "sonner";
 import { Avatar } from "@/components/ui/avatar";
 import { PriorityBadge } from "@/components/ui/badge";
+import { EmptyState } from "@/components/ui/misc";
 import { ProgressBar } from "@/components/ui/progress";
 import { StatusToggle } from "@/components/tasks/status-toggle";
 import { api, ApiError } from "@/lib/client";
@@ -185,6 +186,7 @@ export function TaskList({
   filters,
   meId,
   canManage,
+  canContribute,
   onOpen,
   onReload,
   onEditCategory,
@@ -196,6 +198,8 @@ export function TaskList({
   filters: TaskFilters;
   meId: string;
   canManage: boolean;
+  /** False for view-only members: no quick add, no status changes. */
+  canContribute: boolean;
   onOpen: (id: string) => void;
   onReload: () => void;
   onEditCategory: (c: ProjectCategory) => void;
@@ -208,7 +212,7 @@ export function TaskList({
     childrenOf,
     visible,
     onOpen,
-    canReport: (t) => canManage || t.assigneeId === meId || t.createdById === meId,
+    canReport: (t) => canManage || (canContribute && (t.assigneeId === meId || t.createdById === meId)),
     onToggle: async (t) => {
       try {
         await api(`/api/tasks/${t.id}`, { method: "PATCH", body: { status: t.status === "DONE" ? "IN_PROGRESS" : "DONE" } });
@@ -224,11 +228,22 @@ export function TaskList({
     { category: null, tasks: roots.filter((t) => !t.categoryId || !categories.some((c) => c.id === t.categoryId)) },
   ];
 
+  const shown = groups.filter((g) => g.category || g.tasks.length > 0);
+  if (shown.length === 0) {
+    return (
+      <div className="rounded-2xl border bg-card shadow-card">
+        <EmptyState
+          icon={ListChecks}
+          title="Chưa có công việc nào"
+          description={canContribute ? "Bấm “Thêm công việc” để bắt đầu, hoặc tạo hạng mục để nhóm công việc." : "Công việc của dự án sẽ hiển thị ở đây."}
+        />
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-4">
-      {groups
-        .filter((g) => g.category || g.tasks.length > 0)
-        .map((g) => (
+      {shown.map((g) => (
           <section key={g.category?.id ?? "none"} className="overflow-hidden rounded-2xl border bg-card shadow-card">
             <header className="flex items-center gap-3 px-4 py-3">
               <span className="h-3 w-3 shrink-0 rounded" style={{ background: g.category?.color ?? "#94a3b8" }} />
@@ -254,7 +269,7 @@ export function TaskList({
                 {filters.mine || filters.hideDone ? "Không có công việc phù hợp bộ lọc." : "Chưa có công việc trong hạng mục này."}
               </p>
             )}
-            <QuickAdd projectId={projectId} categoryId={g.category?.id ?? null} onAdded={onReload} />
+            {canContribute && <QuickAdd projectId={projectId} categoryId={g.category?.id ?? null} onAdded={onReload} />}
           </section>
         ))}
     </div>

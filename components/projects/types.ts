@@ -1,4 +1,8 @@
 import type { CategoryBrief, TaskBase, UserBrief } from "@/components/tasks/types";
+import type { ProjectRoleKey } from "@/lib/permissions";
+
+/** A project member with their role in the project. */
+export type ProjectMemberBrief = UserBrief & { projectRole: ProjectRoleKey };
 
 export interface ProjectCategory extends CategoryBrief {
   order: number;
@@ -24,7 +28,7 @@ export interface ProjectDetailData {
   dueDate: string | null;
   ownerId: string;
   owner: UserBrief;
-  members: UserBrief[];
+  members: ProjectMemberBrief[];
   categories: ProjectCategory[];
   tasks: ProjectTask[];
   progress: number;
@@ -42,7 +46,7 @@ export interface ProjectListItemData {
   dueDate: string | null;
   ownerId: string;
   owner: UserBrief;
-  members: UserBrief[];
+  members: ProjectMemberBrief[];
   progress: number;
   totalTasks: number;
   doneTasks: number;

@@ -1,7 +1,8 @@
 import type { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { auth, forbidden, handle, notFound, ok, unauthorized } from "@/lib/api";
-import { canAccessProject, canManageProject } from "@/lib/rbac";
+import { canManageAllProjects, canManageProject, projectAccess } from "@/lib/rbac";
+import { resolveMemberRoles } from "@/lib/project-members";
 import { getProjectDetail } from "@/lib/queries";
 import { updateProjectSchema } from "@/lib/validations";
 
@@ -11,11 +12,19 @@ export async function GET(_req: NextRequest, ctx: Ctx) {
   const params = await ctx.params;
   const me = await auth();
   if (!me) return unauthorized();
-  if (!(await canAccessProject(me, params.id))) return notFound("Không tìm thấy dự án");
+  const access = await projectAccess(me, params.id);
+  if (!access.view) return notFound("Không tìm thấy dự án");
 
   const project = await getProjectDetail(params.id);
   if (!project) return notFound("Không tìm thấy dự án");
-  return ok({ project, canManage: await canManageProject(me, params.id) });
+  return ok({
+    project,
+    canManage: access.manage,
+    canContribute: access.contribute,
+    // Deleting stays with the owner and org-wide project managers.
+    canDelete: project.ownerId === me.id || canManageAllProjects(me),
+    projectRole: access.role,
+  });
 }
 
 export async function PATCH(req: NextRequest, ctx: Ctx) {
@@ -42,14 +51,17 @@ export async function PATCH(req: NextRequest, ctx: Ctx) {
         },
       });
 
-      if (data.memberIds) {
-        // Owner is always a member.
-        const ids = Array.from(new Set([existing.ownerId, ...data.memberIds]));
-        await tx.projectMember.deleteMany({ where: { projectId: params.id, userId: { notIn: ids } } });
-        await tx.projectMember.createMany({
-          data: ids.map((userId) => ({ projectId: params.id, userId })),
-          skipDuplicates: true,
-        });
+      if (data.members || data.memberIds) {
+        const current = await tx.projectMember.findMany({ where: { projectId: params.id }, select: { userId: true, role: true } });
+        const roles = await resolveMemberRoles(existing.ownerId, data, new Map(current.map((m) => [m.userId, m.role])));
+        await tx.projectMember.deleteMany({ where: { projectId: params.id, userId: { notIn: [...roles.keys()] } } });
+        for (const [userId, role] of roles) {
+          await tx.projectMember.upsert({
+            where: { projectId_userId: { projectId: params.id, userId } },
+            create: { projectId: params.id, userId, role },
+            update: { role },
+          });
+        }
       }
     });
 
@@ -61,7 +73,11 @@ export async function DELETE(_req: NextRequest, ctx: Ctx) {
   const params = await ctx.params;
   const me = await auth();
   if (!me) return unauthorized();
-  if (!(await canManageProject(me, params.id))) return forbidden();
+  const project = await prisma.project.findUnique({ where: { id: params.id }, select: { ownerId: true } });
+  if (!project || !(await projectAccess(me, params.id)).view) return notFound("Không tìm thấy dự án");
+  if (project.ownerId !== me.id && !canManageAllProjects(me)) {
+    return forbidden("Chỉ chủ dự án hoặc người có quyền quản lý mọi dự án mới được xoá dự án");
+  }
   await prisma.project.delete({ where: { id: params.id } });
   return ok({ ok: true });
 }

@@ -37,7 +37,7 @@ export interface TaskDetail extends TaskBase {
     name: string;
     color: string;
     owner: UserBrief;
-    members: { user: UserBrief }[];
+    members: { role: string; user: UserBrief }[];
     categories: CategoryBrief[];
   };
   category: CategoryBrief | null;
@@ -54,10 +54,10 @@ export interface TaskPermissions {
   isProjectManager: boolean;
 }
 
-/** Owner + members, de-duplicated — the people a task can be assigned to. */
+/** Owner + members who aren't view-only, de-duplicated — the people a task can be assigned to. */
 export function projectPeople(project: TaskDetail["project"]): UserBrief[] {
   const map = new Map<string, UserBrief>();
   map.set(project.owner.id, project.owner);
-  for (const m of project.members) map.set(m.user.id, m.user);
+  for (const m of project.members) if (m.role !== "VIEWER") map.set(m.user.id, m.user);
   return Array.from(map.values());
 }

@@ -22,6 +22,7 @@ export function Kanban({
   filters,
   meId,
   canManage,
+  canContribute,
   onOpen,
   onReload,
 }: {
@@ -30,6 +31,7 @@ export function Kanban({
   filters: TaskFilters;
   meId: string;
   canManage: boolean;
+  canContribute: boolean;
   onOpen: (id: string) => void;
   onReload: () => void;
 }) {
@@ -40,7 +42,7 @@ export function Kanban({
   const [over, setOver] = useState<string | null>(null);
 
   const { visible } = useTaskTree(tasks, { ...filters, hideDone: false }, meId);
-  const canMove = (t: ProjectTask) => canManage || t.assigneeId === meId || t.createdById === meId;
+  const canMove = (t: ProjectTask) => canManage || (canContribute && (t.assigneeId === meId || t.createdById === meId));
   const titleOf = new Map(tasks.map((t) => [t.id, t.title]));
   const categoryOf = new Map(categories.map((c) => [c.id, c]));
 

@@ -1,10 +1,7 @@
 // Shared display constants (Vietnamese labels + colors) for enums.
+import { ROLE_INFO, ROLES } from "./permissions";
 
-export const ROLE_LABELS: Record<string, string> = {
-  ADMIN: "Quản trị viên",
-  MANAGER: "Quản lý",
-  MEMBER: "Nhân viên",
-};
+export const ROLE_LABELS: Record<string, string> = Object.fromEntries(ROLES.map((r) => [r, ROLE_INFO[r].label]));
 
 export const PROJECT_STATUS = {
   PLANNING: { label: "Lên kế hoạch", color: "#8b5cf6", bg: "bg-violet-100 text-violet-700 dark:bg-violet-500/15 dark:text-violet-300" },

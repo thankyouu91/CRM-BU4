@@ -1,8 +1,9 @@
 import type { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { auth, created, forbidden, handle, ok, unauthorized } from "@/lib/api";
-import { isManagerOrAbove } from "@/lib/rbac";
+import { canCreateProject } from "@/lib/rbac";
 import { listProjects } from "@/lib/queries";
+import { resolveMemberRoles } from "@/lib/project-members";
 import { createProjectSchema } from "@/lib/validations";
 
 export async function GET() {
@@ -15,10 +16,12 @@ export async function POST(req: NextRequest) {
   return handle(async () => {
     const me = await auth();
     if (!me) return unauthorized();
-    if (!isManagerOrAbove(me)) return forbidden("Chỉ quản lý mới được tạo dự án");
+    if (!canCreateProject(me)) {
+      return forbidden("Bạn chưa được cấp quyền tạo dự án. Hãy nhờ quản lý cấp quyền “Tạo dự án”.");
+    }
 
     const data = createProjectSchema.parse(await req.json());
-    const memberIds = Array.from(new Set([me.id, ...(data.memberIds ?? [])]));
+    const roles = await resolveMemberRoles(me.id, data);
 
     const project = await prisma.project.create({
       data: {
@@ -29,7 +32,7 @@ export async function POST(req: NextRequest) {
         startDate: data.startDate,
         dueDate: data.dueDate,
         ownerId: me.id,
-        members: { create: memberIds.map((userId) => ({ userId })) },
+        members: { create: [...roles].map(([userId, role]) => ({ userId, role })) },
       },
     });
     return created({ project });

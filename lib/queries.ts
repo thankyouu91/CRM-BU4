@@ -20,7 +20,7 @@ export async function listProjects(user: CurrentUser) {
   const now = new Date();
   return projects.map(({ tasks, members, ...p }) => ({
     ...p,
-    members: members.map((m) => m.user),
+    members: members.map((m) => ({ ...m.user, projectRole: m.role })),
     progress: projectProgress(tasks),
     totalTasks: tasks.length,
     doneTasks: tasks.filter((t) => t.status === "DONE").length,
@@ -63,7 +63,7 @@ export async function getProjectDetail(projectId: string) {
   const { members, ...rest } = project;
   return {
     ...rest,
-    members: members.map((m) => m.user),
+    members: members.map((m) => ({ ...m.user, projectRole: m.role })),
     categories,
     tasks,
     progress: projectProgress(project.tasks),
@@ -73,11 +73,11 @@ export async function getProjectDetail(projectId: string) {
 export type ProjectDetail = NonNullable<Awaited<ReturnType<typeof getProjectDetail>>>;
 export type ProjectListItem = Awaited<ReturnType<typeof listProjects>>[number];
 
-/** IDs of every user who belongs to a project (owner + members). */
+/** IDs of the users who can be given work in a project (owner + members who aren't viewers). */
 export async function projectMemberIds(projectId: string): Promise<Set<string>> {
   const project = await prisma.project.findUnique({
     where: { id: projectId },
-    select: { ownerId: true, members: { select: { userId: true } } },
+    select: { ownerId: true, members: { where: { role: { not: "VIEWER" } }, select: { userId: true } } },
   });
   if (!project) return new Set();
   return new Set([project.ownerId, ...project.members.map((m) => m.userId)]);

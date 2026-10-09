@@ -1,7 +1,7 @@
 import type { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { auth, badRequest, created, handle, notFound, ok, unauthorized } from "@/lib/api";
-import { canAccessProject, projectVisibilityWhere } from "@/lib/rbac";
+import { auth, badRequest, created, forbidden, handle, notFound, ok, unauthorized } from "@/lib/api";
+import { projectAccess, projectVisibilityWhere } from "@/lib/rbac";
 import { projectMemberIds } from "@/lib/queries";
 import { resolveTaskState } from "@/lib/task-rules";
 import { createTaskSchema } from "@/lib/validations";
@@ -45,7 +45,9 @@ export async function POST(req: NextRequest) {
     if (!me) return unauthorized();
 
     const data = createTaskSchema.parse(await req.json());
-    if (!(await canAccessProject(me, data.projectId))) return notFound("Không tìm thấy dự án");
+    const access = await projectAccess(me, data.projectId);
+    if (!access.view) return notFound("Không tìm thấy dự án");
+    if (!access.contribute) return forbidden("Bạn chỉ có quyền xem dự án này");
 
     let categoryId = data.categoryId || null;
     if (data.parentId) {
@@ -62,7 +64,7 @@ export async function POST(req: NextRequest) {
       if (!category || category.projectId !== data.projectId) return badRequest("Hạng mục không hợp lệ");
     }
     if (data.assigneeId && !(await projectMemberIds(data.projectId)).has(data.assigneeId)) {
-      return badRequest("Người phụ trách phải là thành viên dự án", { assigneeId: "Không phải thành viên dự án" });
+      return badRequest("Người phụ trách phải là thành viên dự án (không phải người chỉ xem)", { assigneeId: "Không phải thành viên dự án" });
     }
 
     const state = resolveTaskState(
