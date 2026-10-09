@@ -3,5 +3,5 @@ import { fileURLToPath } from "node:url";
 
 export default defineConfig({
   resolve: { alias: { "@": fileURLToPath(new URL("./", import.meta.url)) } },
-  test: { include: ["tests/**/*.test.ts", "tests/**/*.test.tsx"], environment: "node", restoreMocks: true },
+  test: { include: ["tests/**/*.test.ts", "tests/**/*.test.tsx"], environment: "node", restoreMocks: true, env: { TZ: "Asia/Ho_Chi_Minh" } },
 });

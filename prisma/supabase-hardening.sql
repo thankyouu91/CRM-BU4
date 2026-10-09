@@ -19,6 +19,7 @@ ALTER TABLE "Contract"      ENABLE ROW LEVEL SECURITY;
 ALTER TABLE "WorkReport"    ENABLE ROW LEVEL SECURITY;
 ALTER TABLE "ContractFile"     ENABLE ROW LEVEL SECURITY;
 ALTER TABLE "ContractFileBlob" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "AuditLog"         ENABLE ROW LEVEL SECURITY;
 
 REVOKE ALL ON ALL TABLES    IN SCHEMA public FROM anon, authenticated;
 REVOKE ALL ON ALL SEQUENCES IN SCHEMA public FROM anon, authenticated;
@@ -27,3 +28,10 @@ REVOKE ALL ON ALL SEQUENCES IN SCHEMA public FROM anon, authenticated;
 -- the API roles either. New tables should still get ENABLE ROW LEVEL SECURITY.
 ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA public REVOKE ALL ON TABLES    FROM anon, authenticated;
 ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA public REVOKE ALL ON SEQUENCES FROM anon, authenticated;
+
+-- Audit log is append-only for the app: it may read, add, and (daily job) delete
+-- expired entries, but never edit one. When the app connects as a dedicated role
+-- (crm_app) rather than the owner, give that role exactly these rights:
+--   CREATE POLICY crm_app_all ON "AuditLog" TO crm_app USING (true) WITH CHECK (true);
+--   REVOKE ALL ON "AuditLog" FROM crm_app;
+--   GRANT SELECT, INSERT, DELETE ON "AuditLog" TO crm_app;

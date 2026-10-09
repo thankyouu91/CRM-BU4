@@ -5,6 +5,7 @@ import { projectAccess } from "@/lib/rbac";
 import { listTasks, projectMemberIds, withWorkspace } from "@/lib/queries";
 import { resolveTaskState } from "@/lib/task-rules";
 import { createTaskSchema } from "@/lib/validations";
+import { audit } from "@/lib/audit";
 
 export async function GET(req: NextRequest) {
   const me = await auth();
@@ -67,6 +68,16 @@ export async function POST(req: NextRequest) {
       // Touch the project so "recently updated" ordering reflects task activity.
       prisma.project.update({ where: { id: data.projectId }, data: { updatedAt: new Date() } }),
     ]);
+    await audit(
+      { id: me.id, name: me.name },
+      {
+        action: "task.create",
+        entityType: "task",
+        entityId: task.id,
+        summary: `Tạo công việc “${task.title}”`,
+        details: { projectId: task.projectId, parentId: task.parentId, assigneeId: task.assigneeId, status: task.status },
+      },
+    );
     return created(await withWorkspace(req, me, data.projectId, { task }));
   });
 }

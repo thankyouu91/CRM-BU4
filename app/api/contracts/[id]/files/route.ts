@@ -5,6 +5,7 @@ import { hasPermission } from "@/lib/permissions";
 import {
   MAX_FILE_BYTES,
   MAX_UPLOAD_BYTES,
+  R2_STORAGE_LIMIT_BYTES,
   STORAGE_LIMIT_BYTES,
   cleanFileName,
   contractFileDto,
@@ -13,10 +14,14 @@ import {
   isPdf,
 } from "@/lib/contract-files";
 import { storeContractFiles } from "@/lib/contract-file-service";
+import { storesInR2 } from "@/lib/file-storage";
+import { audit } from "@/lib/audit";
 
 type Ctx = { params: Promise<{ id: string }> };
 
 const storageUsed = async () => (await prisma.contractFile.aggregate({ _sum: { size: true } }))._sum.size ?? 0;
+/** R2 holds far more than the database, so the cap follows where new files go. */
+const storageLimit = () => (storesInR2() ? R2_STORAGE_LIMIT_BYTES : STORAGE_LIMIT_BYTES);
 
 /** GET /api/contracts/[id]/files: the contract's PDFs (metadata only) and how much of the storage is used. */
 export async function GET(_req: NextRequest, ctx: Ctx) {
@@ -32,7 +37,7 @@ export async function GET(_req: NextRequest, ctx: Ctx) {
     storageUsed(),
   ]);
   if (!contract) return notFound("Không tìm thấy hợp đồng");
-  return ok({ files: contract.files.map(contractFileDto), storage: { used, limit: STORAGE_LIMIT_BYTES } });
+  return ok({ files: contract.files.map(contractFileDto), storage: { used, limit: storageLimit() } });
 }
 
 /** POST /api/contracts/[id]/files (multipart/form-data, one or more "files"): attach PDFs. */
@@ -45,7 +50,7 @@ export async function POST(req: NextRequest, ctx: Ctx) {
     if (Number(req.headers.get("content-length") ?? 0) > MAX_UPLOAD_BYTES) {
       return payloadTooLarge(`Mỗi lần tải lên tối đa ${formatFileSize(MAX_UPLOAD_BYTES)}. Hãy tải từng file một.`);
     }
-    const contract = await prisma.contract.findUnique({ where: { id: params.id }, select: { id: true } });
+    const contract = await prisma.contract.findUnique({ where: { id: params.id }, select: { id: true, code: true, name: true } });
     if (!contract) return notFound("Không tìm thấy hợp đồng");
 
     let form: FormData;
@@ -71,6 +76,13 @@ export async function POST(req: NextRequest, ctx: Ctx) {
     const adding = items.reduce((s, it) => s + it.bytes.length, 0);
     if (adding > MAX_UPLOAD_BYTES) return payloadTooLarge(`Mỗi lần tải lên tối đa ${formatFileSize(MAX_UPLOAD_BYTES)}.`);
     const saved = await storeContractFiles(contract.id, me.id, items);
+    for (const file of saved) {
+      await audit({ id: me.id, name: me.name }, {
+        action: "contract_file.upload", entityType: "contract_file", entityId: file.id,
+        summary: `Tải lên file “${file.name}” cho hợp đồng “${contract.code ?? contract.name}”`,
+        details: { contractId: contract.id, name: file.name, size: file.size },
+      });
+    }
     return created({ files: saved });
   });
 }

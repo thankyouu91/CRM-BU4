@@ -5,6 +5,7 @@ import { attachSession } from "@/lib/issue-session";
 import { loginSchema } from "@/lib/validations";
 import { clientIp, rateLimit, resetRateLimit } from "@/lib/rate-limit";
 import { zodErrors } from "@/lib/api";
+import { audit } from "@/lib/audit";
 
 // Cost-12 bcrypt hash of a discarded random string: compared against when the
 // email is unknown so response timing does not reveal which accounts exist.
@@ -19,6 +20,19 @@ export async function POST(req: NextRequest) {
 
   const email = parsed.data.email.trim().toLowerCase();
   const ip = clientIp(req.headers);
+  // Never the password: only the name that was typed and why it failed.
+  const typed = parsed.data.email.trim().slice(0, 120);
+  const failed = (reason: "wrong_password" | "unknown_user" | "inactive", userId?: string) =>
+    audit(
+      { name: typed },
+      {
+        action: "auth.login_failed",
+        entityType: "session",
+        entityId: userId,
+        summary: `Đăng nhập thất bại: ${typed}`,
+        details: { reason },
+      },
+    );
 
   const [perAccount, perIp] = await Promise.all([
     rateLimit(`login:${ip}:${email}`, "LOGIN_LIMITER", 5, 15 * 60_000),
@@ -26,6 +40,8 @@ export async function POST(req: NextRequest) {
   ]);
   if (!perAccount.allowed || !perIp.allowed) {
     const retry = Math.max(perAccount.retryAfterSec, perIp.retryAfterSec);
+    // Not logged: blocked attempts are unbounded and would let anyone flood the audit log.
+    // The attempts that led to the block were logged as they happened.
     return NextResponse.json(
       { error: `Bạn đã thử đăng nhập quá nhiều lần. Vui lòng thử lại sau ${Math.ceil(retry / 60)} phút.` },
       { status: 429, headers: { "Retry-After": String(retry) } },
@@ -36,14 +52,20 @@ export async function POST(req: NextRequest) {
   const valid = await verifyPassword(parsed.data.password, user?.passwordHash ?? DUMMY_HASH);
 
   if (!user || !valid) {
+    await failed(user ? "wrong_password" : "unknown_user", user?.id);
     return NextResponse.json({ error: "Tên đăng nhập hoặc mật khẩu không đúng" }, { status: 401 });
   }
   if (!user.active) {
+    await failed("inactive", user.id);
     return NextResponse.json({ error: "Tài khoản đã bị vô hiệu hoá. Liên hệ quản trị viên." }, { status: 403 });
   }
 
   resetRateLimit(`login:${ip}:${email}`);
   await prisma.user.update({ where: { id: user.id }, data: { lastLoginAt: new Date() } });
+  await audit(
+    { id: user.id, name: user.name },
+    { action: "auth.login", entityType: "session", entityId: user.id, summary: `${user.name} đăng nhập` },
+  );
 
   const res = NextResponse.json({
     user: { id: user.id, name: user.name, email: user.email, role: user.role },

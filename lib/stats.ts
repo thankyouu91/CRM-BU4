@@ -24,6 +24,7 @@ import type { CurrentUser } from "./session";
 // ----------------------------------------------------------------------------
 
 export { effectiveProgress, indexChildren, projectProgress, subsetProgress } from "./task-progress";
+export type { ProgressNode } from "./task-progress";
 import { projectProgress, subsetProgress, type ProgressNode } from "./task-progress";
 
 /**

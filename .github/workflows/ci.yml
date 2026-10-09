@@ -2,6 +2,9 @@ name: CI
 on:
   pull_request:
   push:
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
 permissions:
   contents: read
 jobs:
@@ -38,4 +41,6 @@ jobs:
       - run: npm run lint
       - run: npm run typecheck
       - run: npm test
-      - run: npm run build
+      - run: npm audit --omit=dev --audit-level=high
+      - run: npx opennextjs-cloudflare build
+      - run: npx wrangler deploy --dry-run --outdir .wrangler-dry-run

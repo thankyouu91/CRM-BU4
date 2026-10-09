@@ -4,6 +4,7 @@ import { auth, created, forbidden, handle, unauthorized } from "@/lib/api";
 import { hasPermission } from "@/lib/permissions";
 import { toDbAmounts } from "@/lib/contracts";
 import { importContractsSchema } from "@/lib/validations";
+import { audit } from "@/lib/audit";
 
 /** Bulk create from rows pasted out of Excel (parsed and previewed on the client). */
 export async function POST(req: NextRequest) {
@@ -29,6 +30,16 @@ export async function POST(req: NextRequest) {
         value: BigInt(d.value),
       })),
     });
+    await audit(
+      { id: me.id, name: me.name },
+      {
+        action: "contract.import",
+        entityType: "contract",
+        summary: `Nhập ${result.count} hợp đồng từ Excel`,
+        // Import only creates rows; nothing is matched against existing contracts.
+        details: { rows: rows.length, created: result.count, updated: 0, skipped: rows.length - result.count },
+      },
+    );
     return created({ count: result.count });
   });
 }

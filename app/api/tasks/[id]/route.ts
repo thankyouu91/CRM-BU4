@@ -1,12 +1,14 @@
 import { updateTaskSafely } from "@/lib/task-service";
 import { withTaskProgress } from "@/lib/task-progress-queries";
 import type { NextRequest } from "next/server";
+import type { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { auth, badRequest, forbidden, handle, notFound, ok, unauthorized } from "@/lib/api";
 import { accessFrom, loadTaskForUser, taskRights } from "@/lib/rbac";
 import { projectMemberIds, withWorkspace } from "@/lib/queries";
 import { resolveTaskState } from "@/lib/task-rules";
 import { updateTaskSchema } from "@/lib/validations";
+import { audit, changedFields } from "@/lib/audit";
 
 type Ctx = { params: Promise<{ id: string }> };
 
@@ -103,6 +105,30 @@ export async function PATCH(req: NextRequest, ctx: Ctx) {
       await tx.project.update({ where: { id: task.projectId }, data: { updatedAt: new Date() } });
       return updated;
     });
+    const changes = changedFields(task, updated, [
+      "title",
+      "description",
+      "status",
+      "progress",
+      "priority",
+      "categoryId",
+      "assigneeId",
+      "startDate",
+      "dueDate",
+      "completedAt",
+    ]);
+    if (Object.keys(changes).length) {
+      await audit(
+        { id: me.id, name: me.name },
+        {
+          action: "task.update",
+          entityType: "task",
+          entityId: task.id,
+          summary: `Sửa công việc “${updated.title}”`,
+          details: changes as Prisma.InputJsonValue,
+        },
+      );
+    }
     return ok(await withWorkspace(req, me, task.projectId, { task: updated }));
   });
 }
@@ -117,5 +143,15 @@ export async function DELETE(req: NextRequest, ctx: Ctx) {
 
   // Subtasks and reports cascade with the task.
   await prisma.task.delete({ where: { id: loaded.task.id } });
+  await audit(
+    { id: me.id, name: me.name },
+    {
+      action: "task.delete",
+      entityType: "task",
+      entityId: loaded.task.id,
+      summary: `Xoá công việc “${loaded.task.title}”`,
+      details: { title: loaded.task.title, projectId: loaded.task.projectId, status: loaded.task.status },
+    },
+  );
   return ok(await withWorkspace(req, me, loaded.task.projectId, { ok: true }));
 }

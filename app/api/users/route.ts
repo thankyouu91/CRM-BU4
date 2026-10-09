@@ -5,6 +5,7 @@ import { isAdmin } from "@/lib/rbac";
 import { hashPassword, validatePasswordStrength } from "@/lib/password";
 import { assignableRoles, forbiddenGrantChange, hasPermission, normalizeGrants, PERMISSION_INFO, ROLE_INFO } from "@/lib/permissions";
 import { createUserSchema } from "@/lib/validations";
+import { audit } from "@/lib/audit";
 
 const AVATAR_COLORS = ["#6366f1", "#22c55e", "#f59e0b", "#ef4444", "#3b82f6", "#a855f7", "#ec4899", "#14b8a6", "#f97316"];
 
@@ -70,6 +71,16 @@ export async function POST(req: NextRequest) {
       },
       select: { id: true, email: true, name: true, role: true, permissions: true, jobTitle: true, avatarColor: true, active: true },
     });
+    await audit(
+      { id: me.id, name: me.name },
+      {
+        action: "user.create",
+        entityType: "user",
+        entityId: user.id,
+        summary: `Tạo tài khoản ${user.name} (${ROLE_INFO[data.role].label})`,
+        details: { email: user.email, role: user.role, permissions: user.permissions, jobTitle: user.jobTitle },
+      },
+    );
     return created({ user });
   });
 }

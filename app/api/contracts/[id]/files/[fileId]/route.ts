@@ -4,11 +4,15 @@ import { auth, forbidden, notFound, ok, unauthorized } from "@/lib/api";
 import { hasPermission } from "@/lib/permissions";
 import { contentDisposition } from "@/lib/contract-files";
 import { deleteFiles, getFile } from "@/lib/file-storage";
+import { audit } from "@/lib/audit";
 
 type Ctx = { params: Promise<{ id: string; fileId: string }> };
 
 const findFile = (p: { id: string; fileId: string }) =>
-  prisma.contractFile.findFirst({ where: { id: p.fileId, contractId: p.id }, select: { id: true, name: true } });
+  prisma.contractFile.findFirst({
+    where: { id: p.fileId, contractId: p.id },
+    select: { id: true, name: true, size: true, contract: { select: { code: true, name: true } } },
+  });
 
 /** GET /api/contracts/[id]/files/[fileId]: the PDF, shown inline (?download=1 saves it). */
 export async function GET(req: NextRequest, ctx: Ctx) {
@@ -41,5 +45,15 @@ export async function DELETE(_req: NextRequest, ctx: Ctx) {
   if (!file) return notFound("Không tìm thấy file hợp đồng");
   await prisma.contractFile.delete({ where: { id: file.id } });
   await deleteFiles([file.id]);
+  await audit(
+    { id: me.id, name: me.name },
+    {
+      action: "contract_file.delete",
+      entityType: "contract_file",
+      entityId: file.id,
+      summary: `Xoá file “${file.name}” của hợp đồng “${file.contract.code ?? file.contract.name}”`,
+      details: { contractId: params.id, name: file.name, size: file.size },
+    },
+  );
   return ok({ ok: true });
 }
