@@ -136,7 +136,13 @@ export function ProjectWorkspace({ projectId, meId, directory }: { projectId: st
                 <ShieldCheck className="h-4 w-4" />
                 Vai trò của bạn:{" "}
                 <span className="font-medium text-foreground">
-                  {projectRole ? PROJECT_ROLE_INFO[projectRole].label : canManage ? "Quản lý (toàn hệ thống)" : "Người xem (toàn hệ thống)"}
+                  {projectRole === "MANAGER"
+                    ? PROJECT_ROLE_INFO.MANAGER.label
+                    : canManage
+                      ? "Quản lý (toàn hệ thống)"
+                      : projectRole
+                        ? PROJECT_ROLE_INFO[projectRole].label
+                        : "Người xem (toàn hệ thống)"}
                 </span>
               </span>
               {(p.startDate || p.dueDate) && (

@@ -95,7 +95,8 @@ echo "  HYPERDRIVE binding → $HD_ID"
 
 echo "▶ 5/7 Secrets"
 SECRETS_FILE=""
-cleanup() { [ -n "$SECRETS_FILE" ] && rm -f "$SECRETS_FILE"; }
+# Must succeed when there is nothing to delete: an EXIT trap's status becomes the script's.
+cleanup() { [ -z "$SECRETS_FILE" ] || rm -f "$SECRETS_FILE"; }
 trap cleanup EXIT
 if npx wrangler secret list --format json 2>/dev/null | grep -q '"JWT_SECRET"'; then
   echo "  JWT_SECRET already set (kept — rotating it would sign everyone out)"
