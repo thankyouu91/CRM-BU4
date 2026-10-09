@@ -1,0 +1,90 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Theme tokens as RGB triplets so Tailwind opacity modifiers work (bg-primary/10). */
+@layer base {
+  :root {
+    --background: 246 247 251;
+    --foreground: 15 23 42;
+    --card: 255 255 255;
+    --muted: 241 243 248;
+    --muted-foreground: 100 116 139;
+    --border: 226 232 240;
+    --ring: 99 102 241;
+    --primary: 79 70 229;
+    --primary-foreground: 255 255 255;
+    --primary-soft: 238 242 255;
+    --success: 22 163 74;
+    --warning: 217 119 6;
+    --danger: 220 38 38;
+    --sidebar: 15 23 42;
+    --sidebar-foreground: 226 232 240;
+    --sidebar-muted: 148 163 184;
+    color-scheme: light;
+  }
+
+  .dark {
+    --background: 9 11 20;
+    --foreground: 226 232 240;
+    --card: 17 21 34;
+    --muted: 26 31 48;
+    --muted-foreground: 148 163 184;
+    --border: 38 45 66;
+    --ring: 129 140 248;
+    --primary: 129 140 248;
+    --primary-foreground: 15 23 42;
+    --primary-soft: 30 32 66;
+    --success: 74 222 128;
+    --warning: 251 191 36;
+    --danger: 248 113 113;
+    --sidebar: 12 15 27;
+    --sidebar-foreground: 226 232 240;
+    --sidebar-muted: 125 137 160;
+    color-scheme: dark;
+  }
+
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground antialiased;
+    font-feature-settings: "cv11", "ss01";
+  }
+
+  :focus-visible {
+    @apply outline-none ring-2 ring-ring/60 ring-offset-2 ring-offset-background;
+  }
+}
+
+@layer utilities {
+  .scrollbar-thin {
+    scrollbar-width: thin;
+    scrollbar-color: rgb(var(--muted-foreground) / 0.3) transparent;
+  }
+  .text-balance {
+    text-wrap: balance;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* Recharts: inherit theme colors */
+.recharts-cartesian-axis-tick-value {
+  fill: rgb(var(--muted-foreground));
+  font-size: 12px;
+}
+.recharts-cartesian-grid line {
+  stroke: rgb(var(--border));
+}
+.recharts-tooltip-cursor {
+  fill: rgb(var(--muted) / 0.6);
+}

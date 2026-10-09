@@ -1,0 +1,203 @@
+// Prisma schema for CRM-BU4 — project & task management dashboard
+// Docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ----------------------------------------------------------------------------
+// Enums
+// ----------------------------------------------------------------------------
+
+enum Role {
+  ADMIN // toàn quyền: quản trị hệ thống, tạo tài khoản
+  MANAGER // quản lý: tạo dự án, nhận báo cáo
+  MEMBER // nhân viên: thực hiện task, gửi báo cáo
+}
+
+enum ProjectStatus {
+  PLANNING
+  ACTIVE
+  ON_HOLD
+  COMPLETED
+  CANCELLED
+}
+
+enum TaskStatus {
+  TODO
+  IN_PROGRESS
+  REVIEW
+  DONE
+  BLOCKED
+}
+
+enum Priority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
+enum NoteType {
+  NOTE // ghi chú nội bộ
+  FEEDBACK // phản hồi / góp ý
+}
+
+// ----------------------------------------------------------------------------
+// Models
+// ----------------------------------------------------------------------------
+
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  name         String
+  passwordHash String
+  role         Role     @default(MEMBER)
+  jobTitle     String? // chức danh
+  avatarColor  String   @default("#6366f1")
+  active       Boolean  @default(true)
+  // Bảo mật: buộc đổi mật khẩu ở lần đăng nhập đầu / sau khi admin reset
+  mustChangePassword Boolean @default(false)
+  // Tăng lên mỗi khi đổi mật khẩu -> vô hiệu hoá mọi phiên đăng nhập cũ
+  tokenVersion       Int     @default(0)
+  lastLoginAt        DateTime?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  ownedProjects    Project[]       @relation("ProjectOwner")
+  memberships      ProjectMember[]
+  assignedTasks    Task[]          @relation("TaskAssignee")
+  createdTasks     Task[]          @relation("TaskCreator")
+  taskReports      TaskReport[]    @relation("ReportAuthor")
+  reviewedReports  TaskReport[]    @relation("ReportReviewer")
+  notes            Note[]
+}
+
+model Project {
+  id          String        @id @default(cuid())
+  name        String
+  description String?
+  status      ProjectStatus @default(PLANNING)
+  color       String        @default("#6366f1")
+  startDate   DateTime?
+  dueDate     DateTime?
+  ownerId     String
+  owner       User          @relation("ProjectOwner", fields: [ownerId], references: [id])
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  categories Category[]
+  tasks      Task[]
+  members    ProjectMember[]
+  notes      Note[]
+
+  @@index([ownerId])
+}
+
+model ProjectMember {
+  id        String  @id @default(cuid())
+  projectId String
+  userId    String
+  project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  user      User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([projectId, userId])
+  @@index([userId])
+}
+
+// Hạng mục trong một dự án (nhóm các task)
+model Category {
+  id        String   @id @default(cuid())
+  name      String
+  color     String   @default("#64748b")
+  order     Int      @default(0)
+  projectId String
+  project   Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  tasks     Task[]
+  createdAt DateTime @default(now())
+
+  @@index([projectId])
+}
+
+model Task {
+  id          String     @id @default(cuid())
+  title       String
+  description String?
+  status      TaskStatus @default(TODO)
+  priority    Priority   @default(MEDIUM)
+  progress    Int        @default(0) // 0-100
+  startDate   DateTime?
+  dueDate     DateTime?
+  completedAt DateTime?
+
+  projectId String
+  project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  categoryId String?
+  category   Category? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+
+  // Subtask: parent/child trên cùng model
+  parentId String?
+  parent   Task?   @relation("Subtasks", fields: [parentId], references: [id], onDelete: Cascade)
+  subtasks Task[]  @relation("Subtasks")
+
+  // PIC (người phụ trách)
+  assigneeId String?
+  assignee   User?   @relation("TaskAssignee", fields: [assigneeId], references: [id], onDelete: SetNull)
+
+  createdById String
+  createdBy   User   @relation("TaskCreator", fields: [createdById], references: [id])
+
+  reports   TaskReport[]
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
+
+  @@index([projectId])
+  @@index([categoryId])
+  @@index([assigneeId])
+  @@index([parentId])
+}
+
+// Báo cáo tiến độ của người thực hiện cho một task
+model TaskReport {
+  id         String   @id @default(cuid())
+  taskId     String
+  task       Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  authorId   String
+  author     User     @relation("ReportAuthor", fields: [authorId], references: [id], onDelete: Cascade)
+  content    String
+  progress   Int      @default(0) // tiến độ báo cáo tại thời điểm đó
+  hoursSpent Float    @default(0)
+  createdAt  DateTime @default(now())
+
+  // Quản lý xem xét / phản hồi báo cáo
+  reviewerId String?
+  reviewer   User?     @relation("ReportReviewer", fields: [reviewerId], references: [id], onDelete: SetNull)
+  reviewedAt DateTime?
+  reviewNote String?
+
+  @@index([taskId])
+  @@index([authorId])
+  @@index([createdAt])
+  @@index([reviewedAt])
+}
+
+// Ghi chú / phản hồi cho dự án
+model Note {
+  id        String   @id @default(cuid())
+  projectId String
+  project   Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  authorId  String
+  author    User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  type      NoteType @default(NOTE)
+  content   String
+  createdAt DateTime @default(now())
+
+  @@index([projectId])
+  @@index([createdAt])
+}

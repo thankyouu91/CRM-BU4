@@ -1,0 +1,48 @@
+import type { NextRequest } from "next/server";
+import { prisma } from "@/lib/prisma";
+import { auth, created, forbidden, handle, notFound, unauthorized } from "@/lib/api";
+import { canAccessProject, taskPermissions } from "@/lib/rbac";
+import { resolveTaskState } from "@/lib/task-rules";
+import { createReportSchema } from "@/lib/validations";
+
+type Ctx = { params: { id: string } };
+
+/**
+ * The person in charge submits a progress report. The task's progress follows
+ * the report; reaching 100% moves the task to REVIEW so the project manager
+ * can approve it from their inbox.
+ */
+export async function POST(req: NextRequest, { params }: Ctx) {
+  return handle(async () => {
+    const me = await auth();
+    if (!me) return unauthorized();
+
+    const task = await prisma.task.findUnique({ where: { id: params.id } });
+    if (!task || !(await canAccessProject(me, task.projectId))) return notFound("Không tìm thấy công việc");
+    if (!(await taskPermissions(me, task)).report) {
+      return forbidden("Chỉ người phụ trách hoặc quản lý mới được gửi báo cáo cho công việc này");
+    }
+
+    const data = createReportSchema.parse(await req.json());
+
+    const nextStatus =
+      data.progress >= 100 && task.status !== "DONE" ? "REVIEW" : undefined;
+    const state = resolveTaskState(task, { progress: data.progress, status: nextStatus });
+
+    const [report] = await prisma.$transaction([
+      prisma.taskReport.create({
+        data: {
+          taskId: task.id,
+          authorId: me.id,
+          content: data.content.trim(),
+          progress: data.progress,
+          hoursSpent: data.hoursSpent,
+        },
+        include: { author: { select: { id: true, name: true, avatarColor: true, jobTitle: true } } },
+      }),
+      prisma.task.update({ where: { id: task.id }, data: state }),
+      prisma.project.update({ where: { id: task.projectId }, data: { updatedAt: new Date() } }),
+    ]);
+    return created({ report });
+  });
+}
