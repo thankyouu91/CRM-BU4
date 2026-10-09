@@ -12,7 +12,7 @@ import { getCloudflareContext } from "@opennextjs/cloudflare";
 //    Hyperdrive binding named HYPERDRIVE exists it is used for pooling;
 //    otherwise DATABASE_URL is used directly.
 
-const isWorkers = typeof navigator !== "undefined" && navigator.userAgent === "Cloudflare-Workers";
+export const isWorkers = typeof navigator !== "undefined" && navigator.userAgent === "Cloudflare-Workers";
 
 function createClient(connectionString: string, perRequest: boolean) {
   const adapter = new PrismaPg(
@@ -32,26 +32,37 @@ function createClient(connectionString: string, perRequest: boolean) {
 const globalForPrisma = globalThis as unknown as { prisma?: PrismaClient };
 
 function nodeClient(): PrismaClient {
-  if (!globalForPrisma.prisma) {
-    const url = process.env.DATABASE_URL;
-    if (!url) throw new Error("DATABASE_URL is not set (see .env.example).");
-    globalForPrisma.prisma = createClient(url, false);
-  }
+  if (!globalForPrisma.prisma) globalForPrisma.prisma = createClient(databaseUrl(), false);
   return globalForPrisma.prisma;
 }
 
 // --- Workers: one client per request ---------------------------------------------
 const perRequest = new WeakMap<object, PrismaClient>();
 
-function workersClient(): PrismaClient {
+function workersContext() {
   // Request-scoped: ctx is the ExecutionContext of the request being served.
-  const { env, ctx } = getCloudflareContext() as unknown as { env: Record<string, unknown>; ctx: object };
+  return getCloudflareContext() as unknown as { env: Record<string, unknown>; ctx: object };
+}
+
+/** The connection string for this runtime (Workers: the Hyperdrive binding, else DATABASE_URL). */
+export function databaseUrl(): string {
+  if (!isWorkers) {
+    const url = process.env.DATABASE_URL;
+    if (!url) throw new Error("DATABASE_URL is not set (see .env.example).");
+    return url;
+  }
+  const { env } = workersContext();
+  const hyperdrive = env.HYPERDRIVE as { connectionString?: string } | undefined;
+  const url = hyperdrive?.connectionString ?? (env.DATABASE_URL as string | undefined) ?? process.env.DATABASE_URL;
+  if (!url) throw new Error("No database configured: set the DATABASE_URL secret or a HYPERDRIVE binding.");
+  return url;
+}
+
+function workersClient(): PrismaClient {
+  const { ctx } = workersContext();
   let client = perRequest.get(ctx);
   if (!client) {
-    const hyperdrive = env.HYPERDRIVE as { connectionString?: string } | undefined;
-    const url = hyperdrive?.connectionString ?? (env.DATABASE_URL as string | undefined) ?? process.env.DATABASE_URL;
-    if (!url) throw new Error("No database configured: set the DATABASE_URL secret or a HYPERDRIVE binding.");
-    client = createClient(url, true);
+    client = createClient(databaseUrl(), true);
     perRequest.set(ctx, client);
   }
   return client;

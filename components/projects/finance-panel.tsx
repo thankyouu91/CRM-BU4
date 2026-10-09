@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { ExternalLink, Loader2, Plus, Wallet } from "lucide-react";
+import { CircleCheck, ExternalLink, FileWarning, Loader2, Plus, Wallet } from "lucide-react";
 import { toast } from "sonner";
 import { Badge, ScheduleBadge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -10,6 +10,7 @@ import { ConfirmDialog } from "@/components/ui/confirm";
 import { EmptyState } from "@/components/ui/misc";
 import { ProgressBar } from "@/components/ui/progress";
 import { ContractModal, monthOf, ratingBg, toDateInput } from "@/components/contracts/contract-form";
+import { ContractFilesModal, FileCountButton, UploadPdfButton } from "@/components/contracts/contract-files";
 import { SummaryCards } from "@/components/contracts/summary-cards";
 import { api, ApiError } from "@/lib/client";
 import { CONTRACT_STATUS, PAYMENT_STATUS, formatVnd, type ContractStatusKey, type ContractTotals } from "@/lib/finance";
@@ -39,6 +40,7 @@ export function FinancePanel({ project, data, onChanged }: { project: ProjectDet
   const [editing, setEditing] = useState<ContractDto | null>(null);
   const [creating, setCreating] = useState(false);
   const [deleting, setDeleting] = useState<ContractDto | null>(null);
+  const [filesOf, setFilesOf] = useState<ContractDto | null>(null);
 
   if (!data) {
     return (
@@ -50,6 +52,9 @@ export function FinancePanel({ project, data, onChanged }: { project: ProjectDet
   const t = data.totals;
   const collectedPct = t.value ? Math.round((t.collected / t.value) * 1000) / 10 : 0;
   const locked = { id: project.id, name: project.name, color: project.color };
+  // A completed project's contracts should all have their signed PDF archived.
+  const completed = project.status === "COMPLETED";
+  const missingFiles = data.contracts.filter((c) => c.fileCount === 0);
 
   return (
     <div className="space-y-6">
@@ -75,6 +80,39 @@ export function FinancePanel({ project, data, onChanged }: { project: ProjectDet
       </div>
 
       {data.contracts.length > 0 && <SummaryCards t={t} />}
+
+      {completed &&
+        data.contracts.length > 0 &&
+        (missingFiles.length > 0 ? (
+          <div className="rounded-2xl border border-amber-300 bg-amber-50 p-5 dark:border-amber-500/30 dark:bg-amber-500/10">
+            <div className="flex items-start gap-3">
+              <FileWarning className="mt-0.5 h-5 w-5 shrink-0 text-amber-600 dark:text-amber-400" />
+              <div className="min-w-0 flex-1">
+                <h3 className="font-semibold text-amber-900 dark:text-amber-200">Dự án đã hoàn thành — lưu hồ sơ hợp đồng (PDF)</h3>
+                <p className="mt-0.5 text-xs text-amber-800/90 dark:text-amber-200/80">
+                  Còn {missingFiles.length}/{data.contracts.length} hợp đồng chưa có file PDF. Tải bản hợp đồng đã ký lên để lưu trữ và hiện trong báo cáo.
+                </p>
+                <ul className="mt-3 divide-y divide-amber-200 rounded-xl border border-amber-200 bg-card dark:divide-amber-500/20 dark:border-amber-500/20">
+                  {missingFiles.map((c) => (
+                    <li key={c.id} className="flex flex-wrap items-center gap-3 px-4 py-2.5">
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate text-sm font-medium">{c.name}</p>
+                        <p className="truncate text-[11px] text-muted-foreground">
+                          {c.code || "Chưa có mã"} · {formatVnd(c.value)}
+                        </p>
+                      </div>
+                      <UploadPdfButton contractId={c.id} onUploaded={onChanged} />
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+          </div>
+        ) : (
+          <p className="flex items-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-2.5 text-xs text-emerald-800 dark:border-emerald-500/30 dark:bg-emerald-500/10 dark:text-emerald-300">
+            <CircleCheck className="h-4 w-4 shrink-0" /> Đã lưu file PDF cho cả {data.contracts.length} hợp đồng của dự án đã hoàn thành.
+          </p>
+        ))}
 
       <div className="overflow-hidden rounded-2xl border bg-card shadow-card">
         <div className="flex flex-wrap items-center justify-between gap-3 px-5 py-4">
@@ -102,10 +140,11 @@ export function FinancePanel({ project, data, onChanged }: { project: ProjectDet
           />
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full min-w-[1100px] text-[13px]">
+            <table className="w-full min-w-[1180px] text-[13px]">
               <thead className="border-y bg-muted/50 text-xs text-muted-foreground">
                 <tr>
                   <th className="px-5 py-2.5 text-left font-medium">Hợp đồng / mã HĐ</th>
+                  <th className="px-3 py-2.5 text-center font-medium">File HĐ</th>
                   <th className="px-3 py-2.5 text-center font-medium">Ngày TH</th>
                   <th className="px-3 py-2.5 text-right font-medium">Giá trị HĐ</th>
                   <th className="px-3 py-2.5 text-right font-medium">Tổng chi phí</th>
@@ -128,6 +167,9 @@ export function FinancePanel({ project, data, onChanged }: { project: ProjectDet
                           {c.code || "Chưa có mã"}
                           {c.partner ? ` · ${c.partner}` : ""}
                         </p>
+                      </td>
+                      <td className="px-3 py-2.5 text-center">
+                        <FileCountButton count={c.fileCount} warn={completed} onClick={() => setFilesOf(c)} />
                       </td>
                       <td className="whitespace-nowrap px-3 py-2.5 text-center text-xs">{monthOf(c.performedAt)}</td>
                       <td className="whitespace-nowrap px-3 py-2.5 text-right font-medium tabular-nums">{formatVnd(c.value, false)}</td>
@@ -177,6 +219,7 @@ export function FinancePanel({ project, data, onChanged }: { project: ProjectDet
         onSaved={onChanged}
         onDelete={setDeleting}
       />
+      <ContractFilesModal contract={filesOf} onClose={() => setFilesOf(null)} onChanged={onChanged} />
       <ConfirmDialog
         open={!!deleting}
         onClose={() => setDeleting(null)}
@@ -185,7 +228,8 @@ export function FinancePanel({ project, data, onChanged }: { project: ProjectDet
         confirmLabel="Xoá hợp đồng"
         message={
           <>
-            Hợp đồng <b className="text-foreground">{deleting?.name}</b> và số liệu chi phí, thanh toán của nó sẽ bị xoá ở mọi nơi.
+            Hợp đồng <b className="text-foreground">{deleting?.name}</b> cùng số liệu chi phí, thanh toán
+            {deleting?.fileCount ? ` và ${deleting.fileCount} file PDF` : ""} của nó sẽ bị xoá ở mọi nơi.
           </>
         }
         onConfirm={async () => {

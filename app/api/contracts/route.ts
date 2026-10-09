@@ -7,7 +7,7 @@ import { contractDto, toDbAmounts } from "@/lib/contracts";
 import { contractList } from "@/lib/contract-queries";
 import { createContractSchema } from "@/lib/validations";
 
-const projectBrief = { select: { id: true, name: true, color: true } } as const;
+const projectBrief = { select: { id: true, name: true, color: true, status: true } } as const;
 
 /** GET /api/contracts: see contractList for the query parameters. */
 export async function GET(req: NextRequest) {

@@ -1,7 +1,7 @@
 import type { Prisma } from "@prisma/client";
 import { prisma } from "./prisma";
 import { projectSchedule } from "./stats";
-import { contractDto, summarizeContracts, type ContractProject } from "./contracts";
+import { contractDto, fileCountSelect, summarizeContracts, type ContractProject } from "./contracts";
 import { parseDate, parsePeriodType, resolvePeriod } from "./period";
 
 /**
@@ -12,7 +12,10 @@ export async function loadContracts(where: Prisma.ContractWhereInput) {
   const rows = await prisma.contract.findMany({
     where,
     orderBy: [{ performedAt: "asc" }, { createdAt: "asc" }],
-    include: { project: { select: { id: true, name: true, color: true, startDate: true, dueDate: true, createdAt: true } } },
+    include: {
+      project: { select: { id: true, name: true, color: true, status: true, startDate: true, dueDate: true, createdAt: true } },
+      ...fileCountSelect,
+    },
   });
   const projectIds = [...new Set(rows.flatMap((r) => (r.projectId ? [r.projectId] : [])))];
   const tasks = projectIds.length
@@ -31,7 +34,7 @@ export async function loadContracts(where: Prisma.ContractWhereInput) {
   return rows.map(({ project, ...c }) =>
     contractDto({
       ...c,
-      project: project ? { id: project.id, name: project.name, color: project.color, ...progressOf.get(project.id) } : null,
+      project: project ? { id: project.id, name: project.name, color: project.color, status: project.status, ...progressOf.get(project.id) } : null,
     }),
   );
 }

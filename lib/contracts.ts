@@ -6,12 +6,17 @@ export interface ContractProject {
   id: string;
   name: string;
   color: string;
+  /** ProjectStatus (contracts of completed projects should have their PDFs archived) */
+  status?: string;
   progress?: number;
   scheduleStatus?: string;
 }
 
+/** Count of attached PDFs, from `_count` (never by loading the files). */
+export const fileCountSelect = { _count: { select: { files: true } } } as const;
+
 /** API shape: amounts as numbers (VNĐ fits well within 2^53) plus derived metrics. */
-export function contractDto(c: Contract & { project?: ContractProject | null }) {
+export function contractDto(c: Contract & { project?: ContractProject | null; _count?: { files: number } }) {
   const amounts = {
     value: Number(c.value),
     trainingCost: Number(c.trainingCost),
@@ -30,6 +35,7 @@ export function contractDto(c: Contract & { project?: ContractProject | null }) 
     note: c.note,
     projectId: c.projectId,
     project: c.project ?? null,
+    fileCount: c._count?.files ?? 0,
     createdAt: c.createdAt.toISOString(),
     updatedAt: c.updatedAt.toISOString(),
     ...amounts,

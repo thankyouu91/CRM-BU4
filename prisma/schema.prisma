@@ -111,6 +111,7 @@ model User {
   reviewedReports TaskReport[]    @relation("ReportReviewer")
   notes           Note[]
   contracts       Contract[]
+  contractFiles   ContractFile[]
 }
 
 model Project {
@@ -270,7 +271,34 @@ model Contract {
   createdBy      User           @relation(fields: [createdById], references: [id])
   createdAt      DateTime       @default(now())
   updatedAt      DateTime       @updatedAt
+  files          ContractFile[]
 
   @@index([performedAt])
   @@index([projectId])
+}
+
+// Hồ sơ hợp đồng: file PDF (bản ký, bản scan) để lưu trữ và báo cáo. Bảng này
+// chỉ giữ thông tin file; nội dung nằm ở ContractFileBlob nên danh sách và
+// include không bao giờ tải các byte của file. Xoá hợp đồng thì xoá file.
+model ContractFile {
+  id           String            @id @default(cuid())
+  contractId   String
+  contract     Contract          @relation(fields: [contractId], references: [id], onDelete: Cascade)
+  name         String // tên file gốc (đã chuẩn hoá)
+  size         Int // số byte
+  mimeType     String            @default("application/pdf")
+  uploadedById String
+  uploadedBy   User              @relation(fields: [uploadedById], references: [id])
+  createdAt    DateTime          @default(now())
+  blob         ContractFileBlob?
+
+  @@index([contractId])
+}
+
+// Nội dung file, 1:1 với ContractFile, chỉ đọc/ghi qua lib/file-storage.ts
+// (có thể chuyển sang Cloudflare R2 mà không đổi phần còn lại).
+model ContractFileBlob {
+  fileId String       @id
+  file   ContractFile @relation(fields: [fileId], references: [id], onDelete: Cascade)
+  data   Bytes
 }

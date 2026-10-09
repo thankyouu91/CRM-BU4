@@ -14,6 +14,11 @@ const nextConfig = {
   poweredByHeader: false,
   // Bundle Prisma's generated client for the workerd runtime (OpenNext).
   serverExternalPackages: ["@prisma/client", ".prisma/client"],
+  experimental: {
+    // Request bodies pass through middleware, which cuts them at 10 MB by default;
+    // contract PDF uploads take up to MAX_UPLOAD_BYTES (lib/contract-files.ts).
+    middlewareClientMaxBodySize: "26mb",
+  },
   async headers() {
     return [{ source: "/:path*", headers: securityHeaders }];
   },
