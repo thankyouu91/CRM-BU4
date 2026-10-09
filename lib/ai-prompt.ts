@@ -1,93 +1,81 @@
-// Builds structured, ready-to-paste prompts in Vietnamese from dashboard data.
-// Feature #8: the dashboard packages project/report numbers into a high-quality
-// prompt that the user copies into Claude.ai / Claude Code to generate a report —
-// no Claude API key or usage cost required.
+// Feature #8 — AI-assisted reporting without the Claude API.
+// The dashboard packages real report numbers into a structured Vietnamese prompt
+// that the user sends to Claude (claude.ai or Claude Code). No API key, no usage
+// cost on this server. Claude's answer can be pasted back to be presented or
+// exported as slides (see lib/deck-model.ts parseOutline).
 
-import { PROJECT_STATUS } from "./constants";
-
-export interface AIPromptProject {
-  name: string;
-  status: string;
-  progress: number;
-  totalTasks: number;
-  doneTasks: number;
-  overdueTasks: number;
-  members: number;
-}
-
-export interface AIPromptStats {
-  periodLabel: string;
-  totalProjects: number;
-  activeProjects: number;
-  totalTasks: number;
-  doneTasks: number;
-  inProgressTasks: number;
-  overdueTasks: number;
-  completionRate: number;
-  reportsCount: number;
-  hoursLogged: number;
-}
+import { PROJECT_STATUS, TASK_STATUS } from "./constants";
+import type { Summary } from "./stats";
 
 export type AIPromptKind = "executive-summary" | "status-report" | "slide-deck" | "risk-analysis";
 
-const KIND_INSTRUCTIONS: Record<AIPromptKind, string> = {
+export const AI_PROMPT_KINDS: { value: AIPromptKind; label: string; desc: string }[] = [
+  { value: "executive-summary", label: "Tóm tắt cho lãnh đạo", desc: "250–350 từ: tiến độ, thành tựu, rủi ro, đề xuất" },
+  { value: "status-report", label: "Báo cáo tiến độ chi tiết", desc: "6 phần có cấu trúc, dùng gửi email/lưu hồ sơ" },
+  { value: "slide-deck", label: "Dàn ý trình chiếu", desc: "6–8 slide — dán lại đây để trình chiếu & xuất PPTX" },
+  { value: "risk-analysis", label: "Phân tích rủi ro", desc: "Điểm nghẽn, mức ảnh hưởng, biện pháp giảm thiểu" },
+];
+
+const TASKS: Record<AIPromptKind, string> = {
   "executive-summary":
-    "Viết một BÁO CÁO TÓM TẮT CHO BAN LÃNH ĐẠO (executive summary) khoảng 250-350 từ. Nêu bật tiến độ tổng thể, thành tựu chính, rủi ro và đề xuất hành động. Văn phong trang trọng, súc tích.",
+    "Viết BÁO CÁO TÓM TẮT CHO BAN LÃNH ĐẠO dài 250–350 từ. Nêu tiến độ tổng thể, kết quả nổi bật, rủi ro chính và 2–3 đề xuất hành động cụ thể. Văn phong trang trọng, súc tích.",
   "status-report":
-    "Viết một BÁO CÁO TIẾN ĐỘ chi tiết có cấu trúc: (1) Tổng quan, (2) Tiến độ theo từng dự án, (3) Công việc đã hoàn thành, (4) Công việc đang thực hiện, (5) Vấn đề & rủi ro, (6) Kế hoạch giai đoạn tới. Dùng gạch đầu dòng khi phù hợp.",
+    "Viết BÁO CÁO TIẾN ĐỘ có cấu trúc gồm 6 phần với tiêu đề rõ ràng: (1) Tổng quan, (2) Tiến độ theo từng dự án, (3) Công việc đã hoàn thành, (4) Công việc đang thực hiện, (5) Vấn đề & rủi ro, (6) Kế hoạch giai đoạn tới. Dùng gạch đầu dòng khi phù hợp.",
   "slide-deck":
-    "Tạo DÀN Ý TRÌNH CHIẾU (slide deck) 6-8 slide. Mỗi slide gồm tiêu đề ngắn gọn và 3-5 bullet. Slide mở đầu là tổng quan, các slide giữa theo từng chủ đề/dự án, slide cuối là đề xuất & bước tiếp theo. Định dạng rõ ràng theo từng slide.",
+    "Tạo DÀN Ý TRÌNH CHIẾU gồm 6–8 slide. BẮT BUỘC dùng đúng định dạng sau cho mỗi slide (để hệ thống tự dựng slide):\n## Slide 1: <tiêu đề ngắn>\n- <ý chính 1>\n- <ý chính 2>\nMỗi slide 3–5 gạch đầu dòng, mỗi dòng không quá 20 từ. Slide đầu là tổng quan, các slide giữa theo chủ đề/dự án, slide cuối là đề xuất & bước tiếp theo. Không thêm lời dẫn ngoài các slide.",
   "risk-analysis":
-    "Phân tích RỦI RO & ĐIỂM NGHẼN dựa trên các task quá hạn và tiến độ chậm. Với mỗi rủi ro: mô tả, mức độ ảnh hưởng, nguyên nhân khả dĩ, và biện pháp giảm thiểu đề xuất.",
+    "PHÂN TÍCH RỦI RO & ĐIỂM NGHẼN dựa trên công việc quá hạn, tiến độ chậm và khối lượng nhân sự. Với mỗi rủi ro nêu: mô tả, mức độ ảnh hưởng (Cao/Trung bình/Thấp), nguyên nhân khả dĩ (ghi rõ là giả định nếu số liệu không cho biết), biện pháp giảm thiểu và người/bộ phận nên phụ trách.",
 };
 
-export function buildReportPrompt(
-  kind: AIPromptKind,
-  stats: AIPromptStats,
-  projects: AIPromptProject[],
-): string {
-  const lines: string[] = [];
-  lines.push("Bạn là một trợ lý phân tích & báo cáo quản lý dự án chuyên nghiệp.");
-  lines.push("");
-  lines.push(`NHIỆM VỤ: ${KIND_INSTRUCTIONS[kind]}`);
-  lines.push("");
-  lines.push(`KỲ BÁO CÁO: ${stats.periodLabel}`);
-  lines.push("");
-  lines.push("SỐ LIỆU TỔNG HỢP:");
-  lines.push(`- Tổng số dự án: ${stats.totalProjects} (đang hoạt động: ${stats.activeProjects})`);
-  lines.push(`- Tổng số công việc: ${stats.totalTasks}`);
-  lines.push(`- Đã hoàn thành: ${stats.doneTasks}`);
-  lines.push(`- Đang thực hiện: ${stats.inProgressTasks}`);
-  lines.push(`- Quá hạn: ${stats.overdueTasks}`);
-  lines.push(`- Tỷ lệ hoàn thành chung: ${stats.completionRate}%`);
-  lines.push(`- Số báo cáo tiến độ đã ghi nhận: ${stats.reportsCount}`);
-  lines.push(`- Tổng giờ công đã ghi: ${stats.hoursLogged} giờ`);
-  lines.push("");
-  lines.push("CHI TIẾT THEO DỰ ÁN:");
-  if (projects.length === 0) {
-    lines.push("- (Không có dữ liệu dự án trong kỳ này)");
-  } else {
-    projects.forEach((p, i) => {
-      const statusLabel =
-        PROJECT_STATUS[p.status as keyof typeof PROJECT_STATUS]?.label ?? p.status;
-      lines.push(
-        `${i + 1}. ${p.name} — Trạng thái: ${statusLabel}; Tiến độ: ${p.progress}%; ` +
-          `Công việc: ${p.doneTasks}/${p.totalTasks} hoàn thành, ${p.overdueTasks} quá hạn; ` +
-          `Thành viên: ${p.members}`,
-      );
-    });
-  }
-  lines.push("");
-  lines.push("YÊU CẦU ĐẦU RA:");
-  lines.push("- Viết hoàn toàn bằng tiếng Việt, văn phong chuyên nghiệp.");
-  lines.push("- Chỉ sử dụng số liệu được cung cấp ở trên, không bịa thêm.");
-  lines.push("- Nếu một chỉ số bằng 0 hoặc thiếu, hãy nêu rõ thay vì suy diễn.");
-  return lines.join("\n");
-}
+const label = <T extends Record<string, { label: string }>>(map: T, key: string) => (map as Record<string, { label: string }>)[key]?.label ?? key;
 
-export const AI_PROMPT_KINDS: { value: AIPromptKind; label: string; desc: string }[] = [
-  { value: "executive-summary", label: "Tóm tắt lãnh đạo", desc: "Báo cáo ngắn gọn cho ban lãnh đạo" },
-  { value: "status-report", label: "Báo cáo tiến độ", desc: "Báo cáo chi tiết có cấu trúc đầy đủ" },
-  { value: "slide-deck", label: "Dàn ý trình chiếu", desc: "Dàn ý 6-8 slide để thuyết trình" },
-  { value: "risk-analysis", label: "Phân tích rủi ro", desc: "Phân tích điểm nghẽn & rủi ro" },
-];
+export function buildReportPrompt(kind: AIPromptKind, s: Summary, scopeLabel: string): string {
+  const k = s.kpis;
+  const L: string[] = [];
+  L.push("Bạn là chuyên gia phân tích và lập báo cáo quản lý dự án.");
+  L.push("");
+  L.push(`NHIỆM VỤ: ${TASKS[kind]}`);
+  L.push("");
+  L.push(`PHẠM VI: ${scopeLabel}`);
+  L.push(`KỲ BÁO CÁO: ${s.period.label}`);
+  L.push("");
+  L.push("1. SỐ LIỆU TỔNG HỢP");
+  L.push(`- Dự án: ${k.totalProjects} (đang thực hiện: ${k.activeProjects}); tiến độ trung bình: ${k.overallProgress}%`);
+  L.push(`- Công việc trong kỳ: ${k.totalTasks}; hoàn thành trong kỳ: ${k.doneTasks} (${k.completionRate}%); đang thực hiện: ${k.inProgressTasks}; quá hạn: ${k.overdueTasks}`);
+  L.push(`- Báo cáo tiến độ đã gửi: ${k.reportsCount}; tổng giờ công: ${k.hoursLogged} giờ`);
+  L.push(`- Phân bổ trạng thái: ${s.statusDistribution.map((d) => `${label(TASK_STATUS, d.status)} ${d.count}`).join(", ")}`);
+  L.push("");
+  L.push("2. CHI TIẾT DỰ ÁN");
+  if (!s.projects.length) L.push("- (Không có dự án trong phạm vi)");
+  s.projects.forEach((p, i) =>
+    L.push(
+      `${i + 1}. ${p.name} — ${label(PROJECT_STATUS, p.status)}; tiến độ ${p.progress}%; ${p.doneTasks}/${p.totalTasks} việc xong; ${p.overdueTasks} quá hạn; ${p.members} thành viên; chủ dự án: ${p.ownerName}` +
+        (p.dueDate ? `; hạn ${new Date(p.dueDate).toLocaleDateString("vi-VN")}` : ""),
+    ),
+  );
+  L.push("");
+  L.push("3. NHÂN SỰ (công việc được giao trong kỳ)");
+  if (!s.people.length) L.push("- (Không có dữ liệu)");
+  s.people.slice(0, 10).forEach((p) =>
+    L.push(`- ${p.name}${p.jobTitle ? ` (${p.jobTitle})` : ""}: giao ${p.assigned}, xong ${p.done}, đang làm ${p.inProgress}, quá hạn ${p.overdue}; ${p.reports} báo cáo, ${p.hours} giờ`),
+  );
+  if (s.upcoming.length) {
+    L.push("");
+    L.push("4. HẠN CHÓT TRONG 14 NGÀY TỚI");
+    s.upcoming.forEach((u) =>
+      L.push(`- ${new Date(u.dueDate).toLocaleDateString("vi-VN")}: ${u.title} (${u.projectName}${u.assigneeName ? `, PIC: ${u.assigneeName}` : ""}; ưu tiên ${u.priority})`),
+    );
+  }
+  if (s.recentReports.length) {
+    L.push("");
+    L.push("5. TRÍCH BÁO CÁO GẦN ĐÂY CỦA NGƯỜI THỰC HIỆN");
+    s.recentReports.slice(0, 8).forEach((r) => L.push(`- ${r.authorName} · ${r.taskTitle} (${r.progress}%): "${r.content}"`));
+  }
+  L.push("");
+  L.push("YÊU CẦU ĐẦU RA:");
+  L.push("- Viết hoàn toàn bằng tiếng Việt, văn phong chuyên nghiệp.");
+  L.push("- Chỉ dùng số liệu ở trên; không bịa thêm số liệu, tên người hay sự kiện.");
+  L.push("- Khi suy luận nguyên nhân hoặc đề xuất, ghi rõ đó là nhận định/đề xuất.");
+  L.push("- Nếu chỉ số bằng 0 hoặc thiếu, nêu rõ thay vì suy diễn.");
+  return L.join("\n");
+}

@@ -257,33 +257,27 @@ function renderBody(c: Ctx, slide: Slide, s: SlideModel) {
           catAxisLabelFontSize: 10,
         },
       );
+      // Drawn with shapes + text rather than a table: some viewers (LibreOffice,
+      // Google Slides) ignore table cell fills and fall back to a white style.
       const top = [...s.people].sort((a, b) => b.done - a.done || b.hours - a.hours).slice(0, 6);
-      const headerOpts = { bold: true, color: hex(t.muted), fontSize: pt(13), fontFace: FONT };
-      const cell = (v: string, align: "left" | "right" = "left", bold = false) => ({
-        text: v,
-        options: { align, bold, color: hex(t.ink), fontSize: pt(15), fontFace: FONT },
+      const tx = LEFT + chartW + 24;
+      const rowH = 64;
+      panel(c, slide, { x: tx, y: TOP, w: 400, h: 460 });
+      text(slide, "Nhân sự", { x: tx + 22, y: TOP + 18, w: 200, h: 20 }, { px: 13, bold: true, color: hex(t.muted) });
+      text(slide, "Hoàn thành", { x: tx + 214, y: TOP + 18, w: 80, h: 20 }, { px: 13, bold: true, color: hex(t.muted), align: "right" });
+      text(slide, "Giờ công", { x: tx + 300, y: TOP + 18, w: 78, h: 20 }, { px: 13, bold: true, color: hex(t.muted), align: "right" });
+      top.forEach((p, i) => {
+        const y = TOP + 50 + i * rowH;
+        rect(c, slide, { x: tx + 1, y: y - 1, w: 398, h: 1 }, t.panelBorder, false);
+        slide.addShape(c.pres.ShapeType.ellipse, { x: inch(tx + 22), y: inch(y + 15), w: inch(34), h: inch(34), fill: { color: hex(p.avatarColor) }, line: { color: hex(p.avatarColor), width: 0 } });
+        text(slide, initials(p.name), { x: tx + 22, y: y + 15, w: 34, h: 34 }, { px: 12, bold: true, color: "FFFFFF", align: "center", valign: "middle" });
+        text(slide, [
+          { text: p.name, options: { bold: true, color: hex(t.ink), fontSize: pt(16), breakLine: true } },
+          { text: p.jobTitle ?? "", options: { color: hex(t.muted), fontSize: pt(12) } },
+        ], { x: tx + 68, y: y + 12, w: 150, h: 42 }, { fit: "shrink" });
+        text(slide, String(p.done), { x: tx + 214, y: y + 20, w: 80, h: 26 }, { px: 20, bold: true, color: hex(t.ink), align: "right" });
+        text(slide, String(p.hours), { x: tx + 300, y: y + 22, w: 78, h: 24 }, { px: 16, color: hex(t.inkSecondary), align: "right" });
       });
-      slide.addTable(
-        [
-          [
-            { text: "Nhân sự", options: headerOpts },
-            { text: "Hoàn thành", options: { ...headerOpts, align: "right" as const } },
-            { text: "Giờ công", options: { ...headerOpts, align: "right" as const } },
-          ],
-          ...top.map((p) => [cell(p.name, "left", true), cell(String(p.done), "right", true), cell(String(p.hours), "right")]),
-        ],
-        {
-          x: inch(LEFT + chartW + 24),
-          y: inch(TOP),
-          w: inch(400),
-          colW: [inch(220), inch(90), inch(90)],
-          rowH: inch(54),
-          fill: { color: hex(t.panel) },
-          border: { type: "solid", pt: 0.5, color: hex(t.panelBorder) },
-          valign: "middle",
-          margin: 0.08,
-        },
-      );
       return;
     }
 

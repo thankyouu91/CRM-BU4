@@ -378,7 +378,7 @@ export function SlideView({
             <span style={{ fontSize: 16, fontWeight: 700, letterSpacing: 3, textTransform: "uppercase", color: t.accent }}>WorkHub · Báo cáo</span>
           </Reveal>
           <Reveal i={1} ctx={ctx}>
-            <h1 style={{ fontSize: 66, fontWeight: 700, lineHeight: 1.12, marginTop: 22, color: t.ink }}>{slide.title}</h1>
+            <h1 style={{ fontSize: 66, fontWeight: 700, lineHeight: 1.12, marginTop: 22, color: t.ink, textWrap: "balance" }}>{slide.title}</h1>
           </Reveal>
           <Reveal i={2} ctx={ctx}>
             <p style={{ fontSize: 26, color: t.inkSecondary, marginTop: 22 }}>{slide.subtitle}</p>
