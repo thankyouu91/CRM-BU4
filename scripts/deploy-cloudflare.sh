@@ -12,7 +12,7 @@
 #   1. resolve the account   2. register the workers.dev subdomain
 #   3. create the Hyperdrive config (caching off) from HYPERDRIVE_ORIGIN_URL
 #   4. write its id into wrangler.jsonc   5. generate JWT_SECRET once
-#   6. build with OpenNext and deploy      7. wait for the public URL
+#   6. R2 buckets (skipped while R2 is off) 7. build with OpenNext, deploy, wait for the URL
 #
 # Optional: WORKERS_SUBDOMAIN (default bu4cdimex; only used when the account has no
 # workers.dev subdomain yet), HYPERDRIVE_NAME (default crm-db).
@@ -107,16 +107,52 @@ else
   echo "  JWT_SECRET generated (uploaded with this deploy, never printed)"
 fi
 
-echo "▶ 6/7 Build & deploy"
+echo "▶ 6/7 R2 buckets"
+# Bucket names come from the r2_buckets entries in wrangler.jsonc.
+BUCKETS="$(node -e 'const t=require("fs").readFileSync("wrangler.jsonc","utf8");console.log([...t.matchAll(/"bucket_name":\s*"([^"]+)"/g)].map(m=>m[1]).join(" "))')"
+WRANGLER_CONFIG="wrangler.jsonc"
+r2list="$(cf "$API/accounts/$CLOUDFLARE_ACCOUNT_ID/r2/buckets")"
+if [ "$(printf '%s' "$r2list" | json "j.success")" = "true" ]; then
+  for b in $BUCKETS; do
+    if [ "$(printf '%s' "$r2list" | json "((j.result&&j.result.buckets)||[]).some(x=>x.name==='$b')")" = "true" ]; then
+      echo "  $b (exists)"
+    else
+      res="$(cf -X POST "$API/accounts/$CLOUDFLARE_ACCOUNT_ID/r2/buckets" -d "{\"name\":\"$b\"}")"
+      if [ "$(printf '%s' "$res" | json "j.success")" != "true" ]; then
+        echo "  Failed to create R2 bucket $b: $(printf '%s' "$res" | cf_errors)" >&2
+        exit 1
+      fi
+      echo "  $b (created)"
+    fi
+  done
+else
+  # Typically 10042 "Please enable R2 through the Cloudflare Dashboard".
+  echo "  R2 unavailable ($(printf '%s' "$r2list" | cf_errors)): deploying without r2_buckets."
+  echo "  Contract PDFs stay in Postgres and backups are skipped until R2 is enabled and this script runs again."
+  WRANGLER_CONFIG=".wrangler-no-r2.jsonc"
+  node -e '
+    const fs = require("fs");
+    const text = fs.readFileSync("wrangler.jsonc", "utf8");
+    const next = text.replace(/\n\s*"r2_buckets":\s*\[[^\]]*\],/, "");
+    if (next === text) { console.error("  r2_buckets block not found in wrangler.jsonc"); process.exit(1); }
+    fs.writeFileSync(".wrangler-no-r2.jsonc", next);'
+fi
+
+cleanup() {
+  [ -z "$SECRETS_FILE" ] || rm -f "$SECRETS_FILE"
+  rm -f .wrangler-no-r2.jsonc
+}
+
+echo "▶ 7/7 Build & deploy"
 npx opennextjs-cloudflare build
 if [ -n "$SECRETS_FILE" ]; then
-  npx wrangler deploy --secrets-file "$SECRETS_FILE"
+  npx wrangler deploy --config "$WRANGLER_CONFIG" --secrets-file "$SECRETS_FILE"
 else
-  npx wrangler deploy
+  npx wrangler deploy --config "$WRANGLER_CONFIG"
 fi
 
 URL="https://$WORKER.$SUB.workers.dev"
-echo "▶ 7/7 Waiting for $URL"
+echo "  Waiting for $URL"
 code=000
 for _ in $(seq 1 36); do
   code="$(curl -s -o /dev/null -w '%{http_code}' "$URL/login" || true)"

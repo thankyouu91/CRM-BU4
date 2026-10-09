@@ -5,6 +5,7 @@ import { accessFrom, accessSelect } from "@/lib/rbac";
 import { withWorkspace } from "@/lib/queries";
 import { resolveTaskState } from "@/lib/task-rules";
 import { reviewReportSchema } from "@/lib/validations";
+import { audit } from "@/lib/audit";
 
 type Ctx = { params: Promise<{ id: string }> };
 
@@ -39,6 +40,16 @@ export async function PATCH(req: NextRequest, ctx: Ctx) {
         });
       }
     });
+    await audit(
+      { id: me.id, name: me.name },
+      {
+        action: "task_report.review",
+        entityType: "task_report",
+        entityId: report.id,
+        summary: `Duyệt báo cáo công việc “${report.task.title}”${data.approveTask ? " và đánh dấu hoàn thành" : ""}`,
+        details: { taskId: report.taskId, approveTask: !!data.approveTask, reviewNote: data.reviewNote?.trim() || null },
+      },
+    );
     return ok(await withWorkspace(req, me, report.task.projectId, { ok: true }));
   });
 }

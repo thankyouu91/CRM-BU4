@@ -1,4 +1,5 @@
 import type { NextRequest } from "next/server";
+import type { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { auth, badRequest, forbidden, handle, notFound, ok, unauthorized } from "@/lib/api";
 import { hasPermission } from "@/lib/permissions";
@@ -6,6 +7,7 @@ import { canAccessProject } from "@/lib/rbac";
 import { contractDto, fileCountSelect, toDbAmounts } from "@/lib/contracts";
 import { updateContractSchema } from "@/lib/validations";
 import { deleteFiles } from "@/lib/file-storage";
+import { audit, changedFields } from "@/lib/audit";
 
 type Ctx = { params: Promise<{ id: string }> };
 
@@ -15,9 +17,8 @@ export async function PATCH(req: NextRequest, ctx: Ctx) {
     const me = await auth();
     if (!me) return unauthorized();
     if (!hasPermission(me, "FINANCE_MANAGE")) return forbidden("Bạn chưa được cấp quyền “Hợp đồng & chi phí”");
-    if (!(await prisma.contract.findUnique({ where: { id: params.id }, select: { id: true } }))) {
-      return notFound("Không tìm thấy hợp đồng");
-    }
+    const before = await prisma.contract.findUnique({ where: { id: params.id } });
+    if (!before) return notFound("Không tìm thấy hợp đồng");
 
     const d = updateContractSchema.parse(await req.json());
     if (d.projectId && !(await canAccessProject(me, d.projectId))) {
@@ -40,6 +41,33 @@ export async function PATCH(req: NextRequest, ctx: Ctx) {
       },
       include: { project: { select: { id: true, name: true, color: true, status: true } }, ...fileCountSelect },
     });
+    const changes = changedFields(before, contract, [
+      "code",
+      "name",
+      "partner",
+      "value",
+      "performedAt",
+      "status",
+      "trainingCost",
+      "examCost",
+      "otherCost",
+      "expectedMargin",
+      "collected",
+      "note",
+      "projectId",
+    ]);
+    if (Object.keys(changes).length) {
+      await audit(
+        { id: me.id, name: me.name },
+        {
+          action: "contract.update",
+          entityType: "contract",
+          entityId: contract.id,
+          summary: `Sửa hợp đồng “${contract.code ?? contract.name}”`,
+          details: changes as Prisma.InputJsonValue,
+        },
+      );
+    }
     return ok({ contract: contractDto(contract) });
   });
 }
@@ -49,10 +77,29 @@ export async function DELETE(_req: NextRequest, ctx: Ctx) {
   const me = await auth();
   if (!me) return unauthorized();
   if (!hasPermission(me, "FINANCE_MANAGE")) return forbidden("Bạn chưa được cấp quyền “Hợp đồng & chi phí”");
-  const existing = await prisma.contract.findUnique({ where: { id: params.id }, select: { id: true, files: { select: { id: true } } } });
+  const existing = await prisma.contract.findUnique({
+    where: { id: params.id },
+    select: { id: true, code: true, name: true, partner: true, value: true, files: { select: { id: true } } },
+  });
   if (!existing) return notFound("Không tìm thấy hợp đồng");
   // Its PDF files go with it (cascade).
   await prisma.contract.delete({ where: { id: params.id } });
   await deleteFiles(existing.files.map((f) => f.id));
+  await audit(
+    { id: me.id, name: me.name },
+    {
+      action: "contract.delete",
+      entityType: "contract",
+      entityId: existing.id,
+      summary: `Xoá hợp đồng “${existing.code ?? existing.name}”`,
+      details: {
+        code: existing.code,
+        name: existing.name,
+        partner: existing.partner,
+        value: Number(existing.value),
+        files: existing.files.length,
+      },
+    },
+  );
   return ok({ ok: true });
 }

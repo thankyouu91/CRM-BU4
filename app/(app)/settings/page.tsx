@@ -1,4 +1,5 @@
-import { KeyRound, Palette, ShieldCheck, UserRound } from "lucide-react";
+import Link from "next/link";
+import { ChevronRight, History, KeyRound, Palette, ShieldCheck, UserRound } from "lucide-react";
 import { getCurrentUser } from "@/lib/session";
 import { prisma } from "@/lib/prisma";
 import { Card, CardBody, CardHeader } from "@/components/ui/card";
@@ -7,8 +8,10 @@ import { Badge, RoleBadge } from "@/components/ui/badge";
 import { PageHeader } from "@/components/ui/misc";
 import { ChangePasswordForm } from "@/components/change-password-form";
 import { ThemeChoice } from "./theme-choice";
+import { BackupsCard } from "./backups-card";
 import { formatDateTime } from "@/lib/utils";
 import { PERMISSION_INFO } from "@/lib/permissions";
+import { isAdmin } from "@/lib/rbac";
 
 export const metadata = { title: "Cài đặt" };
 
@@ -90,6 +93,22 @@ export default async function SettingsPage() {
             </CardBody>
           </Card>
         </div>
+
+        {isAdmin(me) && (
+          <Link href="/settings/audit-log" className="block rounded-2xl transition-shadow hover:shadow-md">
+            <Card className="flex items-center gap-4 p-5">
+              <div className="rounded-xl bg-primary/10 p-2.5 text-primary">
+                <History className="h-5 w-5" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="font-medium">Nhật ký thao tác</p>
+                <p className="text-sm text-muted-foreground">Xem ai đã tạo, sửa, xoá dữ liệu, đổi quyền hay đăng nhập, lúc nào và từ đâu. Chỉ quản trị viên thấy mục này.</p>
+              </div>
+              <ChevronRight className="h-5 w-5 shrink-0 text-muted-foreground" />
+            </Card>
+          </Link>
+        )}
+        {isAdmin(me) && <BackupsCard />}
 
         <Card>
           <CardHeader title={<span className="flex items-center gap-2"><Palette className="h-4 w-4 text-primary" /> Giao diện</span>} description="Áp dụng trên trình duyệt này." />

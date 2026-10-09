@@ -5,6 +5,7 @@ import { hashPassword, validatePasswordStrength, verifyPassword } from "@/lib/pa
 import { attachSession } from "@/lib/issue-session";
 import { changePasswordSchema } from "@/lib/validations";
 import { rateLimit } from "@/lib/rate-limit";
+import { audit } from "@/lib/audit";
 
 export async function POST(req: NextRequest) {
   const me = await auth();
@@ -46,6 +47,10 @@ export async function POST(req: NextRequest) {
       tokenVersion: { increment: 1 },
     },
   });
+  await audit(
+    { id: me.id, name: me.name },
+    { action: "auth.password_change", entityType: "user", entityId: me.id, summary: `${me.name} đổi mật khẩu` },
+  );
 
   return attachSession(NextResponse.json({ ok: true }), updated);
 }

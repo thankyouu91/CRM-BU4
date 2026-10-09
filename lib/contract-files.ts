@@ -3,20 +3,22 @@
 // lib/file-storage.ts, apart from the ContractFile rows.
 
 /**
- * Per-file cap. Bytes go through the Worker (128 MB memory, 100 MB request body)
- * and Hyperdrive (no size limit, 60 s per statement); downloads are streamed in
- * slices, so 10 MB per file keeps an upload well inside the Worker's memory.
+ * Per-file cap. Bytes go through the Worker (128 MB memory, 100 MB request body):
+ * an upload holds the multipart body and the file's bytes, so 25 MB per file
+ * stays well inside the Worker's memory. Downloads are streamed.
  */
-export const MAX_FILE_BYTES = 10 * 1024 * 1024;
+export const MAX_FILE_BYTES = 25 * 1024 * 1024;
 export const MAX_FILES_PER_CONTRACT = 20;
-/** One upload request (the UI sends one file per request). */
-export const MAX_UPLOAD_BYTES = 25 * 1024 * 1024;
+/** One upload request (the UI sends one file per request): one file plus multipart overhead. */
+export const MAX_UPLOAD_BYTES = MAX_FILE_BYTES + 1024 * 1024;
 /**
- * All contract files together. They live in the Supabase database for now
- * (500 MB on the free plan, shared with the app's data), so uploads stop well
- * before the database fills up. Moving the bytes to R2 lifts this limit.
+ * All contract files together while they live in the Supabase database (500 MB
+ * on the free plan, shared with the app's data), so uploads stop well before
+ * the database fills up.
  */
 export const STORAGE_LIMIT_BYTES = 300 * 1024 * 1024;
+/** All contract files together in Cloudflare R2 (10 GB free), with headroom left. */
+export const R2_STORAGE_LIMIT_BYTES = 9 * 1024 * 1024 * 1024;
 
 export interface ContractFileDto {
   id: string;
@@ -80,7 +82,8 @@ export function cleanFileName(raw: string): string {
 export function formatFileSize(bytes: number): string {
   if (bytes < 1024) return `${bytes} B`;
   if (bytes < 1024 * 1024) return `${Math.max(1, Math.round(bytes / 1024))} KB`;
-  return `${(bytes / (1024 * 1024)).toLocaleString("vi-VN", { maximumFractionDigits: 1 })} MB`;
+  if (bytes < 1024 * 1024 * 1024) return `${(bytes / (1024 * 1024)).toLocaleString("vi-VN", { maximumFractionDigits: 1 })} MB`;
+  return `${(bytes / (1024 * 1024 * 1024)).toLocaleString("vi-VN", { maximumFractionDigits: 1 })} GB`;
 }
 
 /**

@@ -5,6 +5,7 @@ import { canCreateProject } from "@/lib/rbac";
 import { listProjects } from "@/lib/queries";
 import { resolveMemberRoles } from "@/lib/project-members";
 import { createProjectSchema } from "@/lib/validations";
+import { audit } from "@/lib/audit";
 
 export async function GET() {
   const me = await auth();
@@ -35,6 +36,16 @@ export async function POST(req: NextRequest) {
         members: { create: [...roles].map(([userId, role]) => ({ userId, role })) },
       },
     });
+    await audit(
+      { id: me.id, name: me.name },
+      {
+        action: "project.create",
+        entityType: "project",
+        entityId: project.id,
+        summary: `Tạo dự án “${project.name}”`,
+        details: { status: project.status, members: roles.size },
+      },
+    );
     return created({ project });
   });
 }

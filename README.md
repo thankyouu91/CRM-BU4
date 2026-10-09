@@ -50,12 +50,12 @@ Chỉ người có quyền **Hợp đồng & chi phí** thấy mục này (quả
 
 #### Hồ sơ hợp đồng (PDF)
 
-- Mỗi hợp đồng lưu được tối đa **20 file PDF**, mỗi file ≤ **10 MB** (bản ký, phụ lục, biên bản nghiệm thu): mở form hợp đồng → mục *Hồ sơ hợp đồng (PDF)* → kéo thả hoặc chọn file; hợp đồng đang tạo mới thì file được tải lên ngay sau khi lưu. Chỉ nhận file PDF thật (kiểm tra nội dung `%PDF-`, không chỉ đuôi file). Bấm tên file để xem trong tab mới, hoặc tải về / xoá.
+- Mỗi hợp đồng lưu được tối đa **20 file PDF**, mỗi file ≤ **25 MB** (bản ký, phụ lục, biên bản nghiệm thu): mở form hợp đồng → mục *Hồ sơ hợp đồng (PDF)* → kéo thả hoặc chọn file; hợp đồng đang tạo mới thì file được tải lên ngay sau khi lưu. Chỉ nhận file PDF thật (kiểm tra nội dung `%PDF-`, không chỉ đuôi file). Bấm tên file để xem trong tab mới, hoặc tải về / xoá.
 - **Dự án đã hoàn thành:** tab *Hợp đồng & chi phí* của dự án liệt kê các hợp đồng chưa có PDF, mỗi dòng có nút *Tải PDF lên*.
 - Trang Hợp đồng & chi phí: cột **File HĐ** (bấm để xem / tải file lên) và bộ lọc *Dự án xong, chưa có PDF*, *Chưa có file PDF*, *Đã có file PDF*; file Excel xuất ra có cột *File HĐ* (“Có (n)” / “Chưa”), dán lại vào trang vẫn nhập được.
 - Trung tâm báo cáo: cột *Hồ sơ PDF* (số HĐ đã có file / tổng số HĐ) theo từng dự án và danh sách dự án đã hoàn thành còn thiếu PDF (tính trên mọi hợp đồng của dự án, không theo kỳ); prompt AI cũng có số liệu này.
 - Quyền giống dữ liệu hợp đồng: chỉ người có quyền *Hợp đồng & chi phí*. Xoá hợp đồng thì xoá luôn file của nó; xoá dự án vẫn giữ hợp đồng và file.
-- **Lưu trữ:** file nằm trong Postgres (bảng `ContractFile` + `ContractFileBlob`, đọc/ghi qua `lib/file-storage.ts`), tổng tối đa **300 MB** để không làm đầy database Supabase Free (500 MB). Cần nhiều hơn thì bật **Cloudflare R2** và chuyển `lib/file-storage.ts` sang R2; phần còn lại không đổi.
+- **Lưu trữ:** file nằm trên **Cloudflare R2** (bucket `crm-contract-files`, binding `CONTRACT_FILES`, đọc/ghi qua `lib/file-storage.ts`), tổng tối đa **9 GB** (R2 miễn phí 10 GB). Khi tài khoản chưa bật R2, file được lưu trong Postgres (bảng `ContractFileBlob`, tối đa **300 MB** để không làm đầy Supabase Free); file cũ trong Postgres được chuyển sang R2 ở lần mở đầu tiên sau khi bật R2.
 
 ### Tiến độ theo deadline
 
@@ -139,6 +139,28 @@ Sau khi đã có Hyperdrive và ID trong `wrangler.jsonc` (cách 1, hoặc tạo
 - **Chạy thử runtime Cloudflare trên máy:** `npm run preview` dùng `localConnectionString` của binding Hyperdrive (Postgres local theo `.env.example`); muốn trỏ chỗ khác thì đặt `CLOUDFLARE_HYPERDRIVE_LOCAL_CONNECTION_STRING_HYPERDRIVE`.
 - **Supabase gói Free** tự tạm dừng project sau 7 ngày không hoạt động; bật lại trong Supabase Dashboard nếu cần.
 
+### Sao lưu & khôi phục
+
+- **Tự động mỗi ngày lúc 2:00 (giờ Việt Nam)**: cron của Worker (`worker.ts` → `lib/maintenance.ts`) xuất mọi bảng ra JSON nén vào bucket R2 `crm-backups`: `daily/YYYY-MM-DD.json.gz` (giữ 30 bản) và `monthly/YYYY-MM.json.gz` vào ngày 1 (giữ 12 bản). File PDF hợp đồng không nằm trong bản sao lưu vì đã ở R2. Cần bật R2; nếu chưa, bước sao lưu được bỏ qua (xem log của Worker).
+- **Xem và tải:** quản trị viên vào *Cài đặt → Sao lưu dữ liệu*. Mỗi lần tải được ghi vào nhật ký thao tác.
+- **Khôi phục** vào một database trống:
+  1. `DATABASE_URL="<database mới>" npx prisma migrate deploy`
+  2. `DATABASE_URL="<database mới>" node scripts/restore-backup.mjs daily-2026-10-09.json.gz` (chạy trong một transaction; từ chối nếu bảng đã có dữ liệu)
+  3. Trên Supabase, chạy lại `prisma/supabase-hardening.sql` và cấp quyền cho `crm_app`.
+- Cùng tác vụ hằng ngày xoá nhật ký thao tác cũ hơn 365 ngày.
+
+### Nhật ký thao tác
+
+- Mọi thao tác thay đổi dữ liệu quan trọng được ghi vào bảng `AuditLog`: đăng nhập (kể cả thất bại), đổi mật khẩu, tài khoản & phân quyền, dự án, hạng mục, công việc, báo cáo, hợp đồng, file hợp đồng, báo cáo tuần/tháng, tải bản sao lưu. Mỗi dòng có người thực hiện, thời gian, IP, mô tả và chi tiết trường thay đổi (không bao giờ có mật khẩu).
+- Chỉ **quản trị viên** xem được: *Cài đặt → Nhật ký thao tác* (`/settings/audit-log`), lọc theo nhóm, thao tác, người, ngày và nội dung.
+- Ghi log từ API bằng `audit(...)` trong `lib/audit.ts`; danh sách thao tác ở `lib/audit-actions.ts`. Vai trò `crm_app` chỉ có quyền đọc, thêm và xoá (theo hạn lưu trữ) trên bảng này, không sửa được dòng nào.
+
+### Kiểm thử & CI
+
+- `npm test` chạy unit test (Vitest, thư mục `tests/`) cho phân quyền, tài chính, tiến độ, báo cáo tuần/tháng, file hợp đồng và sao lưu.
+- GitHub Actions (`.github/workflows/ci.yml`) chạy trên mỗi push và pull request: lint, kiểm tra kiểu, unit test, `npm audit` cho thư viện production, build OpenNext và đóng gói Worker (dry run).
+- Thư viện có lỗ hổng được ép lên bản đã vá bằng `overrides` trong `package.json` (`postcss`, `image-size`, `deepmerge-ts`). Còn lại vài cảnh báo trong công cụ build (tailwind 3, eslint-config-next): chỉ chạy lúc build trên mã của dự án, không có trên trang thật.
+
 ### Hiệu năng
 
 - **Worker chạy cạnh database:** `placement` trong `wrangler.jsonc` đặt Worker ở `aws:ap-southeast-1` (Singapore, cùng vùng Supabase), mỗi truy vấn chỉ còn vài ms. Đổi vùng Supabase thì đổi luôn giá trị này.
@@ -154,7 +176,9 @@ Sau khi đã có Hyperdrive và ID trong `wrangler.jsonc` (cách 1, hoặc tạo
 - Tài khoản mới hoặc bị đặt lại mật khẩu **bắt buộc đổi mật khẩu** ở lần đăng nhập đầu.
 - Đổi mật khẩu, đổi email/tên đăng nhập, đổi vai trò hoặc vô hiệu hoá tài khoản sẽ **thu hồi mọi phiên đăng nhập** của người đó.
 - Chống dò mật khẩu: Workers Rate Limiting (5 lần/phút theo tài khoản + IP, 30 lần/phút theo IP); thời gian phản hồi không làm lộ email nào tồn tại.
-- Chặn CSRF bằng kiểm tra `Origin` cho mọi request thay đổi dữ liệu; header bảo mật (`X-Frame-Options`, `nosniff`, `Referrer-Policy`, `Permissions-Policy`, HSTS).
+- Chặn CSRF bằng kiểm tra `Origin` cho mọi request thay đổi dữ liệu; header bảo mật (`Content-Security-Policy`, `X-Frame-Options`, `nosniff`, `Referrer-Policy`, `Permissions-Policy`, HSTS).
+- **CSP** (`next.config.mjs`): chỉ tải script, style, ảnh, font và kết nối từ chính trang; cấm plugin, nhúng trang vào iframe và gửi form ra ngoài. Next.js cần script nội tuyến nên cho phép `'unsafe-inline'`, nhưng không nguồn ngoài nào được tải.
+- **Nhật ký thao tác** cho quản trị viên (xem *Vận hành*).
 - Không cho quản trị viên tự hạ quyền/vô hiệu hoá chính mình; hệ thống luôn còn ít nhất một quản trị viên.
 - Supabase: bật RLS và thu hồi quyền của `anon`/`authenticated`, nên Data API công khai không đọc/ghi được bảng nào.
 
@@ -167,8 +191,10 @@ app/present/      Trang trình chiếu online
 components/       UI, biểu đồ, bộ slide (deck/), task drawer, dự án
 lib/              prisma, phiên đăng nhập, phân quyền, thống kê theo kỳ, deck model, xuất PDF/PPTX, prompt AI
 prisma/           schema, migrations, seed, tạo admin, SQL bảo mật Supabase
+tests/            Unit test (Vitest)
+worker.ts         Điểm vào Worker: ứng dụng OpenNext + cron sao lưu hằng ngày
 wrangler.jsonc    Cấu hình Cloudflare Worker
-scripts/          Deploy Cloudflare, tạo mật khẩu database (SCRAM)
+scripts/          Deploy Cloudflare, tạo mật khẩu database (SCRAM), khôi phục bản sao lưu
 ```
 
 ## Lệnh
@@ -179,5 +205,6 @@ scripts/          Deploy Cloudflare, tạo mật khẩu database (SCRAM)
 | `npm run build` / `npm start` | Build & chạy production trên Node.js |
 | `npm run preview` | Build cho Cloudflare và chạy thử bằng runtime `workerd` trên máy |
 | `npm run deploy` | Build & deploy bằng Wrangler (cần đăng nhập Cloudflare) |
-| `npm run typecheck` / `npm run lint` | Kiểm tra TypeScript / ESLint |
+| `npm run typecheck` / `npm run lint` | Kiểm tra TypeScript / ESLint (ESLint CLI, cấu hình `eslint.config.mjs`) |
+| `npm test` | Unit test (Vitest) |
 | `npm run db:seed` / `npm run admin:create` | Dữ liệu mẫu / tạo quản trị viên |

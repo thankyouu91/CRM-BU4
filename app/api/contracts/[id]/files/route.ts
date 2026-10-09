@@ -6,6 +6,7 @@ import {
   MAX_FILE_BYTES,
   MAX_FILES_PER_CONTRACT,
   MAX_UPLOAD_BYTES,
+  R2_STORAGE_LIMIT_BYTES,
   STORAGE_LIMIT_BYTES,
   cleanFileName,
   contractFileDto,
@@ -13,11 +14,14 @@ import {
   formatFileSize,
   isPdf,
 } from "@/lib/contract-files";
-import { putFile } from "@/lib/file-storage";
+import { putFile, storesInR2 } from "@/lib/file-storage";
+import { audit } from "@/lib/audit";
 
 type Ctx = { params: Promise<{ id: string }> };
 
 const storageUsed = async () => (await prisma.contractFile.aggregate({ _sum: { size: true } }))._sum.size ?? 0;
+/** R2 holds far more than the database, so the cap follows where new files go. */
+const storageLimit = () => (storesInR2() ? R2_STORAGE_LIMIT_BYTES : STORAGE_LIMIT_BYTES);
 
 /** GET /api/contracts/[id]/files: the contract's PDFs (metadata only) and how much of the storage is used. */
 export async function GET(_req: NextRequest, ctx: Ctx) {
@@ -33,7 +37,7 @@ export async function GET(_req: NextRequest, ctx: Ctx) {
     storageUsed(),
   ]);
   if (!contract) return notFound("Không tìm thấy hợp đồng");
-  return ok({ files: contract.files.map(contractFileDto), storage: { used, limit: STORAGE_LIMIT_BYTES } });
+  return ok({ files: contract.files.map(contractFileDto), storage: { used, limit: storageLimit() } });
 }
 
 /** POST /api/contracts/[id]/files (multipart/form-data, one or more "files"): attach PDFs. */
@@ -47,7 +51,7 @@ export async function POST(req: NextRequest, ctx: Ctx) {
       return payloadTooLarge(`Mỗi lần tải lên tối đa ${formatFileSize(MAX_UPLOAD_BYTES)}. Hãy tải từng file một.`);
     }
     const [contract, count, used] = await Promise.all([
-      prisma.contract.findUnique({ where: { id: params.id }, select: { id: true } }),
+      prisma.contract.findUnique({ where: { id: params.id }, select: { id: true, code: true, name: true } }),
       prisma.contractFile.count({ where: { contractId: params.id } }),
       storageUsed(),
     ]);
@@ -78,9 +82,10 @@ export async function POST(req: NextRequest, ctx: Ctx) {
       items.push({ name, bytes });
     }
     const adding = items.reduce((s, it) => s + it.bytes.length, 0);
-    if (used + adding > STORAGE_LIMIT_BYTES) {
+    const limit = storageLimit();
+    if (used + adding > limit) {
       return badRequest(
-        `Kho lưu trữ hồ sơ đã dùng ${formatFileSize(used)} / ${formatFileSize(STORAGE_LIMIT_BYTES)}, không đủ chỗ cho ${formatFileSize(adding)}. Hãy xoá bớt file hoặc liên hệ quản trị viên.`,
+        `Kho lưu trữ hồ sơ đã dùng ${formatFileSize(used)} / ${formatFileSize(limit)}, không đủ chỗ cho ${formatFileSize(adding)}. Hãy xoá bớt file hoặc liên hệ quản trị viên.`,
       );
     }
 
@@ -96,6 +101,16 @@ export async function POST(req: NextRequest, ctx: Ctx) {
         await prisma.contractFile.delete({ where: { id: file.id } }).catch(() => undefined);
         throw err;
       }
+      await audit(
+        { id: me.id, name: me.name },
+        {
+          action: "contract_file.upload",
+          entityType: "contract_file",
+          entityId: file.id,
+          summary: `Tải lên file “${it.name}” cho hợp đồng “${contract.code ?? contract.name}”`,
+          details: { contractId: contract.id, name: it.name, size: it.bytes.length },
+        },
+      );
       saved.push(contractFileDto(file));
     }
     return created({ files: saved });

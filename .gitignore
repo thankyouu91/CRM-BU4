@@ -42,3 +42,9 @@ next-env.d.ts
 .open-next
 .wrangler
 .dev.vars
+
+# wrangler config written by scripts/deploy-cloudflare.sh when R2 is off
+.wrangler-no-r2.jsonc
+# wrangler local state
+.wrangler/
+.wrangler-dry-run/

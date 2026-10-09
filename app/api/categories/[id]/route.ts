@@ -1,16 +1,27 @@
 import type { NextRequest } from "next/server";
+import type { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { auth, badRequest, forbidden, handle, notFound, ok, unauthorized } from "@/lib/api";
 import { checkCategory } from "@/lib/category-rules";
 import { canManageProject } from "@/lib/rbac";
 import { updateCategorySchema } from "@/lib/validations";
+import { audit, changedFields } from "@/lib/audit";
 
 type Ctx = { params: Promise<{ id: string }> };
 
 async function load(id: string) {
   return prisma.category.findUnique({
     where: { id },
-    select: { id: true, projectId: true, parentId: true, startDate: true, dueDate: true },
+    select: {
+      id: true,
+      projectId: true,
+      parentId: true,
+      startDate: true,
+      dueDate: true,
+      name: true,
+      color: true,
+      order: true,
+    },
   });
 }
 
@@ -37,6 +48,19 @@ export async function PATCH(req: NextRequest, ctx: Ctx) {
       where: { id: params.id },
       data: { name: data.name?.trim(), color: data.color, order: data.order, ...next },
     });
+    const changes = changedFields(category, updated, ["name", "color", "order", "parentId", "startDate", "dueDate"]);
+    if (Object.keys(changes).length) {
+      await audit(
+        { id: me.id, name: me.name },
+        {
+          action: "category.update",
+          entityType: "category",
+          entityId: category.id,
+          summary: `Sửa hạng mục “${updated.name}”`,
+          details: changes as Prisma.InputJsonValue,
+        },
+      );
+    }
     return ok({ category: updated });
   });
 }
@@ -53,5 +77,15 @@ export async function DELETE(_req: NextRequest, ctx: Ctx) {
   if (!category) return notFound("Không tìm thấy hạng mục");
   if (!(await canManageProject(me, category.projectId))) return forbidden();
   await prisma.category.delete({ where: { id: params.id } });
+  await audit(
+    { id: me.id, name: me.name },
+    {
+      action: "category.delete",
+      entityType: "category",
+      entityId: category.id,
+      summary: `Xoá hạng mục “${category.name}”`,
+      details: { name: category.name, projectId: category.projectId },
+    },
+  );
   return ok({ ok: true });
 }

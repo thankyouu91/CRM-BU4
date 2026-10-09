@@ -1,9 +1,20 @@
 import type { NextRequest } from "next/server";
+import type { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { auth, badRequest, forbidden, handle, notFound, ok, unauthorized } from "@/lib/api";
 import { hashPassword, validatePasswordStrength } from "@/lib/password";
-import { assignableRoles, canManageUser, forbiddenGrantChange, normalizeGrants, PERMISSION_INFO, ROLE_INFO } from "@/lib/permissions";
+import {
+  assignableRoles,
+  canManageUser,
+  forbiddenGrantChange,
+  normalizeGrants,
+  PERMISSION_INFO,
+  ROLE_INFO,
+  type PermissionKey,
+  type RoleKey,
+} from "@/lib/permissions";
 import { updateUserSchema } from "@/lib/validations";
+import { audit, changedFields } from "@/lib/audit";
 
 type Ctx = { params: Promise<{ id: string }> };
 
@@ -91,6 +102,44 @@ export async function PATCH(req: NextRequest, ctx: Ctx) {
       },
       select: { id: true, email: true, name: true, role: true, permissions: true, jobTitle: true, avatarColor: true, active: true },
     });
+
+    const actor = { id: me.id, name: me.name };
+    const base = { entityType: "user", entityId: user.id };
+    const roleLabel = (r: string) => ROLE_INFO[r as RoleKey]?.label ?? r;
+    const permLabel = (p: string) => PERMISSION_INFO[p as PermissionKey]?.label ?? p;
+    if (user.role !== target.role) {
+      await audit(actor, {
+        ...base,
+        action: "user.role_change",
+        summary: `Đổi cấp bậc của ${user.name}: ${roleLabel(target.role)} → ${roleLabel(user.role)}`,
+        details: { role: { from: target.role, to: user.role } },
+      });
+    }
+    const added = user.permissions.filter((p) => !target.permissions.includes(p));
+    const removed = target.permissions.filter((p) => !user.permissions.includes(p));
+    if (added.length || removed.length) {
+      const parts = [...added.map((p) => `+${permLabel(p)}`), ...removed.map((p) => `−${permLabel(p)}`)];
+      await audit(actor, {
+        ...base,
+        action: "user.permissions_change",
+        summary: `Đổi quyền của ${user.name}: ${parts.join(", ")}`,
+        details: { added, removed },
+      });
+    }
+    if (passwordHash) {
+      await audit(actor, { ...base, action: "user.password_reset", summary: `Đặt lại mật khẩu cho ${user.name}` });
+    }
+    if (user.active !== target.active) {
+      await audit(actor, {
+        ...base,
+        action: user.active ? "user.activate" : "user.deactivate",
+        summary: `${user.active ? "Mở khoá" : "Khoá"} tài khoản ${user.name}`,
+      });
+    }
+    const changes = changedFields(target, user, ["name", "email", "jobTitle"]);
+    if (Object.keys(changes).length) {
+      await audit(actor, { ...base, action: "user.update", summary: `Sửa tài khoản ${user.name}`, details: changes as Prisma.InputJsonValue });
+    }
     return ok({ user });
   });
 }

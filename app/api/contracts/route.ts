@@ -6,6 +6,7 @@ import { canAccessProject } from "@/lib/rbac";
 import { contractDto, toDbAmounts } from "@/lib/contracts";
 import { contractList } from "@/lib/contract-queries";
 import { createContractSchema } from "@/lib/validations";
+import { audit } from "@/lib/audit";
 
 const projectBrief = { select: { id: true, name: true, color: true, status: true } } as const;
 
@@ -43,6 +44,16 @@ export async function POST(req: NextRequest) {
       },
       include: { project: projectBrief },
     });
+    await audit(
+      { id: me.id, name: me.name },
+      {
+        action: "contract.create",
+        entityType: "contract",
+        entityId: contract.id,
+        summary: `Tạo hợp đồng “${contract.code ?? contract.name}”`,
+        details: { code: contract.code, name: contract.name, partner: contract.partner, value: Number(contract.value) },
+      },
+    );
     return created({ contract: contractDto(contract) });
   });
 }

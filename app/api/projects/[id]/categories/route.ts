@@ -4,6 +4,7 @@ import { auth, badRequest, created, forbidden, handle, unauthorized } from "@/li
 import { checkCategory } from "@/lib/category-rules";
 import { canManageProject } from "@/lib/rbac";
 import { createCategorySchema } from "@/lib/validations";
+import { audit } from "@/lib/audit";
 
 type Ctx = { params: Promise<{ id: string }> };
 
@@ -33,6 +34,16 @@ export async function POST(req: NextRequest, ctx: Ctx) {
         dueDate,
       },
     });
+    await audit(
+      { id: me.id, name: me.name },
+      {
+        action: "category.create",
+        entityType: "category",
+        entityId: category.id,
+        summary: `Tạo hạng mục “${category.name}”`,
+        details: { projectId: params.id, parentId },
+      },
+    );
     return created({ category });
   });
 }

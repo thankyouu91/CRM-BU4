@@ -5,6 +5,7 @@ import { loadTaskForUser } from "@/lib/rbac";
 import { withWorkspace } from "@/lib/queries";
 import { resolveTaskState } from "@/lib/task-rules";
 import { createReportSchema } from "@/lib/validations";
+import { audit } from "@/lib/audit";
 
 type Ctx = { params: Promise<{ id: string }> };
 
@@ -46,6 +47,16 @@ export async function POST(req: NextRequest, ctx: Ctx) {
       prisma.task.update({ where: { id: task.id }, data: state }),
       prisma.project.update({ where: { id: task.projectId }, data: { updatedAt: new Date() } }),
     ]);
+    await audit(
+      { id: me.id, name: me.name },
+      {
+        action: "task_report.create",
+        entityType: "task_report",
+        entityId: report.id,
+        summary: `Gửi báo cáo công việc “${task.title}” (${report.progress}%)`,
+        details: { taskId: task.id, progress: report.progress, hoursSpent: report.hoursSpent },
+      },
+    );
     return created(await withWorkspace(req, me, task.projectId, { report }));
   });
 }

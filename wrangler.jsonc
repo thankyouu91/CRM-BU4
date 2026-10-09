@@ -2,7 +2,8 @@
   "$schema": "./node_modules/wrangler/config-schema.json",
   // Public URL: https://<name>.<account-subdomain>.workers.dev → crm.votranlong91.workers.dev
   "name": "crm",
-  "main": ".open-next/worker.js",
+  // worker.ts wraps the OpenNext build (.open-next/worker.js) and adds the daily cron.
+  "main": "worker.ts",
   "compatibility_date": "2026-10-01",
   // nodejs_compat: required by Next.js, Prisma's pg adapter and the pg driver.
   "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
@@ -38,6 +39,17 @@
       "localConnectionString": "postgresql://crm:crm_dev_password@localhost:5432/crm_bu4"
     }
   ],
+  // Contract PDFs (lib/file-storage.ts) and daily database backups (lib/maintenance.ts).
+  // scripts/deploy-cloudflare.sh creates the buckets; while R2 is not enabled on the
+  // account it deploys without them (PDFs stay in Postgres, backups are skipped).
+  "r2_buckets": [
+    { "binding": "CONTRACT_FILES", "bucket_name": "crm-contract-files" },
+    { "binding": "BACKUPS", "bucket_name": "crm-backups" }
+  ],
+  // 19:00 UTC = 02:00 in Vietnam: backup to R2 and audit-log retention (worker.ts).
+  "triggers": {
+    "crons": ["0 19 * * *"]
+  },
   // Native rate limiting for login / password change (lib/rate-limit.ts).
   // Workers isolates do not share memory, so an in-process counter is not enough.
   "ratelimits": [
