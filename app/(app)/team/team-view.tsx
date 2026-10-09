@@ -135,8 +135,8 @@ function CreateMemberModal({ open, onClose, onCreated }: { open: boolean; onClos
         <Field label="Họ và tên" error={errors.name}>
           <Input value={v.name} onChange={(e) => setV({ ...v, name: e.target.value })} placeholder="Nguyễn Văn A" autoFocus />
         </Field>
-        <Field label="Email đăng nhập" error={errors.email}>
-          <Input type="email" value={v.email} onChange={(e) => setV({ ...v, email: e.target.value })} placeholder="ten@congty.vn" />
+        <Field label="Email hoặc tên đăng nhập" error={errors.email}>
+          <Input value={v.email} onChange={(e) => setV({ ...v, email: e.target.value })} placeholder="ten@congty.vn hoặc nguyenvana" autoCapitalize="none" />
         </Field>
         <Field label="Chức danh">
           <Input value={v.jobTitle} onChange={(e) => setV({ ...v, jobTitle: e.target.value })} placeholder="VD: Chuyên viên Marketing" />
@@ -163,16 +163,22 @@ function CreateMemberModal({ open, onClose, onCreated }: { open: boolean; onClos
 }
 
 function EditMemberModal({ member, onClose, onSaved, isSelf }: { member: Member; onClose: () => void; onSaved: () => void; isSelf: boolean }) {
-  const [v, setV] = useState({ name: member.name, jobTitle: member.jobTitle ?? "", role: member.role });
+  const [v, setV] = useState({ email: member.email, name: member.name, jobTitle: member.jobTitle ?? "", role: member.role });
   const [busy, setBusy] = useState(false);
+  const [errors, setErrors] = useState<Record<string, string>>({});
   const submit = async () => {
     setBusy(true);
+    setErrors({});
     try {
-      await api(`/api/users/${member.id}`, { method: "PATCH", body: { name: v.name, jobTitle: v.jobTitle || null, role: v.role } });
-      toast.success("Đã cập nhật");
+      await api(`/api/users/${member.id}`, {
+        method: "PATCH",
+        body: { email: v.email, name: v.name, jobTitle: v.jobTitle || null, role: v.role },
+      });
+      toast.success(isSelf && v.email.trim().toLowerCase() !== member.email ? "Đã đổi email — vui lòng đăng nhập lại bằng email mới" : "Đã cập nhật");
       onSaved();
       onClose();
     } catch (e) {
+      if (e instanceof ApiError) setErrors(e.fields ?? {});
       toast.error(e instanceof ApiError ? e.message : "Không thể cập nhật");
     } finally {
       setBusy(false);
@@ -184,7 +190,7 @@ function EditMemberModal({ member, onClose, onSaved, isSelf }: { member: Member;
       onClose={onClose}
       size="sm"
       title="Chỉnh sửa thông tin"
-      description={member.email}
+      description={member.name}
       footer={
         <>
           <Button variant="outline" onClick={onClose}>
@@ -197,6 +203,9 @@ function EditMemberModal({ member, onClose, onSaved, isSelf }: { member: Member;
       }
     >
       <div className="space-y-4">
+        <Field label="Email hoặc tên đăng nhập" error={errors.email} hint="Đổi thông tin đăng nhập sẽ đăng xuất người dùng khỏi mọi thiết bị.">
+          <Input value={v.email} onChange={(e) => setV({ ...v, email: e.target.value })} autoCapitalize="none" />
+        </Field>
         <Field label="Họ và tên">
           <Input value={v.name} onChange={(e) => setV({ ...v, name: e.target.value })} />
         </Field>

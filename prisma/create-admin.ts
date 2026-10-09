@@ -2,7 +2,7 @@
  * Bootstrap the first administrator on a fresh (e.g. production) database
  * without loading demo data.
  *
- *   npm run admin:create -- <email> "<full name>" <temporary-password>
+ *   npm run admin:create -- <email-or-username> "<full name>" <temporary-password>
  *
  * The account is flagged to change its password on first sign-in.
  */
@@ -15,7 +15,7 @@ const prisma = new PrismaClient();
 async function main() {
   const [email, name, password] = process.argv.slice(2);
   if (!email || !name || !password) {
-    console.error('Usage: npm run admin:create -- <email> "<full name>" <temporary-password>');
+    console.error('Usage: npm run admin:create -- <email-or-username> "<full name>" <temporary-password>');
     process.exit(1);
   }
   const weak = validatePasswordStrength(password);

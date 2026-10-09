@@ -6,8 +6,20 @@ const taskStatusEnum = z.enum(["TODO", "IN_PROGRESS", "REVIEW", "DONE", "BLOCKED
 const priorityEnum = z.enum(["LOW", "MEDIUM", "HIGH", "URGENT"]);
 const noteTypeEnum = z.enum(["NOTE", "FEEDBACK"]);
 
+// Accounts sign in with an email address or a short username (e.g. "admin").
+const USERNAME = /^[a-z0-9._-]{3,32}$/;
+const loginId = z
+  .string()
+  .trim()
+  .toLowerCase()
+  .refine(
+    (v) => USERNAME.test(v) || z.string().email().safeParse(v).success,
+    "Nhập email hợp lệ hoặc tên đăng nhập (3–32 ký tự: chữ thường, số, . _ -)",
+  );
+
 export const loginSchema = z.object({
-  email: z.string().email("Email không hợp lệ"),
+  // Kept as `email` in the API body for compatibility; holds an email or username.
+  email: z.string().trim().min(1, "Vui lòng nhập email hoặc tên đăng nhập"),
   password: z.string().min(1, "Vui lòng nhập mật khẩu"),
 });
 
@@ -17,7 +29,7 @@ export const changePasswordSchema = z.object({
 });
 
 export const createUserSchema = z.object({
-  email: z.string().email("Email không hợp lệ"),
+  email: loginId,
   name: z.string().min(2, "Tên quá ngắn"),
   password: z.string().min(8, "Mật khẩu phải có ít nhất 8 ký tự"),
   role: roleEnum.default("MEMBER"),
@@ -25,6 +37,7 @@ export const createUserSchema = z.object({
 });
 
 export const updateUserSchema = z.object({
+  email: loginId.optional(),
   name: z.string().min(2).optional(),
   role: roleEnum.optional(),
   jobTitle: z.string().optional().nullable(),

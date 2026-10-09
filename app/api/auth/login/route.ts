@@ -36,7 +36,7 @@ export async function POST(req: NextRequest) {
   const valid = await verifyPassword(parsed.data.password, user?.passwordHash ?? DUMMY_HASH);
 
   if (!user || !valid) {
-    return NextResponse.json({ error: "Email hoặc mật khẩu không đúng" }, { status: 401 });
+    return NextResponse.json({ error: "Tên đăng nhập hoặc mật khẩu không đúng" }, { status: 401 });
   }
   if (!user.active) {
     return NextResponse.json({ error: "Tài khoản đã bị vô hiệu hoá. Liên hệ quản trị viên." }, { status: 403 });

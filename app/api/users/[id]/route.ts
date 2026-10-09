@@ -32,6 +32,12 @@ export async function PATCH(req: NextRequest, ctx: Ctx) {
       if (activeAdmins <= 1) return badRequest("Hệ thống phải còn ít nhất một quản trị viên đang hoạt động");
     }
 
+    const email = data.email?.trim().toLowerCase();
+    if (email && email !== target.email && (await prisma.user.findUnique({ where: { email } }))) {
+      return badRequest("Email đã được sử dụng", { email: "Email đã được sử dụng" });
+    }
+    const emailChanged = !!email && email !== target.email;
+
     let passwordHash: string | undefined;
     if (data.resetPassword) {
       const weak = validatePasswordStrength(data.resetPassword);
@@ -39,14 +45,18 @@ export async function PATCH(req: NextRequest, ctx: Ctx) {
       passwordHash = await hashPassword(data.resetPassword);
     }
 
-    // Revoke existing sessions when the password is reset, the account is
-    // deactivated, or the role changes (so new permissions take effect).
+    // Revoke existing sessions when the password is reset, the login email
+    // changes, the account is deactivated, or the role changes.
     const revoke =
-      !!passwordHash || data.active === false || (data.role !== undefined && data.role !== target.role);
+      !!passwordHash ||
+      emailChanged ||
+      data.active === false ||
+      (data.role !== undefined && data.role !== target.role);
 
     const user = await prisma.user.update({
       where: { id: target.id },
       data: {
+        email: emailChanged ? email : undefined,
         name: data.name?.trim(),
         role: data.role,
         jobTitle: data.jobTitle === undefined ? undefined : data.jobTitle?.trim() || null,

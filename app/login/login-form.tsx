@@ -47,17 +47,19 @@ export function LoginForm({ showDemoHint }: { showDemoHint: boolean }) {
       <p className="mt-1.5 text-sm text-muted-foreground">Nhập tài khoản được quản trị viên cấp để tiếp tục.</p>
 
       <form onSubmit={submit} className="mt-8 space-y-4">
-        <Field label="Email" htmlFor="email">
+        <Field label="Email hoặc tên đăng nhập" htmlFor="email">
           <div className="relative">
             <Mail className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input
               id="email"
-              type="email"
-              autoComplete="email"
+              type="text"
+              autoComplete="username"
+              autoCapitalize="none"
+              spellCheck={false}
               required
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              placeholder="ten@congty.vn"
+              placeholder="ten@congty.vn hoặc admin"
               className="pl-9"
             />
           </div>
