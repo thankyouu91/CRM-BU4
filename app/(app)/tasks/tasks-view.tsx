@@ -52,7 +52,7 @@ function bucketOf(t: Row): Bucket {
   return "later";
 }
 
-export function MyTasksView({ canSeeAll, initial }: { canSeeAll: boolean; initial?: { tasks: Row[] } }) {
+export function MyTasksView({ canSeeAll, initial, tabs }: { canSeeAll: boolean; initial?: { tasks: Row[] }; tabs?: React.ReactNode }) {
   const [scope, setScope] = useState<"mine" | "all">("mine");
   const [q, setQ] = useState("");
   const [openTask, setOpenTask] = useState<string | null>(null);
@@ -120,6 +120,7 @@ export function MyTasksView({ canSeeAll, initial }: { canSeeAll: boolean; initia
           )
         }
       />
+      {tabs}
 
       <div className="mb-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <KpiTile label="Chưa hoàn thành" value={stats.open} icon={ListChecks} />

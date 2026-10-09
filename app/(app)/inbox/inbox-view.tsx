@@ -130,7 +130,15 @@ function ReportCard({
   );
 }
 
-export function InboxView({ isManager, initial }: { isManager: boolean; initial?: { reports: InboxReport[]; pendingCount: number } }) {
+export function InboxView({
+  isManager,
+  initial,
+  tabs,
+}: {
+  isManager: boolean;
+  initial?: { reports: InboxReport[]; pendingCount: number };
+  tabs?: React.ReactNode;
+}) {
   const router = useRouter();
   const [box, setBox] = useState<Box>(isManager ? "received" : "sent");
   const [status, setStatus] = useState<Status>(isManager ? "pending" : "all");
@@ -179,6 +187,7 @@ export function InboxView({ isManager, initial }: { isManager: boolean; initial?
           )
         }
       />
+      {tabs}
 
       <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         {isManager ? (

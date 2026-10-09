@@ -123,6 +123,40 @@ export function ListSkeleton() {
   );
 }
 
+/** A weekly / monthly work report: period bar, header card, counts and sections. */
+export function ReportSkeleton() {
+  return (
+    <Shell>
+      <Bone className="mb-4 h-4 w-48" />
+      <Bone className="mb-5 h-9 w-80 max-w-full" />
+      <Card className="mb-5 flex items-start gap-3">
+        <Bone className="h-10 w-10 rounded-full" />
+        <div className="flex-1 space-y-2">
+          <Bone className="h-3 w-32" />
+          <Bone className="h-6 w-72 max-w-full" />
+          <Bone className="h-4 w-56" />
+        </div>
+      </Card>
+      <div className="mb-5 grid grid-cols-2 gap-4 lg:grid-cols-4">
+        {Array.from({ length: 4 }, (_, i) => (
+          <Card key={i} className="space-y-3">
+            <Bone className="h-3.5 w-24" />
+            <Bone className="h-7 w-16" />
+          </Card>
+        ))}
+      </div>
+      {Array.from({ length: 2 }, (_, i) => (
+        <div key={i} className="mb-5 overflow-hidden rounded-2xl border bg-card shadow-card">
+          <div className="border-b px-5 py-4">
+            <Bone className="h-5 w-48" />
+          </div>
+          <Rows count={3} />
+        </div>
+      ))}
+    </Shell>
+  );
+}
+
 /** Project workspace: header card, tabs and the task list. */
 export function ProjectSkeleton() {
   return (

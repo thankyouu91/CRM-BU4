@@ -179,7 +179,7 @@ export function AppShell({
   return (
     <div className="min-h-screen">
       {/* Desktop sidebar */}
-      <aside className="fixed inset-y-0 left-0 z-30 hidden w-64 flex-col bg-sidebar px-4 py-6 lg:flex">
+      <aside className="fixed inset-y-0 left-0 z-30 hidden w-64 flex-col bg-sidebar px-4 py-6 lg:flex print:!hidden">
         <Brand />
         <SidebarNav user={user} pendingReports={pendingReports} />
         <div className="mt-auto rounded-xl bg-gradient-to-br from-indigo-500/20 to-violet-500/10 p-4 ring-1 ring-white/10">
@@ -224,8 +224,8 @@ export function AppShell({
         )}
       </AnimatePresence>
 
-      <div className="lg:pl-64">
-        <header className="sticky top-0 z-20 flex h-16 items-center gap-3 border-b bg-background/80 px-4 backdrop-blur-md sm:px-6 lg:px-8">
+      <div className="lg:pl-64 print:!pl-0">
+        <header className="sticky top-0 z-20 flex h-16 items-center gap-3 border-b bg-background/80 px-4 backdrop-blur-md sm:px-6 lg:px-8 print:hidden">
           <button
             onClick={() => setMobileOpen(true)}
             className="rounded-lg p-2 text-muted-foreground hover:bg-muted lg:hidden"
@@ -237,7 +237,7 @@ export function AppShell({
           <ThemeToggle />
           <UserMenu user={user} />
         </header>
-        <main className="mx-auto w-full max-w-[1400px] px-4 py-6 sm:px-6 lg:px-8 lg:py-8">{children}</main>
+        <main className="mx-auto w-full max-w-[1400px] px-4 py-6 sm:px-6 lg:px-8 lg:py-8 print:!max-w-none print:!p-0">{children}</main>
       </div>
     </div>
   );

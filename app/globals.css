@@ -77,6 +77,34 @@
   }
 }
 
+/* Printing (work reports "In / Lưu PDF"): A4, light colors even in dark mode;
+   the app shell and controls carry print:hidden. */
+@media print {
+  @page {
+    size: A4;
+    margin: 12mm;
+  }
+  :root,
+  .dark {
+    --background: 255 255 255;
+    --foreground: 15 23 42;
+    --card: 255 255 255;
+    --muted: 241 243 248;
+    --muted-foreground: 71 85 105;
+    --border: 203 213 225;
+    --primary: 79 70 229;
+    --primary-foreground: 255 255 255;
+    --success: 22 163 74;
+    --warning: 180 83 9;
+    --danger: 220 38 38;
+    color-scheme: light;
+  }
+  body {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+}
+
 /* Recharts: inherit theme colors */
 .recharts-cartesian-axis-tick-value {
   fill: rgb(var(--muted-foreground));
