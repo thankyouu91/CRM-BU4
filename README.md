@@ -17,6 +17,7 @@ Dashboard quản lý dự án và công việc cho doanh nghiệp: giao việc t
 | 7 | Theo dõi dự án với biểu đồ, % hoàn thành | Dashboard KPI, vòng tiến độ, xu hướng, phân bổ trạng thái, khối lượng theo nhân sự; tab “Tiến độ” có bảng **tiến độ theo deadline** (thực tế so với kế hoạch đến hôm nay, % đạt kế hoạch, trạng thái Đúng tiến độ / Có rủi ro / Chậm / Trễ hạn), **khối lượng đã làm / cần làm** và timeline (Gantt) gồm cả thời hạn hạng mục; các số liệu này có trong Trung tâm báo cáo, slide trình chiếu, PDF/PowerPoint và prompt AI |
 | 9 | Báo cáo hợp đồng & chi phí (thay file Excel) | Trang **Hợp đồng & chi phí**: giá trị HĐ, chi phí đào tạo / khảo thí / khác, lợi nhuận gộp, tỷ suất LN, đánh giá, đã thu, còn phải thu, trạng thái thanh toán — tính tự động; lọc theo tháng/quý/năm, dòng tổng, 4 ô tổng hợp như mẫu Excel; **dán dữ liệu từ Excel** để nhập nhanh và **xuất Excel** đúng bố cục mẫu |
 | 8 | AI hỗ trợ báo cáo, tích hợp Claude không qua API | Trang **Trợ lý AI**: đóng gói số liệu thật thành prompt → mở Claude.ai điền sẵn / sao chép / tải file cho Claude Code → dán kết quả lại để xem trước, lưu ghi chú dự án, hoặc biến dàn ý thành slide để trình chiếu & xuất file. Không cần API key, không tốn phí API |
+| 10 | Báo cáo tuần trước đã làm, tuần này / tuần tới (hoặc tháng) làm gì, gửi sếp | Tab **Báo cáo tuần / tháng** trong *Công việc của tôi*: ba mục lấy trực tiếp từ công việc và dự án của bạn, ghi chú tự lưu, gửi cấp trên, xuất Excel và in / lưu PDF; cấp trên xem cả đội trong *Hộp báo cáo*. Xem [Báo cáo công việc tuần / tháng](#báo-cáo-công-việc-tuần--tháng) |
 
 ### Phân quyền
 
@@ -50,6 +51,23 @@ Chỉ người có quyền **Hợp đồng & chi phí** thấy mục này (quả
 ### Tiến độ theo deadline
 
 *Kế hoạch đến hôm nay* = phần thời gian đã trôi qua giữa ngày bắt đầu và hạn hoàn thành (giả định công việc tiến triển đều). So sánh với tiến độ thực tế: chậm không quá 10 điểm là **Đúng tiến độ**, 10–25 điểm là **Có rủi ro**, hơn 25 điểm là **Chậm tiến độ**, qua hạn mà chưa xong là **Trễ hạn**. *Đạt KH* = thực tế ÷ kế hoạch. Hạng mục lớn tính cả công việc của các hạng mục con; hạng mục chưa có ngày bắt đầu dùng ngày bắt đầu của hạng mục lớn hoặc của dự án (`lib/schedule.ts`).
+
+### Báo cáo công việc tuần / tháng
+
+*Công việc của tôi* → tab **Báo cáo tuần / tháng**, chọn **Tuần** (thứ Hai 00:00 → Chủ nhật 23:59, số tuần ISO, ví dụ “Tuần 41 · 05/10 – 11/10/2026”) hoặc **Tháng**, chuyển kỳ trước / sau. Ranh giới kỳ tính theo `APP_TIMEZONE` (`lib/work-report.ts`).
+
+- **Luôn đồng bộ với công việc:** các mục được tính lại mỗi lần mở từ những công việc bạn phụ trách **hoặc** đã tạo, và báo cáo tiến độ bạn đã gửi:
+  - *Tuần trước đã làm*: việc hoàn thành trong tuần trước + các báo cáo tiến độ đã gửi (nội dung, %, giờ làm), nhóm theo dự án;
+  - *Tuần này đang làm*: việc đang làm / chờ duyệt / bị chặn, bắt đầu hoặc đến hạn trong tuần (việc quá hạn chưa xong được chuyển sang và đánh dấu đỏ), cùng việc đã xong trong tuần;
+  - *Tuần tới kế hoạch*: việc chưa xong bắt đầu hoặc đến hạn tuần tới. Nút **Thêm việc vào kế hoạch** tạo một công việc thật trong dự án (giao cho bạn, ngày trong tuần tới), nên nó xuất hiện cả trong dự án lẫn báo cáo;
+  - *Dự án của tôi*: dự án bạn làm chủ hoặc là quản lý dự án, với % hoàn thành và trạng thái so với deadline.
+  Bấm vào một công việc để mở chi tiết; sửa ở đó thì báo cáo cập nhật ngay.
+- **Ghi chú** cho từng mục và **Khó khăn / đề xuất**: tự lưu nháp sau khi ngừng gõ (hoặc bấm *Lưu nháp*).
+- **Gửi báo cáo** chụp lại danh sách lúc gửi. Sau đó báo cáo vẫn hiện số liệu hiện tại, dòng nào đổi ghi rõ “lúc báo cáo Đang làm · 40% → hiện tại Hoàn thành · 100%”, kèm việc mới phát sinh hoặc đã bị xoá. Sửa rồi **Gửi lại** để cập nhật bản gửi.
+- **Ai xem được:** chính người viết, quản trị viên, và người có cấp bậc **cao hơn** (quản lý xem trưởng nhóm và nhân viên, trưởng nhóm xem nhân viên); cùng cấp hoặc cấp dưới không xem được (`canViewWorkReport` trong `lib/permissions.ts`). Chỉ người viết sửa và gửi; cấp trên đánh dấu **Đã xem** kèm nhận xét, hiện ngay trên báo cáo của người viết.
+- **Cấp trên:** *Hộp báo cáo* → tab **Báo cáo tuần / tháng** liệt kê mọi nhân sự cấp dưới với trạng thái (Đã gửi + thời gian, Nháp, Chưa có, Đã xem), mở từng người để đọc và nhận xét; **Xuất Excel tổng hợp** gồm bảng tổng hợp, chi tiết công việc và báo cáo tiến độ của cả đội.
+- **Xuất:** Excel cho từng báo cáo và **In / Lưu PDF** (bản in ẩn menu, nút bấm, luôn nền sáng).
+- Dữ liệu mẫu: Bùi Ngọc Lan đã gửi báo cáo tuần trước (có dòng thay đổi so với lúc gửi), Phạm Thu Dung đã gửi tuần này (Trần Thị Bình đã xem), Hoàng Văn Em đang soạn nháp tuần này.
 
 ## Chạy trên máy (local)
 

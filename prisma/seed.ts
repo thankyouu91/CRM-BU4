@@ -6,8 +6,9 @@
  * Safety: refuses to run when users already exist unless SEED_FORCE=1, in which
  * case ALL existing data is deleted first. Never run with SEED_FORCE on production.
  */
-import { PrismaClient, type Priority, type TaskStatus } from "@prisma/client";
+import { PrismaClient, type Prisma, type Priority, type TaskStatus } from "@prisma/client";
 import bcrypt from "bcryptjs";
+import { buildSections, shiftWorkPeriod, takeSnapshot, workPeriodOf, type WorkNotes, type WorkPeriod } from "../lib/work-report";
 
 const prisma = new PrismaClient();
 const DAY = 86_400_000;
@@ -317,6 +318,7 @@ async function main() {
   if (existing > 0) {
     console.log("SEED_FORCE=1: deleting existing data…");
     await prisma.$transaction([
+      prisma.workReport.deleteMany(),
       prisma.contract.deleteMany(),
       prisma.taskReport.deleteMany(),
       prisma.note.deleteMany(),
@@ -513,10 +515,103 @@ async function main() {
     });
   }
 
+  // Weekly work reports: lan.bui sent last week's, dung.pham sent this week's (seen
+  // by binh.tran), em.hoang is still drafting this week's.
+  const thisWeek = workPeriodOf("WEEK", new Date(now));
+  const lastWeek = shiftWorkPeriod(thisWeek, -1);
+  const H = 3_600_000;
+  await workReport(ids.lan, lastWeek, new Date(thisWeek.start.getTime() - 38 * H), {
+    doneNote: "Hoàn tất báo cáo hiệu quả quảng cáo tuần trước: CTR trung bình 2,1%, chi phí mỗi khách hàng tiềm năng giảm 12%.",
+    doingNote: "Tối ưu nhóm quảng cáo Facebook cho độ tuổi 25–34; khảo sát 12 điểm bán tại Đà Nẵng.",
+    planNote: "Chốt địa điểm workshop ra mắt, chuẩn bị nội dung chiến dịch Google Ads.",
+    issues: "Đề xuất bổ sung 20 triệu ngân sách quảng cáo cho tuần cao điểm.",
+  });
+  const dungSent = new Date(Math.min(now, Math.max(now - 2 * H, thisWeek.start.getTime() + 60_000)));
+  const dungReport = await workReport(ids.dung, thisWeek, dungSent, {
+    doneNote: "Hoàn thành bộ ảnh sản phẩm; giao diện mobile đã gửi duyệt.",
+    doingNote: "Dựng video TVC 30 giây, bản dựng thô đã xong phần mở đầu.",
+    planNote: "Hoàn thiện TVC và bắt đầu thiết kế banner đa kênh.",
+    issues: null,
+  });
+  await prisma.workReport.update({
+    where: { id: dungReport.id },
+    data: {
+      reviewedById: ids.binh,
+      reviewedAt: new Date(Math.min(now, dungSent.getTime() + H / 2)),
+      reviewNote: "Tốt, ưu tiên chốt TVC trước thứ Năm.",
+    },
+  });
+  await workReport(ids.em, thisWeek, null, {
+    doneNote: null,
+    doingNote: "Đang chờ phòng Marketing chốt cấu trúc nội dung để tiếp tục tích hợp CMS.",
+    planNote: "Tối ưu hình ảnh & lazy-load; viết test E2E cho luồng thanh toán.",
+    issues: "Tích hợp CMS bị chặn: cần phòng Marketing chốt cấu trúc nội dung trước thứ Hai.",
+  });
+
   console.log(
-    `Seeded ${Object.keys(USERS).length} users, ${PROJECTS.length} projects, ${taskCount} tasks, ${reportCount} reports.`,
+    `Seeded ${Object.keys(USERS).length} users, ${PROJECTS.length} projects, ${taskCount} tasks, ${reportCount} reports, 3 work reports.`,
   );
   console.log("Sign in: admin@crm.local / Admin@1234  ·  other demo accounts use Demo@1234");
+}
+
+// A weekly report; with `sentAt` it is sent then, freezing the task lists as they
+// were at that time (state rebuilt from the progress reports filed by then).
+async function workReport(userId: string, period: WorkPeriod, sentAt: Date | null, notes: WorkNotes) {
+  const base = { userId, period: period.type, periodStart: period.start, ...notes };
+  if (!sentAt) {
+    const at = new Date(now - 2 * 3_600_000);
+    return prisma.workReport.create({ data: { ...base, createdAt: at, updatedAt: at } });
+  }
+  const history = { status: true, progress: true, completedAt: true, reports: { select: { progress: true, createdAt: true } } } as const;
+  const [tasks, entries] = await Promise.all([
+    prisma.task.findMany({
+      where: { OR: [{ assigneeId: userId }, { createdById: userId }], createdAt: { lte: sentAt } },
+      select: {
+        id: true,
+        title: true,
+        priority: true,
+        startDate: true,
+        dueDate: true,
+        createdAt: true,
+        ...history,
+        project: { select: { id: true, name: true, color: true } },
+        parent: { select: { id: true, title: true } },
+        assignee: { select: { id: true, name: true } },
+        subtasks: { select: history },
+      },
+    }),
+    prisma.taskReport.findMany({
+      where: { authorId: userId, createdAt: { lte: sentAt } },
+      select: {
+        id: true,
+        content: true,
+        progress: true,
+        hoursSpent: true,
+        createdAt: true,
+        task: { select: { id: true, title: true, project: { select: { id: true, name: true, color: true } } } },
+      },
+    }),
+  ]);
+  const asOf = <X extends Prisma.TaskGetPayload<{ select: typeof history }>>(t: X) => {
+    const done = !!t.completedAt && t.completedAt <= sentAt;
+    const filed = t.reports.filter((r) => r.createdAt <= sentAt).sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime());
+    const progress = done ? 100 : filed.length ? filed[filed.length - 1].progress : t.reports.length ? 0 : t.progress;
+    const later = t.status === "DONE" || t.status === "REVIEW";
+    const status: TaskStatus = done ? "DONE" : later ? (progress >= 100 ? "REVIEW" : progress > 0 ? "IN_PROGRESS" : "TODO") : t.status;
+    return { ...t, status, progress, completedAt: done ? t.completedAt : null };
+  };
+  const then = tasks.map((t) => ({ ...asOf(t), subtasks: t.subtasks.map(asOf) }));
+  const snapshot = takeSnapshot(buildSections(then, entries, period, sentAt), [], notes, sentAt);
+  return prisma.workReport.create({
+    data: {
+      ...base,
+      status: "SUBMITTED",
+      submittedAt: sentAt,
+      snapshot: snapshot as unknown as Prisma.InputJsonValue,
+      createdAt: new Date(sentAt.getTime() - 3_600_000),
+      updatedAt: sentAt,
+    },
+  });
 }
 
 main()
