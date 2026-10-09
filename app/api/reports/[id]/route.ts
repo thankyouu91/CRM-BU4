@@ -1,7 +1,8 @@
 import type { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { auth, forbidden, handle, notFound, ok, unauthorized } from "@/lib/api";
-import { canManageProject } from "@/lib/rbac";
+import { accessFrom, accessSelect } from "@/lib/rbac";
+import { withWorkspace } from "@/lib/queries";
 import { resolveTaskState } from "@/lib/task-rules";
 import { reviewReportSchema } from "@/lib/validations";
 
@@ -14,9 +15,13 @@ export async function PATCH(req: NextRequest, ctx: Ctx) {
     const me = await auth();
     if (!me) return unauthorized();
 
-    const report = await prisma.taskReport.findUnique({ where: { id: params.id }, include: { task: true } });
+    const report = await prisma.taskReport.findUnique({
+      where: { id: params.id },
+      include: { task: { include: { project: { select: accessSelect(me.id) } } } },
+    });
     if (!report) return notFound("Không tìm thấy báo cáo");
-    if (!(await canManageProject(me, report.task.projectId))) {
+    const { project } = report.task;
+    if (!accessFrom(me, project.ownerId, project.members[0]?.role ?? null).manage) {
       return forbidden("Chỉ quản lý dự án mới được duyệt báo cáo");
     }
 
@@ -34,6 +39,6 @@ export async function PATCH(req: NextRequest, ctx: Ctx) {
         });
       }
     });
-    return ok({ ok: true });
+    return ok(await withWorkspace(req, me, report.task.projectId, { ok: true }));
   });
 }

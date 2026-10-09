@@ -7,7 +7,7 @@ import { toast } from "sonner";
 import { Avatar } from "@/components/ui/avatar";
 import { PriorityBadge } from "@/components/ui/badge";
 import { ProgressBar } from "@/components/ui/progress";
-import { api, ApiError } from "@/lib/client";
+import { ApiError, type SendChange } from "@/lib/client";
 import { TASK_STATUS } from "@/lib/constants";
 import { isOverdue } from "@/lib/dates";
 import { cn, formatShortDate } from "@/lib/utils";
@@ -24,7 +24,7 @@ export function Kanban({
   canManage,
   canContribute,
   onOpen,
-  onReload,
+  send,
 }: {
   tasks: ProjectTask[];
   categories: ProjectCategory[];
@@ -33,9 +33,9 @@ export function Kanban({
   canManage: boolean;
   canContribute: boolean;
   onOpen: (id: string) => void;
-  onReload: () => void;
+  send: SendChange;
 }) {
-  // Local copy so a drop moves the card instantly; server state reconciles on reload.
+  // Local copy so a drop moves the card instantly; the change's answer brings the server state.
   const [tasks, setTasks] = useState(source);
   useEffect(() => setTasks(source), [source]);
   const [dragId, setDragId] = useState<string | null>(null);
@@ -58,9 +58,8 @@ export function Kanban({
     const prev = tasks;
     setTasks((ts) => ts.map((t) => (t.id === task.id ? { ...t, status } : t)));
     try {
-      await api(`/api/tasks/${task.id}`, { method: "PATCH", body: { status } });
+      await send(`/api/tasks/${task.id}`, { method: "PATCH", body: { status } }, { taskId: task.id, fields: { status } });
       toast.success(`Đã chuyển sang “${TASK_STATUS[status as keyof typeof TASK_STATUS].label}”`);
-      onReload();
     } catch (e) {
       setTasks(prev);
       toast.error(e instanceof ApiError ? e.message : "Không thể cập nhật");

@@ -11,6 +11,13 @@
     "directory": ".open-next/assets",
     "binding": "ASSETS"
   },
+  // Run the Worker next to the database (Supabase, AWS ap-southeast-1 Singapore):
+  // each query becomes a ~1-3 ms hop instead of a trip from the user's edge
+  // location. Static assets are still served from the nearest edge.
+  "placement": {
+    "mode": "targeted",
+    "region": "aws:ap-southeast-1"
+  },
   "observability": {
     "enabled": true
   },

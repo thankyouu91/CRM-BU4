@@ -23,7 +23,8 @@ function createClient(connectionString: string, perRequest: boolean) {
   );
   return new PrismaClient({
     adapter,
-    log: process.env.NODE_ENV === "development" ? ["error", "warn"] : ["error"],
+    // PRISMA_QUERY_LOG=1 prints every query, used to count queries per request locally.
+    log: process.env.PRISMA_QUERY_LOG ? ["query", "error"] : process.env.NODE_ENV === "development" ? ["error", "warn"] : ["error"],
   });
 }
 

@@ -27,7 +27,7 @@ import { ProgressBar } from "@/components/ui/progress";
 import { ConfirmDialog } from "@/components/ui/confirm";
 import { StatusToggle } from "./status-toggle";
 import { categoryOptions, projectPeople, type TaskDetail, type TaskPermissions, type TaskReportItem } from "./types";
-import { api, ApiError } from "@/lib/client";
+import { api, ApiError, sendPlain, type SendChange } from "@/lib/client";
 import { PRIORITY, TASK_STATUS } from "@/lib/constants";
 import { fromInputDate, isOverdue, toInputDate } from "@/lib/dates";
 import { cn, formatShortDate, formatDateTime, timeAgo } from "@/lib/utils";
@@ -37,9 +37,11 @@ interface Props {
   onClose: () => void;
   /** Called after any successful mutation so the parent view can refresh. */
   onChanged?: () => void;
+  /** Sends changes; a screen that refreshes itself from the answer (the project workspace) passes its own. */
+  send?: SendChange;
 }
 
-export function TaskDrawer({ taskId, onClose, onChanged }: Props) {
+export function TaskDrawer({ taskId, onClose, onChanged, send }: Props) {
   // Internal navigation lets the drawer walk into subtasks and back up to parents.
   const [currentId, setCurrentId] = useState<string | null>(taskId);
   useEffect(() => setCurrentId(taskId), [taskId]);
@@ -47,7 +49,7 @@ export function TaskDrawer({ taskId, onClose, onChanged }: Props) {
   return (
     <Drawer open={!!taskId} onClose={onClose}>
       {currentId && (
-        <TaskPanel key={currentId} id={currentId} onNavigate={setCurrentId} onClose={onClose} onChanged={onChanged} />
+        <TaskPanel key={currentId} id={currentId} onNavigate={setCurrentId} onClose={onClose} onChanged={onChanged} send={send ?? sendPlain} />
       )}
     </Drawer>
   );
@@ -58,11 +60,13 @@ function TaskPanel({
   onNavigate,
   onClose,
   onChanged,
+  send,
 }: {
   id: string;
   onNavigate: (id: string) => void;
   onClose: () => void;
   onChanged?: () => void;
+  send: SendChange;
 }) {
   const [task, setTask] = useState<TaskDetail | null>(null);
   const [perms, setPerms] = useState<TaskPermissions | null>(null);
@@ -89,8 +93,10 @@ function TaskPanel({
     const prev = task;
     setTask({ ...task, ...fields } as TaskDetail); // optimistic
     try {
-      await api(`/api/tasks/${id}`, { method: "PATCH", body: fields });
-      await load();
+      const res = await send<{ task: Partial<TaskDetail> }>(`/api/tasks/${id}`, { method: "PATCH", body: fields }, { taskId: id, fields });
+      // Plain fields come back with the answer; a new assignee or category needs the full task again.
+      if ("assigneeId" in fields || "categoryId" in fields) await load();
+      else setTask((t) => (t ? { ...t, ...res.task } : t));
       onChanged?.();
     } catch (e) {
       setTask(prev);
@@ -259,9 +265,9 @@ function TaskPanel({
 
         <DescriptionField value={task.description} editable={perms.report} onSave={(description) => patch({ description })} />
 
-        <Subtasks task={task} people={people} onNavigate={onNavigate} onChanged={async () => { await load(); onChanged?.(); }} />
+        <Subtasks task={task} people={people} send={send} onNavigate={onNavigate} onChanged={async () => { await load(); onChanged?.(); }} />
 
-        <Reports task={task} perms={perms} onChanged={async () => { await load(); onChanged?.(); }} />
+        <Reports task={task} perms={perms} send={send} onChanged={async () => { await load(); onChanged?.(); }} />
 
         <p className="border-t pt-4 text-xs text-muted-foreground">
           Tạo bởi {task.createdBy.name} · {formatDateTime(task.createdAt)}
@@ -291,7 +297,7 @@ function TaskPanel({
         }
         onConfirm={async () => {
           try {
-            await api(`/api/tasks/${task.id}`, { method: "DELETE" });
+            await send(`/api/tasks/${task.id}`, { method: "DELETE" });
             toast.success("Đã xoá công việc");
             onChanged?.();
             if (task.parent) onNavigate(task.parent.id);
@@ -412,11 +418,13 @@ function DescriptionField({
 function Subtasks({
   task,
   people,
+  send,
   onNavigate,
   onChanged,
 }: {
   task: TaskDetail;
   people: ReturnType<typeof projectPeople>;
+  send: SendChange;
   onNavigate: (id: string) => void;
   onChanged: () => Promise<void>;
 }) {
@@ -430,7 +438,7 @@ function Subtasks({
     if (!title.trim()) return;
     setBusy(true);
     try {
-      await api("/api/tasks", {
+      await send("/api/tasks", {
         method: "POST",
         body: { projectId: task.projectId, parentId: task.id, title, assigneeId: assigneeId || null },
       });
@@ -444,8 +452,9 @@ function Subtasks({
   };
 
   const toggle = async (id: string, status: string) => {
+    const next = status === "DONE" ? "IN_PROGRESS" : "DONE";
     try {
-      await api(`/api/tasks/${id}`, { method: "PATCH", body: { status: status === "DONE" ? "IN_PROGRESS" : "DONE" } });
+      await send(`/api/tasks/${id}`, { method: "PATCH", body: { status: next } }, { taskId: id, fields: { status: next } });
       await onChanged();
     } catch (err) {
       toast.error(err instanceof ApiError ? err.message : "Không thể cập nhật");
@@ -516,10 +525,12 @@ function Subtasks({
 function Reports({
   task,
   perms,
+  send,
   onChanged,
 }: {
   task: TaskDetail;
   perms: TaskPermissions;
+  send: SendChange;
   onChanged: () => Promise<void>;
 }) {
   const [content, setContent] = useState("");
@@ -533,7 +544,7 @@ function Reports({
     if (!content.trim()) return;
     setBusy(true);
     try {
-      await api(`/api/tasks/${task.id}/reports`, {
+      await send(`/api/tasks/${task.id}/reports`, {
         method: "POST",
         body: { content, progress, hoursSpent: Number(hours) || 0 },
       });
@@ -611,7 +622,7 @@ function Reports({
         <ol className="relative space-y-5 border-l pl-6">
           <AnimatePresence initial={false}>
             {task.reports.map((r) => (
-              <ReportItem key={r.id} report={r} canReview={perms.isProjectManager} taskDone={task.status === "DONE"} onChanged={onChanged} />
+              <ReportItem key={r.id} report={r} canReview={perms.isProjectManager} taskDone={task.status === "DONE"} send={send} onChanged={onChanged} />
             ))}
           </AnimatePresence>
         </ol>
@@ -624,11 +635,13 @@ function ReportItem({
   report: r,
   canReview,
   taskDone,
+  send,
   onChanged,
 }: {
   report: TaskReportItem;
   canReview: boolean;
   taskDone: boolean;
+  send: SendChange;
   onChanged: () => Promise<void>;
 }) {
   const [noteOpen, setNoteOpen] = useState(false);
@@ -638,7 +651,7 @@ function ReportItem({
   const review = async (approveTask: boolean) => {
     setBusy(true);
     try {
-      await api(`/api/reports/${r.id}`, { method: "PATCH", body: { reviewNote: note || null, approveTask } });
+      await send(`/api/reports/${r.id}`, { method: "PATCH", body: { reviewNote: note || null, approveTask } });
       toast.success(approveTask ? "Đã duyệt hoàn thành công việc" : "Đã đánh dấu đã xem");
       await onChanged();
     } catch (err) {

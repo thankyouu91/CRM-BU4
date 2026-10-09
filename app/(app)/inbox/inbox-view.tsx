@@ -130,13 +130,13 @@ function ReportCard({
   );
 }
 
-export function InboxView({ isManager }: { isManager: boolean }) {
+export function InboxView({ isManager, initial }: { isManager: boolean; initial?: { reports: InboxReport[]; pendingCount: number } }) {
   const router = useRouter();
   const [box, setBox] = useState<Box>(isManager ? "received" : "sent");
   const [status, setStatus] = useState<Status>(isManager ? "pending" : "all");
   const [openTask, setOpenTask] = useState<string | null>(null);
   const [bulk, setBulk] = useState(false);
-  const { data, loading, reload } = useApi<{ reports: InboxReport[]; pendingCount: number }>(`/api/reports/inbox?box=${box}&status=${status}`);
+  const { data, loading, reload } = useApi<{ reports: InboxReport[]; pendingCount: number }>(`/api/reports/inbox?box=${box}&status=${status}`, { initial });
 
   const refresh = async () => {
     await reload();

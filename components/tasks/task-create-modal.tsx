@@ -5,7 +5,7 @@ import { toast } from "sonner";
 import { Modal } from "@/components/ui/modal";
 import { Button } from "@/components/ui/button";
 import { Field, Input, Select, Textarea } from "@/components/ui/input";
-import { api, ApiError } from "@/lib/client";
+import { ApiError, sendPlain, type SendChange } from "@/lib/client";
 import { PRIORITY } from "@/lib/constants";
 import { fromInputDate } from "@/lib/dates";
 import { categoryOptions, type CategoryBrief, type UserBrief } from "./types";
@@ -17,6 +17,7 @@ export function TaskCreateModal({
   categories,
   people,
   defaultCategoryId,
+  send = sendPlain,
   onCreated,
 }: {
   open: boolean;
@@ -25,6 +26,8 @@ export function TaskCreateModal({
   categories: CategoryBrief[];
   people: UserBrief[];
   defaultCategoryId?: string | null;
+  /** The project workspace passes its own, which refreshes the project from the answer. */
+  send?: SendChange;
   onCreated: (id: string) => void;
 }) {
   const [title, setTitle] = useState("");
@@ -56,7 +59,7 @@ export function TaskCreateModal({
     }
     setBusy(true);
     try {
-      const res = await api<{ task: { id: string } }>("/api/tasks", {
+      const res = await send<{ task: { id: string } }>("/api/tasks", {
         method: "POST",
         body: {
           projectId,

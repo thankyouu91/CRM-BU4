@@ -6,7 +6,7 @@ import { Eye, EyeOff, Lock, Mail } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Field, Input } from "@/components/ui/input";
-import { api, ApiError } from "@/lib/client";
+import { api, ApiError, clearApiCache } from "@/lib/client";
 
 /** Only allow same-site relative paths, to prevent open redirects via ?next=. */
 function safeNext(next: string | null): string {
@@ -32,6 +32,7 @@ export function LoginForm({ showDemoHint }: { showDemoHint: boolean }) {
         method: "POST",
         body: { email, password },
       });
+      clearApiCache();
       toast.success(`Chào mừng, ${res.user.name}!`);
       router.replace(res.mustChangePassword ? "/change-password" : safeNext(params.get("next")));
       router.refresh();

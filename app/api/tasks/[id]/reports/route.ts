@@ -1,7 +1,8 @@
 import type { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { auth, created, forbidden, handle, notFound, unauthorized } from "@/lib/api";
-import { canAccessProject, taskPermissions } from "@/lib/rbac";
+import { loadTaskForUser } from "@/lib/rbac";
+import { withWorkspace } from "@/lib/queries";
 import { resolveTaskState } from "@/lib/task-rules";
 import { createReportSchema } from "@/lib/validations";
 
@@ -18,9 +19,10 @@ export async function POST(req: NextRequest, ctx: Ctx) {
     const me = await auth();
     if (!me) return unauthorized();
 
-    const task = await prisma.task.findUnique({ where: { id: params.id } });
-    if (!task || !(await canAccessProject(me, task.projectId))) return notFound("Không tìm thấy công việc");
-    if (!(await taskPermissions(me, task)).report) {
+    const loaded = await loadTaskForUser(me, params.id);
+    if (!loaded) return notFound("Không tìm thấy công việc");
+    const { task } = loaded;
+    if (!loaded.perms.report) {
       return forbidden("Chỉ người phụ trách hoặc quản lý mới được gửi báo cáo cho công việc này");
     }
 
@@ -44,6 +46,6 @@ export async function POST(req: NextRequest, ctx: Ctx) {
       prisma.task.update({ where: { id: task.id }, data: state }),
       prisma.project.update({ where: { id: task.projectId }, data: { updatedAt: new Date() } }),
     ]);
-    return created({ report });
+    return created(await withWorkspace(req, me, task.projectId, { report }));
   });
 }

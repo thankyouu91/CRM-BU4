@@ -356,26 +356,27 @@ export async function getSummary(
     ...(projectId ? { id: projectId } : {}),
   };
 
-  const projects = await prisma.project.findMany({
-    where: projectWhere,
-    orderBy: { createdAt: "asc" },
-    select: {
-      id: true,
-      name: true,
-      color: true,
-      status: true,
-      startDate: true,
-      dueDate: true,
-      createdAt: true,
-      owner: { select: { name: true } },
-      _count: { select: { members: true } },
-    },
-  });
-  const projectIds = projects.map((p) => p.id);
-
-  const [tasks, reports, categories] = await Promise.all([
+  // One parallel wave: tasks, reports and categories filter through the project
+  // relation instead of waiting for the project ids.
+  const canFinance = hasPermission(user, "FINANCE_MANAGE");
+  const [projects, tasks, reports, categories, contractRows] = await Promise.all([
+    prisma.project.findMany({
+      where: projectWhere,
+      orderBy: { createdAt: "asc" },
+      select: {
+        id: true,
+        name: true,
+        color: true,
+        status: true,
+        startDate: true,
+        dueDate: true,
+        createdAt: true,
+        owner: { select: { name: true } },
+        _count: { select: { members: true } },
+      },
+    }),
     prisma.task.findMany({
-      where: { projectId: { in: projectIds } },
+      where: { project: projectWhere },
       select: {
         id: true,
         title: true,
@@ -395,7 +396,7 @@ export async function getSummary(
     prisma.taskReport.findMany({
       where: {
         createdAt: { gte: range.from, lte: range.to },
-        task: { projectId: { in: projectIds } },
+        task: { project: projectWhere },
       },
       orderBy: { createdAt: "desc" },
       select: {
@@ -411,14 +412,23 @@ export async function getSummary(
       },
     }),
     // Category breakdown only for a single-project report.
-    projectId && projectIds.length
+    projectId
       ? prisma.category.findMany({
-          where: { projectId: projectIds[0] },
+          where: { project: projectWhere },
           orderBy: [{ order: "asc" }, { createdAt: "asc" }],
           select: { id: true, name: true, color: true, parentId: true, startDate: true, dueDate: true, createdAt: true },
         })
       : Promise.resolve([]),
+    // Contracts & costs (same records and formulas as the contracts page).
+    canFinance
+      ? prisma.contract.findMany({
+          where: projectId ? { projectId } : { performedAt: { gte: range.from, lte: range.to } },
+          orderBy: { performedAt: "asc" },
+          include: { project: { select: { id: true, name: true, color: true } } },
+        })
+      : Promise.resolve([]),
   ]);
+  const projectIds = projects.map((p) => p.id);
 
   const inScope = tasks.filter(
     (t) => t.createdAt <= range.to && (!t.completedAt || t.completedAt >= range.from),
@@ -569,14 +579,9 @@ export async function getSummary(
 
   // --- Contracts & costs (same records and formulas as the contracts page) ---
   let finance: SummaryFinance | undefined;
-  if (hasPermission(user, "FINANCE_MANAGE")) {
-    const rows = (
-      await prisma.contract.findMany({
-        where: projectId ? { projectId } : { performedAt: { gte: range.from, lte: range.to } },
-        orderBy: { performedAt: "asc" },
-        include: { project: { select: { id: true, name: true, color: true } } },
-      })
-    ).map(contractDto);
+  // A project-scoped report only reaches here for a project the user can see (checked by the caller).
+  if (canFinance && (!projectId || projectIds.length)) {
+    const rows = contractRows.map(contractDto);
     const groups = new Map<string, typeof rows>();
     for (const r of rows) groups.set(r.projectId ?? "", [...(groups.get(r.projectId ?? "") ?? []), r]);
     const summaryOf = new Map(summaryProjects.map((p) => [p.id, p]));

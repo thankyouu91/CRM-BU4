@@ -31,18 +31,32 @@ export interface ProjectAccess {
 
 const NO_ACCESS: ProjectAccess = { view: false, contribute: false, manage: false, role: null };
 
-/** What a user may do in one project: their project role combined with org-wide permissions. */
-export async function projectAccess(user: CurrentUser, projectId: string): Promise<ProjectAccess> {
-  const project = await prisma.project.findUnique({
-    where: { id: projectId },
-    select: { ownerId: true, members: { where: { userId: user.id }, select: { role: true } } },
-  });
-  if (!project) return NO_ACCESS;
-  const role: ProjectRoleKey | null = project.ownerId === user.id ? "MANAGER" : (project.members[0]?.role ?? null);
+/**
+ * Access from data already loaded: the project's owner and the user's membership
+ * role (null when not a member). Lets a handler that reads the project anyway
+ * skip a separate access query.
+ */
+export function accessFrom(
+  user: Pick<CurrentUser, "id" | "role" | "permissions">,
+  ownerId: string,
+  memberRole: ProjectRoleKey | null,
+): ProjectAccess {
+  const role: ProjectRoleKey | null = ownerId === user.id ? "MANAGER" : memberRole;
   const manage = role === "MANAGER" || canManageAllProjects(user);
   const contribute = manage || role === "MEMBER";
   const view = contribute || role === "VIEWER" || canViewAllProjects(user);
   return { view, contribute, manage, role };
+}
+
+/** Prisma `select` for the fields accessFrom needs. */
+export const accessSelect = (userId: string) =>
+  ({ ownerId: true, members: { where: { userId }, select: { role: true } } }) as const;
+
+/** What a user may do in one project: their project role combined with org-wide permissions. */
+export async function projectAccess(user: CurrentUser, projectId: string): Promise<ProjectAccess> {
+  const project = await prisma.project.findUnique({ where: { id: projectId }, select: accessSelect(user.id) });
+  if (!project) return NO_ACCESS;
+  return accessFrom(user, project.ownerId, project.members[0]?.role ?? null);
 }
 
 export async function canAccessProject(user: CurrentUser, projectId: string): Promise<boolean> {
@@ -54,18 +68,27 @@ export async function canManageProject(user: CurrentUser, projectId: string): Pr
 }
 
 /**
- * Task-level permissions:
+ * Task-level rights:
  *  - manage: full edit/delete (project managers, and contributors on tasks they created)
  *  - report: submit progress reports and update status/progress (the assignee, or managers)
  */
-export async function taskPermissions(
-  user: CurrentUser,
-  task: { projectId: string; assigneeId: string | null; createdById: string },
-) {
-  const access = await projectAccess(user, task.projectId);
+export function taskRights(user: Pick<CurrentUser, "id">, access: ProjectAccess, task: { assigneeId: string | null; createdById: string }) {
   const manage = access.manage || (access.contribute && task.createdById === user.id);
   const report = manage || (access.contribute && task.assigneeId === user.id);
   return { manage, report, isProjectManager: access.manage };
+}
+
+/**
+ * A task with the caller's project access and task rights, in one query.
+ * Null when the task doesn't exist or the caller can't see its project.
+ */
+export async function loadTaskForUser(user: CurrentUser, taskId: string) {
+  const row = await prisma.task.findUnique({ where: { id: taskId }, include: { project: { select: accessSelect(user.id) } } });
+  if (!row) return null;
+  const { project, ...task } = row;
+  const access = accessFrom(user, project.ownerId, project.members[0]?.role ?? null);
+  if (!access.view) return null;
+  return { task, access, perms: taskRights(user, access, task) };
 }
 
 /** Prisma `where` for the projects a user can see. */

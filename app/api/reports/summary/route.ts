@@ -19,7 +19,8 @@ export async function GET(req: NextRequest) {
   });
 
   const projectId = sp.get("projectId") || null;
-  if (projectId && !(await canAccessProject(me, projectId))) return notFound("Không tìm thấy dự án");
-
-  return ok(await getSummary(me, range, type, projectId));
+  // The access check and the summary don't depend on each other.
+  const [visible, summary] = await Promise.all([projectId ? canAccessProject(me, projectId) : true, getSummary(me, range, type, projectId)]);
+  if (!visible) return notFound("Không tìm thấy dự án");
+  return ok(summary);
 }

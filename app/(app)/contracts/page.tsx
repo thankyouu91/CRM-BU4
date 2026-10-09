@@ -3,6 +3,8 @@ import { getCurrentUser } from "@/lib/session";
 import { prisma } from "@/lib/prisma";
 import { hasPermission } from "@/lib/permissions";
 import { projectVisibilityWhere } from "@/lib/rbac";
+import { contractList } from "@/lib/contract-queries";
+import { asJson } from "@/lib/json";
 import { EmptyState, PageHeader } from "@/components/ui/misc";
 import { ContractsView } from "./contracts-view";
 
@@ -24,10 +26,14 @@ export default async function ContractsPage() {
       </div>
     );
   }
-  const projects = await prisma.project.findMany({
-    where: projectVisibilityWhere(user),
-    orderBy: { name: "asc" },
-    select: { id: true, name: true, color: true },
-  });
-  return <ContractsView projects={projects} />;
+  // The default list (this month) is sent with the page.
+  const [projects, initial] = await Promise.all([
+    prisma.project.findMany({
+      where: projectVisibilityWhere(user),
+      orderBy: { name: "asc" },
+      select: { id: true, name: true, color: true },
+    }),
+    contractList(new URLSearchParams({ period: "month" })),
+  ]);
+  return <ContractsView projects={projects} initial={asJson(initial)} />;
 }

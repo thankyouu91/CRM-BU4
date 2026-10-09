@@ -112,6 +112,14 @@ Sau khi đã có Hyperdrive và ID trong `wrangler.jsonc` (cách 1, hoặc tạo
 - **Chạy thử runtime Cloudflare trên máy:** `npm run preview` dùng `localConnectionString` của binding Hyperdrive (Postgres local theo `.env.example`); muốn trỏ chỗ khác thì đặt `CLOUDFLARE_HYPERDRIVE_LOCAL_CONNECTION_STRING_HYPERDRIVE`.
 - **Supabase gói Free** tự tạm dừng project sau 7 ngày không hoạt động; bật lại trong Supabase Dashboard nếu cần.
 
+### Hiệu năng
+
+- **Worker chạy cạnh database:** `placement` trong `wrangler.jsonc` đặt Worker ở `aws:ap-southeast-1` (Singapore, cùng vùng Supabase), mỗi truy vấn chỉ còn vài ms. Đổi vùng Supabase thì đổi luôn giá trị này.
+- **Ít truy vấn:** Prisma bật `relationJoins`, nên `include` lồng nhau thành một câu SQL; quyền truy cập dự án được tính từ dữ liệu đã tải (`accessFrom`, `loadTaskForUser`), không truy vấn thêm.
+- **Trang gửi kèm dữ liệu:** các trang dự án, công việc, hộp báo cáo, báo cáo và hợp đồng tải dữ liệu trên server và truyền cho view (`useApi(url, { initial })`), không cần request thứ hai. Dữ liệu từng xem được nhớ theo URL và làm mới ngầm.
+- **Thao tác tức thì:** thay đổi công việc trong dự án đi qua `send` (`components/projects/use-workspace.ts`): màn hình cập nhật ngay, request gửi kèm `?include=workspace` và nhận lại toàn bộ dự án đã cập nhật trong cùng câu trả lời; lỗi thì hoàn tác.
+- **Đo số truy vấn trên máy:** chạy `PRISMA_QUERY_LOG=1 npm run dev` để in mọi truy vấn.
+
 ## Bảo mật
 
 - Mật khẩu băm bằng bcrypt (cost 12); chính sách tối thiểu 8 ký tự, có chữ hoa, chữ thường, chữ số.

@@ -1,8 +1,8 @@
 import type { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { auth, badRequest, forbidden, handle, notFound, ok, unauthorized } from "@/lib/api";
-import { canAccessProject, taskPermissions } from "@/lib/rbac";
-import { projectMemberIds } from "@/lib/queries";
+import { accessFrom, loadTaskForUser, taskRights } from "@/lib/rbac";
+import { projectMemberIds, withWorkspace } from "@/lib/queries";
 import { resolveTaskState } from "@/lib/task-rules";
 import { updateTaskSchema } from "@/lib/validations";
 
@@ -12,11 +12,20 @@ const userBrief = { select: { id: true, name: true, avatarColor: true, jobTitle:
 
 export async function GET(_req: NextRequest, ctx: Ctx) {
   const params = await ctx.params;
-  const me = await auth();
+  // Session and task load together; access comes from the project members loaded with the task.
+  const [me, task] = await Promise.all([auth(), loadTaskDetail(params.id)]);
   if (!me) return unauthorized();
+  if (!task) return notFound("Không tìm thấy công việc");
 
-  const task = await prisma.task.findUnique({
-    where: { id: params.id },
+  const membership = task.project.members.find((m) => m.user.id === me.id);
+  const access = accessFrom(me, task.project.owner.id, membership?.role ?? null);
+  if (!access.view) return notFound("Không tìm thấy công việc");
+  return ok({ task, permissions: taskRights(me, access, task) });
+}
+
+function loadTaskDetail(id: string) {
+  return prisma.task.findUnique({
+    where: { id },
     include: {
       // Members + categories let the drawer offer PIC/category pickers without extra requests.
       project: {
@@ -43,10 +52,6 @@ export async function GET(_req: NextRequest, ctx: Ctx) {
       },
     },
   });
-  if (!task || !(await canAccessProject(me, task.projectId))) return notFound("Không tìm thấy công việc");
-
-  const perms = await taskPermissions(me, task);
-  return ok({ task, permissions: perms });
 }
 
 export async function PATCH(req: NextRequest, ctx: Ctx) {
@@ -55,10 +60,9 @@ export async function PATCH(req: NextRequest, ctx: Ctx) {
     const me = await auth();
     if (!me) return unauthorized();
 
-    const task = await prisma.task.findUnique({ where: { id: params.id } });
-    if (!task || !(await canAccessProject(me, task.projectId))) return notFound("Không tìm thấy công việc");
-
-    const perms = await taskPermissions(me, task);
+    const loaded = await loadTaskForUser(me, params.id);
+    if (!loaded) return notFound("Không tìm thấy công việc");
+    const { task, perms } = loaded;
     if (!perms.report) return forbidden();
 
     const data = updateTaskSchema.parse(await req.json());
@@ -71,43 +75,46 @@ export async function PATCH(req: NextRequest, ctx: Ctx) {
       }
     }
 
-    if (data.categoryId) {
-      const category = await prisma.category.findUnique({ where: { id: data.categoryId }, select: { projectId: true } });
-      if (!category || category.projectId !== task.projectId) return badRequest("Hạng mục không hợp lệ");
-    }
-    if (data.assigneeId && !(await projectMemberIds(task.projectId)).has(data.assigneeId)) {
+    const [category, memberIds] = await Promise.all([
+      data.categoryId ? prisma.category.findUnique({ where: { id: data.categoryId }, select: { projectId: true } }) : null,
+      data.assigneeId ? projectMemberIds(task.projectId) : null,
+    ]);
+    if (data.categoryId && (!category || category.projectId !== task.projectId)) return badRequest("Hạng mục không hợp lệ");
+    if (data.assigneeId && !memberIds?.has(data.assigneeId)) {
       return badRequest("Người phụ trách phải là thành viên dự án (không phải người chỉ xem)", { assigneeId: "Không phải thành viên dự án" });
     }
 
     const state = resolveTaskState(task, { status: data.status, progress: data.progress });
 
-    const updated = await prisma.task.update({
-      where: { id: task.id },
-      data: {
-        title: data.title?.trim(),
-        description: data.description === undefined ? undefined : data.description?.trim() || null,
-        categoryId: data.categoryId === undefined ? undefined : data.categoryId || null,
-        assigneeId: data.assigneeId === undefined ? undefined : data.assigneeId || null,
-        priority: data.priority,
-        startDate: data.startDate,
-        dueDate: data.dueDate,
-        ...state,
-      },
-    });
-    await prisma.project.update({ where: { id: task.projectId }, data: { updatedAt: new Date() } });
-    return ok({ task: updated });
+    const [updated] = await Promise.all([
+      prisma.task.update({
+        where: { id: task.id },
+        data: {
+          title: data.title?.trim(),
+          description: data.description === undefined ? undefined : data.description?.trim() || null,
+          categoryId: data.categoryId === undefined ? undefined : data.categoryId || null,
+          assigneeId: data.assigneeId === undefined ? undefined : data.assigneeId || null,
+          priority: data.priority,
+          startDate: data.startDate,
+          dueDate: data.dueDate,
+          ...state,
+        },
+      }),
+      prisma.project.update({ where: { id: task.projectId }, data: { updatedAt: new Date() } }),
+    ]);
+    return ok(await withWorkspace(req, me, task.projectId, { task: updated }));
   });
 }
 
-export async function DELETE(_req: NextRequest, ctx: Ctx) {
+export async function DELETE(req: NextRequest, ctx: Ctx) {
   const params = await ctx.params;
   const me = await auth();
   if (!me) return unauthorized();
-  const task = await prisma.task.findUnique({ where: { id: params.id } });
-  if (!task || !(await canAccessProject(me, task.projectId))) return notFound("Không tìm thấy công việc");
-  if (!(await taskPermissions(me, task)).manage) return forbidden();
+  const loaded = await loadTaskForUser(me, params.id);
+  if (!loaded) return notFound("Không tìm thấy công việc");
+  if (!loaded.perms.manage) return forbidden();
 
   // Subtasks and reports cascade with the task.
-  await prisma.task.delete({ where: { id: task.id } });
-  return ok({ ok: true });
+  await prisma.task.delete({ where: { id: loaded.task.id } });
+  return ok(await withWorkspace(req, me, loaded.task.projectId, { ok: true }));
 }

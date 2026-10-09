@@ -148,7 +148,7 @@ const GROUPS = [
   { label: "Dòng tiền & trạng thái", span: 4, cls: "bg-violet-600 text-white" },
 ];
 
-export function ContractsView({ projects }: { projects: ProjectOption[] }) {
+export function ContractsView({ projects, initial }: { projects: ProjectOption[]; initial?: ListResponse }) {
   const [period, setPeriod] = useState<PeriodState>(defaultPeriod("month"));
   const [all, setAll] = useState(false);
   const [q, setQ] = useState("");
@@ -163,7 +163,7 @@ export function ContractsView({ projects }: { projects: ProjectOption[] }) {
 
   const customIncomplete = period.type === "custom" && (!period.from || !period.to);
   const url = all ? "/api/contracts?all=1" : customIncomplete ? null : `/api/contracts?${periodQuery(period)}`;
-  const { data, loading, reload } = useApi<ListResponse>(url);
+  const { data, loading, reload } = useApi<ListResponse>(url, { initial });
 
   // New contracts default into the period being viewed.
   const defaultDate = useMemo(() => {

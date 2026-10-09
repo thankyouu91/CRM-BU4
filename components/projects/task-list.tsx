@@ -9,7 +9,7 @@ import { PriorityBadge, ScheduleBadge } from "@/components/ui/badge";
 import { EmptyState } from "@/components/ui/misc";
 import { PlanBar, ProgressBar } from "@/components/ui/progress";
 import { StatusToggle } from "@/components/tasks/status-toggle";
-import { api, ApiError } from "@/lib/client";
+import { ApiError, type SendChange } from "@/lib/client";
 import { isOverdue } from "@/lib/dates";
 import { daysLeftLabel } from "@/lib/schedule";
 import { cn, formatShortDate } from "@/lib/utils";
@@ -129,7 +129,7 @@ function TaskRow({ task, depth, ctx }: { task: ProjectTask; depth: number; ctx: 
   );
 }
 
-function QuickAdd({ projectId, categoryId, onAdded }: { projectId: string; categoryId: string | null; onAdded: () => void }) {
+function QuickAdd({ projectId, categoryId, send }: { projectId: string; categoryId: string | null; send: SendChange }) {
   const [title, setTitle] = useState("");
   const [busy, setBusy] = useState(false);
   const submit = async (e: React.FormEvent) => {
@@ -137,9 +137,8 @@ function QuickAdd({ projectId, categoryId, onAdded }: { projectId: string; categ
     if (!title.trim()) return;
     setBusy(true);
     try {
-      await api("/api/tasks", { method: "POST", body: { projectId, categoryId, title } });
+      await send("/api/tasks", { method: "POST", body: { projectId, categoryId, title } });
       setTitle("");
-      onAdded();
     } catch (err) {
       toast.error(err instanceof ApiError ? err.message : "Không thể thêm công việc");
     } finally {
@@ -194,7 +193,7 @@ export function TaskList({
   canManage,
   canContribute,
   onOpen,
-  onReload,
+  send,
   onEditCategory,
   onDeleteCategory,
   onAddSubCategory,
@@ -208,7 +207,7 @@ export function TaskList({
   /** False for view-only members: no quick add, no status changes. */
   canContribute: boolean;
   onOpen: (id: string) => void;
-  onReload: () => void;
+  send: SendChange;
   onEditCategory: (c: ProjectCategory) => void;
   onDeleteCategory: (c: ProjectCategory) => void;
   onAddSubCategory: (parent: ProjectCategory) => void;
@@ -222,9 +221,9 @@ export function TaskList({
     onOpen,
     canReport: (t) => canManage || (canContribute && (t.assigneeId === meId || t.createdById === meId)),
     onToggle: async (t) => {
+      const status = t.status === "DONE" ? "IN_PROGRESS" : "DONE";
       try {
-        await api(`/api/tasks/${t.id}`, { method: "PATCH", body: { status: t.status === "DONE" ? "IN_PROGRESS" : "DONE" } });
-        onReload();
+        await send(`/api/tasks/${t.id}`, { method: "PATCH", body: { status } }, { taskId: t.id, fields: { status } });
       } catch (err) {
         toast.error(err instanceof ApiError ? err.message : "Không thể cập nhật");
       }
@@ -256,7 +255,7 @@ export function TaskList({
     );
   const rows = (list: ProjectTask[]) => list.map((t) => <TaskRow key={t.id} task={t} depth={0} ctx={ctx} />);
   const quickAdd = (categoryId: string | null) =>
-    canContribute && <QuickAdd projectId={projectId} categoryId={categoryId} onAdded={onReload} />;
+    canContribute && <QuickAdd projectId={projectId} categoryId={categoryId} send={send} />;
 
   return (
     <div className="space-y-4">

@@ -3,28 +3,19 @@ import { prisma } from "@/lib/prisma";
 import { auth, forbidden, handle, notFound, ok, unauthorized } from "@/lib/api";
 import { canManageAllProjects, canManageProject, projectAccess } from "@/lib/rbac";
 import { resolveMemberRoles } from "@/lib/project-members";
-import { getProjectDetail } from "@/lib/queries";
+import { getProjectDetail, workspaceFor } from "@/lib/queries";
 import { updateProjectSchema } from "@/lib/validations";
 
 type Ctx = { params: Promise<{ id: string }> };
 
 export async function GET(_req: NextRequest, ctx: Ctx) {
   const params = await ctx.params;
-  const me = await auth();
+  // Session and project load together; access is derived from the loaded members.
+  const [me, project] = await Promise.all([auth(), getProjectDetail(params.id)]);
   if (!me) return unauthorized();
-  const access = await projectAccess(me, params.id);
-  if (!access.view) return notFound("Không tìm thấy dự án");
-
-  const project = await getProjectDetail(params.id);
-  if (!project) return notFound("Không tìm thấy dự án");
-  return ok({
-    project,
-    canManage: access.manage,
-    canContribute: access.contribute,
-    // Deleting stays with the owner and org-wide project managers.
-    canDelete: project.ownerId === me.id || canManageAllProjects(me),
-    projectRole: access.role,
-  });
+  const workspace = workspaceFor(me, project);
+  if (!workspace) return notFound("Không tìm thấy dự án");
+  return ok(workspace);
 }
 
 export async function PATCH(req: NextRequest, ctx: Ctx) {

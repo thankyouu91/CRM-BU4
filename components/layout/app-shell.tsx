@@ -25,6 +25,7 @@ import { Avatar } from "@/components/ui/avatar";
 import { RoleBadge } from "@/components/ui/badge";
 import { ThemeToggle } from "./theme-toggle";
 import type { CurrentUser } from "@/lib/session";
+import { clearApiCache } from "@/lib/client";
 import { cn } from "@/lib/utils";
 import { hasPermission, type PermissionKey } from "@/lib/permissions";
 
@@ -107,6 +108,7 @@ function UserMenu({ user }: { user: CurrentUser }) {
 
   const logout = async () => {
     await fetch("/api/auth/logout", { method: "POST" });
+    clearApiCache();
     toast.success("Đã đăng xuất");
     router.replace("/login");
     router.refresh();

@@ -28,10 +28,13 @@ export function ReportsView({
   projects,
   initialProjectId,
   userName,
+  initial,
 }: {
   projects: { id: string; name: string; color: string }[];
   initialProjectId: string;
   userName: string;
+  /** This month's report, computed with the page. */
+  initial?: Summary;
 }) {
   const [period, setPeriod] = useState<PeriodState>(defaultPeriod("month"));
   const [projectId, setProjectId] = useState(initialProjectId);
@@ -40,7 +43,7 @@ export function ReportsView({
 
   const query = periodQuery(period, projectId);
   const customIncomplete = period.type === "custom" && (!period.from || !period.to);
-  const { data, loading } = useApi<Summary>(customIncomplete ? null : `/api/reports/summary?${query}`);
+  const { data, loading } = useApi<Summary>(customIncomplete ? null : `/api/reports/summary?${query}`, { initial });
 
   const projectName = projects.find((p) => p.id === projectId)?.name ?? null;
   const deck = useMemo(

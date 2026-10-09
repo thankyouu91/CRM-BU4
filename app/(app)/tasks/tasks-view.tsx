@@ -52,12 +52,12 @@ function bucketOf(t: Row): Bucket {
   return "later";
 }
 
-export function MyTasksView({ canSeeAll }: { canSeeAll: boolean }) {
+export function MyTasksView({ canSeeAll, initial }: { canSeeAll: boolean; initial?: { tasks: Row[] } }) {
   const [scope, setScope] = useState<"mine" | "all">("mine");
   const [q, setQ] = useState("");
   const [openTask, setOpenTask] = useState<string | null>(null);
   const [collapsed, setCollapsed] = useState<Set<Bucket>>(new Set(["done"]));
-  const { data, loading, reload } = useApi<{ tasks: Row[] }>(`/api/tasks?scope=${scope}`);
+  const { data, loading, reload } = useApi<{ tasks: Row[] }>(`/api/tasks?scope=${scope}`, { initial });
 
   const tasks = useMemo(
     () => (data?.tasks ?? []).filter((t) => !q.trim() || t.title.toLowerCase().includes(q.trim().toLowerCase())),

@@ -1,6 +1,7 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import dynamic from "next/dynamic";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
@@ -32,17 +33,35 @@ import { TaskDrawer } from "@/components/tasks/task-drawer";
 import { TaskCreateModal } from "@/components/tasks/task-create-modal";
 import { TaskList, type TaskFilters } from "@/components/projects/task-list";
 import { Kanban } from "@/components/projects/kanban";
-import { ProgressPanel } from "@/components/projects/progress-panel";
-import { NotesPanel } from "@/components/projects/notes-panel";
-import { MembersPanel } from "@/components/projects/members-panel";
-import { CategoryModal } from "@/components/projects/category-modal";
-import { ProjectFormModal } from "@/components/projects/project-form";
-import { FinancePanel, type ProjectContracts } from "@/components/projects/finance-panel";
-import type { Directory, ProjectCategory, ProjectDetailData } from "@/components/projects/types";
+import type { ProjectContracts } from "@/components/projects/finance-panel";
+import { useWorkspace, type WorkspaceData } from "@/components/projects/use-workspace";
+import type { Directory, ProjectCategory } from "@/components/projects/types";
 import { api, ApiError, useApi } from "@/lib/client";
 import { formatDate } from "@/lib/utils";
 import { isOverdue } from "@/lib/dates";
-import { PROJECT_ROLE_INFO, type ProjectRoleKey } from "@/lib/permissions";
+import { PROJECT_ROLE_INFO } from "@/lib/permissions";
+
+// Tabs and dialogs that aren't on screen at first load separately (the progress
+// tab carries the chart library) and are fetched once the browser is idle.
+const panelFallback = () => (
+  <div className="flex justify-center py-16">
+    <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+  </div>
+);
+const loaders = {
+  progress: () => import("@/components/projects/progress-panel"),
+  finance: () => import("@/components/projects/finance-panel"),
+  notes: () => import("@/components/projects/notes-panel"),
+  members: () => import("@/components/projects/members-panel"),
+  category: () => import("@/components/projects/category-modal"),
+  form: () => import("@/components/projects/project-form"),
+};
+const ProgressPanel = dynamic(() => loaders.progress().then((m) => m.ProgressPanel), { loading: panelFallback });
+const FinancePanel = dynamic(() => loaders.finance().then((m) => m.FinancePanel), { loading: panelFallback });
+const NotesPanel = dynamic(() => loaders.notes().then((m) => m.NotesPanel), { loading: panelFallback });
+const MembersPanel = dynamic(() => loaders.members().then((m) => m.MembersPanel), { loading: panelFallback });
+const CategoryModal = dynamic(() => loaders.category().then((m) => m.CategoryModal));
+const ProjectFormModal = dynamic(() => loaders.form().then((m) => m.ProjectFormModal));
 
 type Tab = "tasks" | "progress" | "finance" | "notes" | "members";
 const TABS: Tab[] = ["tasks", "progress", "finance", "notes", "members"];
@@ -52,24 +71,24 @@ export function ProjectWorkspace({
   meId,
   directory,
   canFinance,
+  initial,
+  initialFinance,
 }: {
   projectId: string;
   meId: string;
   directory: Directory;
   /** Holders of "Hợp đồng & chi phí" see and edit the project's contracts. */
   canFinance: boolean;
+  /** Rendered with the page, so the workspace shows without a second request. */
+  initial: WorkspaceData;
+  initialFinance?: ProjectContracts;
 }) {
   const router = useRouter();
   const params = useSearchParams();
-  const { data, error, reload } = useApi<{
-    project: ProjectDetailData;
-    canManage: boolean;
-    canContribute: boolean;
-    canDelete: boolean;
-    projectRole: ProjectRoleKey | null;
-  }>(`/api/projects/${projectId}`);
+  // Task changes go through `send`: the list updates at once and the server's answer carries the refreshed project.
+  const { data, error, reload, send } = useWorkspace(projectId, initial);
   // One source for the project's money: the same contract records as /contracts.
-  const finance = useApi<ProjectContracts>(canFinance ? `/api/contracts?projectId=${projectId}` : null);
+  const finance = useApi<ProjectContracts>(canFinance ? `/api/contracts?projectId=${projectId}` : null, { initial: initialFinance });
 
   const initialTab = params.get("tab") as Tab | null;
   const [tab, setTabState] = useState<Tab>(initialTab && TABS.includes(initialTab) && (initialTab !== "finance" || canFinance) ? initialTab : "tasks");
@@ -85,11 +104,22 @@ export function ProjectWorkspace({
   const [editingProject, setEditingProject] = useState(false);
   const [deletingProject, setDeletingProject] = useState(false);
 
+  useEffect(() => {
+    const prefetch = () => Object.values(loaders).forEach((load) => void load());
+    if ("requestIdleCallback" in window) {
+      const id = window.requestIdleCallback(prefetch, { timeout: 3000 });
+      return () => window.cancelIdleCallback(id);
+    }
+    const id = setTimeout(prefetch, 1500);
+    return () => clearTimeout(id);
+  }, []);
+
   const setTab = (t: Tab) => {
     setTabState(t);
-    const sp = new URLSearchParams(params.toString());
+    const sp = new URLSearchParams(window.location.search);
     sp.set("tab", t);
-    router.replace(`?${sp.toString()}`, { scroll: false });
+    // Only the address bar changes: router.replace would render the whole page again on the server.
+    window.history.replaceState(null, "", `?${sp.toString()}`);
   };
 
   // Everyone in the project (avatars), and the people work can be assigned to.
@@ -276,30 +306,28 @@ export function ProjectWorkspace({
             canManage={canManage}
             canContribute={canContribute}
             onOpen={setOpenTask}
-            onReload={reload}
+            send={send}
             onEditCategory={(c) => setCategoryModal({ open: true, category: c })}
             onDeleteCategory={setDeletingCategory}
             onAddSubCategory={(parent) => setCategoryModal({ open: true, category: null, parentId: parent.id })}
           />
         ) : (
-          <Kanban tasks={p.tasks} categories={p.categories} filters={filters} meId={meId} canManage={canManage} canContribute={canContribute} onOpen={setOpenTask} onReload={reload} />
+          <Kanban tasks={p.tasks} categories={p.categories} filters={filters} meId={meId} canManage={canManage} canContribute={canContribute} onOpen={setOpenTask} send={send} />
         ))}
       {tab === "progress" && <ProgressPanel project={p} />}
       {tab === "finance" && canFinance && <FinancePanel project={p} data={finance.data} onChanged={finance.reload} />}
       {tab === "notes" && <NotesPanel projectId={p.id} meId={meId} canManage={canManage} />}
       {tab === "members" && <MembersPanel project={p} canManage={canManage} onEditMembers={() => setEditingProject(true)} onChanged={reload} />}
 
-      <TaskDrawer taskId={openTask} onClose={() => setOpenTask(null)} onChanged={reload} />
+      <TaskDrawer taskId={openTask} onClose={() => setOpenTask(null)} send={send} />
       <TaskCreateModal
         open={creating}
         onClose={() => setCreating(false)}
         projectId={p.id}
         categories={p.categories}
         people={assignable}
-        onCreated={async (id) => {
-          await reload();
-          setOpenTask(id);
-        }}
+        send={send}
+        onCreated={setOpenTask}
       />
       <CategoryModal
         open={categoryModal.open}
