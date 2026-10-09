@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import { getCurrentUser } from "@/lib/session";
 import { prisma } from "@/lib/prisma";
 import { canAccessProject } from "@/lib/rbac";
+import { hasPermission } from "@/lib/permissions";
 import { ProjectWorkspace } from "./workspace";
 
 export const metadata = { title: "Dự án" };
@@ -17,5 +18,5 @@ export default async function ProjectPage({ params }: { params: Promise<{ id: st
     select: { id: true, name: true, avatarColor: true, jobTitle: true, role: true },
   });
 
-  return <ProjectWorkspace projectId={id} meId={user.id} directory={directory} />;
+  return <ProjectWorkspace projectId={id} meId={user.id} directory={directory} canFinance={hasPermission(user, "FINANCE_MANAGE")} />;
 }

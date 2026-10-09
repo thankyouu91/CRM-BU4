@@ -5,14 +5,15 @@ import { hasPermission } from "@/lib/permissions";
 import { canAccessProject } from "@/lib/rbac";
 import { parseDate, parsePeriodType, resolvePeriod } from "@/lib/period";
 import { contractDto, summarizeContracts, toDbAmounts } from "@/lib/contracts";
+import { loadContracts } from "@/lib/contract-queries";
 import { createContractSchema } from "@/lib/validations";
 
 const projectBrief = { select: { id: true, name: true, color: true } } as const;
 
 /**
- * GET /api/contracts?period=day|month|quarter|year|custom&date=&from=&to=&all=1
- * Contracts whose implementation date falls in the period (all=1: every contract),
- * with derived profit/receivable metrics and totals.
+ * GET /api/contracts?period=day|month|quarter|year|custom&date=&from=&to=&all=1&projectId=
+ * Contracts whose implementation date falls in the period (all=1: every contract;
+ * projectId: every contract of that project), with derived metrics and totals.
  */
 export async function GET(req: NextRequest) {
   const me = await auth();
@@ -20,19 +21,17 @@ export async function GET(req: NextRequest) {
   if (!hasPermission(me, "FINANCE_MANAGE")) return forbidden("Bạn chưa được cấp quyền “Hợp đồng & chi phí”");
 
   const sp = req.nextUrl.searchParams;
-  const all = sp.get("all") === "1";
+  const projectId = sp.get("projectId");
+  const all = sp.get("all") === "1" || !!projectId;
   const type = parsePeriodType(sp.get("period"));
   const range = resolvePeriod(type, parseDate(sp.get("date")), {
     from: sp.get("from") ? parseDate(sp.get("from")) : null,
     to: sp.get("to") ? parseDate(sp.get("to")) : null,
   });
 
-  const rows = await prisma.contract.findMany({
-    where: all ? {} : { performedAt: { gte: range.from, lte: range.to } },
-    orderBy: [{ performedAt: "asc" }, { createdAt: "asc" }],
-    include: { project: projectBrief },
-  });
-  const contracts = rows.map(contractDto);
+  const contracts = await loadContracts(
+    projectId ? { projectId } : all ? {} : { performedAt: { gte: range.from, lte: range.to } },
+  );
   return ok({
     period: all ? null : { label: range.label, from: range.from.toISOString(), to: range.to.toISOString() },
     contracts,

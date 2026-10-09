@@ -68,6 +68,20 @@ export function buildReportPrompt(kind: AIPromptKind, s: Summary, scopeLabel: st
       `${indent}${r.name}: thực tế ${r.progress}%; ${plan}; trạng thái: ${SCHEDULE_STATUS[r.schedule.status].label}; đã làm ${r.workload.done}/cần làm ${r.workload.remaining}`,
     );
   });
+  if (s.finance && s.finance.totals.count > 0) {
+    const f = s.finance.totals;
+    const vnd = (n: number) => `${Math.round(n).toLocaleString("vi-VN")} đ`;
+    L.push("");
+    L.push(`2c. TÀI CHÍNH HỢP ĐỒNG (${s.finance.scope === "project" ? "toàn bộ hợp đồng của dự án" : "hợp đồng thực hiện trong kỳ"})`);
+    L.push(
+      `- ${f.count} hợp đồng; giá trị ${vnd(f.value)}; chi phí ${vnd(f.totalCost)} (tỷ lệ ${f.costRatio}%); lợi nhuận gộp ${vnd(f.profit)} (tỷ suất ${f.margin}%${f.estimated ? `, ${f.estimated} HĐ ước tính` : ""}); đã thu ${vnd(f.collected)}; còn phải thu ${vnd(f.receivable)}`,
+    );
+    s.finance.byProject.forEach((p) =>
+      L.push(
+        `  - ${p.name}${p.progress === null ? "" : ` (tiến độ công việc ${p.progress}%)`}: giá trị ${vnd(p.totals.value)}, chi phí ${vnd(p.totals.totalCost)}, lợi nhuận ${vnd(p.totals.profit)} (${p.totals.margin}%), còn phải thu ${vnd(p.totals.receivable)}`,
+      ),
+    );
+  }
   L.push("");
   L.push("3. NHÂN SỰ (công việc được giao trong kỳ)");
   if (!s.people.length) L.push("- (Không có dữ liệu)");

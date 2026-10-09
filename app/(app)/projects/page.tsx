@@ -2,6 +2,7 @@ import { getCurrentUser } from "@/lib/session";
 import { listProjects } from "@/lib/queries";
 import { prisma } from "@/lib/prisma";
 import { canCreateProject } from "@/lib/rbac";
+import { hasPermission } from "@/lib/permissions";
 import { ProjectsView } from "./projects-view";
 
 export const metadata = { title: "Dự án" };
@@ -22,6 +23,7 @@ export default async function ProjectsPage() {
       initial={JSON.parse(JSON.stringify(projects))}
       directory={directory}
       canCreate={canCreateProject(user)}
+      canFinance={hasPermission(user, "FINANCE_MANAGE")}
     />
   );
 }

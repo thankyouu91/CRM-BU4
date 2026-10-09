@@ -1,8 +1,17 @@
 import type { Contract } from "@prisma/client";
 import { contractMetrics, contractTotals } from "./finance";
 
+/** The linked project, with its current completion when loaded through lib/contract-queries.ts. */
+export interface ContractProject {
+  id: string;
+  name: string;
+  color: string;
+  progress?: number;
+  scheduleStatus?: string;
+}
+
 /** API shape: amounts as numbers (VNĐ fits well within 2^53) plus derived metrics. */
-export function contractDto(c: Contract & { project?: { id: string; name: string; color: string } | null }) {
+export function contractDto(c: Contract & { project?: ContractProject | null }) {
   const amounts = {
     value: Number(c.value),
     trainingCost: Number(c.trainingCost),

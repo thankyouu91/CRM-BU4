@@ -135,6 +135,16 @@ export function contractTotals(rows: (ContractAmounts & { metrics: ContractMetri
   return t;
 }
 
+/** Compact amount for slides and tiles: "1,93 tỷ", "468 tr", "950.000 đ". */
+export function formatVndShort(n: number): string {
+  const abs = Math.abs(n);
+  const sign = n < 0 ? "−" : "";
+  const fmt = (v: number, digits: number) => v.toLocaleString("vi-VN", { maximumFractionDigits: digits });
+  if (abs >= 1e9) return `${sign}${fmt(abs / 1e9, 2)} tỷ`;
+  if (abs >= 1e6) return `${sign}${fmt(abs / 1e6, abs >= 1e8 ? 0 : 1)} tr`;
+  return `${sign}${fmt(abs, 0)} đ`;
+}
+
 /** 1.234.567 đ (Vietnamese grouping). */
 export function formatVnd(n: number | null | undefined, unit = true): string {
   if (n === null || n === undefined) return "—";

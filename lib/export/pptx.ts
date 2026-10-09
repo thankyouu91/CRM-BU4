@@ -1,5 +1,6 @@
 "use client";
 
+import { formatVndShort } from "@/lib/finance";
 import type PptxGenJS from "pptxgenjs";
 import { DECK_THEMES, SLIDE_H, type DeckTheme } from "@/components/deck/theme";
 import type { TransitionKind } from "@/components/deck/presenter";
@@ -239,6 +240,53 @@ function renderBody(c: Ctx, slide: Slide, s: SlideModel) {
       if (wl.overdue > 0) {
         text(slide, `${wl.overdue} việc đã quá hạn`, { x: barX, y: TOP + 256 + parts.length * 28 + 10, w: barW, h: 22 }, { px: 15, bold: true, color: hex(t.danger) });
       }
+      return;
+    }
+
+    case "finance": {
+      const f = s.totals;
+      const tiles = [
+        { label: "Giá trị hợp đồng", value: formatVndShort(f.value), sub: `${f.count} hợp đồng`, color: t.ink },
+        { label: "Chi phí thực hiện", value: formatVndShort(f.totalCost), sub: `Tỷ lệ chi phí ${f.costRatio}%`, color: t.ink },
+        { label: "Lợi nhuận gộp", value: formatVndShort(f.profit), sub: `Tỷ suất ${f.margin}%${f.estimated ? ` · ${f.estimated} HĐ ước tính` : ""}`, color: f.profit < 0 ? t.danger : t.success },
+        { label: "Còn phải thu", value: formatVndShort(f.receivable), sub: `Đã thu ${formatVndShort(f.collected)}`, color: f.receivable > 0 ? t.danger : t.ink },
+      ];
+      const gap = 18;
+      const tw = (WIDTH - gap * 3) / 4;
+      tiles.forEach((it, i) => {
+        const x = LEFT + i * (tw + gap);
+        panel(c, slide, { x, y: TOP, w: tw, h: 124 });
+        text(slide, it.label, { x: x + 20, y: TOP + 18, w: tw - 40, h: 20 }, { px: 14, color: hex(t.muted) });
+        text(slide, it.value, { x: x + 20, y: TOP + 42, w: tw - 40, h: 44 }, { px: 34, bold: true, color: hex(it.color), fit: "shrink" });
+        text(slide, it.sub, { x: x + 20, y: TOP + 92, w: tw - 40, h: 20 }, { px: 13, color: hex(t.inkSecondary), fit: "shrink" });
+      });
+      // Table: project | progress | value | profit (margin) | receivable
+      const colX = [LEFT, LEFT + 360, LEFT + 610, LEFT + 790, LEFT + 990];
+      const colW = [350, 240, 170, 190, 162];
+      const headY = TOP + 150;
+      ["Dự án", "Tiến độ công việc", "Giá trị HĐ", "Lợi nhuận (tỷ suất)", "Còn phải thu"].forEach((h, i) =>
+        text(slide, h, { x: colX[i], y: headY, w: colW[i], h: 20 }, { px: 13, color: hex(t.muted), align: i >= 2 ? "right" : "left" }),
+      );
+      rect(c, slide, { x: LEFT, y: headY + 26, w: WIDTH, h: 1 }, t.panelBorder, false);
+      s.rows.forEach((r, i) => {
+        const y = headY + 36 + i * 50;
+        rect(c, slide, { x: LEFT, y: y + 6, w: 11, h: 11 }, r.color, false);
+        text(slide, r.name, { x: LEFT + 22, y, w: colW[0] - 22, h: 24 }, { px: 17, bold: true, color: hex(t.ink), fit: "shrink" });
+        if (r.progress === null) text(slide, "—", { x: colX[1], y, w: colW[1], h: 24 }, { px: 14, color: hex(t.muted) });
+        else {
+          rect(c, slide, { x: colX[1], y: y + 8, w: colW[1] - 60, h: 8 }, t.track);
+          if (r.progress > 0) rect(c, slide, { x: colX[1], y: y + 8, w: ((colW[1] - 60) * r.progress) / 100, h: 8 }, t.accent);
+          text(slide, `${r.progress}%`, { x: colX[1] + colW[1] - 52, y: y + 1, w: 52, h: 22 }, { px: 15, bold: true, color: hex(t.ink), align: "right" });
+        }
+        text(slide, formatVndShort(r.value), { x: colX[2], y, w: colW[2], h: 24 }, { px: 17, bold: true, color: hex(t.ink), align: "right" });
+        text(slide, [
+          { text: formatVndShort(r.profit), options: { bold: true, color: hex(r.profit < 0 ? t.danger : t.success), fontSize: pt(17) } },
+          { text: ` (${r.margin}%)`, options: { color: hex(t.muted), fontSize: pt(13) } },
+        ], { x: colX[3], y, w: colW[3], h: 24 }, { align: "right" });
+        text(slide, formatVndShort(r.receivable), { x: colX[4], y, w: colW[4], h: 24 }, { px: 17, bold: true, color: hex(r.receivable > 0 ? t.danger : t.ink), align: "right" });
+        rect(c, slide, { x: LEFT, y: y + 38, w: WIDTH, h: 1 }, t.panelBorder, false);
+      });
+      text(slide, `${s.scopeNote} · Lợi nhuận gộp = giá trị HĐ − chi phí đào tạo, khảo thí và chi phí khác`, { x: LEFT, y: headY + 46 + s.rows.length * 50, w: WIDTH, h: 20 }, { px: 13, color: hex(t.muted) });
       return;
     }
 

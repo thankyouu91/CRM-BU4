@@ -17,6 +17,7 @@ import { SlideScaler, SlideView } from "@/components/deck/slides";
 import { DECK_THEMES } from "@/components/deck/theme";
 import { PeriodFilter, defaultPeriod, periodQuery, type PeriodState } from "@/components/reports/period-filter";
 import { DeadlineTable, WorkloadCard } from "@/components/reports/deadline";
+import { FinanceSection } from "@/components/reports/finance-section";
 import { useApi } from "@/lib/client";
 import { useChartTheme } from "@/lib/chart-theme";
 import { buildReportDeck, makeDeckMeta, slideTitle } from "@/lib/deck-model";
@@ -153,6 +154,8 @@ export function ReportsView({
             </div>
           </Card>
           <WorkloadCard workload={data.workload} />
+
+          {data.finance && <FinanceSection finance={data.finance} periodLabel={data.period.label} />}
 
           {/* Charts */}
           <div className="grid gap-6 xl:grid-cols-3">

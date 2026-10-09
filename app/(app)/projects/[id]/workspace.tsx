@@ -19,6 +19,7 @@ import {
   Users,
   Eye,
   ShieldCheck,
+  Wallet,
 } from "lucide-react";
 import { toast } from "sonner";
 import { AvatarStack } from "@/components/ui/avatar";
@@ -36,16 +37,28 @@ import { NotesPanel } from "@/components/projects/notes-panel";
 import { MembersPanel } from "@/components/projects/members-panel";
 import { CategoryModal } from "@/components/projects/category-modal";
 import { ProjectFormModal } from "@/components/projects/project-form";
+import { FinancePanel, type ProjectContracts } from "@/components/projects/finance-panel";
 import type { Directory, ProjectCategory, ProjectDetailData } from "@/components/projects/types";
 import { api, ApiError, useApi } from "@/lib/client";
 import { formatDate } from "@/lib/utils";
 import { isOverdue } from "@/lib/dates";
 import { PROJECT_ROLE_INFO, type ProjectRoleKey } from "@/lib/permissions";
 
-type Tab = "tasks" | "progress" | "notes" | "members";
-const TABS: Tab[] = ["tasks", "progress", "notes", "members"];
+type Tab = "tasks" | "progress" | "finance" | "notes" | "members";
+const TABS: Tab[] = ["tasks", "progress", "finance", "notes", "members"];
 
-export function ProjectWorkspace({ projectId, meId, directory }: { projectId: string; meId: string; directory: Directory }) {
+export function ProjectWorkspace({
+  projectId,
+  meId,
+  directory,
+  canFinance,
+}: {
+  projectId: string;
+  meId: string;
+  directory: Directory;
+  /** Holders of "Hợp đồng & chi phí" see and edit the project's contracts. */
+  canFinance: boolean;
+}) {
   const router = useRouter();
   const params = useSearchParams();
   const { data, error, reload } = useApi<{
@@ -55,9 +68,11 @@ export function ProjectWorkspace({ projectId, meId, directory }: { projectId: st
     canDelete: boolean;
     projectRole: ProjectRoleKey | null;
   }>(`/api/projects/${projectId}`);
+  // One source for the project's money: the same contract records as /contracts.
+  const finance = useApi<ProjectContracts>(canFinance ? `/api/contracts?projectId=${projectId}` : null);
 
   const initialTab = params.get("tab") as Tab | null;
-  const [tab, setTabState] = useState<Tab>(initialTab && TABS.includes(initialTab) ? initialTab : "tasks");
+  const [tab, setTabState] = useState<Tab>(initialTab && TABS.includes(initialTab) && (initialTab !== "finance" || canFinance) ? initialTab : "tasks");
   const [view, setView] = useState<"list" | "kanban">("list");
   const [filters, setFilters] = useState<TaskFilters>({ mine: false, hideDone: false });
   const [openTask, setOpenTask] = useState<string | null>(params.get("task"));
@@ -220,6 +235,7 @@ export function ProjectWorkspace({ projectId, meId, directory }: { projectId: st
           options={[
             { value: "tasks", label: <><List className="h-3.5 w-3.5" /> Công việc</> },
             { value: "progress", label: <><ChartColumn className="h-3.5 w-3.5" /> Tiến độ</> },
+            ...(canFinance ? [{ value: "finance" as const, label: <><Wallet className="h-3.5 w-3.5" /> Hợp đồng & chi phí</> }] : []),
             { value: "notes", label: <><MessageSquare className="h-3.5 w-3.5" /> Ghi chú & phản hồi</> },
             { value: "members", label: <><Users className="h-3.5 w-3.5" /> Thành viên</> },
           ]}
@@ -269,6 +285,7 @@ export function ProjectWorkspace({ projectId, meId, directory }: { projectId: st
           <Kanban tasks={p.tasks} categories={p.categories} filters={filters} meId={meId} canManage={canManage} canContribute={canContribute} onOpen={setOpenTask} onReload={reload} />
         ))}
       {tab === "progress" && <ProgressPanel project={p} />}
+      {tab === "finance" && canFinance && <FinancePanel project={p} data={finance.data} onChanged={finance.reload} />}
       {tab === "notes" && <NotesPanel projectId={p.id} meId={meId} canManage={canManage} />}
       {tab === "members" && <MembersPanel project={p} canManage={canManage} onEditMembers={() => setEditingProject(true)} onChanged={reload} />}
 
@@ -297,8 +314,10 @@ export function ProjectWorkspace({ projectId, meId, directory }: { projectId: st
         open={editingProject}
         onClose={() => setEditingProject(false)}
         directory={directory}
+        finance={canFinance ? { contracts: finance.data?.contracts ?? null } : undefined}
         onSaved={() => {
           void reload();
+          if (canFinance) void finance.reload();
           router.refresh();
         }}
         initial={{

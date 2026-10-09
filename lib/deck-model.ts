@@ -4,6 +4,7 @@
 import { buildInsights, type Insight } from "./insights";
 import { PROJECT_STATUS } from "./constants";
 import { daysLeftLabel, SCHEDULE_STATUS, type Workload } from "./schedule";
+import type { ContractTotals } from "./finance";
 import type { Summary, SummaryPerson } from "./stats";
 
 export interface ScheduleSlideRow {
@@ -39,6 +40,14 @@ export type SlideModel =
       rows: { name: string; color: string; status: string; progress: number; done: number; total: number; overdue: number }[];
     }
   | { kind: "schedule"; kicker: string; title: string; rows: ScheduleSlideRow[]; workload: Workload }
+  | {
+      kind: "finance";
+      kicker: string;
+      title: string;
+      scopeNote: string;
+      totals: ContractTotals;
+      rows: { name: string; color: string; progress: number | null; count: number; value: number; profit: number; margin: number; receivable: number }[];
+    }
   | { kind: "trend"; kicker: string; title: string; data: Summary["trend"]; stats: { label: string; value: string }[] }
   | { kind: "status"; kicker: string; title: string; data: Summary["statusDistribution"] }
   | { kind: "people"; kicker: string; title: string; people: SummaryPerson[] }
@@ -148,6 +157,27 @@ export function buildReportDeck(s: Summary, meta: DeckMeta): Deck {
         remaining: r.workload.remaining,
       })),
       workload: s.workload,
+    });
+  }
+
+  if (s.finance && s.finance.totals.count > 0) {
+    const f = s.finance;
+    slides.push({
+      kind: "finance",
+      kicker: "Tài chính",
+      title: "Giá trị hợp đồng, chi phí & lợi nhuận",
+      scopeNote: f.scope === "project" ? "Toàn bộ hợp đồng của dự án" : `Hợp đồng thực hiện trong ${s.period.label.toLowerCase()}`,
+      totals: f.totals,
+      rows: f.byProject.slice(0, 5).map((p) => ({
+        name: p.name.length > 34 ? `${p.name.slice(0, 33).trimEnd()}…` : p.name,
+        color: p.color,
+        progress: p.progress,
+        count: p.totals.count,
+        value: p.totals.value,
+        profit: p.totals.profit,
+        margin: p.totals.margin,
+        receivable: p.totals.receivable,
+      })),
     });
   }
 

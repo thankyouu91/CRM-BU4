@@ -13,6 +13,9 @@ import {
 import { prisma } from "./prisma";
 import { projectVisibilityWhere } from "./rbac";
 import { scheduleOf, workloadOf, type Schedule, type Workload } from "./schedule";
+import { hasPermission } from "./permissions";
+import { contractTotals, type ContractTotals } from "./finance";
+import { contractDto } from "./contracts";
 import type { DateRange, PeriodType } from "./period";
 import type { CurrentUser } from "./session";
 
@@ -233,6 +236,22 @@ export interface SummaryProject {
   workload: Workload;
 }
 
+/** Money of the contracts in a report, overall and per project, next to the project's progress. */
+export interface SummaryFinance {
+  /** "project": every contract of the selected project; "period": contracts implemented in the period. */
+  scope: "project" | "period";
+  totals: ContractTotals;
+  byProject: {
+    /** null for contracts not linked to a project */
+    id: string | null;
+    name: string;
+    color: string;
+    progress: number | null;
+    scheduleStatus: string | null;
+    totals: ContractTotals;
+  }[];
+}
+
 /** One line of the "progress against deadline" table: a project, category or sub-category. */
 export interface ScheduleRow {
   id: string;
@@ -287,6 +306,8 @@ export interface Summary {
   schedule: ScheduleRow[];
   /** Current work volume across the scope: done vs still to do. */
   workload: Workload;
+  /** Present only for holders of "Hợp đồng & chi phí". */
+  finance?: SummaryFinance;
   people: SummaryPerson[];
   recentReports: {
     id: string;
@@ -546,8 +567,41 @@ export async function getSummary(
       priority: t.priority,
     }));
 
+  // --- Contracts & costs (same records and formulas as the contracts page) ---
+  let finance: SummaryFinance | undefined;
+  if (hasPermission(user, "FINANCE_MANAGE")) {
+    const rows = (
+      await prisma.contract.findMany({
+        where: projectId ? { projectId } : { performedAt: { gte: range.from, lte: range.to } },
+        orderBy: { performedAt: "asc" },
+        include: { project: { select: { id: true, name: true, color: true } } },
+      })
+    ).map(contractDto);
+    const groups = new Map<string, typeof rows>();
+    for (const r of rows) groups.set(r.projectId ?? "", [...(groups.get(r.projectId ?? "") ?? []), r]);
+    const summaryOf = new Map(summaryProjects.map((p) => [p.id, p]));
+    finance = {
+      scope: projectId ? "project" : "period",
+      totals: contractTotals(rows),
+      byProject: [...groups.entries()]
+        .map(([id, list]) => {
+          const p = summaryOf.get(id);
+          return {
+            id: id || null,
+            name: id ? (list[0].project?.name ?? "Dự án") : "Chưa gắn dự án",
+            color: id ? (list[0].project?.color ?? "#94a3b8") : "#94a3b8",
+            progress: p ? p.progress : null,
+            scheduleStatus: p ? p.schedule.status : null,
+            totals: contractTotals(list),
+          };
+        })
+        .sort((a, b) => (a.id === null ? 1 : b.id === null ? -1 : b.totals.value - a.totals.value)),
+    };
+  }
+
   return {
     period: { type, label: range.label, from: range.from.toISOString(), to: range.to.toISOString() },
+    finance,
     kpis: {
       totalProjects: projects.length,
       activeProjects: projects.filter((p) => p.status === "ACTIVE").length,

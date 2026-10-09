@@ -44,6 +44,8 @@ Chỉ người có quyền **Hợp đồng & chi phí** thấy mục này (quả
 - **Còn phải thu** = Giá trị HĐ − Đã thanh toán; **Trạng thái TT** tự động: chưa thu → *Chưa thanh toán*, thu một phần → *Đã tạm ứng*, thu đủ → *Đã hoàn tất*.
 - Ô tổng hợp: *Tỷ lệ CP* tính trên các HĐ đã nhập chi phí; *Tỷ suất LN TB* tính trên các HĐ có lợi nhuận (thực tế hoặc ước tính).
 - **Dán từ Excel**: chọn các dòng trong file cũ (có thể kèm dòng tiêu đề) → Ctrl+C → dán; các cột tính toán (Tổng giá trị, LN gộp, Đánh giá, Còn phải thu, Trạng thái TT) được tính lại.
+- **Liên kết với dự án — một nguồn số liệu duy nhất:** mỗi hợp đồng gắn với tối đa một dự án. Nhập số hợp đồng, giá trị, chi phí, đã thu ngay trong form *Tạo/Sửa dự án* hoặc tab **Hợp đồng & chi phí** của dự án — đó chính là bản ghi hợp đồng, nên trang Hợp đồng & chi phí, Trung tâm báo cáo (mục *Tài chính hợp đồng*, bảng *Tiến độ & tài chính theo dự án*), slide trình chiếu, PDF/PowerPoint và prompt AI luôn cùng một số liệu và cùng công thức. Xoá dự án không xoá hợp đồng; hợp đồng chuyển sang nhóm *Chưa gắn dự án*.
+- Trung tâm báo cáo: khi chọn một dự án, mục tài chính tính **toàn bộ hợp đồng của dự án**; khi xem tất cả dự án, tính các hợp đồng có ngày thực hiện trong kỳ đang lọc.
 
 ### Tiến độ theo deadline
 

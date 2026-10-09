@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { Check, Search } from "lucide-react";
+import { Check, Search, Wallet } from "lucide-react";
 import { toast } from "sonner";
 import { Modal } from "@/components/ui/modal";
 import { Button } from "@/components/ui/button";
@@ -10,6 +10,9 @@ import { Avatar } from "@/components/ui/avatar";
 import { api, ApiError } from "@/lib/client";
 import { PROJECT_STATUS, SWATCHES } from "@/lib/constants";
 import { PROJECT_ROLE_INFO, PROJECT_ROLES, type ProjectRoleKey } from "@/lib/permissions";
+import { contractMetrics, formatVnd } from "@/lib/finance";
+import type { ContractDto } from "@/lib/contracts";
+import { MoneyInput, toDateInput } from "@/components/contracts/contract-form";
 import { fromInputDate, toInputDate } from "@/lib/dates";
 import { cn } from "@/lib/utils";
 import type { Directory } from "./types";
@@ -27,6 +30,30 @@ export interface ProjectFormValues {
   members: { userId: string; role: ProjectRoleKey }[];
 }
 
+/** The project's main contract, edited inline. Stored as a contract record (one source of truth). */
+interface ContractFields {
+  code: string;
+  partner: string;
+  value: number | null;
+  trainingCost: number | null;
+  examCost: number | null;
+  otherCost: number | null;
+  collected: number | null;
+}
+const EMPTY_CONTRACT: ContractFields = { code: "", partner: "", value: null, trainingCost: null, examCost: null, otherCost: null, collected: null };
+const contractFields = (c: ContractDto | undefined): ContractFields =>
+  c
+    ? {
+        code: c.code ?? "",
+        partner: c.partner ?? "",
+        value: c.value,
+        trainingCost: c.trainingCost || null,
+        examCost: c.examCost || null,
+        otherCost: c.otherCost || null,
+        collected: c.collected || null,
+      }
+    : EMPTY_CONTRACT;
+
 const EMPTY: ProjectFormValues = {
   name: "",
   description: "",
@@ -43,14 +70,20 @@ export function ProjectFormModal({
   onSaved,
   directory,
   initial,
+  finance,
 }: {
   open: boolean;
   onClose: () => void;
   onSaved: (id: string) => void;
   directory: Directory;
   initial?: ProjectFormValues;
+  /** Present for holders of "Hợp đồng & chi phí": the project's contracts (null while loading). */
+  finance?: { contracts: ContractDto[] | null };
 }) {
   const [v, setV] = useState<ProjectFormValues>(initial ?? EMPTY);
+  const [cf, setCf] = useState<ContractFields>(EMPTY_CONTRACT);
+  const contracts = finance?.contracts ?? null;
+  const single = contracts && contracts.length <= 1;
   const [query, setQuery] = useState("");
   const [busy, setBusy] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -59,9 +92,12 @@ export function ProjectFormModal({
   useEffect(() => {
     if (open) {
       setV(initial ?? EMPTY);
+      setCf(contractFields(contracts?.[0]));
       setErrors({});
       setQuery("");
     }
+    // Prefill once per opening; later reloads of the contract list must not wipe edits.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, initial]);
 
   const people = useMemo(() => {
@@ -97,15 +133,16 @@ export function ProjectFormModal({
       members: v.members,
     };
     try {
+      let id: string;
       if (initial?.id) {
         await api(`/api/projects/${initial.id}`, { method: "PATCH", body });
-        toast.success("Đã cập nhật dự án");
-        onSaved(initial.id);
+        id = initial.id;
       } else {
-        const res = await api<{ project: { id: string } }>("/api/projects", { method: "POST", body });
-        toast.success("Đã tạo dự án");
-        onSaved(res.project.id);
+        id = (await api<{ project: { id: string } }>("/api/projects", { method: "POST", body })).project.id;
       }
+      const contractSaved = await saveContract(id);
+      toast.success(initial?.id ? "Đã cập nhật dự án" : "Đã tạo dự án", contractSaved ? { description: "Hợp đồng đã được cập nhật vào Hợp đồng & chi phí." } : undefined);
+      onSaved(id);
       onClose();
     } catch (e) {
       if (e instanceof ApiError) {
@@ -116,6 +153,49 @@ export function ProjectFormModal({
       setBusy(false);
     }
   };
+
+  /** Create or update the project's main contract. Returns whether anything was written. */
+  async function saveContract(projectId: string): Promise<boolean> {
+    if (!finance || !single) return false;
+    const existing = contracts?.[0];
+    if (!existing && cf.value === null) return false;
+    const fields = {
+      code: cf.code || null,
+      partner: cf.partner || null,
+      value: cf.value ?? 0,
+      trainingCost: cf.trainingCost ?? 0,
+      examCost: cf.examCost ?? 0,
+      otherCost: cf.otherCost ?? 0,
+      collected: cf.collected ?? 0,
+    };
+    try {
+      if (existing) await api(`/api/contracts/${existing.id}`, { method: "PATCH", body: fields });
+      else
+        await api("/api/contracts", {
+          method: "POST",
+          body: {
+            ...fields,
+            projectId,
+            name: v.name.trim(),
+            performedAt: toDateInput(v.startDate ?? new Date().toISOString()),
+            status: v.status === "COMPLETED" ? "COMPLETED" : v.status === "PLANNING" ? "PLANNED" : "IN_PROGRESS",
+          },
+        });
+      return true;
+    } catch (e) {
+      toast.error(`Đã lưu dự án nhưng chưa lưu được hợp đồng: ${e instanceof ApiError ? e.message : "lỗi không xác định"}`);
+      return false;
+    }
+  }
+
+  const preview = contractMetrics({
+    value: cf.value ?? 0,
+    trainingCost: cf.trainingCost ?? 0,
+    examCost: cf.examCost ?? 0,
+    otherCost: cf.otherCost ?? 0,
+    expectedMargin: contracts?.[0]?.expectedMargin ?? null,
+    collected: cf.collected ?? 0,
+  });
 
   return (
     <Modal
@@ -182,6 +262,56 @@ export function ProjectFormModal({
               </div>
             </Field>
           </div>
+          {finance && (
+            <section className="rounded-xl border border-dashed p-4">
+              <p className="flex items-center gap-2 text-sm font-semibold">
+                <Wallet className="h-4 w-4 text-primary" /> Hợp đồng & chi phí <span className="text-xs font-normal text-muted-foreground">(tuỳ chọn)</span>
+              </p>
+              {contracts === null ? (
+                <p className="mt-2 text-xs text-muted-foreground">Đang tải hợp đồng…</p>
+              ) : !single ? (
+                <p className="mt-2 text-xs text-muted-foreground">
+                  Dự án có {contracts.length} hợp đồng — xem và sửa trong tab “Hợp đồng & chi phí” của dự án.
+                </p>
+              ) : (
+                <>
+                  <div className="mt-3 grid gap-3 sm:grid-cols-2">
+                    <Field label="Số hợp đồng">
+                      <Input value={cf.code} onChange={(e) => setCf({ ...cf, code: e.target.value })} placeholder="VD: 248/HĐMB/IES-CDIMEX" />
+                    </Field>
+                    <Field label="Đối tác / khách hàng">
+                      <Input value={cf.partner} onChange={(e) => setCf({ ...cf, partner: e.target.value })} placeholder="Tên đơn vị" />
+                    </Field>
+                    <Field label="Giá trị hợp đồng">
+                      <MoneyInput value={cf.value} onChange={(value) => setCf({ ...cf, value })} />
+                    </Field>
+                    <Field label="Đã thu">
+                      <MoneyInput value={cf.collected} onChange={(collected) => setCf({ ...cf, collected })} />
+                    </Field>
+                    <Field label="Chi phí đào tạo">
+                      <MoneyInput value={cf.trainingCost} onChange={(trainingCost) => setCf({ ...cf, trainingCost })} />
+                    </Field>
+                    <Field label="Chi phí khảo thí">
+                      <MoneyInput value={cf.examCost} onChange={(examCost) => setCf({ ...cf, examCost })} />
+                    </Field>
+                    <Field label="Chi phí khác">
+                      <MoneyInput value={cf.otherCost} onChange={(otherCost) => setCf({ ...cf, otherCost })} />
+                    </Field>
+                  </div>
+                  {cf.value !== null && (
+                    <p className="mt-3 rounded-lg bg-muted/50 px-3 py-2 text-xs">
+                      Lợi nhuận gộp{" "}
+                      <b className={preview.profit !== null && preview.profit < 0 ? "text-danger" : "text-success"}>
+                        {preview.profit === null ? "—" : formatVnd(preview.profit)}
+                      </b>
+                      {preview.margin !== null && ` (${preview.margin}%)`} · Còn phải thu <b>{formatVnd(preview.receivable)}</b>
+                    </p>
+                  )}
+                </>
+              )}
+              <p className="mt-2 text-[11px] text-muted-foreground">Lưu thành hợp đồng của dự án — dùng chung với trang Hợp đồng & chi phí và Trung tâm báo cáo.</p>
+            </section>
+          )}
         </div>
 
         <div>

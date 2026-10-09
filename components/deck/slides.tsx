@@ -5,6 +5,7 @@ import { CircleAlert, CircleCheck, Info, Quote, TriangleAlert } from "lucide-rea
 import { HoursChart, StatusDonut, TrendChart, WorkloadChart, WORKLOAD_SERIES, statusLegend } from "@/components/charts/charts";
 import type { DeckMeta, SlideModel } from "@/lib/deck-model";
 import { initials } from "@/lib/utils";
+import { formatVndShort } from "@/lib/finance";
 import { SLIDE_H, SLIDE_W, type DeckTheme } from "./theme";
 
 interface Ctx {
@@ -200,6 +201,67 @@ function Body({ slide, ctx }: { slide: SlideModel; ctx: Ctx }) {
               </div>
               {w.overdue > 0 && <div style={{ fontSize: 15, fontWeight: 600, color: t.danger }}>{w.overdue} việc đã quá hạn</div>}
             </Panel>
+          </Reveal>
+        </div>
+      );
+    }
+
+    case "finance": {
+      const f = slide.totals;
+      const tiles = [
+        { label: "Giá trị hợp đồng", value: formatVndShort(f.value), sub: `${f.count} hợp đồng`, color: t.ink },
+        { label: "Chi phí thực hiện", value: formatVndShort(f.totalCost), sub: `Tỷ lệ chi phí ${f.costRatio}%`, color: t.ink },
+        { label: "Lợi nhuận gộp", value: formatVndShort(f.profit), sub: `Tỷ suất ${f.margin}%${f.estimated ? ` · ${f.estimated} HĐ ước tính` : ""}`, color: f.profit < 0 ? t.danger : t.success },
+        { label: "Còn phải thu", value: formatVndShort(f.receivable), sub: `Đã thu ${formatVndShort(f.collected)}`, color: f.receivable > 0 ? t.danger : t.ink },
+      ];
+      const cols = "1.6fr 1.1fr 0.9fr 1fr 1fr";
+      return (
+        <div style={{ display: "flex", flexDirection: "column", gap: 22 }}>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 18 }}>
+            {tiles.map((it, i) => (
+              <Reveal key={it.label} i={i} ctx={ctx}>
+                <Panel theme={t} style={{ padding: "18px 20px" }}>
+                  <div style={{ fontSize: 14, color: t.muted }}>{it.label}</div>
+                  <div style={{ fontSize: 36, fontWeight: 700, color: it.color, marginTop: 6, lineHeight: 1.15 }}>{it.value}</div>
+                  <div style={{ fontSize: 13, color: t.inkSecondary, marginTop: 6 }}>{it.sub}</div>
+                </Panel>
+              </Reveal>
+            ))}
+          </div>
+          <Reveal i={4} ctx={ctx}>
+            <div style={{ display: "grid", gridTemplateColumns: cols, gap: 12, fontSize: 13, color: t.muted, padding: "0 4px 8px", borderBottom: `1px solid ${t.panelBorder}` }}>
+              <span>Dự án</span>
+              <span>Tiến độ công việc</span>
+              <span style={{ textAlign: "right" }}>Giá trị HĐ</span>
+              <span style={{ textAlign: "right" }}>Lợi nhuận (tỷ suất)</span>
+              <span style={{ textAlign: "right" }}>Còn phải thu</span>
+            </div>
+            {slide.rows.map((r) => (
+              <div key={r.name} style={{ display: "grid", gridTemplateColumns: cols, gap: 12, alignItems: "center", padding: "11px 4px", borderBottom: `1px solid ${t.panelBorder}`, lineHeight: 1.3 }}>
+                <span style={{ display: "flex", alignItems: "center", gap: 10, fontSize: 17, fontWeight: 600, color: t.ink, whiteSpace: "nowrap" }}>
+                  <span style={{ width: 11, height: 11, borderRadius: 3, background: r.color, flexShrink: 0 }} />
+                  {r.name}
+                </span>
+                <span style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                  {r.progress === null ? (
+                    <span style={{ fontSize: 14, color: t.muted }}>—</span>
+                  ) : (
+                    <>
+                      <span style={{ flex: 1 }}>
+                        <Bar value={r.progress} theme={t} height={8} />
+                      </span>
+                      <span style={{ fontSize: 15, fontWeight: 600, color: t.ink, minWidth: 44, textAlign: "right" }}>{r.progress}%</span>
+                    </>
+                  )}
+                </span>
+                <span style={{ fontSize: 17, fontWeight: 600, color: t.ink, textAlign: "right" }}>{formatVndShort(r.value)}</span>
+                <span style={{ fontSize: 17, fontWeight: 600, color: r.profit < 0 ? t.danger : t.success, textAlign: "right" }}>
+                  {formatVndShort(r.profit)} <span style={{ fontSize: 13, color: t.muted, fontWeight: 500 }}>({r.margin}%)</span>
+                </span>
+                <span style={{ fontSize: 17, fontWeight: 600, color: r.receivable > 0 ? t.danger : t.ink, textAlign: "right" }}>{formatVndShort(r.receivable)}</span>
+              </div>
+            ))}
+            <div style={{ fontSize: 13, color: t.muted, marginTop: 10 }}>{slide.scopeNote} · Lợi nhuận gộp = giá trị HĐ − chi phí đào tạo, khảo thí và chi phí khác</div>
           </Reveal>
         </div>
       );

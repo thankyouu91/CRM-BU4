@@ -20,10 +20,13 @@ export function ProjectsView({
   initial,
   directory,
   canCreate,
+  canFinance,
 }: {
   initial: ProjectListItemData[];
   directory: Directory;
   canCreate: boolean;
+  /** Show the optional contract section when creating a project. */
+  canFinance: boolean;
 }) {
   const router = useRouter();
   const [filter, setFilter] = useState<Filter>("all");
@@ -165,6 +168,7 @@ export function ProjectsView({
         open={creating}
         onClose={() => setCreating(false)}
         directory={directory}
+        finance={canFinance ? { contracts: [] } : undefined}
         onSaved={(id) => router.push(`/projects/${id}`)}
       />
     </div>
