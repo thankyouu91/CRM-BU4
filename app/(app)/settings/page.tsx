@@ -9,6 +9,7 @@ import { PageHeader } from "@/components/ui/misc";
 import { ChangePasswordForm } from "@/components/change-password-form";
 import { ThemeChoice } from "./theme-choice";
 import { BackupsCard } from "./backups-card";
+import { AiSettingsCard } from "./ai-card";
 import { formatDateTime } from "@/lib/utils";
 import { PERMISSION_INFO } from "@/lib/permissions";
 import { isAdmin } from "@/lib/rbac";
@@ -108,6 +109,7 @@ export default async function SettingsPage() {
             </Card>
           </Link>
         )}
+        {isAdmin(me) && <AiSettingsCard />}
         {isAdmin(me) && <BackupsCard />}
 
         <Card>

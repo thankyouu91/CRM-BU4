@@ -1,7 +1,8 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import { Check, ClipboardCopy, Download, ExternalLink, FileText, Loader2, Presentation, Save, Sparkles, Terminal } from "lucide-react";
+import { useMemo, useRef, useState } from "react";
+import Link from "next/link";
+import { Check, ClipboardCopy, Download, ExternalLink, FileText, Loader2, Presentation, Save, Settings, Sparkles, Square, Terminal, Wand2 } from "lucide-react";
 import { toast } from "sonner";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -12,6 +13,7 @@ import { DeckActions } from "@/components/deck/export-actions";
 import { PeriodFilter, defaultPeriod, periodQuery, type PeriodState, type ReportPeriod } from "@/components/reports/period-filter";
 import { AI_PROMPT_KINDS, buildReportPrompt, type AIPromptKind } from "@/lib/ai-prompt";
 import { api, ApiError, useApi } from "@/lib/client";
+import { parseEvents } from "@/lib/ai-stream";
 import { buildOutlineDeck, makeDeckMeta, parseOutline } from "@/lib/deck-model";
 import { fileSlug, saveBlob } from "@/lib/export/save";
 import type { Summary } from "@/lib/stats";
@@ -35,13 +37,18 @@ function Step({ n, title, desc, children }: { n: number; title: string; desc: st
   );
 }
 
+/** The built-in AI (server-side Claude API), when an admin has set it up. */
+export type BuiltInAi = { ready: true; modelLabel: string; limit: number; remaining: number } | { ready: false; canEnable: boolean };
+
 export function AiView({
   projects,
   userName,
+  builtIn,
   initial,
 }: {
   projects: { id: string; name: string; color: string }[];
   userName: string;
+  builtIn: BuiltInAi;
   initial: { type: ReportPeriod; anchor: string; from: string; to: string; projectId: string };
 }) {
   const [kind, setKind] = useState<AIPromptKind>("executive-summary");
@@ -55,6 +62,11 @@ export function AiView({
   const [answer, setAnswer] = useState("");
   const [copied, setCopied] = useState(false);
   const [saving, setSaving] = useState(false);
+  // Built-in generation: "waiting" until the first words arrive, then "writing".
+  const [gen, setGen] = useState<"idle" | "waiting" | "writing">("idle");
+  const [genInfo, setGenInfo] = useState<string | null>(null);
+  const [remaining, setRemaining] = useState(builtIn.ready ? builtIn.remaining : 0);
+  const abortRef = useRef<AbortController | null>(null);
 
   const customIncomplete = period.type === "custom" && (!period.from || !period.to);
   const { data, loading } = useApi<Summary>(customIncomplete ? null : `/api/reports/summary?${periodQuery(period, projectId)}`);
@@ -90,6 +102,60 @@ export function AiView({
     toast.message("Đã mở Claude", { description: "Prompt đã được sao chép — nếu ô chat trống, hãy dán (Ctrl/Cmd + V)." });
   };
 
+  const generate = async () => {
+    if (!builtIn.ready || gen !== "idle") return;
+    const controller = new AbortController();
+    abortRef.current = controller;
+    setGen("waiting");
+    setGenInfo(null);
+    setAnswer("");
+    let text = "";
+    try {
+      const res = await fetch("/api/ai/report", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ kind, period: period.type, date: period.anchor, from: period.from, to: period.to, projectId: projectId || null }),
+        signal: controller.signal,
+      });
+      if (!res.ok || !res.body) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.error ?? "Không gọi được trợ lý AI");
+      }
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = "";
+      for (;;) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        buffer += decoder.decode(value, { stream: true });
+        const { events, rest } = parseEvents(buffer);
+        buffer = rest;
+        for (const e of events) {
+          if (e.t === "text") {
+            text += e.v;
+            setAnswer(text);
+            setGen("writing");
+          } else if (e.t === "done") {
+            setRemaining(e.remaining);
+            setGenInfo(`${builtIn.modelLabel} · ${(e.inputTokens + e.outputTokens).toLocaleString("vi-VN")} token${e.truncated ? " · bài bị cắt do quá dài" : ""}`);
+            toast.success("Claude đã viết xong báo cáo");
+          } else if (e.t === "refused") {
+            setAnswer("");
+            toast.error(e.message);
+          } else if (e.t === "error") {
+            throw new Error(e.message);
+          }
+        }
+      }
+    } catch (e) {
+      if (controller.signal.aborted) toast.message("Đã dừng viết");
+      else toast.error(e instanceof Error ? e.message : "Không gọi được trợ lý AI");
+    } finally {
+      abortRef.current = null;
+      setGen("idle");
+    }
+  };
+
   const fileBase = fileSlug(`${AI_PROMPT_KINDS.find((k) => k.value === kind)?.label ?? "bao-cao"} ${data?.period.label ?? ""}`);
 
   const downloadForClaudeCode = () => {
@@ -119,7 +185,11 @@ export function AiView({
     <div>
       <PageHeader
         title="Trợ lý AI báo cáo"
-        description="Đóng gói số liệu thật của dashboard thành yêu cầu chuẩn để Claude viết báo cáo — không cần Claude API, không phát sinh chi phí API."
+        description={
+          builtIn.ready
+            ? "Claude viết báo cáo ngay trên trang từ số liệu thật của hệ thống, theo đúng quyền xem của bạn. Vẫn có thể sao chép prompt sang Claude.ai hoặc Claude Code."
+            : "Đóng gói số liệu thật của dashboard thành yêu cầu chuẩn để Claude viết báo cáo — không cần Claude API, không phát sinh chi phí API."
+        }
       />
 
       <div className="grid gap-6 xl:grid-cols-[1fr_1fr]">
@@ -161,7 +231,50 @@ export function AiView({
             </div>
           </Step>
 
-          <Step n={2} title="Gửi sang Claude" desc="Mở Claude.ai với prompt điền sẵn, hoặc tải file để dùng với Claude Code.">
+          <Step
+            n={2}
+            title={builtIn.ready ? "Viết bằng AI" : "Gửi sang Claude"}
+            desc={
+              builtIn.ready
+                ? "Claude viết ngay trên trang từ đúng số liệu bên dưới. Hoặc mở Claude.ai, tải file cho Claude Code."
+                : "Mở Claude.ai với prompt điền sẵn, hoặc tải file để dùng với Claude Code."
+            }
+          >
+            {builtIn.ready ? (
+              <div className="mb-4 flex flex-wrap items-center gap-3 rounded-xl border border-primary/30 bg-primary/5 p-3">
+                {gen === "idle" ? (
+                  <Button onClick={generate} disabled={!prompt || remaining <= 0}>
+                    <Wand2 className="h-4 w-4" /> Viết bằng AI
+                  </Button>
+                ) : (
+                  <Button variant="outline" onClick={() => abortRef.current?.abort()}>
+                    <Square className="h-3.5 w-3.5" /> Dừng
+                  </Button>
+                )}
+                <p className="text-xs text-muted-foreground">
+                  {gen === "waiting" ? (
+                    <span className="flex items-center gap-1.5">
+                      <Loader2 className="h-3.5 w-3.5 animate-spin" /> Claude đang đọc số liệu…
+                    </span>
+                  ) : gen === "writing" ? (
+                    "Claude đang viết…"
+                  ) : (
+                    <>
+                      {builtIn.modelLabel} · còn <b className="text-foreground">{remaining}</b>/{builtIn.limit} lượt hôm nay
+                    </>
+                  )}
+                </p>
+              </div>
+            ) : (
+              builtIn.canEnable && (
+                <p className="mb-4 flex items-center gap-1.5 rounded-xl border border-dashed p-3 text-xs text-muted-foreground">
+                  <Settings className="h-3.5 w-3.5" /> Muốn Claude viết ngay trên trang?
+                  <Link href="/settings#ai" className="font-medium text-primary hover:underline">
+                    Nhập Claude API key trong Cài đặt
+                  </Link>
+                </p>
+              )
+            )}
             <div className="relative">
               {loading && (
                 <div className="absolute inset-0 z-10 flex items-center justify-center rounded-xl bg-card/60">
@@ -174,7 +287,7 @@ export function AiView({
               <p className="mt-2 text-right text-[11px] text-muted-foreground">{prompt.length.toLocaleString("vi-VN")} ký tự</p>
             </div>
             <div className="mt-3 flex flex-wrap gap-2">
-              <Button onClick={openClaude} disabled={!prompt}>
+              <Button variant={builtIn.ready ? "outline" : "primary"} onClick={openClaude} disabled={!prompt}>
                 <Sparkles className="h-4 w-4" /> Mở Claude.ai <ExternalLink className="h-3.5 w-3.5 opacity-70" />
               </Button>
               <Button variant="outline" onClick={copy} disabled={!prompt}>
@@ -196,13 +309,19 @@ export function AiView({
           </Step>
         </div>
 
-        <Step n={3} title="Dán kết quả từ Claude" desc="Xem trước, lưu vào ghi chú dự án, hoặc biến dàn ý thành slide để trình chiếu & xuất file.">
+        <Step
+          n={3}
+          title={builtIn.ready ? "Kết quả" : "Dán kết quả từ Claude"}
+          desc="Xem trước, lưu vào ghi chú dự án, hoặc biến dàn ý thành slide để trình chiếu & xuất file."
+        >
           <Textarea
             value={answer}
             onChange={(e) => setAnswer(e.target.value)}
-            placeholder="Dán câu trả lời của Claude vào đây…"
+            placeholder={builtIn.ready ? "Bấm “Viết bằng AI”, hoặc dán câu trả lời của Claude vào đây…" : "Dán câu trả lời của Claude vào đây…"}
+            readOnly={gen !== "idle"}
             className="min-h-[200px] font-mono text-xs"
           />
+          {genInfo && gen === "idle" && <p className="mt-2 text-right text-[11px] text-muted-foreground">{genInfo}</p>}
           {answer.trim() && (
             <>
               <div className="mt-4 flex flex-wrap items-center justify-between gap-3">

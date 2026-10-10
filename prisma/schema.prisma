@@ -126,6 +126,7 @@ model User {
   reviewedWork    WorkReport[]    @relation("WorkReportReviewer")
   contractFiles   ContractFile[]
   auditLogs       AuditLog[]      @relation("AuditActor")
+  settingsChanged AppSetting[]    @relation("SettingUpdater")
 }
 
 model Project {
@@ -371,4 +372,14 @@ model AuditLog {
   @@index([actorId, createdAt])
   @@index([entityType, entityId])
   @@index([action, createdAt])
+}
+
+// Cài đặt hệ thống do quản trị viên chỉnh (ví dụ khoá Claude API cho trợ lý AI).
+// value là JSON; bí mật trong đó luôn được mã hoá (lib/secret-box.ts), không lưu dạng rõ.
+model AppSetting {
+  key         String   @id
+  value       Json
+  updatedById String?
+  updatedBy   User?    @relation("SettingUpdater", fields: [updatedById], references: [id], onDelete: SetNull)
+  updatedAt   DateTime @updatedAt
 }

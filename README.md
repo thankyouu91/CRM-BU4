@@ -16,7 +16,7 @@ Dashboard quản lý dự án và công việc cho doanh nghiệp: giao việc t
 | 6 | Ghi chú / phản hồi cho từng dự án | Tab “Ghi chú & phản hồi” trong mỗi dự án |
 | 7 | Theo dõi dự án với biểu đồ, % hoàn thành | Dashboard KPI, vòng tiến độ, xu hướng, phân bổ trạng thái, khối lượng theo nhân sự; tab “Tiến độ” có bảng **tiến độ theo deadline** (thực tế so với kế hoạch đến hôm nay, % đạt kế hoạch, trạng thái Đúng tiến độ / Có rủi ro / Chậm / Trễ hạn), **khối lượng đã làm / cần làm** và timeline (Gantt) gồm cả thời hạn hạng mục; các số liệu này có trong Trung tâm báo cáo, slide trình chiếu, PDF/PowerPoint và prompt AI |
 | 9 | Báo cáo hợp đồng & chi phí (thay file Excel) | Trang **Hợp đồng & chi phí**: giá trị HĐ, chi phí đào tạo / khảo thí / khác, lợi nhuận gộp, tỷ suất LN, đánh giá, đã thu, còn phải thu, trạng thái thanh toán — tính tự động; lọc theo tháng/quý/năm, dòng tổng, 4 ô tổng hợp như mẫu Excel; **dán dữ liệu từ Excel** để nhập nhanh và **xuất Excel** đúng bố cục mẫu; **lưu file PDF hợp đồng** để lưu trữ và báo cáo (nhắc riêng cho dự án đã hoàn thành) |
-| 8 | AI hỗ trợ báo cáo, tích hợp Claude không qua API | Trang **Trợ lý AI**: đóng gói số liệu thật thành prompt → mở Claude.ai điền sẵn / sao chép / tải file cho Claude Code → dán kết quả lại để xem trước, lưu ghi chú dự án, hoặc biến dàn ý thành slide để trình chiếu & xuất file. Không cần API key, không tốn phí API |
+| 8 | AI hỗ trợ báo cáo | Trang **Trợ lý AI**: đóng gói số liệu thật thành báo cáo. **Viết bằng AI** ngay trên trang khi quản trị viên đã nhập Claude API key (xem [Trợ lý AI tích hợp](#trợ-lý-ai-tích-hợp-claude-api)); hoặc mở Claude.ai điền sẵn / sao chép / tải file cho Claude Code rồi dán kết quả lại. Kết quả xem trước được, lưu thành ghi chú dự án, hoặc biến dàn ý thành slide để trình chiếu & xuất file |
 | 10 | Báo cáo tuần trước đã làm, tuần này / tuần tới (hoặc tháng) làm gì, gửi sếp | Tab **Báo cáo tuần / tháng** trong *Công việc của tôi*: ba mục lấy trực tiếp từ công việc và dự án của bạn, ghi chú tự lưu, gửi cấp trên, xuất Excel và in / lưu PDF; cấp trên xem cả đội trong *Hộp báo cáo*. Xem [Báo cáo công việc tuần / tháng](#báo-cáo-công-việc-tuần--tháng) |
 
 ### Phân quyền
@@ -77,6 +77,17 @@ Chỉ người có quyền **Hợp đồng & chi phí** thấy mục này (quả
 - **Cấp trên:** *Hộp báo cáo* → tab **Báo cáo tuần / tháng** liệt kê mọi nhân sự cấp dưới với trạng thái (Đã gửi + thời gian, Nháp, Chưa có, Đã xem), mở từng người để đọc và nhận xét; **Xuất Excel tổng hợp** gồm bảng tổng hợp, chi tiết công việc và báo cáo tiến độ của cả đội.
 - **Xuất:** Excel cho từng báo cáo và **In / Lưu PDF** (bản in ẩn menu, nút bấm, luôn nền sáng).
 - Dữ liệu mẫu: Bùi Ngọc Lan đã gửi báo cáo tuần trước (có dòng thay đổi so với lúc gửi), Phạm Thu Dung đã gửi tuần này (Trần Thị Bình đã xem), Hoàng Văn Em đang soạn nháp tuần này.
+
+### Trợ lý AI tích hợp (Claude API)
+
+Quản trị viên vào *Cài đặt → Trợ lý AI (Claude API)* (`/settings#ai`) để mọi người bấm **Viết bằng AI** trên trang *Trợ lý AI*: báo cáo được viết và hiện dần ngay trên trang, không phải sao chép sang Claude.ai.
+
+- **API key:** tạo trong [Claude Console → API Keys](https://platform.claude.com/settings/keys) (nên tạo key riêng cho WorkHub và đặt hạn mức chi tiêu trong Console), dán vào ô *API key* rồi bấm **Kiểm tra & lưu**. Key được kiểm tra với Anthropic trước khi lưu (không tốn token), nên key gõ sai không thay được key đang chạy. Tài khoản Claude.ai (Pro, Max, Team) không dùng được ở đây: Anthropic chỉ cho ứng dụng bên ngoài gọi Claude bằng API key của Console.
+- **Lưu trữ:** key được mã hoá AES-256-GCM trước khi ghi vào bảng `AppSetting` (`lib/secret-box.ts`), khoá mã hoá sinh từ secret `SETTINGS_SECRET` của Worker (không có thì dùng `JWT_SECRET`). Key không bao giờ được gửi lại trình duyệt, không vào nhật ký thao tác hay bản sao lưu ở dạng đọc được; giao diện chỉ hiện 4 ký tự cuối. Đổi secret đó thì key cũ không đọc được nữa và trang Cài đặt nhắc nhập lại.
+- **Tuỳ chọn:** bật / tắt, model (Opus 5.5 mặc định, Sonnet 5.5, Haiku 5.5, kèm giá niêm yết), số lượt mỗi người mỗi ngày (mặc định 30, theo giờ Việt Nam). Thẻ cài đặt hiện số báo cáo, số người dùng, token và chi phí ước tính 30 ngày qua; số tiền thực tế xem trong Console.
+- **Số liệu gửi cho Claude** giống hệt prompt sao chép (`lib/ai-prompt.ts`) và theo đúng quyền của người bấm: ai chỉ xem được dự án của mình thì Claude chỉ nhận số liệu dự án đó. Tên công việc và nội dung báo cáo của nhân sự được đánh dấu là dữ liệu, không phải chỉ dẫn.
+- **Nhật ký:** mỗi lần viết ghi `ai.generate` (loại báo cáo, kỳ, model, số token); mỗi lần đổi cài đặt ghi `settings.ai_update` (chỉ có 4 ký tự cuối của key).
+- Mã nguồn: `app/api/settings/ai` (cài đặt, chỉ quản trị viên), `app/api/ai/report` (viết báo cáo, trả về dạng stream NDJSON theo `lib/ai-stream.ts`), `lib/ai-settings.ts`, `lib/ai-models.ts`.
 
 ## Chạy trên máy (local)
 
@@ -179,6 +190,7 @@ Sau khi đã có Hyperdrive và ID trong `wrangler.jsonc` (cách 1, hoặc tạo
 - Chặn CSRF bằng kiểm tra `Origin` cho mọi request thay đổi dữ liệu; header bảo mật (`Content-Security-Policy`, `X-Frame-Options`, `nosniff`, `Referrer-Policy`, `Permissions-Policy`, HSTS).
 - **CSP** (`next.config.mjs`): chỉ tải script, style, ảnh, font và kết nối từ chính trang; cấm plugin, nhúng trang vào iframe và gửi form ra ngoài. Next.js cần script nội tuyến nên cho phép `'unsafe-inline'`, nhưng không nguồn ngoài nào được tải.
 - **Nhật ký thao tác** cho quản trị viên (xem *Vận hành*).
+- **Claude API key** mã hoá AES-256-GCM trong database, chỉ quản trị viên đổi được, không bao giờ trả về trình duyệt (xem [Trợ lý AI tích hợp](#trợ-lý-ai-tích-hợp-claude-api)).
 - Không cho quản trị viên tự hạ quyền/vô hiệu hoá chính mình; hệ thống luôn còn ít nhất một quản trị viên.
 - Supabase: bật RLS và thu hồi quyền của `anon`/`authenticated`, nên Data API công khai không đọc/ghi được bảng nào.
 

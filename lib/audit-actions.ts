@@ -9,6 +9,7 @@ export const AUDIT_GROUPS = {
   task: "Công việc & báo cáo",
   contract: "Hợp đồng & hồ sơ",
   workReport: "Báo cáo tuần/tháng",
+  ai: "Trợ lý AI",
   system: "Hệ thống & sao lưu",
 } as const;
 export type AuditGroup = keyof typeof AUDIT_GROUPS;
@@ -51,6 +52,9 @@ export const AUDIT_ACTIONS = {
 
   "work_report.submit": { label: "Nộp báo cáo tuần/tháng", group: "workReport" },
   "work_report.review": { label: "Đánh dấu đã xem báo cáo", group: "workReport" },
+
+  "ai.generate": { label: "Viết báo cáo bằng AI", group: "ai" },
+  "settings.ai_update": { label: "Đổi cài đặt AI / API key", group: "ai" },
 
   "backup.download": { label: "Tải bản sao lưu", group: "system" },
 } as const satisfies Record<string, { label: string; group: AuditGroup }>;

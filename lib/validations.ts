@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { AI_MODELS, MAX_AI_DAILY_LIMIT, looksLikeAnthropicKey, type AiModelId } from "./ai-models";
 import { PERMISSIONS, PROJECT_ROLES, ROLES } from "./permissions";
 import { CONTRACT_STATUSES } from "./finance";
 import { parseDate } from "./period";
@@ -208,6 +209,32 @@ export const workReportNotesSchema = z.object({
 
 export const reviewWorkReportSchema = z.object({
   reviewNote: z.string().max(2000).optional().nullable(),
+});
+
+// ----------------------------------------------------------------------------
+// Built-in AI (Claude API)
+// ----------------------------------------------------------------------------
+
+export const aiSettingsSchema = z.object({
+  /** A new key; null removes the stored one; omitted keeps it. */
+  apiKey: z
+    .string()
+    .trim()
+    .refine(looksLikeAnthropicKey, "API key phải bắt đầu bằng “sk-ant-” và không có khoảng trắng")
+    .nullable()
+    .optional(),
+  model: z.enum(AI_MODELS.map((m) => m.id) as [AiModelId, ...AiModelId[]]).optional(),
+  enabled: z.boolean().optional(),
+  dailyLimit: z.number().int().min(1, "Tối thiểu 1 lượt").max(MAX_AI_DAILY_LIMIT, `Tối đa ${MAX_AI_DAILY_LIMIT} lượt`).optional(),
+});
+
+export const aiReportSchema = z.object({
+  kind: z.enum(["executive-summary", "status-report", "slide-deck", "risk-analysis"]),
+  period: z.string().optional(),
+  date: z.string().optional(),
+  from: z.string().optional(),
+  to: z.string().optional(),
+  projectId: z.string().optional().nullable(),
 });
 
 export type LoginInput = z.infer<typeof loginSchema>;
