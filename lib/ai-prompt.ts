@@ -31,12 +31,29 @@ const TASKS: Record<AIPromptKind, string> = {
 const label = <T extends Record<string, { label: string }>>(map: T, key: string) => (map as Record<string, { label: string }>)[key]?.label ?? key;
 
 export function buildReportPrompt(kind: AIPromptKind, s: Summary, scopeLabel: string): string {
-  const k = s.kpis;
   const L: string[] = [];
   L.push("Bạn là chuyên gia phân tích và lập báo cáo quản lý dự án.");
   L.push("");
   L.push(`NHIỆM VỤ: ${TASKS[kind]}`);
   L.push("");
+  L.push(...summaryDataLines(s, scopeLabel));
+  L.push("");
+  L.push("YÊU CẦU ĐẦU RA:");
+  L.push("- Viết hoàn toàn bằng tiếng Việt, văn phong chuyên nghiệp.");
+  L.push("- Chỉ dùng số liệu ở trên; không bịa thêm số liệu, tên người hay sự kiện.");
+  L.push("- Khi suy luận nguyên nhân hoặc đề xuất, ghi rõ đó là nhận định/đề xuất.");
+  L.push("- Nếu chỉ số bằng 0 hoặc thiếu, nêu rõ thay vì suy diễn.");
+  return L.join("\n");
+}
+
+/**
+ * The report numbers as plain lines (scope, period, KPIs, projects, deadlines,
+ * finance when the caller may see it, people, upcoming work, recent reports).
+ * Shared by the copy-prompt flow and the AI chat's data block.
+ */
+export function summaryDataLines(s: Summary, scopeLabel: string): string[] {
+  const k = s.kpis;
+  const L: string[] = [];
   L.push(`PHẠM VI: ${scopeLabel}`);
   L.push(`KỲ BÁO CÁO: ${s.period.label}`);
   L.push("");
@@ -103,11 +120,5 @@ export function buildReportPrompt(kind: AIPromptKind, s: Summary, scopeLabel: st
     L.push("5. TRÍCH BÁO CÁO GẦN ĐÂY CỦA NGƯỜI THỰC HIỆN");
     s.recentReports.slice(0, 8).forEach((r) => L.push(`- ${r.authorName} · ${r.taskTitle} (${r.progress}%): "${r.content}"`));
   }
-  L.push("");
-  L.push("YÊU CẦU ĐẦU RA:");
-  L.push("- Viết hoàn toàn bằng tiếng Việt, văn phong chuyên nghiệp.");
-  L.push("- Chỉ dùng số liệu ở trên; không bịa thêm số liệu, tên người hay sự kiện.");
-  L.push("- Khi suy luận nguyên nhân hoặc đề xuất, ghi rõ đó là nhận định/đề xuất.");
-  L.push("- Nếu chỉ số bằng 0 hoặc thiếu, nêu rõ thay vì suy diễn.");
-  return L.join("\n");
+  return L;
 }

@@ -45,10 +45,13 @@ export function AiView({
   userName,
   builtIn,
   initial,
+  embedded = false,
 }: {
   projects: { id: string; name: string; color: string }[];
   userName: string;
   builtIn: BuiltInAi;
+  /** Shown as a tab of the AI screen, which has its own page header. */
+  embedded?: boolean;
   initial: { type: ReportPeriod; anchor: string; from: string; to: string; projectId: string };
 }) {
   const [kind, setKind] = useState<AIPromptKind>("executive-summary");
@@ -183,14 +186,16 @@ export function AiView({
 
   return (
     <div>
-      <PageHeader
-        title="Trợ lý AI báo cáo"
-        description={
-          builtIn.ready
-            ? "Claude viết báo cáo ngay trên trang từ số liệu thật của hệ thống, theo đúng quyền xem của bạn. Vẫn có thể sao chép prompt sang Claude.ai hoặc Claude Code."
-            : "Đóng gói số liệu thật của dashboard thành yêu cầu chuẩn để Claude viết báo cáo — không cần Claude API, không phát sinh chi phí API."
-        }
-      />
+      {!embedded && (
+        <PageHeader
+          title="Trợ lý AI báo cáo"
+          description={
+            builtIn.ready
+              ? "Claude viết báo cáo ngay trên trang từ số liệu thật của hệ thống, theo đúng quyền xem của bạn. Vẫn có thể sao chép prompt sang Claude.ai hoặc Claude Code."
+              : "Đóng gói số liệu thật của dashboard thành yêu cầu chuẩn để Claude viết báo cáo — không cần Claude API, không phát sinh chi phí API."
+          }
+        />
+      )}
 
       <div className="grid gap-6 xl:grid-cols-[1fr_1fr]">
         <div className="space-y-6">

@@ -149,10 +149,13 @@ export async function verifyAnthropicKey(apiKey: string, model: AiModelId): Prom
   }
 }
 
-/** Reports one person has generated today (Vietnam time), for the daily limit. */
+/** Audit actions that each count as one AI use (a written report or a chat answer). */
+const AI_USE_ACTIONS = ["ai.generate", "ai.chat"];
+
+/** AI answers one person has used today (Vietnam time), for the daily limit. */
 export async function aiUsedToday(userId: string): Promise<number> {
   const { from } = resolvePeriod("day");
-  return prisma.auditLog.count({ where: { action: "ai.generate", actorId: userId, createdAt: { gte: from } } });
+  return prisma.auditLog.count({ where: { action: { in: AI_USE_ACTIONS }, actorId: userId, createdAt: { gte: from } } });
 }
 
 export interface AiUsage {
@@ -168,7 +171,7 @@ export interface AiUsage {
 /** Use over the last `days` days, from the audit log entries the generation route writes. */
 export async function aiUsage(days = 30): Promise<AiUsage> {
   const rows = await prisma.auditLog.findMany({
-    where: { action: "ai.generate", createdAt: { gte: new Date(Date.now() - days * 86_400_000) } },
+    where: { action: { in: AI_USE_ACTIONS }, createdAt: { gte: new Date(Date.now() - days * 86_400_000) } },
     select: { actorId: true, details: true },
   });
   const usage: AiUsage = { days, reports: rows.length, people: new Set(rows.map((r) => r.actorId)).size, inputTokens: 0, outputTokens: 0, costUsd: 0 };

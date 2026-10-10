@@ -228,7 +228,7 @@ export function AiSettingsCard() {
             <div className="rounded-xl border bg-muted/30 px-4 py-3 text-sm">
               <p className="text-xs text-muted-foreground">{data.usage.days} ngày qua</p>
               <p className="mt-1">
-                <b>{data.usage.reports.toLocaleString("vi-VN")}</b> báo cáo · <b>{data.usage.people}</b> người dùng ·{" "}
+                <b>{data.usage.reports.toLocaleString("vi-VN")}</b> lượt dùng (báo cáo &amp; chat) · <b>{data.usage.people}</b> người dùng ·{" "}
                 {(data.usage.inputTokens + data.usage.outputTokens).toLocaleString("vi-VN")} token · ước tính <b>{usd(data.usage.costUsd)}</b>
               </p>
               <p className="mt-1 text-[11px] text-muted-foreground">Ước tính theo bảng giá niêm yết. Số tiền thực tế xem trong Claude Console.</p>

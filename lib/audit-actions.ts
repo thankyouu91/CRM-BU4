@@ -54,6 +54,7 @@ export const AUDIT_ACTIONS = {
   "work_report.review": { label: "Đánh dấu đã xem báo cáo", group: "workReport" },
 
   "ai.generate": { label: "Viết báo cáo bằng AI", group: "ai" },
+  "ai.chat": { label: "Trò chuyện với AI", group: "ai" },
   "settings.ai_update": { label: "Đổi cài đặt AI / API key", group: "ai" },
 
   "backup.download": { label: "Tải bản sao lưu", group: "system" },

@@ -3,6 +3,7 @@ import { AI_MODELS, MAX_AI_DAILY_LIMIT, looksLikeAnthropicKey, type AiModelId } 
 import { PERMISSIONS, PROJECT_ROLES, ROLES } from "./permissions";
 import { CONTRACT_STATUSES } from "./finance";
 import { parseDate } from "./period";
+import { CHAT_MAX_CHARS, CHAT_MAX_MESSAGES } from "./ai-chat";
 
 const roleEnum = z.enum(ROLES);
 const permissionList = z.array(z.enum(PERMISSIONS)).max(PERMISSIONS.length);
@@ -235,6 +236,25 @@ export const aiReportSchema = z.object({
   from: z.string().optional(),
   to: z.string().optional(),
   projectId: z.string().optional().nullable(),
+});
+
+export const aiChatSchema = z.object({
+  messages: z
+    .array(z.object({ role: z.enum(["user", "assistant"]), content: z.string().trim().min(1).max(CHAT_MAX_CHARS) }))
+    .min(1)
+    .max(CHAT_MAX_MESSAGES)
+    .refine((m) => m[0]?.role === "user" && m[m.length - 1]?.role === "user", "Cuộc trò chuyện phải bắt đầu và kết thúc bằng câu hỏi của người dùng")
+    .refine((m) => m.every((x, i) => i === 0 || x.role !== m[i - 1].role), "Câu hỏi và câu trả lời phải xen kẽ"),
+  options: z.object({
+    includeData: z.boolean(),
+    projectId: z.string().optional().nullable(),
+    period: z.string(),
+    date: z.string().optional(),
+    from: z.string().optional(),
+    to: z.string().optional(),
+    length: z.enum(["short", "balanced", "detailed"]),
+    audience: z.enum(["general", "leadership", "team", "client"]),
+  }),
 });
 
 export type LoginInput = z.infer<typeof loginSchema>;

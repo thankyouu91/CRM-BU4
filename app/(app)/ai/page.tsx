@@ -3,11 +3,13 @@ import { prisma } from "@/lib/prisma";
 import { isAdmin, projectVisibilityWhere } from "@/lib/rbac";
 import { aiUsedToday, getAiRuntime } from "@/lib/ai-settings";
 import { aiModelInfo } from "@/lib/ai-models";
-import { AiView, type BuiltInAi } from "./ai-view";
+import { hasPermission } from "@/lib/permissions";
+import type { BuiltInAi } from "./ai-view";
+import { AiScreen } from "./ai-screen";
 
 export const metadata = { title: "Trợ lý AI" };
 
-type SP = { period?: string; date?: string; from?: string; to?: string; projectId?: string };
+type SP = { tab?: string; period?: string; date?: string; from?: string; to?: string; projectId?: string };
 
 export default async function AiPage(props: { searchParams: Promise<SP> }) {
   const searchParams = await props.searchParams;
@@ -27,10 +29,13 @@ export default async function AiPage(props: { searchParams: Promise<SP> }) {
     : { ready: false, canEnable: isAdmin(user) };
   const type = ["day", "month", "quarter", "year", "custom"].includes(searchParams.period ?? "") ? searchParams.period! : "month";
   return (
-    <AiView
-      projects={projects}
+    <AiScreen
+      tab={searchParams.tab === "prompt" ? "prompt" : "chat"}
+      userId={user.id}
       userName={user.name}
+      projects={projects}
       builtIn={builtIn}
+      canFinance={hasPermission(user, "FINANCE_MANAGE")}
       initial={{
         type: type as "day" | "month" | "quarter" | "year" | "custom",
         anchor: searchParams.date && !Number.isNaN(Date.parse(searchParams.date)) ? searchParams.date : "",

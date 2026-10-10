@@ -16,7 +16,7 @@ Dashboard quản lý dự án và công việc cho doanh nghiệp: giao việc t
 | 6 | Ghi chú / phản hồi cho từng dự án | Tab “Ghi chú & phản hồi” trong mỗi dự án |
 | 7 | Theo dõi dự án với biểu đồ, % hoàn thành | Dashboard KPI, vòng tiến độ, xu hướng, phân bổ trạng thái, khối lượng theo nhân sự; tab “Tiến độ” có bảng **tiến độ theo deadline** (thực tế so với kế hoạch đến hôm nay, % đạt kế hoạch, trạng thái Đúng tiến độ / Có rủi ro / Chậm / Trễ hạn), **khối lượng đã làm / cần làm** và timeline (Gantt) gồm cả thời hạn hạng mục; các số liệu này có trong Trung tâm báo cáo, slide trình chiếu, PDF/PowerPoint và prompt AI |
 | 9 | Báo cáo hợp đồng & chi phí (thay file Excel) | Trang **Hợp đồng & chi phí**: giá trị HĐ, chi phí đào tạo / khảo thí / khác, lợi nhuận gộp, tỷ suất LN, đánh giá, đã thu, còn phải thu, trạng thái thanh toán — tính tự động; lọc theo tháng/quý/năm, dòng tổng, 4 ô tổng hợp như mẫu Excel; **dán dữ liệu từ Excel** để nhập nhanh và **xuất Excel** đúng bố cục mẫu; **lưu file PDF hợp đồng** để lưu trữ và báo cáo (nhắc riêng cho dự án đã hoàn thành) |
-| 8 | AI hỗ trợ báo cáo | Trang **Trợ lý AI**: đóng gói số liệu thật thành báo cáo. **Viết bằng AI** ngay trên trang khi quản trị viên đã nhập Claude API key (xem [Trợ lý AI tích hợp](#trợ-lý-ai-tích-hợp-claude-api)); hoặc mở Claude.ai điền sẵn / sao chép / tải file cho Claude Code rồi dán kết quả lại. Kết quả xem trước được, lưu thành ghi chú dự án, hoặc biến dàn ý thành slide để trình chiếu & xuất file |
+| 8 | AI hỗ trợ báo cáo | Trang **Trợ lý AI**: tab **Trò chuyện** để chat với Claude (prompt mẫu, chọn phạm vi, kỳ, độ dài, người đọc) khi đã có Claude API key; tab **Sao chép prompt** đóng gói số liệu thật thành báo cáo. **Viết bằng AI** ngay trên trang khi quản trị viên đã nhập Claude API key (xem [Trợ lý AI tích hợp](#trợ-lý-ai-tích-hợp-claude-api)); hoặc mở Claude.ai điền sẵn / sao chép / tải file cho Claude Code rồi dán kết quả lại. Kết quả xem trước được, lưu thành ghi chú dự án, hoặc biến dàn ý thành slide để trình chiếu & xuất file |
 | 10 | Báo cáo tuần trước đã làm, tuần này / tuần tới (hoặc tháng) làm gì, gửi sếp | Tab **Báo cáo tuần / tháng** trong *Công việc của tôi*: ba mục lấy trực tiếp từ công việc và dự án của bạn, ghi chú tự lưu, gửi cấp trên, xuất Excel và in / lưu PDF; cấp trên xem cả đội trong *Hộp báo cáo*. Xem [Báo cáo công việc tuần / tháng](#báo-cáo-công-việc-tuần--tháng) |
 
 ### Phân quyền
@@ -86,8 +86,18 @@ Quản trị viên vào *Cài đặt → Trợ lý AI (Claude API)* (`/settings#
 - **Lưu trữ:** key được mã hoá AES-256-GCM trước khi ghi vào bảng `AppSetting` (`lib/secret-box.ts`), khoá mã hoá sinh từ secret `SETTINGS_SECRET` của Worker (không có thì dùng `JWT_SECRET`). Key không bao giờ được gửi lại trình duyệt, không vào nhật ký thao tác hay bản sao lưu ở dạng đọc được; giao diện chỉ hiện 4 ký tự cuối. Đổi secret đó thì key cũ không đọc được nữa và trang Cài đặt nhắc nhập lại.
 - **Tuỳ chọn:** bật / tắt, model (Opus 5.5 mặc định, Sonnet 5.5, Haiku 5.5, kèm giá niêm yết), số lượt mỗi người mỗi ngày (mặc định 30, theo giờ Việt Nam). Thẻ cài đặt hiện số báo cáo, số người dùng, token và chi phí ước tính 30 ngày qua; số tiền thực tế xem trong Console.
 - **Số liệu gửi cho Claude** giống hệt prompt sao chép (`lib/ai-prompt.ts`) và theo đúng quyền của người bấm: ai chỉ xem được dự án của mình thì Claude chỉ nhận số liệu dự án đó. Tên công việc và nội dung báo cáo của nhân sự được đánh dấu là dữ liệu, không phải chỉ dẫn.
-- **Nhật ký:** mỗi lần viết ghi `ai.generate` (loại báo cáo, kỳ, model, số token); mỗi lần đổi cài đặt ghi `settings.ai_update` (chỉ có 4 ký tự cuối của key).
-- Mã nguồn: `app/api/settings/ai` (cài đặt, chỉ quản trị viên), `app/api/ai/report` (viết báo cáo, trả về dạng stream NDJSON theo `lib/ai-stream.ts`), `lib/ai-settings.ts`, `lib/ai-models.ts`.
+- **Nhật ký:** mỗi lần viết ghi `ai.generate` (loại báo cáo, kỳ, model, số token), mỗi câu trả lời chat ghi `ai.chat`; cả hai tính vào số lượt mỗi ngày. Mỗi lần đổi cài đặt ghi `settings.ai_update` (chỉ có 4 ký tự cuối của key).
+- Mã nguồn: `app/api/settings/ai` (cài đặt, chỉ quản trị viên), `app/api/ai/report` (viết báo cáo) và `app/api/ai/chat` (chat), cùng trả về dạng stream NDJSON qua `lib/ai-run.ts` / `lib/ai-stream.ts`; `lib/ai-settings.ts`, `lib/ai-models.ts`, `lib/ai-chat.ts`.
+
+#### Trò chuyện (chat)
+
+Tab **Trò chuyện** trên trang *Trợ lý AI* (`/ai`) là khung chat nhiều lượt với Claude:
+
+- **Tuỳ chọn:** *Kèm số liệu hệ thống* (bật thì Claude nhận số liệu của phạm vi và kỳ đã chọn, đúng quyền xem của người hỏi, kể cả hợp đồng khi có quyền *Hợp đồng & chi phí*), *Phạm vi* (toàn bộ hoặc một dự án), *Kỳ số liệu*, *Độ dài* (ngắn gọn / vừa phải / chi tiết) và *Người đọc* (chung, ban lãnh đạo, nội bộ nhóm, khách hàng: với khách hàng Claude được dặn không nêu chi phí, lợi nhuận, công nợ).
+- **Prompt mẫu** theo nhóm Báo cáo, Phân tích, Kế hoạch, Soạn thảo, Tài chính (nhóm Tài chính chỉ hiện với người có quyền): bấm để điền sẵn câu hỏi và chọn độ dài, người đọc phù hợp; sửa thêm rồi gửi. Danh sách ở `lib/ai-chat.ts`.
+- **Mỗi câu trả lời:** sao chép, tạo lại (câu cuối), lưu vào ghi chú dự án (khi đang chọn một dự án), và *Trình chiếu / xuất file* khi câu trả lời là dàn ý slide (`## Slide 1: …`). Bấm **Dừng** để ngừng giữa chừng (lượt đó vẫn được tính).
+- **Lịch sử** giữ trong tab trình duyệt (sessionStorage): tải lại trang vẫn còn, đóng tab là mất, không lưu trên máy chủ. Tối đa 40 tin nhắn gần nhất được gửi kèm, mỗi tin tối đa 8.000 ký tự.
+- **Chi phí:** khối số liệu và phần hội thoại đã có được cache (prompt caching), nên các câu hỏi tiếp theo trong cùng phạm vi và kỳ rẻ hơn câu đầu.
 
 ## Chạy trên máy (local)
 
