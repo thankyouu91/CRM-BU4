@@ -16,6 +16,7 @@
     "admin:create": "tsx prisma/create-admin.ts",
     "preview": "opennextjs-cloudflare build && opennextjs-cloudflare preview",
     "deploy": "opennextjs-cloudflare build && opennextjs-cloudflare deploy",
+    "predeploy": "node scripts/require-linux.mjs",
     "cf:build": "opennextjs-cloudflare build",
     "cf-typegen": "wrangler types --env-interface CloudflareEnv cloudflare-env.d.ts",
     "test": "vitest run",

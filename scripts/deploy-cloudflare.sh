@@ -18,6 +18,7 @@
 # workers.dev subdomain yet), HYPERDRIVE_NAME (default crm-db).
 set -euo pipefail
 cd "$(dirname "$0")/.."
+node scripts/require-linux.mjs
 
 : "${CLOUDFLARE_API_TOKEN:?Set CLOUDFLARE_API_TOKEN (see header)}"
 SUBDOMAIN="${WORKERS_SUBDOMAIN:-bu4cdimex}"

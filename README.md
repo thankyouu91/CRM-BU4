@@ -125,6 +125,8 @@ Chạy thử đúng runtime của Cloudflare trên máy: `cp .dev.vars.example .
 
 ## Triển khai lên Cloudflare
 
+**Build production trên Linux.** Nếu thao tác từ Windows, dùng artifact Linux đã qua kiểm tra runtime trên CI; không build lại OpenNext trên Windows. Xem [quy trình phát hành](docs/production-release.md).
+
 Kiến trúc: **Cloudflare Workers** chạy app (qua OpenNext) → **Hyperdrive** (gom kết nối, TLS) → **Supabase PostgreSQL** (Singapore).
 
 **Đang chạy tại: https://crm.votranlong91.workers.dev** (Worker `crm`, subdomain tài khoản `votranlong91`). Muốn đổi thành `crm.bu4cdimex.workers.dev`: Cloudflare → *Workers & Pages* → **Change** cạnh *Your subdomain* → nhập `bu4cdimex`. Không cần deploy lại; API của Cloudflare không cho đổi subdomain đã có (lỗi 10036) nên việc này làm trên dashboard.
