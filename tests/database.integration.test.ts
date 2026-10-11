@@ -87,6 +87,29 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)("PostgreSQL transactions", () =>
     expect((await listTasks(user, { ...filter, scope: "all" })).total).toBe(104);
   });
 
+  it("scopes department reports to visible projects and counts leaf tasks once", async () => {
+    const { departmentReport } = await import("../lib/department-report-queries");
+    const { workPeriodOf } = await import("../lib/work-report");
+    const outsider = `test-${randomUUID()}`;
+    const parent = await db.task.create({ data: { title: "Summary", projectId, createdById: userId, dueDate: new Date() } });
+    const leaf = await db.task.create({ data: { title: "Leaf", parentId: parent.id, projectId, createdById: userId, dueDate: new Date() } });
+    await db.user.create({ data: { id: outsider, email: `${outsider}@example.test`, name: "Other", passwordHash: "test-only" } });
+    try {
+      const hidden = await db.project.create({ data: { name: "Hidden", ownerId: outsider } });
+      const secret = await db.task.create({ data: { title: "Private", projectId: hidden.id, createdById: outsider, assigneeId: userId, dueDate: new Date() } });
+      const viewer = { id: userId, role: "MEMBER", permissions: [] } as unknown as CurrentUser;
+      const report = await departmentReport(viewer, workPeriodOf("WEEK"), null);
+      const ids = report.sections.flatMap(s => s.buckets.flatMap(b => b.rows.map(r => r.task.id)));
+      expect(ids).toContain(leaf.id);
+      expect(ids).not.toContain(parent.id);
+      expect(ids).not.toContain(secret.id);
+      expect((await departmentReport(viewer, workPeriodOf("WEEK"), hidden.id)).counts.currentOpen).toBe(0);
+    } finally {
+      await db.project.deleteMany({ where: { ownerId: outsider } });
+      await db.user.delete({ where: { id: outsider } });
+    }
+  });
+
   it("serializes two real uploads at the contract file limit", async () => {
     const { storeContractFiles } = await import("../lib/contract-file-service");
     const contract = await db.contract.create({ data: { name: "Upload race", value: 0, performedAt: new Date(), createdById: userId } });

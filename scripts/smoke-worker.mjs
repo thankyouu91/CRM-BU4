@@ -48,7 +48,7 @@ try {
   assert.equal(login.status, 200, `Worker login failed: ${await login.text()}`);
   const cookie = login.headers.getSetCookie().find((item) => item.startsWith("crm_session="))?.split(";")[0];
   assert(cookie, "Worker did not issue a session");
-  for (const [path, marker] of [["/projects", "Lịch hoạt động dự án"], ["/tasks", "Deadline công việc"]]) {
+  for (const [path, marker] of [["/projects", "Lịch hoạt động dự án"], ["/tasks", "Deadline công việc"], ["/reports", "Báo cáo công việc phòng"], ["/reports?view=analytics", "Bản trình chiếu tự động"]]) {
     const response = await fetch(`${origin}${path}`, { headers: { Cookie: cookie }, redirect: "manual", signal: AbortSignal.timeout(20000) });
     assert.equal(response.status, 200, `${path} status`);
     const html = await response.text();
@@ -61,7 +61,12 @@ try {
     assert.equal(page.deadline, deadline);
     if (deadline === "this-week") assert.equal(page.total, 1, "Fixture deadline should match this week");
   }
-  console.log("Worker smoke passed: login, project calendar, My Tasks and all three deadline APIs on workerd + PostgreSQL.");
+  const department = await fetch(`${origin}/api/reports/department?projectId=${project.id}`, { headers: { Cookie: cookie }, signal: AbortSignal.timeout(20000) });
+  assert.equal(department.status, 200);
+  const report = await department.json();
+  assert.equal(report.sections.length, 3);
+  assert.equal(report.counts.currentOpen, 1);
+  console.log("Worker smoke passed: login, project calendar, My Tasks, deadline APIs, department report and analytics on workerd + PostgreSQL.");
 } catch (error) {
   console.error(logs);
   throw error;
