@@ -349,9 +349,10 @@ function ProgressField({
 }) {
   const computed = useMemo(() => {
     if (!task.subtasks.length) return null;
+    if (task.effectiveProgress !== undefined) return task.effectiveProgress;
     const sum = task.subtasks.reduce((a, s) => a + (s.status === "DONE" ? 100 : s.progress), 0);
     return Math.round(sum / task.subtasks.length);
-  }, [task.subtasks]);
+  }, [task.subtasks, task.effectiveProgress]);
   const shown = task.status === "DONE" ? 100 : (computed ?? task.progress);
   const [draft, setDraft] = useState(shown);
   useEffect(() => setDraft(shown), [shown]);

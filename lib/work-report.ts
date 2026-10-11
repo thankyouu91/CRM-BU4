@@ -179,6 +179,8 @@ type Dateish = Date | string | null;
 
 /** A task as the builder needs it: a Prisma row (lib/work-report-queries.ts) or plain data. */
 export interface ReportTaskSource {
+  /** Computed from the complete project tree by the server. */
+  effectiveProgress?: number;
   id: string;
   title: string;
   status: string;
@@ -260,7 +262,9 @@ export function workTaskOf(t: ReportTaskSource, now: Date = new Date()): WorkTas
   const progress =
     t.status === "DONE"
       ? 100
-      : subs.length
+      : t.effectiveProgress !== undefined
+        ? t.effectiveProgress
+        : subs.length
         ? Math.round(subs.reduce((a, s) => a + (s.status === "DONE" ? 100 : s.progress), 0) / subs.length)
         : t.progress;
   const due = ms(t.dueDate);

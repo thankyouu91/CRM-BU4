@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { CalendarDays, ChevronRight, FileText, FolderPlus, GitBranch, ListChecks, Loader2, MoreHorizontal, Pencil, Plus, Trash2, TriangleAlert } from "lucide-react";
 import { toast } from "sonner";
@@ -8,6 +8,7 @@ import { Avatar } from "@/components/ui/avatar";
 import { PriorityBadge, ScheduleBadge } from "@/components/ui/badge";
 import { EmptyState } from "@/components/ui/misc";
 import { PlanBar, ProgressBar } from "@/components/ui/progress";
+import { useTaskMenu } from "@/components/tasks/task-menu";
 import { StatusToggle } from "@/components/tasks/status-toggle";
 import { ApiError, type SendChange } from "@/lib/client";
 import { isOverdue } from "@/lib/dates";
@@ -15,36 +16,12 @@ import { daysLeftLabel } from "@/lib/schedule";
 import { cn, formatShortDate } from "@/lib/utils";
 import type { ProjectCategory, ProjectTask } from "./types";
 
-export interface TaskFilters {
-  mine: boolean;
-  hideDone: boolean;
-}
-
-/** Indexes children by parent and decides visibility (a parent stays visible if any descendant matches). */
-export function useTaskTree(tasks: ProjectTask[], filters: TaskFilters, meId: string) {
-  return useMemo(() => {
-    const childrenOf = new Map<string, ProjectTask[]>();
-    for (const t of tasks) {
-      if (!t.parentId) continue;
-      const list = childrenOf.get(t.parentId) ?? [];
-      list.push(t);
-      childrenOf.set(t.parentId, list);
-    }
-    const matches = (t: ProjectTask) =>
-      (!filters.mine || t.assigneeId === meId) && (!filters.hideDone || t.status !== "DONE");
-    const visible = new Set<string>();
-    const walk = (t: ProjectTask): boolean => {
-      const kids = (childrenOf.get(t.id) ?? []).map(walk).some(Boolean);
-      const v = matches(t) || kids;
-      if (v) visible.add(t.id);
-      return v;
-    };
-    tasks.filter((t) => !t.parentId).forEach(walk);
-    return { childrenOf, visible };
-  }, [tasks, filters, meId]);
-}
+import { useTaskTree, type TaskFilters } from "./use-task-tree";
+export type { TaskFilters } from "./use-task-tree";
+import { groupBy } from "@/lib/task-tree";
 
 interface RowCtx {
+  menu: ReturnType<typeof useTaskMenu<ProjectTask>>;
   childrenOf: Map<string, ProjectTask[]>;
   visible: Set<string>;
   canReport: (t: ProjectTask) => boolean;
@@ -64,7 +41,7 @@ function TaskRow({ task, depth, ctx }: { task: ProjectTask; depth: number; ctx: 
         role="button"
         tabIndex={0}
         onClick={() => ctx.onOpen(task.id)}
-        onKeyDown={(e) => e.key === "Enter" && ctx.onOpen(task.id)}
+        {...ctx.menu.bind(task)}
         className="group flex cursor-pointer items-center gap-3 border-t px-4 py-2.5 transition-colors hover:bg-muted/40"
         style={{ paddingLeft: 16 + depth * 28 }}
       >
@@ -115,6 +92,7 @@ function TaskRow({ task, depth, ctx }: { task: ProjectTask; depth: number; ctx: 
             ?
           </span>
         )}
+        {ctx.menu.button(task)}
       </div>
       <AnimatePresence initial={false}>
         {open && kids.length > 0 && (
@@ -212,15 +190,14 @@ export function TaskList({
   onDeleteCategory: (c: ProjectCategory) => void;
   onAddSubCategory: (parent: ProjectCategory) => void;
 }) {
-  const { childrenOf, visible } = useTaskTree(tasks, filters, meId);
-  const roots = tasks.filter((t) => !t.parentId && visible.has(t.id));
+  const { childrenOf, visible, roots } = useTaskTree(tasks, filters, meId);
 
-  const ctx: RowCtx = {
+  const actions = {
     childrenOf,
     visible,
     onOpen,
-    canReport: (t) => canManage || (canContribute && (t.assigneeId === meId || t.createdById === meId)),
-    onToggle: async (t) => {
+    canReport: (t: ProjectTask) => canManage || (canContribute && (t.assigneeId === meId || t.createdById === meId)),
+    onToggle: async (t: ProjectTask) => {
       const status = t.status === "DONE" ? "IN_PROGRESS" : "DONE";
       try {
         await send(`/api/tasks/${t.id}`, { method: "PATCH", body: { status } }, { taskId: t.id, fields: { status } });
@@ -230,10 +207,15 @@ export function TaskList({
     },
   };
 
+  const taskMenu = useTaskMenu({ onOpen, onToggle: actions.onToggle, canToggle: actions.canReport });
+  const ctx: RowCtx = { ...actions, menu: taskMenu };
+
   const known = new Set(categories.map((c) => c.id));
   const mains = categories.filter((c) => !c.parentId || !known.has(c.parentId));
-  const subsOf = (id: string) => categories.filter((c) => c.parentId === id);
-  const rootsIn = (id: string) => roots.filter((t) => t.categoryId === id);
+  const subcategories = groupBy(categories, (c) => c.parentId);
+  const rootsByCategory = groupBy(roots, (t) => t.categoryId);
+  const subsOf = (id: string) => subcategories.get(id) ?? [];
+  const rootsIn = (id: string) => rootsByCategory.get(id) ?? [];
   const uncategorized = roots.filter((t) => !t.categoryId || !known.has(t.categoryId));
   const filtering = filters.mine || filters.hideDone;
 
@@ -259,6 +241,7 @@ export function TaskList({
 
   return (
     <div className="space-y-4">
+      {taskMenu.menu}
       {mains.map((c) => {
         const subs = subsOf(c.id);
         const own = rootsIn(c.id);

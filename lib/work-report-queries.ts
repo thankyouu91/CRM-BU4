@@ -1,3 +1,4 @@
+import { withTaskProgress } from "./task-progress-queries";
 import type { Prisma } from "@prisma/client";
 import { prisma } from "./prisma";
 import { canViewAllProjects } from "./rbac";
@@ -44,6 +45,7 @@ const taskSelect = {
   status: true,
   priority: true,
   progress: true,
+  projectId: true,
   startDate: true,
   dueDate: true,
   completedAt: true,
@@ -55,7 +57,7 @@ const taskSelect = {
   assignee: { select: { id: true, name: true } },
   subtasks: { select: { status: true, progress: true } },
 } satisfies Prisma.TaskSelect;
-type TaskRow = Prisma.TaskGetPayload<{ select: typeof taskSelect }>;
+type TaskRow = Prisma.TaskGetPayload<{ select: typeof taskSelect }> & { effectiveProgress?: number };
 
 const recordInclude = { reviewedBy: { select: { id: true, name: true } } } satisfies Prisma.WorkReportInclude;
 type RecordRow = Prisma.WorkReportGetPayload<{ include: typeof recordInclude }>;
@@ -160,7 +162,7 @@ async function load(viewer: CurrentUser, authors: AuthorRow[], period: WorkPerio
       : Promise.resolve([]),
   ]);
   return {
-    tasks,
+    tasks: await withTaskProgress(tasks),
     entries,
     records,
     projects,
@@ -215,7 +217,7 @@ async function lookupMissing(loaded: Loaded): Promise<TaskRow[]> {
     if (snap) for (const id of snapshotTaskIds(snap.sections)) if (!known.has(id)) missing.add(id);
   }
   if (!missing.size) return [];
-  return prisma.task.findMany({ where: { id: { in: Array.from(missing) } }, select: taskSelect });
+  return withTaskProgress(await prisma.task.findMany({ where: { id: { in: Array.from(missing) } }, select: taskSelect }));
 }
 
 function assemble(

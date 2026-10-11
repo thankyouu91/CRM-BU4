@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { ZodError } from "zod";
 import { getCurrentUser, type CurrentUser } from "./session";
+import { ConflictError, InputError } from "./errors";
 
 export function ok<T>(data: T, init?: ResponseInit) {
   return NextResponse.json(data, init);
@@ -54,6 +55,8 @@ export async function handle<T>(fn: () => Promise<T>): Promise<T | NextResponse>
   try {
     return await fn();
   } catch (err) {
+    if (err instanceof ConflictError) return NextResponse.json({ error: err.message }, { status: 409 });
+    if (err instanceof InputError) return badRequest(err.message);
     if (err instanceof ZodError) {
       return NextResponse.json(
         { error: "Dữ liệu không hợp lệ", fields: zodErrors(err) },

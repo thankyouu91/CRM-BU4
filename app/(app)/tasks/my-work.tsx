@@ -1,12 +1,16 @@
 "use client";
 
 import { useState } from "react";
+import dynamic from "next/dynamic";
 import { FileText, ListChecks } from "lucide-react";
 import { PageHeader, Segmented } from "@/components/ui/misc";
 import { replacePeriodInUrl, WorkPeriodNav, type PeriodRef } from "@/components/work-report/period-nav";
-import { WorkReportScreen } from "@/components/work-report/report-view";
 import type { WorkReportData } from "@/lib/work-report";
 import { MyTasksView } from "./tasks-view";
+
+const WorkReportScreen = dynamic(() => import("@/components/work-report/report-view").then((m) => m.WorkReportScreen), {
+  loading: () => <p role="status" className="py-12 text-center text-sm text-muted-foreground">Đang tải báo cáo…</p>,
+});
 
 export type MyWorkTab = "list" | "report";
 

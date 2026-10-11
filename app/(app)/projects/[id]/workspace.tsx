@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import dynamic from "next/dynamic";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -29,8 +29,8 @@ import { Button } from "@/components/ui/button";
 import { ConfirmDialog } from "@/components/ui/confirm";
 import { Segmented } from "@/components/ui/misc";
 import { ProgressRing } from "@/components/ui/progress";
-import { TaskDrawer } from "@/components/tasks/task-drawer";
-import { TaskCreateModal } from "@/components/tasks/task-create-modal";
+import { TaskDrawer } from "@/components/tasks/lazy-task-drawer";
+import { MountOnOpen } from "@/components/ui/mount-on-open";
 import { TaskList, type TaskFilters } from "@/components/projects/task-list";
 import { Kanban } from "@/components/projects/kanban";
 import type { ProjectContracts } from "@/components/projects/finance-panel";
@@ -41,8 +41,7 @@ import { formatDate } from "@/lib/utils";
 import { isOverdue } from "@/lib/dates";
 import { PROJECT_ROLE_INFO } from "@/lib/permissions";
 
-// Tabs and dialogs that aren't on screen at first load separately (the progress
-// tab carries the chart library) and are fetched once the browser is idle.
+// Load secondary panels and dialogs only when opened.
 const panelFallback = () => (
   <div className="flex justify-center py-16">
     <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
@@ -60,6 +59,7 @@ const ProgressPanel = dynamic(() => loaders.progress().then((m) => m.ProgressPan
 const FinancePanel = dynamic(() => loaders.finance().then((m) => m.FinancePanel), { loading: panelFallback });
 const NotesPanel = dynamic(() => loaders.notes().then((m) => m.NotesPanel), { loading: panelFallback });
 const MembersPanel = dynamic(() => loaders.members().then((m) => m.MembersPanel), { loading: panelFallback });
+const TaskCreateModal = dynamic(() => import("@/components/tasks/task-create-modal").then((m) => m.TaskCreateModal), { loading: panelFallback });
 const CategoryModal = dynamic(() => loaders.category().then((m) => m.CategoryModal));
 const ProjectFormModal = dynamic(() => loaders.form().then((m) => m.ProjectFormModal));
 
@@ -103,16 +103,6 @@ export function ProjectWorkspace({
   const [deletingCategory, setDeletingCategory] = useState<ProjectCategory | null>(null);
   const [editingProject, setEditingProject] = useState(false);
   const [deletingProject, setDeletingProject] = useState(false);
-
-  useEffect(() => {
-    const prefetch = () => Object.values(loaders).forEach((load) => void load());
-    if ("requestIdleCallback" in window) {
-      const id = window.requestIdleCallback(prefetch, { timeout: 3000 });
-      return () => window.cancelIdleCallback(id);
-    }
-    const id = setTimeout(prefetch, 1500);
-    return () => clearTimeout(id);
-  }, []);
 
   const setTab = (t: Tab) => {
     setTabState(t);
@@ -320,46 +310,52 @@ export function ProjectWorkspace({
       {tab === "members" && <MembersPanel project={p} canManage={canManage} onEditMembers={() => setEditingProject(true)} onChanged={reload} />}
 
       <TaskDrawer taskId={openTask} onClose={() => setOpenTask(null)} send={send} />
-      <TaskCreateModal
-        open={creating}
-        onClose={() => setCreating(false)}
-        projectId={p.id}
-        categories={p.categories}
-        people={assignable}
-        send={send}
-        onCreated={setOpenTask}
-      />
-      <CategoryModal
-        open={categoryModal.open}
-        onClose={() => setCategoryModal({ open: false, category: null })}
-        projectId={p.id}
-        category={categoryModal.category}
-        categories={p.categories}
-        defaultParentId={categoryModal.parentId ?? null}
-        onSaved={reload}
-      />
-      <ProjectFormModal
-        open={editingProject}
-        onClose={() => setEditingProject(false)}
-        directory={directory}
-        finance={canFinance ? { contracts: finance.data?.contracts ?? null } : undefined}
-        onSaved={() => {
-          void reload();
-          if (canFinance) void finance.reload();
-          router.refresh();
-        }}
-        initial={{
-          id: p.id,
-          name: p.name,
-          description: p.description,
-          status: p.status,
-          color: p.color,
-          startDate: p.startDate,
-          dueDate: p.dueDate,
-          ownerId: p.ownerId,
-          members: p.members.map((m) => ({ userId: m.id, role: m.projectRole })),
-        }}
-      />
+      <MountOnOpen open={creating}>
+        <TaskCreateModal
+          open={creating}
+          onClose={() => setCreating(false)}
+          projectId={p.id}
+          categories={p.categories}
+          people={assignable}
+          send={send}
+          onCreated={setOpenTask}
+        />
+      </MountOnOpen>
+      <MountOnOpen open={categoryModal.open}>
+        <CategoryModal
+          open={categoryModal.open}
+          onClose={() => setCategoryModal({ open: false, category: null })}
+          projectId={p.id}
+          category={categoryModal.category}
+          categories={p.categories}
+          defaultParentId={categoryModal.parentId ?? null}
+          onSaved={reload}
+        />
+      </MountOnOpen>
+      <MountOnOpen open={editingProject}>
+        <ProjectFormModal
+          open={editingProject}
+          onClose={() => setEditingProject(false)}
+          directory={directory}
+          finance={canFinance ? { contracts: finance.data?.contracts ?? null } : undefined}
+          onSaved={() => {
+            void reload();
+            if (canFinance) void finance.reload();
+            router.refresh();
+          }}
+          initial={{
+            id: p.id,
+            name: p.name,
+            description: p.description,
+            status: p.status,
+            color: p.color,
+            startDate: p.startDate,
+            dueDate: p.dueDate,
+            ownerId: p.ownerId,
+            members: p.members.map((m) => ({ userId: m.id, role: m.projectRole })),
+          }}
+        />
+      </MountOnOpen>
       <ConfirmDialog
         open={!!deletingCategory}
         onClose={() => setDeletingCategory(null)}

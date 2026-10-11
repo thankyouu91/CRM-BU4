@@ -7,5 +7,5 @@ export async function GET(req: NextRequest) {
   const me = await auth();
   if (!me) return unauthorized();
   const sp = req.nextUrl.searchParams;
-  return ok(await inboxReports(me, sp.get("box"), sp.get("status")));
+  return ok(await inboxReports(me, sp.get("box"), sp.get("status"), sp.get("cursor")));
 }
