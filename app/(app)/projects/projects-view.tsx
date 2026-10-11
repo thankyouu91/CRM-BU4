@@ -1,176 +1,124 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import Link from "next/link";
+import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
-import { motion } from "framer-motion";
-import { CalendarDays, FolderKanban, MessageSquare, Plus, Search, TriangleAlert } from "lucide-react";
+import { CalendarDays, ChevronLeft, ChevronRight, Plus, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { AvatarStack } from "@/components/ui/avatar";
-import { ProjectStatusBadge } from "@/components/ui/badge";
-import { EmptyState, PageHeader, Segmented } from "@/components/ui/misc";
-import { ProgressRing } from "@/components/ui/progress";
-import { ProjectFormModal } from "@/components/projects/project-form";
+import { EmptyState, PageHeader } from "@/components/ui/misc";
+import { MountOnOpen } from "@/components/ui/mount-on-open";
+import { ActivityTimeline, UnscheduledProjects, type CalendarProject } from "@/components/projects/activity-timeline";
 import type { Directory, ProjectListItemData } from "@/components/projects/types";
-import { formatDate } from "@/lib/utils";
+import { calendarPeriod, calendarSelection, moveCalendar, projectTiming, timelineSpan, type CalendarView } from "@/lib/project-calendar";
+import { cn } from "@/lib/utils";
+import { PROJECT_STATUS } from "@/lib/constants";
 
-type Filter = "all" | "ACTIVE" | "PLANNING" | "ON_HOLD" | "COMPLETED";
+const ProjectFormModal = dynamic(() => import("@/components/projects/project-form").then((m) => m.ProjectFormModal), {
+  loading: () => <p role="status" className="fixed bottom-4 right-4 rounded-lg border bg-card px-4 py-2 shadow-pop">Đang mở biểu mẫu…</p>,
+});
+const VIEWS: { value: CalendarView; label: string }[] = [{ value: "month", label: "Tháng" }, { value: "quarter", label: "Quý" }, { value: "year", label: "Năm" }];
 
-export function ProjectsView({
-  initial,
-  directory,
-  canCreate,
-  canFinance,
-}: {
+export function ProjectsView({ initial, directory, canCreate, canFinance, initialView, initialAnchor, now }: {
   initial: ProjectListItemData[];
   directory: Directory;
   canCreate: boolean;
-  /** Show the optional contract section when creating a project. */
   canFinance: boolean;
+  initialView: CalendarView;
+  initialAnchor: string;
+  now: string;
 }) {
   const router = useRouter();
-  const [filter, setFilter] = useState<Filter>("all");
+  const [view, setView] = useState(initialView);
+  const [anchor, setAnchor] = useState(initialAnchor);
+  const [filter, setFilter] = useState("all");
   const [q, setQ] = useState("");
   const [creating, setCreating] = useState(false);
+  const period = useMemo(() => calendarPeriod(view, anchor), [view, anchor]);
 
-  const counts = useMemo(() => {
-    const c: Record<string, number> = { all: initial.length };
-    for (const p of initial) c[p.status] = (c[p.status] ?? 0) + 1;
-    return c;
-  }, [initial]);
+  const { entries, unscheduled, outside, dueCount, nearest } = useMemo(() => {
+    const entries: CalendarProject[] = [];
+    const unscheduled: ProjectListItemData[] = [];
+    let outside = 0;
+    let dueCount = 0;
+    let nearest: { distance: number; anchor: string } | null = null;
+    const query = q.trim().toLocaleLowerCase("vi");
+    for (const project of initial) {
+      if ((filter !== "all" && project.status !== filter) || (query && !project.name.toLocaleLowerCase("vi").includes(query))) continue;
+      const timing = projectTiming(project);
+      if (!timing) { unscheduled.push(project); continue; }
+      const span = timelineSpan(timing, period);
+      if (!span) {
+        outside++;
+        const instant = timing.start >= period.until.getTime() ? timing.start : timing.end - 1;
+        const distance = Math.abs(instant - period.from.getTime());
+        if (!nearest || distance < nearest.distance) nearest = { distance, anchor: new Date(instant).toISOString() };
+        continue;
+      }
+      entries.push({ project, timing, span });
+      if (timing.end > period.from.getTime() && timing.end <= period.until.getTime()) dueCount++;
+    }
+    entries.sort((a, b) => a.timing.start - b.timing.start || a.timing.end - b.timing.end || a.project.name.localeCompare(b.project.name, "vi") || a.project.id.localeCompare(b.project.id));
+    return { entries, unscheduled, outside, dueCount, nearest };
+  }, [initial, period, q, filter]);
 
-  const shown = initial.filter(
-    (p) =>
-      (filter === "all" || p.status === filter) &&
-      (!q.trim() || p.name.toLowerCase().includes(q.trim().toLowerCase())),
-  );
+  const selectPeriod = (nextView: CalendarView, nextAnchor: string) => {
+    setView(nextView);
+    setAnchor(nextAnchor);
+    const url = new URL(window.location.href);
+    url.searchParams.set("calendar", nextView);
+    url.searchParams.set("month", calendarPeriod("month", nextAnchor).key);
+    window.history.replaceState(null, "", `${url.pathname}${url.search}${url.hash}`);
+  };
 
-  const label = (text: string, key: string) => (
-    <>
-      {text}
-      <span className="rounded bg-foreground/5 px-1 text-[10px] tabular-nums">{counts[key] ?? 0}</span>
-    </>
-  );
+  return <div className="space-y-5">
+    <PageHeader title="Lịch hoạt động dự án" description="Theo dõi thời gian triển khai và tiến độ theo tháng, quý, năm."
+      actions={canCreate && <Button onClick={() => setCreating(true)}><Plus className="h-4 w-4" />Tạo dự án</Button>} />
 
-  return (
-    <div>
-      <PageHeader
-        title="Dự án"
-        description="Theo dõi tiến độ và quản lý toàn bộ dự án của bạn."
-        actions={
-          canCreate && (
-            <Button onClick={() => setCreating(true)}>
-              <Plus className="h-4 w-4" /> Tạo dự án
-            </Button>
-          )
-        }
-      />
-
-      <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <Segmented
-          layoutId="project-filter"
-          value={filter}
-          onChange={setFilter}
-          className="max-w-full overflow-x-auto"
-          options={[
-            { value: "all", label: label("Tất cả", "all") },
-            { value: "ACTIVE", label: label("Đang thực hiện", "ACTIVE") },
-            { value: "PLANNING", label: label("Lên kế hoạch", "PLANNING") },
-            { value: "ON_HOLD", label: label("Tạm dừng", "ON_HOLD") },
-            { value: "COMPLETED", label: label("Hoàn thành", "COMPLETED") },
-          ]}
-        />
-        <div className="relative sm:w-64">
-          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-          <input
-            value={q}
-            onChange={(e) => setQ(e.target.value)}
-            placeholder="Tìm dự án…"
-            className="h-10 w-full rounded-lg border bg-card pl-9 pr-3 text-sm outline-none focus:border-primary/60 focus:ring-2 focus:ring-primary/20"
-          />
+    <section className="overflow-hidden rounded-xl border bg-card shadow-card" aria-label="Lịch hoạt động">
+      <div className="flex flex-wrap items-center justify-between gap-4 border-b px-4 py-4 sm:px-5">
+        <div className="flex items-center gap-3">
+          <span className="hidden rounded-lg bg-primary/10 p-2 text-primary sm:inline-flex"><CalendarDays className="h-5 w-5" /></span>
+          <div><p className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">Lịch triển khai</p><h2 aria-live="polite" className="mt-0.5 text-lg font-semibold tracking-tight">{period.label}</h2></div>
+        </div>
+        <div className="flex items-center gap-2">
+          <div className="inline-flex rounded-lg bg-muted p-1" role="group" aria-label="Chế độ lịch">
+            {VIEWS.map((option) => <button type="button" key={option.value} aria-pressed={view === option.value} onClick={() => selectPeriod(option.value, anchor)}
+              className={cn("rounded-md px-4 py-1.5 text-xs font-medium", view === option.value ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground")}>{option.label}</button>)}
+          </div>
         </div>
       </div>
 
-      {shown.length === 0 ? (
-        <div className="rounded-2xl border bg-card">
-          <EmptyState
-            icon={FolderKanban}
-            title={initial.length ? "Không có dự án phù hợp" : "Chưa có dự án nào"}
-            description={canCreate ? "Bắt đầu bằng việc tạo dự án đầu tiên và mời thành viên tham gia." : "Bạn sẽ thấy dự án ở đây khi được thêm làm thành viên."}
-            action={
-              canCreate && (
-                <Button onClick={() => setCreating(true)}>
-                  <Plus className="h-4 w-4" /> Tạo dự án
-                </Button>
-              )
-            }
-          />
+      <div className="flex flex-wrap items-center gap-3 border-b px-4 py-3 sm:px-5">
+        <div className="flex items-center gap-1">
+          <Button variant="outline" size="icon" aria-label="Kỳ trước" onClick={() => selectPeriod(view, moveCalendar(view, anchor, -1))}><ChevronLeft className="h-4 w-4" /></Button>
+          <Button variant="outline" size="sm" className="h-9" onClick={() => selectPeriod(view, now)}>Hôm nay</Button>
+          <Button variant="outline" size="icon" aria-label="Kỳ tiếp theo" onClick={() => selectPeriod(view, moveCalendar(view, anchor, 1))}><ChevronRight className="h-4 w-4" /></Button>
         </div>
-      ) : (
-        <div className="grid gap-5 md:grid-cols-2 2xl:grid-cols-3">
-          {shown.map((p, i) => (
-            <motion.div key={p.id} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.04 }}>
-              <Link
-                href={`/projects/${p.id}`}
-                className="group relative flex h-full flex-col overflow-hidden rounded-2xl border bg-card p-5 shadow-card transition hover:-translate-y-0.5 hover:shadow-pop"
-              >
-                <span className="absolute inset-x-0 top-0 h-1" style={{ background: p.color }} />
-                <div className="flex items-start justify-between gap-4">
-                  <div className="min-w-0">
-                    <ProjectStatusBadge status={p.status} />
-                    <h3 className="mt-2.5 line-clamp-2 text-base font-semibold leading-snug group-hover:text-primary">{p.name}</h3>
-                    <p className="mt-1 text-xs text-muted-foreground">Chủ dự án: {p.owner.name}</p>
-                  </div>
-                  <ProgressRing value={p.progress} size={64} stroke={6} />
-                </div>
-                {p.description && <p className="mt-3 line-clamp-2 text-sm text-muted-foreground">{p.description}</p>}
+        <input type="month" aria-label="Chọn tháng" min="1900-01" max="2200-12" value={calendarPeriod("month", anchor).key}
+          onChange={(event) => { if (event.target.validity.valid && event.target.value) selectPeriod(view, calendarSelection(view, event.target.value, now).anchor); }}
+          className="h-9 min-w-0 rounded-lg border bg-card px-2 text-xs" />
+        <div className="hidden h-5 border-l xl:block" />
+        <label className="relative min-w-[160px] flex-1 sm:max-w-xs">
+          <Search className="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+          <span className="sr-only">Tìm dự án</span><input value={q} onChange={(event) => setQ(event.target.value)} placeholder="Tìm dự án…" className="h-9 w-full rounded-lg border bg-card pl-9 pr-3 text-xs" />
+        </label>
+        <select aria-label="Lọc trạng thái dự án" value={filter} onChange={(event) => setFilter(event.target.value)} className="h-9 rounded-lg border bg-card px-3 text-xs sm:ml-auto">
+          <option value="all">Tất cả trạng thái</option>{Object.entries(PROJECT_STATUS).map(([value, status]) => <option key={value} value={value}>{status.label}</option>)}
+        </select>
+      </div>
 
-                <div className="mt-auto pt-5">
-                  <div className="grid grid-cols-3 gap-2 rounded-xl bg-muted/50 p-3 text-center">
-                    <div>
-                      <p className="text-base font-bold">
-                        {p.doneTasks}
-                        <span className="text-xs font-normal text-muted-foreground">/{p.totalTasks}</span>
-                      </p>
-                      <p className="text-[11px] text-muted-foreground">Công việc</p>
-                    </div>
-                    <div>
-                      <p className="flex items-center justify-center gap-1 text-base font-bold">
-                        {p.overdueTasks > 0 && <TriangleAlert className="h-3.5 w-3.5 text-danger" />}
-                        <span className={p.overdueTasks ? "text-danger" : undefined}>{p.overdueTasks}</span>
-                      </p>
-                      <p className="text-[11px] text-muted-foreground">Quá hạn</p>
-                    </div>
-                    <div>
-                      <p className="flex items-center justify-center gap-1 text-base font-bold">
-                        <MessageSquare className="h-3.5 w-3.5 text-muted-foreground" />
-                        {p._count.notes}
-                      </p>
-                      <p className="text-[11px] text-muted-foreground">Ghi chú</p>
-                    </div>
-                  </div>
-                  <div className="mt-4 flex items-center justify-between">
-                    <AvatarStack users={p.members} max={5} />
-                    {p.dueDate && (
-                      <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                        <CalendarDays className="h-3.5 w-3.5" /> {formatDate(p.dueDate)}
-                      </span>
-                    )}
-                  </div>
-                </div>
-              </Link>
-            </motion.div>
-          ))}
-        </div>
-      )}
-
-      <ProjectFormModal
-        open={creating}
-        onClose={() => setCreating(false)}
-        directory={directory}
-        finance={canFinance ? { contracts: [] } : undefined}
-        onSaved={(id) => router.push(`/projects/${id}`)}
-      />
-    </div>
-  );
+      <div className="flex flex-wrap items-center gap-x-5 gap-y-1 border-b px-5 py-3 text-xs text-muted-foreground" aria-live="polite">
+        <span><strong className="font-semibold tabular-nums text-foreground">{entries.length}</strong> dự án trong kỳ</span>
+        <span><strong className="font-semibold tabular-nums text-foreground">{dueCount}</strong> đến hạn trong kỳ</span>
+        {outside > 0 && <span className="ml-auto">{outside} dự án ngoài kỳ này</span>}
+      </div>
+      {entries.length ? <ActivityTimeline entries={entries} period={period} view={view} now={now} /> : <EmptyState icon={CalendarDays}
+        title={q || filter !== "all" ? "Không có dự án phù hợp trong kỳ" : "Chưa có hoạt động trong kỳ này"}
+        description={unscheduled.length ? "Các dự án chưa có lịch nằm bên dưới. Bổ sung ngày trong chi tiết dự án để đưa lên lịch." : "Chọn kỳ khác để xem lịch triển khai, hoặc tạo dự án mới."}
+        action={nearest && <Button variant="outline" size="sm" onClick={() => selectPeriod(view, nearest.anchor)}>Xem kỳ có dự án gần nhất</Button>} />}
+    </section>
+    <UnscheduledProjects projects={unscheduled} />
+    <MountOnOpen open={creating}><ProjectFormModal open={creating} onClose={() => setCreating(false)} directory={directory}
+      finance={canFinance ? { contracts: [] } : undefined} onSaved={(id) => router.push(`/projects/${id}`)} /></MountOnOpen>
+  </div>;
 }
