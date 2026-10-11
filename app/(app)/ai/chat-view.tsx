@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
+import dynamic from "next/dynamic";
 import { ArrowUp, Check, ClipboardCopy, Database, MessageSquarePlus, Presentation, RotateCcw, Save, Settings, Sparkles, Square, User } from "lucide-react";
 import { toast } from "sonner";
 import { Card } from "@/components/ui/card";
@@ -28,6 +29,11 @@ import {
 } from "@/lib/ai-chat";
 import { cn } from "@/lib/utils";
 import type { BuiltInAi } from "./ai-view";
+import { AiFileInput } from "@/components/ai/file-input";
+import type { AiAttachment } from "@/lib/ai-attachments";
+import type { AiIntake } from "@/lib/ai-intake";
+
+const IntakeReview = dynamic(() => import("@/components/ai/intake-review").then(m => m.IntakeReview), { ssr: false });
 
 interface ChatMessage {
   id: string;
@@ -36,6 +42,7 @@ interface ChatMessage {
   /** Assistant only: still arriving, finished, stopped by the person, or failed. */
   status?: "streaming" | "done" | "stopped" | "error";
   info?: string;
+  files?: string[];
 }
 
 interface ChatSettings {
@@ -72,6 +79,7 @@ export function ChatView({
   projects,
   builtIn,
   canFinance,
+  canProject,
   initialProjectId,
 }: {
   userId: string;
@@ -79,6 +87,7 @@ export function ChatView({
   projects: { id: string; name: string; color: string }[];
   builtIn: BuiltInAi;
   canFinance: boolean;
+  canProject: boolean;
   initialProjectId: string;
 }) {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -95,6 +104,10 @@ export function ChatView({
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [slidesFor, setSlidesFor] = useState<string | null>(null);
   const [loaded, setLoaded] = useState(false);
+  const [attachments, setAttachments] = useState<AiAttachment[]>([]);
+  const [reading, setReading] = useState(false);
+  const [intakes, setIntakes] = useState<Record<string, AiIntake>>({});
+  const [createdProjects, setCreatedProjects] = useState<typeof projects>([]);
   const abortRef = useRef<AbortController | null>(null);
   const listRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
@@ -156,14 +169,14 @@ export function ChatView({
 
   const ask = useCallback(
     async (question: string, base: ChatMessage[]) => {
-      if (!builtIn.ready || busy) return;
-      const text = question.trim();
+      if (!builtIn.ready || busy || reading || remaining <= 0) return;
+      const text = question.trim() || (attachments.length ? "Review các file đính kèm: tóm tắt nội dung, thông tin chính và những điểm cần kiểm tra." : "");
       if (!text) return;
       if (settings.includeData && settings.period.type === "custom" && (!settings.period.from || !settings.period.to)) {
         toast.error("Hãy chọn đủ ngày bắt đầu và kết thúc cho kỳ tùy chọn");
         return;
       }
-      const userMsg: ChatMessage = { id: newId(), role: "user", content: text.slice(0, CHAT_MAX_CHARS) };
+      const userMsg: ChatMessage = { id: newId(), role: "user", content: text.slice(0, CHAT_MAX_CHARS), files: attachments.map(f => f.name) };
       const reply: ChatMessage = { id: newId(), role: "assistant", content: "", status: "streaming" };
       const history = chatHistoryForApi(base);
       setMessages([...base, userMsg, reply]);
@@ -180,6 +193,7 @@ export function ChatView({
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             messages: [...history, { role: "user", content: userMsg.content }],
+            attachments,
             options: {
               includeData: settings.includeData,
               projectId: settings.projectId || null,
@@ -229,8 +243,25 @@ export function ChatView({
         requestAnimationFrame(() => inputRef.current?.focus());
       }
     },
-    [builtIn.ready, busy, settings],
+    [builtIn.ready, busy, settings, attachments, reading, remaining],
   );
+
+  const extract = async () => {
+    if (!builtIn.ready || busy || reading || remaining <= 0 || !attachments.length || input.length > CHAT_MAX_CHARS) return;
+    const reply: ChatMessage = { id: newId(), role: "assistant", content: "", status: "streaming" };
+    setMessages(all => [...all, { id: newId(), role: "user", content: input.trim() || "Trích xuất thông tin dự án, hợp đồng và chi phí từ file để nhập liệu.", files: attachments.map(f => f.name) }, reply]);
+    const controller = new AbortController(); abortRef.current = controller; setBusy(true);
+    const instruction = input; setInput("");
+    const update = (patch: Partial<ChatMessage>) => setMessages(all => all.map(m => m.id === reply.id ? { ...m, ...patch } : m));
+    try {
+      const data = await api<AiIntake & { remaining: number }>("/api/ai/intake", { method: "POST", body: { attachments, instruction }, signal: controller.signal });
+      if (controller.signal.aborted) return;
+      setIntakes(all => ({ ...all, [reply.id]: data }));
+      setRemaining(data.remaining); update({ content: data.summary, status: "done", info: "Bản nháp nhập liệu chỉ giữ trong phiên hiện tại" });
+    } catch (error) {
+      update(controller.signal.aborted ? { status: "stopped" } : { status: "error", content: error instanceof Error ? error.message : "Không trích xuất được file" });
+    } finally { abortRef.current = null; setBusy(false); }
+  };
 
   const send = () => void ask(input, messages);
   const stop = () => abortRef.current?.abort();
@@ -246,6 +277,8 @@ export function ChatView({
     setMessages([]);
     setSlidesFor(null);
     setInput("");
+    setAttachments([]);
+    setIntakes({});
   };
 
   const copy = async (m: ChatMessage) => {
@@ -379,7 +412,7 @@ export function ChatView({
               "Trợ lý AI tích hợp chưa được bật"
             )}
           </p>
-          <Button variant="ghost" size="sm" onClick={newChat} disabled={!messages.length && !input}>
+          <Button variant="ghost" size="sm" onClick={newChat} disabled={reading || (!messages.length && !input && !attachments.length)}>
             <MessageSquarePlus className="h-3.5 w-3.5" /> Cuộc trò chuyện mới
           </Button>
         </div>
@@ -407,7 +440,7 @@ export function ChatView({
                 </div>
                 <h2 className="text-lg font-semibold">Hỏi trợ lý AI về dự án của bạn</h2>
                 <p className="mt-1 text-sm text-muted-foreground">
-                  Hỏi tự do hoặc chọn một prompt mẫu. Với “Kèm số liệu hệ thống”, Claude trả lời từ số liệu thật theo phạm vi và kỳ đã chọn.
+                  Hỏi tự do hoặc đính kèm tài liệu để AI review, trích xuất tên dự án, số hợp đồng và chi phí. Với “Kèm số liệu hệ thống”, Claude dùng thêm số liệu theo quyền xem của bạn.
                 </p>
               </div>
               <div className="lg:hidden">{templateList(false)}</div>
@@ -416,7 +449,7 @@ export function ChatView({
             messages.map((m) =>
               m.role === "user" ? (
                 <div key={m.id} className="flex justify-end gap-2">
-                  <div className="max-w-[85%] whitespace-pre-wrap break-words rounded-2xl rounded-tr-sm bg-primary px-4 py-2.5 text-sm text-primary-foreground">{m.content}</div>
+                  <div className="max-w-[85%] whitespace-pre-wrap break-words rounded-2xl rounded-tr-sm bg-primary px-4 py-2.5 text-sm text-primary-foreground">{m.content}{!!m.files?.length && <p className="mt-2 border-t border-white/20 pt-2 text-xs opacity-80">File: {m.files.join(" · ")}</p>}</div>
                   <span className="mt-1 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-muted text-muted-foreground">
                     <User className="h-3.5 w-3.5" />
                   </span>
@@ -437,10 +470,11 @@ export function ChatView({
                           <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-current [animation-delay:-0.3s]" />
                           <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-current [animation-delay:-0.15s]" />
                           <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-current" />
-                          <span className="ml-2 text-xs">Claude đang đọc số liệu…</span>
+                          <span className="ml-2 text-xs">Claude đang phân tích…</span>
                         </span>
                       )}
                     </div>
+                    {intakes[m.id] && <IntakeReview result={intakes[m.id]} projects={[...projects, ...createdProjects.filter(p => !projects.some(x => x.id === p.id))]} canProject={canProject} canFinance={canFinance} onProjectCreated={p => setCreatedProjects(all => [...all.filter(x => x.id !== p.id), p])} />}
                     {m.status !== "streaming" && m.content && (
                       <div className="mt-1.5 flex flex-wrap items-center gap-1 text-xs text-muted-foreground">
                         {m.status === "stopped" && <span className="mr-1">Đã dừng.</span>}
@@ -448,7 +482,7 @@ export function ChatView({
                         <button type="button" onClick={() => copy(m)} className="inline-flex items-center gap-1 rounded-md px-2 py-1 hover:bg-muted hover:text-foreground">
                           {copiedId === m.id ? <Check className="h-3.5 w-3.5" /> : <ClipboardCopy className="h-3.5 w-3.5" />} Sao chép
                         </button>
-                        {m.id === lastAssistantId && (
+                        {m.id === lastAssistantId && !intakes[m.id] && (
                           <button type="button" onClick={regenerate} disabled={busy || !builtIn.ready} className="inline-flex items-center gap-1 rounded-md px-2 py-1 hover:bg-muted hover:text-foreground disabled:opacity-50">
                             <RotateCcw className="h-3.5 w-3.5" /> Tạo lại
                           </button>
@@ -482,6 +516,10 @@ export function ChatView({
         </div>
 
         <div className="border-t p-3">
+          <div className="mb-2 space-y-2">
+            <AiFileInput files={attachments} onChange={setAttachments} disabled={busy || !builtIn.ready} reading={reading} onReading={setReading} />
+            {attachments.length > 0 && <Button size="sm" variant="secondary" onClick={() => void extract()} disabled={busy || reading || !builtIn.ready || remaining <= 0 || tooLong}><Sparkles className="h-3.5 w-3.5" /> Trích xuất để nhập liệu</Button>}
+          </div>
           <div className={cn("flex items-end gap-2 rounded-xl border bg-card p-2 focus-within:border-primary/60 focus-within:ring-2 focus-within:ring-primary/20", tooLong && "border-danger")}>
             <Textarea
               ref={inputRef}
@@ -504,7 +542,7 @@ export function ChatView({
                 <Square className="h-4 w-4" />
               </Button>
             ) : (
-              <Button size="icon" onClick={send} disabled={!builtIn.ready || !input.trim() || tooLong || remaining <= 0} aria-label="Gửi">
+              <Button size="icon" onClick={send} disabled={!builtIn.ready || reading || (!input.trim() && !attachments.length) || tooLong || remaining <= 0} aria-label="Gửi">
                 <ArrowUp className="h-4 w-4" />
               </Button>
             )}
