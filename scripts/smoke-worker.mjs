@@ -48,7 +48,7 @@ try {
   assert.equal(login.status, 200, `Worker login failed: ${await login.text()}`);
   const cookie = login.headers.getSetCookie().find((item) => item.startsWith("crm_session="))?.split(";")[0];
   assert(cookie, "Worker did not issue a session");
-  for (const [path, marker] of [["/projects", "Lịch hoạt động dự án"], ["/tasks", "Deadline công việc"], ["/reports", "Báo cáo công việc phòng"], ["/reports?view=analytics", "Bản trình chiếu tự động"]]) {
+  for (const [path, marker] of [["/projects", "Lịch hoạt động dự án"], ["/tasks", "Deadline công việc"], ["/reports", "Báo cáo công việc phòng"], ["/reports?view=analytics", "Bản trình chiếu tự động"], ["/ai", "Đính kèm file"]]) {
     const response = await fetch(`${origin}${path}`, { headers: { Cookie: cookie }, redirect: "manual", signal: AbortSignal.timeout(20000) });
     assert.equal(response.status, 200, `${path} status`);
     const html = await response.text();
@@ -66,7 +66,13 @@ try {
   const report = await department.json();
   assert.equal(report.sections.length, 3);
   assert.equal(report.counts.currentOpen, 1);
-  console.log("Worker smoke passed: login, project calendar, My Tasks, deadline APIs, department report and analytics on workerd + PostgreSQL.");
+  const intake = await fetch(`${origin}/api/ai/intake`, {
+    method: "POST", headers: { Cookie: cookie, "Content-Type": "application/json", Origin: origin },
+    body: JSON.stringify({ attachments: [] }), signal: AbortSignal.timeout(20000),
+  });
+  assert.equal(intake.status, 400, "Intake must validate files inside workerd without calling AI");
+  assert.equal((await intake.json()).fields.attachments, "Chọn file để trích xuất");
+  console.log("Worker smoke passed: login, project calendar, My Tasks, deadline APIs, department report, analytics and AI intake route on workerd + PostgreSQL.");
 } catch (error) {
   console.error(logs);
   throw error;

@@ -17,6 +17,7 @@ export function AiScreen({
   projects,
   builtIn,
   canFinance,
+  canProject,
   initial,
 }: {
   tab: AiTab;
@@ -25,6 +26,7 @@ export function AiScreen({
   projects: { id: string; name: string; color: string }[];
   builtIn: BuiltInAi;
   canFinance: boolean;
+  canProject: boolean;
   initial: { type: ReportPeriod; anchor: string; from: string; to: string; projectId: string };
 }) {
   const [tab, setTabState] = useState<AiTab>(initialTab);
@@ -58,7 +60,7 @@ export function AiScreen({
         ]}
       />
       {tab === "chat" ? (
-        <ChatView userId={userId} userName={userName} projects={projects} builtIn={builtIn} canFinance={canFinance} initialProjectId={initial.projectId} />
+        <ChatView userId={userId} userName={userName} projects={projects} builtIn={builtIn} canFinance={canFinance} canProject={canProject} initialProjectId={initial.projectId} />
       ) : (
         <AiView embedded projects={projects} userName={userName} builtIn={builtIn} initial={initial} />
       )}

@@ -4,6 +4,7 @@ import { PERMISSIONS, PROJECT_ROLES, ROLES } from "./permissions";
 import { CONTRACT_STATUSES } from "./finance";
 import { parseDate } from "./period";
 import { CHAT_MAX_CHARS, CHAT_MAX_MESSAGES } from "./ai-chat";
+import { aiAttachmentsSchema } from "./ai-attachments";
 
 const roleEnum = z.enum(ROLES);
 const permissionList = z.array(z.enum(PERMISSIONS)).max(PERMISSIONS.length);
@@ -239,6 +240,7 @@ export const aiReportSchema = z.object({
 });
 
 export const aiChatSchema = z.object({
+  attachments: aiAttachmentsSchema,
   messages: z
     .array(z.object({ role: z.enum(["user", "assistant"]), content: z.string().trim().min(1).max(CHAT_MAX_CHARS) }))
     .min(1)

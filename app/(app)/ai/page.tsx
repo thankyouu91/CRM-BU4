@@ -1,6 +1,6 @@
 import { getCurrentUser } from "@/lib/session";
 import { prisma } from "@/lib/prisma";
-import { isAdmin, projectVisibilityWhere } from "@/lib/rbac";
+import { canCreateProject, isAdmin, projectVisibilityWhere } from "@/lib/rbac";
 import { aiUsedToday, getAiRuntime } from "@/lib/ai-settings";
 import { aiModelInfo } from "@/lib/ai-models";
 import { hasPermission } from "@/lib/permissions";
@@ -36,6 +36,7 @@ export default async function AiPage(props: { searchParams: Promise<SP> }) {
       projects={projects}
       builtIn={builtIn}
       canFinance={hasPermission(user, "FINANCE_MANAGE")}
+      canProject={canCreateProject(user)}
       initial={{
         type: type as "day" | "month" | "quarter" | "year" | "custom",
         anchor: searchParams.date && !Number.isNaN(Date.parse(searchParams.date)) ? searchParams.date : "",
