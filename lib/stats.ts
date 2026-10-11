@@ -18,6 +18,7 @@ import { contractTotals, type ContractTotals } from "./finance";
 import { contractDto, fileCountSelect } from "./contracts";
 import type { DateRange, PeriodType } from "./period";
 import type { CurrentUser } from "./session";
+import { groupBy } from "./task-tree";
 
 // ----------------------------------------------------------------------------
 // Progress
@@ -41,13 +42,11 @@ export function categorySchedules<
   now: Date = new Date(),
 ) {
   const byId = new Map(categories.map((c) => [c.id, c]));
-  const childIds = new Map<string, string[]>();
-  for (const c of categories) {
-    if (c.parentId && byId.has(c.parentId)) childIds.set(c.parentId, [...(childIds.get(c.parentId) ?? []), c.id]);
-  }
+  const children = groupBy(categories, (c) => c.parentId);
+  const tasksByCategory = groupBy(tasks, (t) => t.categoryId);
   return categories.map((c) => {
-    const scope = new Set([c.id, ...(childIds.get(c.id) ?? [])]);
-    const ct = tasks.filter((t) => t.categoryId && scope.has(t.categoryId));
+    const scope = [c.id, ...(children.get(c.id) ?? []).map((child) => child.id)];
+    const ct = scope.flatMap((id) => tasksByCategory.get(id) ?? []);
     const progress = subsetProgress(ct);
     const workload = workloadOf(ct, now);
     const parent = c.parentId ? byId.get(c.parentId) : undefined;

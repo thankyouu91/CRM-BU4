@@ -2,6 +2,7 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { randomUUID } from "node:crypto";
 import type { PrismaClient } from "@prisma/client";
 import type { Pool } from "pg";
+import type { CurrentUser } from "../lib/session";
 
 // CI provisions an empty PostgreSQL database. Never use a production database here.
 describe.skipIf(!process.env.TEST_DATABASE_URL)("PostgreSQL transactions", () => {
@@ -37,6 +38,22 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)("PostgreSQL transactions", () =>
     })).rejects.toThrow("Công việc đã được cập nhật");
     expect((await db.task.findUniqueOrThrow({ where: { id: task.id } })).progress).toBe(80);
     expect(await db.taskReport.count({ where: { taskId: task.id } })).toBe(0);
+  });
+
+  it("aggregates filtered task statistics and exposes task rights on PostgreSQL", async () => {
+    const { listTasks } = await import("../lib/queries");
+    const title = `performance-${randomUUID()}`;
+    await db.task.createMany({ data: [
+      { title, projectId, createdById: userId, assigneeId: userId, status: "TODO", dueDate: new Date(Date.now() - 86400000) },
+      { title, projectId, createdById: userId, assigneeId: userId, status: "IN_PROGRESS" },
+      { title, projectId, createdById: userId, assigneeId: userId, status: "DONE", completedAt: new Date() },
+    ] });
+    const user = { id: userId, role: "MEMBER", permissions: [] } as unknown as CurrentUser;
+    const result = await listTasks(user, { q: title });
+    expect(result).toMatchObject({ total: 3, nextCursor: null, stats: { open: 2, active: 1, overdue: 1, doneWeek: 1 } });
+    expect(result.tasks.every((task) => task.canReport)).toBe(true);
+    expect(result.tasks[0].project).not.toHaveProperty("members");
+    expect((await listTasks(user, { q: title, status: "DONE" })).stats).toEqual({ open: 0, active: 0, overdue: 0, doneWeek: 1 });
   });
 
   it("serializes two real uploads at the contract file limit", async () => {

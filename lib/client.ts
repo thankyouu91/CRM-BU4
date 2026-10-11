@@ -48,6 +48,16 @@ export type SendChange = <R = unknown>(url: string, init: ApiInit, hint?: Change
 /** A plain request; the caller refreshes its own view afterwards. */
 export const sendPlain: SendChange = (url, init) => api(url, init);
 
+/** Keep typing immediate while postponing expensive server-side searches. */
+export function useDebouncedValue<T>(value: T, delay = 300): T {
+  const [settled, setSettled] = useState(value);
+  useEffect(() => {
+    const timer = setTimeout(() => setSettled(value), delay);
+    return () => clearTimeout(timer);
+  }, [value, delay]);
+  return settled;
+}
+
 // Last response per URL, so returning to a view shows its data at once while a
 // fresh copy loads in the background (stale-while-revalidate). Bounded; lost on reload.
 const responseCache = new Map<string, unknown>();
@@ -93,34 +103,44 @@ export function useApi<T>(url: string | null, opts?: { initial?: T }) {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(!!url && !hasInitial && !responseCache.has(url));
   const seq = useRef(0);
+  const request = useRef<AbortController | null>(null);
   // The URL whose server-sent data is still fresh: no fetch needed until the URL changes.
   const freshUrl = useRef(hasInitial && !restoredFromHistory() ? url : null);
+  const cancel = useCallback(() => {
+    ++seq.current;
+    request.current?.abort();
+  }, []);
 
   const load = useCallback(async () => {
     if (!url) return;
     const id = ++seq.current;
+    request.current?.abort();
+    const controller = new AbortController();
+    request.current = controller;
     setLoading(true);
     // Cached data stays on screen; only an empty view shows the loading state.
     if (responseCache.has(url)) setDataState(responseCache.get(url) as T);
     try {
-      const result = await api<T>(url);
-      remember(url, result);
-      if (id === seq.current) {
+      const result = await api<T>(url, { signal: controller.signal });
+      if (id === seq.current && !controller.signal.aborted) {
+        remember(url, result);
         setDataState(result);
         setError(null);
       }
     } catch (e) {
-      if (id === seq.current) setError(e instanceof Error ? e.message : "Lỗi tải dữ liệu");
+      if (id === seq.current && !controller.signal.aborted) setError(e instanceof Error ? e.message : "Lỗi tải dữ liệu");
     } finally {
       if (id === seq.current) setLoading(false);
     }
   }, [url]);
 
   useEffect(() => {
-    if (url !== null && url === freshUrl.current) return;
+    if (url !== null && url === freshUrl.current) return cancel;
     freshUrl.current = null;
-    void load();
-  }, [load, url]);
+    if (url) void load();
+    else setLoading(false);
+    return cancel;
+  }, [load, url, cancel]);
 
   /** Replace the data locally (optimistic updates, or a mutation's response). */
   const setData = useCallback(

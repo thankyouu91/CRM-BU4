@@ -11,13 +11,16 @@ import { PriorityBadge, TaskStatusBadge } from "@/components/ui/badge";
 import { EmptyState, PageHeader, Segmented } from "@/components/ui/misc";
 import { ProgressBar } from "@/components/ui/progress";
 import { KpiTile } from "@/components/kpi";
+import { useTaskMenu } from "@/components/tasks/task-menu";
 import { StatusToggle } from "@/components/tasks/status-toggle";
-import { TaskDrawer } from "@/components/tasks/task-drawer";
-import { api, ApiError, useApi } from "@/lib/client";
+import { TaskDrawer } from "@/components/tasks/lazy-task-drawer";
+import { api, ApiError, useApi, useDebouncedValue } from "@/lib/client";
+import { groupBy } from "@/lib/task-tree";
 import { cn, formatShortDate } from "@/lib/utils";
 
 interface Row {
   id: string;
+  canReport: boolean;
   title: string;
   status: string;
   priority: string;
@@ -59,19 +62,17 @@ function bucketOf(t: Row): Bucket {
 export function MyTasksView({ canSeeAll, initial, tabs }: { canSeeAll: boolean; initial?: TaskPage; tabs?: React.ReactNode }) {
   const [scope, setScope] = useState<"mine" | "all">("mine");
   const [q, setQ] = useState("");
+  const query = useDebouncedValue(q);
   const [openTask, setOpenTask] = useState<string | null>(null);
   const [collapsed, setCollapsed] = useState<Set<Bucket>>(new Set(["done"]));
   const [cursors, setCursors] = useState<(string | null)[]>([null]);
   const cursor = cursors[cursors.length - 1];
-  const { data, loading, error, reload } = useApi<TaskPage>(`/api/tasks?scope=${scope}&q=${encodeURIComponent(q)}${cursor ? `&cursor=${encodeURIComponent(cursor)}` : ""}`, { initial });
+  const { data, loading, error, reload } = useApi<TaskPage>(q === query ? `/api/tasks?scope=${scope}&q=${encodeURIComponent(query)}${cursor ? `&cursor=${encodeURIComponent(cursor)}` : ""}` : null, { initial });
+  const busy = loading || q !== query;
 
   const tasks = useMemo(() => data?.tasks ?? [], [data]);
   const grouped = useMemo(() => {
-    const g = new Map<Bucket, Row[]>();
-    for (const t of tasks) {
-      const b = bucketOf(t);
-      g.set(b, [...(g.get(b) ?? []), t]);
-    }
+    const g = groupBy(tasks, bucketOf);
     const done = g.get("done");
     done?.sort((a, b) => new Date(b.completedAt ?? 0).getTime() - new Date(a.completedAt ?? 0).getTime());
     return g;
@@ -89,6 +90,8 @@ export function MyTasksView({ canSeeAll, initial, tabs }: { canSeeAll: boolean; 
     }
   };
 
+  const taskMenu = useTaskMenu({ onOpen: setOpenTask, onToggle: toggle, canToggle: (task: Row) => task.canReport });
+
   const flip = (b: Bucket) =>
     setCollapsed((s) => {
       const n = new Set(s);
@@ -99,6 +102,7 @@ export function MyTasksView({ canSeeAll, initial, tabs }: { canSeeAll: boolean; 
 
   return (
     <div>
+      {taskMenu.menu}
       <PageHeader
         title="Công việc của tôi"
         description="Tất cả công việc bạn phụ trách, sắp xếp theo mức độ khẩn cấp."
@@ -144,7 +148,7 @@ export function MyTasksView({ canSeeAll, initial, tabs }: { canSeeAll: boolean; 
           <EmptyState icon={ListChecks} title={q ? "Không tìm thấy công việc" : "Bạn chưa được giao công việc nào"} description="Công việc được giao cho bạn sẽ xuất hiện tại đây." />
         </div>
       ) : (
-        <div className={cn("space-y-4 transition-opacity", loading && "opacity-60")}>
+        <div className={cn("space-y-4 transition-opacity", busy && "opacity-60")}>
           {BUCKETS.filter((b) => grouped.get(b.key)?.length).map((b) => {
             const rows = grouped.get(b.key)!;
             const isCollapsed = collapsed.has(b.key);
@@ -163,10 +167,12 @@ export function MyTasksView({ canSeeAll, initial, tabs }: { canSeeAll: boolean; 
                       {rows.map((t) => (
                         <li
                           key={t.id}
+                          tabIndex={0}
+                          {...taskMenu.bind(t)}
                           onClick={() => setOpenTask(t.id)}
                           className="flex cursor-pointer items-center gap-3 border-t px-4 py-3 hover:bg-muted/40"
                         >
-                          <StatusToggle status={t.status} onToggle={() => toggle(t)} />
+                          <StatusToggle status={t.status} disabled={!t.canReport} onToggle={() => toggle(t)} />
                           <div className="min-w-0 flex-1">
                             <p className={cn("truncate text-sm font-medium", t.status === "DONE" && "text-muted-foreground line-through")}>{t.title}</p>
                             <p className="mt-0.5 flex min-w-0 items-center gap-1.5 text-xs text-muted-foreground">
@@ -191,6 +197,7 @@ export function MyTasksView({ canSeeAll, initial, tabs }: { canSeeAll: boolean; 
                             {t.dueDate ? formatShortDate(t.dueDate) : "—"}
                           </span>
                           {scope === "all" && (t.assignee ? <Avatar name={t.assignee.name} color={t.assignee.avatarColor} size="xs" /> : <span className="h-6 w-6" />)}
+                          {taskMenu.button(t)}
                         </li>
                       ))}
                     </motion.ul>
@@ -203,7 +210,7 @@ export function MyTasksView({ canSeeAll, initial, tabs }: { canSeeAll: boolean; 
       )}
 
       {error && <p role="alert" className="my-3 text-danger">{error}</p>}
-      <Pagination total={data?.total ?? 0} page={cursors.length} busy={loading} hasNext={!!data?.nextCursor} onPrevious={() => setCursors((s) => s.slice(0, -1))} onNext={() => { if (data?.nextCursor) setCursors((s) => [...s, data.nextCursor]); }} />
+      <Pagination total={data?.total ?? 0} page={cursors.length} busy={busy} hasNext={!!data?.nextCursor} onPrevious={() => setCursors((s) => s.slice(0, -1))} onNext={() => { if (data?.nextCursor) setCursors((s) => [...s, data.nextCursor]); }} />
       <TaskDrawer taskId={openTask} onClose={() => setOpenTask(null)} onChanged={reload} />
     </div>
   );

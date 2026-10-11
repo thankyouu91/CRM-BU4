@@ -1,7 +1,8 @@
 import type { Prisma } from "@prisma/client";
 import { prisma } from "./prisma";
-import { accessFrom, canManageAllProjects, managedProjectsWhere, projectVisibilityWhere } from "./rbac";
-import { categorySchedules, effectiveProgress, indexChildren, projectSchedule } from "./stats";
+import { accessFrom, accessSelect, taskRights, canManageAllProjects, managedProjectsWhere, projectVisibilityWhere } from "./rbac";
+import { categorySchedules, projectSchedule } from "./stats";
+import { indexChildren, progressIndex } from "./task-progress";
 import type { CurrentUser } from "./session";
 
 const userBrief = { select: { id: true, name: true, avatarColor: true, jobTitle: true } } as const;
@@ -55,9 +56,10 @@ export async function getProjectDetail(projectId: string) {
   if (!project) return null;
 
   const childrenOf = indexChildren(project.tasks);
+  const progressById = progressIndex(project.tasks, childrenOf);
   const tasks = project.tasks.map((t) => ({
     ...t,
-    effectiveProgress: Math.round(effectiveProgress(t, childrenOf)),
+    effectiveProgress: Math.round(progressById.get(t.id)!),
     subtaskCount: childrenOf.get(t.id)?.length ?? 0,
   }));
 
@@ -130,26 +132,34 @@ export async function listTasks(
   };
   const now = new Date();
   const count = (extra: Prisma.TaskWhereInput) => prisma.task.count({ where: { AND: [where, extra] } });
-  const [rows, total, open, active, overdue, doneWeek] = await Promise.all([
+  const [rows, counts, overdue, doneWeek] = await Promise.all([
     prisma.task.findMany({
       where,
       orderBy: [{ dueDate: { sort: "asc", nulls: "last" } }, { createdAt: "desc" }, { id: "asc" }],
       take: 101,
       ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
       include: {
-        project: { select: { id: true, name: true, color: true } },
+        project: { select: { id: true, name: true, color: true, ...accessSelect(user.id) } },
         category: { select: { id: true, name: true, color: true } },
         assignee: { select: { id: true, name: true, avatarColor: true } },
         parent: { select: { id: true, title: true } },
         _count: { select: { subtasks: true, reports: true } },
       },
     }),
-    count({}), count({ status: { not: "DONE" } }),
-    count({ status: { in: ["IN_PROGRESS", "REVIEW"] } }),
+    prisma.task.groupBy({ by: ["status"], where, _count: { _all: true } }),
     count({ status: { not: "DONE" }, dueDate: { lt: now } }),
     count({ status: "DONE", completedAt: { gte: new Date(now.getTime() - 7 * 86_400_000) } }),
   ]);
-  return { tasks: rows.slice(0, 100), nextCursor: rows.length > 100 ? rows[99].id : null, total, stats: { open, active, overdue, doneWeek } };
+  const totals = new Map(counts.map((row) => [row.status, row._count._all]));
+  const total = counts.reduce((sum, row) => sum + row._count._all, 0);
+  const open = total - (totals.get("DONE") ?? 0);
+  const active = (totals.get("IN_PROGRESS") ?? 0) + (totals.get("REVIEW") ?? 0);
+  const tasks = rows.slice(0, 100).map(({ project, ...task }) => {
+    const { ownerId, members, ...brief } = project;
+    const access = accessFrom(user, ownerId, members[0]?.role ?? null);
+    return { ...task, project: brief, canReport: taskRights(user, access, task).report };
+  });
+  return { tasks, nextCursor: rows.length > 100 ? rows[99].id : null, total, stats: { open, active, overdue, doneWeek } };
 }
 
 /**

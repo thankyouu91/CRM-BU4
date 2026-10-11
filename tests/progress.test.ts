@@ -1,6 +1,28 @@
 import { expect, it } from "vitest";
 import { workTaskOf } from "../lib/work-report";
-import { effectiveProgress, indexChildren, projectProgress } from "../lib/task-progress";
+import { effectiveProgress, indexChildren, projectProgress, progressIndex } from "../lib/task-progress";
+
+it("indexes every node consistently, including cycles and completed parents", () => {
+  const tree = Array.from({ length: 200 }, (_, i) => ({
+    id: String(i), parentId: i ? String(Math.floor((i - 1) / 3)) : null,
+    status: i % 7 === 0 ? "DONE" : "IN_PROGRESS", progress: i % 101,
+  }));
+  tree.push({ id: "cycle-a", parentId: "cycle-b", status: "IN_PROGRESS", progress: 20 });
+  tree.push({ id: "cycle-b", parentId: "cycle-a", status: "IN_PROGRESS", progress: 80 });
+  const children = indexChildren(tree);
+  const values = progressIndex(tree);
+  for (const task of tree) expect(values.get(task.id)).toBeCloseTo(effectiveProgress(task, children));
+});
+
+it("handles a deep tree without overflowing the call stack", () => {
+  const tree = Array.from({ length: 20000 }, (_, i) => ({
+    id: String(i), parentId: i ? String(i - 1) : null,
+    status: "IN_PROGRESS", progress: i === 19999 ? 73 : 0,
+  }));
+  const values = progressIndex(tree);
+  expect(values.size).toBe(tree.length);
+  expect(values.get("0")).toBe(73);
+});
 
 it("uses the complete tree's computed progress in weekly reports", () => {
   const parent = {

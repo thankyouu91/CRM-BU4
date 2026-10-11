@@ -1,17 +1,19 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
 import { CalendarDays, GitBranch, TriangleAlert } from "lucide-react";
 import { toast } from "sonner";
+import { useTaskMenu } from "@/components/tasks/task-menu";
 import { Avatar } from "@/components/ui/avatar";
 import { PriorityBadge } from "@/components/ui/badge";
 import { ProgressBar } from "@/components/ui/progress";
 import { ApiError, type SendChange } from "@/lib/client";
+import { groupBy } from "@/lib/task-tree";
 import { TASK_STATUS } from "@/lib/constants";
 import { isOverdue } from "@/lib/dates";
 import { cn, formatShortDate } from "@/lib/utils";
-import { useTaskTree, type TaskFilters } from "./task-list";
+import { useTaskTree, type TaskFilters } from "./use-task-tree";
 import type { ProjectCategory, ProjectTask } from "./types";
 
 const COLUMNS = Object.keys(TASK_STATUS) as (keyof typeof TASK_STATUS)[];
@@ -46,8 +48,9 @@ export function Kanban({
   const titleOf = new Map(tasks.map((t) => [t.id, t.title]));
   const categoryOf = new Map(categories.map((c) => [c.id, c]));
 
-  const drop = async (status: string) => {
-    const task = tasks.find((t) => t.id === dragId);
+  const cardsByStatus = useMemo(() => groupBy(tasks.filter((t) => visible.has(t.id) && (!filters.mine || t.assigneeId === meId)), (t) => t.status), [tasks, visible, filters.mine, meId]);
+
+  const move = async (task: ProjectTask | undefined, status: string) => {
     setDragId(null);
     setOver(null);
     if (!task || task.status === status) return;
@@ -66,11 +69,14 @@ export function Kanban({
     }
   };
 
+  const taskMenu = useTaskMenu({ onOpen, canToggle: canMove, onToggle: (task: ProjectTask) => { void move(task, task.status === "DONE" ? "IN_PROGRESS" : "DONE"); } });
+
   return (
     <div className="scrollbar-thin -mx-1 flex gap-4 overflow-x-auto px-1 pb-2">
+      {taskMenu.menu}
       {COLUMNS.map((status) => {
         const meta = TASK_STATUS[status];
-        const cards = tasks.filter((t) => t.status === status && visible.has(t.id) && (!filters.mine || t.assigneeId === meId));
+        const cards = cardsByStatus.get(status) ?? [];
         return (
           <div
             key={status}
@@ -79,7 +85,7 @@ export function Kanban({
               setOver(status);
             }}
             onDragLeave={() => setOver((o) => (o === status ? null : o))}
-            onDrop={() => drop(status)}
+            onDrop={() => move(tasks.find((t) => t.id === dragId), status)}
             className={cn(
               "flex w-[290px] shrink-0 flex-col rounded-2xl border bg-muted/40 transition-colors",
               over === status && "border-primary/50 bg-primary/5",
@@ -97,6 +103,9 @@ export function Kanban({
                 return (
                   <motion.div
                     layout
+                    tabIndex={0}
+                    role="button"
+                    {...taskMenu.bind(t)}
                     key={t.id}
                     draggable={canMove(t)}
                     onDragStart={() => setDragId(t.id)}
@@ -113,7 +122,7 @@ export function Kanban({
                         <GitBranch className="h-3 w-3 shrink-0" /> {titleOf.get(t.parentId)}
                       </p>
                     )}
-                    <p className="text-sm font-medium leading-snug">{t.title}</p>
+                    <div className="flex items-start gap-1"><p className="flex-1 text-sm font-medium leading-snug">{t.title}</p>{taskMenu.button(t)}</div>
                     <div className="mt-2 flex flex-wrap items-center gap-1.5">
                       {cat && (
                         <span className="inline-flex items-center gap-1 rounded-md bg-muted px-1.5 py-0.5 text-[11px] text-muted-foreground">

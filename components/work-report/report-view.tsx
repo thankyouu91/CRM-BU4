@@ -27,7 +27,7 @@ import { Button } from "@/components/ui/button";
 import { Input, Textarea } from "@/components/ui/input";
 import { PlanBar, ProgressBar } from "@/components/ui/progress";
 import { KpiTile } from "@/components/kpi";
-import { TaskDrawer } from "@/components/tasks/task-drawer";
+import { TaskDrawer } from "@/components/tasks/lazy-task-drawer";
 import { PlanItemModal } from "./plan-item-modal";
 import type { PeriodRef } from "./period-nav";
 import { api, ApiError, useApi } from "@/lib/client";

@@ -11,7 +11,7 @@ import { TaskStatusBadge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { EmptyState, PageHeader, Segmented } from "@/components/ui/misc";
-import { TaskDrawer } from "@/components/tasks/task-drawer";
+import { TaskDrawer } from "@/components/tasks/lazy-task-drawer";
 import { api, ApiError, useApi } from "@/lib/client";
 import { cn, formatDateTime, timeAgo } from "@/lib/utils";
 
