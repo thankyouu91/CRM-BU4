@@ -16,7 +16,9 @@ import { StatusToggle } from "@/components/tasks/status-toggle";
 import { TaskDrawer } from "@/components/tasks/lazy-task-drawer";
 import { api, ApiError, useApi, useDebouncedValue } from "@/lib/client";
 import { groupBy } from "@/lib/task-tree";
-import { cn, formatShortDate } from "@/lib/utils";
+import { DEADLINE_FILTERS, taskDeadlineBucket, taskDeadlinePeriods, type DeadlineBucket, type DeadlineFilter } from "@/lib/task-deadlines";
+import { zonedText } from "@/lib/work-report";
+import { cn } from "@/lib/utils";
 
 interface Row {
   id: string;
@@ -34,9 +36,9 @@ interface Row {
   _count: { subtasks: number; reports: number };
 }
 
-interface TaskPage { tasks: Row[]; total: number; nextCursor: string | null; stats: { open: number; active: number; overdue: number; doneWeek: number } }
+interface TaskPage { tasks: Row[]; total: number; nextCursor: string | null; stats: { open: number; active: number; overdue: number; doneWeek: number }; deadline: DeadlineFilter; asOf: string }
 
-type Bucket = "overdue" | "today" | "week" | "later" | "none" | "done";
+type Bucket = DeadlineBucket;
 const BUCKETS: { key: Bucket; label: string; icon: React.ComponentType<{ className?: string }>; tone?: string }[] = [
   { key: "overdue", label: "Quá hạn", icon: TriangleAlert, tone: "text-danger" },
   { key: "today", label: "Hôm nay", icon: CalendarClock },
@@ -46,37 +48,31 @@ const BUCKETS: { key: Bucket; label: string; icon: React.ComponentType<{ classNa
   { key: "done", label: "Đã hoàn thành", icon: CheckCircle2 },
 ];
 
-function bucketOf(t: Row): Bucket {
-  if (t.status === "DONE") return "done";
-  if (!t.dueDate) return "none";
-  const due = new Date(t.dueDate);
-  const now = new Date();
-  if (due < now) return "overdue";
-  const endToday = new Date(now);
-  endToday.setHours(23, 59, 59, 999);
-  if (due <= endToday) return "today";
-  if (due.getTime() - now.getTime() <= 7 * 86_400_000) return "week";
-  return "later";
-}
-
 export function MyTasksView({ canSeeAll, initial, tabs }: { canSeeAll: boolean; initial?: TaskPage; tabs?: React.ReactNode }) {
   const [scope, setScope] = useState<"mine" | "all">("mine");
+  const [deadline, setDeadline] = useState<DeadlineFilter>("all");
   const [q, setQ] = useState("");
   const query = useDebouncedValue(q);
   const [openTask, setOpenTask] = useState<string | null>(null);
   const [collapsed, setCollapsed] = useState<Set<Bucket>>(new Set(["done"]));
   const [cursors, setCursors] = useState<(string | null)[]>([null]);
   const cursor = cursors[cursors.length - 1];
-  const { data, loading, error, reload } = useApi<TaskPage>(q === query ? `/api/tasks?scope=${scope}&q=${encodeURIComponent(query)}${cursor ? `&cursor=${encodeURIComponent(cursor)}` : ""}` : null, { initial });
+  const { data: response, loading, error, reload } = useApi<TaskPage>(q === query ? `/api/tasks?scope=${scope}&q=${encodeURIComponent(query)}&deadline=${deadline}${cursor ? `&cursor=${encodeURIComponent(cursor)}` : ""}` : null, { initial });
+  // Do not display the previous period's tasks or statistics under the new label.
+  const data = response?.deadline === deadline ? response : null;
   const busy = loading || q !== query;
+  const now = useMemo(() => new Date(response?.asOf ?? Date.now()), [response?.asOf]);
+  const periods = useMemo(() => taskDeadlinePeriods(now), [now]);
+  const period = deadline === "all" ? null : periods[deadline];
+  const selectDeadline = (value: DeadlineFilter) => { setDeadline(value); setCursors([null]); };
 
   const tasks = useMemo(() => data?.tasks ?? [], [data]);
   const grouped = useMemo(() => {
-    const g = groupBy(tasks, bucketOf);
+    const g = groupBy(tasks, (task) => taskDeadlineBucket(task, now, deadline));
     const done = g.get("done");
     done?.sort((a, b) => new Date(b.completedAt ?? 0).getTime() - new Date(a.completedAt ?? 0).getTime());
     return g;
-  }, [tasks]);
+  }, [tasks, now, deadline]);
 
   const stats = data?.stats ?? { open: 0, active: 0, overdue: 0, doneWeek: 0 };
 
@@ -105,7 +101,7 @@ export function MyTasksView({ canSeeAll, initial, tabs }: { canSeeAll: boolean; 
       {taskMenu.menu}
       <PageHeader
         title="Công việc của tôi"
-        description="Tất cả công việc bạn phụ trách, sắp xếp theo mức độ khẩn cấp."
+        description="Theo dõi trạng thái công việc và chủ động kế hoạch theo deadline."
         actions={
           canSeeAll && (
             <Segmented
@@ -122,30 +118,66 @@ export function MyTasksView({ canSeeAll, initial, tabs }: { canSeeAll: boolean; 
       />
       {tabs}
 
-      <div className="mb-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <KpiTile label="Chưa hoàn thành" value={stats.open} icon={ListChecks} />
-        <KpiTile label="Đang thực hiện" value={stats.active} sub="Gồm cả chờ duyệt" icon={Clock} />
-        <KpiTile label="Quá hạn" value={stats.overdue} icon={TriangleAlert} tone={stats.overdue ? "critical" : "default"} sub={stats.overdue ? "Ưu tiên xử lý ngay" : "Không có việc trễ"} />
-        <KpiTile label="Hoàn thành 7 ngày qua" value={stats.doneWeek} icon={CheckCircle2} />
+      <section aria-label="Lọc theo deadline" className="mb-5 rounded-2xl border bg-card p-4">
+        <div className="mb-3 flex items-center gap-2 text-sm font-semibold">
+          <CalendarClock className="h-4 w-4 text-primary" /> Deadline công việc
+        </div>
+        <div className="grid grid-cols-2 gap-2 lg:grid-cols-4">
+          {DEADLINE_FILTERS.map((option) => {
+            const window = option.value === "all" ? null : periods[option.value];
+            return (
+              <button
+                key={option.value}
+                aria-pressed={deadline === option.value}
+                onClick={() => selectDeadline(option.value)}
+                className={cn("rounded-xl border px-3 py-2.5 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary", deadline === option.value ? "border-primary/40 bg-primary/5 text-primary" : "border-transparent bg-muted/50 hover:bg-muted")}
+              >
+                <span className="block text-sm font-semibold">{option.label}</span>
+                <span className="mt-1 block text-xs text-muted-foreground">
+                  {window ? `${zonedText(window.start, "short")} – ${zonedText(window.end)}` : "Gồm cả việc chưa có hạn"}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+        <p className="mt-3 text-xs text-muted-foreground">
+          Tuần tính từ thứ Hai đến Chủ nhật · Theo giờ Việt Nam · Lọc theo hạn chót của công việc.
+        </p>
+      </section>
+
+      <div aria-busy={busy} className={cn("mb-6 grid grid-cols-2 gap-3 xl:grid-cols-4", busy && "opacity-60")}>
+        <KpiTile label="Chưa hoàn thành" value={data ? stats.open : "—"} icon={ListChecks} />
+        <KpiTile label="Đang thực hiện" value={data ? stats.active : "—"} sub="Gồm cả chờ duyệt" icon={Clock} />
+        <KpiTile label="Quá hạn" value={data ? stats.overdue : "—"} icon={TriangleAlert} tone={stats.overdue ? "critical" : "default"} sub={data ? stats.overdue ? "Ưu tiên xử lý ngay" : "Không có việc trễ" : undefined} />
+        <KpiTile label={period ? "Đã hoàn thành" : "Hoàn thành 7 ngày qua"} value={data ? period ? data.total - stats.open : stats.doneWeek : "—"} sub={period ? "Deadline thuộc kỳ đang chọn" : undefined} icon={CheckCircle2} />
       </div>
 
+      <p role="status" className="mb-3 text-sm text-muted-foreground">
+        {!data && !error ? "Đang tải công việc…" : data ? `${period ? `${period.label} · ` : ""}${data.total} công việc${period ? " đến hạn trong kỳ" : ""}` : "Không thể tải công việc trong kỳ này."}
+      </p>
       <div className="relative mb-5 max-w-sm">
         <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
         <input
           value={q}
           onChange={(e) => { setQ(e.target.value); setCursors([null]); }}
           placeholder="Tìm công việc…"
+          aria-label="Tìm công việc"
           className="h-10 w-full rounded-lg border bg-card pl-9 pr-3 text-sm outline-none focus:border-primary/60 focus:ring-2 focus:ring-primary/20"
         />
       </div>
 
-      {loading && !data ? (
+      {!data ? (
         <div className="flex justify-center py-20">
-          <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+          {error ? <button className="text-sm font-medium text-primary hover:underline" onClick={reload}>Thử lại</button> : <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />}
         </div>
       ) : tasks.length === 0 ? (
         <div className="rounded-2xl border bg-card">
-          <EmptyState icon={ListChecks} title={q ? "Không tìm thấy công việc" : "Bạn chưa được giao công việc nào"} description="Công việc được giao cho bạn sẽ xuất hiện tại đây." />
+          <EmptyState
+            icon={ListChecks}
+            title={q ? "Không tìm thấy công việc" : period ? "Không có công việc đến hạn trong kỳ này" : "Bạn chưa được giao công việc nào"}
+            description={period ? "Chọn kỳ khác hoặc xem tất cả để tìm công việc có deadline khác và việc chưa có hạn chót." : "Công việc được giao cho bạn sẽ xuất hiện tại đây."}
+            action={period && <button className="text-sm font-medium text-primary hover:underline" onClick={() => selectDeadline("all")}>Xem tất cả công việc</button>}
+          />
         </div>
       ) : (
         <div className={cn("space-y-4 transition-opacity", busy && "opacity-60")}>
@@ -155,10 +187,10 @@ export function MyTasksView({ canSeeAll, initial, tabs }: { canSeeAll: boolean; 
             const Icon = b.icon;
             return (
               <section key={b.key} className="overflow-hidden rounded-2xl border bg-card shadow-card">
-                <button onClick={() => flip(b.key)} className="flex w-full items-center gap-2.5 px-4 py-3 text-left hover:bg-muted/40">
+                <button onClick={() => flip(b.key)} aria-expanded={!isCollapsed} className="flex w-full items-center gap-2.5 px-4 py-3 text-left hover:bg-muted/40">
                   <ChevronRight className={cn("h-4 w-4 text-muted-foreground transition-transform", !isCollapsed && "rotate-90")} />
                   <Icon className={cn("h-4 w-4", b.tone ?? "text-muted-foreground")} />
-                  <span className={cn("font-semibold", b.tone)}>{b.label}</span>
+                  <span className={cn("font-semibold", b.tone)}>{b.key === "later" && period ? "Sắp đến hạn" : b.label}</span>
                   <span className="rounded-md bg-muted px-1.5 py-0.5 text-[11px] font-semibold text-muted-foreground">{rows.length}</span>
                 </button>
                 <AnimatePresence initial={false}>
@@ -185,6 +217,7 @@ export function MyTasksView({ canSeeAll, initial, tabs }: { canSeeAll: boolean; 
                                 </span>
                               )}
                             </p>
+                            <div className="mt-1 md:hidden"><TaskStatusBadge status={t.status} /></div>
                           </div>
                           <div className="hidden items-center gap-3 md:flex">
                             <TaskStatusBadge status={t.status} />
@@ -194,7 +227,7 @@ export function MyTasksView({ canSeeAll, initial, tabs }: { canSeeAll: boolean; 
                             </div>
                           </div>
                           <span className={cn("w-12 text-right text-xs tabular-nums", b.key === "overdue" ? "font-semibold text-danger" : "text-muted-foreground")}>
-                            {t.dueDate ? formatShortDate(t.dueDate) : "—"}
+                            {t.dueDate ? zonedText(t.dueDate, "short") : "—"}
                           </span>
                           {scope === "all" && (t.assignee ? <Avatar name={t.assignee.name} color={t.assignee.avatarColor} size="xs" /> : <span className="h-6 w-6" />)}
                           {taskMenu.button(t)}

@@ -11,7 +11,7 @@ export async function GET(req: NextRequest) {
   const me = await auth();
   if (!me) return unauthorized();
   const sp = req.nextUrl.searchParams;
-  const tasks = await listTasks(me, { scope: sp.get("scope"), status: sp.get("status"), projectId: sp.get("projectId"), q: sp.get("q"), cursor: sp.get("cursor") });
+  const tasks = await listTasks(me, { scope: sp.get("scope"), status: sp.get("status"), projectId: sp.get("projectId"), q: sp.get("q"), cursor: sp.get("cursor"), deadline: sp.get("deadline") });
   return ok(tasks);
 }
 

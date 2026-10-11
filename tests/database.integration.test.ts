@@ -56,6 +56,37 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)("PostgreSQL transactions", () =>
     expect((await listTasks(user, { q: title, status: "DONE" })).stats).toEqual({ open: 0, active: 0, overdue: 0, doneWeek: 1 });
   });
 
+  it("filters deadline boundaries and full status totals before paginating on PostgreSQL", async () => {
+    const { listTasks } = await import("../lib/queries");
+    const { taskDeadlinePeriods } = await import("../lib/task-deadlines");
+    const { start, end } = taskDeadlinePeriods(new Date())["next-month"];
+    const title = `deadline-${randomUUID()}`;
+    const common = { title, projectId, createdById: userId, assigneeId: userId };
+    await db.task.createMany({ data: [
+      ...Array.from({ length: 101 }, () => ({ ...common, status: "IN_PROGRESS" as const, dueDate: new Date(start.getTime() + 86400000) })),
+      { ...common, status: "DONE", dueDate: start, completedAt: new Date("2020-01-01T00:00:00Z") },
+      { ...common, status: "TODO", dueDate: end },
+      { ...common, dueDate: new Date(start.getTime() - 1) },
+      { ...common, dueDate: new Date(end.getTime() + 1) },
+      { ...common, dueDate: null },
+      { ...common, assigneeId: null, dueDate: start },
+    ] });
+    const user = { id: userId, role: "MEMBER", permissions: [] } as unknown as CurrentUser;
+    const filter = { q: title, deadline: "next-month" };
+    const first = await listTasks(user, filter);
+    expect(first).toMatchObject({ total: 103, stats: { open: 102, active: 101, overdue: 0, doneWeek: 0 } });
+    expect(first.tasks).toHaveLength(100);
+    expect(first.tasks[0].status).toBe("DONE"); // Deadline, not completion date, selects the period.
+    const second = await listTasks(user, { ...filter, cursor: first.nextCursor });
+    expect(second).toMatchObject({ total: 103, nextCursor: null, stats: first.stats });
+    expect(second.tasks).toHaveLength(3);
+    const tasks = [...first.tasks, ...second.tasks];
+    expect(new Set(tasks.map((task) => task.id)).size).toBe(103);
+    expect(tasks.at(-1)?.dueDate).toEqual(end);
+    expect(tasks.every((task) => task.dueDate && task.dueDate >= start && task.dueDate <= end)).toBe(true);
+    expect((await listTasks(user, { ...filter, scope: "all" })).total).toBe(104);
+  });
+
   it("serializes two real uploads at the contract file limit", async () => {
     const { storeContractFiles } = await import("../lib/contract-file-service");
     const contract = await db.contract.create({ data: { name: "Upload race", value: 0, performedAt: new Date(), createdById: userId } });

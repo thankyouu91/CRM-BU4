@@ -1,9 +1,10 @@
-import { beforeEach, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import type { CurrentUser } from "../lib/session";
 const db = vi.hoisted(() => ({ task: { findMany: vi.fn(), count: vi.fn(), groupBy: vi.fn() }, taskReport: { findMany: vi.fn(), count: vi.fn() } }));
 vi.mock("../lib/prisma", () => ({ prisma: db }));
 import { listTasks, inboxReports } from "../lib/queries";
 const me = { id: "u", role: "MEMBER", permissions: [] } as unknown as CurrentUser;
+afterEach(() => vi.useRealTimers());
 beforeEach(() => {
   vi.clearAllMocks();
   db.task.findMany.mockResolvedValue(Array.from({ length: 101 }, (_, i) => ({ id: `t${i}`, createdById: "other", assigneeId: "u", project: { id: "p", ownerId: "other", members: [{ role: "VIEWER" }] } })));
@@ -25,4 +26,31 @@ it("exposes older inbox reports and applies the cursor", async () => {
   expect(result).toMatchObject({ nextCursor: "r99", total: 250 });
   expect(result.reports).toHaveLength(100);
   expect(db.taskReport.findMany).toHaveBeenCalledWith(expect.objectContaining({ cursor: { id: "r99" }, skip: 1, where: { authorId: "u" } }));
+});
+
+it.each([
+  ["this-week", "2026-10-04T17:00:00.000Z", "2026-10-11T16:59:59.999Z"],
+  ["next-week", "2026-10-11T17:00:00.000Z", "2026-10-18T16:59:59.999Z"],
+  ["next-month", "2026-10-31T17:00:00.000Z", "2026-11-30T16:59:59.999Z"],
+])("filters %s on the server before pagination and applies the same scope to all statistics", async (deadline, start, end) => {
+  vi.useFakeTimers();
+  vi.setSystemTime(new Date("2026-10-11T12:00:00+07:00"));
+  const result = await listTasks(me, { deadline, q: "  Báo cáo  ", projectId: "p", cursor: "t99" });
+  const where = db.task.findMany.mock.calls[0][0].where;
+  expect(where).toMatchObject({ assigneeId: "u", projectId: "p", title: { contains: "Báo cáo", mode: "insensitive" }, dueDate: { gte: new Date(start), lte: new Date(end) } });
+  expect(where.project).toBeTruthy(); // Visibility constraints remain in place.
+  expect(db.task.findMany).toHaveBeenCalledWith(expect.objectContaining({ cursor: { id: "t99" }, skip: 1, take: 101 }));
+  expect(db.task.groupBy).toHaveBeenCalledWith(expect.objectContaining({ where }));
+  expect(db.task.count).toHaveBeenCalledTimes(2);
+  for (const [args] of db.task.count.mock.calls) expect(args.where.AND[0]).toEqual(where);
+  expect(result).toMatchObject({ deadline, asOf: "2026-10-11T05:00:00.000Z", total: 601, stats: { open: 401 } });
+});
+
+it("keeps undated tasks available in all and retains visibility when changing assignment scope", async () => {
+  const result = await listTasks(me, { scope: "all", deadline: "unknown" });
+  const where = db.task.findMany.mock.calls[0][0].where;
+  expect(where).not.toHaveProperty("dueDate");
+  expect(where).not.toHaveProperty("assigneeId");
+  expect(where.project).toBeTruthy();
+  expect(result.deadline).toBe("all");
 });

@@ -4,6 +4,7 @@ import { accessFrom, accessSelect, taskRights, canManageAllProjects, managedProj
 import { categorySchedules, projectSchedule } from "./stats";
 import { indexChildren, progressIndex } from "./task-progress";
 import type { CurrentUser } from "./session";
+import { parseDeadlineFilter, taskDeadlinePeriods } from "./task-deadlines";
 
 const userBrief = { select: { id: true, name: true, avatarColor: true, jobTitle: true } } as const;
 
@@ -120,17 +121,20 @@ const TASK_STATUSES = ["TODO", "IN_PROGRESS", "REVIEW", "DONE", "BLOCKED"] as co
 /** Tasks across visible projects (GET /api/tasks and the "Công việc của tôi" page). */
 export async function listTasks(
   user: CurrentUser,
-  { scope, status, projectId, q, cursor }: { scope?: string | null; status?: string | null; projectId?: string | null; q?: string | null; cursor?: string | null },
+  { scope, status, projectId, q, cursor, deadline: deadlineParam }: { scope?: string | null; status?: string | null; projectId?: string | null; q?: string | null; cursor?: string | null; deadline?: string | null },
 ) {
   const query = q?.trim();
+  const now = new Date();
+  const deadline = parseDeadlineFilter(deadlineParam);
+  const period = deadline === "all" ? null : taskDeadlinePeriods(now)[deadline];
   const where: Prisma.TaskWhereInput = {
     project: projectVisibilityWhere(user),
     ...((scope ?? "mine") === "mine" ? { assigneeId: user.id } : {}),
     ...(status && (TASK_STATUSES as readonly string[]).includes(status) ? { status: status as (typeof TASK_STATUSES)[number] } : {}),
     ...(projectId ? { projectId } : {}),
     ...(query ? { title: { contains: query, mode: "insensitive" } } : {}),
+    ...(period ? { dueDate: { gte: period.start, lte: period.end } } : {}),
   };
-  const now = new Date();
   const count = (extra: Prisma.TaskWhereInput) => prisma.task.count({ where: { AND: [where, extra] } });
   const [rows, counts, overdue, doneWeek] = await Promise.all([
     prisma.task.findMany({
@@ -159,7 +163,7 @@ export async function listTasks(
     const access = accessFrom(user, ownerId, members[0]?.role ?? null);
     return { ...task, project: brief, canReport: taskRights(user, access, task).report };
   });
-  return { tasks, nextCursor: rows.length > 100 ? rows[99].id : null, total, stats: { open, active, overdue, doneWeek } };
+  return { tasks, nextCursor: rows.length > 100 ? rows[99].id : null, total, stats: { open, active, overdue, doneWeek }, deadline, asOf: now.toISOString() };
 }
 
 /**
