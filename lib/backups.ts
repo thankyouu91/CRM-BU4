@@ -10,7 +10,7 @@ interface BackupObject {
   customMetadata?: Record<string, string>;
 }
 interface BackupsBucket {
-  list(options?: { prefix?: string; cursor?: string }): Promise<{ objects: BackupObject[]; truncated: boolean; cursor?: string }>;
+  list(options?: { prefix?: string; cursor?: string; include?: ("httpMetadata" | "customMetadata")[] }): Promise<{ objects: BackupObject[]; truncated: boolean; cursor?: string }>;
   get(key: string): Promise<{ size: number; body: ReadableStream<Uint8Array> } | null>;
 }
 
@@ -36,7 +36,8 @@ export async function listBackups(bucket: BackupsBucket): Promise<BackupInfo[]> 
   for (const prefix of ["daily/", "monthly/"] as const) {
     let cursor: string | undefined;
     do {
-      const page = await bucket.list({ prefix, cursor });
+      // customMetadata (row counts) is only returned when asked for.
+      const page = await bucket.list({ prefix, cursor, include: ["customMetadata"] });
       for (const o of page.objects) {
         out.push({
           key: o.key,
