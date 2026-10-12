@@ -1,6 +1,6 @@
 import { expect, it } from "vitest";
 import JSZip from "jszip";
-import { attachmentBlocks, readAiJson } from "../lib/ai-file-content";
+import { attachmentBlocks, attachmentContent, readAiJson } from "../lib/ai-file-content";
 import { AI_FILE_MAX_BYTES, aiAttachmentSchema, aiAttachmentsSchema } from "../lib/ai-attachments";
 import { validateIntake } from "../lib/ai-intake";
 
@@ -28,7 +28,18 @@ it("sends actual PDF/image blocks, preserves UTF-8 text and rejects spoofed or u
   expect(textOf(blocks)).toContain("00123");
   await expect(attachmentBlocks([file("bad.pdf", "not PDF")])).rejects.toThrow("không hợp lệ");
   await expect(attachmentBlocks([file("bad.txt", new Uint8Array([0xff]))])).rejects.toThrow("Không đọc được");
-  await expect(attachmentBlocks([file("huge.txt", "x".repeat(60001))])).rejects.toThrow("quá dài");
+});
+
+it("sends the start of a text file that is too long, with a note for Claude and the person", async () => {
+  const long = Array.from({ length: 30_000 }, (_, i) => `Dòng ${i + 1}: nội dung báo cáo`).join("\n");
+  const { blocks, notices } = await attachmentContent([file("dai.txt", long)]);
+  const text = textOf(blocks);
+  expect(text.length).toBeLessThanOrEqual(200_000);
+  expect(text).toContain("Dòng 1: nội dung");
+  expect(text).toMatch(/\[ĐÃ LƯỢC BỚT: chỉ gửi khoảng \d+% đầu/);
+  expect(notices).toHaveLength(1);
+  expect(notices[0]).toContain("“dai.txt” lớn nên AI chỉ nhận một phần");
+  expect((await attachmentContent([file("ngan.txt", "ngắn")])).notices).toEqual([]);
 });
 
 it("reads Word paragraphs and tables but refuses XML entities, macro files and decompression bombs", async () => {
@@ -49,8 +60,77 @@ it("reads all Excel sheets with cell references, leading-zero strings, date cell
     "xl/worksheets/sheet2.xml": '<worksheet><sheetData><row><c r="A1" t="inlineStr"><is><t>VND</t></is></c><c r="B1"><f>1+2</f><v>3</v></c></row></sheetData></worksheet>',
   });
   const text = textOf(await attachmentBlocks([book]));
-  expect(text).toContain("Sheet: Hợp đồng\nA1: 00123 | B1: 2026-04-02");
-  expect(text).toContain("Sheet: Chi phí\nA1: VND | B1: 3 [kết quả công thức đã lưu; cần đối chiếu]");
+  expect(text).toContain("Sheet: Hợp đồng\nHàng 1: A=00123 | B=2026-04-02");
+  expect(text).toContain("Sheet: Chi phí\nHàng 1: A=VND | B=3 [CT]");
+  expect(text).toContain("“[CT]” = kết quả công thức đã lưu");
+});
+
+const workbook = (sheets: Record<string, string>, shared = "") => zipFile("bao-cao.xlsx", {
+  "xl/workbook.xml": `<workbook><sheets>${Object.keys(sheets).map((name, i) => `<sheet name="${name}" r:id="r${i + 1}"/>`).join("")}</sheets></workbook>`,
+  "xl/_rels/workbook.xml.rels": `<Relationships>${Object.keys(sheets).map((_, i) => `<Relationship Id="r${i + 1}" Target="worksheets/sheet${i + 1}.xml"/>`).join("")}</Relationships>`,
+  ...(shared ? { "xl/sharedStrings.xml": `<sst>${shared}</sst>` } : {}),
+  ...Object.fromEntries(Object.values(sheets).map((xml, i) => [`xl/worksheets/sheet${i + 1}.xml`, `<worksheet><sheetData>${xml}</sheetData></worksheet>`])),
+});
+const dataRows = (from: number, to: number, cells = 12) => Array.from({ length: to - from + 1 }, (_, k) => {
+  const r = from + k;
+  return `<row r="${r}">${Array.from({ length: cells }, (_, c) => `<c r="${String.fromCharCode(65 + c)}${r}" t="inlineStr"><is><t>Khoá đào tạo ${r}-${c} Hà Nội</t></is></c>`).join("")}</row>`;
+}).join("");
+
+it("decodes numeric character references, skips empty bordered cells and rows, and names cells without references", async () => {
+  const text = textOf(await attachmentBlocks([await workbook({
+    "Đào tạo": '<row r="1"><c r="A1" t="inlineStr"><is><t>B&#193;O C&#193;O T&#7892;NG H&#7906;P</t></is></c><c r="B1" s="3"/><c r="C1" s="3"><v></v></c></row>'
+      + '<row r="2"><c r="A2" s="3"/><c r="B2" s="3"/></row>'
+      + '<row r="3"><c t="inlineStr"><is><t>STT</t></is></c><c/><c t="inlineStr"><is><t>Đơn vị</t></is></c></row>',
+  })]));
+  expect(text).toContain("Hàng 1: A=BÁO CÁO TỔNG HỢP\n");
+  expect(text).not.toContain("Hàng 2");
+  expect(text).toContain("Hàng 3: A=STT | C=Đơn vị");
+  expect(text).not.toContain("&#");
+});
+
+it("fits a large workbook: small sheets whole, large ones keep their first and last rows, with notices", async () => {
+  const total = '<row r="2000"><c r="A2000" t="inlineStr"><is><t>TỔNG CỘNG</t></is></c><c r="B2000"><f>SUM(B2:B1999)</f><v>123456</v></c></row>';
+  const { blocks, notices } = await attachmentContent([await workbook({
+    "Đào tạo": dataRows(1, 1999) + total,
+    "Khảo thí": dataRows(1, 1500),
+    "Tổng hợp": dataRows(1, 12, 3),
+  })]);
+  const text = textOf(blocks);
+  expect(text.length).toBeLessThanOrEqual(200_000);
+  expect(text).toContain("Hàng 1: A=Khoá đào tạo 1-0");
+  expect(text).toContain("Hàng 2000: A=TỔNG CỘNG | B=123456 [CT]");
+  expect(text).toContain("Hàng 12: A=Khoá đào tạo 12-0");
+  expect(text).toMatch(/\[ĐÃ LƯỢC BỚT: \d+ hàng có dữ liệu \(hàng \d+–1997\)/);
+  expect(text).toContain("LƯU Ý: file quá lớn nên chỉ gửi một phần");
+  expect(notices).toHaveLength(1);
+  expect(notices[0]).toMatch(/sheet “Đào tạo” \d+\/2000 hàng; sheet “Khảo thí” \d+\/1500 hàng/);
+  expect(notices[0]).not.toContain("Tổng hợp");
+  // A workbook that fits is sent whole, without notices.
+  const small = await attachmentContent([await workbook({ "Một": dataRows(1, 50) })]);
+  expect(small.notices).toEqual([]);
+  expect(textOf(small.blocks)).toContain("Hàng 50:");
+});
+
+it("reads an oversized worksheet up to the XML limit, cut after a whole row, instead of refusing it", async () => {
+  const { blocks, notices } = await attachmentContent([await workbook({ "Lớn": dataRows(1, 9000) })]);
+  const text = textOf(blocks);
+  expect(text).toMatch(/\[ĐÃ LƯỢC BỚT: phần sau hàng \d+ của sheet không được đọc/);
+  expect(text).toContain("chưa đọc hết");
+  expect(notices[0]).toMatch(/sheet “Lớn”/);
+  const last = [...text.matchAll(/^Hàng (\d+): /gm)].map(m => Number(m[1])).at(-1)!;
+  expect(last).toBeGreaterThan(1000);
+  expect(last).toBeLessThan(9000);
+});
+
+it("shares the text budget between text files and still refuses a workbook with only empty sheets", async () => {
+  const one = await workbook({ "A": dataRows(1, 1500) });
+  const two = { ...(await workbook({ "B": dataRows(1, 1500) })), name: "khac.xlsx" };
+  const { blocks, notices } = await attachmentContent([one, two]);
+  const sizes = blocks.flatMap(b => b.type === "document" && b.source.type === "text" ? [b.source.data.length] : []);
+  expect(sizes).toHaveLength(2);
+  expect(sizes.every(n => n <= 150_000)).toBe(true);
+  expect(notices).toHaveLength(2);
+  await expect(attachmentBlocks([await workbook({ "Trống": '<row r="1"><c r="A1" s="1"/></row>' })])).rejects.toThrow("không có văn bản đọc được");
 });
 
 it("bounds actual streamed JSON bodies even when the content length is missing", async () => {

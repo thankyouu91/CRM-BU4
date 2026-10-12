@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import dynamic from "next/dynamic";
-import { ArrowUp, Check, ClipboardCopy, Database, MessageSquarePlus, Presentation, RotateCcw, Save, Settings, Sparkles, Square, User } from "lucide-react";
+import { ArrowUp, Check, ClipboardCopy, Database, MessageSquarePlus, Presentation, RotateCcw, Save, Settings, Sparkles, Square, TriangleAlert, User } from "lucide-react";
 import { toast } from "sonner";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -42,6 +42,8 @@ interface ChatMessage {
   /** Assistant only: still arriving, finished, stopped by the person, or failed. */
   status?: "streaming" | "done" | "stopped" | "error";
   info?: string;
+  /** Assistant only: e.g. an attached file was too large and only part of it was sent. */
+  notice?: string;
   files?: string[];
 }
 
@@ -186,6 +188,7 @@ export function ChatView({
       abortRef.current = controller;
       const update = (patch: Partial<ChatMessage>) => setMessages((all) => all.map((m) => (m.id === reply.id ? { ...m, ...patch } : m)));
       let answer = "";
+      let notice = "";
       try {
         const p = settings.period;
         const res = await fetch("/api/ai/chat", {
@@ -220,7 +223,10 @@ export function ChatView({
           const { events, rest } = parseEvents(buffer);
           buffer = rest;
           for (const e of events) {
-            if (e.t === "text") {
+            if (e.t === "notice") {
+              notice = notice ? `${notice}\n${e.message}` : e.message;
+              update({ notice });
+            } else if (e.t === "text") {
               answer += e.v;
               update({ content: answer });
             } else if (e.t === "done") {
@@ -254,10 +260,10 @@ export function ChatView({
     const instruction = input; setInput("");
     const update = (patch: Partial<ChatMessage>) => setMessages(all => all.map(m => m.id === reply.id ? { ...m, ...patch } : m));
     try {
-      const data = await api<AiIntake & { remaining: number }>("/api/ai/intake", { method: "POST", body: { attachments, instruction }, signal: controller.signal });
+      const data = await api<AiIntake & { remaining: number; notices?: string[] }>("/api/ai/intake", { method: "POST", body: { attachments, instruction }, signal: controller.signal });
       if (controller.signal.aborted) return;
       setIntakes(all => ({ ...all, [reply.id]: data }));
-      setRemaining(data.remaining); update({ content: data.summary, status: "done", info: "Bản nháp nhập liệu chỉ giữ trong phiên hiện tại" });
+      setRemaining(data.remaining); update({ content: data.summary, status: "done", info: "Bản nháp nhập liệu chỉ giữ trong phiên hiện tại", notice: data.notices?.join("\n") || undefined });
     } catch (error) {
       update(controller.signal.aborted ? { status: "stopped" } : { status: "error", content: error instanceof Error ? error.message : "Không trích xuất được file" });
     } finally { abortRef.current = null; setBusy(false); }
@@ -461,6 +467,11 @@ export function ChatView({
                   </span>
                   <div className="min-w-0 max-w-[92%] flex-1">
                     <div className={cn("rounded-2xl rounded-tl-sm border bg-card px-4 py-3 text-sm", m.status === "error" && "border-danger/40 bg-danger/5")}>
+                      {m.notice && (
+                        <p className="mb-2.5 flex items-start gap-1.5 whitespace-pre-line rounded-lg bg-warning/10 px-3 py-2 text-xs text-warning">
+                          <TriangleAlert className="mt-px h-3.5 w-3.5 shrink-0" /> {m.notice}
+                        </p>
+                      )}
                       {m.content ? (
                         m.status === "error" && !m.content.includes("\n") ? <p className="text-danger">{m.content}</p> : <Markdown text={m.content} />
                       ) : m.status !== "streaming" ? (

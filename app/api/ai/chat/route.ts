@@ -10,7 +10,7 @@ import { chatStyleInstruction } from "@/lib/ai-chat";
 import { aiUsedToday, getAiRuntime } from "@/lib/ai-settings";
 import { streamClaudeAnswer } from "@/lib/ai-run";
 import { aiChatSchema } from "@/lib/validations";
-import { attachmentBlocks, readAiJson } from "@/lib/ai-file-content";
+import { attachmentContent, readAiJson } from "@/lib/ai-file-content";
 
 // Stable across every chat, so it stays in the cached prefix.
 const CHAT_SYSTEM = [
@@ -71,7 +71,7 @@ export async function POST(req: NextRequest) {
     system.push({ type: "text", text: chatStyleInstruction(options) });
 
     const question = messages[messages.length - 1].content;
-    const content = await attachmentBlocks(attachments);
+    const { blocks: content, notices } = await attachmentContent(attachments);
     const conversation: Anthropic.Beta.BetaMessageParam[] = messages.map((m, i) =>
       i === messages.length - 1 && content.length ? { role: m.role, content: [...content, { type: "text", text: m.content }] } : m,
     );
@@ -91,6 +91,7 @@ export async function POST(req: NextRequest) {
         details: { turn: Math.ceil(messages.length / 2), includeData: options.includeData, length: options.length, audience: options.audience, files: attachments.length },
       },
       refusedMessage: "Claude không trả lời câu hỏi này. Hãy diễn đạt lại hoặc hỏi nội dung khác.",
+      notices,
     });
   });
 }

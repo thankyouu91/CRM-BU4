@@ -2,8 +2,9 @@ import { NextResponse, type NextRequest } from "next/server";
 import { z } from "zod";
 import { auth, badRequest, handle, ok, unauthorized } from "@/lib/api";
 import { aiAttachmentsSchema } from "@/lib/ai-attachments";
-import { attachmentBlocks, readAiJson } from "@/lib/ai-file-content";
+import { attachmentContent, readAiJson } from "@/lib/ai-file-content";
 import { aiIntakeSchema, validateIntake } from "@/lib/ai-intake";
+import { aiModelInfo } from "@/lib/ai-models";
 import { aiUsedToday, anthropicClient, describeAnthropicError, getAiRuntime } from "@/lib/ai-settings";
 import { audit } from "@/lib/audit";
 
@@ -22,6 +23,8 @@ const SYSTEM = [
   "Nếu là tài liệu khác, tóm tắt đúng nội dung và trả proposals rỗng. Sử dụng tool prepare_intake để trả kết quả có cấu trúc.",
 ].join("\n");
 
+const CALL_TOOL = "Trả kết quả bằng đúng một lần gọi tool prepare_intake, không trả lời bằng văn bản thường.";
+
 export async function POST(req: NextRequest) {
   return handle(async () => {
     const me = await auth();
@@ -31,27 +34,44 @@ export async function POST(req: NextRequest) {
     if (!runtime) return badRequest("Trợ lý AI chưa được bật. Hãy cấu hình trong Cài đặt → Trợ lý AI.");
     const used = await aiUsedToday(me.id);
     if (used >= runtime.dailyLimit) return NextResponse.json({ error: "Bạn đã dùng hết lượt AI hôm nay." }, { status: 429 });
-    const content = await attachmentBlocks(attachments);
+    const { blocks: content, notices } = await attachmentContent(attachments);
     try {
       const schema = z.toJSONSchema(aiIntakeSchema);
-      const response = await anthropicClient(runtime.apiKey).beta.messages.create({
-        model: runtime.model, max_tokens: 10000, system: SYSTEM,
-        messages: [{ role: "user", content: [...content, { type: "text", text: instruction || "Review tài liệu và trích xuất thông tin có thể điền vào dự án, hợp đồng và chi phí." }] }],
+      // Opus 5.5 and Sonnet 5.5 reject a forced tool_choice: ask for the tool in the prompt
+      // instead, and once more if the first answer came back as plain text.
+      const forced = aiModelInfo(runtime.model).forcedToolChoice;
+      const ask = instruction || "Review tài liệu và trích xuất thông tin có thể điền vào dự án, hợp đồng và chi phí.";
+      const request = {
+        model: runtime.model, max_tokens: forced ? 10000 : 16000, system: SYSTEM,
+        messages: [{ role: "user" as const, content: [...content, { type: "text" as const, text: forced ? ask : `${ask}\n\n${CALL_TOOL}` }] }],
         tools: [{ name: "prepare_intake", description: "Chuẩn bị dữ liệu có nguồn để người dùng kiểm tra; không ghi vào hệ thống.", input_schema: { ...schema, type: "object" as const } }],
-        tool_choice: { type: "tool", name: "prepare_intake" },
+        ...(forced ? { tool_choice: { type: "tool" as const, name: "prepare_intake" } } : {}),
         metadata: { user_id: me.id },
-      }, { signal: req.signal });
+      };
+      const client = anthropicClient(runtime.apiKey);
+      let response = await client.beta.messages.create(request, { signal: req.signal });
+      const usage = { inputTokens: response.usage.input_tokens, outputTokens: response.usage.output_tokens };
+      const findTool = () => response.content.find(c => c.type === "tool_use" && c.name === "prepare_intake");
+      if (!forced && !findTool() && response.stop_reason === "end_turn") {
+        response = await client.beta.messages.create({
+          ...request,
+          messages: [...request.messages, { role: "assistant", content: response.content }, { role: "user", content: CALL_TOOL }],
+        }, { signal: req.signal });
+        usage.inputTokens += response.usage.input_tokens;
+        usage.outputTokens += response.usage.output_tokens;
+      }
       await audit({ id: me.id, name: me.name }, {
         action: "ai.chat", entityType: "chat", entityId: null, summary: `AI đọc ${attachments.length} file để chuẩn bị nhập liệu`,
-        details: { kind: "file-intake", files: attachments.length, model: response.model, inputTokens: response.usage.input_tokens, outputTokens: response.usage.output_tokens, stopReason: response.stop_reason },
+        details: { kind: "file-intake", files: attachments.length, model: response.model, ...usage, stopReason: response.stop_reason },
       });
       if (response.stop_reason === "max_tokens") return badRequest("Tài liệu có quá nhiều thông tin. Hãy tách nhỏ file để trích xuất đầy đủ.");
-      const tool = response.content.find(c => c.type === "tool_use" && c.name === "prepare_intake");
+      if (response.stop_reason === "refusal") return badRequest("Claude không xử lý tài liệu này. Hãy thử file khác hoặc nêu rõ thông tin cần trích.");
+      const tool = findTool();
       if (!tool || tool.type !== "tool_use") return badRequest("AI chưa trích được dữ liệu. Hãy dùng file rõ hơn hoặc nêu trường cần tìm.");
       let result;
       try { result = validateIntake(tool.input, attachments.map(f => f.name)); }
       catch { return badRequest("Kết quả AI chưa đúng định dạng nhập liệu. Hãy thử lại với ít nội dung hơn."); }
-      return ok({ ...result, remaining: Math.max(0, runtime.dailyLimit - used - 1) }, { headers: { "Cache-Control": "private, no-store" } });
+      return ok({ ...result, notices, remaining: Math.max(0, runtime.dailyLimit - used - 1) }, { headers: { "Cache-Control": "private, no-store" } });
     } catch (error) {
       return badRequest(describeAnthropicError(error));
     }

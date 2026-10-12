@@ -3,6 +3,8 @@
 
 export type AiStreamEvent =
   | { t: "text"; v: string }
+  /** Sent before the answer, e.g. an attached file was too large to send whole. */
+  | { t: "notice"; message: string }
   | { t: "done"; model: string; inputTokens: number; outputTokens: number; truncated: boolean; remaining: number }
   | { t: "refused"; message: string }
   | { t: "error"; message: string };

@@ -34,6 +34,8 @@ export interface ClaudeStreamRequest {
   cacheConversation?: boolean;
   record: { action: Extract<AuditAction, "ai.generate" | "ai.chat">; entityType: string; entityId: string | null; summary: string; details: Record<string, unknown> };
   refusedMessage: string;
+  /** Shown to the person before the answer (e.g. a file sent only in part). */
+  notices?: string[];
 }
 
 export function streamClaudeAnswer(r: ClaudeStreamRequest): Response {
@@ -78,6 +80,7 @@ export function streamClaudeAnswer(r: ClaudeStreamRequest): Response {
       }
     };
     try {
+      for (const message of r.notices ?? []) send({ t: "notice", message });
       for await (const event of stream) {
         if (event.type === "content_block_delta" && event.delta.type === "text_delta") send({ t: "text", v: event.delta.text });
         else if (event.type === "message_start") {

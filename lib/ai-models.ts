@@ -1,6 +1,8 @@
 // Claude models the admin can choose for the built-in AI (no server-only imports).
 // Prices are Anthropic's list prices in USD per million tokens, used only to
 // estimate spend in Settings; the Anthropic Console bill is the source of truth.
+// forcedToolChoice: whether the model accepts tool_choice "tool"/"any" (Opus 5.5 and
+// Sonnet 5.5 answer it with a 400; steer them from the prompt instead).
 
 export const AI_MODELS = [
   {
@@ -9,6 +11,7 @@ export const AI_MODELS = [
     note: "Mặc định · chất lượng cao nhất",
     inputPerMTok: 4,
     outputPerMTok: 20,
+    forcedToolChoice: false,
   },
   {
     id: "claude-sonnet-5-5",
@@ -16,6 +19,7 @@ export const AI_MODELS = [
     note: "Nhanh, chi phí bằng một nửa",
     inputPerMTok: 2,
     outputPerMTok: 10,
+    forcedToolChoice: false,
   },
   {
     id: "claude-haiku-5-5",
@@ -23,6 +27,7 @@ export const AI_MODELS = [
     note: "Rẻ nhất, phù hợp báo cáo ngắn",
     inputPerMTok: 0.1,
     outputPerMTok: 0.5,
+    forcedToolChoice: true,
   },
 ] as const;
 

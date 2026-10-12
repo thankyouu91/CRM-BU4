@@ -98,6 +98,7 @@ Tab **Trò chuyện** trên trang *Trợ lý AI* (`/ai`) là khung chat nhiều 
 - **Mỗi câu trả lời:** sao chép, tạo lại (câu cuối), lưu vào ghi chú dự án (khi đang chọn một dự án), và *Trình chiếu / xuất file* khi câu trả lời là dàn ý slide (`## Slide 1: …`). Bấm **Dừng** để ngừng giữa chừng (lượt đó vẫn được tính).
 - **Lịch sử** giữ trong tab trình duyệt (sessionStorage): tải lại trang vẫn còn, đóng tab là mất, không lưu trên máy chủ. Tối đa 40 tin nhắn gần nhất được gửi kèm, mỗi tin tối đa 8.000 ký tự.
 - **Chi phí:** khối số liệu và phần hội thoại đã có được cache (prompt caching), nên các câu hỏi tiếp theo trong cùng phạm vi và kỳ rẻ hơn câu đầu.
+- **File đính kèm** (PDF, ảnh, Excel, Word, CSV/TXT; 3 file, 4 MB/file): Excel, Word, CSV/TXT được chuyển thành văn bản (`lib/ai-file-content.ts`), mỗi file tối đa khoảng 200.000 ký tự và 300.000 ký tự cho cả lượt gửi. Excel chỉ liệt kê ô có dữ liệu, mỗi hàng một dòng (`Hàng 12: B=…`). File lớn hơn **không bị từ chối**: mỗi sheet giữ các hàng đầu và 3 hàng cuối (thường là dòng tổng cộng), tài liệu dài giữ phần đầu; Claude được báo phần nào bị lược bớt và câu trả lời hiện ghi chú màu vàng cho người dùng. *Trích xuất để nhập liệu* gọi tool `prepare_intake`: Haiku 5.5 được ép gọi tool, Opus 5.5 và Sonnet 5.5 không cho ép (lỗi 400) nên được yêu cầu trong prompt và hỏi lại một lần nếu trả lời bằng văn bản.
 
 ## Chạy trên máy (local)
 
