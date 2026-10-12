@@ -249,7 +249,7 @@ export interface Summary {
   };
   statusDistribution: { status: string; count: number }[];
   priorityDistribution: { priority: string; count: number }[];
-  trend: { label: string; created: number; completed: number; reports: number; hours: number }[];
+  trend: { label: string; created: number; completed: number; projects: number; reports: number; hours: number }[];
   projects: SummaryProject[];
   /** Projects; for a single-project report, followed by its categories and sub-categories. */
   schedule: ScheduleRow[];
@@ -494,7 +494,13 @@ export async function getSummary(
 
   // --- Trend --- (stop at "now": never plot zeros for time that hasn't happened)
   const buckets = buildBuckets(range, type).filter((b) => b.start <= now);
-  const trend = buckets.map((b) => ({ label: b.label, created: 0, completed: 0, reports: 0, hours: 0 }));
+  const trend = buckets.map((b) => ({ label: b.label, created: 0, completed: 0, projects: 0, reports: 0, hours: 0 }));
+  // Projects started in each bucket: a project made without tasks (e.g. by the AI
+  // assistant) still shows up as activity.
+  for (const p of projects) {
+    const pi = bucketIndex(buckets, p.createdAt);
+    if (pi >= 0) trend[pi].projects += 1;
+  }
   for (const t of tasks) {
     const ci = bucketIndex(buckets, t.createdAt);
     if (ci >= 0) trend[ci].created += 1;

@@ -299,6 +299,7 @@ function renderBody(c: Ctx, slide: Slide, s: SlideModel) {
         ? [
             { name: "Tạo mới", labels: s.data.map((d) => d.label), values: s.data.map((d) => d.created) },
             { name: "Hoàn thành", labels: s.data.map((d) => d.label), values: s.data.map((d) => d.completed) },
+            { name: "Dự án mới", labels: s.data.map((d) => d.label), values: s.data.map((d) => d.projects) },
           ]
         : [{ name: "Giờ công", labels: s.data.map((d) => d.label), values: s.data.map((d) => d.hours) }];
       slide.addChart(c.pres.ChartType.bar, data, {
@@ -309,7 +310,7 @@ function renderBody(c: Ctx, slide: Slide, s: SlideModel) {
         barDir: "col",
         barGrouping: "clustered",
         barGapWidthPct: 70,
-        chartColors: isTrend ? [hex(t.chart.series[0]), hex(t.chart.series[1])] : [hex(t.chart.series[0])],
+        chartColors: isTrend ? [hex(t.chart.series[0]), hex(t.chart.series[1]), hex(t.chart.series[2])] : [hex(t.chart.series[0])],
         showLegend: isTrend,
         legendPos: "t",
         showTitle: !isTrend,

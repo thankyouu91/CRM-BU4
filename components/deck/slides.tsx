@@ -272,7 +272,7 @@ function Body({ slide, ctx }: { slide: SlideModel; ctx: Ctx }) {
         <div style={{ display: "grid", gridTemplateColumns: "1fr 260px", gap: 24 }}>
           <Reveal ctx={ctx}>
             <Panel theme={t} style={{ height: 460 }}>
-              <LegendRow theme={t} items={[{ label: "Tạo mới", color: t.chart.series[0] }, { label: "Hoàn thành", color: t.chart.series[1] }]} />
+              <LegendRow theme={t} items={[{ label: "Việc tạo mới", color: t.chart.series[0] }, { label: "Việc hoàn thành", color: t.chart.series[1] }, { label: "Dự án mới", color: t.chart.series[2] }]} />
               <div style={{ marginTop: 16 }}>
                 <TrendChart data={slide.data} width={820} height={370} animate={ctx.animate} theme={t.chart} />
               </div>

@@ -164,7 +164,7 @@ const axisProps = (theme: ChartTheme) => ({
 });
 
 // ---------------------------------------------------------------------------
-// Trend: tasks created vs completed per bucket (same unit, one axis).
+// Trend: tasks created vs completed, and new projects, per bucket (counts, one axis).
 // Grouped bars: counts are small integers, so bars read more honestly than curves.
 // ---------------------------------------------------------------------------
 
@@ -183,7 +183,7 @@ export function TrendChart({
 }) {
   const auto = useChartTheme();
   const theme = forced ?? auto;
-  const [c1, c2] = theme.series;
+  const [c1, c2, c3] = theme.series;
   const chart = (
     <BarChart data={data} margin={{ top: 8, right: 8, left: -18, bottom: 0 }} width={width} height={height} barGap={2}>
       <CartesianGrid vertical={false} stroke={theme.grid} />
@@ -193,8 +193,9 @@ export function TrendChart({
         cursor={{ fill: theme.grid, fillOpacity: 0.4 }}
         content={(p) => <ChartTooltip {...(p as object)} theme={theme} />}
       />
-      <Bar dataKey="created" name="Tạo mới" fill={c1} radius={[4, 4, 0, 0]} maxBarSize={18} isAnimationActive={animate} />
-      <Bar dataKey="completed" name="Hoàn thành" fill={c2} radius={[4, 4, 0, 0]} maxBarSize={18} isAnimationActive={animate} />
+      <Bar dataKey="created" name="Việc tạo mới" fill={c1} radius={[4, 4, 0, 0]} maxBarSize={18} isAnimationActive={animate} />
+      <Bar dataKey="completed" name="Việc hoàn thành" fill={c2} radius={[4, 4, 0, 0]} maxBarSize={18} isAnimationActive={animate} />
+      <Bar dataKey="projects" name="Dự án mới" fill={c3} radius={[4, 4, 0, 0]} maxBarSize={18} isAnimationActive={animate} />
     </BarChart>
   );
   if (width) return chart;
@@ -207,8 +208,9 @@ export function TrendChart({
 
 export function trendLegend(theme: ChartTheme) {
   return [
-    { label: "Tạo mới", color: theme.series[0] },
-    { label: "Hoàn thành", color: theme.series[1] },
+    { label: "Việc tạo mới", color: theme.series[0] },
+    { label: "Việc hoàn thành", color: theme.series[1] },
+    { label: "Dự án mới", color: theme.series[2] },
   ];
 }
 

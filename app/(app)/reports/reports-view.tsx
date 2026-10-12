@@ -165,7 +165,7 @@ export function ReportsView({
             <ChartCard
               id="r-trend"
               className="xl:col-span-2"
-              title="Công việc tạo mới & hoàn thành"
+              title="Công việc & dự án mới"
               description={data.period.label}
               legend={<Legend items={trendLegend(theme)} />}
               chart={<TrendChart data={data.trend} />}
@@ -175,6 +175,7 @@ export function ReportsView({
                     { key: "label", label: "Thời điểm" },
                     { key: "created", label: "Tạo mới", align: "right" },
                     { key: "completed", label: "Hoàn thành", align: "right" },
+                    { key: "projects", label: "Dự án mới", align: "right" },
                   ]}
                   rows={data.trend}
                 />

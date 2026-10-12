@@ -116,7 +116,7 @@ export function DashboardView({ initial, userName }: { initial: Summary; userNam
             id="trend"
             className="xl:col-span-2"
             title="Xu hướng công việc"
-            description="Số công việc tạo mới và hoàn thành theo thời gian"
+            description="Công việc tạo mới, hoàn thành và dự án mới theo thời gian"
             legend={<Legend items={trendLegend(theme)} />}
             chart={<TrendChart data={data.trend} />}
             table={
@@ -125,6 +125,7 @@ export function DashboardView({ initial, userName }: { initial: Summary; userNam
                   { key: "label", label: "Thời điểm" },
                   { key: "created", label: "Tạo mới", align: "right" },
                   { key: "completed", label: "Hoàn thành", align: "right" },
+                  { key: "projects", label: "Dự án mới", align: "right" },
                 ]}
                 rows={data.trend}
               />
