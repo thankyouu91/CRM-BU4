@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildDepartmentReport, type DepartmentTaskSource } from "../lib/department-report";
+import { buildDepartmentReport, type DepartmentProjectSource, type DepartmentTaskSource } from "../lib/department-report";
 import { workPeriodFromKey } from "../lib/work-report";
 
 const period = workPeriodFromKey("WEEK", "2026-W42")!;
@@ -84,6 +84,27 @@ describe("department weekly report", () => {
     const r = build(task("cancelled", { project: { id: "p", name: "P", color: "#000", status: "CANCELLED" }, dueDate: "2026-10-15T00:00:00Z" }), task("review", { status: "REVIEW", progress: 100, dueDate: "2026-10-15T00:00:00Z" }));
     expect(ids(r, "current", "due")).toEqual(["review"]);
     expect(ids(r, "current", "completed")).toEqual([]);
+  });
+
+  it("lists projects with no row in the three weeks, so a new empty project is not missed", () => {
+    const project = (id: string, patch: Partial<DepartmentProjectSource> = {}): DepartmentProjectSource => ({
+      id, name: id, color: "#000", status: "ACTIVE", createdAt: "2026-10-12T03:30:00Z", owner: { name: "Long" }, _count: { tasks: 0 }, tasks: [], ...patch,
+    });
+    const far = { id: "far", title: "Nghiệm thu", startDate: "2026-12-01T00:00:00Z", dueDate: "2026-12-15T00:00:00Z" };
+    const r = buildDepartmentReport([task("due", { dueDate: "2026-10-15T00:00:00Z" })], period, null, now, [
+      project("p"), // has a row above
+      project("Mới tạo bởi AI", { status: "COMPLETED" }),
+      project("Việc ở xa", { _count: { tasks: 1 }, tasks: [far] }),
+      project("Đã xong hết", { _count: { tasks: 4 } }),
+      project("Đã huỷ", { status: "CANCELLED" }),
+      project("Tạo sau hôm nay", { createdAt: "2026-10-15T00:00:00Z" }),
+    ]);
+    expect(r.projectsWithoutWork.map(p => p.id)).toEqual(["Mới tạo bởi AI", "Việc ở xa"]);
+    expect(r.projectsWithoutWork[0]).toMatchObject({ status: "COMPLETED", owner: "Long", taskCount: 0, next: null, createdAt: "2026-10-12T03:30:00.000Z" });
+    expect(r.projectsWithoutWork[1].next).toEqual({ ...far, startDate: "2026-12-01T00:00:00.000Z", dueDate: "2026-12-15T00:00:00.000Z" });
+    // A past week does not list a project created after it; a project filter keeps only that project.
+    expect(buildDepartmentReport([], workPeriodFromKey("WEEK", "2026-W40")!, null, now, [project("x")]).projectsWithoutWork).toEqual([]);
+    expect(buildDepartmentReport([], period, "y", now, [project("x"), project("y")]).projectsWithoutWork.map(p => p.id)).toEqual(["y"]);
   });
 
   it("handles ISO year changes and never uses now to redefine a selected report week", () => {

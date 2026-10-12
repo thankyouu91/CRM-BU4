@@ -2,14 +2,14 @@
 
 import { Fragment, useState } from "react";
 import Link from "next/link";
-import { ChevronLeft, ChevronRight, Download, Loader2, RefreshCw, TriangleAlert } from "lucide-react";
+import { ChevronLeft, ChevronRight, Download, FolderOpen, Loader2, RefreshCw, TriangleAlert } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/ui/misc";
-import { PriorityBadge, TaskStatusBadge } from "@/components/ui/badge";
+import { PriorityBadge, ProjectStatusBadge, TaskStatusBadge } from "@/components/ui/badge";
 import { TaskDrawer } from "@/components/tasks/lazy-task-drawer";
 import { useApi } from "@/lib/client";
-import { departmentGroups, type DepartmentReport, type DepartmentRow } from "@/lib/department-report";
+import { departmentGroups, type DepartmentProject, type DepartmentReport, type DepartmentRow } from "@/lib/department-report";
 import { shiftWorkPeriod, workPeriodFromKey, workPeriodOf, zonedText } from "@/lib/work-report";
 import { cn } from "@/lib/utils";
 import { ReportModeNav } from "./report-mode-nav";
@@ -84,6 +84,7 @@ export function DepartmentReportView({ initial, projects }: {
           <p>Cập nhật lúc {zonedText(report.asOf, "datetime")} · Thứ Hai – Chủ nhật · Giờ Việt Nam.</p>
           <p>Trạng thái và tiến độ là hiện tại. Kết quả xếp theo ngày hoàn thành, kế hoạch theo ngày bắt đầu và deadline; không phải bản chụp trạng thái quá khứ.</p>
           <p>Đếm công việc chi tiết; công việc tổng có việc con chỉ dùng làm ngữ cảnh, không cộng lặp. Các tuần là tương đối với tuần báo cáo đang chọn.</p>
+          {report.projectsWithoutWork.length > 0 && <p><a href="#report-projects" className="font-medium text-primary hover:underline">{report.projectsWithoutWork.length} dự án chưa có việc trong 3 tuần này</a> (chưa có công việc, hoặc việc còn lại nằm sau tuần tới).</p>}
         </div>
         <div className="space-y-7">
           {report.sections.map(section => <section id={`report-${section.id}`} aria-label={section.title} key={section.id} className="scroll-mt-6 overflow-hidden rounded-xl border bg-card">
@@ -96,6 +97,11 @@ export function DepartmentReportView({ initial, projects }: {
                 <DepartmentTable rows={b.rows} label={`${section.title} · ${b.label}`} onOpen={setOpenTask} />
               </div>)}
           </section>)}
+          {report.projectsWithoutWork.length > 0 && <section id="report-projects" aria-label="Dự án chưa có việc trong 3 tuần" className="scroll-mt-6 overflow-hidden rounded-xl border bg-card">
+            <div className="border-b px-5 py-4"><h2 className="flex items-center gap-2 font-semibold"><FolderOpen className="h-4 w-4 text-muted-foreground" /> Dự án chưa có việc trong 3 tuần <span className="text-muted-foreground">{report.projectsWithoutWork.length}</span></h2>
+              <p className="mt-1 text-xs text-muted-foreground">Báo cáo đếm theo công việc. Dự án mới tạo chưa có công việc, hoặc việc còn lại bắt đầu và đến hạn sau tuần tới, được liệt kê ở đây để không bị sót.</p></div>
+            <ProjectsTable projects={report.projectsWithoutWork} onOpen={setOpenTask} />
+          </section>}
           <section aria-label="Công việc cần bổ sung lịch" className="overflow-hidden rounded-xl border bg-card">
             <div className="border-b px-5 py-4"><h2 className="flex items-center gap-2 font-semibold"><TriangleAlert className="h-4 w-4 text-amber-600" /> Chưa có deadline <span className="text-muted-foreground">{report.unscheduled.length}</span></h2>
               <p className="mt-1 text-xs text-muted-foreground">Cần chốt hạn hoàn thành để lên kế hoạch. Việc đang làm vẫn có thể xuất hiện ở tuần này.</p></div>
@@ -110,6 +116,34 @@ export function DepartmentReportView({ initial, projects }: {
         </div>
       </>}
     <TaskDrawer taskId={openTask} onClose={() => setOpenTask(null)} onChanged={reload} />
+  </div>;
+}
+
+function ProjectsTable({ projects, onOpen }: { projects: DepartmentProject[]; onOpen: (id: string) => void }) {
+  return <div className="overflow-x-auto" role="region" aria-label="Danh sách dự án chưa có việc trong 3 tuần" tabIndex={0}>
+    <table className="w-full min-w-[720px] text-sm">
+      <caption className="sr-only">Dự án chưa có việc trong 3 tuần</caption>
+      <thead className="border-b text-left text-xs text-muted-foreground"><tr>
+        <th scope="col" className="w-[34%] px-5 py-2.5 font-medium">Dự án</th>
+        <th scope="col" className="px-3 py-2.5 font-medium">Trạng thái</th>
+        <th scope="col" className="px-3 py-2.5 font-medium">Quản lý</th>
+        <th scope="col" className="w-[34%] px-3 py-2.5 font-medium">Công việc</th>
+        <th scope="col" className="px-5 py-2.5 font-medium">Ngày tạo</th>
+      </tr></thead>
+      <tbody>{projects.map(p => <tr key={p.id} className="border-b align-top last:border-0 hover:bg-muted/20">
+        <td className="px-5 py-3"><Link href={`/projects/${p.id}`} className="flex items-start gap-2 font-medium hover:text-primary hover:underline">
+          <span className="mt-1.5 h-2 w-2 shrink-0 rounded-full" style={{ backgroundColor: p.color }} aria-hidden /><span className="break-words">{p.name}</span>
+        </Link></td>
+        <td className="px-3 py-3"><ProjectStatusBadge status={p.status} /></td>
+        <td className="whitespace-nowrap px-3 py-3">{p.owner ?? <span className="text-muted-foreground">Chưa có</span>}</td>
+        <td className="px-3 py-3">{p.next ? <>
+          <p className="text-xs text-muted-foreground">{p.taskCount} công việc · việc tiếp theo:</p>
+          <button onClick={() => onOpen(p.next!.id)} className="text-left font-medium hover:text-primary hover:underline">{p.next.title}</button>
+          <p className="text-xs text-muted-foreground">{[p.next.startDate && `Bắt đầu ${zonedText(p.next.startDate)}`, p.next.dueDate && `Deadline ${zonedText(p.next.dueDate)}`].filter(Boolean).join(" · ")}</p>
+        </> : <p className="text-amber-700 dark:text-amber-300">Chưa có công việc <Link href={`/projects/${p.id}`} className="ml-1 text-xs font-medium text-primary hover:underline">Thêm công việc</Link></p>}</td>
+        <td className="whitespace-nowrap px-5 py-3 tabular-nums">{zonedText(p.createdAt)}</td>
+      </tr>)}</tbody>
+    </table>
   </div>;
 }
 

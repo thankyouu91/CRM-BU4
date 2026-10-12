@@ -29,6 +29,7 @@ const CHAT_SYSTEM = [
   "- Chỉ đề xuất thay đổi khi người dùng yêu cầu hoặc đồng ý (ví dụ “tạo dự án…”, “cập nhật…”, “nhập các hợp đồng trong file”). Câu hỏi chỉ để hỏi thì trả lời, không đề xuất.",
   "- Trước khi cập nhật, tra cứu để lấy đúng id; không bịa id. Giao việc: tìm người bằng find_users. Nếu có nhiều kết quả khớp hoặc không chắc, hỏi lại người dùng.",
   "- Khi tạo nhiều mục liên quan trong cùng câu trả lời (dự án → hạng mục → công việc, hoặc dự án → hợp đồng), đặt ref cho mục mới (ví dụ ref \"duan1\") và dùng \"ref:duan1\" ở trường id của các đề xuất sau. Gọi theo thứ tự: mục cha trước, mục con sau.",
+  "- Báo cáo tuần ở Trung tâm báo cáo tính theo công việc (ngày bắt đầu, deadline, ngày hoàn thành). Khi tạo dự án mà dữ liệu có đầu việc, đề xuất luôn hạng mục và công việc kèm ngày. Nếu chỉ tạo dự án, nói rõ dự án sẽ nằm ở mục “Dự án chưa có việc trong 3 tuần” của báo cáo cho tới khi có công việc.",
   "- Chỉ điền giá trị có căn cứ (lời người dùng, file đính kèm, dữ liệu tra cứu). Thiếu thông tin bắt buộc (tên, ngày thực hiện, giá trị hợp đồng) thì hỏi lại, không suy đoán. Ngày dạng YYYY-MM-DD; số tiền là số nguyên VND. Không có công cụ xoá.",
   "- Nếu một đề xuất bị báo lỗi, đọc lý do và sửa hoặc giải thích cho người dùng (ví dụ thiếu quyền).",
   "- Trong lịch sử, dòng “[Kết quả áp dụng đề xuất: …]” cho biết thay đổi nào đã được áp dụng và id mới; dòng “[… chưa áp dụng …]” nghĩa là dữ liệu chưa đổi.",

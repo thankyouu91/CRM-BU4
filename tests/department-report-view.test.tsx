@@ -34,9 +34,35 @@ it("renders all three weeks and suppresses stale rows and exports while changing
 
 it("exports every section with explicit text cells and matching scope", () => {
   const sheets = departmentWorkbook(fixture(), "Dự án được chọn");
-  expect(sheets.map(s => s.sheet)).toEqual(["Tuần trước", "Tuần này", "Tuần tới", "Chưa có deadline", "Kiểm tra ngày hoàn thành"]);
+  expect(sheets.map(s => s.sheet)).toEqual(["Tuần trước", "Tuần này", "Tuần tới", "Dự án chưa có việc", "Chưa có deadline", "Kiểm tra ngày hoàn thành"]);
   expect(sheets[1].data[1][0].value).toContain("Dự án được chọn");
   const title = sheets[1].data.flat().find(c => c.value === "=Nội dung từ file")!;
   expect(title.type).toBe(String);
   expect(sheets[1].data.flat().some(c => c.value === "Chưa phân công")).toBe(true);
+});
+
+it("lists projects without work in the three weeks, on screen and in the export", () => {
+  const report = buildDepartmentReport([], workPeriodFromKey("WEEK", "2026-W42")!, null, new Date("2026-10-14T05:00:00Z"), [
+    { id: "ai", name: "IES Pearson", color: "#2a78d6", status: "COMPLETED", createdAt: "2026-10-12T03:30:00Z", owner: { name: "Long" }, _count: { tasks: 0 }, tasks: [] },
+    { id: "far", name: "Đào tạo", color: "#1baf7a", status: "ACTIVE", createdAt: "2026-09-01T00:00:00Z", owner: { name: "Bình" }, _count: { tasks: 2 }, tasks: [{ id: "t9", title: "Nghiệm thu", startDate: "2026-12-01T00:00:00Z", dueDate: "2026-12-15T00:00:00Z" }] },
+  ]);
+  render(<DepartmentReportView initial={report} projects={[]} />);
+  const section = screen.getByRole("region", { name: "Dự án chưa có việc trong 3 tuần" });
+  expect(section.textContent).toContain("IES Pearson");
+  expect(section.textContent).toContain("Hoàn thành");
+  expect(section.textContent).toContain("Chưa có công việc");
+  expect(section.textContent).toContain("Deadline 15/12/2026");
+  expect(screen.getByRole("link", { name: "2 dự án chưa có việc trong 3 tuần này" }).getAttribute("href")).toBe("#report-projects");
+  expect(screen.getAllByRole("link", { name: /IES Pearson/ })[0].getAttribute("href")).toBe("/projects/ai");
+  const sheet = departmentWorkbook(report, "Toàn bộ").find(s => s.sheet === "Dự án chưa có việc")!;
+  const values = sheet.data.slice(5).map(row => row.map(c => c.value));
+  expect(values).toEqual([
+    ["Đào tạo", "Đang thực hiện", "Bình", "2", "Nghiệm thu", "01/12/2026", "15/12/2026", "01/09/2026"],
+    ["IES Pearson", "Hoàn thành", "Long", "0", "Chưa có công việc", "", "", "12/10/2026"],
+  ]);
+});
+
+it("shows no projects section when every project has work in the report", () => {
+  render(<DepartmentReportView initial={fixture()} projects={[]} />);
+  expect(screen.queryByRole("region", { name: "Dự án chưa có việc trong 3 tuần" })).toBeNull();
 });

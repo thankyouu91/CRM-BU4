@@ -61,6 +61,12 @@ Chỉ người có quyền **Hợp đồng & chi phí** thấy mục này (quả
 
 *Kế hoạch đến hôm nay* = phần thời gian đã trôi qua giữa ngày bắt đầu và hạn hoàn thành (giả định công việc tiến triển đều). So sánh với tiến độ thực tế: chậm không quá 10 điểm là **Đúng tiến độ**, 10–25 điểm là **Có rủi ro**, hơn 25 điểm là **Chậm tiến độ**, qua hạn mà chưa xong là **Trễ hạn**. *Đạt KH* = thực tế ÷ kế hoạch. Hạng mục lớn tính cả công việc của các hạng mục con; hạng mục chưa có ngày bắt đầu dùng ngày bắt đầu của hạng mục lớn hoặc của dự án (`lib/schedule.ts`).
 
+### Báo cáo công việc phòng (Trung tâm báo cáo)
+
+Màn hình mặc định của *Trung tâm báo cáo*: tuần trước (kết quả, tồn đọng), tuần này (việc phải làm) và tuần tới (kế hoạch), tính theo **công việc** trong mọi dự án bạn được xem (`lib/department-report.ts`). Xuất Excel gửi sếp có đủ các mục.
+
+- **Dự án chưa có việc trong 3 tuần:** dự án mới tạo chưa có công việc (ví dụ dự án do Trợ lý AI tạo), hoặc dự án mà việc còn lại bắt đầu và đến hạn sau tuần tới, được liệt kê riêng kèm trạng thái, quản lý và việc tiếp theo, để không dự án nào bị sót. Thêm công việc có deadline thì dự án chuyển vào các tuần tương ứng. Dự án đã xong hết việc hoặc đã huỷ không liệt kê.
+
 ### Báo cáo công việc tuần / tháng
 
 *Công việc của tôi* → tab **Báo cáo tuần / tháng**, chọn **Tuần** (thứ Hai 00:00 → Chủ nhật 23:59, số tuần ISO, ví dụ “Tuần 41 · 05/10 – 11/10/2026”) hoặc **Tháng**, chuyển kỳ trước / sau. Ranh giới kỳ tính theo `APP_TIMEZONE` (`lib/work-report.ts`).

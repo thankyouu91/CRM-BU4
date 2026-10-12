@@ -104,6 +104,17 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)("PostgreSQL transactions", () =>
       expect(ids).not.toContain(parent.id);
       expect(ids).not.toContain(secret.id);
       expect((await departmentReport(viewer, workPeriodOf("WEEK"), hidden.id)).counts.currentOpen).toBe(0);
+      // A visible project with no task yet is listed, never one the viewer cannot see.
+      const empty = await db.project.create({ data: { name: "Empty", ownerId: userId, status: "COMPLETED" } });
+      const later = await db.project.create({ data: { name: "Later", ownerId: userId } });
+      const far = await db.task.create({ data: { title: "Far", projectId: later.id, createdById: userId, startDate: new Date(Date.now() + 60 * 86400000), dueDate: new Date(Date.now() + 70 * 86400000) } });
+      await db.project.create({ data: { name: "Hidden empty", ownerId: outsider } });
+      const listed = (await departmentReport(viewer, workPeriodOf("WEEK"), null)).projectsWithoutWork;
+      expect(listed.map(p => p.id)).toEqual(expect.arrayContaining([empty.id, later.id]));
+      expect(listed.map(p => p.id)).not.toContain(projectId);
+      expect(listed.map(p => p.name)).not.toContain("Hidden empty");
+      expect(listed.find(p => p.id === empty.id)).toMatchObject({ taskCount: 0, next: null, status: "COMPLETED", owner: "Integration" });
+      expect(listed.find(p => p.id === later.id)).toMatchObject({ taskCount: 1, next: { id: far.id, title: "Far" } });
     } finally {
       await db.project.deleteMany({ where: { ownerId: outsider } });
       await db.user.delete({ where: { id: outsider } });

@@ -15,6 +15,19 @@ export interface DepartmentUpdate {
   id: string; content: string; createdAt: string; progress: number; author: string;
 }
 export interface DepartmentRow { task: DepartmentTask; updates: DepartmentUpdate[] }
+export interface DepartmentProjectSource {
+  id: string; name: string; color: string; status: string; createdAt: Date | string;
+  owner: { name: string } | null;
+  _count: { tasks: number };
+  /** The open leaf task with the nearest deadline, if any. */
+  tasks: { id: string; title: string; startDate: Date | string | null; dueDate: Date | string | null }[];
+}
+/** A project in scope with no row in the report: no tasks yet, or its open work lies beyond next week. */
+export interface DepartmentProject {
+  id: string; name: string; color: string; status: string; owner: string | null; createdAt: string;
+  taskCount: number;
+  next: { id: string; title: string; startDate: string | null; dueDate: string | null } | null;
+}
 export interface DepartmentBucket { id: string; label: string; rows: DepartmentRow[] }
 export interface DepartmentSection {
   id: "previous" | "current" | "next";
@@ -29,6 +42,7 @@ export interface DepartmentReport {
   sections: DepartmentSection[];
   unscheduled: DepartmentTask[];
   missingCompletion: DepartmentTask[];
+  projectsWithoutWork: DepartmentProject[];
   counts: { previousDone: number; previousOutstanding: number; currentOpen: number; currentDone: number; carryover: number; nextPlanned: number; blocked: number };
 }
 
@@ -38,7 +52,7 @@ const compareTasks = (a: DepartmentTask, b: DepartmentTask) =>
   (a.dueDate ? new Date(a.dueDate).getTime() : Infinity) - (b.dueDate ? new Date(b.dueDate).getTime() : Infinity) || a.title.localeCompare(b.title, "vi");
 
 /** A live report, never a reconstruction of historical status. Only leaf tasks enter this builder. */
-export function buildDepartmentReport(sources: DepartmentTaskSource[], period: WorkPeriod, projectId: string | null, now = new Date()): DepartmentReport {
+export function buildDepartmentReport(sources: DepartmentTaskSource[], period: WorkPeriod, projectId: string | null, now = new Date(), projects: DepartmentProjectSource[] = []): DepartmentReport {
   const previous = shiftWorkPeriod(period, -1);
   const next = shiftWorkPeriod(period, 1);
   const bucket = (id: string, label: string): DepartmentBucket => ({ id, label, rows: [] });
@@ -106,9 +120,22 @@ export function buildDepartmentReport(sources: DepartmentTaskSource[], period: W
   for (const section of sections) for (const b of section.buckets) b.rows.sort((a, b) => compareTasks(a.task, b.task));
   unscheduled.sort(compareTasks);
   missingCompletion.sort(compareTasks);
+  // The report counts tasks, so a project without any (a new one, often) would vanish from it.
+  const shown = new Set([...sections.flatMap(s => s.buckets.flatMap(b => b.rows)).map(r => r.task.project.id), ...unscheduled.map(t => t.project.id), ...missingCompletion.map(t => t.project.id)]);
+  const existedBy = Math.min(period.end.getTime(), now.getTime());
+  const iso = (value: Date | string | null) => value === null ? null : new Date(value).toISOString();
+  const projectsWithoutWork: DepartmentProject[] = projects
+    .filter(p => p.status !== "CANCELLED" && (!projectId || p.id === projectId) && new Date(p.createdAt).getTime() <= existedBy && !shown.has(p.id)
+      // Finished work only: nothing left to report on.
+      && (p._count.tasks === 0 || p.tasks.length > 0))
+    .map(p => ({
+      id: p.id, name: p.name, color: p.color, status: p.status, owner: p.owner?.name ?? null, createdAt: new Date(p.createdAt).toISOString(), taskCount: p._count.tasks,
+      next: p.tasks[0] ? { id: p.tasks[0].id, title: p.tasks[0].title, startDate: iso(p.tasks[0].startDate), dueDate: iso(p.tasks[0].dueDate) } : null,
+    }))
+    .sort((a, b) => a.name.localeCompare(b.name, "vi"));
   const count = (index: number, id: string) => sections[index].buckets.find(b => b.id === id)!.rows.length;
   return {
-    asOf: now.toISOString(), week: period.key, projectId, sections, unscheduled, missingCompletion,
+    asOf: now.toISOString(), week: period.key, projectId, sections, unscheduled, missingCompletion, projectsWithoutWork,
     counts: {
       previousDone: count(0, "completed"), previousOutstanding: count(0, "outstanding"),
       currentOpen: sections[1].buckets.filter(b => b.id !== "completed").reduce((n, b) => n + b.rows.length, 0),
