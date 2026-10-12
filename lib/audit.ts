@@ -1,3 +1,4 @@
+import { AsyncLocalStorage } from "node:async_hooks";
 import { headers } from "next/headers";
 import type { Prisma } from "@prisma/client";
 import { prisma } from "./prisma";
@@ -26,12 +27,20 @@ async function clientIp(): Promise<string | null> {
 }
 
 /**
+ * Set while the AI chat's approved changes run (app/api/ai/actions), so the log entries
+ * the normal routes write say the change came through the AI assistant.
+ */
+export const auditVia = new AsyncLocalStorage<{ via: "ai" }>();
+
+/**
  * Record one action in the audit log. Logging must never break the action
  * itself, so failures are reported to the Worker log and swallowed.
  * Call it after the change succeeded.
  */
 export async function audit(actor: AuditActor, entry: AuditEntry): Promise<void> {
   try {
+    const via = auditVia.getStore()?.via;
+    const details = via ? { ...(entry.details && typeof entry.details === "object" && !Array.isArray(entry.details) ? entry.details : entry.details === undefined ? {} : { value: entry.details }), via } : entry.details;
     await prisma.auditLog.create({
       data: {
         actorId: actor.id ?? null,
@@ -39,8 +48,8 @@ export async function audit(actor: AuditActor, entry: AuditEntry): Promise<void>
         action: entry.action,
         entityType: entry.entityType,
         entityId: entry.entityId ?? null,
-        summary: entry.summary.slice(0, 500),
-        details: entry.details === undefined ? undefined : (JSON.parse(JSON.stringify(entry.details, (_k, v) => (typeof v === "bigint" ? Number(v) : v))) as Prisma.InputJsonValue),
+        summary: (via ? `${entry.summary} · qua Trợ lý AI` : entry.summary).slice(0, 500),
+        details: details === undefined ? undefined : (JSON.parse(JSON.stringify(details, (_k, v) => (typeof v === "bigint" ? Number(v) : v))) as Prisma.InputJsonValue),
         ip: await clientIp(),
       },
     });

@@ -11,7 +11,7 @@ import { Select, Textarea } from "@/components/ui/input";
 import { Markdown } from "@/components/markdown";
 import { DeckActions } from "@/components/deck/export-actions";
 import { PeriodFilter, defaultPeriod, type PeriodState } from "@/components/reports/period-filter";
-import { api, ApiError } from "@/lib/client";
+import { api, ApiError, clearApiCache } from "@/lib/client";
 import { parseEvents } from "@/lib/ai-stream";
 import { parseDate, resolvePeriod } from "@/lib/period";
 import { buildOutlineDeck, makeDeckMeta, parseOutline } from "@/lib/deck-model";
@@ -32,6 +32,8 @@ import type { BuiltInAi } from "./ai-view";
 import { AiFileInput } from "@/components/ai/file-input";
 import type { AiAttachment } from "@/lib/ai-attachments";
 import type { AiIntake } from "@/lib/ai-intake";
+import { actionsNote, type AgentAction, type AgentActionResult } from "@/lib/ai-actions";
+import { ActionsCard } from "@/components/ai/actions-card";
 
 const IntakeReview = dynamic(() => import("@/components/ai/intake-review").then(m => m.IntakeReview), { ssr: false });
 
@@ -45,6 +47,17 @@ interface ChatMessage {
   /** Assistant only: e.g. an attached file was too large and only part of it was sent. */
   notice?: string;
   files?: string[];
+  /** Assistant only: changes Claude proposed; applied only when the person says so. */
+  actions?: AgentAction[];
+  actionResults?: AgentActionResult[];
+  actionsDismissed?: boolean;
+}
+
+/** The answer as the next questions see it: with what became of its proposals. */
+function forHistory(m: ChatMessage): ChatMessage {
+  if (m.role !== "assistant" || !m.actions?.length) return m;
+  const note = actionsNote(m.actions, m.actionResults ?? null, !!m.actionsDismissed);
+  return { ...m, content: `${m.content.slice(0, Math.max(0, CHAT_MAX_CHARS - note.length))}${note}` };
 }
 
 interface ChatSettings {
@@ -109,6 +122,31 @@ export function ChatView({
   const [attachments, setAttachments] = useState<AiAttachment[]>([]);
   const [reading, setReading] = useState(false);
   const [intakes, setIntakes] = useState<Record<string, AiIntake>>({});
+  const [applyingFor, setApplyingFor] = useState<string | null>(null);
+
+  // Runs the chosen proposals of one answer, in their order, with the person's permissions.
+  const applyActions = async (messageId: string, ids: string[]) => {
+    const message = messages.find((m) => m.id === messageId);
+    const chosen = (message?.actions ?? []).filter((a) => ids.includes(a.id));
+    if (!chosen.length || applyingFor) return;
+    setApplyingFor(messageId);
+    try {
+      const { results } = await api<{ results: AgentActionResult[] }>("/api/ai/actions", {
+        method: "POST",
+        body: { actions: chosen.map((a) => ({ id: a.id, tool: a.tool, input: a.input })) },
+      });
+      setMessages((all) => all.map((m) => (m.id === messageId ? { ...m, actionResults: results } : m)));
+      // Project, task and contract screens fetch fresh data next time they open.
+      clearApiCache();
+      const ok = results.filter((r) => r.ok).length;
+      if (ok === results.length) toast.success(`Đã áp dụng ${ok} thay đổi`);
+      else toast.error(`Đã áp dụng ${ok}/${results.length} thay đổi; xem lỗi ở từng mục`);
+    } catch (e) {
+      toast.error(e instanceof ApiError ? e.message : "Không áp dụng được thay đổi");
+    } finally {
+      setApplyingFor(null);
+    }
+  };
   const [createdProjects, setCreatedProjects] = useState<typeof projects>([]);
   const abortRef = useRef<AbortController | null>(null);
   const listRef = useRef<HTMLDivElement>(null);
@@ -180,7 +218,7 @@ export function ChatView({
       }
       const userMsg: ChatMessage = { id: newId(), role: "user", content: text.slice(0, CHAT_MAX_CHARS), files: attachments.map(f => f.name) };
       const reply: ChatMessage = { id: newId(), role: "assistant", content: "", status: "streaming" };
-      const history = chatHistoryForApi(base);
+      const history = chatHistoryForApi(base.map(forHistory));
       setMessages([...base, userMsg, reply]);
       setInput("");
       setBusy(true);
@@ -189,6 +227,7 @@ export function ChatView({
       const update = (patch: Partial<ChatMessage>) => setMessages((all) => all.map((m) => (m.id === reply.id ? { ...m, ...patch } : m)));
       let answer = "";
       let notice = "";
+      let actions: AgentAction[] = [];
       try {
         const p = settings.period;
         const res = await fetch("/api/ai/chat", {
@@ -223,7 +262,10 @@ export function ChatView({
           const { events, rest } = parseEvents(buffer);
           buffer = rest;
           for (const e of events) {
-            if (e.t === "notice") {
+            if (e.t === "action") {
+              actions = [...actions, e.action];
+              update({ actions });
+            } else if (e.t === "notice") {
               notice = notice ? `${notice}\n${e.message}` : e.message;
               update({ notice });
             } else if (e.t === "text") {
@@ -475,7 +517,7 @@ export function ChatView({
                       {m.content ? (
                         m.status === "error" && !m.content.includes("\n") ? <p className="text-danger">{m.content}</p> : <Markdown text={m.content} />
                       ) : m.status !== "streaming" ? (
-                        <p className="text-muted-foreground">Đã dừng trước khi Claude trả lời.</p>
+                        !m.actions?.length && <p className="text-muted-foreground">Đã dừng trước khi Claude trả lời.</p>
                       ) : (
                         <span className="inline-flex items-center gap-1 text-muted-foreground">
                           <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-current [animation-delay:-0.3s]" />
@@ -485,6 +527,17 @@ export function ChatView({
                         </span>
                       )}
                     </div>
+                    {!!m.actions?.length && (
+                      <ActionsCard
+                        actions={m.actions}
+                        results={m.actionResults}
+                        dismissed={m.actionsDismissed}
+                        pending={m.status === "streaming"}
+                        applying={applyingFor === m.id}
+                        onApply={(ids) => void applyActions(m.id, ids)}
+                        onDismiss={() => setMessages((all) => all.map((x) => (x.id === m.id ? { ...x, actionsDismissed: true } : x)))}
+                      />
+                    )}
                     {intakes[m.id] && <IntakeReview result={intakes[m.id]} projects={[...projects, ...createdProjects.filter(p => !projects.some(x => x.id === p.id))]} canProject={canProject} canFinance={canFinance} onProjectCreated={p => setCreatedProjects(all => [...all.filter(x => x.id !== p.id), p])} />}
                     {m.status !== "streaming" && m.content && (
                       <div className="mt-1.5 flex flex-wrap items-center gap-1 text-xs text-muted-foreground">

@@ -6,6 +6,14 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
+/**
+ * Dates are shown in the business time zone on the server and in the browser alike
+ * (the same value as APP_TIMEZONE in lib/period.ts; the browser has no APP_TIMEZONE and
+ * uses the default). Without it a Worker, which runs in UTC, shows a start date entered as
+ * midnight in Vietnam as the day before, and the page fails to hydrate.
+ */
+const DISPLAY_TIMEZONE = process.env.APP_TIMEZONE || "Asia/Ho_Chi_Minh";
+
 /** Format a date for display (vi-VN). Returns "" for null/undefined. */
 export function formatDate(
   date: Date | string | null | undefined,
@@ -14,7 +22,7 @@ export function formatDate(
   if (!date) return "";
   const d = typeof date === "string" ? new Date(date) : date;
   if (Number.isNaN(d.getTime())) return "";
-  return new Intl.DateTimeFormat("vi-VN", opts).format(d);
+  return new Intl.DateTimeFormat("vi-VN", { timeZone: DISPLAY_TIMEZONE, ...opts }).format(d);
 }
 
 /** Short day/month, e.g. "07/10" (Intl's vi-VN pattern would give "07-10"). */
@@ -22,7 +30,7 @@ export function formatShortDate(date: Date | string | null | undefined): string 
   if (!date) return "";
   const d = typeof date === "string" ? new Date(date) : date;
   if (Number.isNaN(d.getTime())) return "";
-  return `${String(d.getDate()).padStart(2, "0")}/${String(d.getMonth() + 1).padStart(2, "0")}`;
+  return new Intl.DateTimeFormat("en-GB", { day: "2-digit", month: "2-digit", timeZone: DISPLAY_TIMEZONE }).format(d);
 }
 
 export function formatDateTime(date: Date | string | null | undefined): string {
