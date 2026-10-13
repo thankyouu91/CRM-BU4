@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import dynamic from "next/dynamic";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -100,7 +100,20 @@ export function ProjectWorkspace({
   const [tab, setTabState] = useState<Tab>(initialTab && TABS.includes(initialTab) && (initialTab !== "finance" || canFinance) ? initialTab : "tasks");
   const [view, setView] = useState<"list" | "kanban">("list");
   const [filters, setFilters] = useState<TaskFilters>({ mine: false, hideDone: false });
-  const [openTask, setOpenTask] = useState<string | null>(params.get("task"));
+  const taskParam = params.get("task");
+  const [openTask, setOpenTask] = useState<string | null>(taskParam);
+  // ?task=<id> (links from quick search) opens that task, also when this project is already on screen.
+  useEffect(() => {
+    if (taskParam) setOpenTask(taskParam);
+  }, [taskParam]);
+  const closeTask = () => {
+    setOpenTask(null);
+    const sp = new URLSearchParams(window.location.search);
+    if (!sp.has("task")) return;
+    sp.delete("task");
+    const qs = sp.toString();
+    window.history.replaceState(null, "", qs ? `?${qs}` : window.location.pathname);
+  };
   const [creating, setCreating] = useState(false);
   const [categoryModal, setCategoryModal] = useState<{ open: boolean; category: ProjectCategory | null; parentId?: string | null }>({
     open: false,
@@ -321,7 +334,7 @@ export function ProjectWorkspace({
       {tab === "notes" && <NotesPanel projectId={p.id} meId={meId} canManage={canManage} />}
       {tab === "members" && <MembersPanel project={p} canManage={canManage} onEditMembers={() => setEditingProject(true)} onChanged={reload} />}
 
-      <TaskDrawer taskId={openTask} onClose={() => setOpenTask(null)} send={send} />
+      <TaskDrawer taskId={openTask} onClose={closeTask} send={send} />
       <MountOnOpen open={creating}>
         <TaskCreateModal
           open={creating}

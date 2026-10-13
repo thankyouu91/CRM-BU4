@@ -113,6 +113,15 @@ Từ **15:00 thứ Sáu** đến hết Chủ nhật nhắc báo cáo của tuầ
 - **Xuất:** Excel cho từng báo cáo và **In / Lưu PDF** (bản in ẩn menu, nút bấm, luôn nền sáng).
 - Dữ liệu mẫu: Bùi Ngọc Lan đã gửi báo cáo tuần trước (có dòng thay đổi so với lúc gửi), Phạm Thu Dung đã gửi tuần này (Trần Thị Bình đã xem), Hoàng Văn Em đang soạn nháp tuần này.
 
+### Tìm kiếm nhanh (Ctrl+K)
+
+Bấm **Ctrl K** (⌘ K trên Mac) ở bất kỳ trang nào, kể cả khi đang gõ trong một ô nhập, hoặc nút **Tìm kiếm…** trên thanh đầu trang (trên điện thoại là biểu tượng kính lúp).
+
+- **Tìm gì:** dự án, công việc (theo tên), hợp đồng (mã, tên, đối tác; chỉ người có quyền *Hợp đồng & chi phí*) và nhân sự đang hoạt động (tên, chức danh); mỗi nhóm tối đa 6 kết quả, khớp ở đầu tên hoặc đầu một từ xếp trước, sau đó tới mục mới cập nhật. Dự án và công việc theo đúng quyền xem dự án. Chưa gõ gì thì hiện lối tắt tới các trang; gõ vào thì các trang khớp nằm ở nhóm *Trang*.
+- **Không cần gõ dấu:** “bao cao” ra “Báo cáo”, “dao tao” ra “Đào tạo”, chữ hoa hay thường đều được. Database so khớp bằng `translate()` của Postgres với bảng chữ có dấu trong `lib/search.ts` (không cần extension `unaccent`); `%`, `_`, `\` trong từ khoá được hiểu theo nghĩa đen.
+- **Bàn phím:** ↑ ↓ chọn, Home / End về đầu / cuối, Enter mở, Esc đóng. Công việc mở trang dự án kèm chi tiết công việc (`/projects/<id>?task=<id>`); hợp đồng và nhân sự mở trang tương ứng, lọc sẵn theo mã hợp đồng / tên (`?q=`).
+- Mã nguồn: `app/api/search` (2–100 ký tự), `lib/search-queries.ts`, `components/layout/command-palette.tsx`.
+
 ### Trợ lý AI tích hợp (Claude API)
 
 Quản trị viên vào *Cài đặt → Trợ lý AI (Claude API)* (`/settings#ai`) để mọi người bấm **Viết bằng AI** trên trang *Trợ lý AI*: báo cáo được viết và hiện dần ngay trên trang, không phải sao chép sang Claude.ai.

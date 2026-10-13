@@ -154,10 +154,10 @@ const GROUPS = [
 type FileFilter = "" | "missing" | "completed-missing" | "has";
 const isCompletedProject = (c: ContractDto) => c.project?.status === "COMPLETED";
 
-export function ContractsView({ projects, initial }: { projects: ProjectOption[]; initial?: ListResponse }) {
+export function ContractsView({ projects, initial, initialQuery = "" }: { projects: ProjectOption[]; initial?: ListResponse; initialQuery?: string }) {
   const [period, setPeriod] = useState<PeriodState>(defaultPeriod("month"));
-  const [all, setAll] = useState(false);
-  const [q, setQ] = useState("");
+  const [all, setAll] = useState(!!initialQuery);
+  const [q, setQ] = useState(initialQuery);
   const [status, setStatus] = useState<"" | ContractStatusKey>("");
   // "" = all, "none" = not linked to a project, otherwise a project id.
   const [projectFilter, setProjectFilter] = useState("");

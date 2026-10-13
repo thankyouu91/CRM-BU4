@@ -10,7 +10,7 @@ import { ContractsView } from "./contracts-view";
 
 export const metadata = { title: "Hợp đồng & chi phí" };
 
-export default async function ContractsPage() {
+export default async function ContractsPage({ searchParams }: { searchParams: Promise<{ q?: string | string[] }> }) {
   const user = (await getCurrentUser())!;
   if (!hasPermission(user, "FINANCE_MANAGE")) {
     return (
@@ -26,14 +26,16 @@ export default async function ContractsPage() {
       </div>
     );
   }
-  // The default list (this month) is sent with the page.
+  // The list is sent with the page: this month, or every contract filtered by ?q= (links from quick search).
+  const { q } = await searchParams;
+  const query = typeof q === "string" ? q.trim().slice(0, 100) : "";
   const [projects, initial] = await Promise.all([
     prisma.project.findMany({
       where: projectVisibilityWhere(user),
       orderBy: { name: "asc" },
       select: { id: true, name: true, color: true },
     }),
-    contractList(new URLSearchParams({ period: "month" })),
+    contractList(new URLSearchParams(query ? { all: "1" } : { period: "month" })),
   ]);
-  return <ContractsView projects={projects} initial={asJson(initial)} />;
+  return <ContractsView key={query} projects={projects} initial={asJson(initial)} initialQuery={query} />;
 }
