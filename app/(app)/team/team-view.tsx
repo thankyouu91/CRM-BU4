@@ -467,9 +467,9 @@ function ResetPasswordModal({ member, onClose, onDone }: { member: Member; onClo
   );
 }
 
-export function TeamView({ actor }: { actor: Actor }) {
+export function TeamView({ actor, initialQuery = "" }: { actor: Actor; initialQuery?: string }) {
   const { data, loading, reload } = useApi<{ users: Member[] }>("/api/users");
-  const [q, setQ] = useState("");
+  const [q, setQ] = useState(initialQuery);
   const [role, setRole] = useState<"ALL" | RoleKey>("ALL");
   const [creating, setCreating] = useState(false);
   const [editing, setEditing] = useState<Member | null>(null);

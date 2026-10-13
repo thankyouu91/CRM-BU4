@@ -121,6 +121,58 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)("PostgreSQL transactions", () =>
     }
   });
 
+  it("quick search ignores accents and wildcards and never returns a project the viewer cannot see", async () => {
+    const { quickSearch } = await import("../lib/search-queries");
+    const tag = randomUUID().slice(0, 8);
+    const outsider = `test-${randomUUID()}`;
+    const retired = `test-${randomUUID()}`;
+    await db.user.createMany({ data: [
+      { id: outsider, email: `${outsider}@example.test`, name: "Other", jobTitle: `Kế toán ${tag}`, passwordHash: "test-only" },
+      { id: retired, email: `${retired}@example.test`, name: "Retired", jobTitle: `Kế toán ${tag}`, passwordHash: "test-only", active: false },
+    ] });
+    try {
+      const own = await db.project.create({ data: { name: `Báo cáo ${tag}`, ownerId: userId } });
+      const shared = await db.project.create({ data: { name: `ĐÀO TẠO ${tag}`, ownerId: outsider, members: { create: { userId, role: "VIEWER" } } } });
+      const hidden = await db.project.create({ data: { name: `Báo cáo ${tag} bí mật`, ownerId: outsider } });
+      const task = await db.task.create({ data: { title: `Lập báo cáo ${tag} quý`, projectId: shared.id, createdById: outsider, assigneeId: outsider, dueDate: new Date() } });
+      const secret = await db.task.create({ data: { title: `Báo cáo ${tag} riêng`, projectId: hidden.id, createdById: outsider } });
+      const contract = await db.contract.create({ data: { code: `HĐ-${tag}`, name: "Đào tạo", value: 0, performedAt: new Date(), createdById: userId } });
+      const viewer = { id: userId, role: "MEMBER", permissions: [] } as unknown as CurrentUser;
+      const ids = (rows: { id: string }[]) => rows.map((r) => r.id);
+
+      const found = await quickSearch(viewer, `bao cao ${tag}`);
+      expect(ids(found.projects)).toEqual([own.id]);
+      expect(found.tasks).toEqual([expect.objectContaining({ id: task.id, assignee: "Other", status: "TODO", project: { id: shared.id, name: shared.name, color: shared.color } })]);
+      expect(found.tasks[0].dueDate).toBeInstanceOf(Date);
+      expect(found).not.toHaveProperty("contracts");
+      expect(ids((await quickSearch(viewer, `dao tao ${tag}`)).projects)).toEqual([shared.id]); // membership, uppercase, accents
+      expect((await quickSearch(viewer, `ke toan ${tag}`)).people).toEqual([{ id: outsider, name: "Other", jobTitle: `Kế toán ${tag}`, email: `${outsider}@example.test`, avatarColor: "#6366f1" }]);
+
+      const all = { ...viewer, permissions: ["PROJECT_VIEW_ALL", "FINANCE_MANAGE"] } as CurrentUser;
+      const everything = await quickSearch(all, `BÁO CÁO ${tag}`);
+      expect(ids(everything.projects).sort()).toEqual([own.id, hidden.id].sort());
+      expect(ids(everything.tasks).sort()).toEqual([task.id, secret.id].sort());
+      expect(ids((await quickSearch(all, `hd-${tag}`)).contracts!)).toEqual([contract.id]);
+
+      // LIKE wildcards and backslashes in the term match literally.
+      const literal = await Promise.all([`Tỷ lệ 50% ${tag}`, `Tỷ lệ 500 ${tag}`, `a_b ${tag}`, `axb ${tag}`, `C:\\dir ${tag}`].map((name) => db.project.create({ data: { name, ownerId: userId } })));
+      expect(ids((await quickSearch(viewer, `50% ${tag}`)).projects)).toEqual([literal[0].id]);
+      expect(ids((await quickSearch(viewer, `a_b ${tag}`)).projects)).toEqual([literal[2].id]);
+      expect(ids((await quickSearch(viewer, `c:\\dir ${tag}`)).projects)).toEqual([literal[4].id]);
+
+      // Start and word-start matches come first, then the most recently updated.
+      const rank = randomUUID().slice(0, 8).replace(/^\d/, "r");
+      const at = (minutesAgo: number) => new Date(Date.now() - minutesAgo * 60_000);
+      const start = await db.project.create({ data: { name: `${rank} alpha`, ownerId: userId, updatedAt: at(30) } });
+      const word = await db.project.create({ data: { name: `beta ${rank}`, ownerId: userId, updatedAt: at(20) } });
+      const inner = await db.project.create({ data: { name: `gamma${rank}`, ownerId: userId, updatedAt: at(10) } });
+      expect(ids((await quickSearch(viewer, rank)).projects)).toEqual([word.id, start.id, inner.id]);
+    } finally {
+      await db.project.deleteMany({ where: { ownerId: outsider } });
+      await db.user.deleteMany({ where: { id: { in: [outsider, retired] } } });
+    }
+  });
+
   it("serializes two real uploads at the contract file limit", async () => {
     const { storeContractFiles } = await import("../lib/contract-file-service");
     const contract = await db.contract.create({ data: { name: "Upload race", value: 0, performedAt: new Date(), createdById: userId } });

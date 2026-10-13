@@ -26,6 +26,7 @@ import { toast } from "sonner";
 import { Avatar } from "@/components/ui/avatar";
 import { RoleBadge } from "@/components/ui/badge";
 import { ThemeToggle } from "./theme-toggle";
+import { CommandPalette } from "./command-palette";
 import type { CurrentUser } from "@/lib/session";
 import { clearApiCache } from "@/lib/client";
 import { cn } from "@/lib/utils";
@@ -315,6 +316,7 @@ export function AppShell({
             {collapsed ? <PanelLeftOpen className="h-5 w-5" /> : <PanelLeftClose className="h-5 w-5" />}
           </button>
           <div className="flex-1" />
+          <CommandPalette user={user} />
           <ThemeToggle />
           <UserMenu user={user} />
         </header>
