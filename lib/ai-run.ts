@@ -7,7 +7,7 @@ import type Anthropic from "@anthropic-ai/sdk";
 import { getCloudflareContext } from "@opennextjs/cloudflare";
 import { isWorkers } from "./prisma";
 import { audit } from "./audit";
-import { anthropicClient, describeAnthropicError, type AiRuntime } from "./ai-settings";
+import { anthropicClient, describeAnthropicError, releaseAiUse, type AiRuntime } from "./ai-settings";
 import { encodeEvent, type AiStreamEvent } from "./ai-stream";
 import type { AuditAction } from "./audit-actions";
 import type { AgentAction } from "./ai-actions";
@@ -56,7 +56,8 @@ export function streamClaudeAnswer(r: ClaudeStreamRequest): Response {
   const open = (messages: Anthropic.Beta.BetaMessageParam[]) =>
     client.beta.messages.stream({
       model: r.runtime.model,
-      max_tokens: 16000,
+      // A whole project plan (up to MAX_AGENT_ACTIONS proposals) can take more room.
+      max_tokens: r.tools ? 32000 : 16000,
       output_config: { effort: r.effort },
       system: r.system,
       messages,
@@ -162,8 +163,9 @@ export function streamClaudeAnswer(r: ClaudeStreamRequest): Response {
         await record("aborted").catch((e) => console.error("[ai] audit failed", e));
       } else {
         console.error("[ai] generation failed", err);
-        // Counted only when Claude had started answering.
+        // Counted only when Claude had started answering; otherwise the reserved use is given back.
         if (usage().inputTokens) await record("error").catch((e) => console.error("[ai] audit failed", e));
+        else await releaseAiUse(r.actor.id);
         send({ t: "error", message: describeAnthropicError(err) });
       }
     } finally {

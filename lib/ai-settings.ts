@@ -7,6 +7,7 @@ import type { Prisma } from "@prisma/client";
 import { prisma } from "./prisma";
 import { openSecret, sealSecret } from "./secret-box";
 import { resolvePeriod } from "./period";
+import { zonedDay } from "./work-report";
 import { DEFAULT_AI_DAILY_LIMIT, DEFAULT_AI_MODEL, estimateCostUsd, isAiModel, keyHint, type AiModelId } from "./ai-models";
 
 const SETTING_KEY = "ai";
@@ -156,6 +157,32 @@ const AI_USE_ACTIONS = ["ai.generate", "ai.chat"];
 export async function aiUsedToday(userId: string): Promise<number> {
   const { from } = resolvePeriod("day");
   return prisma.auditLog.count({ where: { action: { in: AI_USE_ACTIONS }, actorId: userId, createdAt: { gte: from } } });
+}
+
+/**
+ * Take one of today's AI uses for this person before calling Claude. The counter row is
+ * updated atomically, so requests sent at the same moment cannot pass the limit
+ * together. Returns the uses before this one, or null when none is left. The audit log
+ * (finished answers) seeds a new day's counter, so uses before this counter existed count.
+ */
+export async function reserveAiUse(userId: string, limit: number): Promise<number | null> {
+  const day = zonedDay(new Date());
+  const seed = await aiUsedToday(userId);
+  const rows = await prisma.$queryRaw<{ count: number }[]>`
+    INSERT INTO "AiQuota" ("userId", "day", "count")
+    SELECT ${userId}, ${day}, ${seed + 1}::int WHERE ${seed}::int < ${limit}::int
+    ON CONFLICT ("userId", "day") DO UPDATE SET "count" = "AiQuota"."count" + 1
+    WHERE "AiQuota"."count" < ${limit}::int
+    RETURNING "count"`;
+  return rows.length ? Number(rows[0].count) - 1 : null;
+}
+
+/** Give back a use whose request failed before Claude answered anything. */
+export async function releaseAiUse(userId: string): Promise<void> {
+  const day = zonedDay(new Date());
+  await prisma.$executeRaw`UPDATE "AiQuota" SET "count" = GREATEST("count" - 1, 0) WHERE "userId" = ${userId} AND "day" = ${day}`.catch((err) =>
+    console.error("[ai] could not release a use", err),
+  );
 }
 
 export interface AiUsage {

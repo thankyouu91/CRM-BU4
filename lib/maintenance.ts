@@ -5,12 +5,16 @@
 //     month, monthly/YYYY-MM.json.gz (kept 12 months). Contract PDF bytes are not
 //     in it: they live in their own R2 bucket (only legacy Postgres copies are skipped).
 //     Restore with scripts/restore-backup.mjs.
-//  2. Audit log retention: entries older than AUDIT_RETENTION_DAYS are deleted.
+//  2. Retention: audit entries older than AUDIT_RETENTION_DAYS, notifications older than
+//     NOTIFICATION_RETENTION_DAYS and AI day counters older than a week are deleted.
 //
 // Uses `pg` directly (no Prisma) so the cron path stays small and does not load the Next.js app.
 
 import { Client } from "pg";
 import { AUDIT_RETENTION_DAYS } from "./audit-actions";
+
+/** Days a notification is kept (lib/notifications.ts shows the latest in the bell). */
+export const NOTIFICATION_RETENTION_DAYS = 90;
 
 /** The subset of the R2 binding used here. */
 export interface BackupBucket {
@@ -46,29 +50,41 @@ async function gzip(text: string): Promise<Uint8Array> {
   return new Uint8Array(await new Response(stream).arrayBuffer());
 }
 
-/** Every table as JSON text, built as text so BIGINT money values keep full precision. */
-async function dumpDatabase(db: Client, createdAt: Date): Promise<{ json: string; counts: Record<string, number> }> {
-  const tables = await db.query<{ name: string }>(
-    "SELECT table_name AS name FROM information_schema.tables WHERE table_schema = 'public' AND table_type = 'BASE TABLE' ORDER BY table_name",
-  );
-  const parts: string[] = [];
-  const counts: Record<string, number> = {};
-  const skipped: string[] = [];
-  for (const { name } of tables.rows) {
-    if (SKIP_TABLES.has(name)) continue;
-    const ident = `"${name.replace(/"/g, '""')}"`;
-    try {
-      const r = await db.query<{ rows: string; n: number }>(`SELECT coalesce(json_agg(t), '[]'::json)::text AS rows, count(*)::int AS n FROM ${ident} t`);
-      counts[name] = r.rows[0].n;
-      parts.push(`${JSON.stringify(name)}:${r.rows[0].rows}`);
-    } catch (err) {
-      // e.g. a table the app role may not read (_prisma_migrations on some setups)
-      skipped.push(name);
-      console.warn("[maintenance] backup skipped table", name, (err as Error).message);
+/**
+ * Every table as JSON text, built as text so BIGINT money values keep full precision.
+ * All tables are read from one snapshot (REPEATABLE READ), so a row written during the
+ * backup cannot leave a child without its parent and the file always restores.
+ */
+export async function dumpDatabase(db: Client, createdAt: Date): Promise<{ json: string; counts: Record<string, number> }> {
+  await db.query("BEGIN ISOLATION LEVEL REPEATABLE READ READ ONLY");
+  try {
+    const tables = await db.query<{ name: string }>(
+      "SELECT table_name AS name FROM information_schema.tables WHERE table_schema = 'public' AND table_type = 'BASE TABLE' ORDER BY table_name",
+    );
+    const parts: string[] = [];
+    const counts: Record<string, number> = {};
+    const skipped: string[] = [];
+    for (const { name } of tables.rows) {
+      if (SKIP_TABLES.has(name)) continue;
+      const ident = `"${name.replace(/"/g, '""')}"`;
+      await db.query("SAVEPOINT t");
+      try {
+        const r = await db.query<{ rows: string; n: number }>(`SELECT coalesce(json_agg(t), '[]'::json)::text AS rows, count(*)::int AS n FROM ${ident} t`);
+        counts[name] = r.rows[0].n;
+        parts.push(`${JSON.stringify(name)}:${r.rows[0].rows}`);
+        await db.query("RELEASE SAVEPOINT t");
+      } catch (err) {
+        // e.g. a table the app role may not read (_prisma_migrations on some setups)
+        await db.query("ROLLBACK TO SAVEPOINT t");
+        skipped.push(name);
+        console.warn("[maintenance] backup skipped table", name, (err as Error).message);
+      }
     }
+    const meta = { format: "crm-backup", version: 1, createdAt: createdAt.toISOString(), counts, skipped };
+    return { json: `{"meta":${JSON.stringify(meta)},"tables":{${parts.join(",")}}}`, counts };
+  } finally {
+    await db.query("COMMIT").catch(() => undefined);
   }
-  const meta = { format: "crm-backup", version: 1, createdAt: createdAt.toISOString(), counts, skipped };
-  return { json: `{"meta":${JSON.stringify(meta)},"tables":{${parts.join(",")}}}`, counts };
 }
 
 async function prune(bucket: BackupBucket, prefix: string, keep: number): Promise<number> {
@@ -113,6 +129,10 @@ export async function runMaintenance(env: MaintenanceEnv, now = new Date()): Pro
 
     const removed = await db.query(`DELETE FROM "AuditLog" WHERE "createdAt" < now() - make_interval(days => $1)`, [AUDIT_RETENTION_DAYS]);
     console.log(`[maintenance] audit log: removed ${removed.rowCount ?? 0} entries older than ${AUDIT_RETENTION_DAYS} days`);
+    // The bell shows the latest notices; old ones and past days' AI counters are not needed.
+    const notices = await db.query(`DELETE FROM "Notification" WHERE "createdAt" < now() - make_interval(days => $1)`, [NOTIFICATION_RETENTION_DAYS]);
+    const quotas = await db.query(`DELETE FROM "AiQuota" WHERE "day" < $1`, [localDay(new Date(now.getTime() - 7 * 86_400_000), env.APP_TIMEZONE)]);
+    console.log(`[maintenance] removed ${notices.rowCount ?? 0} old notifications, ${quotas.rowCount ?? 0} old AI counters`);
   } finally {
     ending = true;
     await db.end();

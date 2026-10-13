@@ -348,6 +348,8 @@ async function main() {
     console.log("SEED_FORCE=1: deleting existing data…");
     await prisma.$transaction([
       prisma.appSetting.deleteMany(),
+      prisma.notification.deleteMany(),
+      prisma.aiQuota.deleteMany(),
       prisma.workReport.deleteMany(),
       prisma.contract.deleteMany(),
       prisma.taskReport.deleteMany(),

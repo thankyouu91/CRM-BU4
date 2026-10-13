@@ -26,13 +26,14 @@ import { toast } from "sonner";
 import { Avatar } from "@/components/ui/avatar";
 import { RoleBadge } from "@/components/ui/badge";
 import { ThemeToggle } from "./theme-toggle";
+import { NotificationBell } from "./notification-bell";
 import type { CurrentUser } from "@/lib/session";
 import { clearApiCache } from "@/lib/client";
 import { cn } from "@/lib/utils";
 import { hasPermission, type PermissionKey } from "@/lib/permissions";
 import { SIDEBAR_COOKIE } from "@/lib/constants";
 
-type NavItem = { href: string; label: string; icon: typeof Users; badge?: boolean; permission?: PermissionKey };
+type NavItem = { href: string; label: string; icon: typeof Users; badge?: "inbox" | "report"; permission?: PermissionKey };
 
 // Grouped by what people come to do; settings sit apart at the bottom.
 const NAV: { title: string; items: NavItem[] }[] = [
@@ -41,14 +42,14 @@ const NAV: { title: string; items: NavItem[] }[] = [
     items: [
       { href: "/dashboard", label: "Tổng quan", icon: LayoutDashboard },
       { href: "/projects", label: "Dự án", icon: FolderKanban },
-      { href: "/tasks", label: "Công việc của tôi", icon: ListChecks },
+      { href: "/tasks", label: "Công việc của tôi", icon: ListChecks, badge: "report" },
       { href: "/ai", label: "Trợ lý AI", icon: Sparkles },
     ],
   },
   {
     title: "Báo cáo",
     items: [
-      { href: "/inbox", label: "Hộp báo cáo", icon: Inbox, badge: true },
+      { href: "/inbox", label: "Hộp báo cáo", icon: Inbox, badge: "inbox" },
       { href: "/reports", label: "Trung tâm báo cáo", icon: ChartColumn },
     ],
   },
@@ -78,7 +79,7 @@ function Brand({ collapsed }: { collapsed?: boolean }) {
   );
 }
 
-function NavLink({ item, active, collapsed, count, onNavigate }: { item: NavItem; active: boolean; collapsed?: boolean; count: number; onNavigate?: () => void }) {
+function NavLink({ item, active, collapsed, count, dot, onNavigate }: { item: NavItem; active: boolean; collapsed?: boolean; count: number; dot?: string; onNavigate?: () => void }) {
   const Icon = item.icon;
   const shown = count > 99 ? "99+" : String(count);
   return (
@@ -103,7 +104,11 @@ function NavLink({ item, active, collapsed, count, onNavigate }: { item: NavItem
       <span className={cn("relative flex-1", collapsed && "sr-only")}>
         {item.label}
         {collapsed && count > 0 && `, ${shown} chưa duyệt`}
+        {dot && <span className="sr-only">, {dot}</span>}
       </span>
+      {dot && !count && (
+        <span aria-hidden title={dot} className={cn("relative h-2 w-2 rounded-full bg-amber-400", collapsed && "absolute right-2 top-2")} />
+      )}
       {count > 0 && (
         <span
           aria-hidden={collapsed}
@@ -128,7 +133,7 @@ function NavLink({ item, active, collapsed, count, onNavigate }: { item: NavItem
   );
 }
 
-function SidebarNav({ user, pendingReports, collapsed, onNavigate }: { user: CurrentUser; pendingReports: number; collapsed?: boolean; onNavigate?: () => void }) {
+function SidebarNav({ user, pendingReports, reportOwed, collapsed, onNavigate }: { user: CurrentUser; pendingReports: number; reportOwed?: string | null; collapsed?: boolean; onNavigate?: () => void }) {
   const pathname = usePathname();
   const isActive = (href: string) => pathname === href || pathname.startsWith(`${href}/`);
   const allowed = (item: NavItem) => !item.permission || hasPermission(user, item.permission);
@@ -145,7 +150,15 @@ function SidebarNav({ user, pendingReports, collapsed, onNavigate }: { user: Cur
             {collapsed && i > 0 && <div aria-hidden className="mx-auto mb-4 h-px w-6 bg-white/10" />}
             <div className="space-y-1">
               {items.map((item) => (
-                <NavLink key={item.href} item={item} active={isActive(item.href)} collapsed={collapsed} count={item.badge ? pendingReports : 0} onNavigate={onNavigate} />
+                <NavLink
+                  key={item.href}
+                  item={item}
+                  active={isActive(item.href)}
+                  collapsed={collapsed}
+                  count={item.badge === "inbox" ? pendingReports : 0}
+                  dot={item.badge === "report" && reportOwed ? `chưa gửi báo cáo ${reportOwed}` : undefined}
+                  onNavigate={onNavigate}
+                />
               ))}
             </div>
           </div>
@@ -231,11 +244,14 @@ function UserMenu({ user }: { user: CurrentUser }) {
 export function AppShell({
   user,
   pendingReports,
+  reportOwed = null,
   initialCollapsed = false,
   children,
 }: {
   user: CurrentUser;
   pendingReports: number;
+  /** "tuần 42" when this person's weekly report is due and not sent. */
+  reportOwed?: string | null;
   /** The sidebar is a narrow icon bar (from the cookie, so the server renders it the same). */
   initialCollapsed?: boolean;
   children: React.ReactNode;
@@ -262,7 +278,7 @@ export function AppShell({
         )}
       >
         <Brand collapsed={collapsed} />
-        <SidebarNav user={user} pendingReports={pendingReports} collapsed={collapsed} />
+        <SidebarNav user={user} pendingReports={pendingReports} reportOwed={reportOwed} collapsed={collapsed} />
       </aside>
 
       {/* Mobile sidebar */}
@@ -289,7 +305,7 @@ export function AppShell({
                   <X className="h-5 w-5" />
                 </button>
               </div>
-              <SidebarNav user={user} pendingReports={pendingReports} onNavigate={() => setMobileOpen(false)} />
+              <SidebarNav user={user} pendingReports={pendingReports} reportOwed={reportOwed} onNavigate={() => setMobileOpen(false)} />
             </motion.aside>
           </div>
         )}
@@ -315,6 +331,7 @@ export function AppShell({
             {collapsed ? <PanelLeftOpen className="h-5 w-5" /> : <PanelLeftClose className="h-5 w-5" />}
           </button>
           <div className="flex-1" />
+          <NotificationBell />
           <ThemeToggle />
           <UserMenu user={user} />
         </header>

@@ -127,6 +127,8 @@ model User {
   contractFiles   ContractFile[]
   auditLogs       AuditLog[]      @relation("AuditActor")
   settingsChanged AppSetting[]    @relation("SettingUpdater")
+  notifications   Notification[]  @relation("NotificationRecipient")
+  aiQuotas        AiQuota[]
 }
 
 model Project {
@@ -382,4 +384,34 @@ model AppSetting {
   updatedById String?
   updatedBy   User?    @relation("SettingUpdater", fields: [updatedById], references: [id], onDelete: SetNull)
   updatedAt   DateTime @updatedAt
+}
+
+// Thông báo trong ứng dụng (chuông trên thanh trên cùng). Nhắc việc quá hạn,
+// sắp đến hạn và báo cáo tuần được tính trực tiếp, không lưu ở đây.
+model Notification {
+  id        String    @id @default(cuid())
+  userId    String
+  user      User      @relation("NotificationRecipient", fields: [userId], references: [id], onDelete: Cascade)
+  // task.assigned, task_report.reviewed, work_report.reviewed (lib/notifications.ts)
+  type      String
+  title     String
+  body      String?
+  link      String?
+  actorName String?
+  readAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([userId, createdAt])
+}
+
+// Lượt dùng AI trong ngày của từng người: giữ chỗ trước khi gọi Claude, nên các
+// yêu cầu gửi cùng lúc không vượt được giới hạn ngày.
+model AiQuota {
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  // YYYY-MM-DD theo APP_TIMEZONE
+  day    String
+  count  Int    @default(0)
+
+  @@id([userId, day])
 }

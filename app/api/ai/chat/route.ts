@@ -7,7 +7,7 @@ import { parseDate, parsePeriodType, resolvePeriod } from "@/lib/period";
 import { getSummary } from "@/lib/stats";
 import { summaryDataLines } from "@/lib/ai-prompt";
 import { chatStyleInstruction } from "@/lib/ai-chat";
-import { aiUsedToday, getAiRuntime } from "@/lib/ai-settings";
+import { getAiRuntime, reserveAiUse } from "@/lib/ai-settings";
 import { streamClaudeAnswer } from "@/lib/ai-run";
 import { aiChatSchema } from "@/lib/validations";
 import { attachmentContent, readAiJson } from "@/lib/ai-file-content";
@@ -50,10 +50,6 @@ export async function POST(req: NextRequest) {
 
     const runtime = await getAiRuntime();
     if (!runtime) return badRequest("Trợ lý AI tích hợp chưa được bật. Quản trị viên có thể bật trong Cài đặt → Trợ lý AI.");
-    const used = await aiUsedToday(me.id);
-    if (used >= runtime.dailyLimit) {
-      return NextResponse.json({ error: `Bạn đã dùng hết ${runtime.dailyLimit} lượt AI hôm nay. Hãy thử lại vào ngày mai.` }, { status: 429 });
-    }
 
     const projectId = options.projectId || null;
     const system: Anthropic.Beta.BetaTextBlockParam[] = [{ type: "text", text: CHAT_SYSTEM }];
@@ -87,6 +83,11 @@ export async function POST(req: NextRequest) {
     const conversation: Anthropic.Beta.BetaMessageParam[] = messages.map((m, i) =>
       i === messages.length - 1 && content.length ? { role: m.role, content: [...content, { type: "text", text: m.content }] } : m,
     );
+    // Reserved last, so a request refused above does not use one of today's answers.
+    const used = await reserveAiUse(me.id, runtime.dailyLimit);
+    if (used === null) {
+      return NextResponse.json({ error: `Bạn đã dùng hết ${runtime.dailyLimit} lượt AI hôm nay. Hãy thử lại vào ngày mai.` }, { status: 429 });
+    }
     return streamClaudeAnswer({
       actor: { id: me.id, name: me.name },
       runtime,

@@ -3,7 +3,7 @@ import { z } from "zod";
 import { auth, handle, ok, unauthorized } from "@/lib/api";
 import { auditVia } from "@/lib/audit";
 import { actionRequest, ToolError, type ActionRequest } from "@/lib/ai-agent";
-import { MAX_AGENT_ACTIONS, WRITE_TOOLS, type AgentActionResult, type WriteTool } from "@/lib/ai-actions";
+import { APPLY_BATCH, WRITE_TOOLS, type AgentActionResult, type WriteTool } from "@/lib/ai-actions";
 import { POST as createProject } from "@/app/api/projects/route";
 import { PATCH as updateProject } from "@/app/api/projects/[id]/route";
 import { POST as createCategory } from "@/app/api/projects/[id]/categories/route";
@@ -42,29 +42,33 @@ const DONE: Record<WriteTool, string> = {
   add_note: "Đã thêm ghi chú",
 };
 
+const REF = /^ref:([A-Za-z0-9_-]{1,40})$/;
+
 const schema = z.object({
   actions: z
     .array(z.object({ id: z.string().min(1).max(100), tool: z.enum(WRITE_TOOLS), input: z.record(z.string(), z.unknown()) }))
     .min(1, "Chưa chọn thay đổi nào")
-    .max(MAX_AGENT_ACTIONS, `Mỗi lần áp dụng tối đa ${MAX_AGENT_ACTIONS} thay đổi`),
+    .max(APPLY_BATCH, `Mỗi lần áp dụng tối đa ${APPLY_BATCH} thay đổi`),
+  /** Items created by earlier batches of the same answer: ref name → id. */
+  refs: z.record(z.string().regex(/^[A-Za-z0-9_-]{1,40}$/), z.string().min(1).max(100)).optional(),
 });
 
-const REF = /^ref:([A-Za-z0-9_-]{1,40})$/;
-
 /**
- * POST /api/ai/actions { actions: [{ id, tool, input }] }
+ * POST /api/ai/actions { actions: [{ id, tool, input }], refs? }
  * Applies changes the AI chat proposed and the person approved, in order, each through
  * the normal API route with the person's own permissions. A later action can use
  * "ref:<name>" for an item an earlier one created. Each result says what happened;
- * a failed action does not undo the ones before it.
+ * a failed action does not undo the ones before it. Larger sets come in batches: each
+ * answer returns `refs` (all names known so far), sent back with the next batch. A ref
+ * only stands for an id; every action still goes through the route's own checks.
  */
 export async function POST(req: NextRequest) {
   return handle(async () => {
     const me = await auth();
     if (!me) return unauthorized();
-    const { actions } = schema.parse(await req.json());
+    const { actions, refs } = schema.parse(await req.json());
 
-    const created = new Map<string, string>();
+    const created = new Map<string, string>(Object.entries(refs ?? {}));
     const results: AgentActionResult[] = [];
     await auditVia.run({ via: "ai" }, async () => {
       for (const action of actions) {
@@ -112,6 +116,6 @@ export async function POST(req: NextRequest) {
         }
       }
     });
-    return ok({ results }, { headers: { "Cache-Control": "private, no-store" } });
+    return ok({ results, refs: Object.fromEntries(created) }, { headers: { "Cache-Control": "private, no-store" } });
   });
 }

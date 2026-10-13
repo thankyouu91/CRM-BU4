@@ -128,6 +128,21 @@ export const updateTaskSchema = z.object({
   dueDate: dateish,
 });
 
+/** POST /api/tasks/bulk: one change applied to many tasks. */
+export const bulkTaskSchema = z.object({
+  ids: z.array(z.string().min(1).max(100)).min(1, "Chưa chọn công việc nào").max(200, "Mỗi lần sửa tối đa 200 công việc"),
+  patch: z
+    .object({
+      assigneeId: z.string().min(1).nullable().optional(),
+      status: taskStatusEnum.optional(),
+      priority: priorityEnum.optional(),
+      startDate: dateish,
+      dueDate: dateish,
+    })
+    .refine((p) => Object.values(p).some((v) => v !== undefined), "Chưa chọn thay đổi nào"),
+});
+export type BulkTaskPatch = Partial<z.infer<typeof bulkTaskSchema>["patch"]>;
+
 export const createReportSchema = z.object({
   content: z.string().min(1, "Nội dung báo cáo không được trống"),
   progress: z.number().int().min(0).max(100).default(0),

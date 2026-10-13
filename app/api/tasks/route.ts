@@ -6,12 +6,13 @@ import { listTasks, projectMemberIds, withWorkspace } from "@/lib/queries";
 import { resolveTaskState } from "@/lib/task-rules";
 import { createTaskSchema } from "@/lib/validations";
 import { audit } from "@/lib/audit";
+import { assignmentNotices, notify } from "@/lib/notifications";
 
 export async function GET(req: NextRequest) {
   const me = await auth();
   if (!me) return unauthorized();
   const sp = req.nextUrl.searchParams;
-  const tasks = await listTasks(me, { scope: sp.get("scope"), status: sp.get("status"), projectId: sp.get("projectId"), q: sp.get("q"), cursor: sp.get("cursor"), deadline: sp.get("deadline") });
+  const tasks = await listTasks(me, { scope: sp.get("scope"), status: sp.get("status"), projectId: sp.get("projectId"), q: sp.get("q"), cursor: sp.get("cursor"), deadline: sp.get("deadline"), issue: sp.get("issue") });
   return ok(tasks);
 }
 
@@ -78,6 +79,10 @@ export async function POST(req: NextRequest) {
         details: { projectId: task.projectId, parentId: task.parentId, assigneeId: task.assigneeId, status: task.status },
       },
     );
+    if (task.assigneeId && task.assigneeId !== me.id) {
+      const project = await prisma.project.findUnique({ where: { id: task.projectId }, select: { name: true } });
+      await notify(me, assignmentNotices([{ ...task, projectName: project?.name ?? "" }]));
+    }
     return created(await withWorkspace(req, me, data.projectId, { task }));
   });
 }

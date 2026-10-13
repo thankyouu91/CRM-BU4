@@ -111,7 +111,7 @@ export function DashboardView({ initial, userName }: { initial: Summary; userNam
         </div>
 
         {/* Trend + status */}
-        <div className="grid gap-6 xl:grid-cols-3">
+        <div className="grid grid-cols-1 gap-6 xl:grid-cols-3">
           <ChartCard
             id="trend"
             className="xl:col-span-2"
@@ -164,7 +164,7 @@ export function DashboardView({ initial, userName }: { initial: Summary; userNam
         </div>
 
         {/* Projects + workload */}
-        <div className="grid gap-6 xl:grid-cols-2">
+        <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
           <Card>
             <CardHeader
               title="Tiến độ dự án"
@@ -240,7 +240,7 @@ export function DashboardView({ initial, userName }: { initial: Summary; userNam
         </div>
 
         {/* Deadlines + reports */}
-        <div className="grid gap-6 xl:grid-cols-2">
+        <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
           <Card>
             <CardHeader title="Hạn chót sắp tới" description="Công việc chưa xong đến hạn trong 14 ngày" />
             <CardBody className="pt-3">

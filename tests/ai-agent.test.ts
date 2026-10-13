@@ -188,11 +188,23 @@ describe("applying approved changes", () => {
     mock.auth.mockResolvedValue({ id: "me", name: "Me", role: "ADMIN", permissions: [] });
     for (const fn of Object.values(mock.handlers)) fn.mockReset();
   });
-  const apply = async (actions: unknown[]) => {
+  const apply = async (actions: unknown[], refs?: Record<string, string>) => {
     const { POST } = await import("../app/api/ai/actions/route");
-    const res = await POST(new NextRequest("http://local/api/ai/actions", { method: "POST", body: JSON.stringify({ actions }) }));
-    return { status: res.status, body: (await res.json()) as { results: { id: string; ok: boolean; message: string; link?: string; entityId?: string }[] } };
+    const res = await POST(new NextRequest("http://local/api/ai/actions", { method: "POST", body: JSON.stringify({ actions, refs }) }));
+    return { status: res.status, body: (await res.json()) as { results: { id: string; ok: boolean; message: string; link?: string; entityId?: string }[]; refs: Record<string, string> } };
   };
+
+  it("continues a large set in batches: refs from earlier batches resolve, and the answer carries them on", async () => {
+    mock.handlers["tasks"].mockResolvedValue(json(201, { task: { id: "t9", title: "Việc", projectId: "p1" } }));
+    const { body } = await apply([{ id: "a26", tool: "create_task", input: { ref: "t", projectId: "ref:p", title: "Việc" } }], { p: "p1" });
+    expect(body.results[0]).toMatchObject({ ok: true, link: "/projects/p1" });
+    expect(await (mock.handlers["tasks"].mock.calls[0][0] as NextRequest).json()).toEqual({ projectId: "p1", title: "Việc" });
+    expect(body.refs).toEqual({ p: "p1", t: "t9" });
+    // One request holds at most a batch; the chat sends more in turn.
+    const many = Array.from({ length: 26 }, (_, i) => ({ id: `a${i}`, tool: "add_note", input: { projectId: "p1", content: "x" } }));
+    expect((await apply(many)).status).toBe(400);
+    expect((await apply([{ id: "a", tool: "add_note", input: { projectId: "p1", content: "x" } }], { "bad name": "x" })).status).toBe(400);
+  });
 
   it("runs in order through the normal routes, resolving refs to the ids just created", async () => {
     mock.handlers["projects"].mockResolvedValue(json(201, { project: { id: "p1", name: "Dự án A" } }));

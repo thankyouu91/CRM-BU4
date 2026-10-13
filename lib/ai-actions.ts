@@ -18,8 +18,10 @@ export type WriteTool = (typeof WRITE_TOOLS)[number];
 
 export const isWriteTool = (name: string): name is WriteTool => (WRITE_TOOLS as readonly string[]).includes(name);
 
-/** Proposals per chat answer, and actions per apply request. */
-export const MAX_AGENT_ACTIONS = 30;
+/** Proposals per chat answer (a whole project plan fits). */
+export const MAX_AGENT_ACTIONS = 100;
+/** Actions per apply request: the chat sends larger sets in batches, carrying the refs. */
+export const APPLY_BATCH = 25;
 
 /** One proposed change, as shown in the chat. `input` is Claude's tool input, re-validated on apply. */
 export interface AgentAction {

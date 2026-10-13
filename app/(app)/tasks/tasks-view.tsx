@@ -4,7 +4,7 @@ import { Pagination } from "@/components/ui/pagination";
 
 import { useMemo, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { CalendarClock, CheckCircle2, ChevronRight, Clock, GitBranch, ListChecks, Loader2, Search, TriangleAlert } from "lucide-react";
+import { CalendarClock, CalendarX, CheckCircle2, ChevronRight, Clock, GitBranch, ListChecks, Loader2, Search, TriangleAlert, UserX } from "lucide-react";
 import { toast } from "sonner";
 import { Avatar } from "@/components/ui/avatar";
 import { PriorityBadge, TaskStatusBadge } from "@/components/ui/badge";
@@ -14,6 +14,7 @@ import { KpiTile } from "@/components/kpi";
 import { useTaskMenu } from "@/components/tasks/task-menu";
 import { StatusToggle } from "@/components/tasks/status-toggle";
 import { TaskDrawer } from "@/components/tasks/lazy-task-drawer";
+import { BulkBar } from "@/components/tasks/bulk-bar";
 import { api, ApiError, useApi, useDebouncedValue } from "@/lib/client";
 import { groupBy } from "@/lib/task-tree";
 import { DEADLINE_FILTERS, taskDeadlineBucket, taskDeadlinePeriods, type DeadlineBucket, type DeadlineFilter } from "@/lib/task-deadlines";
@@ -36,7 +37,19 @@ interface Row {
   _count: { subtasks: number; reports: number };
 }
 
-interface TaskPage { tasks: Row[]; total: number; nextCursor: string | null; stats: { open: number; active: number; overdue: number; doneWeek: number }; deadline: DeadlineFilter; asOf: string }
+type Issue = "unassigned" | "nodue" | "overdue";
+interface TaskPage {
+  tasks: Row[]; total: number; nextCursor: string | null;
+  stats: { open: number; active: number; overdue: number; doneWeek: number };
+  issues?: Record<Issue, number>; issue?: Issue | null;
+  deadline: DeadlineFilter; asOf: string;
+}
+
+const ISSUES: { key: Issue; label: string; icon: React.ComponentType<{ className?: string }>; allOnly?: boolean }[] = [
+  { key: "unassigned", label: "Chưa giao người", icon: UserX, allOnly: true },
+  { key: "nodue", label: "Chưa có deadline", icon: CalendarX },
+  { key: "overdue", label: "Quá hạn", icon: TriangleAlert },
+];
 
 type Bucket = DeadlineBucket;
 const BUCKETS: { key: Bucket; label: string; icon: React.ComponentType<{ className?: string }>; tone?: string }[] = [
@@ -48,8 +61,23 @@ const BUCKETS: { key: Bucket; label: string; icon: React.ComponentType<{ classNa
   { key: "done", label: "Đã hoàn thành", icon: CheckCircle2 },
 ];
 
-export function MyTasksView({ canSeeAll, initial, tabs }: { canSeeAll: boolean; initial?: TaskPage; tabs?: React.ReactNode }) {
-  const [scope, setScope] = useState<"mine" | "all">("mine");
+export function MyTasksView({
+  canSeeAll,
+  initial,
+  initialFilter,
+  projects = [],
+  tabs,
+}: {
+  canSeeAll: boolean;
+  initial?: TaskPage;
+  initialFilter?: { scope: "mine" | "all"; issue: Issue | null };
+  projects?: { id: string; name: string }[];
+  tabs?: React.ReactNode;
+}) {
+  const [scope, setScope] = useState<"mine" | "all">(initialFilter?.scope ?? "mine");
+  const [issue, setIssue] = useState<Issue | null>(initialFilter?.issue ?? null);
+  const [projectId, setProjectId] = useState("");
+  const [selected, setSelected] = useState<Set<string>>(new Set());
   const [deadline, setDeadline] = useState<DeadlineFilter>("all");
   const [q, setQ] = useState("");
   const query = useDebouncedValue(q);
@@ -57,14 +85,35 @@ export function MyTasksView({ canSeeAll, initial, tabs }: { canSeeAll: boolean; 
   const [collapsed, setCollapsed] = useState<Set<Bucket>>(new Set(["done"]));
   const [cursors, setCursors] = useState<(string | null)[]>([null]);
   const cursor = cursors[cursors.length - 1];
-  const { data: response, loading, error, reload } = useApi<TaskPage>(q === query ? `/api/tasks?scope=${scope}&q=${encodeURIComponent(query)}&deadline=${deadline}${cursor ? `&cursor=${encodeURIComponent(cursor)}` : ""}` : null, { initial });
+  const filters = `${issue ? `&issue=${issue}` : ""}${projectId ? `&projectId=${projectId}` : ""}`;
+  const { data: response, loading, error, reload } = useApi<TaskPage>(q === query ? `/api/tasks?scope=${scope}&q=${encodeURIComponent(query)}&deadline=${deadline}${filters}${cursor ? `&cursor=${encodeURIComponent(cursor)}` : ""}` : null, { initial });
   // Do not display the previous period's tasks or statistics under the new label.
-  const data = response?.deadline === deadline ? response : null;
+  const data = response?.deadline === deadline && (response.issue ?? null) === issue ? response : null;
   const busy = loading || q !== query;
   const now = useMemo(() => new Date(response?.asOf ?? Date.now()), [response?.asOf]);
   const periods = useMemo(() => taskDeadlinePeriods(now), [now]);
   const period = deadline === "all" ? null : periods[deadline];
-  const selectDeadline = (value: DeadlineFilter) => { setDeadline(value); setCursors([null]); };
+  const restart = () => { setCursors([null]); setSelected(new Set()); };
+  const selectDeadline = (value: DeadlineFilter) => { setDeadline(value); restart(); };
+  const selectIssue = (value: Issue | null) => {
+    setIssue(value);
+    // Unassigned work is never "mine": look across projects.
+    if (value === "unassigned") setScope("all");
+    restart();
+    const sp = new URLSearchParams(window.location.search);
+    if (value) sp.set("issue", value);
+    else sp.delete("issue");
+    window.history.replaceState(null, "", sp.size ? `?${sp}` : window.location.pathname);
+  };
+  const flipSelected = (ids: string[], on: boolean) =>
+    setSelected((prev) => {
+      const next = new Set(prev);
+      for (const id of ids) {
+        if (on) next.add(id);
+        else next.delete(id);
+      }
+      return next;
+    });
 
   const tasks = useMemo(() => data?.tasks ?? [], [data]);
   const grouped = useMemo(() => {
@@ -107,7 +156,7 @@ export function MyTasksView({ canSeeAll, initial, tabs }: { canSeeAll: boolean; 
             <Segmented
               layoutId="task-scope"
               value={scope}
-              onChange={(value) => { setScope(value); setCursors([null]); }}
+              onChange={(value) => { setScope(value); if (value === "mine" && issue === "unassigned") setIssue(null); restart(); }}
               options={[
                 { value: "mine", label: "Tôi phụ trách" },
                 { value: "all", label: "Tất cả dự án" },
@@ -155,11 +204,48 @@ export function MyTasksView({ canSeeAll, initial, tabs }: { canSeeAll: boolean; 
       <p role="status" className="mb-3 text-sm text-muted-foreground">
         {!data && !error ? "Đang tải công việc…" : data ? `${period ? `${period.label} · ` : ""}${data.total} công việc${period ? " đến hạn trong kỳ" : ""}` : "Không thể tải công việc trong kỳ này."}
       </p>
+      <div role="group" aria-label="Lọc nhanh việc cần bổ sung" className="mb-3 flex flex-wrap items-center gap-2">
+        {ISSUES.filter((i) => !i.allOnly || scope === "all").map((i) => {
+          const n = response?.issues?.[i.key];
+          const Icon = i.icon;
+          const on = issue === i.key;
+          return (
+            <button
+              key={i.key}
+              aria-pressed={on}
+              onClick={() => selectIssue(on ? null : i.key)}
+              className={cn(
+                "flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary",
+                on ? "border-primary/40 bg-primary/10 text-primary" : "bg-card hover:bg-muted",
+                !on && !!n && i.key === "overdue" && "border-danger/30 text-danger",
+              )}
+            >
+              <Icon className="h-3.5 w-3.5" /> {i.label}
+              {n !== undefined && <span className="rounded-full bg-muted px-1.5 tabular-nums text-muted-foreground">{n}</span>}
+            </button>
+          );
+        })}
+        {scope === "all" && projects.length > 0 && (
+          <select
+            aria-label="Lọc theo dự án"
+            value={projectId}
+            onChange={(e) => { setProjectId(e.target.value); restart(); }}
+            className="h-8 max-w-full rounded-full border bg-card px-3 text-xs sm:max-w-xs"
+          >
+            <option value="">Mọi dự án</option>
+            {projects.map((p) => (
+              <option key={p.id} value={p.id}>
+                {p.name}
+              </option>
+            ))}
+          </select>
+        )}
+      </div>
       <div className="relative mb-5 max-w-sm">
         <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
         <input
           value={q}
-          onChange={(e) => { setQ(e.target.value); setCursors([null]); }}
+          onChange={(e) => { setQ(e.target.value); restart(); }}
           placeholder="Tìm công việc…"
           aria-label="Tìm công việc"
           className="h-10 w-full rounded-lg border bg-card pl-9 pr-3 text-sm outline-none focus:border-primary/60 focus:ring-2 focus:ring-primary/20"
@@ -174,9 +260,16 @@ export function MyTasksView({ canSeeAll, initial, tabs }: { canSeeAll: boolean; 
         <div className="rounded-2xl border bg-card">
           <EmptyState
             icon={ListChecks}
-            title={q ? "Không tìm thấy công việc" : period ? "Không có công việc đến hạn trong kỳ này" : "Bạn chưa được giao công việc nào"}
-            description={period ? "Chọn kỳ khác hoặc xem tất cả để tìm công việc có deadline khác và việc chưa có hạn chót." : "Công việc được giao cho bạn sẽ xuất hiện tại đây."}
-            action={period && <button className="text-sm font-medium text-primary hover:underline" onClick={() => selectDeadline("all")}>Xem tất cả công việc</button>}
+            title={issue ? "Không còn việc nào trong mục này" : q ? "Không tìm thấy công việc" : period ? "Không có công việc đến hạn trong kỳ này" : "Bạn chưa được giao công việc nào"}
+            description={
+              issue
+                ? { unassigned: "Mọi công việc chưa xong đều đã có người phụ trách.", nodue: "Mọi công việc chưa xong đều đã có deadline.", overdue: "Không có công việc nào trễ hạn." }[issue]
+                : period ? "Chọn kỳ khác hoặc xem tất cả để tìm công việc có deadline khác và việc chưa có hạn chót." : "Công việc được giao cho bạn sẽ xuất hiện tại đây."
+            }
+            action={
+              issue ? <button className="text-sm font-medium text-primary hover:underline" onClick={() => selectIssue(null)}>Bỏ lọc</button>
+                : period && <button className="text-sm font-medium text-primary hover:underline" onClick={() => selectDeadline("all")}>Xem tất cả công việc</button>
+            }
           />
         </div>
       ) : (
@@ -185,14 +278,27 @@ export function MyTasksView({ canSeeAll, initial, tabs }: { canSeeAll: boolean; 
             const rows = grouped.get(b.key)!;
             const isCollapsed = collapsed.has(b.key);
             const Icon = b.icon;
+            const pickable = rows.filter((t) => t.canReport).map((t) => t.id);
+            const allPicked = pickable.length > 0 && pickable.every((id) => selected.has(id));
             return (
               <section key={b.key} className="overflow-hidden rounded-2xl border bg-card shadow-card">
+                <div className="flex items-center">
+                {pickable.length > 0 && (
+                  <input
+                    type="checkbox"
+                    className="ml-4 h-4 w-4 shrink-0 accent-[rgb(var(--primary))]"
+                    checked={allPicked}
+                    onChange={() => flipSelected(pickable, !allPicked)}
+                    aria-label={`Chọn tất cả ${pickable.length} việc trong nhóm ${b.label}`}
+                  />
+                )}
                 <button onClick={() => flip(b.key)} aria-expanded={!isCollapsed} className="flex w-full items-center gap-2.5 px-4 py-3 text-left hover:bg-muted/40">
                   <ChevronRight className={cn("h-4 w-4 text-muted-foreground transition-transform", !isCollapsed && "rotate-90")} />
                   <Icon className={cn("h-4 w-4", b.tone ?? "text-muted-foreground")} />
                   <span className={cn("font-semibold", b.tone)}>{b.key === "later" && period ? "Sắp đến hạn" : b.label}</span>
                   <span className="rounded-md bg-muted px-1.5 py-0.5 text-[11px] font-semibold text-muted-foreground">{rows.length}</span>
                 </button>
+                </div>
                 <AnimatePresence initial={false}>
                   {!isCollapsed && (
                     <motion.ul initial={{ height: 0 }} animate={{ height: "auto" }} exit={{ height: 0 }} className="overflow-hidden">
@@ -202,8 +308,19 @@ export function MyTasksView({ canSeeAll, initial, tabs }: { canSeeAll: boolean; 
                           tabIndex={0}
                           {...taskMenu.bind(t)}
                           onClick={() => setOpenTask(t.id)}
-                          className="flex cursor-pointer items-center gap-3 border-t px-4 py-3 hover:bg-muted/40"
+                          className={cn("flex cursor-pointer items-center gap-3 border-t px-4 py-3 hover:bg-muted/40", selected.has(t.id) && "bg-primary/[0.04]")}
                         >
+                          <input
+                            type="checkbox"
+                            className="h-4 w-4 shrink-0 accent-[rgb(var(--primary))] disabled:opacity-30"
+                            checked={selected.has(t.id)}
+                            disabled={!t.canReport}
+                            onClick={(e) => e.stopPropagation()}
+                            onKeyDown={(e) => e.stopPropagation()}
+                            onChange={(e) => flipSelected([t.id], e.target.checked)}
+                            aria-label={`Chọn “${t.title}”`}
+                            title={t.canReport ? undefined : "Bạn không có quyền sửa việc này"}
+                          />
                           <StatusToggle status={t.status} disabled={!t.canReport} onToggle={() => toggle(t)} />
                           <div className="min-w-0 flex-1">
                             <p className={cn("truncate text-sm font-medium", t.status === "DONE" && "text-muted-foreground line-through")}>{t.title}</p>
@@ -229,7 +346,7 @@ export function MyTasksView({ canSeeAll, initial, tabs }: { canSeeAll: boolean; 
                           <span className={cn("w-12 text-right text-xs tabular-nums", b.key === "overdue" ? "font-semibold text-danger" : "text-muted-foreground")}>
                             {t.dueDate ? zonedText(t.dueDate, "short") : "—"}
                           </span>
-                          {scope === "all" && (t.assignee ? <Avatar name={t.assignee.name} color={t.assignee.avatarColor} size="xs" /> : <span className="h-6 w-6" />)}
+                          {scope === "all" && (t.assignee ? <Avatar name={t.assignee.name} color={t.assignee.avatarColor} size="xs" /> : <span title="Chưa giao người" className="flex h-6 w-6 items-center justify-center rounded-full border border-dashed text-muted-foreground"><UserX className="h-3 w-3" /></span>)}
                           {taskMenu.button(t)}
                         </li>
                       ))}
@@ -242,6 +359,7 @@ export function MyTasksView({ canSeeAll, initial, tabs }: { canSeeAll: boolean; 
         </div>
       )}
 
+      {selected.size > 0 && <BulkBar ids={[...selected]} onClear={() => setSelected(new Set())} onDone={() => { setSelected(new Set()); void reload(); }} />}
       {error && <p role="alert" className="my-3 text-danger">{error}</p>}
       <Pagination total={data?.total ?? 0} page={cursors.length} busy={busy} hasNext={!!data?.nextCursor} onPrevious={() => setCursors((s) => s.slice(0, -1))} onNext={() => { if (data?.nextCursor) setCursors((s) => [...s, data.nextCursor]); }} />
       <TaskDrawer taskId={openTask} onClose={() => setOpenTask(null)} onChanged={reload} />

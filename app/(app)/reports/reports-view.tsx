@@ -161,7 +161,7 @@ export function ReportsView({
           {data.finance && <FinanceSection finance={data.finance} periodLabel={data.period.label} />}
 
           {/* Charts */}
-          <div className="grid gap-6 xl:grid-cols-3">
+          <div className="grid grid-cols-1 gap-6 xl:grid-cols-3">
             <ChartCard
               id="r-trend"
               className="xl:col-span-2"

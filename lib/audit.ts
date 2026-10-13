@@ -32,6 +32,21 @@ async function clientIp(): Promise<string | null> {
  */
 export const auditVia = new AsyncLocalStorage<{ via: "ai" }>();
 
+function auditRow(actor: AuditActor, entry: AuditEntry, ip: string | null): Prisma.AuditLogCreateManyInput {
+  const via = auditVia.getStore()?.via;
+  const details = via ? { ...(entry.details && typeof entry.details === "object" && !Array.isArray(entry.details) ? entry.details : entry.details === undefined ? {} : { value: entry.details }), via } : entry.details;
+  return {
+    actorId: actor.id ?? null,
+    actorName: actor.name,
+    action: entry.action,
+    entityType: entry.entityType,
+    entityId: entry.entityId ?? null,
+    summary: (via ? `${entry.summary} · qua Trợ lý AI` : entry.summary).slice(0, 500),
+    details: details === undefined ? undefined : (JSON.parse(JSON.stringify(details, (_k, v) => (typeof v === "bigint" ? Number(v) : v))) as Prisma.InputJsonValue),
+    ip,
+  };
+}
+
 /**
  * Record one action in the audit log. Logging must never break the action
  * itself, so failures are reported to the Worker log and swallowed.
@@ -39,22 +54,20 @@ export const auditVia = new AsyncLocalStorage<{ via: "ai" }>();
  */
 export async function audit(actor: AuditActor, entry: AuditEntry): Promise<void> {
   try {
-    const via = auditVia.getStore()?.via;
-    const details = via ? { ...(entry.details && typeof entry.details === "object" && !Array.isArray(entry.details) ? entry.details : entry.details === undefined ? {} : { value: entry.details }), via } : entry.details;
-    await prisma.auditLog.create({
-      data: {
-        actorId: actor.id ?? null,
-        actorName: actor.name,
-        action: entry.action,
-        entityType: entry.entityType,
-        entityId: entry.entityId ?? null,
-        summary: (via ? `${entry.summary} · qua Trợ lý AI` : entry.summary).slice(0, 500),
-        details: details === undefined ? undefined : (JSON.parse(JSON.stringify(details, (_k, v) => (typeof v === "bigint" ? Number(v) : v))) as Prisma.InputJsonValue),
-        ip: await clientIp(),
-      },
-    });
+    await prisma.auditLog.create({ data: auditRow(actor, entry, await clientIp()) });
   } catch (err) {
     console.error("[audit] could not record", entry.action, err);
+  }
+}
+
+/** Several entries in one insert (bulk changes), with the same guarantees as audit(). */
+export async function auditMany(actor: AuditActor, entries: AuditEntry[]): Promise<void> {
+  if (!entries.length) return;
+  try {
+    const ip = await clientIp();
+    await prisma.auditLog.createMany({ data: entries.map((e) => auditRow(actor, e, ip)) });
+  } catch (err) {
+    console.error("[audit] could not record", entries[0].action, entries.length, err);
   }
 }
 

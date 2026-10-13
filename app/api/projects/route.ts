@@ -6,6 +6,7 @@ import { listProjects } from "@/lib/queries";
 import { resolveMemberRoles } from "@/lib/project-members";
 import { createProjectSchema } from "@/lib/validations";
 import { audit } from "@/lib/audit";
+import { notify } from "@/lib/notifications";
 
 export async function GET() {
   const me = await auth();
@@ -46,6 +47,9 @@ export async function POST(req: NextRequest) {
         details: { status: project.status, members: roles.size },
       },
     );
+    await notify(me, [...roles.keys()].map((userId) => ({
+      userId, type: "project.member_added" as const, title: `Bạn được thêm vào dự án “${project.name}”`, body: null, link: `/projects/${project.id}`,
+    })));
     return created({ project });
   });
 }

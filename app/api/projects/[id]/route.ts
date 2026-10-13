@@ -8,6 +8,7 @@ import { getProjectDetail, workspaceFor } from "@/lib/queries";
 import { updateProjectSchema } from "@/lib/validations";
 import { PROJECT_ROLE_INFO } from "@/lib/permissions";
 import { audit, changedFields } from "@/lib/audit";
+import { notify } from "@/lib/notifications";
 
 type Ctx = { params: Promise<{ id: string }> };
 
@@ -88,6 +89,9 @@ export async function PATCH(req: NextRequest, ctx: Ctx) {
         });
         const name = (id: string) => people.find((u) => u.id === id)?.name ?? id;
         const roleLabel = (r?: string) => PROJECT_ROLE_INFO[r as keyof typeof PROJECT_ROLE_INFO]?.label ?? r ?? null;
+        await notify(actor, added.map((userId) => ({
+          userId, type: "project.member_added" as const, title: `Bạn được thêm vào dự án “${updated.name}”`, body: null, link: `/projects/${params.id}`,
+        })));
         await audit(actor, {
           action: "project.members_change",
           entityType: "project",

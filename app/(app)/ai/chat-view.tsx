@@ -32,7 +32,7 @@ import type { BuiltInAi } from "./ai-view";
 import { AiFileInput } from "@/components/ai/file-input";
 import type { AiAttachment } from "@/lib/ai-attachments";
 import type { AiIntake } from "@/lib/ai-intake";
-import { actionsNote, type AgentAction, type AgentActionResult } from "@/lib/ai-actions";
+import { actionsNote, APPLY_BATCH, type AgentAction, type AgentActionResult } from "@/lib/ai-actions";
 import { ActionsCard } from "@/components/ai/actions-card";
 
 const IntakeReview = dynamic(() => import("@/components/ai/intake-review").then(m => m.IntakeReview), { ssr: false });
@@ -123,6 +123,7 @@ export function ChatView({
   const [reading, setReading] = useState(false);
   const [intakes, setIntakes] = useState<Record<string, AiIntake>>({});
   const [applyingFor, setApplyingFor] = useState<string | null>(null);
+  const [applyProgress, setApplyProgress] = useState<{ done: number; total: number } | null>(null);
 
   // Runs the chosen proposals of one answer, in their order, with the person's permissions.
   const applyActions = async (messageId: string, ids: string[]) => {
@@ -130,11 +131,28 @@ export function ChatView({
     const chosen = (message?.actions ?? []).filter((a) => ids.includes(a.id));
     if (!chosen.length || applyingFor) return;
     setApplyingFor(messageId);
+    setApplyProgress({ done: 0, total: chosen.length });
+    const results: AgentActionResult[] = [];
+    let refs: Record<string, string> = {};
     try {
-      const { results } = await api<{ results: AgentActionResult[] }>("/api/ai/actions", {
-        method: "POST",
-        body: { actions: chosen.map((a) => ({ id: a.id, tool: a.tool, input: a.input })) },
-      });
+      // In batches, in order; names created by earlier batches go along with the next.
+      for (let i = 0; i < chosen.length; i += APPLY_BATCH) {
+        const batch = chosen.slice(i, i + APPLY_BATCH);
+        try {
+          const r = await api<{ results: AgentActionResult[]; refs?: Record<string, string> }>("/api/ai/actions", {
+            method: "POST",
+            body: { actions: batch.map((a) => ({ id: a.id, tool: a.tool, input: a.input })), refs },
+          });
+          results.push(...r.results);
+          refs = r.refs ?? refs;
+        } catch (e) {
+          // This batch and the rest did not run; what was applied before stays applied.
+          const why = e instanceof ApiError ? e.message : "Không áp dụng được thay đổi";
+          results.push(...chosen.slice(i).map((a) => ({ id: a.id, ok: false, message: why })));
+          break;
+        }
+        setApplyProgress({ done: Math.min(i + APPLY_BATCH, chosen.length), total: chosen.length });
+      }
       setMessages((all) => all.map((m) => (m.id === messageId ? { ...m, actionResults: results } : m)));
       // Project, task and contract screens fetch fresh data next time they open.
       clearApiCache();
@@ -145,6 +163,7 @@ export function ChatView({
       toast.error(e instanceof ApiError ? e.message : "Không áp dụng được thay đổi");
     } finally {
       setApplyingFor(null);
+      setApplyProgress(null);
     }
   };
   const [createdProjects, setCreatedProjects] = useState<typeof projects>([]);
@@ -534,6 +553,7 @@ export function ChatView({
                         dismissed={m.actionsDismissed}
                         pending={m.status === "streaming"}
                         applying={applyingFor === m.id}
+                        progress={applyingFor === m.id ? applyProgress : null}
                         onApply={(ids) => void applyActions(m.id, ids)}
                         onDismiss={() => setMessages((all) => all.map((x) => (x.id === m.id ? { ...x, actionsDismissed: true } : x)))}
                       />

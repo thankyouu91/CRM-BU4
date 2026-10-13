@@ -7,6 +7,7 @@ import { withWorkspace } from "@/lib/queries";
 import { resolveTaskState } from "@/lib/task-rules";
 import { reviewReportSchema } from "@/lib/validations";
 import { audit } from "@/lib/audit";
+import { notify, taskLink } from "@/lib/notifications";
 
 type Ctx = { params: Promise<{ id: string }> };
 
@@ -49,6 +50,14 @@ export async function PATCH(req: NextRequest, ctx: Ctx) {
         details: { taskId: report.taskId, approveTask: !!data.approveTask, reviewNote: data.reviewNote?.trim() || null },
       },
     );
+    const note = data.reviewNote?.trim();
+    await notify(me, [{
+      userId: report.authorId,
+      type: "task_report.reviewed",
+      title: `Báo cáo về “${report.task.title}” đã được duyệt${data.approveTask ? ", công việc được đánh dấu hoàn thành" : ""}`,
+      body: note ? `Nhận xét: ${note}` : null,
+      link: taskLink(report.task.projectId, report.taskId),
+    }]);
     return ok(await withWorkspace(req, me, report.task.projectId, { ok: true }));
   });
 }

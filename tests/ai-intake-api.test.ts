@@ -1,8 +1,8 @@
 import { beforeEach, expect, it, vi } from "vitest";
 import { NextRequest } from "next/server";
-const mock = vi.hoisted(() => ({ auth: vi.fn(), runtime: vi.fn(), used: vi.fn(), create: vi.fn(), audit: vi.fn() }));
+const mock = vi.hoisted(() => ({ auth: vi.fn(), runtime: vi.fn(), used: vi.fn(), release: vi.fn(), create: vi.fn(), audit: vi.fn() }));
 vi.mock("../lib/session", () => ({ getCurrentUser: mock.auth }));
-vi.mock("../lib/ai-settings", () => ({ getAiRuntime: mock.runtime, aiUsedToday: mock.used, anthropicClient: () => ({ beta: { messages: { create: mock.create } } }), describeAnthropicError: () => "AI không phản hồi" }));
+vi.mock("../lib/ai-settings", () => ({ getAiRuntime: mock.runtime, reserveAiUse: mock.used, releaseAiUse: mock.release, anthropicClient: () => ({ beta: { messages: { create: mock.create } } }), describeAnthropicError: () => "AI không phản hồi" }));
 vi.mock("../lib/audit", () => ({ audit: mock.audit }));
 import { POST } from "../app/api/ai/intake/route";
 const body = { attachments: [{ name: "a.txt", data: Buffer.from("Dự án A, hợp đồng 001").toString("base64") }] };
@@ -14,7 +14,8 @@ beforeEach(() => {
 it("requires login, configured AI and remaining quota before any provider call", async () => {
   mock.auth.mockResolvedValueOnce(null); expect((await request()).status).toBe(401);
   mock.runtime.mockResolvedValueOnce(null); expect((await request()).status).toBe(400);
-  mock.used.mockResolvedValueOnce(10); expect((await request()).status).toBe(429);
+  mock.used.mockResolvedValueOnce(null); expect((await request()).status).toBe(429);
+  expect(mock.used).toHaveBeenCalledWith("me", 10);
   expect(mock.create).not.toHaveBeenCalled();
 });
 it("rejects missing and malformed attachments without calling the provider", async () => {
@@ -58,4 +59,13 @@ it("rejects truncated, refused and malformed AI output instead of offering incom
   mock.create.mockResolvedValueOnce({ ...normal, stop_reason: "max_tokens" }); expect((await request()).status).toBe(400);
   mock.create.mockResolvedValueOnce({ ...normal, content: [] }); expect((await request()).status).toBe(400);
   mock.create.mockResolvedValueOnce({ ...normal, content: [{ type: "tool_use", name: "prepare_intake", input: { proposals: "bad" } }] }); expect((await request()).status).toBe(400);
+});
+
+it("gives the reserved use back when Claude answered nothing", async () => {
+  mock.create.mockRejectedValueOnce(new Error("overloaded"));
+  expect((await request()).status).toBe(400);
+  expect(mock.release).toHaveBeenCalledWith("me");
+  mock.release.mockClear();
+  expect((await request()).status).toBe(200);
+  expect(mock.release).not.toHaveBeenCalled();
 });

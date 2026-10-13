@@ -5,7 +5,7 @@ import { aiAttachmentsSchema } from "@/lib/ai-attachments";
 import { attachmentContent, readAiJson } from "@/lib/ai-file-content";
 import { aiIntakeSchema, validateIntake } from "@/lib/ai-intake";
 import { aiModelInfo } from "@/lib/ai-models";
-import { aiUsedToday, anthropicClient, describeAnthropicError, getAiRuntime } from "@/lib/ai-settings";
+import { anthropicClient, describeAnthropicError, getAiRuntime, releaseAiUse, reserveAiUse } from "@/lib/ai-settings";
 import { audit } from "@/lib/audit";
 
 const inputSchema = z.object({ attachments: aiAttachmentsSchema.refine(a => a.length > 0, "Chọn file để trích xuất"), instruction: z.string().max(8000).default("") });
@@ -32,8 +32,8 @@ export async function POST(req: NextRequest) {
     const { attachments, instruction } = inputSchema.parse(await readAiJson(req));
     const runtime = await getAiRuntime();
     if (!runtime) return badRequest("Trợ lý AI chưa được bật. Hãy cấu hình trong Cài đặt → Trợ lý AI.");
-    const used = await aiUsedToday(me.id);
-    if (used >= runtime.dailyLimit) return NextResponse.json({ error: "Bạn đã dùng hết lượt AI hôm nay." }, { status: 429 });
+    const used = await reserveAiUse(me.id, runtime.dailyLimit);
+    if (used === null) return NextResponse.json({ error: "Bạn đã dùng hết lượt AI hôm nay." }, { status: 429 });
     const { blocks: content, notices } = await attachmentContent(attachments);
     try {
       const schema = z.toJSONSchema(aiIntakeSchema);
@@ -73,6 +73,8 @@ export async function POST(req: NextRequest) {
       catch { return badRequest("Kết quả AI chưa đúng định dạng nhập liệu. Hãy thử lại với ít nội dung hơn."); }
       return ok({ ...result, notices, remaining: Math.max(0, runtime.dailyLimit - used - 1) }, { headers: { "Cache-Control": "private, no-store" } });
     } catch (error) {
+      // Claude answered nothing: the reserved use is given back.
+      await releaseAiUse(me.id);
       return badRequest(describeAnthropicError(error));
     }
   });

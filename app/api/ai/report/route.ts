@@ -5,7 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { parseDate, parsePeriodType, resolvePeriod } from "@/lib/period";
 import { getSummary } from "@/lib/stats";
 import { AI_PROMPT_KINDS, buildReportPrompt } from "@/lib/ai-prompt";
-import { aiUsedToday, getAiRuntime } from "@/lib/ai-settings";
+import { getAiRuntime, reserveAiUse } from "@/lib/ai-settings";
 import { streamClaudeAnswer } from "@/lib/ai-run";
 import { aiReportSchema } from "@/lib/validations";
 
@@ -31,10 +31,6 @@ export async function POST(req: NextRequest) {
 
     const runtime = await getAiRuntime();
     if (!runtime) return badRequest("Trợ lý AI tích hợp chưa được bật. Quản trị viên có thể bật trong Cài đặt → Trợ lý AI.");
-    const used = await aiUsedToday(me.id);
-    if (used >= runtime.dailyLimit) {
-      return NextResponse.json({ error: `Bạn đã dùng hết ${runtime.dailyLimit} lượt viết bằng AI hôm nay. Hãy thử lại vào ngày mai.` }, { status: 429 });
-    }
 
     const type = parsePeriodType(input.period);
     const range = resolvePeriod(type, parseDate(input.date ?? null), {
@@ -51,6 +47,11 @@ export async function POST(req: NextRequest) {
 
     const scopeLabel = project ? `Dự án “${project.name}”` : "Toàn bộ dự án";
     const kindLabel = AI_PROMPT_KINDS.find((k) => k.value === input.kind)?.label ?? input.kind;
+    // Reserved last, so a request refused above does not use one of today's answers.
+    const used = await reserveAiUse(me.id, runtime.dailyLimit);
+    if (used === null) {
+      return NextResponse.json({ error: `Bạn đã dùng hết ${runtime.dailyLimit} lượt viết bằng AI hôm nay. Hãy thử lại vào ngày mai.` }, { status: 429 });
+    }
     return streamClaudeAnswer({
       actor: { id: me.id, name: me.name },
       runtime,

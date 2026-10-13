@@ -118,16 +118,25 @@ export type ProjectListItem = Awaited<ReturnType<typeof listProjects>>[number];
 
 const TASK_STATUSES = ["TODO", "IN_PROGRESS", "REVIEW", "DONE", "BLOCKED"] as const;
 
+/** Quick filters for tasks that need fixing (open tasks only). */
+export const TASK_ISSUES = ["unassigned", "nodue", "overdue"] as const;
+export type TaskIssue = (typeof TASK_ISSUES)[number];
+export const parseTaskIssue = (v: string | null | undefined): TaskIssue | null => ((TASK_ISSUES as readonly string[]).includes(v ?? "") ? (v as TaskIssue) : null);
+const issueWhere = (issue: TaskIssue, now: Date): Prisma.TaskWhereInput =>
+  issue === "unassigned" ? { status: { not: "DONE" }, assigneeId: null } : issue === "nodue" ? { status: { not: "DONE" }, dueDate: null } : { status: { not: "DONE" }, dueDate: { lt: now } };
+
 /** Tasks across visible projects (GET /api/tasks and the "Công việc của tôi" page). */
 export async function listTasks(
   user: CurrentUser,
-  { scope, status, projectId, q, cursor, deadline: deadlineParam }: { scope?: string | null; status?: string | null; projectId?: string | null; q?: string | null; cursor?: string | null; deadline?: string | null },
+  { scope, status, projectId, q, cursor, deadline: deadlineParam, issue: issueParam }: { scope?: string | null; status?: string | null; projectId?: string | null; q?: string | null; cursor?: string | null; deadline?: string | null; issue?: string | null },
 ) {
   const query = q?.trim();
   const now = new Date();
   const deadline = parseDeadlineFilter(deadlineParam);
+  const issue = parseTaskIssue(issueParam);
   const period = deadline === "all" ? null : taskDeadlinePeriods(now)[deadline];
-  const where: Prisma.TaskWhereInput = {
+  // Everything but the quick filter: its counts show what each filter would find.
+  const base: Prisma.TaskWhereInput = {
     project: projectVisibilityWhere(user),
     ...((scope ?? "mine") === "mine" ? { assigneeId: user.id } : {}),
     ...(status && (TASK_STATUSES as readonly string[]).includes(status) ? { status: status as (typeof TASK_STATUSES)[number] } : {}),
@@ -135,8 +144,10 @@ export async function listTasks(
     ...(query ? { title: { contains: query, mode: "insensitive" } } : {}),
     ...(period ? { dueDate: { gte: period.start, lte: period.end } } : {}),
   };
+  const where: Prisma.TaskWhereInput = issue ? { AND: [base, issueWhere(issue, now)] } : base;
   const count = (extra: Prisma.TaskWhereInput) => prisma.task.count({ where: { AND: [where, extra] } });
-  const [rows, counts, overdue, doneWeek] = await Promise.all([
+  const countBase = (extra: Prisma.TaskWhereInput) => prisma.task.count({ where: { AND: [base, extra] } });
+  const [rows, counts, overdue, doneWeek, unassigned, noDue, overdueAll] = await Promise.all([
     prisma.task.findMany({
       where,
       orderBy: [{ dueDate: { sort: "asc", nulls: "last" } }, { createdAt: "desc" }, { id: "asc" }],
@@ -153,6 +164,9 @@ export async function listTasks(
     prisma.task.groupBy({ by: ["status"], where, _count: { _all: true } }),
     count({ status: { not: "DONE" }, dueDate: { lt: now } }),
     count({ status: "DONE", completedAt: { gte: new Date(now.getTime() - 7 * 86_400_000) } }),
+    countBase(issueWhere("unassigned", now)),
+    countBase(issueWhere("nodue", now)),
+    countBase(issueWhere("overdue", now)),
   ]);
   const totals = new Map(counts.map((row) => [row.status, row._count._all]));
   const total = counts.reduce((sum, row) => sum + row._count._all, 0);
@@ -161,9 +175,13 @@ export async function listTasks(
   const tasks = rows.slice(0, 100).map(({ project, ...task }) => {
     const { ownerId, members, ...brief } = project;
     const access = accessFrom(user, ownerId, members[0]?.role ?? null);
-    return { ...task, project: brief, canReport: taskRights(user, access, task).report };
+    const rights = taskRights(user, access, task);
+    return { ...task, project: brief, canReport: rights.report, canManage: rights.manage };
   });
-  return { tasks, nextCursor: rows.length > 100 ? rows[99].id : null, total, stats: { open, active, overdue, doneWeek }, deadline, asOf: now.toISOString() };
+  return {
+    tasks, nextCursor: rows.length > 100 ? rows[99].id : null, total, stats: { open, active, overdue, doneWeek },
+    issues: { unassigned, nodue: noDue, overdue: overdueAll }, issue, deadline, asOf: now.toISOString(),
+  };
 }
 
 /**

@@ -9,6 +9,7 @@ import { projectMemberIds, withWorkspace } from "@/lib/queries";
 import { resolveTaskState } from "@/lib/task-rules";
 import { updateTaskSchema } from "@/lib/validations";
 import { audit, changedFields } from "@/lib/audit";
+import { assignmentNotices, notify } from "@/lib/notifications";
 
 type Ctx = { params: Promise<{ id: string }> };
 
@@ -128,6 +129,10 @@ export async function PATCH(req: NextRequest, ctx: Ctx) {
           details: changes as Prisma.InputJsonValue,
         },
       );
+    }
+    if (updated.assigneeId && updated.assigneeId !== task.assigneeId && updated.assigneeId !== me.id) {
+      const project = await prisma.project.findUnique({ where: { id: task.projectId }, select: { name: true } });
+      await notify(me, assignmentNotices([{ ...updated, projectName: project?.name ?? "" }]));
     }
     return ok(await withWorkspace(req, me, task.projectId, { task: updated }));
   });

@@ -4,6 +4,7 @@ import { reviewWorkReport } from "@/lib/work-report-queries";
 import { reviewWorkReportSchema } from "@/lib/validations";
 import { prisma } from "@/lib/prisma";
 import { audit } from "@/lib/audit";
+import { notify } from "@/lib/notifications";
 import { resolveWorkPeriod } from "@/lib/work-report";
 
 type Ctx = { params: Promise<{ id: string }> };
@@ -21,7 +22,7 @@ export async function POST(req: NextRequest, ctx: Ctx) {
     if (result === "draft") return badRequest("Báo cáo chưa được gửi");
     const reviewed = await prisma.workReport.findUnique({
       where: { id: result.id },
-      select: { period: true, periodStart: true, user: { select: { name: true } } },
+      select: { period: true, periodStart: true, user: { select: { id: true, name: true } } },
     });
     const label = reviewed && resolveWorkPeriod(reviewed.period, null, reviewed.periodStart)?.label;
     await audit(
@@ -34,6 +35,16 @@ export async function POST(req: NextRequest, ctx: Ctx) {
         details: { reviewNote: result.reviewNote },
       },
     );
+    const period = reviewed && resolveWorkPeriod(reviewed.period, null, reviewed.periodStart);
+    if (reviewed && period) {
+      await notify(me, [{
+        userId: reviewed.user.id,
+        type: "work_report.reviewed",
+        title: `${me.name} đã xem báo cáo ${period.short.toLowerCase()} của bạn`,
+        body: result.reviewNote ? `Nhận xét: ${result.reviewNote}` : period.label,
+        link: `/tasks?tab=report&period=${period.type.toLowerCase()}&key=${period.key}`,
+      }]);
+    }
     return ok({ report: result });
   });
 }

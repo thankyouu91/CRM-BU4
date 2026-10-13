@@ -67,6 +67,25 @@ Màn hình mặc định của *Trung tâm báo cáo*: tuần trước (kết qu
 
 - **Dự án chưa có việc trong 3 tuần:** dự án mới tạo chưa có công việc (ví dụ dự án do Trợ lý AI tạo), hoặc dự án mà việc còn lại bắt đầu và đến hạn sau tuần tới, được liệt kê riêng kèm trạng thái, quản lý và việc tiếp theo, để không dự án nào bị sót. Thêm công việc có deadline thì dự án chuyển vào các tuần tương ứng. Dự án đã xong hết việc hoặc đã huỷ không liệt kê.
 
+### Sửa hàng loạt và lọc nhanh
+
+*Công việc của tôi* → danh sách: các nút **Chưa giao người** (khi xem *Tất cả dự án*), **Chưa có deadline**, **Quá hạn** lọc việc chưa xong cần bổ sung, kèm số lượng; lọc thêm theo dự án. Đường dẫn giữ bộ lọc (`/tasks?issue=overdue`), nên thông báo có thể mở thẳng vào đó.
+
+- Tích chọn từng việc hoặc cả nhóm, rồi trên thanh **Sửa hàng loạt**: giao cho một người, đặt deadline (cuối ngày theo giờ Việt Nam), đổi trạng thái hoặc ưu tiên cho tất cả trong một bước (`POST /api/tasks/bulk`, tối đa 200 việc).
+- Quyền như khi sửa từng việc (`lib/task-bulk.ts`): người được giao chỉ đổi được trạng thái; người phụ trách mới phải là thành viên của dự án. Việc không sửa được được bỏ qua và báo lý do; mỗi việc đã sửa có một dòng nhật ký.
+
+### Thông báo
+
+Chuông trên thanh trên cùng (`components/layout/notification-bell.tsx`, `lib/notifications.ts`):
+
+- **Thông báo lưu lại:** được giao công việc (giao nhiều việc một lúc thì gộp thành một thông báo), được thêm vào dự án, báo cáo tiến độ được duyệt, báo cáo tuần/tháng được cấp trên xem (kèm nhận xét). Không ai nhận thông báo về thao tác của chính mình. Bấm để mở đúng công việc, dự án hoặc báo cáo; *Đánh dấu đã đọc* cho tất cả. Thông báo cũ hơn 90 ngày được xoá trong tác vụ hằng đêm.
+- **Cần chú ý** (tính lại mỗi lần mở, không lưu): việc của bạn đã quá hạn, việc đến hạn hôm nay hoặc ngày mai, báo cáo tuần chưa gửi; cấp trên thấy số người chưa gửi báo cáo tuần.
+- Chuông tự cập nhật khi chuyển trang, khi quay lại tab và vài phút một lần.
+
+### Nhắc báo cáo tuần
+
+Từ **15:00 thứ Sáu** đến hết Chủ nhật nhắc báo cáo của tuần đang chạy; thứ Hai và thứ Ba nhắc báo cáo tuần trước nếu chưa gửi (giờ Việt Nam). Nhắc ở chuông và bằng chấm vàng cạnh *Công việc của tôi* trên thanh bên. Mọi cấp trừ quản trị viên viết báo cáo tuần; quyền xem báo cáo của người khác giữ nguyên như dưới đây.
+
 ### Báo cáo công việc tuần / tháng
 
 *Công việc của tôi* → tab **Báo cáo tuần / tháng**, chọn **Tuần** (thứ Hai 00:00 → Chủ nhật 23:59, số tuần ISO, ví dụ “Tuần 41 · 05/10 – 11/10/2026”) hoặc **Tháng**, chuyển kỳ trước / sau. Ranh giới kỳ tính theo `APP_TIMEZONE` (`lib/work-report.ts`).
@@ -92,7 +111,7 @@ Quản trị viên vào *Cài đặt → Trợ lý AI (Claude API)* (`/settings#
 - **Lưu trữ:** key được mã hoá AES-256-GCM trước khi ghi vào bảng `AppSetting` (`lib/secret-box.ts`), khoá mã hoá sinh từ secret `SETTINGS_SECRET` của Worker (không có thì dùng `JWT_SECRET`). Key không bao giờ được gửi lại trình duyệt, không vào nhật ký thao tác hay bản sao lưu ở dạng đọc được; giao diện chỉ hiện 4 ký tự cuối. Đổi secret đó thì key cũ không đọc được nữa và trang Cài đặt nhắc nhập lại.
 - **Tuỳ chọn:** bật / tắt, model (Opus 5.5 mặc định, Sonnet 5.5, Haiku 5.5, kèm giá niêm yết), số lượt mỗi người mỗi ngày (mặc định 30, theo giờ Việt Nam). Thẻ cài đặt hiện số báo cáo, số người dùng, token và chi phí ước tính 30 ngày qua; số tiền thực tế xem trong Console.
 - **Số liệu gửi cho Claude** giống hệt prompt sao chép (`lib/ai-prompt.ts`) và theo đúng quyền của người bấm: ai chỉ xem được dự án của mình thì Claude chỉ nhận số liệu dự án đó. Tên công việc và nội dung báo cáo của nhân sự được đánh dấu là dữ liệu, không phải chỉ dẫn.
-- **Nhật ký:** mỗi lần viết ghi `ai.generate` (loại báo cáo, kỳ, model, số token), mỗi câu trả lời chat ghi `ai.chat`; cả hai tính vào số lượt mỗi ngày. Mỗi lần đổi cài đặt ghi `settings.ai_update` (chỉ có 4 ký tự cuối của key).
+- **Nhật ký:** mỗi lần viết ghi `ai.generate` (loại báo cáo, kỳ, model, số token), mỗi câu trả lời chat ghi `ai.chat`. Mỗi lần viết, chat hoặc trích xuất file dùng một lượt trong ngày: lượt được giữ chỗ trước khi gọi Claude (bảng `AiQuota`, cập nhật nguyên tử), nên gửi nhiều yêu cầu cùng lúc cũng không vượt giới hạn; yêu cầu lỗi trước khi Claude trả lời được trả lại lượt. Mỗi lần đổi cài đặt ghi `settings.ai_update` (chỉ có 4 ký tự cuối của key).
 - Mã nguồn: `app/api/settings/ai` (cài đặt, chỉ quản trị viên), `app/api/ai/report` (viết báo cáo) và `app/api/ai/chat` (chat), cùng trả về dạng stream NDJSON qua `lib/ai-run.ts` / `lib/ai-stream.ts`; `lib/ai-settings.ts`, `lib/ai-models.ts`, `lib/ai-chat.ts`.
 
 #### Trò chuyện (chat)
@@ -106,7 +125,7 @@ Tab **Trò chuyện** trên trang *Trợ lý AI* (`/ai`) là khung chat nhiều 
 - **Chi phí:** khối số liệu và phần hội thoại đã có được cache (prompt caching), nên các câu hỏi tiếp theo trong cùng phạm vi và kỳ rẻ hơn câu đầu.
 - **Trợ lý tạo và cập nhật dữ liệu:** trong chat, người dùng có thể yêu cầu “tạo dự án…, thêm hạng mục…, giao việc cho…, cập nhật trạng thái…, nhập các hợp đồng trong file…”. Claude tra cứu bằng công cụ chỉ đọc (dự án, chi tiết dự án, người dùng, hợp đồng; theo đúng quyền xem của người hỏi) rồi **đề xuất** thay đổi: tạo/sửa dự án, hạng mục, công việc, hợp đồng, thêm ghi chú (không có xoá). Đề xuất hiện thành thẻ **Đề xuất thay đổi** với từng trường mới hoặc “cũ → mới”; **không có gì được ghi cho tới khi người dùng bấm Áp dụng** (chọn từng mục; bỏ chọn một mục cha thì các mục con dùng nó cũng bỏ theo).
   - *Áp dụng* gọi đúng các API mà màn hình dùng (`app/api/ai/actions` → `app/api/projects`, `tasks`, `contracts`…), nên quyền, kiểm tra dữ liệu và nhật ký thao tác y như khi người dùng tự làm; mỗi dòng nhật ký ghi thêm “· qua Trợ lý AI”. Các mục chạy theo thứ tự; mục sau dùng được id của mục vừa tạo (`ref`); mục lỗi không hoàn tác các mục trước và được báo riêng.
-  - Câu hỏi tiếp theo nhận kèm kết quả áp dụng (id mới) hoặc ghi chú “chưa áp dụng”. Mỗi câu trả lời dùng tối đa 8 bước công cụ và 30 đề xuất; áp dụng không tính vào lượt AI. Mã nguồn: `lib/ai-agent.ts` (công cụ, kiểm tra, xem trước), `lib/ai-actions.ts`, `lib/ai-run.ts` (vòng lặp công cụ), `components/ai/actions-card.tsx`.
+  - Câu hỏi tiếp theo nhận kèm kết quả áp dụng (id mới) hoặc ghi chú “chưa áp dụng”. Mỗi câu trả lời dùng tối đa 8 bước công cụ và 100 đề xuất (đủ cho cả một kế hoạch dự án); khi áp dụng, trình duyệt gửi theo từng đợt 25 mục, mang theo các `ref` đã tạo. Áp dụng không tính vào lượt AI. Mã nguồn: `lib/ai-agent.ts` (công cụ, kiểm tra, xem trước), `lib/ai-actions.ts`, `lib/ai-run.ts` (vòng lặp công cụ), `components/ai/actions-card.tsx`.
 - **File đính kèm** (PDF, ảnh, Excel, Word, CSV/TXT; 3 file, 4 MB/file): Excel, Word, CSV/TXT được chuyển thành văn bản (`lib/ai-file-content.ts`), mỗi file tối đa khoảng 200.000 ký tự và 300.000 ký tự cho cả lượt gửi. Excel chỉ liệt kê ô có dữ liệu, mỗi hàng một dòng (`Hàng 12: B=…`). File lớn hơn **không bị từ chối**: mỗi sheet giữ các hàng đầu và 3 hàng cuối (thường là dòng tổng cộng), tài liệu dài giữ phần đầu; Claude được báo phần nào bị lược bớt và câu trả lời hiện ghi chú màu vàng cho người dùng. *Trích xuất để nhập liệu* gọi tool `prepare_intake`: Haiku 5.5 được ép gọi tool, Opus 5.5 và Sonnet 5.5 không cho ép (lỗi 400) nên được yêu cầu trong prompt và hỏi lại một lần nếu trả lời bằng văn bản.
 
 ## Chạy trên máy (local)
@@ -180,7 +199,9 @@ Sau khi đã có Hyperdrive và ID trong `wrangler.jsonc` (cách 1, hoặc tạo
   1. `DATABASE_URL="<database mới>" npx prisma migrate deploy`
   2. `DATABASE_URL="<database mới>" node scripts/restore-backup.mjs daily-2026-10-09.json.gz` (chạy trong một transaction; từ chối nếu bảng đã có dữ liệu)
   3. Trên Supabase, chạy lại `prisma/supabase-hardening.sql` và cấp quyền cho `crm_app`.
-- Cùng tác vụ hằng ngày xoá nhật ký thao tác cũ hơn 365 ngày.
+- Bản sao lưu đọc mọi bảng từ cùng một thời điểm (transaction REPEATABLE READ), nên dữ liệu ghi trong lúc sao lưu không làm file thiếu dòng cha.
+- **Đã kiểm thử khôi phục:** `tests/backup-restore.integration.test.ts` (chạy trong CI) sao lưu database kiểm thử như tác vụ hằng ngày, khôi phục bằng `scripts/restore-backup.mjs` vào một database mới và so từng bảng (cả task cha/con, số tiền lớn, JSON); chạy lại lần hai phải bị từ chối.
+- Cùng tác vụ hằng ngày xoá nhật ký thao tác cũ hơn 365 ngày, thông báo cũ hơn 90 ngày và bộ đếm lượt AI của các ngày đã qua.
 
 ### Nhật ký thao tác
 

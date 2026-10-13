@@ -28,6 +28,7 @@ export function ActionsCard({
   dismissed,
   pending,
   applying,
+  progress,
   onApply,
   onDismiss,
 }: {
@@ -37,6 +38,8 @@ export function ActionsCard({
   /** Claude is still answering: more proposals may come. */
   pending: boolean;
   applying: boolean;
+  /** Large sets are applied in batches. */
+  progress?: { done: number; total: number } | null;
   onApply: (ids: string[]) => void;
   onDismiss: () => void;
 }) {
@@ -133,6 +136,10 @@ export function ActionsCard({
         <footer className="flex flex-wrap items-center gap-2 border-t border-primary/20 px-3 py-2">
           {pending ? (
             <p className="text-xs text-muted-foreground">Claude đang chuẩn bị thêm…</p>
+          ) : applying && progress && progress.total > progress.done ? (
+            <p role="status" className="text-xs text-muted-foreground">
+              Đang áp dụng… {progress.done}/{progress.total}
+            </p>
           ) : (
             <p className="flex items-center gap-1 text-xs text-muted-foreground">
               <CircleAlert className="h-3.5 w-3.5" /> Kiểm tra từng mục; thay đổi chạy theo quyền của bạn và được ghi vào nhật ký.
