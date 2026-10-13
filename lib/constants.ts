@@ -35,6 +35,9 @@ export const NOTE_TYPE = {
 /** Preset colors offered when creating projects/categories (identity swatches). */
 export const SWATCHES = ["#2a78d6", "#eb6834", "#1baf7a", "#eda100", "#e87ba4", "#008300", "#4a3aa7", "#e34948"];
 
+/** Sidebar width choice; the app layout reads it so the server renders the same width (no jump on load). */
+export const SIDEBAR_COOKIE = "sidebar";
+
 export type ProjectStatusKey = keyof typeof PROJECT_STATUS;
 export type TaskStatusKey = keyof typeof TASK_STATUS;
 export type PriorityKey = keyof typeof PRIORITY;
