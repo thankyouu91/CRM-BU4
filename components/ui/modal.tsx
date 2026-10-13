@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useId } from "react";
 import { createPortal } from "react-dom";
 import { AnimatePresence, motion } from "framer-motion";
 import { X } from "lucide-react";
@@ -38,6 +38,8 @@ export function Modal({
   size?: "sm" | "md" | "lg";
 }) {
   useEscape(open, onClose);
+  // The title names the dialog for screen readers.
+  const id = useId();
   if (typeof document === "undefined") return null;
   const width = size === "sm" ? "max-w-md" : size === "lg" ? "max-w-3xl" : "max-w-xl";
 
@@ -55,6 +57,8 @@ export function Modal({
           <motion.div
             role="dialog"
             aria-modal="true"
+            aria-labelledby={`${id}-title`}
+            aria-describedby={description ? `${id}-description` : undefined}
             className={cn(
               "relative flex max-h-[92vh] w-full flex-col rounded-t-2xl border bg-card shadow-pop sm:rounded-2xl",
               width,
@@ -66,8 +70,8 @@ export function Modal({
           >
             <div className="flex items-start justify-between gap-4 border-b px-6 py-4">
               <div>
-                <h2 className="text-base font-semibold">{title}</h2>
-                {description && <p className="mt-0.5 text-xs text-muted-foreground">{description}</p>}
+                <h2 id={`${id}-title`} className="text-base font-semibold">{title}</h2>
+                {description && <p id={`${id}-description`} className="mt-0.5 text-xs text-muted-foreground">{description}</p>}
               </div>
               <button onClick={onClose} className="rounded-md p-1 text-muted-foreground hover:bg-muted" aria-label="Đóng">
                 <X className="h-4 w-4" />
