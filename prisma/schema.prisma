@@ -114,19 +114,20 @@ model User {
   createdAt          DateTime     @default(now())
   updatedAt          DateTime     @updatedAt
 
-  ownedProjects   Project[]       @relation("ProjectOwner")
-  memberships     ProjectMember[]
-  assignedTasks   Task[]          @relation("TaskAssignee")
-  createdTasks    Task[]          @relation("TaskCreator")
-  taskReports     TaskReport[]    @relation("ReportAuthor")
-  reviewedReports TaskReport[]    @relation("ReportReviewer")
-  notes           Note[]
-  contracts       Contract[]
-  workReports     WorkReport[]    @relation("WorkReportAuthor")
-  reviewedWork    WorkReport[]    @relation("WorkReportReviewer")
-  contractFiles   ContractFile[]
-  auditLogs       AuditLog[]      @relation("AuditActor")
-  settingsChanged AppSetting[]    @relation("SettingUpdater")
+  ownedProjects    Project[]         @relation("ProjectOwner")
+  memberships      ProjectMember[]
+  assignedTasks    Task[]            @relation("TaskAssignee")
+  createdTasks     Task[]            @relation("TaskCreator")
+  taskReports      TaskReport[]      @relation("ReportAuthor")
+  reviewedReports  TaskReport[]      @relation("ReportReviewer")
+  notes            Note[]
+  contracts        Contract[]
+  workReports      WorkReport[]      @relation("WorkReportAuthor")
+  reviewedWork     WorkReport[]      @relation("WorkReportReviewer")
+  contractFiles    ContractFile[]
+  auditLogs        AuditLog[]        @relation("AuditActor")
+  settingsChanged  AppSetting[]      @relation("SettingUpdater")
+  projectTemplates ProjectTemplate[] @relation("TemplateCreator")
 }
 
 model Project {
@@ -381,5 +382,20 @@ model AppSetting {
   value       Json
   updatedById String?
   updatedBy   User?    @relation("SettingUpdater", fields: [updatedById], references: [id], onDelete: SetNull)
+  updatedAt   DateTime @updatedAt
+}
+
+// Mẫu dự án: cấu trúc của một dự án (hạng mục, công việc, mức ưu tiên, ngày tính
+// theo số ngày so với ngày bắt đầu) để tạo dự án mới. data là JSON có phiên bản
+// (TemplateData, lib/project-templates.ts); không chứa người phụ trách, trạng thái,
+// tiến độ, báo cáo, ghi chú hay hợp đồng.
+model ProjectTemplate {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  data        Json
+  createdById String?
+  createdBy   User?    @relation("TemplateCreator", fields: [createdById], references: [id], onDelete: SetNull)
+  createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 }

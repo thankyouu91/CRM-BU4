@@ -10,6 +10,7 @@ import {
   ChartColumn,
   Kanban as KanbanIcon,
   Layers,
+  LayoutTemplate,
   List,
   Loader2,
   MessageSquare,
@@ -54,6 +55,7 @@ const loaders = {
   members: () => import("@/components/projects/members-panel"),
   category: () => import("@/components/projects/category-modal"),
   form: () => import("@/components/projects/project-form"),
+  template: () => import("@/components/projects/save-template-modal"),
 };
 const ProgressPanel = dynamic(() => loaders.progress().then((m) => m.ProgressPanel), { loading: panelFallback });
 const FinancePanel = dynamic(() => loaders.finance().then((m) => m.FinancePanel), { loading: panelFallback });
@@ -62,6 +64,7 @@ const MembersPanel = dynamic(() => loaders.members().then((m) => m.MembersPanel)
 const TaskCreateModal = dynamic(() => import("@/components/tasks/task-create-modal").then((m) => m.TaskCreateModal), { loading: panelFallback });
 const CategoryModal = dynamic(() => loaders.category().then((m) => m.CategoryModal));
 const ProjectFormModal = dynamic(() => loaders.form().then((m) => m.ProjectFormModal));
+const SaveTemplateModal = dynamic(() => loaders.template().then((m) => m.SaveTemplateModal));
 
 type Tab = "tasks" | "progress" | "finance" | "notes" | "members";
 const TABS: Tab[] = ["tasks", "progress", "finance", "notes", "members"];
@@ -71,6 +74,7 @@ export function ProjectWorkspace({
   meId,
   directory,
   canFinance,
+  canCreateProject = false,
   initial,
   initialFinance,
 }: {
@@ -79,6 +83,8 @@ export function ProjectWorkspace({
   directory: Directory;
   /** Holders of "Hợp đồng & chi phí" see and edit the project's contracts. */
   canFinance: boolean;
+  /** With project management, lets the person save the project as a template. */
+  canCreateProject?: boolean;
   /** Rendered with the page, so the workspace shows without a second request. */
   initial: WorkspaceData;
   initialFinance?: ProjectContracts;
@@ -103,6 +109,7 @@ export function ProjectWorkspace({
   const [deletingCategory, setDeletingCategory] = useState<ProjectCategory | null>(null);
   const [editingProject, setEditingProject] = useState(false);
   const [deletingProject, setDeletingProject] = useState(false);
+  const [savingTemplate, setSavingTemplate] = useState(false);
 
   const setTab = (t: Tab) => {
     setTabState(t);
@@ -230,6 +237,11 @@ export function ProjectWorkspace({
               <Button size="sm" variant="outline" onClick={() => setEditingProject(true)}>
                 <Pencil className="h-4 w-4" /> Sửa dự án
               </Button>
+              {canCreateProject && (
+                <Button size="sm" variant="outline" onClick={() => setSavingTemplate(true)}>
+                  <LayoutTemplate className="h-4 w-4" /> Lưu làm mẫu
+                </Button>
+              )}
             </>
           )}
           <Link href={`/reports?projectId=${p.id}`}>
@@ -354,6 +366,13 @@ export function ProjectWorkspace({
             ownerId: p.ownerId,
             members: p.members.map((m) => ({ userId: m.id, role: m.projectRole })),
           }}
+        />
+      </MountOnOpen>
+      <MountOnOpen open={savingTemplate}>
+        <SaveTemplateModal
+          open={savingTemplate}
+          onClose={() => setSavingTemplate(false)}
+          project={{ id: p.id, name: p.name, categories: p.categories.length, tasks: p.tasks.length }}
         />
       </MountOnOpen>
       <ConfirmDialog

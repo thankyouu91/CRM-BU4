@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
-import { CalendarDays, ChevronLeft, ChevronRight, Plus, Search } from "lucide-react";
+import { CalendarDays, ChevronLeft, ChevronRight, LayoutTemplate, Plus, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { EmptyState, PageHeader } from "@/components/ui/misc";
 import { MountOnOpen } from "@/components/ui/mount-on-open";
@@ -13,9 +13,9 @@ import { calendarPeriod, calendarSelection, moveCalendar, projectTiming, timelin
 import { cn } from "@/lib/utils";
 import { PROJECT_STATUS } from "@/lib/constants";
 
-const ProjectFormModal = dynamic(() => import("@/components/projects/project-form").then((m) => m.ProjectFormModal), {
-  loading: () => <p role="status" className="fixed bottom-4 right-4 rounded-lg border bg-card px-4 py-2 shadow-pop">Đang mở biểu mẫu…</p>,
-});
+const opening = () => <p role="status" className="fixed bottom-4 right-4 rounded-lg border bg-card px-4 py-2 shadow-pop">Đang mở biểu mẫu…</p>;
+const ProjectFormModal = dynamic(() => import("@/components/projects/project-form").then((m) => m.ProjectFormModal), { loading: opening });
+const ProjectFromTemplateModal = dynamic(() => import("@/components/projects/project-from-template-modal").then((m) => m.ProjectFromTemplateModal), { loading: opening });
 const VIEWS: { value: CalendarView; label: string }[] = [{ value: "month", label: "Tháng" }, { value: "quarter", label: "Quý" }, { value: "year", label: "Năm" }];
 
 export function ProjectsView({ initial, directory, canCreate, canFinance, initialView, initialAnchor, now }: {
@@ -33,6 +33,7 @@ export function ProjectsView({ initial, directory, canCreate, canFinance, initia
   const [filter, setFilter] = useState("all");
   const [q, setQ] = useState("");
   const [creating, setCreating] = useState(false);
+  const [fromTemplate, setFromTemplate] = useState(false);
   const period = useMemo(() => calendarPeriod(view, anchor), [view, anchor]);
 
   const { entries, unscheduled, outside, dueCount, nearest } = useMemo(() => {
@@ -72,7 +73,10 @@ export function ProjectsView({ initial, directory, canCreate, canFinance, initia
 
   return <div className="space-y-5">
     <PageHeader title="Lịch hoạt động dự án" description="Theo dõi thời gian triển khai và tiến độ theo tháng, quý, năm."
-      actions={canCreate && <Button onClick={() => setCreating(true)}><Plus className="h-4 w-4" />Tạo dự án</Button>} />
+      actions={canCreate && <>
+        <Button variant="outline" onClick={() => setFromTemplate(true)}><LayoutTemplate className="h-4 w-4" />Tạo từ mẫu</Button>
+        <Button onClick={() => setCreating(true)}><Plus className="h-4 w-4" />Tạo dự án</Button>
+      </>} />
 
     <section className="overflow-hidden rounded-xl border bg-card shadow-card" aria-label="Lịch hoạt động">
       <div className="flex flex-wrap items-center justify-between gap-4 border-b px-4 py-4 sm:px-5">
@@ -120,5 +124,6 @@ export function ProjectsView({ initial, directory, canCreate, canFinance, initia
     <UnscheduledProjects projects={unscheduled} />
     <MountOnOpen open={creating}><ProjectFormModal open={creating} onClose={() => setCreating(false)} directory={directory}
       finance={canFinance ? { contracts: [] } : undefined} onSaved={(id) => router.push(`/projects/${id}`)} /></MountOnOpen>
+    <MountOnOpen open={fromTemplate}><ProjectFromTemplateModal open={fromTemplate} onClose={() => setFromTemplate(false)} onCreated={(id) => router.push(`/projects/${id}`)} /></MountOnOpen>
   </div>;
 }
