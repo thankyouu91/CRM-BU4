@@ -3,7 +3,7 @@
 import { motion } from "framer-motion";
 import { CircleAlert, CircleCheck, Info, Quote, TriangleAlert } from "lucide-react";
 import { HoursChart, StatusDonut, TrendChart, WorkloadChart, WORKLOAD_SERIES, statusLegend } from "@/components/charts/charts";
-import type { DeckMeta, SlideModel } from "@/lib/deck-model";
+import { clipName, PROJECTS_LIST_MAX, type DeckMeta, type SlideModel, type WorkTone } from "@/lib/deck-model";
 import { initials } from "@/lib/utils";
 import { formatVndShort } from "@/lib/finance";
 import { SLIDE_H, SLIDE_W, type DeckTheme } from "./theme";
@@ -69,6 +69,138 @@ function Stat({ label, value, theme }: { label: string; value: string; theme: De
 // Slide bodies
 // ---------------------------------------------------------------------------
 
+/** rgba() from "#rrggbb" (the PDF capture does not read 8-digit hex colours). */
+function tint(hex: string, alpha: number) {
+  const n = parseInt(hex.slice(1, 7), 16);
+  return `rgba(${(n >> 16) & 255}, ${(n >> 8) & 255}, ${n & 255}, ${alpha})`;
+}
+
+/** Status in its own colour, so finished and running projects tell apart at a glance. */
+function StatusPill({ label, color, size = 13 }: { label: string; color: string; size?: number }) {
+  return (
+    <span style={{ flexShrink: 0, fontSize: size, padding: "2px 9px", borderRadius: 8, background: tint(color, 0.16), color, fontWeight: 600, whiteSpace: "nowrap" }}>{label}</span>
+  );
+}
+
+const toneColor = (t: DeckTheme, tone: WorkTone | undefined) =>
+  tone === "success" ? t.success : tone === "danger" ? t.danger : tone === "warning" ? t.warning : tone === "accent" ? t.accent : t.muted;
+
+/** Weekly report: figures, then tasks grouped by project in two columns. */
+function WeekBody({ slide, ctx }: { slide: Extract<SlideModel, { kind: "week" }>; ctx: Ctx }) {
+  const t = ctx.theme;
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 18, height: "100%" }}>
+      <Reveal ctx={ctx} style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+        <span style={{ fontSize: 15, fontWeight: 700, color: t.ink, marginRight: 6 }}>{slide.period}</span>
+        {slide.stats.map((st) => (
+          <span key={st.label} style={{ display: "flex", alignItems: "baseline", gap: 6, fontSize: 14, color: t.inkSecondary, padding: "5px 12px", borderRadius: 999, background: t.panel, border: `1px solid ${t.panelBorder}` }}>
+            <b style={{ fontSize: 17, color: st.value ? toneColor(t, st.tone) : t.muted }}>{st.value}</b> {st.label}
+          </span>
+        ))}
+      </Reveal>
+      {slide.columns.length === 0 ? (
+        <Reveal i={1} ctx={ctx} style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20, color: t.muted }}>
+          Không có công việc nào trong mục này.
+        </Reveal>
+      ) : (
+        // minmax(0, 1fr): a long line must not widen its column past the slide.
+        <div style={{ display: "grid", gridTemplateColumns: "minmax(0, 1fr) minmax(0, 1fr)", columnGap: 40, flex: 1 }}>
+          {slide.columns.map((col, c) => (
+            <div key={c} style={{ display: "flex", flexDirection: "column", minWidth: 0 }}>
+              {col.map((line, i) =>
+                line.kind === "project" ? (
+                  <Reveal key={i} i={1 + c * 0.5 + i * 0.15} ctx={ctx} style={{ display: "flex", alignItems: "center", gap: 10, height: 34, marginTop: i ? 4 : 0 }}>
+                    <span style={{ width: 10, height: 10, borderRadius: 5, background: line.color, flexShrink: 0 }} />
+                    <span style={{ fontSize: 16, fontWeight: 700, color: t.ink, whiteSpace: "nowrap" }}>{line.name}</span>
+                    <span style={{ fontSize: 13, color: t.muted, whiteSpace: "nowrap" }}>{line.continued ? "(tiếp)" : `${line.count} việc`}</span>
+                  </Reveal>
+                ) : (
+                  <Reveal key={i} i={1 + c * 0.5 + i * 0.15} ctx={ctx} style={{ display: "flex", alignItems: "center", gap: 10, height: 34, paddingLeft: 20, borderLeft: `2px solid ${t.panelBorder}`, marginLeft: 4 }}>
+                    <span style={{ fontSize: 15, color: t.inkSecondary, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", minWidth: 0 }}>{line.title}</span>
+                    <span style={{ fontSize: 12, color: t.muted, whiteSpace: "nowrap", flexShrink: 0 }}>{line.who}</span>
+                    <span style={{ marginLeft: "auto", flexShrink: 0, fontSize: 12, fontWeight: 600, color: toneColor(t, line.tone), whiteSpace: "nowrap" }}>{line.tag}</span>
+                  </Reveal>
+                ),
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+      {slide.hidden > 0 && (
+        <p style={{ fontSize: 13, color: t.muted }}>… và {slide.hidden} việc khác: xem đầy đủ ở Báo cáo công việc phòng hoặc file Excel.</p>
+      )}
+    </div>
+  );
+}
+
+function ProjectsBody({ slide, ctx }: { slide: Extract<SlideModel, { kind: "projects" }>; ctx: Ctx }) {
+  const t = ctx.theme;
+  const sm = slide.summary;
+  const chips = [
+    { label: `${sm.total} dự án`, color: t.ink },
+    sm.complete > 0 && { label: `${sm.complete} đã xong toàn bộ việc`, color: t.success },
+    sm.overdue > 0 && { label: `${sm.overdue} có việc quá hạn`, color: t.danger },
+    sm.empty > 0 && { label: `${sm.empty} chưa có công việc`, color: t.muted },
+  ].filter((c): c is { label: string; color: string } => !!c);
+  const count = (r: (typeof slide.rows)[number]) => (r.total ? `${r.done}/${r.total} việc` : "Chưa có việc");
+  const list = slide.rows.length <= PROJECTS_LIST_MAX;
+  const perColumn = Math.ceil(slide.rows.length / 2);
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: list ? 22 : 18, height: "100%" }}>
+      <Reveal ctx={ctx} style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+        {chips.map((c) => (
+          <span key={c.label} style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 15, fontWeight: 600, color: t.inkSecondary, padding: "5px 12px", borderRadius: 999, background: t.panel, border: `1px solid ${t.panelBorder}` }}>
+            <span style={{ width: 8, height: 8, borderRadius: 4, background: c.color }} />
+            {c.label}
+          </span>
+        ))}
+      </Reveal>
+      {list ? (
+        <div style={{ display: "flex", flexDirection: "column", gap: slide.rows.length > 4 ? 16 : 24 }}>
+          {slide.rows.map((r, i) => (
+            <Reveal key={`${r.name}-${i}`} i={i + 1} ctx={ctx}>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16, marginBottom: 10 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 12, minWidth: 0 }}>
+                  <span style={{ flexShrink: 0, width: 14, height: 14, borderRadius: 7, background: r.color }} />
+                  <span style={{ fontSize: 22, fontWeight: 600, color: t.ink, whiteSpace: "nowrap" }}>{clipName(r.name, 60)}</span>
+                  <StatusPill label={r.status} color={r.statusColor} />
+                </div>
+                <div style={{ display: "flex", alignItems: "baseline", gap: 18, flexShrink: 0 }}>
+                  <span style={{ fontSize: 15, color: t.muted }}>{count(r)}</span>
+                  {r.overdue > 0 && <span style={{ fontSize: 15, color: t.danger, fontWeight: 600 }}>{r.overdue} quá hạn</span>}
+                  <span style={{ fontSize: 26, fontWeight: 700, color: r.total ? t.ink : t.muted, minWidth: 74, textAlign: "right" }}>{r.total ? `${r.progress}%` : "—"}</span>
+                </div>
+              </div>
+              <Bar value={r.progress} theme={t} height={slide.rows.length > 4 ? 10 : 14} />
+            </Reveal>
+          ))}
+        </div>
+      ) : (
+        // Two columns, read down: the left column first.
+        <div style={{ display: "grid", gridTemplateColumns: "minmax(0, 1fr) minmax(0, 1fr)", gridTemplateRows: `repeat(${perColumn}, auto)`, gridAutoFlow: "column", columnGap: 40, rowGap: 14 }}>
+          {slide.rows.map((r, i) => (
+            <Reveal key={`${r.name}-${i}`} i={1 + i * 0.4} ctx={ctx}>
+              <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 8 }}>
+                <span style={{ flexShrink: 0, width: 10, height: 10, borderRadius: 5, background: r.color }} />
+                <span style={{ fontSize: 16, fontWeight: 600, color: t.ink, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", minWidth: 0 }}>{clipName(r.name, 38)}</span>
+                <StatusPill label={r.status} color={r.statusColor} size={11} />
+                <span style={{ marginLeft: "auto", flexShrink: 0, fontSize: 13, color: r.overdue ? t.danger : t.muted, fontWeight: r.overdue ? 600 : 400, whiteSpace: "nowrap" }}>
+                  {r.overdue ? `${r.overdue} quá hạn · ` : ""}
+                  {count(r)}
+                </span>
+                <span style={{ flexShrink: 0, width: 52, textAlign: "right", fontSize: 19, fontWeight: 700, color: r.total ? t.ink : t.muted }}>{r.total ? `${r.progress}%` : "—"}</span>
+              </div>
+              <Bar value={r.progress} theme={t} height={6} />
+            </Reveal>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+
 function Body({ slide, ctx }: { slide: SlideModel; ctx: Ctx }) {
   const t = ctx.theme;
   switch (slide.kind) {
@@ -97,29 +229,10 @@ function Body({ slide, ctx }: { slide: SlideModel; ctx: Ctx }) {
       );
 
     case "projects":
-      return (
-        <div style={{ display: "flex", flexDirection: "column", gap: slide.rows.length > 5 ? 16 : 24 }}>
-          {slide.rows.map((r, i) => (
-            <Reveal key={r.name} i={i} ctx={ctx}>
-              <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", marginBottom: 10 }}>
-                <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                  <span style={{ width: 14, height: 14, borderRadius: 7, background: r.color }} />
-                  <span style={{ fontSize: 22, fontWeight: 600, color: t.ink }}>{r.name}</span>
-                  <span style={{ fontSize: 13, padding: "3px 10px", borderRadius: 8, background: t.accentSoft, color: t.accent, fontWeight: 600 }}>{r.status}</span>
-                </div>
-                <div style={{ display: "flex", alignItems: "baseline", gap: 18 }}>
-                  <span style={{ fontSize: 15, color: t.muted }}>
-                    {r.done}/{r.total} việc
-                  </span>
-                  {r.overdue > 0 && <span style={{ fontSize: 15, color: t.danger, fontWeight: 600 }}>{r.overdue} quá hạn</span>}
-                  <span style={{ fontSize: 26, fontWeight: 700, color: t.ink, minWidth: 74, textAlign: "right" }}>{r.progress}%</span>
-                </div>
-              </div>
-              <Bar value={r.progress} theme={t} height={slide.rows.length > 5 ? 10 : 14} />
-            </Reveal>
-          ))}
-        </div>
-      );
+      return <ProjectsBody slide={slide} ctx={ctx} />;
+
+    case "week":
+      return <WeekBody slide={slide} ctx={ctx} />;
 
     case "schedule": {
       const w = slide.workload;

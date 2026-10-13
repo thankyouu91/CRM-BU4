@@ -5,7 +5,7 @@ import type PptxGenJS from "pptxgenjs";
 import { DECK_THEMES, SLIDE_H, type DeckTheme } from "@/components/deck/theme";
 import type { TransitionKind } from "@/components/deck/presenter";
 import { WORKLOAD_SERIES, statusLegend } from "@/components/charts/charts";
-import type { Deck, DeckMeta, SlideModel } from "@/lib/deck-model";
+import { clipName, PROJECTS_LIST_MAX, type Deck, type DeckMeta, type SlideModel } from "@/lib/deck-model";
 import { initials } from "@/lib/utils";
 import { saveBlob } from "./save";
 
@@ -140,25 +140,99 @@ function renderBody(c: Ctx, slide: Slide, s: SlideModel) {
     }
 
     case "projects": {
-      const tight = s.rows.length > 5;
-      const rowH = tight ? 56 : 76;
+      // Same layout as the screen (components/deck/slides.tsx ProjectsBody).
+      const sm = s.summary;
+      const chips = [
+        { label: `${sm.total} dự án`, color: t.ink },
+        ...(sm.complete ? [{ label: `${sm.complete} đã xong toàn bộ việc`, color: t.success }] : []),
+        ...(sm.overdue ? [{ label: `${sm.overdue} có việc quá hạn`, color: t.danger }] : []),
+        ...(sm.empty ? [{ label: `${sm.empty} chưa có công việc`, color: t.muted }] : []),
+      ];
+      text(slide, chips.flatMap((ch, i) => [
+        { text: `${i ? "      " : ""}● `, options: { color: hex(ch.color), fontSize: pt(13) } },
+        { text: ch.label, options: { color: hex(t.inkSecondary), fontSize: pt(15), bold: true } },
+      ]), { x: LEFT, y: TOP, w: WIDTH, h: 26 });
+      const count = (r: (typeof s.rows)[number]) => (r.total ? `${r.done}/${r.total} việc` : "Chưa có việc");
+      const top = TOP + 52;
+      if (s.rows.length <= PROJECTS_LIST_MAX) {
+        const rowH = s.rows.length > 4 ? 64 : 80;
+        s.rows.forEach((r, i) => {
+          const y = top + i * rowH;
+          slide.addShape(c.pres.ShapeType.ellipse, { x: inch(LEFT), y: inch(y + 7), w: inch(14), h: inch(14), fill: { color: hex(r.color) }, line: { color: hex(r.color), width: 0 } });
+          text(slide, [
+            { text: clipName(r.name, 60), options: { bold: true, color: hex(t.ink), fontSize: pt(21) } },
+            { text: `   ${r.status}`, options: { color: hex(r.statusColor), fontSize: pt(13), bold: true } },
+          ], { x: LEFT + 26, y, w: 760, h: 28 }, { fit: "shrink" });
+          text(slide, [
+            { text: count(r), options: { color: hex(t.muted), fontSize: pt(15) } },
+            ...(r.overdue ? [{ text: `   ${r.overdue} quá hạn`, options: { color: hex(t.danger), fontSize: pt(15), bold: true } }] : []),
+            { text: `   ${r.total ? `${r.progress}%` : "—"}`, options: { color: hex(r.total ? t.ink : t.muted), fontSize: pt(24), bold: true } },
+          ], { x: LEFT + 760, y: y - 2, w: WIDTH - 760, h: 30 }, { align: "right" });
+          const barH = s.rows.length > 4 ? 10 : 14;
+          rect(c, slide, { x: LEFT, y: y + 36, w: WIDTH, h: barH }, t.track);
+          if (r.progress > 0) rect(c, slide, { x: LEFT, y: y + 36, w: (WIDTH * r.progress) / 100, h: barH }, t.accent);
+        });
+        return;
+      }
+      // Two columns, read down.
+      const perColumn = Math.ceil(s.rows.length / 2);
+      const colW = (WIDTH - 40) / 2;
+      const rowH = 54;
       s.rows.forEach((r, i) => {
-        const y = TOP + i * rowH;
-        slide.addShape(c.pres.ShapeType.ellipse, { x: inch(LEFT), y: inch(y + 7), w: inch(14), h: inch(14), fill: { color: hex(r.color) }, line: { color: hex(r.color), width: 0 } });
+        const x = LEFT + Math.floor(i / perColumn) * (colW + 40);
+        const y = top + (i % perColumn) * rowH;
+        slide.addShape(c.pres.ShapeType.ellipse, { x: inch(x), y: inch(y + 7), w: inch(10), h: inch(10), fill: { color: hex(r.color) }, line: { color: hex(r.color), width: 0 } });
         text(slide, [
-          { text: r.name, options: { bold: true, color: hex(t.ink), fontSize: pt(21) } },
-          { text: `   ${r.status}`, options: { color: hex(t.accent), fontSize: pt(13), bold: true } },
-        ], { x: LEFT + 26, y: y, w: 760, h: 28 });
+          { text: clipName(r.name, 38), options: { bold: true, color: hex(t.ink), fontSize: pt(16) } },
+          { text: `  ${r.status}`, options: { color: hex(r.statusColor), fontSize: pt(11), bold: true } },
+        ], { x: x + 20, y: y + 1, w: colW - 200, h: 22 }, { fit: "shrink" });
         text(slide, [
-          { text: `${r.done}/${r.total} việc`, options: { color: hex(t.muted), fontSize: pt(15) } },
-          ...(r.overdue ? [{ text: `   ${r.overdue} quá hạn`, options: { color: hex(t.danger), fontSize: pt(15), bold: true } }] : []),
-          { text: `   ${r.progress}%`, options: { color: hex(t.ink), fontSize: pt(24), bold: true } },
-        ], { x: LEFT + 760, y: y - 2, w: WIDTH - 760, h: 30 }, { align: "right" });
-        const barY = y + 36;
-        const barH = tight ? 10 : 14;
-        rect(c, slide, { x: LEFT, y: barY, w: WIDTH, h: barH }, t.track);
-        if (r.progress > 0) rect(c, slide, { x: LEFT, y: barY, w: (WIDTH * r.progress) / 100, h: barH }, t.accent);
+          { text: `${r.overdue ? `${r.overdue} quá hạn · ` : ""}${count(r)}`, options: { color: hex(r.overdue ? t.danger : t.muted), fontSize: pt(13), bold: !!r.overdue } },
+          { text: `  ${r.total ? `${r.progress}%` : "—"}`, options: { color: hex(r.total ? t.ink : t.muted), fontSize: pt(19), bold: true } },
+        ], { x: x + colW - 180, y: y - 2, w: 180, h: 26 }, { align: "right" });
+        rect(c, slide, { x, y: y + 30, w: colW, h: 6 }, t.track);
+        if (r.progress > 0) rect(c, slide, { x, y: y + 30, w: (colW * r.progress) / 100, h: 6 }, t.accent);
       });
+      return;
+    }
+
+    case "week": {
+      // Same layout as the screen (components/deck/slides.tsx WeekBody).
+      const tone = (x?: string) => (x === "success" ? t.success : x === "danger" ? t.danger : x === "warning" ? t.warning : x === "accent" ? t.accent : t.muted);
+      text(slide, [
+        { text: `${s.period}     `, options: { bold: true, color: hex(t.ink), fontSize: pt(15) } },
+        ...s.stats.flatMap((st) => [
+          { text: `${st.value}`, options: { bold: true, color: hex(st.value ? tone(st.tone) : t.muted), fontSize: pt(17) } },
+          { text: ` ${st.label}      `, options: { color: hex(t.inkSecondary), fontSize: pt(14) } },
+        ]),
+      ], { x: LEFT, y: TOP, w: WIDTH, h: 28 }, { fit: "shrink" });
+      const top = TOP + 52;
+      if (!s.columns.length) {
+        text(slide, "Không có công việc nào trong mục này.", { x: LEFT, y: top + 150, w: WIDTH, h: 30 }, { px: 20, color: hex(t.muted), align: "center" });
+        return;
+      }
+      const colW = (WIDTH - 40) / 2;
+      s.columns.forEach((col, ci) => {
+        const x = LEFT + ci * (colW + 40);
+        col.forEach((line, li) => {
+          const y = top + li * 36;
+          if (line.kind === "project") {
+            slide.addShape(c.pres.ShapeType.ellipse, { x: inch(x), y: inch(y + 10), w: inch(10), h: inch(10), fill: { color: hex(line.color) }, line: { color: hex(line.color), width: 0 } });
+            text(slide, [
+              { text: line.name, options: { bold: true, color: hex(t.ink), fontSize: pt(16) } },
+              { text: `   ${line.continued ? "(tiếp)" : `${line.count} việc`}`, options: { color: hex(t.muted), fontSize: pt(13) } },
+            ], { x: x + 20, y: y + 4, w: colW - 20, h: 24 }, { fit: "shrink" });
+          } else {
+            rect(c, slide, { x: x + 4, y: y + 2, w: 2, h: 32 }, t.panelBorder, false);
+            text(slide, [
+              { text: line.title, options: { color: hex(t.inkSecondary), fontSize: pt(15) } },
+              { text: `   ${line.who}`, options: { color: hex(t.muted), fontSize: pt(12) } },
+            ], { x: x + 24, y: y + 7, w: colW - 200, h: 22 }, { fit: "shrink" });
+            text(slide, line.tag, { x: x + colW - 176, y: y + 9, w: 176, h: 20 }, { px: 12, bold: true, color: hex(tone(line.tone)), align: "right" });
+          }
+        });
+      });
+      if (s.hidden > 0) text(slide, `… và ${s.hidden} việc khác: xem đầy đủ ở Báo cáo công việc phòng hoặc file Excel.`, { x: LEFT, y: 640, w: WIDTH, h: 20 }, { px: 13, color: hex(t.muted) });
       return;
     }
 

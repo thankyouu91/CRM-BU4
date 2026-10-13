@@ -4,6 +4,9 @@ import { canAccessProject } from "@/lib/rbac";
 import { prisma } from "@/lib/prisma";
 import { parseDate, parsePeriodType, resolvePeriod } from "@/lib/period";
 import { getSummary } from "@/lib/stats";
+import { departmentReport } from "@/lib/department-report-queries";
+import { workPeriodOf } from "@/lib/work-report";
+import { deckWeekAnchor } from "@/lib/deck-model";
 import { PresentClient } from "./present-client";
 
 export const metadata = { title: "Trình chiếu báo cáo" };
@@ -30,6 +33,11 @@ export default async function PresentPage(props: { searchParams: Promise<SP> }) 
     projectName = (await prisma.project.findUnique({ where: { id: projectId }, select: { name: true } }))?.name ?? null;
   }
 
-  const summary = await getSummary(user, range, type, projectId);
-  return <PresentClient summary={JSON.parse(JSON.stringify(summary))} projectName={projectName} userName={user.name} />;
+  // Weekly report slides: this week, or the last week of a past period.
+  const now = new Date();
+  const [summary, week] = await Promise.all([
+    getSummary(user, range, type, projectId),
+    departmentReport(user, workPeriodOf("WEEK", deckWeekAnchor(range.from, range.to, now)), projectId, now),
+  ]);
+  return <PresentClient summary={JSON.parse(JSON.stringify(summary))} week={JSON.parse(JSON.stringify(week))} projectName={projectName} userName={user.name} />;
 }

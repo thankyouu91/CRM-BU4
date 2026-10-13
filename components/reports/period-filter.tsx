@@ -1,9 +1,11 @@
 "use client";
 
+import { TZDate } from "@date-fns/tz";
 import { addDays, addMonths, addYears } from "date-fns";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Segmented } from "@/components/ui/misc";
 import { cn } from "@/lib/utils";
+import { APP_TIMEZONE } from "@/lib/period";
 
 export type ReportPeriod = "day" | "month" | "quarter" | "year" | "custom";
 
@@ -16,9 +18,11 @@ export interface PeriodState {
 }
 
 export function defaultPeriod(type: ReportPeriod = "month"): PeriodState {
-  const now = new Date();
-  now.setHours(12, 0, 0, 0);
-  return { type, anchor: now.toISOString(), from: "", to: "" };
+  // Noon of today in the business time zone: the server (UTC on Workers) and the browser
+  // must produce the same anchor, or the links built from it differ after hydration.
+  const noon = new TZDate(Date.now(), APP_TIMEZONE);
+  noon.setHours(12, 0, 0, 0);
+  return { type, anchor: new Date(noon.getTime()).toISOString(), from: "", to: "" };
 }
 
 export function shiftPeriod(p: PeriodState, step: number): PeriodState {

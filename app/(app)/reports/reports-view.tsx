@@ -20,7 +20,9 @@ import { DeadlineTable, WorkloadCard } from "@/components/reports/deadline";
 import { FinanceSection } from "@/components/reports/finance-section";
 import { useApi } from "@/lib/client";
 import { useChartTheme } from "@/lib/chart-theme";
-import { buildReportDeck, makeDeckMeta, slideTitle } from "@/lib/deck-model";
+import { buildReportDeck, deckWeekAnchor, makeDeckMeta, slideTitle } from "@/lib/deck-model";
+import type { DepartmentReport } from "@/lib/department-report";
+import { workPeriodOf } from "@/lib/work-report";
 import type { Summary } from "@/lib/stats";
 import { cn, formatDate, timeAgo } from "@/lib/utils";
 
@@ -45,10 +47,15 @@ export function ReportsView({
   const customIncomplete = period.type === "custom" && (!period.from || !period.to);
   const { data, loading } = useApi<Summary>(customIncomplete ? null : `/api/reports/summary?${query}`, { initial });
 
+  // The weekly report slides: this week, or the last week of a past period.
+  const week = data ? workPeriodOf("WEEK", deckWeekAnchor(data.period.from, data.period.to)).key : null;
+  const weekly = useApi<DepartmentReport>(week ? `/api/reports/department?week=${week}${projectId ? `&projectId=${encodeURIComponent(projectId)}` : ""}` : null);
+  const weekReport = weekly.data && weekly.data.week === week && (weekly.data.projectId ?? "") === projectId ? weekly.data : null;
+
   const projectName = projects.find((p) => p.id === projectId)?.name ?? null;
   const deck = useMemo(
-    () => (data ? buildReportDeck(data, makeDeckMeta(data.period.label, projectName, userName)) : null),
-    [data, projectName, userName],
+    () => (data ? buildReportDeck(data, makeDeckMeta(data.period.label, projectName, userName), weekReport) : null),
+    [data, projectName, userName, weekReport],
   );
 
   const copyPresentLink = async () => {

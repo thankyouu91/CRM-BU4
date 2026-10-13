@@ -96,6 +96,13 @@ Chuông trên thanh trên cùng (`components/layout/notification-bell.tsx`, `lib
 
 Từ **15:00 thứ Sáu** đến hết Chủ nhật nhắc báo cáo của tuần đang chạy; thứ Hai và thứ Ba nhắc báo cáo tuần trước nếu chưa gửi (giờ Việt Nam). Nhắc ở chuông và bằng chấm vàng cạnh *Công việc của tôi* trên thanh bên. Mọi cấp trừ quản trị viên viết báo cáo tuần; quyền xem báo cáo của người khác giữ nguyên như dưới đây.
 
+### Trình chiếu báo cáo
+
+*Trung tâm báo cáo → Thống kê & trình chiếu* (và liên kết `/present`) dựng bộ slide từ số liệu kỳ đang lọc; cùng nội dung khi trình chiếu, xuất PDF hay PowerPoint (`lib/deck-model.ts`).
+
+- **Tiến độ hoàn thành từng dự án:** có đủ mọi dự án. Dòng đầu tóm tắt số dự án, số đã xong toàn bộ việc, số có việc quá hạn, số chưa có công việc. Tới 6 dự án mỗi dự án một hàng lớn; nhiều hơn thì gọn thành hai cột, tối đa 14 dự án mỗi slide (nhiều hơn chia đều sang slide sau). Dự án đang thực hiện xếp trước, đã hoàn thành xếp cuối; tên dài được rút gọn.
+- **Báo cáo tuần:** ba slide *Tuần trước · Đã làm*, *Tuần này · Đang làm*, *Tuần tới · Sẽ làm*, cùng số liệu với Báo cáo công việc phòng, nhóm theo dự án, mỗi việc có người phụ trách và nhãn (xong ngày, hạn, % đang làm, tồn, bị chặn). Tuần được chọn là tuần hiện tại, hoặc tuần cuối của kỳ nếu kỳ đã qua. Tuần nhiều việc chia thành nhiều slide (tối đa 3 mỗi phần, phần còn lại ghi số việc và chỉ sang báo cáo đầy đủ).
+
 ### Báo cáo công việc tuần / tháng
 
 *Công việc của tôi* → tab **Báo cáo tuần / tháng**, chọn **Tuần** (thứ Hai 00:00 → Chủ nhật 23:59, số tuần ISO, ví dụ “Tuần 41 · 05/10 – 11/10/2026”) hoặc **Tháng**, chuyển kỳ trước / sau. Ranh giới kỳ tính theo `APP_TIMEZONE` (`lib/work-report.ts`).
