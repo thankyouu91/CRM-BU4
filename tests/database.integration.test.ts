@@ -22,6 +22,7 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)("PostgreSQL transactions", () =>
   afterAll(async () => {
     if (!db) return;
     await db.contract.deleteMany({ where: { createdById: userId } });
+    await db.projectTemplate.deleteMany({ where: { createdById: userId } });
     await db.project.deleteMany({ where: { ownerId: userId } });
     await db.user.deleteMany({ where: { id: userId } });
     await db.$disconnect();
@@ -119,6 +120,37 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)("PostgreSQL transactions", () =>
       await db.project.deleteMany({ where: { ownerId: outsider } });
       await db.user.delete({ where: { id: outsider } });
     }
+  });
+
+  it("saves a real project as a template and creates a project from it with shifted dates", async () => {
+    const { snapshotFromProject, createProjectFromTemplate, listTemplates } = await import("../lib/project-template-service");
+    const vn = (day: string, time = "00:00:00") => new Date(`${day}T${time}+07:00`);
+    const source = await db.project.create({ data: { name: "Khảo thí tiếng Anh ACB", ownerId: userId, color: "#0ea5e9", startDate: vn("2026-10-05") } });
+    const main = await db.category.create({ data: { projectId: source.id, name: "Tổ chức thi", order: 0, startDate: vn("2026-10-05"), dueDate: vn("2026-10-09", "23:59:59") } });
+    const sub = await db.category.create({ data: { projectId: source.id, name: "Coi thi", parentId: main.id, order: 0, dueDate: vn("2026-10-08", "23:59:59") } });
+    const parent = await db.task.create({ data: { projectId: source.id, categoryId: main.id, title: "Soạn đề", priority: "HIGH", createdById: userId, assigneeId: userId, status: "DONE", progress: 100, completedAt: new Date(), startDate: vn("2026-10-05"), dueDate: vn("2026-10-06", "23:59:59") } });
+    await db.task.create({ data: { projectId: source.id, categoryId: sub.id, parentId: parent.id, title: "In đề", createdById: userId, assigneeId: userId, status: "IN_PROGRESS", progress: 40, dueDate: vn("2026-10-07", "23:59:59") } });
+
+    const snap = await snapshotFromProject(source.id);
+    const template = await db.projectTemplate.create({ data: { name: "Mẫu khảo thí", data: snap!.data, createdById: userId } });
+    expect((await listTemplates({ id: userId, role: "MEMBER" })).find((t) => t.id === template.id)).toMatchObject({ categories: 2, tasks: 2, canDelete: true, createdBy: { id: userId, name: "Integration" } });
+
+    const { project } = await createProjectFromTemplate({ id: userId }, template, { name: "Khảo thí ACB đợt 2", startDate: "2026-11-02" });
+    const made = await db.project.findUniqueOrThrow({
+      where: { id: project.id },
+      include: { members: true, categories: { orderBy: [{ order: "asc" }, { createdAt: "asc" }] }, tasks: { orderBy: [{ createdAt: "asc" }, { id: "asc" }] } },
+    });
+    expect(made).toMatchObject({ ownerId: userId, status: "PLANNING", color: "#0ea5e9", startDate: vn("2026-11-02"), dueDate: vn("2026-11-06", "23:59:59") });
+    expect(made.members).toEqual([expect.objectContaining({ userId, role: "MANAGER" })]);
+    const [newMain, newSub] = [made.categories.find((c) => !c.parentId)!, made.categories.find((c) => c.parentId)!];
+    expect(newSub).toMatchObject({ name: "Coi thi", parentId: newMain.id, startDate: null, dueDate: vn("2026-11-05", "23:59:59") });
+    expect(made.tasks.map((t) => t.title)).toEqual(["Soạn đề", "In đề"]);
+    const [newParent, child] = made.tasks;
+    expect(newParent).toMatchObject({ categoryId: newMain.id, priority: "HIGH", startDate: vn("2026-11-02"), dueDate: vn("2026-11-03", "23:59:59") });
+    expect(child).toMatchObject({ parentId: newParent.id, categoryId: newSub.id, dueDate: vn("2026-11-04", "23:59:59") });
+    for (const t of made.tasks) expect(t).toMatchObject({ status: "TODO", progress: 0, assigneeId: null, completedAt: null, createdById: userId });
+    // The source project is untouched.
+    expect(await db.task.count({ where: { projectId: source.id, status: "DONE" } })).toBe(1);
   });
 
   it("serializes two real uploads at the contract file limit", async () => {

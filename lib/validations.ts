@@ -5,6 +5,7 @@ import { CONTRACT_STATUSES } from "./finance";
 import { parseDate } from "./period";
 import { CHAT_MAX_CHARS, CHAT_MAX_MESSAGES } from "./ai-chat";
 import { aiAttachmentsSchema } from "./ai-attachments";
+import { dayNumber } from "./project-templates";
 
 const roleEnum = z.enum(ROLES);
 const permissionList = z.array(z.enum(PERMISSIONS)).max(PERMISSIONS.length);
@@ -90,6 +91,24 @@ export const updateProjectSchema = z.object({
   memberIds: z.array(z.string()).optional(),
   /** Replace the member list with explicit project roles. */
   members: projectMembers.optional(),
+});
+
+// Project templates (lib/project-templates.ts)
+export const createTemplateSchema = z.object({
+  projectId: z.string().min(1),
+  name: z.string().trim().min(2, "Tên mẫu quá ngắn").max(200, "Tên mẫu tối đa 200 ký tự"),
+  description: z.string().trim().max(2000, "Mô tả tối đa 2000 ký tự").optional().nullable(),
+});
+
+export const projectFromTemplateSchema = z.object({
+  templateId: z.string().min(1, "Chọn một mẫu"),
+  name: z.string().trim().min(2, "Tên dự án quá ngắn").max(200, "Tên dự án tối đa 200 ký tự"),
+  /** Calendar day in APP_TIMEZONE; the template's dates are moved to start here. */
+  startDate: z
+    .string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/, "Ngày bắt đầu phải theo dạng YYYY-MM-DD")
+    .refine((v) => dayNumber(v) !== null, "Ngày bắt đầu không hợp lệ"),
+  description: z.string().trim().max(4000, "Mô tả tối đa 4000 ký tự").optional().nullable(),
 });
 
 export const createCategorySchema = z.object({

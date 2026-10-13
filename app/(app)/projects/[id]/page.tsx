@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import { getCurrentUser } from "@/lib/session";
 import { prisma } from "@/lib/prisma";
 import { hasPermission } from "@/lib/permissions";
+import { canCreateProject } from "@/lib/rbac";
 import { getProjectDetail, workspaceFor } from "@/lib/queries";
 import { loadContracts } from "@/lib/contract-queries";
 import { summarizeContracts } from "@/lib/contracts";
@@ -36,6 +37,7 @@ export default async function ProjectPage({ params }: { params: Promise<{ id: st
       meId={user.id}
       directory={directory}
       canFinance={canFinance}
+      canCreateProject={canCreateProject(user)}
       initial={asJson<WorkspaceData>(workspace)}
       initialFinance={contracts ? asJson<ProjectContracts>({ period: null, contracts, totals: summarizeContracts(contracts) }) : undefined}
     />

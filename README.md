@@ -61,6 +61,16 @@ Chỉ người có quyền **Hợp đồng & chi phí** thấy mục này (quả
 
 *Kế hoạch đến hôm nay* = phần thời gian đã trôi qua giữa ngày bắt đầu và hạn hoàn thành (giả định công việc tiến triển đều). So sánh với tiến độ thực tế: chậm không quá 10 điểm là **Đúng tiến độ**, 10–25 điểm là **Có rủi ro**, hơn 25 điểm là **Chậm tiến độ**, qua hạn mà chưa xong là **Trễ hạn**. *Đạt KH* = thực tế ÷ kế hoạch. Hạng mục lớn tính cả công việc của các hạng mục con; hạng mục chưa có ngày bắt đầu dùng ngày bắt đầu của hạng mục lớn hoặc của dự án (`lib/schedule.ts`).
 
+### Mẫu dự án
+
+Cho các dự án lặp lại cùng một khung (ví dụ *Khảo thí tiếng Anh ACB*, *Đào tạo PCCC cho UEH*): lưu một dự án làm mẫu rồi tạo dự án mới từ mẫu, ngày được tính lại theo ngày bắt đầu mới.
+
+- **Lưu làm mẫu:** mở dự án → **Lưu làm mẫu** (hiện với người quản lý dự án đó **và** có quyền *Tạo dự án*), đặt tên và mô tả. Mẫu giữ hạng mục lớn / con (tên, màu, thứ tự), công việc và task con (tiêu đề, mô tả, mức ưu tiên, hạng mục) cùng ngày bắt đầu / hạn hoàn thành, lưu dưới dạng **số ngày** so với ngày gốc: ngày bắt đầu dự án, nếu trống thì ngày sớm nhất của hạng mục / công việc, nếu vẫn trống thì ngày tạo dự án. **Không** lưu người phụ trách, trạng thái, tiến độ, báo cáo, ghi chú hay hợp đồng. Tối đa 100 hạng mục và 500 công việc mỗi mẫu.
+- **Tạo từ mẫu:** trang *Dự án* → **Tạo từ mẫu**, chọn mẫu (kèm số hạng mục, công việc), nhập tên dự án và ngày bắt đầu; ô xem trước ghi “12 hạng mục, 48 công việc; ngày tính lại từ 20/10/2026”. Dự án mới thuộc về người tạo (là quản lý dự án, như khi tạo dự án thường), bắt đầu từ ngày đã chọn, hạn hoàn thành là hạn muộn nhất trong các hạng mục / công việc; mọi công việc ở trạng thái *Cần làm*, 0%, chưa giao ai. Dự án, hạng mục và công việc được tạo trong một transaction.
+- **Ngày** tính theo lịch của `APP_TIMEZONE`: ngày bắt đầu là 00:00, hạn hoàn thành là 23:59:59 giờ Việt Nam, nên một hạn “23:59 ngày 05/10” không bị lệch sang ngày khác khi server chạy giờ UTC.
+- **Quản lý mẫu:** danh sách mẫu nằm trong hộp thoại *Tạo từ mẫu*; người tạo mẫu hoặc quản trị viên xoá được mẫu (xoá mẫu không ảnh hưởng dự án đã tạo). Nhật ký thao tác ghi `project_template.create`, `project_template.delete` và `project.create` (kèm id mẫu, số hạng mục, công việc).
+- Mã nguồn: `lib/project-templates.ts` (dữ liệu mẫu có phiên bản, chụp và dựng lại, không cần database), `lib/project-template-service.ts`, `app/api/project-templates`, `app/api/projects/from-template`; bảng `ProjectTemplate`.
+
 ### Báo cáo công việc phòng (Trung tâm báo cáo)
 
 Màn hình mặc định của *Trung tâm báo cáo*: tuần trước (kết quả, tồn đọng), tuần này (việc phải làm) và tuần tới (kế hoạch), tính theo **công việc** trong mọi dự án bạn được xem (`lib/department-report.ts`). Xuất Excel gửi sếp có đủ các mục.

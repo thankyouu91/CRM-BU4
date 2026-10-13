@@ -32,6 +32,8 @@ export const AUDIT_ACTIONS = {
   "project.update": { label: "Sửa dự án", group: "project" },
   "project.delete": { label: "Xoá dự án", group: "project" },
   "project.members_change": { label: "Đổi thành viên dự án", group: "project" },
+  "project_template.create": { label: "Lưu mẫu dự án", group: "project" },
+  "project_template.delete": { label: "Xoá mẫu dự án", group: "project" },
   "category.create": { label: "Tạo hạng mục", group: "project" },
   "category.update": { label: "Sửa hạng mục", group: "project" },
   "category.delete": { label: "Xoá hạng mục", group: "project" },
