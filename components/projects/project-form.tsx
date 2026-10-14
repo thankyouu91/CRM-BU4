@@ -16,6 +16,7 @@ import { MoneyInput, toDateInput } from "@/components/contracts/contract-form";
 import { fromInputDate, toInputDate } from "@/lib/dates";
 import { cn } from "@/lib/utils";
 import type { Directory } from "./types";
+import { DateInput } from "@/components/ui/date-input";
 
 export interface ProjectFormValues {
   id?: string;
@@ -229,10 +230,10 @@ export function ProjectFormModal({
           </Field>
           <div className="grid grid-cols-2 gap-4">
             <Field label="Ngày bắt đầu">
-              <Input type="date" value={toInputDate(v.startDate)} onChange={(e) => setV({ ...v, startDate: fromInputDate(e.target.value, "start") })} />
+              <DateInput aria-label="Ngày bắt đầu" value={toInputDate(v.startDate)} onChange={(d) => setV({ ...v, startDate: fromInputDate(d, "start") })} />
             </Field>
             <Field label="Hạn hoàn thành" error={errors.dueDate}>
-              <Input type="date" value={toInputDate(v.dueDate)} onChange={(e) => setV({ ...v, dueDate: fromInputDate(e.target.value, "end") })} />
+              <DateInput aria-label="Hạn hoàn thành" value={toInputDate(v.dueDate)} onChange={(d) => setV({ ...v, dueDate: fromInputDate(d, "end") })} />
             </Field>
           </div>
           <div className="grid grid-cols-2 gap-4">

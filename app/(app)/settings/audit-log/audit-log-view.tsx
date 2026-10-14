@@ -10,6 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input, Select } from "@/components/ui/input";
 import { EmptyState, Skeleton } from "@/components/ui/misc";
+import { DateInput } from "@/components/ui/date-input";
 
 interface Entry {
   id: string;
@@ -180,8 +181,8 @@ export function AuditLogView() {
           ))}
         </Select>
         <div className="flex items-center gap-2 sm:col-span-2 xl:col-span-1">
-          <Input type="date" value={filters.from} onChange={(e) => set({ from: e.target.value })} aria-label="Từ ngày" className="px-2 xl:w-[150px]" />
-          <Input type="date" value={filters.to} onChange={(e) => set({ to: e.target.value })} aria-label="Đến ngày" className="px-2 xl:w-[150px]" />
+          <DateInput value={filters.from} onChange={(from) => set({ from })} aria-label="Từ ngày" className="xl:w-[150px]" />
+          <DateInput value={filters.to} onChange={(to) => set({ to })} aria-label="Đến ngày" className="xl:w-[150px]" />
         </div>
         {filtered && (
           <div className="col-span-full">

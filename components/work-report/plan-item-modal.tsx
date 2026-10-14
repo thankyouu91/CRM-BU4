@@ -8,6 +8,7 @@ import { Field, Input, Select } from "@/components/ui/input";
 import { api, ApiError } from "@/lib/client";
 import { PRIORITY } from "@/lib/constants";
 import { zonedDay, zonedDayEdge, type ProjectBrief, type WorkPeriodJson } from "@/lib/work-report";
+import { DateInput } from "@/components/ui/date-input";
 
 /**
  * Adds a plan item for the next period: a real task (POST /api/tasks) assigned to
@@ -134,10 +135,10 @@ export function PlanItemModal({
             </Select>
           </Field>
           <Field label="Bắt đầu">
-            <Input type="date" value={start} min={first} max={last} onChange={(e) => setStart(e.target.value)} required />
+            <DateInput aria-label="Bắt đầu" value={start} min={first} max={last} onChange={setStart} required />
           </Field>
           <Field label="Hạn chót" error={errors.dueDate}>
-            <Input type="date" value={due} min={start || first} max={last} onChange={(e) => setDue(e.target.value)} required />
+            <DateInput aria-label="Hạn chót" value={due} min={start || first} max={last} onChange={setDue} required />
           </Field>
         </div>
       </form>

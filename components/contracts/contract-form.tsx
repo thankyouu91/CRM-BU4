@@ -21,6 +21,7 @@ import {
 import type { ContractDto } from "@/lib/contracts";
 import { cn } from "@/lib/utils";
 import { ContractFiles, PendingFiles, uploadContractFiles } from "./contract-files";
+import { DateInput } from "@/components/ui/date-input";
 
 export type ProjectOption = { id: string; name: string; color: string };
 
@@ -311,10 +312,10 @@ export function ContractModal({
               error={errors.performedAt}
               hint="Báo cáo lọc theo tháng/quý/năm của ngày này."
             >
-              <Input
-                type="date"
+              <DateInput
+                aria-label="Ngày thực hiện"
                 value={v.performedAt}
-                onChange={(e) => setV({ ...v, performedAt: e.target.value })}
+                onChange={(performedAt) => setV({ ...v, performedAt })}
               />
             </Field>
             <Field label="Tiến độ thực hiện">

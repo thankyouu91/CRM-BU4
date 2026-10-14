@@ -54,7 +54,9 @@ it("sets a deadline at the end of the chosen day (Vietnam time)", async () => {
   const calls = server();
   render(<MyTasksView canSeeAll initial={page()} initialFilter={{ scope: "all", issue: null }} />);
   fireEvent.click(screen.getByRole("checkbox", { name: "Chọn “Việc a”" }));
-  fireEvent.change(screen.getByLabelText("Deadline mới"), { target: { value: "2026-10-20" } });
+  fireEvent.change(screen.getByLabelText("Deadline mới: ngày"), { target: { value: "20" } });
+  fireEvent.change(screen.getByLabelText("Deadline mới: tháng"), { target: { value: "10" } });
+  fireEvent.change(screen.getByLabelText("Deadline mới: năm"), { target: { value: "2026" } });
   await act(async () => { fireEvent.click(screen.getByRole("button", { name: "Đặt deadline" })); });
   expect(calls.find((c) => c.url === "/api/tasks/bulk")!.body).toEqual({ ids: ["a"], patch: { dueDate: "2026-10-20T16:59:59.999Z" } });
 });

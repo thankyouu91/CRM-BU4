@@ -9,6 +9,7 @@ import { ApiError, sendPlain, type SendChange } from "@/lib/client";
 import { PRIORITY } from "@/lib/constants";
 import { fromInputDate } from "@/lib/dates";
 import { categoryOptions, joinHint, personLabel, type CategoryBrief, type UserBrief } from "./types";
+import { DateInput } from "@/components/ui/date-input";
 
 export function TaskCreateModal({
   open,
@@ -141,10 +142,10 @@ export function TaskCreateModal({
           </Field>
           <div className="grid grid-cols-2 gap-3">
             <Field label="Bắt đầu">
-              <Input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} />
+              <DateInput aria-label="Bắt đầu" value={startDate} onChange={setStartDate} />
             </Field>
             <Field label="Hạn chót" error={errors.dueDate}>
-              <Input type="date" value={dueDate} onChange={(e) => setDueDate(e.target.value)} />
+              <DateInput aria-label="Hạn chót" value={dueDate} onChange={setDueDate} />
             </Field>
           </div>
         </div>

@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { api, ApiError } from "@/lib/client";
 import { PRIORITY, TASK_STATUS } from "@/lib/constants";
 import { zonedDayEdge } from "@/lib/work-report";
+import { DateInput } from "@/components/ui/date-input";
 
 export interface BulkResult {
   updated: number;
@@ -97,7 +98,7 @@ export function BulkBar({ ids, onDone, onClear }: { ids: string[]; onDone: () =>
         </label>
         <span className="flex items-center gap-1.5">
           <CalendarClock className="h-4 w-4 text-muted-foreground" aria-hidden />
-          <input type="date" aria-label="Deadline mới" value={due} onChange={(e) => setDue(e.target.value)} disabled={busy} className={field} />
+          <DateInput size="sm" aria-label="Deadline mới" value={due} onChange={setDue} disabled={busy} className="w-40" />
           <Button size="sm" variant="secondary" disabled={busy || !due} onClick={() => apply({ dueDate: zonedDayEdge(due, "end") }, "Đặt deadline")}>
             Đặt deadline
           </Button>

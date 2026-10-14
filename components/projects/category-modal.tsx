@@ -10,6 +10,7 @@ import { api, ApiError } from "@/lib/client";
 import { SWATCHES } from "@/lib/constants";
 import { fromInputDate, toInputDate } from "@/lib/dates";
 import { cn, formatDate } from "@/lib/utils";
+import { DateInput } from "@/components/ui/date-input";
 
 interface CategoryLike {
   id: string;
@@ -128,10 +129,10 @@ export function CategoryModal({
         </Field>
         <div className="grid grid-cols-2 gap-3">
           <Field label="Ngày bắt đầu">
-            <Input type="date" value={toInputDate(startDate)} onChange={(e) => setStartDate(fromInputDate(e.target.value, "start"))} />
+            <DateInput aria-label="Ngày bắt đầu" value={toInputDate(startDate)} onChange={(d) => setStartDate(fromInputDate(d, "start"))} />
           </Field>
           <Field label="Hạn hoàn thành" error={errors.dueDate}>
-            <Input type="date" value={toInputDate(dueDate)} onChange={(e) => setDueDate(fromInputDate(e.target.value, "end"))} />
+            <DateInput aria-label="Hạn hoàn thành" value={toInputDate(dueDate)} onChange={(d) => setDueDate(fromInputDate(d, "end"))} />
           </Field>
         </div>
         {parent && (parent.startDate || parent.dueDate) && (

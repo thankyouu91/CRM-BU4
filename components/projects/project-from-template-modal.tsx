@@ -12,6 +12,7 @@ import { api, ApiError, useApi } from "@/lib/client";
 import { dayNumber, showDay } from "@/lib/project-templates";
 import { zonedDay } from "@/lib/work-report";
 import { cn, formatDate } from "@/lib/utils";
+import { DateInput } from "@/components/ui/date-input";
 
 /** A row of GET /api/project-templates. */
 export interface TemplateItem {
@@ -160,7 +161,7 @@ export function ProjectFromTemplateModal({ open, onClose, onCreated }: { open: b
                 />
               </Field>
               <Field label="Ngày bắt đầu" error={errors.startDate ?? (startDate && !validDay ? "Ngày không hợp lệ" : undefined)} htmlFor="template-start-date">
-                <Input id="template-start-date" type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} className="sm:w-44" />
+                <DateInput id="template-start-date" aria-label="Ngày bắt đầu" value={startDate} onChange={setStartDate} className="sm:w-44" />
               </Field>
             </div>
             <p role="status" className="rounded-lg bg-muted px-3 py-2 text-xs text-muted-foreground">

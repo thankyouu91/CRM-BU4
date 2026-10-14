@@ -6,6 +6,7 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Segmented } from "@/components/ui/misc";
 import { cn } from "@/lib/utils";
 import { APP_TIMEZONE } from "@/lib/period";
+import { DateInput } from "@/components/ui/date-input";
 
 export type ReportPeriod = "day" | "month" | "quarter" | "year" | "custom";
 
@@ -85,21 +86,9 @@ export function PeriodFilter({
       />
       {value.type === "custom" ? (
         <div className="flex items-center gap-2">
-          <input
-            type="date"
-            value={value.from}
-            onChange={(e) => onChange({ ...value, from: e.target.value })}
-            className="h-9 rounded-lg border bg-card px-2 text-sm"
-            aria-label="Từ ngày"
-          />
+          <DateInput size="sm" value={value.from} onChange={(from) => onChange({ ...value, from })} className="w-40" aria-label="Từ ngày" />
           <span className="text-muted-foreground">→</span>
-          <input
-            type="date"
-            value={value.to}
-            onChange={(e) => onChange({ ...value, to: e.target.value })}
-            className="h-9 rounded-lg border bg-card px-2 text-sm"
-            aria-label="Đến ngày"
-          />
+          <DateInput size="sm" value={value.to} onChange={(to) => onChange({ ...value, to })} className="w-40" aria-label="Đến ngày" />
         </div>
       ) : (
         <div className="flex items-center rounded-lg border bg-card">

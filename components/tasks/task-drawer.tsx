@@ -31,6 +31,7 @@ import { api, ApiError, sendPlain, type SendChange } from "@/lib/client";
 import { PRIORITY, TASK_STATUS } from "@/lib/constants";
 import { fromInputDate, isOverdue, toInputDate } from "@/lib/dates";
 import { cn, formatShortDate, formatDateTime, timeAgo } from "@/lib/utils";
+import { DateInput } from "@/components/ui/date-input";
 
 interface Props {
   taskId: string | null;
@@ -242,19 +243,19 @@ function TaskPanel({
             </Select>
           </Field>
           <Field label="Ngày bắt đầu">
-            <Input
-              type="date"
+            <DateInput
+              aria-label="Ngày bắt đầu"
               value={toInputDate(task.startDate)}
               disabled={!perms.manage}
-              onChange={(e) => patch({ startDate: fromInputDate(e.target.value, "start") })}
+              onChange={(d) => patch({ startDate: fromInputDate(d, "start") })}
             />
           </Field>
           <Field label="Hạn chót">
-            <Input
-              type="date"
+            <DateInput
+              aria-label="Hạn chót"
               value={toInputDate(task.dueDate)}
               disabled={!perms.manage}
-              onChange={(e) => patch({ dueDate: fromInputDate(e.target.value, "end") })}
+              onChange={(d) => patch({ dueDate: fromInputDate(d, "end") })}
               className={cn(overdue && "border-danger/50 text-danger")}
             />
           </Field>

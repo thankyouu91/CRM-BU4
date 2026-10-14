@@ -44,7 +44,9 @@ it("picks a template, previews the counts and start day, then creates the projec
   fireEvent.click(screen.getByRole("radio", { name: /Đào tạo PCCC/ }));
   expect(name.value).toBe("Khảo thí ACB đợt 2");
   fireEvent.click(screen.getByRole("radio", { name: /Khảo thí tiếng Anh ACB/ }));
-  fireEvent.change(screen.getByLabelText("Ngày bắt đầu"), { target: { value: "2026-10-20" } });
+  fireEvent.change(screen.getByLabelText("Ngày bắt đầu: ngày"), { target: { value: "20" } });
+  fireEvent.change(screen.getByLabelText("Ngày bắt đầu: tháng"), { target: { value: "10" } });
+  fireEvent.change(screen.getByLabelText("Ngày bắt đầu: năm"), { target: { value: "2026" } });
   expect(screen.getByRole("status").textContent).toBe("12 hạng mục, 48 công việc; ngày tính lại từ 20/10/2026");
   expect(screen.getByText(/12 hạng mục, 48 công việc · Nguyễn An/)).toBeTruthy();
   // Only the creator (or an admin) gets a delete button.
