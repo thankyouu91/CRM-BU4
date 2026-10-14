@@ -6,6 +6,7 @@ import { Card, CardHeader } from "@/components/ui/card";
 import { Badge, ScheduleBadge } from "@/components/ui/badge";
 import { ProgressBar } from "@/components/ui/progress";
 import { SummaryCards } from "@/components/contracts/summary-cards";
+import { ProfitWaterfall } from "@/components/contracts/profit-waterfall";
 import { RATINGS, formatVnd } from "@/lib/finance";
 import type { SummaryFinance } from "@/lib/stats";
 import { cn } from "@/lib/utils";
@@ -29,6 +30,7 @@ export function FinanceSection({ finance, periodLabel }: { finance: SummaryFinan
         </Link>
       </div>
       <SummaryCards t={finance.totals} />
+      <ProfitWaterfall t={finance.totals} />
       {finance.missingFiles.length > 0 && (
         <div className="rounded-2xl border border-amber-300 bg-amber-50 px-5 py-4 dark:border-amber-500/30 dark:bg-amber-500/10">
           <p className="flex items-center gap-2 text-sm font-semibold text-amber-900 dark:text-amber-200">

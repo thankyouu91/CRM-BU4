@@ -25,6 +25,7 @@ import { parseContractPaste, type ParsedRow } from "@/lib/contract-import";
 import { ContractModal, monthOf, ratingBg, toDateInput, type ProjectOption } from "@/components/contracts/contract-form";
 import { ContractFilesModal, FileCountButton } from "@/components/contracts/contract-files";
 import { SummaryCards } from "@/components/contracts/summary-cards";
+import { ProfitWaterfall } from "@/components/contracts/profit-waterfall";
 import { cn } from "@/lib/utils";
 
 interface ListResponse {
@@ -296,6 +297,7 @@ export function ContractsView({ projects, initial, initialQuery = "" }: { projec
       ) : (
         <div className="space-y-6">
           {totals && <SummaryCards t={totals} />}
+          {totals && <ProfitWaterfall t={totals} />}
 
           <div className="overflow-hidden rounded-2xl border bg-card shadow-card">
             <div className="flex items-center justify-between px-5 py-4">
