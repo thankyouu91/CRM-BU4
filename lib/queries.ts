@@ -150,7 +150,9 @@ export async function listTasks(
   const where: Prisma.TaskWhereInput = issue ? { AND: [base, issueWhere(issue, now)] } : base;
   const count = (extra: Prisma.TaskWhereInput) => prisma.task.count({ where: { AND: [where, extra] } });
   const countBase = (extra: Prisma.TaskWhereInput) => prisma.task.count({ where: { AND: [base, extra] } });
-  const [rows, counts, overdue, doneWeek, unassigned, noDue, overdueAll] = await Promise.all([
+  // The list and its paging follow the quick filter; the summary numbers above it do not,
+  // so turning on "Quá hạn" does not make "Chưa hoàn thành" or "Đang thực hiện" read 0.
+  const [rows, counts, baseCounts, overdue, doneWeek, unassigned, noDue, overdueAll] = await Promise.all([
     prisma.task.findMany({
       where,
       orderBy: [{ dueDate: { sort: "asc", nulls: "last" } }, { createdAt: "desc" }, { id: "asc" }],
@@ -165,15 +167,18 @@ export async function listTasks(
       },
     }),
     prisma.task.groupBy({ by: ["status"], where, _count: { _all: true } }),
-    count({ status: { not: "DONE" }, dueDate: { lt: now } }),
-    count({ status: "DONE", completedAt: { gte: new Date(now.getTime() - 7 * 86_400_000) } }),
+    issue ? prisma.task.groupBy({ by: ["status"], where: base, _count: { _all: true } }) : null,
+    countBase({ status: { not: "DONE" }, dueDate: { lt: now } }),
+    countBase({ status: "DONE", completedAt: { gte: new Date(now.getTime() - 7 * 86_400_000) } }),
     countBase(issueWhere("unassigned", now)),
     countBase(issueWhere("nodue", now)),
     countBase(issueWhere("overdue", now)),
   ]);
-  const totals = new Map(counts.map((row) => [row.status, row._count._all]));
   const total = counts.reduce((sum, row) => sum + row._count._all, 0);
-  const open = total - (totals.get("DONE") ?? 0);
+  const summary = baseCounts ?? counts;
+  const totals = new Map(summary.map((row) => [row.status, row._count._all]));
+  const done = totals.get("DONE") ?? 0;
+  const open = summary.reduce((sum, row) => sum + row._count._all, 0) - done;
   const active = (totals.get("IN_PROGRESS") ?? 0) + (totals.get("REVIEW") ?? 0);
   const tasks = rows.slice(0, 100).map(({ project, ...task }) => {
     const { ownerId, members, ...brief } = project;
@@ -182,7 +187,7 @@ export async function listTasks(
     return { ...task, project: brief, canReport: rights.report, canManage: rights.manage };
   });
   return {
-    tasks, nextCursor: rows.length > 100 ? rows[99].id : null, total, stats: { open, active, overdue, doneWeek },
+    tasks, nextCursor: rows.length > 100 ? rows[99].id : null, total, stats: { open, active, overdue, doneWeek, done },
     issues: { unassigned, nodue: noDue, overdue: overdueAll }, issue, deadline, asOf: now.toISOString(),
   };
 }

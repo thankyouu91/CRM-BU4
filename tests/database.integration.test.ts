@@ -54,7 +54,10 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)("PostgreSQL transactions", () =>
     expect(result).toMatchObject({ total: 3, nextCursor: null, stats: { open: 2, active: 1, overdue: 1, doneWeek: 1 } });
     expect(result.tasks.every((task) => task.canReport)).toBe(true);
     expect(result.tasks[0].project).not.toHaveProperty("members");
-    expect((await listTasks(user, { q: title, status: "DONE" })).stats).toEqual({ open: 0, active: 0, overdue: 0, doneWeek: 1 });
+    expect((await listTasks(user, { q: title, status: "DONE" })).stats).toEqual({ open: 0, active: 0, overdue: 0, doneWeek: 1, done: 1 });
+    // A quick filter narrows the list, not the summary numbers above it.
+    const overdue = await listTasks(user, { q: title, issue: "overdue" });
+    expect(overdue).toMatchObject({ total: 1, stats: { open: 2, active: 1, overdue: 1, doneWeek: 1, done: 1 } });
   });
 
   it("filters deadline boundaries and full status totals before paginating on PostgreSQL", async () => {

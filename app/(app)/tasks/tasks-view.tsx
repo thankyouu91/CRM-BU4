@@ -41,7 +41,7 @@ interface Row {
 type Issue = "unassigned" | "nodue" | "overdue";
 interface TaskPage {
   tasks: Row[]; total: number; nextCursor: string | null;
-  stats: { open: number; active: number; overdue: number; doneWeek: number };
+  stats: { open: number; active: number; overdue: number; doneWeek: number; done?: number };
   issues?: Record<Issue, number>; issue?: Issue | null;
   deadline: DeadlineFilter; asOf: string;
 }
@@ -174,7 +174,7 @@ export function MyTasksView({
         <KpiTile label="Chưa hoàn thành" value={data ? stats.open : "—"} icon={ListChecks} />
         <KpiTile label="Đang thực hiện" value={data ? stats.active : "—"} sub="Gồm cả chờ duyệt" icon={Clock} />
         <KpiTile label="Quá hạn" value={data ? stats.overdue : "—"} icon={TriangleAlert} tone={stats.overdue ? "critical" : "default"} sub={data ? stats.overdue ? "Ưu tiên xử lý ngay" : "Không có việc trễ" : undefined} />
-        <KpiTile label={period ? "Đã hoàn thành" : "Hoàn thành 7 ngày qua"} value={data ? period ? data.total - stats.open : stats.doneWeek : "—"} sub={period ? "Deadline thuộc kỳ đang chọn" : undefined} icon={CheckCircle2} />
+        <KpiTile label={period ? "Đã hoàn thành" : "Hoàn thành 7 ngày qua"} value={data ? period ? (stats.done ?? data.total - stats.open) : stats.doneWeek : "—"} sub={period ? "Deadline thuộc kỳ đang chọn" : undefined} icon={CheckCircle2} />
       </div>
 
       <div role="group" aria-label="Lọc danh sách theo deadline" className="mb-3 flex flex-wrap items-center gap-1.5">
