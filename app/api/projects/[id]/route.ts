@@ -1,7 +1,7 @@
 import type { NextRequest } from "next/server";
 import type { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
-import { auth, forbidden, handle, notFound, ok, unauthorized } from "@/lib/api";
+import { auth, badRequest, forbidden, handle, notFound, ok, unauthorized } from "@/lib/api";
 import { canManageAllProjects, canManageProject, projectAccess } from "@/lib/rbac";
 import { resolveMemberRoles } from "@/lib/project-members";
 import { getProjectDetail, workspaceFor } from "@/lib/queries";
@@ -9,6 +9,8 @@ import { updateProjectSchema } from "@/lib/validations";
 import { PROJECT_ROLE_INFO } from "@/lib/permissions";
 import { audit, changedFields } from "@/lib/audit";
 import { notify } from "@/lib/notifications";
+import { checkProjectDates } from "@/lib/project-create";
+import { taskCounts } from "@/lib/project-sync";
 
 type Ctx = { params: Promise<{ id: string }> };
 
@@ -35,6 +37,12 @@ export async function PATCH(req: NextRequest, ctx: Ctx) {
       select: { ownerId: true, name: true, description: true, status: true, color: true, startDate: true, dueDate: true },
     });
     if (!existing) return notFound("Không tìm thấy dự án");
+    checkProjectDates(data.startDate === undefined ? existing.startDate : data.startDate, data.dueDate === undefined ? existing.dueDate : data.dueDate);
+    // A project is completed through its tasks: it cannot be closed with work still open.
+    if (data.status === "COMPLETED" && existing.status !== "COMPLETED") {
+      const { open } = await taskCounts(params.id);
+      if (open) return badRequest(`Dự án còn ${open} công việc chưa hoàn thành. Hãy hoàn thành hoặc xoá các việc đó trước, hoặc chọn “Tạm dừng” / “Đã huỷ”.`);
+    }
 
     const { updated, memberDiff } = await prisma.$transaction(async (tx) => {
       const row = await tx.project.update({

@@ -29,6 +29,28 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)("PostgreSQL transactions", () =>
     await (globalThis as unknown as { fileStoragePool?: Pool }).fileStoragePool?.end();
   });
 
+  it("keeps the project status in step with its tasks", async () => {
+    const { syncProjectStatus } = await import("../lib/project-sync");
+    const actor = { id: userId, name: "Integration" };
+    const p = await db.project.create({ data: { name: "Sync", ownerId: userId, status: "PLANNING" } });
+    const status = async () => (await db.project.findUniqueOrThrow({ where: { id: p.id } })).status;
+    const a = await db.task.create({ data: { title: "A", projectId: p.id, createdById: userId } });
+    await syncProjectStatus(actor, [p.id]);
+    expect(await status()).toBe("PLANNING");
+    await db.task.update({ where: { id: a.id }, data: { status: "IN_PROGRESS" } });
+    await syncProjectStatus(actor, [p.id]);
+    expect(await status()).toBe("ACTIVE");
+    await db.task.update({ where: { id: a.id }, data: { status: "DONE", completedAt: new Date() } });
+    await syncProjectStatus(actor, [p.id, p.id]);
+    expect(await status()).toBe("COMPLETED");
+    await db.task.create({ data: { title: "B", projectId: p.id, createdById: userId } });
+    await syncProjectStatus(actor, [p.id]);
+    expect(await status()).toBe("ACTIVE");
+    const log = await db.auditLog.findMany({ where: { entityId: p.id, action: "project.update" }, orderBy: { createdAt: "asc" } });
+    expect(log.map((l) => (l.details as { status: { to: string } }).status.to)).toEqual(["ACTIVE", "COMPLETED", "ACTIVE"]);
+    await db.auditLog.deleteMany({ where: { entityId: p.id } });
+  });
+
   it("rolls back a progress report when its task snapshot is stale", async () => {
     const { updateTaskSafely } = await import("../lib/task-service");
     const task = await db.task.create({ data: { title: "Concurrency", projectId, createdById: userId, status: "IN_PROGRESS", progress: 20 } });

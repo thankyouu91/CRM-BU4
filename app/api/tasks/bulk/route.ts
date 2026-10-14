@@ -7,6 +7,7 @@ import { assignmentNotices, notify } from "@/lib/notifications";
 import { planBulk } from "@/lib/task-bulk";
 import { joinProject } from "@/lib/project-members";
 import { updateTaskSafely } from "@/lib/task-service";
+import { syncProjectStatus } from "@/lib/project-sync";
 import { bulkTaskSchema } from "@/lib/validations";
 
 const FIELDS = ["status", "progress", "priority", "assigneeId", "startDate", "dueDate", "completedAt"] as const;
@@ -68,6 +69,8 @@ export async function POST(req: NextRequest) {
     );
     const given = updated.filter(({ before, after }) => after.assigneeId && after.assigneeId !== before.assigneeId);
     await notify(me, assignmentNotices(given.map(({ before, after }) => ({ ...after, projectName: before.project.name }))));
+
+    await syncProjectStatus({ id: me.id, name: me.name }, updated.filter(({ before, after }) => before.status !== after.status).map(({ after }) => after.projectId));
 
     return ok({ updated: updated.length, unchanged: plan.unchanged, skipped: plan.skipped }, { headers: { "Cache-Control": "private, no-store" } });
   });

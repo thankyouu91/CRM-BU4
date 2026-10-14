@@ -1,4 +1,10 @@
 import { clampProgress } from "./utils";
+import { InputError } from "./errors";
+
+/** A task cannot be due before it starts (either date may be missing). */
+export function checkTaskDates(startDate: Date | null | undefined, dueDate: Date | null | undefined) {
+  if (startDate && dueDate && dueDate.getTime() < startDate.getTime()) throw new InputError("Hạn chót không được trước ngày bắt đầu");
+}
 
 type Status = "TODO" | "IN_PROGRESS" | "REVIEW" | "DONE" | "BLOCKED";
 

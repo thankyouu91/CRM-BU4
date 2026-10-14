@@ -8,6 +8,7 @@ import { resolveTaskState } from "@/lib/task-rules";
 import { reviewReportSchema } from "@/lib/validations";
 import { audit } from "@/lib/audit";
 import { notify, taskLink } from "@/lib/notifications";
+import { syncProjectStatus } from "@/lib/project-sync";
 
 type Ctx = { params: Promise<{ id: string }> };
 
@@ -58,6 +59,7 @@ export async function PATCH(req: NextRequest, ctx: Ctx) {
       body: note ? `Nhận xét: ${note}` : null,
       link: taskLink(report.task.projectId, report.taskId),
     }]);
+    if (data.approveTask) await syncProjectStatus({ id: me.id, name: me.name }, [report.task.projectId]);
     return ok(await withWorkspace(req, me, report.task.projectId, { ok: true }));
   });
 }

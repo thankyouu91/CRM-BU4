@@ -1,4 +1,5 @@
 import { updateTaskSafely } from "@/lib/task-service";
+import { syncProjectStatus } from "@/lib/project-sync";
 import { withTaskProgress } from "@/lib/task-progress-queries";
 import type { NextRequest } from "next/server";
 import type { Prisma } from "@prisma/client";
@@ -6,7 +7,7 @@ import { prisma } from "@/lib/prisma";
 import { auth, badRequest, forbidden, handle, notFound, ok, unauthorized } from "@/lib/api";
 import { accessFrom, loadTaskForUser, taskRights } from "@/lib/rbac";
 import { projectMemberIds, withWorkspace } from "@/lib/queries";
-import { assignability, resolveTaskState } from "@/lib/task-rules";
+import { assignability, checkTaskDates, resolveTaskState } from "@/lib/task-rules";
 import { updateTaskSchema } from "@/lib/validations";
 import { audit, changedFields } from "@/lib/audit";
 import { assignmentNotices, notify } from "@/lib/notifications";
@@ -95,6 +96,7 @@ export async function PATCH(req: NextRequest, ctx: Ctx) {
       return badRequest("Người phụ trách phải là thành viên dự án (không phải người chỉ xem)", { assigneeId: "Không phải thành viên dự án" });
     }
 
+    checkTaskDates(data.startDate === undefined ? task.startDate : data.startDate, data.dueDate === undefined ? task.dueDate : data.dueDate);
     const state = resolveTaskState(task, { status: data.status, progress: data.progress });
 
     const updated = await prisma.$transaction(async (tx) => {
@@ -142,6 +144,7 @@ export async function PATCH(req: NextRequest, ctx: Ctx) {
       const project = await prisma.project.findUnique({ where: { id: task.projectId }, select: { name: true } });
       await notify(me, assignmentNotices([{ ...updated, projectName: project?.name ?? "" }]));
     }
+    if (updated.status !== task.status) await syncProjectStatus({ id: me.id, name: me.name }, [task.projectId]);
     return ok(await withWorkspace(req, me, task.projectId, { task: updated }));
   });
 }
@@ -166,5 +169,6 @@ export async function DELETE(req: NextRequest, ctx: Ctx) {
       details: { title: loaded.task.title, projectId: loaded.task.projectId, status: loaded.task.status },
     },
   );
+  await syncProjectStatus({ id: me.id, name: me.name }, [loaded.task.projectId]);
   return ok(await withWorkspace(req, me, loaded.task.projectId, { ok: true }));
 }

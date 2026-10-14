@@ -7,6 +7,7 @@ import { withWorkspace } from "@/lib/queries";
 import { resolveTaskState } from "@/lib/task-rules";
 import { createReportSchema } from "@/lib/validations";
 import { audit } from "@/lib/audit";
+import { syncProjectStatus } from "@/lib/project-sync";
 
 type Ctx = { params: Promise<{ id: string }> };
 
@@ -59,6 +60,7 @@ export async function POST(req: NextRequest, ctx: Ctx) {
         details: { taskId: task.id, progress: report.progress, hoursSpent: report.hoursSpent },
       },
     );
+    if (state.status && state.status !== task.status) await syncProjectStatus({ id: me.id, name: me.name }, [task.projectId]);
     return created(await withWorkspace(req, me, task.projectId, { report }));
   });
 }

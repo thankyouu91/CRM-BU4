@@ -3,11 +3,12 @@ import { prisma } from "@/lib/prisma";
 import { auth, badRequest, created, forbidden, handle, notFound, ok, unauthorized } from "@/lib/api";
 import { projectAccess } from "@/lib/rbac";
 import { listTasks, projectMemberIds, withWorkspace } from "@/lib/queries";
-import { assignability, resolveTaskState } from "@/lib/task-rules";
+import { assignability, checkTaskDates, resolveTaskState } from "@/lib/task-rules";
 import { createTaskSchema } from "@/lib/validations";
 import { audit } from "@/lib/audit";
 import { assignmentNotices, notify } from "@/lib/notifications";
 import { joinSelf } from "@/lib/project-members";
+import { syncProjectStatus } from "@/lib/project-sync";
 
 export async function GET(req: NextRequest) {
   const me = await auth();
@@ -47,6 +48,7 @@ export async function POST(req: NextRequest) {
       return badRequest("Người phụ trách phải là thành viên dự án (không phải người chỉ xem)", { assigneeId: "Không phải thành viên dự án" });
     }
 
+    checkTaskDates(data.startDate, data.dueDate);
     const state = resolveTaskState(
       { status: "TODO", progress: 0, completedAt: null },
       { status: data.status, progress: data.progress },
@@ -87,6 +89,7 @@ export async function POST(req: NextRequest) {
       const project = await prisma.project.findUnique({ where: { id: task.projectId }, select: { name: true } });
       await notify(me, assignmentNotices([{ ...task, projectName: project?.name ?? "" }]));
     }
+    await syncProjectStatus({ id: me.id, name: me.name }, [task.projectId]);
     return created(await withWorkspace(req, me, data.projectId, { task }));
   });
 }
