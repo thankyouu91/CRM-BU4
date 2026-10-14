@@ -231,6 +231,8 @@ export interface SummaryPerson {
   remaining: number;
   reports: number;
   hours: number;
+  /** Hours reported in each trend bucket (same order as `trend`), for the heatmap. */
+  hoursByBucket: number[];
 }
 
 export interface Summary {
@@ -472,6 +474,7 @@ export async function getSummary(
         remaining: 0,
         reports: 0,
         hours: 0,
+        hoursByBucket: [],
       };
       people.set(u.id, p);
     }
@@ -512,6 +515,8 @@ export async function getSummary(
   for (const r of reports) {
     const ri = bucketIndex(buckets, r.createdAt);
     if (ri >= 0) {
+      const byBucket = personOf(r.author).hoursByBucket;
+      byBucket[ri] = (byBucket[ri] ?? 0) + r.hoursSpent;
       trend[ri].reports += 1;
       trend[ri].hours += r.hoursSpent;
     }
@@ -600,7 +605,7 @@ export async function getSummary(
     schedule: scheduleRows,
     workload: workloadOf(tasks, now),
     people: Array.from(people.values())
-      .map((p) => ({ ...p, hours: Math.round(p.hours * 10) / 10 }))
+      .map((p) => ({ ...p, hours: Math.round(p.hours * 10) / 10, hoursByBucket: trend.map((_, i) => Math.round((p.hoursByBucket[i] ?? 0) * 10) / 10) }))
       .sort((a, b) => b.done - a.done || b.hours - a.hours),
     recentReports: reports.slice(0, 10).map((r) => ({
       id: r.id,

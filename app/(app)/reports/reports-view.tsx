@@ -18,6 +18,7 @@ import { DECK_THEMES } from "@/components/deck/theme";
 import { PeriodFilter, defaultPeriod, periodQuery, type PeriodState } from "@/components/reports/period-filter";
 import { DeadlineTable, WorkloadCard } from "@/components/reports/deadline";
 import { FinanceSection } from "@/components/reports/finance-section";
+import { HoursHeatmap } from "@/components/reports/hours-heatmap";
 import { useApi } from "@/lib/client";
 import { useChartTheme } from "@/lib/chart-theme";
 import { buildReportDeck, deckWeekAnchor, makeDeckMeta, slideTitle } from "@/lib/deck-model";
@@ -231,6 +232,23 @@ export function ReportsView({
                   { key: "hours", label: "Giờ công", align: "right" },
                 ]}
                 rows={data.trend}
+              />
+            }
+          />
+
+          <ChartCard
+            id="r-hours-people"
+            title="Giờ công theo người"
+            description="Ai ghi nhận bao nhiêu giờ ở từng mốc thời gian · ô càng đậm càng nhiều giờ"
+            chart={<HoursHeatmap people={data.people} trend={data.trend} />}
+            table={
+              <DataTable
+                columns={[
+                  { key: "name", label: "Nhân sự" },
+                  { key: "reports", label: "Số báo cáo", align: "right" },
+                  { key: "hours", label: "Giờ công", align: "right" },
+                ]}
+                rows={data.people.filter((p) => p.hours > 0).sort((a, b) => b.hours - a.hours)}
               />
             }
           />
