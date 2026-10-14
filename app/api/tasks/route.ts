@@ -3,10 +3,11 @@ import { prisma } from "@/lib/prisma";
 import { auth, badRequest, created, forbidden, handle, notFound, ok, unauthorized } from "@/lib/api";
 import { projectAccess } from "@/lib/rbac";
 import { listTasks, projectMemberIds, withWorkspace } from "@/lib/queries";
-import { resolveTaskState } from "@/lib/task-rules";
+import { assignability, resolveTaskState } from "@/lib/task-rules";
 import { createTaskSchema } from "@/lib/validations";
 import { audit } from "@/lib/audit";
 import { assignmentNotices, notify } from "@/lib/notifications";
+import { joinSelf } from "@/lib/project-members";
 
 export async function GET(req: NextRequest) {
   const me = await auth();
@@ -41,7 +42,8 @@ export async function POST(req: NextRequest) {
       const category = await prisma.category.findUnique({ where: { id: categoryId }, select: { projectId: true } });
       if (!category || category.projectId !== data.projectId) return badRequest("Hạng mục không hợp lệ");
     }
-    if (data.assigneeId && !memberIds?.has(data.assigneeId)) {
+    const assign = data.assigneeId ? assignability(memberIds!, data.assigneeId, me, access.contribute) : null;
+    if (data.assigneeId && !assign) {
       return badRequest("Người phụ trách phải là thành viên dự án (không phải người chỉ xem)", { assigneeId: "Không phải thành viên dự án" });
     }
 
@@ -50,6 +52,8 @@ export async function POST(req: NextRequest) {
       { status: data.status, progress: data.progress },
     );
 
+    // Taking the work yourself in a project you manage without being in it: you join it.
+    if (assign === "join") await joinSelf(me, data.projectId);
     const [task] = await Promise.all([
       prisma.task.create({
         data: {

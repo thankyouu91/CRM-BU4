@@ -11,8 +11,8 @@ vi.mock("../lib/session", () => ({ getCurrentUser: async () => session.user }));
 describe.skipIf(!process.env.TEST_DATABASE_URL)("bulk edits, notifications and AI uses on PostgreSQL", () => {
   let db: PrismaClient;
   const run = randomUUID().slice(0, 8);
-  const ids = { lead: `lead-${run}`, an: `an-${run}`, outsider: `out-${run}` };
-  const as = (id: string, role = "MEMBER"): CurrentUser => ({ id, email: `${id}@example.test`, name: id === ids.lead ? "Trưởng nhóm" : id === ids.an ? "An" : "Ngoài", role, permissions: [], jobTitle: null, avatarColor: "#000", mustChangePassword: false });
+  const ids = { lead: `lead-${run}`, an: `an-${run}`, outsider: `out-${run}`, admin: `admin-${run}` };
+  const as = (id: string, role = "MEMBER"): CurrentUser => ({ id, email: `${id}@example.test`, name: id === ids.lead ? "Trưởng nhóm" : id === ids.an ? "An" : id === ids.admin ? "Quản trị" : "Ngoài", role, permissions: [], jobTitle: null, avatarColor: "#000", mustChangePassword: false });
   let projectId: string;
   let other: string;
   let tasks: string[];
@@ -22,7 +22,7 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)("bulk edits, notifications and A
     if (!["localhost", "127.0.0.1", "postgres"].includes(url.hostname) || !url.pathname.endsWith("_test")) throw new Error("Integration tests require a local database whose name ends in _test");
     process.env.DATABASE_URL = process.env.TEST_DATABASE_URL;
     db = (await import("../lib/prisma")).prisma;
-    for (const [key, id] of Object.entries(ids)) await db.user.create({ data: { id, email: `${id}@example.test`, name: key === "lead" ? "Trưởng nhóm" : key === "an" ? "An" : "Ngoài", passwordHash: "test-only", role: key === "lead" ? "LEAD" : "MEMBER" } });
+    for (const [key, id] of Object.entries(ids)) await db.user.create({ data: { id, email: `${id}@example.test`, name: key === "lead" ? "Trưởng nhóm" : key === "an" ? "An" : key === "admin" ? "Quản trị" : "Ngoài", passwordHash: "test-only", role: key === "lead" ? "LEAD" : key === "admin" ? "ADMIN" : "MEMBER" } });
     projectId = (await db.project.create({ data: { name: "Dự án hàng loạt", ownerId: ids.lead, members: { create: [{ userId: ids.an, role: "MEMBER" }] } } })).id;
     other = (await db.project.create({ data: { name: "Dự án khác", ownerId: ids.outsider } })).id;
     tasks = [];
@@ -81,6 +81,36 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)("bulk edits, notifications and A
     expect(one.unread).toBe(2);
     const all = await (await readRoute.POST(new NextRequest("http://local/api/notifications/read", { method: "POST", body: JSON.stringify({ all: true }) }))).json();
     expect(all.unread).toBe(0);
+  });
+
+  it("lets an administrator outside a project take its work, joining it, and nobody else", async () => {
+    const create = (await import("../app/api/tasks/route")).POST;
+    const update = (await import("../app/api/tasks/[id]/route")).PATCH;
+    const post = (body: object) => create(new NextRequest("http://local/api/tasks", { method: "POST", body: JSON.stringify(body) }));
+
+    // A member of the project still cannot give work to someone outside it.
+    session.user = as(ids.an);
+    expect((await post({ projectId, title: "Cho người ngoài", assigneeId: ids.outsider })).status).toBe(400);
+
+    session.user = as(ids.admin, "ADMIN");
+    expect((await post({ projectId: other, title: "Cho người ngoài", assigneeId: ids.an })).status).toBe(400);
+    const res = await post({ projectId: other, title: "Tôi tự làm", assigneeId: ids.admin });
+    expect(res.status).toBe(201);
+    const { task } = await res.json();
+    expect(task).toMatchObject({ assigneeId: ids.admin, createdById: ids.admin });
+    expect(await db.projectMember.findUnique({ where: { projectId_userId: { projectId: other, userId: ids.admin } }, select: { role: true } })).toEqual({ role: "MEMBER" });
+    const joined = await db.auditLog.findMany({ where: { actorId: ids.admin, action: "project.members_change", entityId: other } });
+    expect(joined).toHaveLength(1);
+    expect(joined[0]).toMatchObject({ summary: "Tham gia dự án “Dự án khác” để nhận việc", details: { reason: "self-assign" } });
+    // Nobody is notified of giving work to themselves.
+    expect(await db.notification.count({ where: { userId: ids.admin } })).toBe(0);
+
+    // Taking an existing task as a viewer of the project makes the administrator a member too.
+    await db.projectMember.update({ where: { projectId_userId: { projectId: other, userId: ids.admin } }, data: { role: "VIEWER" } });
+    const patch = await update(new NextRequest(`http://local/api/tasks/${tasks[3]}`, { method: "PATCH", body: JSON.stringify({ assigneeId: ids.admin }) }), { params: Promise.resolve({ id: tasks[3] }) });
+    expect(patch.status).toBe(200);
+    expect(await db.task.findUnique({ where: { id: tasks[3] }, select: { assigneeId: true } })).toEqual({ assigneeId: ids.admin });
+    expect(await db.projectMember.findUnique({ where: { projectId_userId: { projectId: other, userId: ids.admin } }, select: { role: true } })).toEqual({ role: "MEMBER" });
   });
 
   it("never lets requests sent together pass the daily AI limit", async () => {

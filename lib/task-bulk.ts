@@ -5,8 +5,8 @@
 
 import type { Prisma, Task } from "@prisma/client";
 import { accessFrom, taskRights } from "./rbac";
+import { assignability, resolveTaskState } from "./task-rules";
 import type { CurrentUser } from "./session";
-import { resolveTaskState } from "./task-rules";
 import type { BulkTaskPatch } from "./validations";
 
 export type BulkTaskRow = Pick<Task, "id" | "title" | "projectId" | "assigneeId" | "createdById" | "status" | "progress" | "completedAt" | "updatedAt" | "startDate" | "dueDate" | "priority"> & {
@@ -24,6 +24,8 @@ export interface BulkPlan {
   skipped: BulkSkip[];
   /** Already as asked: nothing to write. */
   unchanged: number;
+  /** Projects the person joins to take tasks in them (they manage them without being members). */
+  join: string[];
 }
 
 const time = (d: Date | null | undefined) => (d ? d.getTime() : null);
@@ -32,7 +34,8 @@ const time = (d: Date | null | undefined) => (d ? d.getTime() : null);
 export function planBulk(me: CurrentUser, ids: string[], rows: BulkTaskRow[], patch: BulkTaskPatch, assigneeName?: string | null): BulkPlan {
   const byId = new Map(rows.map((r) => [r.id, r]));
   const needsManage = patch.assigneeId !== undefined || patch.priority !== undefined || patch.startDate !== undefined || patch.dueDate !== undefined;
-  const plan: BulkPlan = { apply: [], skipped: [], unchanged: 0 };
+  const plan: BulkPlan = { apply: [], skipped: [], unchanged: 0, join: [] };
+  const join = new Set<string>();
   for (const id of new Set(ids)) {
     const task = byId.get(id);
     const member = task?.project.members.find((m) => m.userId === me.id);
@@ -52,12 +55,15 @@ export function planBulk(me: CurrentUser, ids: string[], rows: BulkTaskRow[], pa
       skip("Chỉ người quản lý công việc mới đổi được người phụ trách, ưu tiên hoặc ngày");
       continue;
     }
+    let joins = false;
     if (patch.assigneeId) {
-      const assignable = patch.assigneeId === task.project.ownerId || task.project.members.some((m) => m.userId === patch.assigneeId && m.role !== "VIEWER");
-      if (!assignable) {
+      const memberIds = new Set([task.project.ownerId, ...task.project.members.filter((m) => m.role !== "VIEWER").map((m) => m.userId)]);
+      const assign = assignability(memberIds, patch.assigneeId, me, access.contribute);
+      if (!assign) {
         skip(`${assigneeName ?? "Người được chọn"} không phải thành viên dự án “${task.project.name}”`);
         continue;
       }
+      joins = assign === "join";
     }
     const start = patch.startDate !== undefined ? patch.startDate : task.startDate;
     const due = patch.dueDate !== undefined ? patch.dueDate : task.dueDate;
@@ -77,6 +83,8 @@ export function planBulk(me: CurrentUser, ids: string[], rows: BulkTaskRow[], pa
       continue;
     }
     plan.apply.push({ task, data });
+    if (joins && data.assigneeId) join.add(task.projectId);
   }
+  plan.join = [...join];
   return plan;
 }

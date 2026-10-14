@@ -6,10 +6,11 @@ import { prisma } from "@/lib/prisma";
 import { auth, badRequest, forbidden, handle, notFound, ok, unauthorized } from "@/lib/api";
 import { accessFrom, loadTaskForUser, taskRights } from "@/lib/rbac";
 import { projectMemberIds, withWorkspace } from "@/lib/queries";
-import { resolveTaskState } from "@/lib/task-rules";
+import { assignability, resolveTaskState } from "@/lib/task-rules";
 import { updateTaskSchema } from "@/lib/validations";
 import { audit, changedFields } from "@/lib/audit";
 import { assignmentNotices, notify } from "@/lib/notifications";
+import { joinProject, logJoin } from "@/lib/project-members";
 
 type Ctx = { params: Promise<{ id: string }> };
 
@@ -26,7 +27,10 @@ export async function GET(_req: NextRequest, ctx: Ctx) {
   const access = accessFrom(me, task.project.owner.id, membership?.role ?? null);
   if (!access.view) return notFound("Không tìm thấy công việc");
   const [enriched, ...subtasks] = await withTaskProgress([task, ...task.subtasks]);
-  return ok({ task: { ...enriched, subtasks }, permissions: taskRights(me, access, task) });
+  // Someone who manages the project without being in it can still take the task (and joins).
+  const inProject = task.project.owner.id === me.id || task.project.members.some((m) => m.user.id === me.id && m.role !== "VIEWER");
+  const self = access.contribute && !inProject ? { id: me.id, name: me.name, avatarColor: me.avatarColor, jobTitle: me.jobTitle } : null;
+  return ok({ task: { ...enriched, subtasks }, permissions: { ...taskRights(me, access, task), self } });
 }
 
 function loadTaskDetail(id: string) {
@@ -68,7 +72,7 @@ export async function PATCH(req: NextRequest, ctx: Ctx) {
 
     const loaded = await loadTaskForUser(me, params.id);
     if (!loaded) return notFound("Không tìm thấy công việc");
-    const { task, perms } = loaded;
+    const { task, perms, access } = loaded;
     if (!perms.report) return forbidden();
 
     const data = updateTaskSchema.parse(await req.json());
@@ -86,13 +90,16 @@ export async function PATCH(req: NextRequest, ctx: Ctx) {
       data.assigneeId ? projectMemberIds(task.projectId) : null,
     ]);
     if (data.categoryId && (!category || category.projectId !== task.projectId)) return badRequest("Hạng mục không hợp lệ");
-    if (data.assigneeId && !memberIds?.has(data.assigneeId)) {
+    const assign = data.assigneeId ? assignability(memberIds!, data.assigneeId, me, access.contribute) : null;
+    if (data.assigneeId && !assign) {
       return badRequest("Người phụ trách phải là thành viên dự án (không phải người chỉ xem)", { assigneeId: "Không phải thành viên dự án" });
     }
 
     const state = resolveTaskState(task, { status: data.status, progress: data.progress });
 
     const updated = await prisma.$transaction(async (tx) => {
+      // Taking the task yourself in a project you manage without being in it: you join it.
+      if (assign === "join") await joinProject(tx, task.projectId, me.id);
       const updated = await updateTaskSafely(tx, task, {
           title: data.title?.trim(),
           description: data.description === undefined ? undefined : data.description?.trim() || null,
@@ -106,6 +113,7 @@ export async function PATCH(req: NextRequest, ctx: Ctx) {
       await tx.project.update({ where: { id: task.projectId }, data: { updatedAt: new Date() } });
       return updated;
     });
+    if (assign === "join") await logJoin(me, task.projectId);
     const changes = changedFields(task, updated, [
       "title",
       "description",

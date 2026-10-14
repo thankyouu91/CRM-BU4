@@ -90,8 +90,11 @@ export function workspaceFor(user: CurrentUser, project: ProjectDetail | null) {
   if (!project) return null;
   const access = accessFrom(user, project.ownerId, project.members.find((m) => m.id === user.id)?.projectRole ?? null);
   if (!access.view) return null;
+  const inProject = project.ownerId === user.id || project.members.some((m) => m.id === user.id && m.projectRole !== "VIEWER");
   return {
     project,
+    /** The person, when they manage the project without being in it: they can still take tasks (and join). */
+    self: access.contribute && !inProject ? { id: user.id, name: user.name, avatarColor: user.avatarColor, jobTitle: user.jobTitle } : null,
     canManage: access.manage,
     canContribute: access.contribute,
     // Deleting stays with the owner and org-wide project managers.

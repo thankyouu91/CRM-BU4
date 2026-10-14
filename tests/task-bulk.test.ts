@@ -48,4 +48,20 @@ describe("bulk task changes", () => {
     expect(late.skipped[0].reason).toBe("Ngày bắt đầu sau deadline");
     expect(planBulk(me(), ["a", "a"], [row("a")], { dueDate: null }).unchanged).toBe(1);
   });
+
+  it("lets an org-wide manager take tasks in projects they are not in, and join only those that change", () => {
+    const admin = me({ id: "admin", role: "ADMIN" });
+    const outside = row("a", { projectId: "p1" });
+    const already = row("b", { projectId: "p2", assigneeId: "admin" });
+    const plan = planBulk(admin, ["a", "b"], [outside, already], { assigneeId: "admin" }, "Admin");
+    expect(plan.apply.map((x) => [x.task.id, x.data])).toEqual([["a", { assigneeId: "admin" }]]);
+    expect(plan.unchanged).toBe(1);
+    expect(plan.join).toEqual(["p1"]);
+    // A date the task cannot take skips it, and nothing is joined for it.
+    const late = planBulk(admin, ["a"], [row("a", { startDate: new Date("2026-11-01") })], { assigneeId: "admin", dueDate: new Date("2026-10-20") });
+    expect(late.join).toEqual([]);
+    // A project manager inside the project cannot give work to an outsider, nor to themselves as a viewer.
+    expect(planBulk(me(), ["a"], [row("a")], { assigneeId: "admin" }).skipped).toHaveLength(1);
+    expect(planBulk(me({ id: "viewer" }), ["a"], [row("a")], { assigneeId: "viewer" }).skipped).toHaveLength(1);
+  });
 });

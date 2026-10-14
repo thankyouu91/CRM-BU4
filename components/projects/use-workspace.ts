@@ -3,6 +3,7 @@
 import { useCallback, useRef } from "react";
 import { api, useApi, type ChangeHint, type SendChange } from "@/lib/client";
 import type { ProjectRoleKey } from "@/lib/permissions";
+import type { UserBrief } from "@/components/tasks/types";
 import type { ProjectDetailData } from "./types";
 
 export interface WorkspaceData {
@@ -11,6 +12,8 @@ export interface WorkspaceData {
   canContribute: boolean;
   canDelete: boolean;
   projectRole: ProjectRoleKey | null;
+  /** You, when you may take tasks here without being a member yet (you join on taking one). */
+  self?: UserBrief | null;
 }
 
 /** The change's expected effect on one task, so the list moves before the server answers. */

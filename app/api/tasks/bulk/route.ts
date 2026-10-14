@@ -5,6 +5,7 @@ import { auth, handle, ok, unauthorized } from "@/lib/api";
 import { auditMany, changedFields } from "@/lib/audit";
 import { assignmentNotices, notify } from "@/lib/notifications";
 import { planBulk } from "@/lib/task-bulk";
+import { joinProject } from "@/lib/project-members";
 import { updateTaskSafely } from "@/lib/task-service";
 import { bulkTaskSchema } from "@/lib/validations";
 
@@ -34,6 +35,8 @@ export async function POST(req: NextRequest) {
     const updated = plan.apply.length
       ? await prisma.$transaction(
           async (tx) => {
+            // Taking tasks yourself in projects you manage without being in them: you join them.
+            for (const projectId of plan.join) await joinProject(tx, projectId, me.id);
             const out = [];
             for (const { task, data } of plan.apply) out.push({ before: task, after: await updateTaskSafely(tx, task, data) });
             await tx.project.updateMany({ where: { id: { in: [...new Set(plan.apply.map((a) => a.task.projectId))] } }, data: { updatedAt: new Date() } });
@@ -43,6 +46,16 @@ export async function POST(req: NextRequest) {
         )
       : [];
 
+    await auditMany(
+      { id: me.id, name: me.name },
+      plan.join.map((projectId) => ({
+        action: "project.members_change" as const,
+        entityType: "project",
+        entityId: projectId,
+        summary: `Tham gia dự án “${rows.find((r) => r.projectId === projectId)?.project.name ?? ""}” để nhận việc`,
+        details: { added: [{ name: me.name, role: "Thành viên" }], reason: "self-assign" } as Prisma.InputJsonValue,
+      })),
+    );
     await auditMany(
       { id: me.id, name: me.name },
       updated.map(({ before, after }) => ({

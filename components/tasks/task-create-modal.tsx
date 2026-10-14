@@ -8,7 +8,7 @@ import { Field, Input, Select, Textarea } from "@/components/ui/input";
 import { ApiError, sendPlain, type SendChange } from "@/lib/client";
 import { PRIORITY } from "@/lib/constants";
 import { fromInputDate } from "@/lib/dates";
-import { categoryOptions, type CategoryBrief, type UserBrief } from "./types";
+import { categoryOptions, joinHint, personLabel, type CategoryBrief, type UserBrief } from "./types";
 
 export function TaskCreateModal({
   open,
@@ -120,13 +120,12 @@ export function TaskCreateModal({
               ))}
             </Select>
           </Field>
-          <Field label="Người phụ trách (PIC)" error={errors.assigneeId}>
+          <Field label="Người phụ trách (PIC)" error={errors.assigneeId} hint={joinHint(people, assigneeId)}>
             <Select value={assigneeId} onChange={(e) => setAssigneeId(e.target.value)}>
               <option value="">— Chưa giao —</option>
               {people.map((u) => (
                 <option key={u.id} value={u.id}>
-                  {u.name}
-                  {u.jobTitle ? ` · ${u.jobTitle}` : ""}
+                  {personLabel(u)}
                 </option>
               ))}
             </Select>

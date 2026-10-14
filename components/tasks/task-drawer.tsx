@@ -26,7 +26,7 @@ import { PriorityBadge, TaskStatusBadge } from "@/components/ui/badge";
 import { ProgressBar } from "@/components/ui/progress";
 import { ConfirmDialog } from "@/components/ui/confirm";
 import { StatusToggle } from "./status-toggle";
-import { categoryOptions, projectPeople, type TaskDetail, type TaskPermissions, type TaskReportItem } from "./types";
+import { categoryOptions, joinHint, personLabel, projectPeople, type TaskDetail, type TaskPermissions, type TaskReportItem } from "./types";
 import { api, ApiError, sendPlain, type SendChange } from "@/lib/client";
 import { PRIORITY, TASK_STATUS } from "@/lib/constants";
 import { fromInputDate, isOverdue, toInputDate } from "@/lib/dates";
@@ -123,7 +123,7 @@ function TaskPanel({
     );
   }
 
-  const people = projectPeople(task.project);
+  const people = projectPeople(task.project, perms.self);
   const hasSubtasks = task.subtasks.length > 0;
   const overdue = isOverdue(task.dueDate, task.status);
 
@@ -213,7 +213,7 @@ function TaskPanel({
               ))}
             </Select>
           </Field>
-          <Field label="Người phụ trách (PIC)">
+          <Field label="Người phụ trách (PIC)" hint={joinHint(people, task.assigneeId)}>
             <Select
               value={task.assigneeId ?? ""}
               disabled={!perms.manage}
@@ -222,8 +222,7 @@ function TaskPanel({
               <option value="">— Chưa giao —</option>
               {people.map((u) => (
                 <option key={u.id} value={u.id}>
-                  {u.name}
-                  {u.jobTitle ? ` · ${u.jobTitle}` : ""}
+                  {personLabel(u)}
                 </option>
               ))}
             </Select>
@@ -511,7 +510,7 @@ function Subtasks({
               <option value="">Chưa giao</option>
               {people.map((u) => (
                 <option key={u.id} value={u.id}>
-                  {u.name}
+                  {personLabel({ ...u, jobTitle: null })}
                 </option>
               ))}
             </select>

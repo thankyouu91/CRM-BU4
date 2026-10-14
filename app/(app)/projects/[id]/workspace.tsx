@@ -138,10 +138,12 @@ export function ProjectWorkspace({
     const map = new Map([[data.project.owner.id, data.project.owner], ...data.project.members.map((m) => [m.id, m] as const)]);
     return Array.from(map.values());
   }, [data]);
-  const assignable = useMemo(
-    () => people.filter((u) => u.id === data?.project.ownerId || !("projectRole" in u) || u.projectRole !== "VIEWER"),
-    [people, data],
-  );
+  const assignable = useMemo(() => {
+    const list = people.filter((u) => u.id === data?.project.ownerId || !("projectRole" in u) || u.projectRole !== "VIEWER");
+    // You manage this project without being in it: you can still take work, and join it.
+    const self = data?.self;
+    return self && !list.some((u) => u.id === self.id) ? [...list, { ...self, joins: true }] : list;
+  }, [people, data]);
 
   if (error) {
     return (

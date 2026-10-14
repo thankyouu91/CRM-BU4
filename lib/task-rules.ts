@@ -37,3 +37,14 @@ export function resolveTaskState(current: Current, patch: Patch) {
 
   return { status, progress, completedAt };
 }
+
+/**
+ * Whether work in a project can be given to this person: the owner or a member who is
+ * not a viewer ("member"); or the person acting, when they may contribute without being
+ * in the project (org-wide project managers): they join it on taking the work ("join").
+ */
+export function assignability(memberIds: Set<string>, assigneeId: string, actor: { id: string }, actorCanContribute: boolean): "member" | "join" | null {
+  if (memberIds.has(assigneeId)) return "member";
+  if (assigneeId === actor.id && actorCanContribute) return "join";
+  return null;
+}
