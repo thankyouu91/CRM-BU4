@@ -6,6 +6,8 @@ import { clearApiCache } from "../lib/client";
 import type { DeadlineFilter } from "../lib/task-deadlines";
 
 vi.mock("../components/tasks/lazy-task-drawer", () => ({ TaskDrawer: () => null }));
+// The month calendar loads its own data (tests/task-calendar*.test.*).
+vi.mock("../components/tasks/task-calendar", () => ({ TaskCalendar: () => null }));
 afterEach(() => { cleanup(); clearApiCache(); vi.unstubAllGlobals(); });
 
 function page(deadline: DeadlineFilter = "all", nextCursor: string | null = null) {
@@ -29,7 +31,7 @@ it("resets pagination for each deadline and shows full-period counts without ano
   vi.stubGlobal("fetch", fetch);
   render(<MyTasksView canSeeAll initial={page("all", "page-2")} />);
   expect(fetch).not.toHaveBeenCalled();
-  expect(screen.getByText("05/10 – 11/10/2026")).toBeTruthy();
+  expect(screen.getByRole("button", { name: "Tuần này" }).getAttribute("title")).toContain("05/10 – 11/10/2026");
   fireEvent.click(screen.getByRole("button", { name: "Trang sau" }));
   await waitFor(() => expect(screen.getByText(/Trang 2/)).toBeTruthy());
   expect(fetch.mock.calls.at(-1)?.[0]).toContain("cursor=page-2");
@@ -71,5 +73,5 @@ it("hides the old period while loading and provides a way back from an empty per
   expect(screen.getByText("Không có công việc đến hạn trong kỳ này")).toBeTruthy();
   fireEvent.click(screen.getByRole("button", { name: "Xem tất cả công việc" }));
   await screen.findByText("Công việc all");
-  expect(screen.getByRole("button", { name: /Tất cả Gồm cả/ }).getAttribute("aria-pressed")).toBe("true");
+  expect(screen.getByRole("button", { name: "Tất cả" }).getAttribute("aria-pressed")).toBe("true");
 });

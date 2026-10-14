@@ -15,6 +15,7 @@ import { useTaskMenu } from "@/components/tasks/task-menu";
 import { StatusToggle } from "@/components/tasks/status-toggle";
 import { TaskDrawer } from "@/components/tasks/lazy-task-drawer";
 import { BulkBar } from "@/components/tasks/bulk-bar";
+import { TaskCalendar } from "@/components/tasks/task-calendar";
 import { api, ApiError, useApi, useDebouncedValue } from "@/lib/client";
 import { groupBy } from "@/lib/task-tree";
 import { DEADLINE_FILTERS, taskDeadlineBucket, taskDeadlinePeriods, type DeadlineBucket, type DeadlineFilter } from "@/lib/task-deadlines";
@@ -167,32 +168,7 @@ export function MyTasksView({
       />
       {tabs}
 
-      <section aria-label="Lọc theo deadline" className="mb-5 rounded-2xl border bg-card p-4">
-        <div className="mb-3 flex items-center gap-2 text-sm font-semibold">
-          <CalendarClock className="h-4 w-4 text-primary" /> Deadline công việc
-        </div>
-        <div className="grid grid-cols-2 gap-2 lg:grid-cols-4">
-          {DEADLINE_FILTERS.map((option) => {
-            const window = option.value === "all" ? null : periods[option.value];
-            return (
-              <button
-                key={option.value}
-                aria-pressed={deadline === option.value}
-                onClick={() => selectDeadline(option.value)}
-                className={cn("rounded-xl border px-3 py-2.5 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary", deadline === option.value ? "border-primary/40 bg-primary/5 text-primary" : "border-transparent bg-muted/50 hover:bg-muted")}
-              >
-                <span className="block text-sm font-semibold">{option.label}</span>
-                <span className="mt-1 block text-xs text-muted-foreground">
-                  {window ? `${zonedText(window.start, "short")} – ${zonedText(window.end)}` : "Gồm cả việc chưa có hạn"}
-                </span>
-              </button>
-            );
-          })}
-        </div>
-        <p className="mt-3 text-xs text-muted-foreground">
-          Tuần tính từ thứ Hai đến Chủ nhật · Theo giờ Việt Nam · Lọc theo hạn chót của công việc.
-        </p>
-      </section>
+      <TaskCalendar scope={scope} projectId={scope === "all" ? projectId : undefined} refreshKey={response?.asOf} onOpenTask={setOpenTask} />
 
       <div aria-busy={busy} className={cn("mb-6 grid grid-cols-2 gap-3 xl:grid-cols-4", busy && "opacity-60")}>
         <KpiTile label="Chưa hoàn thành" value={data ? stats.open : "—"} icon={ListChecks} />
@@ -201,6 +177,25 @@ export function MyTasksView({
         <KpiTile label={period ? "Đã hoàn thành" : "Hoàn thành 7 ngày qua"} value={data ? period ? data.total - stats.open : stats.doneWeek : "—"} sub={period ? "Deadline thuộc kỳ đang chọn" : undefined} icon={CheckCircle2} />
       </div>
 
+      <div role="group" aria-label="Lọc danh sách theo deadline" className="mb-3 flex flex-wrap items-center gap-1.5">
+        <span className="mr-1 flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
+          <CalendarClock className="h-3.5 w-3.5" aria-hidden /> Deadline
+        </span>
+        {DEADLINE_FILTERS.map((option) => {
+          const window = option.value === "all" ? null : periods[option.value];
+          return (
+            <button
+              key={option.value}
+              aria-pressed={deadline === option.value}
+              onClick={() => selectDeadline(option.value)}
+              title={window ? `${zonedText(window.start, "short")} – ${zonedText(window.end)} · theo giờ Việt Nam` : "Gồm cả việc chưa có hạn"}
+              className={cn("rounded-full border px-3 py-1 text-xs font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary", deadline === option.value ? "border-primary/40 bg-primary/10 text-primary" : "bg-card hover:bg-muted")}
+            >
+              {option.label}
+            </button>
+          );
+        })}
+      </div>
       <p role="status" className="mb-3 text-sm text-muted-foreground">
         {!data && !error ? "Đang tải công việc…" : data ? `${period ? `${period.label} · ` : ""}${data.total} công việc${period ? " đến hạn trong kỳ" : ""}` : "Không thể tải công việc trong kỳ này."}
       </p>
