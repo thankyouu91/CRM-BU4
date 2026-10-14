@@ -71,7 +71,7 @@ function Brand({ collapsed }: { collapsed?: boolean }) {
         <FolderKanban className="h-5 w-5" />
       </span>
       {!collapsed && (
-        <span className="leading-tight">
+        <span className="whitespace-nowrap leading-tight">
           <span className="block text-[15px] font-bold text-white">WorkHub</span>
           <span className="block text-[11px] text-sidebar-muted">Quản lý & Báo cáo</span>
         </span>
@@ -102,7 +102,7 @@ function NavLink({ item, active, collapsed, count, dot, onNavigate }: { item: Na
         />
       )}
       <Icon className={cn("relative h-[18px] w-[18px] shrink-0", active && "text-indigo-300")} aria-hidden />
-      <span className={cn("relative flex-1", collapsed && "sr-only")}>
+      <span className={cn("relative flex-1 whitespace-nowrap", collapsed && "sr-only")}>
         {item.label}
         {collapsed && count > 0 && `, ${shown} chưa duyệt`}
         {dot && <span className="sr-only">, {dot}</span>}
@@ -259,8 +259,19 @@ export function AppShell({
 }) {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [collapsed, setCollapsed] = useState(initialCollapsed);
+  // While collapsed, pointing at (or tabbing into) the bar opens it over the page for a
+  // moment; it folds back when the pointer leaves. The page itself does not move.
+  const [peek, setPeek] = useState(false);
+  const peekTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const pathname = usePathname();
   useEffect(() => setMobileOpen(false), [pathname]);
+  useEffect(() => setPeek(false), [pathname, collapsed]);
+  useEffect(() => () => clearTimeout(peekTimer.current ?? undefined), []);
+  const schedulePeek = (open: boolean, delay: number) => {
+    clearTimeout(peekTimer.current ?? undefined);
+    peekTimer.current = setTimeout(() => setPeek(open), delay);
+  };
+  const wide = !collapsed || peek;
 
   const toggleSidebar = () => {
     const next = !collapsed;
@@ -273,13 +284,19 @@ export function AppShell({
       {/* Desktop sidebar */}
       <aside
         id="app-sidebar"
+        onMouseEnter={() => collapsed && schedulePeek(true, 120)}
+        onMouseLeave={() => collapsed && schedulePeek(false, 200)}
+        onFocus={(e) => collapsed && e.target.matches(":focus-visible") && schedulePeek(true, 0)}
+        onBlur={(e) => collapsed && !e.currentTarget.contains(e.relatedTarget as Node | null) && schedulePeek(false, 0)}
+        onKeyDown={(e) => e.key === "Escape" && peek && schedulePeek(false, 0)}
         className={cn(
-          "fixed inset-y-0 left-0 z-30 hidden flex-col bg-sidebar py-6 transition-[width] duration-200 motion-reduce:transition-none lg:flex print:!hidden",
-          collapsed ? "w-[72px] px-3" : "w-64 px-4",
+          "fixed inset-y-0 left-0 z-30 hidden flex-col bg-sidebar py-6 transition-[width,box-shadow] duration-200 motion-reduce:transition-none lg:flex print:!hidden",
+          wide ? "w-64 overflow-hidden px-4" : "w-[72px] px-3",
+          peek && "shadow-2xl shadow-slate-950/40",
         )}
       >
-        <Brand collapsed={collapsed} />
-        <SidebarNav user={user} pendingReports={pendingReports} reportOwed={reportOwed} collapsed={collapsed} />
+        <Brand collapsed={!wide} />
+        <SidebarNav user={user} pendingReports={pendingReports} reportOwed={reportOwed} collapsed={!wide} />
       </aside>
 
       {/* Mobile sidebar */}
@@ -327,7 +344,7 @@ export function AppShell({
             aria-label={collapsed ? "Mở rộng thanh bên" : "Thu gọn thanh bên"}
             aria-controls="app-sidebar"
             aria-expanded={!collapsed}
-            title={collapsed ? "Mở rộng thanh bên" : "Thu gọn thanh bên"}
+            title={collapsed ? "Mở rộng thanh bên (giữ mở)" : "Thu gọn thanh bên (di chuột vào để mở tạm)"}
           >
             {collapsed ? <PanelLeftOpen className="h-5 w-5" /> : <PanelLeftClose className="h-5 w-5" />}
           </button>

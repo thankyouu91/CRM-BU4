@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
-import { cleanup, fireEvent, render, screen, within } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen, within } from "@testing-library/react";
 import { AppShell } from "../components/layout/app-shell";
 import type { CurrentUser } from "../lib/session";
 
@@ -54,4 +54,31 @@ it("starts collapsed when the cookie says so", () => {
   render(<AppShell user={user()} pendingReports={0} initialCollapsed><p /></AppShell>);
   expect(document.getElementById("app-sidebar")!.className).toContain("w-[72px]");
   expect(screen.getByRole("button", { name: "Mở rộng thanh bên" })).toBeTruthy();
+});
+
+it("opens over the page while the pointer is on the collapsed bar, then folds back", () => {
+  vi.useFakeTimers();
+  render(<AppShell user={user()} pendingReports={0} initialCollapsed><p /></AppShell>);
+  const sidebar = document.getElementById("app-sidebar")!;
+  const content = sidebar.parentElement!.lastElementChild as HTMLElement;
+  fireEvent.mouseEnter(sidebar);
+  act(() => vi.advanceTimersByTime(150));
+  expect(sidebar.className).toContain("w-64");
+  expect(within(nav()).getByText("Trung tâm báo cáo").className).not.toContain("sr-only");
+  expect(content.className).toContain("lg:pl-[72px]"); // the page does not move
+  expect(document.cookie).not.toContain("sidebar=expanded"); // a peek is not a choice
+  fireEvent.mouseLeave(sidebar);
+  act(() => vi.advanceTimersByTime(250));
+  expect(sidebar.className).toContain("w-[72px]");
+  vi.useRealTimers();
+});
+
+it("does not peek when the bar is already open", () => {
+  vi.useFakeTimers();
+  render(<AppShell user={user()} pendingReports={0}><p /></AppShell>);
+  const sidebar = document.getElementById("app-sidebar")!;
+  fireEvent.mouseEnter(sidebar);
+  act(() => vi.advanceTimersByTime(150));
+  expect(sidebar.className).not.toContain("shadow-2xl");
+  vi.useRealTimers();
 });
