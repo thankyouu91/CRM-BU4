@@ -148,7 +148,6 @@ export async function listTasks(
     ...(period ? { dueDate: { gte: period.start, lte: period.end } } : {}),
   };
   const where: Prisma.TaskWhereInput = issue ? { AND: [base, issueWhere(issue, now)] } : base;
-  const count = (extra: Prisma.TaskWhereInput) => prisma.task.count({ where: { AND: [where, extra] } });
   const countBase = (extra: Prisma.TaskWhereInput) => prisma.task.count({ where: { AND: [base, extra] } });
   // The list and its paging follow the quick filter; the summary numbers above it do not,
   // so turning on "Quá hạn" does not make "Chưa hoàn thành" or "Đang thực hiện" read 0.
