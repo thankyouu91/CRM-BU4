@@ -26,22 +26,16 @@ it("puts done on the completion day in Vietnam time, deadlines in red", () => {
   ], "2026-10", now);
   expect(ids(cell(grid, "2026-10-10").done)).toEqual(["done"]);
   expect(ids(cell(grid, "2026-10-20").due)).toEqual(["todo"]); // a finished task is not a deadline any more
-  expect(cell(grid, "2026-10-20").active).toEqual([]); // not started: no orange
 });
 
-it("marks work in progress orange from its start to the day before the deadline", () => {
-  const grid = calendarMonth([task({ id: "a", status: "IN_PROGRESS", startDate: "2026-10-12T17:00:00Z", dueDate: "2026-10-16T16:59:59Z" })], "2026-10", now);
-  expect(grid.flat().filter((d) => d.active.length).map((d) => d.day)).toEqual(["2026-10-13", "2026-10-14", "2026-10-15"]);
-  expect(ids(cell(grid, "2026-10-16").due)).toEqual(["a"]);
-});
-
-it("keeps overdue work in progress orange up to today, and work without dates on today", () => {
+it("gives work in progress only its deadline, never a dot on every day it runs", () => {
   const grid = calendarMonth([
-    task({ id: "late", status: "REVIEW", startDate: "2026-10-10T17:00:00Z", dueDate: "2026-10-12T16:59:59Z" }),
-    task({ id: "open", status: "IN_PROGRESS" }),
+    task({ id: "a", status: "IN_PROGRESS", startDate: "2026-09-01T17:00:00Z", dueDate: "2026-10-16T16:59:59Z" }),
+    task({ id: "open", status: "REVIEW", startDate: "2026-10-01T17:00:00Z" }),
   ], "2026-10", now);
-  expect(grid.flat().filter((d) => d.active.some((t) => t.id === "late")).map((d) => d.day)).toEqual(["2026-10-11", "2026-10-12", "2026-10-13", "2026-10-14"]);
-  expect(grid.flat().filter((d) => d.active.some((t) => t.id === "open")).map((d) => d.day)).toEqual(["2026-10-14"]);
+  expect(grid.flat().filter((d) => d.done.length || d.due.length).map((d) => d.day)).toEqual(["2026-10-16"]);
+  expect(ids(cell(grid, "2026-10-16").due)).toEqual(["a"]);
+  expect(Object.keys(cell(grid, "2026-10-14")).sort()).toEqual(["day", "done", "due", "inMonth", "today"]);
 });
 
 it("parses and moves months, with Vietnam-time bounds", () => {

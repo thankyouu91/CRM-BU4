@@ -9,9 +9,9 @@ const LIMIT = 500;
 
 /**
  * GET /api/tasks/calendar?month=2026-10&scope=mine|all[&projectId=]
- * The tasks behind the month calendar of "Công việc của tôi": finished in the month,
- * due in it, or in progress during it. Grid days from the next and previous months are
- * covered too (a week either side), so the edges of the grid are not empty.
+ * The tasks behind the month calendar of "Công việc của tôi": finished in the month or
+ * due in it. Grid days from the next and previous months are covered too (a week either
+ * side), so the edges of the grid are not empty.
  */
 export async function GET(req: NextRequest) {
   const me = await auth();
@@ -31,13 +31,6 @@ export async function GET(req: NextRequest) {
       OR: [
         { status: "DONE", completedAt: { gte: from, lte: to } },
         { status: { not: "DONE" }, dueDate: { gte: from, lte: to } },
-        {
-          status: { in: ["IN_PROGRESS", "REVIEW"] },
-          AND: [
-            { OR: [{ startDate: null }, { startDate: { lte: to } }] },
-            { OR: [{ dueDate: null }, { dueDate: { gte: from } }] },
-          ],
-        },
       ],
     },
     orderBy: [{ dueDate: { sort: "asc", nulls: "last" } }, { id: "asc" }],

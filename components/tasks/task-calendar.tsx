@@ -12,7 +12,6 @@ interface CalendarResponse { month: string; asOf: string; tasks: CalendarTask[];
 // Glowing dots: the glow is a coloured shadow, so it reads on the light and the dark theme.
 const KINDS = [
   { key: "done", label: "Hoàn thành", color: "#22e07a" },
-  { key: "active", label: "Đang làm", color: "#ff9f1a" },
   { key: "due", label: "Deadline", color: "#ff3b5c" },
 ] as const;
 type Kind = (typeof KINDS)[number]["key"];
@@ -85,7 +84,7 @@ function DayPopover({ d, onOpenTask, alignRight, above }: { d: CalendarDay; onOp
 
 /**
  * Month calendar of one's tasks: a green dot on the day a task was finished, a red one
- * on a deadline, orange while a task is in progress. Pointing at (or tabbing to) a day
+ * on a deadline. Pointing at (or tabbing to) a day
  * lists its tasks with project and progress; choosing one opens it.
  */
 export function TaskCalendar({ scope, projectId, refreshKey, onOpenTask }: { scope: "mine" | "all"; projectId?: string; refreshKey?: unknown; onOpenTask: (id: string) => void }) {

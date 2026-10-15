@@ -20,7 +20,9 @@ it("shows dots per day, lists a day's tasks with project and progress, and opens
   expect(screen.getByText("Tháng 10/2026")).toBeTruthy();
   expect(fetch.mock.calls[0][0]).toContain("month=2026-10&scope=mine");
   const done = await screen.findByRole("button", { name: "Ngày 5/10: 1 hoàn thành" });
-  expect(screen.getByRole("button", { name: "Ngày 14/10: 1 đang làm" })).toBeTruthy();
+  // Work in progress has no dot: only its deadline shows.
+  expect(screen.getByRole("button", { name: "Ngày 14/10: không có công việc" })).toBeTruthy();
+  expect(screen.queryByText("Đang làm")).toBeNull();
   expect(screen.getByRole("button", { name: "Ngày 16/10: 1 deadline" })).toBeTruthy();
   expect(screen.getByRole("button", { name: "Ngày 20/10: không có công việc" })).toBeTruthy();
   const cell = done.closest("[role=gridcell]") as HTMLElement;

@@ -1,5 +1,5 @@
-// Month calendar of "Công việc của tôi": which days get a green (done), red (deadline)
-// or orange (in progress) dot. Pure, so the API route, the page and tests share it.
+// Month calendar of "Công việc của tôi": which days get a green (done) or red (deadline)
+// dot. Pure, so the API route, the page and tests share it.
 
 import { TZDate } from "@date-fns/tz";
 import { APP_TIMEZONE } from "./period";
@@ -25,11 +25,8 @@ export interface CalendarDay {
   done: CalendarTask[];
   /** Not finished and due on this day. */
   due: CalendarTask[];
-  /** Being worked on (in progress or awaiting review) on this day, before its deadline. */
-  active: CalendarTask[];
 }
 
-const ACTIVE = new Set(["IN_PROGRESS", "REVIEW"]);
 const pad = (n: number) => String(n).padStart(2, "0");
 
 /** "2026-10" if valid, else null. */
@@ -55,17 +52,10 @@ export function monthRange(month: string): { start: Date; end: Date } {
   return { start: new Date(start.getTime()), end: new Date(next.getTime() - 1) };
 }
 
-/** "YYYY-MM-DD" one day later (calendar arithmetic, no time zone involved). */
-function nextDay(day: string): string {
-  const d = new Date(`${day}T00:00:00Z`);
-  d.setUTCDate(d.getUTCDate() + 1);
-  return d.toISOString().slice(0, 10);
-}
-
 /**
- * The weeks (Monday first) covering the month, each day with its tasks. A task in
- * progress is orange from its start day (today when it has none) up to the day before
- * its deadline, or up to today when it has no deadline; the deadline day itself is red.
+ * The weeks (Monday first) covering the month, each day with the tasks finished on it
+ * and the unfinished tasks due on it. Work in progress has no dot of its own: it spans
+ * every day until its deadline and would cover the whole month.
  */
 export function calendarMonth(tasks: CalendarTask[], month: string, now: Date): CalendarDay[][] {
   const [y, m] = month.split("-").map(Number);
@@ -85,30 +75,18 @@ export function calendarMonth(tasks: CalendarTask[], month: string, now: Date): 
       const d = new Date(gridStart);
       d.setUTCDate(gridStart.getUTCDate() + w * 7 + i);
       const day = d.toISOString().slice(0, 10);
-      const cell: CalendarDay = { day, inMonth: day.startsWith(month), today: day === today, done: [], due: [], active: [] };
+      const cell: CalendarDay = { day, inMonth: day.startsWith(month), today: day === today, done: [], due: [] };
       byDay.set(day, cell);
       row.push(cell);
     }
     grid.push(row);
   }
-  const firstDay = grid[0][0].day;
-  const lastDay = grid[grid.length - 1][6].day;
 
   for (const task of tasks) {
     if (task.status === "DONE") {
       if (task.completedAt) byDay.get(zonedDay(task.completedAt))?.done.push(task);
-      continue;
-    }
-    const due = task.dueDate ? zonedDay(task.dueDate) : null;
-    if (due) byDay.get(due)?.due.push(task);
-    if (!ACTIVE.has(task.status)) continue;
-    let day = task.startDate ? zonedDay(task.startDate) : today;
-    // Up to the day before the deadline; without one (or when it has passed), up to today.
-    const last = due && due > today ? due : nextDay(today);
-    if (day < firstDay) day = firstDay;
-    while (day < last && day <= lastDay) {
-      byDay.get(day)?.active.push(task);
-      day = nextDay(day);
+    } else if (task.dueDate) {
+      byDay.get(zonedDay(task.dueDate))?.due.push(task);
     }
   }
   return grid;
