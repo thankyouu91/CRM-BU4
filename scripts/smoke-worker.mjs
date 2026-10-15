@@ -48,7 +48,7 @@ try {
   assert.equal(login.status, 200, `Worker login failed: ${await login.text()}`);
   const cookie = login.headers.getSetCookie().find((item) => item.startsWith("crm_session="))?.split(";")[0];
   assert(cookie, "Worker did not issue a session");
-  for (const [path, marker] of [["/projects", "Lịch hoạt động dự án"], ["/tasks", "Deadline công việc"], ["/reports", "Báo cáo công việc phòng"], ["/reports?view=analytics", "Bản trình chiếu tự động"], ["/ai", "Đính kèm file"]]) {
+  for (const [path, marker] of [["/projects", "Lịch hoạt động dự án"], ["/tasks", "Lịch công việc"], ["/reports", "Báo cáo công việc phòng"], ["/reports?view=analytics", "Bản trình chiếu tự động"], ["/ai", "Đính kèm file"]]) {
     const response = await fetch(`${origin}${path}`, { headers: { Cookie: cookie }, redirect: "manual", signal: AbortSignal.timeout(20000) });
     assert.equal(response.status, 200, `${path} status`);
     const html = await response.text();
