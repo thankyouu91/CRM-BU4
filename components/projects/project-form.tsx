@@ -122,6 +122,11 @@ export function ProjectFormModal({
     setV((s) => ({ ...s, members: s.members.map((m) => (m.userId === id ? { ...m, role } : m)) }));
 
   const submit = async () => {
+    // Same rule as the server, shown on the field (an older project may have its dates the wrong way round).
+    if (v.startDate && v.dueDate && new Date(v.dueDate).getTime() < new Date(v.startDate).getTime()) {
+      setErrors({ dueDate: "Hạn hoàn thành không được trước ngày bắt đầu" });
+      return;
+    }
     setBusy(true);
     setErrors({});
     const body = {
