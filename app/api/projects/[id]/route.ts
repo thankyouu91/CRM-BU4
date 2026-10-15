@@ -37,7 +37,11 @@ export async function PATCH(req: NextRequest, ctx: Ctx) {
       select: { ownerId: true, name: true, description: true, status: true, color: true, startDate: true, dueDate: true },
     });
     if (!existing) return notFound("Không tìm thấy dự án");
-    checkProjectDates(data.startDate === undefined ? existing.startDate : data.startDate, data.dueDate === undefined ? existing.dueDate : data.dueDate);
+    // Only when the dates are being changed: an older project saved with its dates the wrong
+    // way round can still be renamed, re-staffed or closed before someone fixes them.
+    if (data.startDate !== undefined || data.dueDate !== undefined) {
+      checkProjectDates(data.startDate === undefined ? existing.startDate : data.startDate, data.dueDate === undefined ? existing.dueDate : data.dueDate);
+    }
     // A project is completed through its tasks: it cannot be closed with work still open.
     if (data.status === "COMPLETED" && existing.status !== "COMPLETED") {
       const { open } = await taskCounts(params.id);

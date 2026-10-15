@@ -96,7 +96,9 @@ export async function PATCH(req: NextRequest, ctx: Ctx) {
       return badRequest("Người phụ trách phải là thành viên dự án (không phải người chỉ xem)", { assigneeId: "Không phải thành viên dự án" });
     }
 
-    checkTaskDates(data.startDate === undefined ? task.startDate : data.startDate, data.dueDate === undefined ? task.dueDate : data.dueDate);
+    if (data.startDate !== undefined || data.dueDate !== undefined) {
+      checkTaskDates(data.startDate === undefined ? task.startDate : data.startDate, data.dueDate === undefined ? task.dueDate : data.dueDate);
+    }
     const state = resolveTaskState(task, { status: data.status, progress: data.progress });
 
     const updated = await prisma.$transaction(async (tx) => {
