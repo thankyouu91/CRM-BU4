@@ -24,10 +24,9 @@ export async function middleware(req: NextRequest) {
   }
 
   if (matches(pathname, [SHARE_PATH])) {
-    // Keep shared reports out of search engines, caches and the Referer of outgoing links.
+    // Keep shared reports out of search engines and caches (no-referrer: next.config.mjs).
     const res = NextResponse.next();
     res.headers.set("X-Robots-Tag", "noindex, nofollow");
-    res.headers.set("Referrer-Policy", "no-referrer");
     res.headers.set("Cache-Control", "private, no-store");
     return res;
   }

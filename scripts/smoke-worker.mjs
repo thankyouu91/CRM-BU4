@@ -60,6 +60,7 @@ try {
   const shared = await fetch(`${origin}/share/${shareToken}`, { redirect: "manual", signal: AbortSignal.timeout(20000) });
   assert.equal(shared.status, 200, "/share status");
   assert.equal(shared.headers.get("x-robots-tag"), "noindex, nofollow", "/share must not be indexed");
+  assert.equal(shared.headers.get("referrer-policy"), "no-referrer", "/share must send no Referer");
   const sharedHtml = await shared.text();
   assert(sharedHtml.includes(`Báo cáo dự án ${id}`) && !sharedHtml.includes("a server-side exception"), "/share server rendering failed");
   const unknownShare = await fetch(`${origin}/share/${"A".repeat(43)}`, { redirect: "manual", signal: AbortSignal.timeout(20000) });

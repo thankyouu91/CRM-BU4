@@ -29,7 +29,6 @@ const securityHeaders = [
   { key: "Content-Security-Policy", value: contentSecurityPolicy },
   { key: "X-Frame-Options", value: "DENY" },
   { key: "X-Content-Type-Options", value: "nosniff" },
-  { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
   { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=(), payment=()" },
   ...(isProd
     ? [{ key: "Strict-Transport-Security", value: "max-age=63072000; includeSubDomains; preload" }]
@@ -46,7 +45,12 @@ const nextConfig = {
     middlewareClientMaxBodySize: "27mb",
   },
   async headers() {
-    return [{ source: "/:path*", headers: securityHeaders }];
+    return [
+      { source: "/:path*", headers: securityHeaders },
+      // Public presentation links carry their token in the path: send no Referer at all.
+      { source: "/((?!share/).*)", headers: [{ key: "Referrer-Policy", value: "strict-origin-when-cross-origin" }] },
+      { source: "/share/:token", headers: [{ key: "Referrer-Policy", value: "no-referrer" }] },
+    ];
   },
   webpack(config, { isServer, webpack }) {
     if (!isServer) {
