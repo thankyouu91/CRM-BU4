@@ -102,6 +102,7 @@ Từ **15:00 thứ Sáu** đến hết Chủ nhật nhắc báo cáo của tuầ
 
 - **Tiến độ hoàn thành từng dự án:** có đủ mọi dự án. Dòng đầu tóm tắt số dự án, số đã xong toàn bộ việc, số có việc quá hạn, số chưa có công việc. Tới 6 dự án mỗi dự án một hàng lớn; nhiều hơn thì gọn thành hai cột, tối đa 14 dự án mỗi slide (nhiều hơn chia đều sang slide sau). Dự án đang thực hiện xếp trước, đã hoàn thành xếp cuối; tên dài được rút gọn.
 - **Báo cáo tuần:** ba slide *Tuần trước · Đã làm*, *Tuần này · Đang làm*, *Tuần tới · Sẽ làm*, cùng số liệu với Báo cáo công việc phòng, nhóm theo dự án, mỗi việc có người phụ trách và nhãn (xong ngày, hạn, % đang làm, tồn, bị chặn). Tuần được chọn là tuần hiện tại, hoặc tuần cuối của kỳ nếu kỳ đã qua. Tuần nhiều việc chia thành nhiều slide (tối đa 3 mỗi phần, phần còn lại ghi số việc và chỉ sang báo cáo đầy đủ).
+- **Chia sẻ ra ngoài (link công khai):** nút **Chia sẻ trình chiếu** cho link nội bộ `/present` (cần đăng nhập) và, với trưởng nhóm trở lên, link công khai `/share/<mã>` để người ngoài xem không cần tài khoản. Chọn thời hạn 1, 7, 30 hoặc 90 ngày; mặc định không kèm hợp đồng, doanh thu, lợi nhuận (chỉ người có quyền tài chính bật được). Số liệu tính lúc mở, theo quyền của người tạo. Link ngừng hoạt động khi hết hạn, bị thu hồi, người tạo bị khoá hoặc dự án bị xoá; mọi trường hợp đều hiện cùng một trang "Liên kết không còn hiệu lực". Chỉ lưu mã băm SHA-256, nên link chỉ hiện một lần lúc tạo. Trang công khai gửi `noindex` và `no-referrer`; tạo và thu hồi được ghi nhật ký (`lib/report-share.ts`, bảng `DeckShare`).
 
 ### Báo cáo công việc tuần / tháng
 
@@ -268,7 +269,8 @@ Sau khi đã có Hyperdrive và ID trong `wrangler.jsonc` (cách 1, hoặc tạo
 ```
 app/(app)/        Các trang sau đăng nhập: dashboard, projects, tasks, inbox, reports, ai, team, settings
 app/api/          API (auth, users, projects, categories, tasks, reports, notes)
-app/present/      Trang trình chiếu online
+app/present/      Trang trình chiếu online (cần đăng nhập)
+app/share/        Trang trình chiếu qua link công khai (không cần đăng nhập)
 components/       UI, biểu đồ, bộ slide (deck/), task drawer, dự án
 lib/              prisma, phiên đăng nhập, phân quyền, thống kê theo kỳ, deck model, xuất PDF/PPTX, prompt AI
 prisma/           schema, migrations, seed, tạo admin, SQL bảo mật Supabase

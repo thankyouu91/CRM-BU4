@@ -3,7 +3,6 @@
 import { useMemo, useState } from "react";
 import Link from "next/link";
 import { CheckCircle2, Clock, ExternalLink, FileText, Link2, Loader2, Sparkles, Timer, TriangleAlert } from "lucide-react";
-import { toast } from "sonner";
 import { Card, CardBody, CardHeader } from "@/components/ui/card";
 import { Avatar } from "@/components/ui/avatar";
 import { ProjectStatusBadge } from "@/components/ui/badge";
@@ -19,6 +18,7 @@ import { PeriodFilter, defaultPeriod, periodQuery, type PeriodState } from "@/co
 import { DeadlineTable, WorkloadCard } from "@/components/reports/deadline";
 import { FinanceSection } from "@/components/reports/finance-section";
 import { HoursHeatmap } from "@/components/reports/hours-heatmap";
+import { ShareDialog } from "@/components/reports/share-dialog";
 import { useApi } from "@/lib/client";
 import { useChartTheme } from "@/lib/chart-theme";
 import { buildReportDeck, deckWeekAnchor, makeDeckMeta, slideTitle } from "@/lib/deck-model";
@@ -59,15 +59,7 @@ export function ReportsView({
     [data, projectName, userName, weekReport],
   );
 
-  const copyPresentLink = async () => {
-    const url = `${window.location.origin}/present?${query}`;
-    try {
-      await navigator.clipboard.writeText(url);
-      toast.success("Đã sao chép liên kết trình chiếu", { description: "Thành viên đã đăng nhập có thể mở để xem trực tuyến." });
-    } catch {
-      toast.message(url);
-    }
-  };
+  const [sharing, setSharing] = useState(false);
 
   const k = data?.kpis;
 
@@ -97,8 +89,8 @@ export function ReportsView({
               </option>
             ))}
           </select>
-          <Button variant="ghost" size="sm" onClick={copyPresentLink} disabled={customIncomplete}>
-            <Link2 className="h-4 w-4" /> Link trình chiếu
+          <Button variant="ghost" size="sm" onClick={() => setSharing(true)} disabled={customIncomplete || !data}>
+            <Link2 className="h-4 w-4" /> Chia sẻ trình chiếu
           </Button>
           <Link href={`/ai?${query}`}>
             <Button variant="ghost" size="sm">
@@ -394,6 +386,15 @@ export function ReportsView({
           </Card>
         </div>
       )}
+      <ShareDialog
+        open={sharing}
+        onClose={() => setSharing(false)}
+        period={period}
+        projectId={projectId}
+        periodLabel={data?.period.label ?? ""}
+        projectName={projectName}
+        financeAvailable={!!data?.finance && data.finance.totals.count > 0}
+      />
     </div>
   );
 }

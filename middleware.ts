@@ -1,8 +1,10 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { SESSION_COOKIE, verifyToken } from "@/lib/jwt";
 
-// Routes reachable without a session.
-const PUBLIC_PATHS = ["/login", "/api/auth/login"];
+// Routes reachable without a session. /share/<token> is a public presentation link:
+// the page checks the token itself (lib/report-share.ts).
+const PUBLIC_PATHS = ["/login", "/api/auth/login", "/share"];
+const SHARE_PATH = "/share";
 // Routes a session flagged "must change password" may still reach.
 const PASSWORD_CHANGE_PATHS = ["/change-password", "/api/auth/change-password", "/api/auth/logout", "/api/auth/me"];
 
@@ -21,6 +23,14 @@ export async function middleware(req: NextRequest) {
     }
   }
 
+  if (matches(pathname, [SHARE_PATH])) {
+    // Keep shared reports out of search engines, caches and the Referer of outgoing links.
+    const res = NextResponse.next();
+    res.headers.set("X-Robots-Tag", "noindex, nofollow");
+    res.headers.set("Referrer-Policy", "no-referrer");
+    res.headers.set("Cache-Control", "private, no-store");
+    return res;
+  }
   if (matches(pathname, PUBLIC_PATHS)) return NextResponse.next();
 
   const token = req.cookies.get(SESSION_COOKIE)?.value;

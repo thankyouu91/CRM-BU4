@@ -11,7 +11,7 @@ CREATE ROLE crm_app NOLOGIN;
 GRANT USAGE ON SCHEMA public TO crm_app;
 GRANT SELECT, INSERT, UPDATE, DELETE ON
   "User", "Project", "ProjectMember", "Category", "Task", "TaskReport", "Note", "Contract",
-  "WorkReport", "ContractFile", "ContractFileBlob", "AppSetting", "Notification", "AiQuota", "ProjectTemplate"
+  "WorkReport", "ContractFile", "ContractFileBlob", "AppSetting", "Notification", "AiQuota", "ProjectTemplate", "DeckShare"
   TO crm_app;
 
 -- RLS is enabled on every table (supabase-hardening.sql). crm_app is not the
@@ -31,6 +31,7 @@ CREATE POLICY crm_app_all ON "AppSetting"       FOR ALL TO crm_app USING (true) 
 CREATE POLICY crm_app_all ON "Notification"     FOR ALL TO crm_app USING (true) WITH CHECK (true);
 CREATE POLICY crm_app_all ON "AiQuota"          FOR ALL TO crm_app USING (true) WITH CHECK (true);
 CREATE POLICY crm_app_all ON "ProjectTemplate"  FOR ALL TO crm_app USING (true) WITH CHECK (true);
+CREATE POLICY crm_app_all ON "DeckShare"        FOR ALL TO crm_app USING (true) WITH CHECK (true);
 
 -- Tables added by future migrations (run as postgres) are usable by the app;
 -- each new table still needs ENABLE ROW LEVEL SECURITY + a crm_app policy.

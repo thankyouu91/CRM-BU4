@@ -130,6 +130,7 @@ model User {
   projectTemplates ProjectTemplate[] @relation("TemplateCreator")
   notifications    Notification[]    @relation("NotificationRecipient")
   aiQuotas         AiQuota[]
+  deckShares       DeckShare[]       @relation("DeckShareCreator")
 }
 
 model Project {
@@ -150,6 +151,7 @@ model Project {
   members    ProjectMember[]
   notes      Note[]
   contracts  Contract[]
+  deckShares DeckShare[]
 
   @@index([ownerId])
 }
@@ -430,4 +432,33 @@ model ProjectTemplate {
   createdBy   User?    @relation("TemplateCreator", fields: [createdById], references: [id], onDelete: SetNull)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+}
+
+// Link công khai của bản trình chiếu báo cáo (/share/<mã>): người ngoài xem không cần
+// đăng nhập. Chỉ lưu mã băm SHA-256 của mã trong link, không lưu mã gốc. Số liệu tính lúc
+// xem, theo quyền của người tạo; link hết hiệu lực khi hết hạn, bị thu hồi, người tạo bị
+// khoá tài khoản hoặc dự án bị xoá.
+model DeckShare {
+  id             String    @id @default(cuid())
+  tokenHash      String    @unique
+  createdById    String
+  createdBy      User      @relation("DeckShareCreator", fields: [createdById], references: [id], onDelete: Cascade)
+  // Kỳ báo cáo như ở Trung tâm báo cáo: period (day|week|month|quarter|year|custom),
+  // ngày neo hoặc from/to (YYYY-MM-DD theo APP_TIMEZONE)
+  period         String
+  date           String?
+  from           String?
+  to             String?
+  projectId      String?
+  project        Project?  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  label          String?
+  // Hợp đồng, doanh thu, lợi nhuận: chỉ hiện khi người tạo bật và có quyền tài chính
+  includeFinance Boolean   @default(false)
+  expiresAt      DateTime
+  revokedAt      DateTime?
+  viewCount      Int       @default(0)
+  lastViewedAt   DateTime?
+  createdAt      DateTime  @default(now())
+
+  @@index([createdById, createdAt])
 }

@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { randomUUID } from "node:crypto";
+import { createHash, randomBytes, randomUUID } from "node:crypto";
 import { spawn } from "node:child_process";
 import { setTimeout as sleep } from "node:timers/promises";
 import { PrismaClient } from "@prisma/client";
@@ -54,6 +54,16 @@ try {
     const html = await response.text();
     assert(html.includes(marker) && !html.includes("a server-side exception"), `${path} server rendering failed`);
   }
+  // A public presentation link opens without a session; an unknown one does not.
+  const shareToken = randomBytes(32).toString("base64url");
+  await db.deckShare.create({ data: { tokenHash: createHash("sha256").update(shareToken).digest("hex"), createdById: id, period: "month", projectId: project.id, expiresAt: new Date(Date.now() + 86_400_000) } });
+  const shared = await fetch(`${origin}/share/${shareToken}`, { redirect: "manual", signal: AbortSignal.timeout(20000) });
+  assert.equal(shared.status, 200, "/share status");
+  assert.equal(shared.headers.get("x-robots-tag"), "noindex, nofollow", "/share must not be indexed");
+  const sharedHtml = await shared.text();
+  assert(sharedHtml.includes(`Báo cáo dự án ${id}`) && !sharedHtml.includes("a server-side exception"), "/share server rendering failed");
+  const unknownShare = await fetch(`${origin}/share/${"A".repeat(43)}`, { redirect: "manual", signal: AbortSignal.timeout(20000) });
+  assert.equal(unknownShare.status, 404, "an unknown share link must not open");
   for (const deadline of ["this-week", "next-week", "next-month"]) {
     const response = await fetch(`${origin}/api/tasks?deadline=${deadline}&q=${id}`, { headers: { Cookie: cookie }, signal: AbortSignal.timeout(20000) });
     assert.equal(response.status, 200, `${deadline} API status`);
@@ -72,7 +82,7 @@ try {
   });
   assert.equal(intake.status, 400, "Intake must validate files inside workerd without calling AI");
   assert.equal((await intake.json()).fields.attachments, "Chọn file để trích xuất");
-  console.log("Worker smoke passed: login, project calendar, My Tasks, deadline APIs, department report, analytics and AI intake route on workerd + PostgreSQL.");
+  console.log("Worker smoke passed: login, project calendar, My Tasks, public share link, deadline APIs, department report, analytics and AI intake route on workerd + PostgreSQL.");
 } catch (error) {
   console.error(logs);
   throw error;

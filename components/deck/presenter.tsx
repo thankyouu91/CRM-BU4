@@ -56,7 +56,8 @@ export function Presenter({
   initialTheme?: DeckTheme["id"];
   initialTransition?: TransitionKind;
   startIndex?: number;
-  onClose: () => void;
+  /** Left out on a public link: there is nowhere to go back to, so there is no exit. */
+  onClose?: () => void;
 }) {
   const root = useRef<HTMLDivElement>(null);
   const reduced = useReducedMotion();
@@ -152,7 +153,7 @@ export function Presenter({
           // Browsers usually consume the first Esc to leave fullscreen; whenever
           // the key does reach us, it closes the overview or ends the show.
           if (overview) setOverview(false);
-          else onClose();
+          else onClose?.();
           break;
       }
     };
@@ -275,10 +276,14 @@ export function Presenter({
             <CtrlButton label="Toàn màn hình (F)" onClick={toggleFullscreen}>
               {fullscreen ? <Minimize className="h-4 w-4" /> : <Maximize className="h-4 w-4" />}
             </CtrlButton>
-            <span className="mx-1 h-6 w-px bg-white/15" />
-            <CtrlButton label="Thoát (Esc)" onClick={onClose}>
-              <X className="h-4 w-4" />
-            </CtrlButton>
+            {onClose && (
+              <>
+                <span className="mx-1 h-6 w-px bg-white/15" />
+                <CtrlButton label="Thoát (Esc)" onClick={onClose}>
+                  <X className="h-4 w-4" />
+                </CtrlButton>
+              </>
+            )}
           </motion.div>
         )}
       </AnimatePresence>

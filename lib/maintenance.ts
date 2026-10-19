@@ -12,6 +12,7 @@
 
 import { Client } from "pg";
 import { AUDIT_RETENTION_DAYS } from "./audit-actions";
+import { SHARE_RETENTION_DAYS } from "./report-share-rules";
 
 /** Days a notification is kept (lib/notifications.ts shows the latest in the bell). */
 export const NOTIFICATION_RETENTION_DAYS = 90;
@@ -132,7 +133,12 @@ export async function runMaintenance(env: MaintenanceEnv, now = new Date()): Pro
     // The bell shows the latest notices; old ones and past days' AI counters are not needed.
     const notices = await db.query(`DELETE FROM "Notification" WHERE "createdAt" < now() - make_interval(days => $1)`, [NOTIFICATION_RETENTION_DAYS]);
     const quotas = await db.query(`DELETE FROM "AiQuota" WHERE "day" < $1`, [localDay(new Date(now.getTime() - 7 * 86_400_000), env.APP_TIMEZONE)]);
-    console.log(`[maintenance] removed ${notices.rowCount ?? 0} old notifications, ${quotas.rowCount ?? 0} old AI counters`);
+    // Public presentation links that stopped working long ago (lib/report-share-rules.ts).
+    const shares = await db.query(
+      `DELETE FROM "DeckShare" WHERE "expiresAt" < now() - make_interval(days => $1) OR "revokedAt" < now() - make_interval(days => $1)`,
+      [SHARE_RETENTION_DAYS],
+    );
+    console.log(`[maintenance] removed ${notices.rowCount ?? 0} old notifications, ${quotas.rowCount ?? 0} old AI counters, ${shares.rowCount ?? 0} old share links`);
   } finally {
     ending = true;
     await db.end();
