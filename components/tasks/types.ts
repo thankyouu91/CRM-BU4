@@ -1,5 +1,5 @@
 export type UserBrief = { id: string; name: string; avatarColor: string; jobTitle?: string | null; /** Not in the project yet: joins it when given the work. */ joins?: boolean };
-export type CategoryBrief = { id: string; name: string; color: string; parentId?: string | null };
+export type CategoryBrief = { id: string; name: string; color: string; parentId?: string | null; startDate?: string | null; dueDate?: string | null };
 
 /** Category picker options: each main category followed by its sub-categories, indented. */
 export function categoryOptions(categories: CategoryBrief[]): { id: string; label: string }[] {
@@ -50,6 +50,8 @@ export interface TaskDetail extends TaskBase {
     owner: UserBrief;
     members: { role: string; user: UserBrief }[];
     categories: CategoryBrief[];
+    startDate?: string | null;
+    dueDate?: string | null;
   };
   category: (CategoryBrief & { parent?: { name: string } | null }) | null;
   parent: { id: string; title: string } | null;

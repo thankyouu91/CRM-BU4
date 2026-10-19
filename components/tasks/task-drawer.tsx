@@ -32,6 +32,7 @@ import { PRIORITY, TASK_STATUS } from "@/lib/constants";
 import { fromInputDate, isOverdue, toInputDate } from "@/lib/dates";
 import { cn, formatShortDate, formatDateTime, timeAgo } from "@/lib/utils";
 import { DateInput } from "@/components/ui/date-input";
+import { DateWindowNotice } from "./date-window-notice";
 
 interface Props {
   taskId: string | null;
@@ -260,6 +261,14 @@ function TaskPanel({
             />
           </Field>
         </section>
+        <DateWindowNotice
+          start={task.startDate}
+          due={task.dueDate}
+          windows={[
+            { kind: "dự án", name: task.project.name, startDate: task.project.startDate, dueDate: task.project.dueDate },
+            ...task.project.categories.filter((c) => c.id === task.category?.id).map((c) => ({ kind: "hạng mục", name: c.name, startDate: c.startDate, dueDate: c.dueDate })),
+          ]}
+        />
 
         <ProgressField task={task} disabled={!perms.report || hasSubtasks} onCommit={(progress) => patch({ progress })} />
 

@@ -10,6 +10,7 @@ import { PRIORITY } from "@/lib/constants";
 import { fromInputDate } from "@/lib/dates";
 import { categoryOptions, joinHint, personLabel, type CategoryBrief, type UserBrief } from "./types";
 import { DateInput } from "@/components/ui/date-input";
+import { DateWindowNotice } from "./date-window-notice";
 
 export function TaskCreateModal({
   open,
@@ -18,6 +19,7 @@ export function TaskCreateModal({
   categories,
   people,
   defaultCategoryId,
+  projectWindow,
   send = sendPlain,
   onCreated,
 }: {
@@ -27,6 +29,8 @@ export function TaskCreateModal({
   categories: CategoryBrief[];
   people: UserBrief[];
   defaultCategoryId?: string | null;
+  /** The project's own dates, to warn when the task falls outside them. */
+  projectWindow?: { name: string; startDate: string | null; dueDate: string | null };
   /** The project workspace passes its own, which refreshes the project from the answer. */
   send?: SendChange;
   onCreated: (id: string) => void;
@@ -148,6 +152,14 @@ export function TaskCreateModal({
               <DateInput aria-label="Hạn chót" value={dueDate} onChange={setDueDate} />
             </Field>
           </div>
+          <DateWindowNotice
+            start={startDate}
+            due={dueDate}
+            windows={[
+              ...(projectWindow ? [{ kind: "dự án", ...projectWindow }] : []),
+              ...categories.filter((c) => c.id === categoryId).map((c) => ({ kind: "hạng mục", name: c.name, startDate: c.startDate, dueDate: c.dueDate })),
+            ]}
+          />
         </div>
       </div>
     </Modal>

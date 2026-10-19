@@ -344,6 +344,7 @@ export function ProjectWorkspace({
           projectId={p.id}
           categories={p.categories}
           people={assignable}
+          projectWindow={{ name: p.name, startDate: p.startDate, dueDate: p.dueDate }}
           send={send}
           onCreated={setOpenTask}
         />
