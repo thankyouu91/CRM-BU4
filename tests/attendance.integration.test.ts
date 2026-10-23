@@ -65,7 +65,7 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)("attendance on PostgreSQL", () =
     await db.user.deleteMany({ where: { id: { in: Object.values(ids) } } });
   });
 
-  it("lets people mark their own leave this month, tells their direct manager, and closes past months to them", async () => {
+  it("lets people ask for their own leave this month, tells their direct manager, and leaves changes to managers", async () => {
     const day = firstWeekday(month);
     const own = await mark("an", { userId: ids.an, from: day, sessions: ["AM"], kind: "ANNUAL", note: "Đi khám" });
     expect(own.status).toBe(200);
@@ -81,11 +81,21 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)("attendance on PostgreSQL", () =
     expect((await mark("an", { userId: ids.an, from: firstWeekday(lastMonth), kind: "SICK" })).status).toBe(403);
     expect((await mark("an", { userId: ids.an, from: sunday, kind: "ANNUAL" })).body.error).toMatch(/Chủ nhật/);
     expect((await mark("an", { userId: ids.an, from: saturday, sessions: ["PM"], kind: "ANNUAL" })).body.error).toMatch(/Chiều thứ 7/);
-    // Back to worked.
-    expect((await mark("an", { userId: ids.an, from: day, sessions: ["AM"], kind: null })).body.view.balance.used).toBe(0);
+    // Once recorded, only a manager changes or clears it; empty sessions stay open to them.
+    const clear = await mark("an", { userId: ids.an, from: day, sessions: ["AM"], kind: null });
+    expect(clear.status).toBe(403);
+    expect(clear.body.error).toMatch(/Chỉ quản lý mới sửa hoặc xoá/);
+    const change = await mark("an", { userId: ids.an, from: day, kind: "SICK" });
+    expect(change.status).toBe(403);
+    expect(change.body.error).toMatch(/^Buổi sáng .* đã được ghi/);
+    expect((await db.attendanceMark.findMany({ where: { userId: ids.an, day } })).map((r) => r.kind)).toEqual(["ANNUAL"]);
+    expect((await mark("an", { userId: ids.an, from: day, sessions: ["PM"], kind: "PERSONAL" })).status).toBe(200);
+    // Back to worked, by the direct manager.
+    expect((await mark("boss", { userId: ids.an, from: day, kind: null })).body.changed).toBe(2);
+    expect(await db.attendanceMark.count({ where: { userId: ids.an, day } })).toBe(0);
   });
 
-  it("lets the direct manager see and correct any day, and keeps everyone else out", async () => {
+  it("shows everyone's timesheet to everyone, and lets only managers correct it", async () => {
     const past = firstWeekday(lastMonth);
     const fixed = await mark("boss", { userId: ids.an, from: past, kind: "SICK", note: "Ốm" });
     expect(fixed.status).toBe(200);
@@ -95,12 +105,16 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)("attendance on PostgreSQL", () =
 
     const { view } = await routes();
     session.user = as("peer");
-    expect((await view(json(`/api/attendance?user=${ids.an}&month=${month}`, "GET"))).status).toBe(403);
-    expect((await mark("peer", { userId: ids.an, from: firstWeekday(month), kind: "UNPAID" })).status).toBe(404);
+    const peerView = await view(json(`/api/attendance?user=${ids.an}&month=${lastMonth}`, "GET"));
+    expect(peerView.status).toBe(200);
+    const peerSees = await peerView.json();
+    expect(peerSees.notes).toHaveLength(2);
+    expect(peerSees.rights).toMatchObject({ correct: false, requestFrom: null, canEditBalance: false });
+    expect((await mark("peer", { userId: ids.an, from: firstWeekday(month), kind: "UNPAID" })).status).toBe(403);
     session.user = as("boss");
     const seen = await (await view(json(`/api/attendance?user=${ids.an}&month=${month}`, "GET"))).json();
     expect(seen.person).toMatchObject({ name: "An", managerName: "Trưởng nhóm" });
-    expect(seen.rights).toMatchObject({ editFrom: "", canEditBalance: false });
+    expect(seen.rights).toMatchObject({ correct: true, requestFrom: null, canEditBalance: false });
   });
 
   it("marks every working session of a range, skipping Sunday and Saturday afternoon", async () => {
@@ -129,7 +143,7 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)("attendance on PostgreSQL", () =
     session.user = as("an");
     const mine = await (await view(json(`/api/attendance?month=${month}`, "GET"))).json();
     expect(mine.balance).toMatchObject({ entitlement: 14, carriedOver: 2.5, used: 1, remaining: 15.5, note: "Thâm niên" });
-    expect(mine.rights.editFrom).toBe(`${month}-01`);
+    expect(mine.rights).toMatchObject({ correct: false, requestFrom: `${month}-01` });
     expect(await db.auditLog.count({ where: { actorId: ids.hr, action: "leave_balance.update" } })).toBe(1);
 
     session.user = as("hr");
@@ -139,7 +153,9 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)("attendance on PostgreSQL", () =
     expect(an.notes).toHaveLength(2);
     session.user = as("peer");
     const peerSheet = await (await team(json(`/api/attendance/team?month=${month}`, "GET"))).json();
-    expect(peerSheet.people.map((p: { person: { id: string } }) => p.person.id)).toEqual([ids.peer]);
+    const seenIds = peerSheet.people.map((p: { person: { id: string } }) => p.person.id);
+    expect(seenIds[0]).toBe(ids.peer);
+    expect(seenIds).toEqual(expect.arrayContaining(Object.values(ids)));
   });
 
   it("takes holidays out of the working days; only HR sets them", async () => {

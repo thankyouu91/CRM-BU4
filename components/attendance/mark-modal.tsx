@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Field, Textarea } from "@/components/ui/input";
 import { DateInput } from "@/components/ui/date-input";
 import { api, ApiError } from "@/lib/client";
-import { LEAVE_KINDS, LEAVE_KIND_KEYS, scheduledSessions, SESSION_LABEL, WEEKDAY_SHORT, weekdayOf, type LeaveKind, type Session, type SessionCell } from "@/lib/attendance";
+import { formatDays, LEAVE_KINDS, LEAVE_KIND_KEYS, scheduledSessions, SESSION_LABEL, WEEKDAY_SHORT, weekdayOf, type LeaveKind, type Session, type SessionCell } from "@/lib/attendance";
 import type { AttendanceView } from "@/lib/attendance-queries";
 import { cn } from "@/lib/utils";
 import { KIND_TONE } from "./attendance-calendar";
@@ -16,14 +16,21 @@ type Scope = Session | "DAY" | "RANGE";
 
 const dayText = (day: string) => `${WEEKDAY_SHORT[weekdayOf(day)] === "CN" ? "Chủ nhật" : `Thứ ${weekdayOf(day) + 1}`}, ${day.slice(8)}/${day.slice(5, 7)}/${day.slice(0, 4)}`;
 
-/** Mark a session (or a day, or several days) as leave or a business trip, with the reason. */
+/**
+ * Mark a session (or a day, or several days) as leave or a business trip, with the reason.
+ * A manager (`correct`) may change or clear what is there; anyone else asks for leave on
+ * empty sessions only, and cannot change it afterwards.
+ */
 export function MarkModal({
   personId,
   personName,
   isSelf,
+  correct,
+  managerName,
   day,
   session,
   cell,
+  taken,
   maxDay,
   onClose,
   onSaved,
@@ -31,10 +38,15 @@ export function MarkModal({
   personId: string;
   personName: string;
   isSelf: boolean;
+  correct: boolean;
+  /** The person's direct manager, told when they ask for leave. */
+  managerName: string | null;
   day: string;
   session: Session;
   /** What the session holds now. */
   cell: SessionCell;
+  /** Sessions of `day` already recorded (a request cannot cover them). */
+  taken: Session[];
   maxDay?: string;
   onClose: () => void;
   onSaved: (view: AttendanceView | null) => void;
@@ -58,8 +70,8 @@ export function MarkModal({
         note: k ? note.trim() || null : null,
       };
       const r = await api<{ changed: number; view: AttendanceView | null }>("/api/attendance/marks", { method: "POST", body });
-      toast.success(k ? `Đã ghi ${LEAVE_KINDS[k].label.toLowerCase()} (${r.changed / 2} ngày công)` : "Đã chuyển về đi làm bình thường", {
-        description: k && isSelf && !LEAVE_KINDS[k].worked ? "Quản lý trực tiếp của bạn nhận được thông báo." : undefined,
+      toast.success(k ? `Đã ghi ${LEAVE_KINDS[k].label.toLowerCase()} (${formatDays(r.changed / 2)} ngày công)` : "Đã chuyển về đi làm bình thường", {
+        description: k && isSelf && managerName && !LEAVE_KINDS[k].worked ? `Đã báo cho ${managerName} (quản lý trực tiếp).` : undefined,
       });
       onSaved(r.view);
       onClose();
@@ -70,9 +82,14 @@ export function MarkModal({
     }
   };
 
-  const scopes: { value: Scope; label: string }[] = [
-    { value: "AM", label: "Buổi sáng" },
-    ...(saturday ? [] : [{ value: "PM" as Scope, label: "Buổi chiều" }, { value: "DAY" as Scope, label: "Cả ngày" }]),
+  const scopes: { value: Scope; label: string; disabled?: boolean }[] = [
+    { value: "AM", label: "Buổi sáng", disabled: !correct && taken.includes("AM") },
+    ...(saturday
+      ? []
+      : [
+          { value: "PM" as Scope, label: "Buổi chiều", disabled: !correct && taken.includes("PM") },
+          { value: "DAY" as Scope, label: "Cả ngày", disabled: !correct && taken.length > 0 },
+        ]),
     { value: "RANGE", label: "Nhiều ngày" },
   ];
 
@@ -81,11 +98,11 @@ export function MarkModal({
       open
       onClose={onClose}
       size="sm"
-      title={isSelf ? "Ghi nghỉ / xin nghỉ" : `Chấm công · ${personName}`}
+      title={isSelf && !correct ? "Xin nghỉ" : isSelf ? "Ghi nghỉ" : `Chấm công · ${personName}`}
       description={`${dayText(day)} · đang là: ${cell.state === "marked" ? LEAVE_KINDS[cell.kind!].label : "đi làm"} (${SESSION_LABEL[session].toLowerCase()})`}
       footer={
         <>
-          {cell.state === "marked" && (
+          {correct && cell.state === "marked" && (
             <Button variant="ghost" className="mr-auto" onClick={() => send(null)} disabled={busy}>
               Đi làm bình thường
             </Button>
@@ -108,8 +125,13 @@ export function MarkModal({
                 type="button"
                 role="radio"
                 aria-checked={scope === s.value}
+                disabled={s.disabled}
+                title={s.disabled ? "Buổi này đã được ghi; chỉ quản lý sửa được" : undefined}
                 onClick={() => setScope(s.value)}
-                className={cn("rounded-lg border px-3 py-1.5 text-xs font-medium", scope === s.value ? "border-primary bg-primary/10 text-primary" : "hover:bg-muted")}
+                className={cn(
+                  "rounded-lg border px-3 py-1.5 text-xs font-medium disabled:cursor-not-allowed disabled:opacity-40",
+                  scope === s.value ? "border-primary bg-primary/10 text-primary" : "enabled:hover:bg-muted",
+                )}
               >
                 {s.label}
               </button>
@@ -137,6 +159,11 @@ export function MarkModal({
         <Field label="Ghi chú / lý do">
           <Textarea value={note} maxLength={500} onChange={(e) => setNote(e.target.value)} placeholder="VD: Đi khám bệnh, việc gia đình, đi gặp khách hàng…" />
         </Field>
+        {!correct && (
+          <p className="rounded-lg bg-muted p-2.5 text-xs text-muted-foreground">
+            {managerName ? `Sau khi lưu, ${managerName} (quản lý trực tiếp) nhận được thông báo. ` : ""}Buổi đã ghi chỉ quản lý sửa hoặc huỷ được: hãy nhờ quản lý trực tiếp hoặc người quản lý nhân sự.
+          </p>
+        )}
       </div>
     </Modal>
   );

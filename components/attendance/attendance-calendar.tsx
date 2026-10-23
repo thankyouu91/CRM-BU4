@@ -55,12 +55,13 @@ function SessionButton({ day, cell, editable, onPick }: { day: DayCell; cell: Se
 export function AttendanceCalendar({
   days,
   today,
-  canEditDay,
+  canPick,
   onPick,
 }: {
   days: DayCell[];
   today: string;
-  canEditDay: (day: string) => boolean;
+  /** Whether the viewer may act on this session (record, or change what is there). */
+  canPick: (day: string, cell: SessionCell) => boolean;
   onPick: (day: string, session: Session) => void;
 }) {
   const lead = (days[0]?.weekday ?? 1) - 1;
@@ -79,7 +80,6 @@ export function AttendanceCalendar({
         ))}
         {days.map((d) => {
           const working = d.sessions.filter((s) => s.state !== "off");
-          const editable = canEditDay(d.day);
           return (
             <div
               key={d.day}
@@ -99,7 +99,7 @@ export function AttendanceCalendar({
               ) : (
                 <div className="space-y-1">
                   {working.map((s) => (
-                    <SessionButton key={s.session} day={d} cell={s} editable={editable} onPick={onPick} />
+                    <SessionButton key={s.session} day={d} cell={s} editable={canPick(d.day, s)} onPick={onPick} />
                   ))}
                   {working.length === 1 && <p className="flex h-7 items-center justify-center text-[10px] text-muted-foreground">Nghỉ chiều</p>}
                 </div>

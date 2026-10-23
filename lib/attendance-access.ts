@@ -1,14 +1,14 @@
-// Who may see and change whose timesheet. Pure, so the API, the page and the tests share it.
+// Who may change whose timesheet. Pure, so the API, the page and the tests share it.
 //
-//  - See: yourself, anyone below your level (as for weekly reports), and the people you
-//    are the direct manager of.
-//  - Change marks: yourself from the first day of the current month on (earlier months
-//    are closed to you); any day for the people whose accounts you manage and for your
-//    direct reports.
+//  - See: everyone signed in sees everyone's timesheet.
+//  - Ask for leave: yourself, on sessions nothing is recorded for yet, from the first day
+//    of the current month on. Once recorded, only a manager changes or clears it.
+//  - Correct (record, change, clear any day): your direct manager, and whoever manages
+//    your account (USER_MANAGE over lower levels, administrators).
 //  - Change the annual leave numbers: the people whose accounts you manage (HR).
 //  - Holidays: account managers (USER_MANAGE) and administrators.
 
-import { canManageUser, canViewWorkReport, hasPermission, type Actor } from "./permissions";
+import { canManageUser, hasPermission, type Actor } from "./permissions";
 import { ownEditFrom } from "./attendance";
 
 export type Viewer = Actor;
@@ -21,18 +21,14 @@ export interface Person {
 
 export const isDirectManager = (viewer: { id: string }, person: Person) => !!person.managerId && person.managerId === viewer.id;
 
-export function canSeeAttendance(viewer: Viewer, person: Person): boolean {
-  return canViewWorkReport(viewer, person) || isDirectManager(viewer, person);
-}
-
-/** Correct anyone's day: account managers and direct managers. */
+/** Record, change or clear any day: account managers and direct managers. */
 export function canCorrectAttendance(viewer: Viewer, person: Person): boolean {
   // canManageUser covers administrators (themselves included) and never a non-admin's own account.
   return canManageUser(viewer, person) || isDirectManager(viewer, person);
 }
 
-export function canEditAttendanceDay(viewer: Viewer, person: Person, day: string, today: string): boolean {
-  if (canCorrectAttendance(viewer, person)) return true;
+/** Record new leave on one's own empty sessions of `day` (not change what is there). */
+export function canRequestLeave(viewer: Viewer, person: Person, day: string, today: string): boolean {
   return viewer.id === person.id && day >= ownEditFrom(today);
 }
 
