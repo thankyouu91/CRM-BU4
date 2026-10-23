@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Monitor, Moon, Sun } from "lucide-react";
 import { Segmented } from "@/components/ui/misc";
+import { useBrowserValue } from "@/lib/client";
 
 type Choice = "light" | "dark" | "system";
 
@@ -17,23 +18,27 @@ function apply(choice: Choice) {
   }
 }
 
+function savedChoice(): Choice {
+  try {
+    const saved = localStorage.getItem("theme");
+    return saved === "light" || saved === "dark" ? saved : "system";
+  } catch {
+    return "system";
+  }
+}
+
 export function ThemeChoice() {
-  const [choice, setChoice] = useState<Choice>("system");
-  useEffect(() => {
-    try {
-      const saved = localStorage.getItem("theme");
-      setChoice(saved === "light" || saved === "dark" ? saved : "system");
-    } catch {
-      setChoice("system");
-    }
-  }, []);
+  const saved = useBrowserValue(savedChoice, "system");
+  // What was picked here; until then the saved choice.
+  const [picked, setPicked] = useState<Choice | null>(null);
+  const choice = picked ?? saved;
 
   return (
     <Segmented
       layoutId="theme-choice"
       value={choice}
       onChange={(c) => {
-        setChoice(c);
+        setPicked(c);
         apply(c);
       }}
       options={[

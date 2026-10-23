@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useRef } from "react";
+import { useCallback, useLayoutEffect, useRef } from "react";
 import { api, useApi, type ChangeHint, type SendChange } from "@/lib/client";
 import type { ProjectRoleKey } from "@/lib/permissions";
 import type { UserBrief } from "@/components/tasks/types";
@@ -44,8 +44,11 @@ const withWorkspace = (url: string) => `${url}${url.includes("?") ? "&" : "?"}in
 export function useWorkspace(projectId: string, initial: WorkspaceData) {
   const ws = useApi<WorkspaceData>(`/api/projects/${projectId}`, { initial });
   const { setData, reload } = ws;
+  // The data on screen, for `send` (a layout effect: in place before any click can call it).
   const latest = useRef(ws.data);
-  latest.current = ws.data;
+  useLayoutEffect(() => {
+    latest.current = ws.data;
+  });
   const seq = useRef(0);
   const inFlight = useRef(0);
 

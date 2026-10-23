@@ -4,6 +4,7 @@ import { useEffect, useId } from "react";
 import { createPortal } from "react-dom";
 import { AnimatePresence, motion } from "framer-motion";
 import { X } from "lucide-react";
+import { useHydrated } from "@/lib/client";
 import { cn } from "@/lib/utils";
 
 function useEscape(open: boolean, onClose: () => void) {
@@ -18,6 +19,15 @@ function useEscape(open: boolean, onClose: () => void) {
       document.body.style.overflow = prev;
     };
   }, [open, onClose]);
+}
+
+/**
+ * Whether the dialog can portal into the page: not on the server, and not while hydrating
+ * either, so a dialog open on the first render (a ?task= link) hydrates like the server's
+ * HTML, which has none, and shows right after.
+ */
+function useCanPortal() {
+  return useHydrated();
 }
 
 export function Modal({
@@ -40,7 +50,7 @@ export function Modal({
   useEscape(open, onClose);
   // The title names the dialog for screen readers.
   const id = useId();
-  if (typeof document === "undefined") return null;
+  if (!useCanPortal()) return null;
   const width = size === "sm" ? "max-w-md" : size === "lg" ? "max-w-3xl" : "max-w-xl";
 
   return createPortal(
@@ -99,7 +109,7 @@ export function Drawer({
   width?: string;
 }) {
   useEscape(open, onClose);
-  if (typeof document === "undefined") return null;
+  if (!useCanPortal()) return null;
   return createPortal(
     <AnimatePresence>
       {open && (

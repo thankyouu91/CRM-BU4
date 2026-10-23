@@ -1,11 +1,11 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { toast } from "sonner";
 import { Modal } from "@/components/ui/modal";
 import { Button } from "@/components/ui/button";
 import { Field, Input, Select } from "@/components/ui/input";
-import { api, ApiError } from "@/lib/client";
+import { api, ApiError, useChanged } from "@/lib/client";
 import { PRIORITY } from "@/lib/constants";
 import { zonedDay, zonedDayEdge, type ProjectBrief, type WorkPeriodJson } from "@/lib/work-report";
 import { DateInput } from "@/components/ui/date-input";
@@ -41,15 +41,14 @@ export function PlanItemModal({
   const [busy, setBusy] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
-  useEffect(() => {
-    if (!open) return;
+  if (useChanged([open, projects, first, last]) && open) {
     setProjectId((id) => (projects.some((p) => p.id === id) ? id : (projects[0]?.id ?? "")));
     setTitle("");
     setPriority("MEDIUM");
     setStart(first);
     setDue(last);
     setErrors({});
-  }, [open, projects, first, last]);
+  }
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();

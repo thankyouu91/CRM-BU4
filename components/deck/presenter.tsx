@@ -162,12 +162,9 @@ export function Presenter({
   }, [next, prev, go, total, onClose, overview]);
 
   // Autoplay: advance every AUTOPLAY_MS, stop on the last slide.
+  if (playing && index >= total - 1) setPlaying(false);
   useEffect(() => {
-    if (!playing) return;
-    if (index >= total - 1) {
-      setPlaying(false);
-      return;
-    }
+    if (!playing || index >= total - 1) return;
     const t = setTimeout(next, AUTOPLAY_MS);
     return () => clearTimeout(t);
   }, [playing, index, total, next]);
@@ -179,7 +176,8 @@ export function Presenter({
     idle.current = setTimeout(() => setChrome(false), 2500);
   };
   useEffect(() => {
-    poke();
+    // The controls show on open (`chrome` starts true) until the first pause.
+    idle.current = setTimeout(() => setChrome(false), 2500);
     return () => clearTimeout(idle.current);
   }, []);
 

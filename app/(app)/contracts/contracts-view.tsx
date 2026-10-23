@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { ClipboardPaste, FileSpreadsheet, Loader2, Plus, Search, Wallet } from "lucide-react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
@@ -10,7 +10,7 @@ import { Modal } from "@/components/ui/modal";
 import { ConfirmDialog } from "@/components/ui/confirm";
 import { EmptyState, PageHeader } from "@/components/ui/misc";
 import { PeriodFilter, defaultPeriod, periodQuery, type PeriodState } from "@/components/reports/period-filter";
-import { api, ApiError, useApi } from "@/lib/client";
+import { api, ApiError, useApi, useChanged } from "@/lib/client";
 import {
   CONTRACT_STATUS,
   CONTRACT_STATUSES,
@@ -40,9 +40,7 @@ interface ListResponse {
 function ImportModal({ open, defaultDate, onClose, onImported }: { open: boolean; defaultDate: string; onClose: () => void; onImported: () => void }) {
   const [text, setText] = useState("");
   const [busy, setBusy] = useState(false);
-  useEffect(() => {
-    if (open) setText("");
-  }, [open]);
+  if (useChanged([open]) && open) setText("");
   const rows: ParsedRow[] = useMemo(() => (text.trim() ? parseContractPaste(text, Number(defaultDate.slice(0, 4)), defaultDate) : []), [text, defaultDate]);
   const valid = rows.filter((r) => r.data);
 
@@ -175,15 +173,16 @@ export function ContractsView({ projects, initial, initialQuery = "" }: { projec
   const { data, loading, reload } = useApi<ListResponse>(url, { initial });
 
   // New contracts default into the period being viewed.
+  const listPeriod = data?.period;
   const defaultDate = useMemo(() => {
-    if (data?.period) {
+    if (listPeriod) {
       const now = new Date();
-      const from = new Date(data.period.from);
-      const to = new Date(data.period.to);
+      const from = new Date(listPeriod.from);
+      const to = new Date(listPeriod.to);
       return toDateInput((now >= from && now <= to ? now : from).toISOString());
     }
     return toDateInput(new Date().toISOString());
-  }, [data?.period]);
+  }, [listPeriod]);
 
   const rows = useMemo(() => {
     const term = q.trim().toLowerCase();

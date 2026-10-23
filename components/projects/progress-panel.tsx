@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { motion } from "framer-motion";
 import { TriangleAlert } from "lucide-react";
 import { Card, CardBody, CardHeader } from "@/components/ui/card";
@@ -15,9 +15,11 @@ import type { ProjectDetailData } from "./types";
 const DAY = 86_400_000;
 
 function Timeline({ project }: { project: ProjectDetailData }) {
+  // "Now" for this view: when it opened (reading the clock during render is impure).
+  const [openedAt] = useState(Date.now);
   const { rows, bands, start, span, months, todayPct } = useMemo(() => {
     const roots = project.tasks.filter((t) => !t.parentId);
-    const times: number[] = [Date.now()];
+    const times: number[] = [openedAt];
     if (project.startDate) times.push(new Date(project.startDate).getTime());
     if (project.dueDate) times.push(new Date(project.dueDate).getTime());
     for (const t of roots) {
@@ -53,8 +55,8 @@ function Timeline({ project }: { project: ProjectDetailData }) {
     const bands = mains
       .flatMap((m) => [m, ...project.categories.filter((c) => c.parentId === m.id)])
       .filter((c) => c.startDate || c.dueDate);
-    return { rows, bands, start, span, months, todayPct: ((Date.now() - start) / span) * 100 };
-  }, [project]);
+    return { rows, bands, start, span, months, todayPct: ((openedAt - start) / span) * 100 };
+  }, [project, openedAt]);
 
   const catColor = new Map(project.categories.map((c) => [c.id, c.color]));
 

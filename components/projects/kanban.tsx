@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { motion } from "framer-motion";
 import { CalendarDays, GitBranch, TriangleAlert } from "lucide-react";
 import { toast } from "sonner";
@@ -8,7 +8,7 @@ import { useTaskMenu } from "@/components/tasks/task-menu";
 import { Avatar } from "@/components/ui/avatar";
 import { PriorityBadge } from "@/components/ui/badge";
 import { ProgressBar } from "@/components/ui/progress";
-import { ApiError, type SendChange } from "@/lib/client";
+import { ApiError, useChanged, type SendChange } from "@/lib/client";
 import { groupBy } from "@/lib/task-tree";
 import { TASK_STATUS } from "@/lib/constants";
 import { isOverdue } from "@/lib/dates";
@@ -39,7 +39,7 @@ export function Kanban({
 }) {
   // Local copy so a drop moves the card instantly; the change's answer brings the server state.
   const [tasks, setTasks] = useState(source);
-  useEffect(() => setTasks(source), [source]);
+  if (useChanged([source])) setTasks(source);
   const [dragId, setDragId] = useState<string | null>(null);
   const [over, setOver] = useState<string | null>(null);
 

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import dynamic from "next/dynamic";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -37,7 +37,7 @@ import { Kanban } from "@/components/projects/kanban";
 import type { ProjectContracts } from "@/components/projects/finance-panel";
 import { useWorkspace, type WorkspaceData } from "@/components/projects/use-workspace";
 import type { Directory, ProjectCategory } from "@/components/projects/types";
-import { api, ApiError, useApi } from "@/lib/client";
+import { api, ApiError, useApi, useChanged } from "@/lib/client";
 import { formatDate } from "@/lib/utils";
 import { isOverdue } from "@/lib/dates";
 import { PROJECT_ROLE_INFO } from "@/lib/permissions";
@@ -103,9 +103,7 @@ export function ProjectWorkspace({
   const taskParam = params.get("task");
   const [openTask, setOpenTask] = useState<string | null>(taskParam);
   // ?task=<id> (links from quick search) opens that task, also when this project is already on screen.
-  useEffect(() => {
-    if (taskParam) setOpenTask(taskParam);
-  }, [taskParam]);
+  if (useChanged([taskParam]) && taskParam) setOpenTask(taskParam);
   const closeTask = () => {
     setOpenTask(null);
     const sp = new URLSearchParams(window.location.search);
@@ -123,6 +121,8 @@ export function ProjectWorkspace({
   const [editingProject, setEditingProject] = useState(false);
   const [deletingProject, setDeletingProject] = useState(false);
   const [savingTemplate, setSavingTemplate] = useState(false);
+  // "Now" for this view: when it opened (reading the clock during render is impure).
+  const [openedAt] = useState(Date.now);
 
   const setTab = (t: Tab) => {
     setTabState(t);
@@ -167,7 +167,7 @@ export function ProjectWorkspace({
   const { project: p, canManage, canContribute, canDelete, projectRole } = data;
   const done = p.tasks.filter((t) => t.status === "DONE").length;
   const overdue = p.tasks.filter((t) => isOverdue(t.dueDate, t.status)).length;
-  const daysLeft = p.dueDate ? Math.ceil((new Date(p.dueDate).getTime() - Date.now()) / 86_400_000) : null;
+  const daysLeft = p.dueDate ? Math.ceil((new Date(p.dueDate).getTime() - openedAt) / 86_400_000) : null;
 
   return (
     <div>

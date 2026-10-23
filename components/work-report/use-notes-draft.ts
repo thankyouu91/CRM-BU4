@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { api, ApiError } from "@/lib/client";
 import { notesOf, type WorkNotes, type WorkReportData, type WorkReportRecord } from "@/lib/work-report";
@@ -17,7 +17,9 @@ export function useNotesDraft(data: WorkReportData, onSaved: (r: WorkReportRecor
   const submitting = useRef(false);
   const timer = useRef<ReturnType<typeof setTimeout>>(undefined);
   const saved = useRef(onSaved);
-  saved.current = onSaved;
+  useLayoutEffect(() => {
+    saved.current = onSaved;
+  });
   const { type, key } = data.period;
   const body = useCallback((n: WorkNotes) => ({ period: type.toLowerCase(), key, ...n }), [type, key]);
 

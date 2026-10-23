@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useLayoutEffect, useRef, useState } from "react";
 import { CalendarDays } from "lucide-react";
+import { useChanged } from "@/lib/client";
 import { cn } from "@/lib/utils";
 
 const pad = (n: number) => String(n).padStart(2, "0");
@@ -60,18 +61,18 @@ export function DateInput({
   "aria-label"?: string;
 }) {
   const [parts, setParts] = useState<Parts>(() => split(value));
+  // Follow changes from outside (a reset, a saved value), but not our own partial typing.
+  const ours = joinDate(parts) === value || (!value && !parts.d && !parts.m && !parts.y);
+  if (useChanged([value]) && !ours) setParts(split(value));
   // Latest parts, for handlers that run before a re-render (a blur right after typing moves focus).
   const latest = useRef(parts);
-  latest.current = parts;
+  useLayoutEffect(() => {
+    latest.current = parts;
+  });
   const dayRef = useRef<HTMLInputElement>(null);
   const monthRef = useRef<HTMLInputElement>(null);
   const yearRef = useRef<HTMLInputElement>(null);
   const pickerRef = useRef<HTMLInputElement>(null);
-
-  // Follow changes from outside (a reset, a saved value), but not our own partial typing.
-  useEffect(() => {
-    setParts((cur) => (joinDate(cur) === value || (!value && !cur.d && !cur.m && !cur.y) ? cur : split(value)));
-  }, [value]);
 
   const commit = (next: Parts) => {
     latest.current = next;
@@ -97,7 +98,7 @@ export function DateInput({
   const setYear = (raw: string) => commit({ ...latest.current, y: raw.replace(/\D/g, "").slice(0, 4) });
 
   // Backspace in an empty part moves back to the previous one.
-  const back = (prev: React.RefObject<HTMLInputElement | null>) => (e: React.KeyboardEvent<HTMLInputElement>) => {
+  const back = (e: React.KeyboardEvent<HTMLInputElement>, prev: React.RefObject<HTMLInputElement | null>) => {
     if (e.key === "Backspace" && !e.currentTarget.value) prev.current?.focus();
   };
 
@@ -147,7 +148,7 @@ export function DateInput({
         value={parts.m}
         disabled={disabled}
         onChange={(e) => setMonth(e.target.value)}
-        onKeyDown={back(dayRef)}
+        onKeyDown={(e) => back(e, dayRef)}
         onBlur={() => latest.current.m.length === 1 && commit({ ...latest.current, m: pad(Number(latest.current.m)) })}
         onFocus={(e) => e.currentTarget.select()}
         className={cn(seg, "w-[2.6ch]")}
@@ -161,7 +162,7 @@ export function DateInput({
         value={parts.y}
         disabled={disabled}
         onChange={(e) => setYear(e.target.value)}
-        onKeyDown={back(monthRef)}
+        onKeyDown={(e) => back(e, monthRef)}
         onFocus={(e) => e.currentTarget.select()}
         className={cn(seg, "w-[4.4ch]")}
       />

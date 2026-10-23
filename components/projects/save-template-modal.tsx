@@ -1,11 +1,11 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { toast } from "sonner";
 import { Modal } from "@/components/ui/modal";
 import { Button } from "@/components/ui/button";
 import { Field, Input, Textarea } from "@/components/ui/input";
-import { api, ApiError } from "@/lib/client";
+import { api, ApiError, useChanged } from "@/lib/client";
 import { MAX_TEMPLATE_CATEGORIES, MAX_TEMPLATE_TASKS } from "@/lib/project-templates";
 
 /** Save the open project's structure (categories, tasks, relative dates) as a template. */
@@ -23,12 +23,11 @@ export function SaveTemplateModal({
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [busy, setBusy] = useState(false);
 
-  useEffect(() => {
-    if (!open) return;
+  if (useChanged([open, project.name]) && open) {
     setName(project.name);
     setDescription("");
     setErrors({});
-  }, [open, project.name]);
+  }
 
   const tooBig =
     project.categories > MAX_TEMPLATE_CATEGORIES

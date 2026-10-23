@@ -1,9 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { CheckCircle2, KeyRound, PlugZap, Sparkles, Trash2, TriangleAlert } from "lucide-react";
 import { toast } from "sonner";
-import { api, ApiError, useApi } from "@/lib/client";
+import { api, ApiError, useApi, useChanged } from "@/lib/client";
 import { AI_MODELS, DEFAULT_AI_DAILY_LIMIT, MAX_AI_DAILY_LIMIT, aiModelInfo, looksLikeAnthropicKey, type AiModelId } from "@/lib/ai-models";
 import type { AiSettingsView, AiUsage } from "@/lib/ai-settings";
 import { formatDateTime } from "@/lib/utils";
@@ -33,11 +33,10 @@ export function AiSettingsCard() {
   const [confirmRemove, setConfirmRemove] = useState(false);
 
   const s = data?.settings;
-  useEffect(() => {
-    if (!s) return;
+  if (useChanged([s]) && s) {
     setModel(s.model);
     setLimit(String(s.dailyLimit));
-  }, [s]);
+  }
 
   const save = async (patch: Record<string, unknown>, what: NonNullable<typeof busy>, done: string) => {
     setBusy(what);

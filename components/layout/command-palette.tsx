@@ -21,7 +21,7 @@ import {
 } from "lucide-react";
 import { Avatar } from "@/components/ui/avatar";
 import type { CurrentUser } from "@/lib/session";
-import { api, useDebouncedValue } from "@/lib/client";
+import { api, useBrowserValue, useChanged, useDebouncedValue } from "@/lib/client";
 import { PROJECT_STATUS, TASK_STATUS, type ProjectStatusKey, type TaskStatusKey } from "@/lib/constants";
 import { CONTRACT_STATUS, type ContractStatusKey } from "@/lib/finance";
 import { hasPermission } from "@/lib/permissions";
@@ -130,6 +130,7 @@ function Highlight({ text, query }: { text: string; query: string }) {
 }
 
 const kbd = "rounded border bg-muted px-1.5 py-0.5 font-sans text-[10px] font-medium leading-none text-muted-foreground";
+const isMac = () => /Mac|iPhone|iPad/.test(navigator.userAgent);
 
 /**
  * Quick search (Ctrl/Cmd+K from any page, or the header button): projects, tasks,
@@ -145,7 +146,6 @@ export function CommandPalette({ user }: { user: CurrentUser }) {
   const [results, setResults] = useState<{ q: string; data: SearchResults } | null>(null);
   const [state, setState] = useState<"idle" | "loading" | "error">("idle");
   const [retry, setRetry] = useState(0);
-  const [mac, setMac] = useState(false);
   const triggerRef = useRef<HTMLButtonElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const panelRef = useRef<HTMLDivElement>(null);
@@ -171,8 +171,8 @@ export function CommandPalette({ user }: { user: CurrentUser }) {
     (back && back !== document.body && back.isConnected ? back : triggerRef.current)?.focus();
   }, []);
 
-  useEffect(() => setMac(/Mac|iPhone|iPad/.test(navigator.userAgent)), []);
-  useEffect(() => setOpen(false), [pathname]);
+  const mac = useBrowserValue(isMac, false);
+  if (useChanged([pathname])) setOpen(false);
 
   // Ctrl/Cmd+K anywhere, also while typing in a field; again to close.
   useEffect(() => {
@@ -206,13 +206,10 @@ export function CommandPalette({ user }: { user: CurrentUser }) {
   }, [open, close]);
 
   // One request per settled query; typing on aborts the one in flight.
+  if (useChanged([open, debounced, term, retry])) setState(open && debounced && debounced === term ? "loading" : "idle");
   useEffect(() => {
-    if (!open || !debounced || debounced !== term) {
-      setState("idle");
-      return;
-    }
+    if (!open || !debounced || debounced !== term) return;
     const controller = new AbortController();
-    setState("loading");
     api<SearchResults>(`/api/search?q=${encodeURIComponent(debounced)}`, { signal: controller.signal })
       .then((data) => {
         setResults({ q: debounced, data });

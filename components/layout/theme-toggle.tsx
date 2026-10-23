@@ -1,19 +1,21 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Moon, Sun } from "lucide-react";
+import { useBrowserValue } from "@/lib/client";
 import { cn } from "@/lib/utils";
 
-export function ThemeToggle({ className }: { className?: string }) {
-  const [dark, setDark] = useState(false);
+const pageIsDark = () => document.documentElement.classList.contains("dark");
 
-  useEffect(() => {
-    setDark(document.documentElement.classList.contains("dark"));
-  }, []);
+export function ThemeToggle({ className }: { className?: string }) {
+  const pageDark = useBrowserValue(pageIsDark, false);
+  // What was picked here; until then the page's theme.
+  const [picked, setPicked] = useState<boolean | null>(null);
+  const dark = picked ?? pageDark;
 
   const toggle = () => {
     const next = !dark;
-    setDark(next);
+    setPicked(next);
     document.documentElement.classList.toggle("dark", next);
     try {
       localStorage.setItem("theme", next ? "dark" : "light");
