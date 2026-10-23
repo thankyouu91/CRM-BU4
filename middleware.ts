@@ -1,6 +1,10 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { SESSION_COOKIE, verifyToken } from "@/lib/jwt";
 
+// Edge middleware. Next.js 16 deprecates this file name for proxy.ts, but a proxy always runs
+// on the Node.js runtime, which OpenNext does not support on Cloudflare Workers (only as an
+// unmaintained experiment), so this stays middleware.ts until it does.
+
 // Routes reachable without a session. /share/<token> is a public presentation link:
 // the page checks the token itself (lib/report-share.ts).
 const PUBLIC_PATHS = ["/login", "/api/auth/login", "/share"];

@@ -2,7 +2,7 @@
 
 Dashboard quản lý dự án và công việc cho doanh nghiệp: giao việc theo hạng mục, task con và người phụ trách (PIC), báo cáo tiến độ gửi về quản lý, biểu đồ theo dõi, xuất PDF/PowerPoint, trình chiếu trực tuyến và trợ lý AI tạo báo cáo cùng Claude.
 
-**Stack:** Next.js 15 (App Router) · React 19 · TypeScript · Tailwind CSS · Prisma 6 + PostgreSQL · Recharts · Framer Motion · triển khai trên Cloudflare Workers (OpenNext) + Supabase.
+**Stack:** Next.js 16 (App Router) · React 19 · TypeScript · Tailwind CSS · Prisma 6 + PostgreSQL · Recharts · Framer Motion · triển khai trên Cloudflare Workers (OpenNext) + Supabase.
 
 ## Tính năng
 
@@ -266,7 +266,7 @@ Sau khi đã có Hyperdrive và ID trong `wrangler.jsonc` (cách 1, hoặc tạo
 
 - `npm test` chạy unit test (Vitest, thư mục `tests/`) cho phân quyền, tài chính, tiến độ, báo cáo tuần/tháng, file hợp đồng và sao lưu.
 - GitHub Actions (`.github/workflows/ci.yml`) chạy trên mỗi push và pull request: lint, kiểm tra kiểu, unit test, `npm audit` cho thư viện production, build OpenNext và đóng gói Worker (dry run).
-- Thư viện có lỗ hổng được ép lên bản đã vá bằng `overrides` trong `package.json` (`postcss`, `image-size`, `deepmerge-ts`). Còn lại vài cảnh báo trong công cụ build (tailwind 3, eslint-config-next): chỉ chạy lúc build trên mã của dự án, không có trên trang thật.
+- Thư viện có lỗ hổng được ép lên bản đã vá bằng `overrides` trong `package.json` (`postcss`, `image-size`, `deepmerge-ts`, và `glob` của `@node-minify/core` mà OpenNext dùng lúc build). Còn lại vài cảnh báo trong công cụ build (tailwind 3, eslint-config-next): chỉ chạy lúc build trên mã của dự án, không có trên trang thật.
 
 ### Hiệu năng
 
