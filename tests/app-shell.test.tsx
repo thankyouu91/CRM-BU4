@@ -18,7 +18,7 @@ it("groups the menu and marks the current page", () => {
   render(<AppShell user={user({ permissions: ["FINANCE_MANAGE"] })} pendingReports={3}><p>Nội dung</p></AppShell>);
   const groups = within(nav()).getAllByRole("group").map(g => [g.getAttribute("aria-labelledby") && document.getElementById(g.getAttribute("aria-labelledby")!)!.textContent, within(g).getAllByRole("link").map(a => a.textContent)]);
   expect(groups).toEqual([
-    ["Làm việc", ["Tổng quan", "Dự án", "Công việc của tôi", "Trợ lý AI"]],
+    ["Làm việc", ["Tổng quan", "Dự án", "Công việc của tôi", "Chấm công", "Trợ lý AI"]],
     ["Báo cáo", ["Hộp báo cáo3", "Trung tâm báo cáo"]],
     ["Quản lý", ["Hợp đồng & chi phí", "Nhân sự"]],
   ]);

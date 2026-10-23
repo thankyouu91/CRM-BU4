@@ -110,6 +110,10 @@ model User {
   mustChangePassword Boolean      @default(false)
   // Tăng lên mỗi khi đổi mật khẩu -> vô hiệu hoá mọi phiên đăng nhập cũ
   tokenVersion       Int          @default(0)
+  // Quản lý trực tiếp: xem và sửa chấm công của người này (lib/attendance-access.ts)
+  managerId          String?
+  manager            User?        @relation("DirectManager", fields: [managerId], references: [id], onDelete: SetNull)
+  directReports      User[]       @relation("DirectManager")
   lastLoginAt        DateTime?
   createdAt          DateTime     @default(now())
   updatedAt          DateTime     @updatedAt
@@ -131,6 +135,9 @@ model User {
   notifications    Notification[]    @relation("NotificationRecipient")
   aiQuotas         AiQuota[]
   deckShares       DeckShare[]       @relation("DeckShareCreator")
+  attendanceMarks  AttendanceMark[]  @relation("AttendanceOwner")
+  attendanceSet    AttendanceMark[]  @relation("AttendanceAuthor")
+  leaveBalances    LeaveBalance[]    @relation("LeaveBalanceOwner")
 }
 
 model Project {
@@ -461,4 +468,50 @@ model DeckShare {
   createdAt      DateTime  @default(now())
 
   @@index([createdById, createdAt])
+}
+
+// Chấm công: mặc định ai cũng đi làm đủ các buổi làm việc (thứ 2 – thứ 6 sáng và chiều,
+// sáng thứ 7), nên chỉ lưu những buổi khác đi: nghỉ phép, nghỉ ốm, việc riêng, không lương,
+// công tác (lib/attendance.ts). Một dòng cho một buổi của một người.
+model AttendanceMark {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation("AttendanceOwner", fields: [userId], references: [id], onDelete: Cascade)
+  // YYYY-MM-DD theo APP_TIMEZONE
+  day         String
+  // AM (sáng) | PM (chiều)
+  session     String
+  // ANNUAL | SICK | PERSONAL | UNPAID | BUSINESS (LEAVE_KINDS)
+  kind        String
+  note        String?
+  createdById String?
+  createdBy   User?    @relation("AttendanceAuthor", fields: [createdById], references: [id], onDelete: SetNull)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([userId, day, session])
+  @@index([day])
+}
+
+// Phép năm của một người trong một năm: số được hưởng và tồn năm trước do quản lý nhập;
+// số đã nghỉ và còn lại luôn tính từ lịch chấm công.
+model LeaveBalance {
+  userId      String
+  user        User     @relation("LeaveBalanceOwner", fields: [userId], references: [id], onDelete: Cascade)
+  year        Int
+  entitlement Float    @default(12)
+  carriedOver Float    @default(0)
+  note        String?
+  updatedById String?
+  updatedAt   DateTime @updatedAt
+
+  @@id([userId, year])
+}
+
+// Ngày nghỉ lễ của công ty: không tính là ngày làm việc, ghi "L" trên bảng công.
+model Holiday {
+  // YYYY-MM-DD theo APP_TIMEZONE
+  day       String   @id
+  name      String
+  createdAt DateTime @default(now())
 }

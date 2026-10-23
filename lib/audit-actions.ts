@@ -11,6 +11,7 @@ export const AUDIT_GROUPS = {
   workReport: "Báo cáo tuần/tháng",
   ai: "Trợ lý AI",
   share: "Chia sẻ ra ngoài",
+  attendance: "Chấm công & nghỉ phép",
   system: "Hệ thống & sao lưu",
 } as const;
 export type AuditGroup = keyof typeof AUDIT_GROUPS;
@@ -28,6 +29,7 @@ export const AUDIT_ACTIONS = {
   "user.password_reset": { label: "Đặt lại mật khẩu", group: "user" },
   "user.deactivate": { label: "Khoá tài khoản", group: "user" },
   "user.activate": { label: "Mở khoá tài khoản", group: "user" },
+  "user.manager_change": { label: "Đổi quản lý trực tiếp", group: "user" },
 
   "project.create": { label: "Tạo dự án", group: "project" },
   "project.update": { label: "Sửa dự án", group: "project" },
@@ -62,6 +64,11 @@ export const AUDIT_ACTIONS = {
 
   "deck_share.create": { label: "Tạo link trình chiếu công khai", group: "share" },
   "deck_share.revoke": { label: "Thu hồi link trình chiếu công khai", group: "share" },
+
+  "attendance.mark": { label: "Ghi chấm công / nghỉ", group: "attendance" },
+  "leave_balance.update": { label: "Sửa số phép năm", group: "attendance" },
+  "holiday.create": { label: "Thêm ngày nghỉ lễ", group: "attendance" },
+  "holiday.delete": { label: "Xoá ngày nghỉ lễ", group: "attendance" },
 
   "backup.download": { label: "Tải bản sao lưu", group: "system" },
 } as const satisfies Record<string, { label: string; group: AuditGroup }>;

@@ -49,6 +49,7 @@ const GROUP_TONE: Record<AuditGroup, string> = {
   workReport: "bg-slate-500/10 text-slate-700 dark:text-slate-300",
   ai: "bg-indigo-500/10 text-indigo-700 dark:text-indigo-300",
   share: "bg-teal-500/10 text-teal-700 dark:text-teal-300",
+  attendance: "bg-lime-500/10 text-lime-700 dark:text-lime-300",
   system: "bg-zinc-500/10 text-zinc-700 dark:text-zinc-300",
 };
 

@@ -18,6 +18,7 @@ Dashboard quản lý dự án và công việc cho doanh nghiệp: giao việc t
 | 9 | Báo cáo hợp đồng & chi phí (thay file Excel) | Trang **Hợp đồng & chi phí**: giá trị HĐ, chi phí đào tạo / khảo thí / khác, lợi nhuận gộp, tỷ suất LN, đánh giá, đã thu, còn phải thu, trạng thái thanh toán — tính tự động; lọc theo tháng/quý/năm, dòng tổng, 4 ô tổng hợp như mẫu Excel; **dán dữ liệu từ Excel** để nhập nhanh và **xuất Excel** đúng bố cục mẫu; **lưu file PDF hợp đồng** để lưu trữ và báo cáo (nhắc riêng cho dự án đã hoàn thành) |
 | 8 | AI hỗ trợ báo cáo | Trang **Trợ lý AI**: tab **Trò chuyện** để chat với Claude (prompt mẫu, chọn phạm vi, kỳ, độ dài, người đọc) khi đã có Claude API key; tab **Sao chép prompt** đóng gói số liệu thật thành báo cáo. **Viết bằng AI** ngay trên trang khi quản trị viên đã nhập Claude API key (xem [Trợ lý AI tích hợp](#trợ-lý-ai-tích-hợp-claude-api)); hoặc mở Claude.ai điền sẵn / sao chép / tải file cho Claude Code rồi dán kết quả lại. Kết quả xem trước được, lưu thành ghi chú dự án, hoặc biến dàn ý thành slide để trình chiếu & xuất file |
 | 10 | Báo cáo tuần trước đã làm, tuần này / tuần tới (hoặc tháng) làm gì, gửi sếp | Tab **Báo cáo tuần / tháng** trong *Công việc của tôi*: ba mục lấy trực tiếp từ công việc và dự án của bạn, ghi chú tự lưu, gửi cấp trên, xuất Excel và in / lưu PDF; cấp trên xem cả đội trong *Hộp báo cáo*. Xem [Báo cáo công việc tuần / tháng](#báo-cáo-công-việc-tuần--tháng) |
+| 11 | Chấm công sáng / chiều, xin nghỉ, xuất Excel theo tháng, tồn phép năm | Trang **Chấm công**: mặc định đi làm đủ buổi (thứ 2 đến thứ 6 sáng và chiều, thứ 7 buổi sáng), bấm vào buổi bận để ghi nghỉ và lý do; bảng công tháng của đội, **xuất Excel** theo mẫu bảng chấm công; phép năm được hưởng và tồn năm trước sửa được, số đã nghỉ và còn lại tự tính từ lịch. Xem [Chấm công & nghỉ phép](#chấm-công--nghỉ-phép) |
 
 ### Phân quyền
 
@@ -33,6 +34,8 @@ Dashboard quản lý dự án và công việc cho doanh nghiệp: giao việc t
 **Cấp thêm quyền:** người có quyền *Quản lý nhân viên* vào trang **Nhân sự** → biểu tượng khiên để đổi cấp bậc và cấp thêm quyền cho người **ở cấp thấp hơn**, chỉ trong phạm vi quyền mình đang có (ví dụ: quản lý cấp quyền *Tạo dự án* cho một nhân viên). Quyền mới có hiệu lực ngay, không cần đăng nhập lại; đổi cấp bậc thì người đó phải đăng nhập lại.
 
 **Vai trò trong từng dự án:** *Quản lý dự án* (sửa dự án, hạng mục, thành viên, mọi công việc; duyệt báo cáo) · *Thành viên* (tạo công việc, cập nhật và báo cáo việc mình phụ trách) · *Chỉ xem* (xem và gửi ghi chú/phản hồi). Người tạo dự án là chủ dự án và luôn là quản lý dự án; chỉ chủ dự án hoặc người có quyền *Quản lý mọi dự án* mới xoá được dự án.
+
+**Quản lý trực tiếp:** trong hồ sơ nhân sự (trang **Nhân sự** → tạo mới hoặc sửa) chọn *Quản lý trực tiếp* của từng người. Người này nhận thông báo khi nhân sự xin nghỉ, xem và sửa chấm công của họ (kể cả tháng đã qua). Không chọn chính mình được, và không tạo được vòng quản lý (A quản lý B thì B không thể quản lý A, trực tiếp hay qua người khác). Mỗi lần đổi được ghi nhật ký.
 
 Mọi quyền được kiểm tra ở phía server cho từng API (`lib/permissions.ts`, `lib/rbac.ts`).
 
@@ -88,7 +91,7 @@ Màn hình mặc định của *Trung tâm báo cáo*: tuần trước (kết qu
 
 Chuông trên thanh trên cùng (`components/layout/notification-bell.tsx`, `lib/notifications.ts`):
 
-- **Thông báo lưu lại:** được giao công việc (giao nhiều việc một lúc thì gộp thành một thông báo), được thêm vào dự án, báo cáo tiến độ được duyệt, báo cáo tuần/tháng được cấp trên xem (kèm nhận xét). Không ai nhận thông báo về thao tác của chính mình. Bấm để mở đúng công việc, dự án hoặc báo cáo; *Đánh dấu đã đọc* cho tất cả. Thông báo cũ hơn 90 ngày được xoá trong tác vụ hằng đêm.
+- **Thông báo lưu lại:** được giao công việc (giao nhiều việc một lúc thì gộp thành một thông báo), được thêm vào dự án, báo cáo tiến độ được duyệt, báo cáo tuần/tháng được cấp trên xem (kèm nhận xét), nhân sự mình quản lý trực tiếp xin nghỉ. Không ai nhận thông báo về thao tác của chính mình. Bấm để mở đúng công việc, dự án hoặc báo cáo; *Đánh dấu đã đọc* cho tất cả. Thông báo cũ hơn 90 ngày được xoá trong tác vụ hằng đêm.
 - **Cần chú ý** (tính lại mỗi lần mở, không lưu): việc của bạn đã quá hạn, việc đến hạn hôm nay hoặc ngày mai, báo cáo tuần chưa gửi; cấp trên thấy số người chưa gửi báo cáo tuần.
 - Chuông tự cập nhật khi chuyển trang, khi quay lại tab và vài phút một lần.
 
@@ -120,6 +123,29 @@ Từ **15:00 thứ Sáu** đến hết Chủ nhật nhắc báo cáo của tuầ
 - **Cấp trên:** *Hộp báo cáo* → tab **Báo cáo tuần / tháng** liệt kê mọi nhân sự cấp dưới với trạng thái (Đã gửi + thời gian, Nháp, Chưa có, Đã xem), mở từng người để đọc và nhận xét; **Xuất Excel tổng hợp** gồm bảng tổng hợp, chi tiết công việc và báo cáo tiến độ của cả đội.
 - **Xuất:** Excel cho từng báo cáo và **In / Lưu PDF** (bản in ẩn menu, nút bấm, luôn nền sáng).
 - Dữ liệu mẫu: Bùi Ngọc Lan đã gửi báo cáo tuần trước (có dòng thay đổi so với lúc gửi), Phạm Thu Dung đã gửi tuần này (Trần Thị Bình đã xem), Hoàng Văn Em đang soạn nháp tuần này.
+
+### Chấm công & nghỉ phép
+
+Thanh bên → **Chấm công** (`/attendance`). Lịch làm việc: thứ 2 đến thứ 6 hai buổi sáng và chiều, thứ 7 buổi sáng (8:00 – 12:00), Chủ nhật nghỉ. Ngày tính theo `APP_TIMEZONE` (`lib/attendance.ts`).
+
+- **Mặc định đi làm:** không cần bấm gì cho những buổi đi làm bình thường. Chỉ những buổi khác thường mới được lưu (bảng `AttendanceMark`).
+- **Ghi nghỉ:** bấm vào một buổi trên lịch, chọn *Buổi sáng*, *Buổi chiều*, *Cả ngày* hoặc *Nhiều ngày*, chọn loại và ghi lý do (VD: "Đưa con đi khám"). *Đi làm bình thường* xoá ghi nhận. Nhiều ngày thì bỏ qua Chủ nhật, chiều thứ 7 và ngày lễ.
+
+  | Loại | Ký hiệu | Tính công | Trừ phép năm |
+  |---|:-:|---|:-:|
+  | Nghỉ phép năm | P | Hưởng lương | ✓ |
+  | Nghỉ ốm | Ô | Không do công ty trả | |
+  | Nghỉ việc riêng có lương | R | Hưởng lương | |
+  | Nghỉ không lương | KL | Không lương | |
+  | Đi công tác | CT | Tính là đi làm | |
+
+  Trên bảng công: X là đi làm, L là nghỉ lễ, buổi sáng và chiều khác nhau ghi dạng `X/P`.
+- **Ai sửa được:** mỗi người tự ghi cho mình từ đầu tháng hiện tại trở đi; tháng đã qua chỉ quản lý trực tiếp hoặc người có quyền *Quản lý nhân viên* (với cấp thấp hơn) sửa. Khi nhân sự tự ghi nghỉ, quản lý trực tiếp nhận thông báo trên chuông. Không có bước duyệt: ghi là có hiệu lực, quản lý sửa lại nếu cần.
+- **Ai xem được:** chính người đó, quản lý trực tiếp, và cấp trên theo cùng quy tắc với báo cáo tuần (`lib/attendance-access.ts`).
+- **Tổng công tháng:** công chuẩn (không tính ngày lễ), đi làm (tháng hiện tại tính đến hôm nay), từng loại nghỉ, nghỉ lễ, công hưởng lương. Mỗi buổi là nửa ngày công.
+- **Phép năm:** *Còn lại = được hưởng + tồn năm trước − đã nghỉ phép năm từ đầu năm đến hết tháng đang xem.* Mặc định được hưởng 12 ngày (Điều 113 Bộ luật Lao động). Người có quyền *Quản lý nhân viên* bấm **Sửa số** để đổi số được hưởng, tồn năm trước (theo nửa ngày, kèm ghi chú như "+1 ngày thâm niên"); số đã nghỉ và còn lại luôn tự tính lại từ lịch (bảng `LeaveBalance`). Còn lại âm hiện màu đỏ.
+- **Bảng công tháng** (tab thứ hai, khi bạn xem được nhiều người): tổng công từng người và phép còn lại; bấm tên để mở lịch người đó. **Xuất Excel** gồm trang *Bảng chấm công* (từng ngày trong tháng, Chủ nhật và ngày lễ tô màu, các cột tổng và phép năm) và trang *Chi tiết nghỉ* (ngày, buổi, loại, lý do) (`lib/export/attendance-xlsx.ts`).
+- **Ngày nghỉ lễ:** người có quyền *Quản lý nhân viên* nhập ở nút **Ngày nghỉ lễ** trong bảng công tháng (bảng `Holiday`). Ngày lễ không tính là ngày làm, ghi L và vẫn tính vào công hưởng lương.
 
 ### Tìm kiếm nhanh (Ctrl+K)
 
@@ -232,7 +258,7 @@ Sau khi đã có Hyperdrive và ID trong `wrangler.jsonc` (cách 1, hoặc tạo
 
 ### Nhật ký thao tác
 
-- Mọi thao tác thay đổi dữ liệu quan trọng được ghi vào bảng `AuditLog`: đăng nhập (kể cả thất bại), đổi mật khẩu, tài khoản & phân quyền, dự án, hạng mục, công việc, báo cáo, hợp đồng, file hợp đồng, báo cáo tuần/tháng, tải bản sao lưu. Mỗi dòng có người thực hiện, thời gian, IP, mô tả và chi tiết trường thay đổi (không bao giờ có mật khẩu).
+- Mọi thao tác thay đổi dữ liệu quan trọng được ghi vào bảng `AuditLog`: đăng nhập (kể cả thất bại), đổi mật khẩu, tài khoản & phân quyền, dự án, hạng mục, công việc, báo cáo, hợp đồng, file hợp đồng, báo cáo tuần/tháng, chấm công, phép năm, ngày nghỉ lễ, quản lý trực tiếp, tải bản sao lưu. Mỗi dòng có người thực hiện, thời gian, IP, mô tả và chi tiết trường thay đổi (không bao giờ có mật khẩu).
 - Chỉ **quản trị viên** xem được: *Cài đặt → Nhật ký thao tác* (`/settings/audit-log`), lọc theo nhóm, thao tác, người, ngày và nội dung.
 - Ghi log từ API bằng `audit(...)` trong `lib/audit.ts`; danh sách thao tác ở `lib/audit-actions.ts`. Vai trò `crm_app` chỉ có quyền đọc, thêm và xoá (theo hạn lưu trữ) trên bảng này, không sửa được dòng nào.
 
@@ -267,7 +293,7 @@ Sau khi đã có Hyperdrive và ID trong `wrangler.jsonc` (cách 1, hoặc tạo
 ## Cấu trúc thư mục
 
 ```
-app/(app)/        Các trang sau đăng nhập: dashboard, projects, tasks, inbox, reports, ai, team, settings
+app/(app)/        Các trang sau đăng nhập: dashboard, projects, tasks, attendance, inbox, reports, ai, team, settings
 app/api/          API (auth, users, projects, categories, tasks, reports, notes)
 app/present/      Trang trình chiếu online (cần đăng nhập)
 app/share/        Trang trình chiếu qua link công khai (không cần đăng nhập)

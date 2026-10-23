@@ -15,6 +15,7 @@ import {
 } from "@/lib/permissions";
 import { updateUserSchema } from "@/lib/validations";
 import { audit, changedFields } from "@/lib/audit";
+import { managerLoop } from "@/lib/attendance-access";
 
 type Ctx = { params: Promise<{ id: string }> };
 
@@ -66,6 +67,19 @@ export async function PATCH(req: NextRequest, ctx: Ctx) {
       if (denied) return forbidden(`Bạn không thể cấp hoặc thu hồi quyền "${PERMISSION_INFO[denied].label}"`);
     }
 
+    // Direct manager: an active account, never the person themselves, and no loop.
+    const managerChanged = data.managerId !== undefined && (data.managerId || null) !== target.managerId;
+    let manager: { id: string; name: string } | null = null;
+    if (managerChanged && data.managerId) {
+      if (data.managerId === target.id) return badRequest("Một người không thể là quản lý trực tiếp của chính mình", { managerId: "Chọn người khác" });
+      manager = await prisma.user.findFirst({ where: { id: data.managerId, active: true }, select: { id: true, name: true } });
+      if (!manager) return badRequest("Quản lý trực tiếp không hợp lệ", { managerId: "Chọn một tài khoản đang hoạt động" });
+      const everyone = await prisma.user.findMany({ select: { id: true, managerId: true } });
+      if (managerLoop(target.id, manager.id, new Map(everyone.map((u) => [u.id, u.managerId])))) {
+        return badRequest(`${manager.name} đang do ${target.name} quản lý (trực tiếp hoặc qua người khác)`, { managerId: "Sẽ tạo vòng quản lý" });
+      }
+    }
+
     const email = data.email?.trim().toLowerCase();
     if (email && email !== target.email && (await prisma.user.findUnique({ where: { email } }))) {
       return badRequest("Email đã được sử dụng", { email: "Email đã được sử dụng" });
@@ -97,10 +111,11 @@ export async function PATCH(req: NextRequest, ctx: Ctx) {
         permissions,
         jobTitle: data.jobTitle === undefined ? undefined : data.jobTitle?.trim() || null,
         active: data.active,
+        ...(managerChanged ? { managerId: data.managerId || null } : {}),
         ...(passwordHash ? { passwordHash, mustChangePassword: true } : {}),
         ...(revoke ? { tokenVersion: { increment: 1 } } : {}),
       },
-      select: { id: true, email: true, name: true, role: true, permissions: true, jobTitle: true, avatarColor: true, active: true },
+      select: { id: true, email: true, name: true, role: true, permissions: true, jobTitle: true, avatarColor: true, active: true, managerId: true },
     });
 
     const actor = { id: me.id, name: me.name };
@@ -128,6 +143,15 @@ export async function PATCH(req: NextRequest, ctx: Ctx) {
     }
     if (passwordHash) {
       await audit(actor, { ...base, action: "user.password_reset", summary: `Đặt lại mật khẩu cho ${user.name}` });
+    }
+    if (managerChanged) {
+      const previous = target.managerId ? await prisma.user.findUnique({ where: { id: target.managerId }, select: { name: true } }) : null;
+      await audit(actor, {
+        ...base,
+        action: "user.manager_change",
+        summary: `Đổi quản lý trực tiếp của ${user.name}: ${previous?.name ?? "chưa có"} → ${manager?.name ?? "không có"}`,
+        details: { managerId: { from: target.managerId, to: user.managerId } },
+      });
     }
     if (user.active !== target.active) {
       await audit(actor, {

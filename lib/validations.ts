@@ -45,6 +45,8 @@ export const createUserSchema = z.object({
   /** Extra permissions beyond the level's defaults. */
   permissions: permissionList.optional(),
   jobTitle: z.string().optional().nullable(),
+  /** Direct manager (quản lý trực tiếp). */
+  managerId: z.string().min(1).max(100).nullish(),
 });
 
 export const updateUserSchema = z.object({
@@ -55,6 +57,8 @@ export const updateUserSchema = z.object({
   jobTitle: z.string().optional().nullable(),
   active: z.boolean().optional(),
   resetPassword: z.string().min(8).optional(),
+  /** Direct manager; null clears it. */
+  managerId: z.string().min(1).max(100).nullable().optional(),
 });
 
 // undefined -> leave unchanged; null or "" -> clear; ISO string -> Date.

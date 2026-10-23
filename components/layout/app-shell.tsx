@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
 import {
+  CalendarCheck,
   ChartColumn,
   ChevronDown,
   FolderKanban,
@@ -44,6 +45,7 @@ const NAV: { title: string; items: NavItem[] }[] = [
       { href: "/dashboard", label: "Tổng quan", icon: LayoutDashboard },
       { href: "/projects", label: "Dự án", icon: FolderKanban },
       { href: "/tasks", label: "Công việc của tôi", icon: ListChecks, badge: "report" },
+      { href: "/attendance", label: "Chấm công", icon: CalendarCheck },
       { href: "/ai", label: "Trợ lý AI", icon: Sparkles },
     ],
   },

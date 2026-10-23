@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
-import { Bell, CheckCheck, ClipboardList, Info, TriangleAlert, UserPlus } from "lucide-react";
+import { Bell, CalendarCheck, CheckCheck, ClipboardList, Info, TriangleAlert, UserPlus } from "lucide-react";
 import { api } from "@/lib/client";
 import type { NotificationAlert, NotificationFeed, NotificationItem } from "@/lib/notifications";
 import { cn } from "@/lib/utils";
@@ -165,7 +165,13 @@ export function NotificationBell() {
                         <li key={n.id}>
                           <button onClick={() => go(n.link, n)} className="flex w-full gap-3 rounded-lg px-2 py-2.5 text-left hover:bg-muted">
                             <span className={cn("mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full", n.read ? "bg-muted text-muted-foreground" : "bg-primary/10 text-primary")}>
-                              {n.type === "task.assigned" || n.type === "project.member_added" ? <UserPlus className="h-3.5 w-3.5" /> : <CheckCheck className="h-3.5 w-3.5" />}
+                              {n.type === "task.assigned" || n.type === "project.member_added" ? (
+                                <UserPlus className="h-3.5 w-3.5" />
+                              ) : n.type === "attendance.leave" ? (
+                                <CalendarCheck className="h-3.5 w-3.5" />
+                              ) : (
+                                <CheckCheck className="h-3.5 w-3.5" />
+                              )}
                             </span>
                             <span className="min-w-0 flex-1">
                               <span className={cn("block break-words text-sm", !n.read && "font-semibold")}>{n.title}</span>

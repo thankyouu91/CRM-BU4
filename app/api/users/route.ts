@@ -26,6 +26,8 @@ export async function GET() {
       jobTitle: true,
       avatarColor: true,
       active: true,
+      managerId: true,
+      manager: { select: { id: true, name: true } },
       ...(managing ? { lastLoginAt: true, createdAt: true, mustChangePassword: true, permissions: true } : {}),
       _count: { select: { assignedTasks: true } },
     },
@@ -49,6 +51,10 @@ export async function POST(req: NextRequest) {
     const denied = forbiddenGrantChange(me, [], permissions);
     if (denied) return forbidden(`Bạn không thể cấp quyền "${PERMISSION_INFO[denied].label}"`);
 
+    if (data.managerId && !(await prisma.user.findFirst({ where: { id: data.managerId, active: true }, select: { id: true } }))) {
+      return badRequest("Quản lý trực tiếp không hợp lệ", { managerId: "Chọn một tài khoản đang hoạt động" });
+    }
+
     const weak = validatePasswordStrength(data.password);
     if (weak) return badRequest(weak, { password: weak });
 
@@ -64,6 +70,7 @@ export async function POST(req: NextRequest) {
         role: data.role,
         permissions,
         jobTitle: data.jobTitle?.trim() || null,
+        managerId: data.managerId || null,
         passwordHash: await hashPassword(data.password),
         avatarColor: AVATAR_COLORS[Math.floor(Math.random() * AVATAR_COLORS.length)],
         // New accounts must set their own password on first sign-in.

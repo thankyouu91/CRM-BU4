@@ -37,6 +37,8 @@ interface Member {
   jobTitle: string | null;
   avatarColor: string;
   active: boolean;
+  managerId: string | null;
+  manager: { id: string; name: string } | null;
   lastLoginAt?: string | null;
   createdAt?: string;
   mustChangePassword?: boolean;
@@ -212,14 +214,32 @@ function LevelsOverview({ canDelegate }: { canDelegate: boolean }) {
   );
 }
 
+/** Quản lý trực tiếp: any other active account. */
+function ManagerSelect({ value, onChange, people, selfId }: { value: string; onChange: (id: string) => void; people: Member[]; selfId?: string }) {
+  const options = people.filter((p) => p.active && p.id !== selfId);
+  return (
+    <Select value={value} onChange={(e) => onChange(e.target.value)} aria-label="Quản lý trực tiếp">
+      <option value="">— Chưa có —</option>
+      {options.map((p) => (
+        <option key={p.id} value={p.id}>
+          {p.name}
+          {p.jobTitle ? ` · ${p.jobTitle}` : ""}
+        </option>
+      ))}
+    </Select>
+  );
+}
+
 function CreateMemberModal({
   open,
   actor,
+  people,
   onClose,
   onCreated,
 }: {
   open: boolean;
   actor: Actor;
+  people: Member[];
   onClose: () => void;
   onCreated: (email: string, pw: string) => void;
 }) {
@@ -231,6 +251,7 @@ function CreateMemberModal({
     role: (roles.includes("MEMBER") ? "MEMBER" : roles[roles.length - 1]) as string,
     password: "",
     permissions: [] as string[],
+    managerId: "",
   });
   const [v, setV] = useState(blank);
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -240,7 +261,7 @@ function CreateMemberModal({
     setBusy(true);
     setErrors({});
     try {
-      await api("/api/users", { method: "POST", body: { ...v, jobTitle: v.jobTitle || null } });
+      await api("/api/users", { method: "POST", body: { ...v, jobTitle: v.jobTitle || null, managerId: v.managerId || null } });
       toast.success(`Đã tạo tài khoản cho ${v.name}`);
       onCreated(v.email.trim().toLowerCase(), v.password);
       setV(blank());
@@ -283,6 +304,9 @@ function CreateMemberModal({
           </Field>
           <Field label="Chức danh">
             <Input value={v.jobTitle} onChange={(e) => setV({ ...v, jobTitle: e.target.value })} placeholder="VD: Chuyên viên Marketing" />
+          </Field>
+          <Field label="Quản lý trực tiếp" error={errors.managerId} hint="Xem và duyệt chấm công, nhận thông báo khi người này xin nghỉ.">
+            <ManagerSelect value={v.managerId} onChange={(managerId) => setV({ ...v, managerId })} people={people} />
           </Field>
           <PasswordField label="Mật khẩu tạm thời" value={v.password} onChange={(password) => setV({ ...v, password })} error={errors.password} />
         </div>
@@ -357,8 +381,8 @@ function PermissionsModal({ member, actor, onClose, onSaved }: { member: Member;
   );
 }
 
-function EditMemberModal({ member, onClose, onSaved, isSelf }: { member: Member; onClose: () => void; onSaved: () => void; isSelf: boolean }) {
-  const [v, setV] = useState({ email: member.email, name: member.name, jobTitle: member.jobTitle ?? "" });
+function EditMemberModal({ member, people, onClose, onSaved, isSelf }: { member: Member; people: Member[]; onClose: () => void; onSaved: () => void; isSelf: boolean }) {
+  const [v, setV] = useState({ email: member.email, name: member.name, jobTitle: member.jobTitle ?? "", managerId: member.managerId ?? "" });
   const [busy, setBusy] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const submit = async () => {
@@ -367,7 +391,7 @@ function EditMemberModal({ member, onClose, onSaved, isSelf }: { member: Member;
     try {
       await api(`/api/users/${member.id}`, {
         method: "PATCH",
-        body: { email: v.email, name: v.name, jobTitle: v.jobTitle || null },
+        body: { email: v.email, name: v.name, jobTitle: v.jobTitle || null, managerId: v.managerId || null },
       });
       toast.success(isSelf && v.email.trim().toLowerCase() !== member.email ? "Đã đổi email — vui lòng đăng nhập lại bằng email mới" : "Đã cập nhật");
       onSaved();
@@ -406,6 +430,9 @@ function EditMemberModal({ member, onClose, onSaved, isSelf }: { member: Member;
         </Field>
         <Field label="Chức danh">
           <Input value={v.jobTitle} onChange={(e) => setV({ ...v, jobTitle: e.target.value })} />
+        </Field>
+        <Field label="Quản lý trực tiếp" error={errors.managerId} hint="Xem và sửa chấm công của người này, nhận thông báo khi họ xin nghỉ.">
+          <ManagerSelect value={v.managerId} onChange={(managerId) => setV({ ...v, managerId })} people={people} selfId={member.id} />
         </Field>
       </div>
     </Modal>
@@ -566,6 +593,7 @@ export function TeamView({ actor, initialQuery = "" }: { actor: Actor; initialQu
                               {u.email}
                               {u.jobTitle && ` · ${u.jobTitle}`}
                             </p>
+                            {u.manager && <p className="truncate text-xs text-muted-foreground">Quản lý trực tiếp: {u.manager.name}</p>}
                           </div>
                         </div>
                       </td>
@@ -636,6 +664,7 @@ export function TeamView({ actor, initialQuery = "" }: { actor: Actor; initialQu
             <CreateMemberModal
               open={creating}
               actor={actor}
+              people={data?.users ?? []}
               onClose={() => setCreating(false)}
               onCreated={(email, password) => {
                 setCredential({ email, password });
@@ -644,7 +673,7 @@ export function TeamView({ actor, initialQuery = "" }: { actor: Actor; initialQu
             />
           )}
           {granting && <PermissionsModal member={granting} actor={actor} onClose={() => setGranting(null)} onSaved={reload} />}
-          {editing && <EditMemberModal member={editing} isSelf={editing.id === actor.id} onClose={() => setEditing(null)} onSaved={reload} />}
+          {editing && <EditMemberModal member={editing} people={data?.users ?? []} isSelf={editing.id === actor.id} onClose={() => setEditing(null)} onSaved={reload} />}
           {resetting && (
             <ResetPasswordModal
               member={resetting}
