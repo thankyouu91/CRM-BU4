@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { LayoutTemplate, Loader2, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { Modal } from "@/components/ui/modal";
@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { ConfirmDialog } from "@/components/ui/confirm";
 import { EmptyState } from "@/components/ui/misc";
 import { Field, Input } from "@/components/ui/input";
-import { api, ApiError, useApi } from "@/lib/client";
+import { api, ApiError, useApi, useChanged } from "@/lib/client";
 import { dayNumber, showDay } from "@/lib/project-templates";
 import { zonedDay } from "@/lib/work-report";
 import { cn, formatDate } from "@/lib/utils";
@@ -40,14 +40,13 @@ export function ProjectFromTemplateModal({ open, onClose, onCreated }: { open: b
   const [busy, setBusy] = useState(false);
   const [deleting, setDeleting] = useState<TemplateItem | null>(null);
 
-  useEffect(() => {
-    if (!open) return;
+  if (useChanged([open]) && open) {
     setTemplateId("");
     setName("");
     setNamed(false);
     setStartDate(zonedDay(new Date()));
     setErrors({});
-  }, [open]);
+  }
 
   const template = templates.find((t) => t.id === templateId);
   const pick = (t: TemplateItem) => {

@@ -116,7 +116,9 @@ function ReportBody({
   const openable = useMemo(() => new Set(data.openable), [data.openable]);
   const current = data.sections.current;
   const currentIds = useMemo(() => new Set(current.filter((r) => r.live && r.live.status !== "DONE").map((r) => r.id)), [current]);
-  const future = new Date(data.period.start).getTime() > Date.now();
+  // "Now" for this view: when it opened (reading the clock during render is impure).
+  const [openedAt] = useState(Date.now);
+  const future = new Date(data.period.start).getTime() > openedAt;
   const submitted = data.report?.status === "SUBMITTED";
 
   const send = async () => {

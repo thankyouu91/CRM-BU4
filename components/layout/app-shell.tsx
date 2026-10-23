@@ -30,7 +30,7 @@ import { ThemeToggle } from "./theme-toggle";
 import { NotificationBell } from "./notification-bell";
 import { CommandPalette } from "./command-palette";
 import type { CurrentUser } from "@/lib/session";
-import { clearApiCache } from "@/lib/client";
+import { clearApiCache, useChanged } from "@/lib/client";
 import { cn } from "@/lib/utils";
 import { hasPermission, type PermissionKey } from "@/lib/permissions";
 import { SIDEBAR_COOKIE } from "@/lib/constants";
@@ -266,8 +266,8 @@ export function AppShell({
   const [peek, setPeek] = useState(false);
   const peekTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const pathname = usePathname();
-  useEffect(() => setMobileOpen(false), [pathname]);
-  useEffect(() => setPeek(false), [pathname, collapsed]);
+  if (useChanged([pathname])) setMobileOpen(false);
+  if (useChanged([pathname, collapsed])) setPeek(false);
   useEffect(() => () => clearTimeout(peekTimer.current ?? undefined), []);
   const schedulePeek = (open: boolean, delay: number) => {
     clearTimeout(peekTimer.current ?? undefined);

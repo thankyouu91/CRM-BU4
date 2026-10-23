@@ -11,7 +11,7 @@ import { Select, Textarea } from "@/components/ui/input";
 import { Markdown } from "@/components/markdown";
 import { DeckActions } from "@/components/deck/export-actions";
 import { PeriodFilter, defaultPeriod, type PeriodState } from "@/components/reports/period-filter";
-import { api, ApiError, clearApiCache } from "@/lib/client";
+import { api, ApiError, clearApiCache, useBrowserValue, useChanged } from "@/lib/client";
 import { parseEvents } from "@/lib/ai-stream";
 import { parseDate, resolvePeriod } from "@/lib/period";
 import { buildOutlineDeck, makeDeckMeta, parseOutline } from "@/lib/deck-model";
@@ -118,7 +118,6 @@ export function ChatView({
   const [remaining, setRemaining] = useState(builtIn.ready ? builtIn.remaining : 0);
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [slidesFor, setSlidesFor] = useState<string | null>(null);
-  const [loaded, setLoaded] = useState(false);
   const [attachments, setAttachments] = useState<AiAttachment[]>([]);
   const [reading, setReading] = useState(false);
   const [intakes, setIntakes] = useState<Record<string, AiIntake>>({});
@@ -185,8 +184,9 @@ export function ChatView({
     return resolvePeriod(p.type, parseDate(p.anchor), { from: p.from ? parseDate(p.from) : null, to: p.to ? parseDate(p.to) : null }).label;
   }, [settings.period]);
 
-  // Restore this tab's conversation once, then keep it saved.
-  useEffect(() => {
+  // Restore this tab's conversation once (the browser has it, so after hydration), then keep it saved.
+  const hydrated = useBrowserValue(() => true, false);
+  if (useChanged([hydrated, userId, projects]) && hydrated) {
     const saved = loadSaved(userId);
     if (saved) {
       setMessages(saved.messages);
@@ -197,16 +197,15 @@ export function ChatView({
         projectId: saved.settings.projectId !== undefined && projects.some((p) => p.id === saved.settings.projectId) ? saved.settings.projectId : s.projectId,
       }));
     }
-    setLoaded(true);
-  }, [userId, projects]);
+  }
   useEffect(() => {
-    if (!loaded) return;
+    if (!hydrated) return;
     try {
       sessionStorage.setItem(storageKey(userId), JSON.stringify({ messages: messages.slice(-60), settings }));
     } catch {
       // Storage full or blocked: the chat still works, it just won't survive a reload.
     }
-  }, [messages, settings, loaded, userId]);
+  }, [messages, settings, hydrated, userId]);
 
   // Follow the answer as it arrives, unless the person scrolled up to read.
   useEffect(() => {

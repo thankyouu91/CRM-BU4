@@ -93,7 +93,9 @@ export function TaskCalendar({ scope, projectId, refreshKey, onOpenTask }: { sco
   const url = `/api/tasks/calendar?month=${shown}&scope=${scope}${projectId ? `&projectId=${projectId}` : ""}${refreshKey ? `&v=${String(refreshKey)}` : ""}`;
   const { data, loading, error, reload } = useApi<CalendarResponse>(url);
   const current = data?.month === shown ? data : null;
-  const grid = useMemo(() => calendarMonth(current?.tasks ?? [], shown, new Date(current?.asOf ?? Date.now())), [current, shown]);
+  // "Now" for this view: when it opened (reading the clock during render is impure).
+  const [openedAt] = useState(Date.now);
+  const grid = useMemo(() => calendarMonth(current?.tasks ?? [], shown, new Date(current?.asOf ?? openedAt)), [current, shown, openedAt]);
   const [y, m] = shown.split("-");
   const thisMonth = monthOf(new Date());
 

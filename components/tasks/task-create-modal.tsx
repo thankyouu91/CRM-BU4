@@ -1,11 +1,11 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { toast } from "sonner";
 import { Modal } from "@/components/ui/modal";
 import { Button } from "@/components/ui/button";
 import { Field, Input, Select, Textarea } from "@/components/ui/input";
-import { ApiError, sendPlain, type SendChange } from "@/lib/client";
+import { ApiError, sendPlain, useChanged, type SendChange } from "@/lib/client";
 import { PRIORITY } from "@/lib/constants";
 import { fromInputDate } from "@/lib/dates";
 import { categoryOptions, joinHint, personLabel, type CategoryBrief, type UserBrief } from "./types";
@@ -45,8 +45,7 @@ export function TaskCreateModal({
   const [busy, setBusy] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
-  useEffect(() => {
-    if (!open) return;
+  if (useChanged([open, defaultCategoryId, categories]) && open) {
     setTitle("");
     setDescription("");
     setCategoryId(defaultCategoryId ?? categories[0]?.id ?? "");
@@ -55,7 +54,7 @@ export function TaskCreateModal({
     setStartDate("");
     setDueDate("");
     setErrors({});
-  }, [open, defaultCategoryId, categories]);
+  }
 
   const submit = async () => {
     if (startDate && dueDate && dueDate < startDate) {

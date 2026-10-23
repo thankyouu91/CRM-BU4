@@ -91,7 +91,9 @@ export function MyTasksView({
   // Do not display the previous period's tasks or statistics under the new label.
   const data = response?.deadline === deadline && (response.issue ?? null) === issue ? response : null;
   const busy = loading || q !== query;
-  const now = useMemo(() => new Date(response?.asOf ?? Date.now()), [response?.asOf]);
+  // "Now" for this view: when it opened (reading the clock during render is impure).
+  const [openedAt] = useState(Date.now);
+  const now = useMemo(() => new Date(response?.asOf ?? openedAt), [response?.asOf, openedAt]);
   const periods = useMemo(() => taskDeadlinePeriods(now), [now]);
   const period = deadline === "all" ? null : periods[deadline];
   const restart = () => { setCursors([null]); setSelected(new Set()); };

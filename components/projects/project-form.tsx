@@ -1,13 +1,13 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { Check, Search, Wallet } from "lucide-react";
 import { toast } from "sonner";
 import { Modal } from "@/components/ui/modal";
 import { Button } from "@/components/ui/button";
 import { Field, Input, Select, Textarea } from "@/components/ui/input";
 import { Avatar } from "@/components/ui/avatar";
-import { api, ApiError } from "@/lib/client";
+import { api, ApiError, useChanged } from "@/lib/client";
 import { PROJECT_STATUS, SWATCHES } from "@/lib/constants";
 import { PROJECT_ROLE_INFO, PROJECT_ROLES, type ProjectRoleKey } from "@/lib/permissions";
 import { contractMetrics, formatVnd } from "@/lib/finance";
@@ -90,16 +90,13 @@ export function ProjectFormModal({
   const [errors, setErrors] = useState<Record<string, string>>({});
   const editing = !!initial?.id;
 
-  useEffect(() => {
-    if (open) {
-      setV(initial ?? EMPTY);
-      setCf(contractFields(contracts?.[0]));
-      setErrors({});
-      setQuery("");
-    }
-    // Prefill once per opening; later reloads of the contract list must not wipe edits.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open, initial]);
+  // Prefill once per opening; later reloads of the contract list must not wipe edits.
+  if (useChanged([open, initial]) && open) {
+    setV(initial ?? EMPTY);
+    setCf(contractFields(contracts?.[0]));
+    setErrors({});
+    setQuery("");
+  }
 
   const people = useMemo(() => {
     const q = query.trim().toLowerCase();

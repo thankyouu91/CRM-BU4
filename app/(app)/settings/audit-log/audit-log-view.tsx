@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { ChevronDown, ChevronRight, History, Search } from "lucide-react";
-import { api } from "@/lib/client";
+import { api, useChanged } from "@/lib/client";
 import { formatDateTime, cn } from "@/lib/utils";
 import { AUDIT_ACTIONS, AUDIT_GROUPS, auditActionLabel, auditActionsIn, type AuditGroup } from "@/lib/audit-actions";
 import { Card } from "@/components/ui/card";
@@ -112,10 +112,12 @@ export function AuditLogView() {
     return () => clearTimeout(t);
   }, [search]);
 
-  useEffect(() => {
-    let live = true;
+  if (useChanged([filters])) {
     setLoading(true);
     setError(null);
+  }
+  useEffect(() => {
+    let live = true;
     api<Page>(queryOf(filters))
       .then((page) => {
         if (!live) return;

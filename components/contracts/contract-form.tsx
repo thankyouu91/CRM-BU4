@@ -1,13 +1,13 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Field, Input, Select, Textarea } from "@/components/ui/input";
 import { Modal } from "@/components/ui/modal";
-import { api, ApiError } from "@/lib/client";
+import { api, ApiError, useChanged } from "@/lib/client";
 import {
   CONTRACT_STATUS,
   CONTRACT_STATUSES,
@@ -156,23 +156,20 @@ export function ContractModal({
   const [pending, setPending] = useState<File[]>([]);
   const [uploading, setUploading] = useState(false);
 
-  useEffect(() => {
-    if (open) {
-      setPending([]);
-      setV(
-        contract
-          ? fromContract(contract)
-          : {
-              ...emptyForm(defaultDate),
-              ...defaults,
-              ...(lockedProject ? { projectId: lockedProject.id } : {}),
-            },
-      );
-      setErrors({});
-    }
-    // defaults is an inline object at call sites; reset only when the modal opens.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open, contract, defaultDate]);
+  // defaults is an inline object at call sites; reset only when the modal opens.
+  if (useChanged([open, contract, defaultDate]) && open) {
+    setPending([]);
+    setV(
+      contract
+        ? fromContract(contract)
+        : {
+            ...emptyForm(defaultDate),
+            ...defaults,
+            ...(lockedProject ? { projectId: lockedProject.id } : {}),
+          },
+    );
+    setErrors({});
+  }
 
   const margin =
     v.expectedMargin.trim() === ""

@@ -27,7 +27,7 @@ import { ProgressBar } from "@/components/ui/progress";
 import { ConfirmDialog } from "@/components/ui/confirm";
 import { StatusToggle } from "./status-toggle";
 import { categoryOptions, joinHint, personLabel, projectPeople, type TaskDetail, type TaskPermissions, type TaskReportItem } from "./types";
-import { api, ApiError, sendPlain, type SendChange } from "@/lib/client";
+import { api, ApiError, sendPlain, useChanged, type SendChange } from "@/lib/client";
 import { PRIORITY, TASK_STATUS } from "@/lib/constants";
 import { fromInputDate, isOverdue, toInputDate } from "@/lib/dates";
 import { cn, formatShortDate, formatDateTime, timeAgo } from "@/lib/utils";
@@ -46,7 +46,7 @@ interface Props {
 export function TaskDrawer({ taskId, onClose, onChanged, send }: Props) {
   // Internal navigation lets the drawer walk into subtasks and back up to parents.
   const [currentId, setCurrentId] = useState<string | null>(taskId);
-  useEffect(() => setCurrentId(taskId), [taskId]);
+  if (useChanged([taskId])) setCurrentId(taskId);
 
   return (
     <Drawer open={!!taskId} onClose={onClose}>
@@ -75,15 +75,16 @@ function TaskPanel({
   const [error, setError] = useState<string | null>(null);
   const [confirmDelete, setConfirmDelete] = useState(false);
 
-  const load = async () => {
-    try {
-      const res = await api<{ task: TaskDetail; permissions: TaskPermissions }>(`/api/tasks/${id}`);
-      setTask(res.task);
-      setPerms(res.permissions);
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Không tải được công việc");
-    }
-  };
+  // Promise callbacks, not await: the compiler lint counts state set after an await, in a
+  // function an effect calls, as set synchronously by the effect.
+  const load = () =>
+    api<{ task: TaskDetail; permissions: TaskPermissions }>(`/api/tasks/${id}`).then(
+      (res) => {
+        setTask(res.task);
+        setPerms(res.permissions);
+      },
+      (e) => setError(e instanceof Error ? e.message : "Không tải được công việc"),
+    );
 
   useEffect(() => {
     void load();
@@ -322,7 +323,7 @@ function TaskPanel({
 
 function EditableTitle({ value, editable, onSave }: { value: string; editable: boolean; onSave: (v: string) => void }) {
   const [draft, setDraft] = useState(value);
-  useEffect(() => setDraft(value), [value]);
+  if (useChanged([value])) setDraft(value);
   if (!editable) return <h2 className="text-lg font-semibold leading-snug">{value}</h2>;
   const commit = () => {
     const v = draft.trim();
@@ -364,7 +365,7 @@ function ProgressField({
   }, [task.subtasks, task.effectiveProgress]);
   const shown = task.status === "DONE" ? 100 : (computed ?? task.progress);
   const [draft, setDraft] = useState(shown);
-  useEffect(() => setDraft(shown), [shown]);
+  if (useChanged([shown])) setDraft(shown);
 
   return (
     <section>
@@ -407,7 +408,7 @@ function DescriptionField({
   onSave: (v: string | null) => void;
 }) {
   const [draft, setDraft] = useState(value ?? "");
-  useEffect(() => setDraft(value ?? ""), [value]);
+  if (useChanged([value])) setDraft(value ?? "");
   return (
     <section>
       <h3 className="mb-2 text-xs font-medium text-foreground/80">Mô tả</h3>

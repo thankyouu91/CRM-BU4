@@ -1,12 +1,12 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Check } from "lucide-react";
 import { toast } from "sonner";
 import { Modal } from "@/components/ui/modal";
 import { Button } from "@/components/ui/button";
 import { Field, Input, Select } from "@/components/ui/input";
-import { api, ApiError } from "@/lib/client";
+import { api, ApiError, useChanged } from "@/lib/client";
 import { SWATCHES } from "@/lib/constants";
 import { fromInputDate, toInputDate } from "@/lib/dates";
 import { cn, formatDate } from "@/lib/utils";
@@ -48,17 +48,15 @@ export function CategoryModal({
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [busy, setBusy] = useState(false);
 
-  useEffect(() => {
-    if (open) {
-      const parent = categories.find((c) => c.id === (category?.parentId ?? defaultParentId));
-      setName(category?.name ?? "");
-      setColor(category?.color ?? parent?.color ?? SWATCHES[0]);
-      setParentId(category?.parentId ?? defaultParentId ?? "");
-      setStartDate(category?.startDate ?? null);
-      setDueDate(category?.dueDate ?? null);
-      setErrors({});
-    }
-  }, [open, category, defaultParentId, categories]);
+  if (useChanged([open, category, defaultParentId, categories]) && open) {
+    const parent = categories.find((c) => c.id === (category?.parentId ?? defaultParentId));
+    setName(category?.name ?? "");
+    setColor(category?.color ?? parent?.color ?? SWATCHES[0]);
+    setParentId(category?.parentId ?? defaultParentId ?? "");
+    setStartDate(category?.startDate ?? null);
+    setDueDate(category?.dueDate ?? null);
+    setErrors({});
+  }
 
   // Two levels only: a category that has sub-categories stays a main category.
   const hasChildren = !!category && categories.some((c) => c.parentId === category.id);

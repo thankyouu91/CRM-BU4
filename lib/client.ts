@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
 
 export class ApiError extends Error {
   constructor(
@@ -49,6 +49,29 @@ export type SendChange = <R = unknown>(url: string, init: ApiInit, hint?: Change
 
 /** A plain request; the caller refreshes its own view afterwards. */
 export const sendPlain: SendChange = (url, init) => api(url, init);
+
+/**
+ * True while rendering with `deps` other than the last render's, and on the first render:
+ * the condition of an effect with these dependencies, known during render. Adjust state to
+ * changed props under it instead of in an effect, so the stale state never shows
+ * (https://react.dev/learn/you-might-not-need-an-effect#adjusting-some-state-when-a-prop-changes).
+ */
+export function useChanged(deps: readonly unknown[]): boolean {
+  const [prev, setPrev] = useState<readonly unknown[] | null>(null);
+  const changed = prev === null || deps.length !== prev.length || deps.some((d, i) => !Object.is(d, prev[i]));
+  if (changed) setPrev(deps);
+  return changed;
+}
+
+const noSubscription = () => () => {};
+
+/**
+ * A value only the browser has (storage, the user agent, the page's classes): `server` on the
+ * server and while hydrating, then `read()`, read again on each render without subscribing.
+ */
+export function useBrowserValue<T>(read: () => T, server: T): T {
+  return useSyncExternalStore(noSubscription, read, () => server);
+}
 
 /** Keep typing immediate while postponing expensive server-side searches. */
 export function useDebouncedValue<T>(value: T, delay = 300): T {
@@ -103,46 +126,62 @@ export function useApi<T>(url: string | null, opts?: { initial?: T }) {
     return url && responseCache.has(url) ? (responseCache.get(url) as T) : null;
   });
   const [error, setError] = useState<string | null>(null);
-  const [loading, setLoading] = useState(!!url && !hasInitial && !responseCache.has(url));
+  // The URL whose server-sent data is still fresh: no fetch needed until the URL changes.
+  const [freshUrl, setFreshUrl] = useState(() => (hasInitial && !restoredFromHistory() ? url : null));
+  const [loading, setLoading] = useState(!!url && url !== freshUrl);
   const seq = useRef(0);
   const request = useRef<AbortController | null>(null);
-  // The URL whose server-sent data is still fresh: no fetch needed until the URL changes.
-  const freshUrl = useRef(hasInitial && !restoredFromHistory() ? url : null);
   const cancel = useCallback(() => {
     ++seq.current;
     request.current?.abort();
   }, []);
 
-  const load = useCallback(async () => {
-    if (!url) return;
+  // A new URL shows its remembered response at once and loads (the effect below fetches it).
+  const [shownUrl, setShownUrl] = useState(url);
+  if (url !== shownUrl) {
+    setShownUrl(url);
+    setFreshUrl(null);
+    setLoading(!!url);
+    if (url && responseCache.has(url)) setDataState(responseCache.get(url) as T);
+  }
+
+  // Promise callbacks, not await: the compiler lint counts state set after an await, in a
+  // function an effect calls, as set synchronously by the effect.
+  const fetchLatest = useCallback(() => {
+    if (!url) return Promise.resolve();
     const id = ++seq.current;
     request.current?.abort();
     const controller = new AbortController();
     request.current = controller;
+    return api<T>(url, { signal: controller.signal })
+      .then(
+        (result) => {
+          if (id !== seq.current || controller.signal.aborted) return;
+          remember(url, result);
+          setDataState(result);
+          setError(null);
+        },
+        (e) => {
+          if (id === seq.current && !controller.signal.aborted) setError(e instanceof Error ? e.message : "Lỗi tải dữ liệu");
+        },
+      )
+      .finally(() => {
+        if (id === seq.current) setLoading(false);
+      });
+  }, [url]);
+
+  const load = useCallback(() => {
+    if (!url) return Promise.resolve();
     setLoading(true);
     // Cached data stays on screen; only an empty view shows the loading state.
     if (responseCache.has(url)) setDataState(responseCache.get(url) as T);
-    try {
-      const result = await api<T>(url, { signal: controller.signal });
-      if (id === seq.current && !controller.signal.aborted) {
-        remember(url, result);
-        setDataState(result);
-        setError(null);
-      }
-    } catch (e) {
-      if (id === seq.current && !controller.signal.aborted) setError(e instanceof Error ? e.message : "Lỗi tải dữ liệu");
-    } finally {
-      if (id === seq.current) setLoading(false);
-    }
-  }, [url]);
+    return fetchLatest();
+  }, [url, fetchLatest]);
 
   useEffect(() => {
-    if (url !== null && url === freshUrl.current) return cancel;
-    freshUrl.current = null;
-    if (url) void load();
-    else setLoading(false);
+    if (url && url !== freshUrl) void fetchLatest();
     return cancel;
-  }, [load, url, cancel]);
+  }, [fetchLatest, url, freshUrl, cancel]);
 
   /** Replace the data locally (optimistic updates, or a mutation's response). */
   const setData = useCallback(

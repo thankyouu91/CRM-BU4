@@ -40,14 +40,14 @@ export function NotificationBell() {
   const router = useRouter();
   const pathname = usePathname();
 
-  const load = useCallback(async (force = false) => {
+  // Promise callbacks, not await: the compiler lint counts state set after an await, in a
+  // function an effect calls, as set synchronously by the effect.
+  const load = useCallback((force = false) => {
     if (!force && Date.now() - loadedAt.current < FRESH_MS) return;
     loadedAt.current = Date.now();
-    try {
-      setFeed(await api<NotificationFeed>("/api/notifications"));
-    } catch {
+    return api<NotificationFeed>("/api/notifications").then(setFeed, () => {
       loadedAt.current = 0; // try again on the next occasion
-    }
+    });
   }, []);
 
   // Navigation, focus and a slow poll while the tab is visible.
