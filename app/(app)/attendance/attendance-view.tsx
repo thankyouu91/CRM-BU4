@@ -9,7 +9,7 @@ import { MarkModal } from "@/components/attendance/mark-modal";
 import { LeaveBalanceCard } from "@/components/attendance/leave-balance-card";
 import { TeamSheet } from "@/components/attendance/team-sheet";
 import { useApi } from "@/lib/client";
-import { formatDays, LEAVE_KINDS, LEAVE_KIND_KEYS, monthDays, monthLabel, SESSION_LABEL, shiftMonth, WEEKDAY_SHORT, weekdayOf, WORK_SCHEDULE_TEXT, type Session } from "@/lib/attendance";
+import { formatDays, LEAVE_KINDS, LEAVE_KIND_KEYS, monthDays, monthLabel, SESSION_LABEL, shiftMonth, WEEKDAY_SHORT, weekdayOf, WORK_SCHEDULE_TEXT, type Session, type SessionCell } from "@/lib/attendance";
 import type { AttendanceView as View } from "@/lib/attendance-queries";
 import { cn } from "@/lib/utils";
 
@@ -33,8 +33,9 @@ export function AttendanceView({ initial, initialTab }: { initial: View; initial
   }, [month, personId, tab, initial.people]);
 
   const isSelf = shown.person.id === initial.people[0]?.id;
-  const { editFrom } = shown.rights;
-  const canEditDay = (day: string) => editFrom !== null && (editFrom === "" || day >= editFrom);
+  const { correct, requestFrom } = shown.rights;
+  // Managers act on any session; people ask for leave on their own empty sessions only.
+  const canPick = (day: string, cell: SessionCell) => correct || (requestFrom !== null && day >= requestFrom && cell.state !== "marked");
   const current = month === shown.today.slice(0, 7);
   const t = shown.attendance.totals;
   const teamTab = initial.people.length > 1 || initial.rights.canEditHolidays;
@@ -50,7 +51,7 @@ export function AttendanceView({ initial, initialTab }: { initial: View; initial
 
   return (
     <div>
-      <PageHeader title="Chấm công" description={`${WORK_SCHEDULE_TEXT}. Mặc định đi làm đủ buổi; bấm vào buổi bận để ghi nghỉ và lý do.`} />
+      <PageHeader title="Chấm công" description={`${WORK_SCHEDULE_TEXT}. Mặc định đi làm đủ buổi; bấm vào buổi bận để xin nghỉ và ghi lý do. Buổi đã ghi chỉ quản lý sửa được.`} />
 
       <div className="mb-4 flex flex-wrap items-center gap-2">
         {teamTab && (
@@ -108,12 +109,12 @@ export function AttendanceView({ initial, initialTab }: { initial: View; initial
             <div className="mb-3 flex flex-wrap items-center gap-2">
               <h2 className="text-sm font-semibold">{isSelf ? "Lịch của bạn" : shown.person.name}</h2>
               {shown.person.managerName && <span className="text-xs text-muted-foreground">· Quản lý trực tiếp: {shown.person.managerName}</span>}
-              {editFrom !== "" && editFrom !== null && month < editFrom.slice(0, 7) && (
-                <span className="rounded-full bg-muted px-2 py-0.5 text-[11px] text-muted-foreground">Tháng đã qua: chỉ quản lý sửa được</span>
+              {!correct && requestFrom !== null && month < requestFrom.slice(0, 7) && (
+                <span className="rounded-full bg-muted px-2 py-0.5 text-[11px] text-muted-foreground">Tháng đã qua: chỉ quản lý ghi được</span>
               )}
-              {editFrom === null && <span className="rounded-full bg-muted px-2 py-0.5 text-[11px] text-muted-foreground">Chỉ xem</span>}
+              {!correct && requestFrom === null && <span className="rounded-full bg-muted px-2 py-0.5 text-[11px] text-muted-foreground">Chỉ xem</span>}
             </div>
-            <AttendanceCalendar days={shown.attendance.days} today={shown.today} canEditDay={canEditDay} onPick={(day, session) => setPicked({ day, session })} />
+            <AttendanceCalendar days={shown.attendance.days} today={shown.today} canPick={canPick} onPick={(day, session) => setPicked({ day, session })} />
             <div className="mt-3">
               <AttendanceLegend />
             </div>
@@ -177,9 +178,12 @@ export function AttendanceView({ initial, initialTab }: { initial: View; initial
           personId={shown.person.id}
           personName={shown.person.name}
           isSelf={isSelf}
+          correct={correct}
+          managerName={shown.person.managerName}
           day={picked.day}
           session={picked.session}
           cell={pickedCell}
+          taken={shown.attendance.days.find((d) => d.day === picked.day)?.sessions.filter((s) => s.state === "marked").map((s) => s.session) ?? []}
           maxDay={monthDays(shiftMonth(month, 1)).at(-1)}
           onClose={() => setPicked(null)}
           onSaved={(next) => (next ? setData(next) : void reload())}

@@ -23,7 +23,7 @@ import {
   type LeaveKind,
   type Session,
 } from "./attendance";
-import { canCorrectAttendance, canEditAttendanceDay, canEditHolidays, canEditLeaveBalance, canSeeAttendance } from "./attendance-access";
+import { canCorrectAttendance, canEditHolidays, canEditLeaveBalance, canRequestLeave } from "./attendance-access";
 
 const personSelect = { id: true, name: true, role: true, jobTitle: true, avatarColor: true, managerId: true, active: true, manager: { select: { name: true } } } as const;
 
@@ -55,12 +55,14 @@ export interface AttendanceView extends PersonAttendance {
   today: string;
   holidays: HolidayInput[];
   rights: {
-    /** Earliest day the viewer may change ("" = any day; null = none). */
-    editFrom: string | null;
+    /** Record, change and clear any session (a manager of this person). */
+    correct: boolean;
+    /** Earliest day the viewer may ask for leave on an empty session of their own (null = never). */
+    requestFrom: string | null;
     canEditBalance: boolean;
     canEditHolidays: boolean;
   };
-  /** People the viewer may open (themselves first). */
+  /** Everyone active (the viewer first). */
   people: AttendancePerson[];
 }
 
@@ -72,12 +74,10 @@ const monthEnd = (month: string) => monthDays(month).at(-1)!;
 
 const holidaysIn = (from: string, to: string) => prisma.holiday.findMany({ where: { day: { gte: from, lte: to } }, orderBy: { day: "asc" }, select: { day: true, name: true } });
 
-/** Everyone the viewer may see, themselves first, then by name. */
+/** Everyone active (every timesheet is open to everyone signed in), the viewer first, then by name. */
 async function visiblePeople(viewer: CurrentUser): Promise<PersonRow[]> {
   const users = await prisma.user.findMany({ where: { active: true }, select: personSelect });
-  return users
-    .filter((u) => u.id === viewer.id || canSeeAttendance(viewer, u))
-    .sort((a, b) => (a.id === viewer.id ? -1 : b.id === viewer.id ? 1 : a.name.localeCompare(b.name, "vi")));
+  return users.sort((a, b) => (a.id === viewer.id ? -1 : b.id === viewer.id ? 1 : a.name.localeCompare(b.name, "vi")));
 }
 
 function assemble(person: PersonRow, month: string, today: string, yearMarks: AttendanceNote[], yearHolidays: HolidayInput[], balanceRow: { entitlement: number; carriedOver: number; note: string | null } | null): PersonAttendance {
@@ -107,11 +107,10 @@ const marksOf = async (userIds: string[], month: string) => {
   return byUser;
 };
 
-/** One person's month with what the viewer may do; null when unknown, "forbidden" when not theirs to see. */
-export async function attendanceView(viewer: CurrentUser, personId: string, month: string, now = new Date()): Promise<AttendanceView | "forbidden" | null> {
+/** One person's month with what the viewer may do; null when unknown. */
+export async function attendanceView(viewer: CurrentUser, personId: string, month: string, now = new Date()): Promise<AttendanceView | null> {
   const [person, people] = await Promise.all([prisma.user.findUnique({ where: { id: personId }, select: personSelect }), visiblePeople(viewer)]);
   if (!person) return null;
-  if (person.id !== viewer.id && !canSeeAttendance(viewer, person)) return "forbidden";
   const today = zonedDay(now);
   const year = Number(month.slice(0, 4));
   const [marks, yearHolidays, balanceRow] = await Promise.all([
@@ -120,12 +119,13 @@ export async function attendanceView(viewer: CurrentUser, personId: string, mont
     prisma.leaveBalance.findUnique({ where: { userId_year: { userId: person.id, year } }, select: { entitlement: true, carriedOver: true, note: true } }),
   ]);
   const view = assemble(person, month, today, marks.get(person.id) ?? [], yearHolidays, balanceRow);
-  const editFrom = canCorrectAttendance(viewer, person) ? "" : person.id === viewer.id ? ownEditFrom(today) : null;
+  const correct = canCorrectAttendance(viewer, person);
+  const requestFrom = !correct && person.id === viewer.id ? ownEditFrom(today) : null;
   return {
     ...view,
     today,
     holidays: yearHolidays.filter((h) => h.day.startsWith(month)),
-    rights: { editFrom, canEditBalance: canEditLeaveBalance(viewer, person), canEditHolidays: canEditHolidays(viewer) },
+    rights: { correct, requestFrom, canEditBalance: canEditLeaveBalance(viewer, person), canEditHolidays: canEditHolidays(viewer) },
     people: people.map(toPerson),
   };
 }
@@ -138,7 +138,7 @@ export interface TeamAttendance {
   people: PersonAttendance[];
 }
 
-/** The month of everyone the viewer may see (the timesheet and its Excel file). */
+/** Everyone's month (the timesheet and its Excel file). */
 export async function teamAttendance(viewer: CurrentUser, month: string, now = new Date()): Promise<TeamAttendance> {
   const today = zonedDay(now);
   const year = Number(month.slice(0, 4));
@@ -161,6 +161,8 @@ export async function teamAttendance(viewer: CurrentUser, month: string, now = n
 
 const refuse = (message: string, status: 400 | 403 | 404 = 400) => new StatusError(message, status);
 
+const TAKEN = "Chỉ quản lý mới sửa hoặc xoá được buổi đã ghi.";
+
 const dayText = (day: string) => `${day.slice(8)}/${day.slice(5, 7)}/${day.slice(0, 4)}`;
 
 /** The sessions a request covers: chosen sessions of one day, or every working session of a range. */
@@ -181,8 +183,8 @@ export function slotsOf(input: { from: string; to?: string | null; sessions?: Se
 
 /**
  * Mark sessions (kind) or put them back to worked (kind null). For a range, Sundays,
- * Saturday afternoons and holidays are skipped. Tells the direct manager when people
- * mark their own leave.
+ * Saturday afternoons and holidays are skipped. A manager may do anything; people ask
+ * for their own leave on empty sessions only, and their direct manager is told.
  */
 export async function setAttendance(
   viewer: CurrentUser,
@@ -191,7 +193,9 @@ export async function setAttendance(
 ): Promise<{ changed: number }> {
   const person = await prisma.user.findUnique({ where: { id: input.userId }, select: personSelect });
   if (!person || !person.active) throw refuse("Không tìm thấy nhân sự", 404);
-  if (person.id !== viewer.id && !canSeeAttendance(viewer, person)) throw refuse("Không tìm thấy nhân sự", 404);
+  const correct = canCorrectAttendance(viewer, person);
+  if (!correct && person.id !== viewer.id) throw refuse("Chỉ quản lý mới sửa được chấm công của người khác", 403);
+  if (!correct && !input.kind) throw refuse(TAKEN, 403);
   const today = zonedDay(now);
   const to = input.to && input.to > input.from ? input.to : null;
   const holidays = await holidaysIn(input.from, to ?? input.from);
@@ -201,22 +205,37 @@ export async function setAttendance(
   for (const s of slots) {
     const reason = markableReason(s.day, s.session, holidays);
     if (reason) throw refuse(reason);
-    if (!canEditAttendanceDay(viewer, person, s.day, today)) {
-      throw refuse(person.id === viewer.id ? "Tháng đã qua chỉ quản lý mới sửa được" : "Bạn không có quyền sửa chấm công của người này", 403);
-    }
+    if (!correct && !canRequestLeave(viewer, person, s.day, today)) throw refuse("Tháng đã qua chỉ quản lý mới ghi được", 403);
+  }
+  if (!correct) {
+    const taken = await prisma.attendanceMark.findFirst({
+      where: { userId: person.id, OR: slots.map((s) => ({ day: s.day, session: s.session })) },
+      orderBy: [{ day: "asc" }, { session: "asc" }],
+      select: { day: true, session: true },
+    });
+    if (taken) throw refuse(`Buổi ${SESSION_LABEL[taken.session as Session].toLowerCase()} ${dayText(taken.day)} đã được ghi. ${TAKEN}`, 403);
   }
   const note = input.note?.trim() || null;
-  await prisma.$transaction(
-    slots.map((s) =>
-      input.kind
+  const kind = input.kind;
+  const writes = slots.map((s) =>
+    !kind
+      ? prisma.attendanceMark.deleteMany({ where: { userId: person.id, day: s.day, session: s.session } })
+      : correct
         ? prisma.attendanceMark.upsert({
             where: { userId_day_session: { userId: person.id, day: s.day, session: s.session } },
-            create: { userId: person.id, day: s.day, session: s.session, kind: input.kind, note, createdById: viewer.id },
-            update: { kind: input.kind, note, createdById: viewer.id },
+            create: { userId: person.id, day: s.day, session: s.session, kind, note, createdById: viewer.id },
+            update: { kind, note, createdById: viewer.id },
           })
-        : prisma.attendanceMark.deleteMany({ where: { userId: person.id, day: s.day, session: s.session } }),
-    ),
+        : // A request never overwrites: a session recorded meanwhile fails the whole request.
+          prisma.attendanceMark.create({ data: { userId: person.id, day: s.day, session: s.session, kind, note, createdById: viewer.id } }),
   );
+  try {
+    await prisma.$transaction(writes);
+  } catch (e) {
+    // P2002: the unique (person, day, session) row was created by someone else meanwhile.
+    if ((e as { code?: string }).code === "P2002") throw refuse(`Có buổi vừa được ghi. ${TAKEN}`, 403);
+    throw e;
+  }
 
   const first = slots[0];
   const last = slots.at(-1)!;

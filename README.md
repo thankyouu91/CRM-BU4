@@ -18,7 +18,7 @@ Dashboard quản lý dự án và công việc cho doanh nghiệp: giao việc t
 | 9 | Báo cáo hợp đồng & chi phí (thay file Excel) | Trang **Hợp đồng & chi phí**: giá trị HĐ, chi phí đào tạo / khảo thí / khác, lợi nhuận gộp, tỷ suất LN, đánh giá, đã thu, còn phải thu, trạng thái thanh toán — tính tự động; lọc theo tháng/quý/năm, dòng tổng, 4 ô tổng hợp như mẫu Excel; **dán dữ liệu từ Excel** để nhập nhanh và **xuất Excel** đúng bố cục mẫu; **lưu file PDF hợp đồng** để lưu trữ và báo cáo (nhắc riêng cho dự án đã hoàn thành) |
 | 8 | AI hỗ trợ báo cáo | Trang **Trợ lý AI**: tab **Trò chuyện** để chat với Claude (prompt mẫu, chọn phạm vi, kỳ, độ dài, người đọc) khi đã có Claude API key; tab **Sao chép prompt** đóng gói số liệu thật thành báo cáo. **Viết bằng AI** ngay trên trang khi quản trị viên đã nhập Claude API key (xem [Trợ lý AI tích hợp](#trợ-lý-ai-tích-hợp-claude-api)); hoặc mở Claude.ai điền sẵn / sao chép / tải file cho Claude Code rồi dán kết quả lại. Kết quả xem trước được, lưu thành ghi chú dự án, hoặc biến dàn ý thành slide để trình chiếu & xuất file |
 | 10 | Báo cáo tuần trước đã làm, tuần này / tuần tới (hoặc tháng) làm gì, gửi sếp | Tab **Báo cáo tuần / tháng** trong *Công việc của tôi*: ba mục lấy trực tiếp từ công việc và dự án của bạn, ghi chú tự lưu, gửi cấp trên, xuất Excel và in / lưu PDF; cấp trên xem cả đội trong *Hộp báo cáo*. Xem [Báo cáo công việc tuần / tháng](#báo-cáo-công-việc-tuần--tháng) |
-| 11 | Chấm công sáng / chiều, xin nghỉ, xuất Excel theo tháng, tồn phép năm | Trang **Chấm công**: mặc định đi làm đủ buổi (thứ 2 đến thứ 6 sáng và chiều, thứ 7 buổi sáng), bấm vào buổi bận để ghi nghỉ và lý do; bảng công tháng của đội, **xuất Excel** theo mẫu bảng chấm công; phép năm được hưởng và tồn năm trước sửa được, số đã nghỉ và còn lại tự tính từ lịch. Xem [Chấm công & nghỉ phép](#chấm-công--nghỉ-phép) |
+| 11 | Chấm công sáng / chiều, xin nghỉ, xuất Excel theo tháng, tồn phép năm | Trang **Chấm công**: mặc định đi làm đủ buổi (thứ 2 đến thứ 6 sáng và chiều, thứ 7 buổi sáng), bấm vào buổi bận để xin nghỉ và ghi lý do, buổi đã ghi chỉ quản lý sửa được; mọi người xem được lịch và bảng công tháng của cả công ty, **xuất Excel** theo mẫu bảng chấm công; phép năm được hưởng và tồn năm trước sửa được, số đã nghỉ và còn lại tự tính từ lịch. Xem [Chấm công & nghỉ phép](#chấm-công--nghỉ-phép) |
 
 ### Phân quyền
 
@@ -35,7 +35,7 @@ Dashboard quản lý dự án và công việc cho doanh nghiệp: giao việc t
 
 **Vai trò trong từng dự án:** *Quản lý dự án* (sửa dự án, hạng mục, thành viên, mọi công việc; duyệt báo cáo) · *Thành viên* (tạo công việc, cập nhật và báo cáo việc mình phụ trách) · *Chỉ xem* (xem và gửi ghi chú/phản hồi). Người tạo dự án là chủ dự án và luôn là quản lý dự án; chỉ chủ dự án hoặc người có quyền *Quản lý mọi dự án* mới xoá được dự án.
 
-**Quản lý trực tiếp:** trong hồ sơ nhân sự (trang **Nhân sự** → tạo mới hoặc sửa) chọn *Quản lý trực tiếp* của từng người. Người này nhận thông báo khi nhân sự xin nghỉ, xem và sửa chấm công của họ (kể cả tháng đã qua). Không chọn chính mình được, và không tạo được vòng quản lý (A quản lý B thì B không thể quản lý A, trực tiếp hay qua người khác). Mỗi lần đổi được ghi nhật ký.
+**Quản lý trực tiếp:** trong hồ sơ nhân sự (trang **Nhân sự** → tạo mới hoặc sửa) chọn *Quản lý trực tiếp* của từng người. Người này nhận thông báo khi nhân sự xin nghỉ, và sửa hoặc xoá được chấm công của họ (kể cả tháng đã qua). Không chọn chính mình được, và không tạo được vòng quản lý (A quản lý B thì B không thể quản lý A, trực tiếp hay qua người khác). Mỗi lần đổi được ghi nhật ký.
 
 Mọi quyền được kiểm tra ở phía server cho từng API (`lib/permissions.ts`, `lib/rbac.ts`).
 
@@ -129,7 +129,7 @@ Từ **15:00 thứ Sáu** đến hết Chủ nhật nhắc báo cáo của tuầ
 Thanh bên → **Chấm công** (`/attendance`). Lịch làm việc: thứ 2 đến thứ 6 hai buổi sáng và chiều, thứ 7 buổi sáng (8:00 – 12:00), Chủ nhật nghỉ. Ngày tính theo `APP_TIMEZONE` (`lib/attendance.ts`).
 
 - **Mặc định đi làm:** không cần bấm gì cho những buổi đi làm bình thường. Chỉ những buổi khác thường mới được lưu (bảng `AttendanceMark`).
-- **Ghi nghỉ:** bấm vào một buổi trên lịch, chọn *Buổi sáng*, *Buổi chiều*, *Cả ngày* hoặc *Nhiều ngày*, chọn loại và ghi lý do (VD: "Đưa con đi khám"). *Đi làm bình thường* xoá ghi nhận. Nhiều ngày thì bỏ qua Chủ nhật, chiều thứ 7 và ngày lễ.
+- **Xin nghỉ:** bấm vào một buổi trên lịch, chọn *Buổi sáng*, *Buổi chiều*, *Cả ngày* hoặc *Nhiều ngày*, chọn loại và ghi lý do (VD: "Đưa con đi khám"). Nhiều ngày thì bỏ qua Chủ nhật, chiều thứ 7 và ngày lễ. Quản lý có thêm nút *Đi làm bình thường* để xoá ghi nhận.
 
   | Loại | Ký hiệu | Tính công | Trừ phép năm |
   |---|:-:|---|:-:|
@@ -140,11 +140,12 @@ Thanh bên → **Chấm công** (`/attendance`). Lịch làm việc: thứ 2 đ�
   | Đi công tác | CT | Tính là đi làm | |
 
   Trên bảng công: X là đi làm, L là nghỉ lễ, buổi sáng và chiều khác nhau ghi dạng `X/P`.
-- **Ai sửa được:** mỗi người tự ghi cho mình từ đầu tháng hiện tại trở đi; tháng đã qua chỉ quản lý trực tiếp hoặc người có quyền *Quản lý nhân viên* (với cấp thấp hơn) sửa. Khi nhân sự tự ghi nghỉ, quản lý trực tiếp nhận thông báo trên chuông. Không có bước duyệt: ghi là có hiệu lực, quản lý sửa lại nếu cần.
-- **Ai xem được:** chính người đó, quản lý trực tiếp, và cấp trên theo cùng quy tắc với báo cáo tuần (`lib/attendance-access.ts`).
+- **Ai xem được:** mọi người đã đăng nhập xem được lịch, lý do nghỉ, phép năm và bảng công tháng của mọi người, và xuất được file Excel.
+- **Ai sửa được:** chỉ quản lý, gồm quản lý trực tiếp của người đó và người có quyền *Quản lý nhân viên* với cấp thấp hơn (cấp Quản lý, Quản trị viên). Họ ghi, sửa hoặc xoá được mọi buổi, kể cả tháng đã qua.
+- **Nhân viên tự xin nghỉ:** mỗi người ghi được nghỉ cho chính mình trên những buổi **chưa có ghi nhận**, từ đầu tháng hiện tại trở đi. Đã ghi rồi thì không tự sửa hay xoá được; muốn đổi phải nhờ quản lý. Khi nhân sự tự xin nghỉ, quản lý trực tiếp nhận thông báo trên chuông. Không có bước duyệt: ghi là có hiệu lực, quản lý sửa lại nếu cần (`lib/attendance-access.ts`).
 - **Tổng công tháng:** công chuẩn (không tính ngày lễ), đi làm (tháng hiện tại tính đến hôm nay), từng loại nghỉ, nghỉ lễ, công hưởng lương. Mỗi buổi là nửa ngày công.
 - **Phép năm:** *Còn lại = được hưởng + tồn năm trước − đã nghỉ phép năm từ đầu năm đến hết tháng đang xem.* Mặc định được hưởng 12 ngày (Điều 113 Bộ luật Lao động). Người có quyền *Quản lý nhân viên* bấm **Sửa số** để đổi số được hưởng, tồn năm trước (theo nửa ngày, kèm ghi chú như "+1 ngày thâm niên"); số đã nghỉ và còn lại luôn tự tính lại từ lịch (bảng `LeaveBalance`). Còn lại âm hiện màu đỏ.
-- **Bảng công tháng** (tab thứ hai, khi bạn xem được nhiều người): tổng công từng người và phép còn lại; bấm tên để mở lịch người đó. **Xuất Excel** gồm trang *Bảng chấm công* (từng ngày trong tháng, Chủ nhật và ngày lễ tô màu, các cột tổng và phép năm) và trang *Chi tiết nghỉ* (ngày, buổi, loại, lý do) (`lib/export/attendance-xlsx.ts`).
+- **Bảng công tháng** (tab thứ hai): tổng công từng người và phép còn lại; bấm tên để mở lịch người đó. **Xuất Excel** gồm trang *Bảng chấm công* (từng ngày trong tháng, Chủ nhật và ngày lễ tô màu, các cột tổng và phép năm) và trang *Chi tiết nghỉ* (ngày, buổi, loại, lý do) (`lib/export/attendance-xlsx.ts`).
 - **Ngày nghỉ lễ:** người có quyền *Quản lý nhân viên* nhập ở nút **Ngày nghỉ lễ** trong bảng công tháng (bảng `Holiday`). Ngày lễ không tính là ngày làm, ghi L và vẫn tính vào công hưởng lương.
 
 ### Tìm kiếm nhanh (Ctrl+K)
