@@ -68,9 +68,17 @@ const noSubscription = () => () => {};
 /**
  * A value only the browser has (storage, the user agent, the page's classes): `server` on the
  * server and while hydrating, then `read()`, read again on each render without subscribing.
+ * Pass a function defined outside the component: React checks a new one again after each commit.
  */
 export function useBrowserValue<T>(read: () => T, server: T): T {
   return useSyncExternalStore(noSubscription, read, () => server);
+}
+
+const always = () => true;
+
+/** False on the server and while hydrating, true after that (and at once when mounted later). */
+export function useHydrated(): boolean {
+  return useBrowserValue(always, false);
 }
 
 /** Keep typing immediate while postponing expensive server-side searches. */

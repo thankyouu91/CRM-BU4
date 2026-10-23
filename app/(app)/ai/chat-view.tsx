@@ -11,7 +11,7 @@ import { Select, Textarea } from "@/components/ui/input";
 import { Markdown } from "@/components/markdown";
 import { DeckActions } from "@/components/deck/export-actions";
 import { PeriodFilter, defaultPeriod, type PeriodState } from "@/components/reports/period-filter";
-import { api, ApiError, clearApiCache, useBrowserValue, useChanged } from "@/lib/client";
+import { api, ApiError, clearApiCache, useChanged, useHydrated } from "@/lib/client";
 import { parseEvents } from "@/lib/ai-stream";
 import { parseDate, resolvePeriod } from "@/lib/period";
 import { buildOutlineDeck, makeDeckMeta, parseOutline } from "@/lib/deck-model";
@@ -185,7 +185,7 @@ export function ChatView({
   }, [settings.period]);
 
   // Restore this tab's conversation once (the browser has it, so after hydration), then keep it saved.
-  const hydrated = useBrowserValue(() => true, false);
+  const hydrated = useHydrated();
   if (useChanged([hydrated, userId, projects]) && hydrated) {
     const saved = loadSaved(userId);
     if (saved) {

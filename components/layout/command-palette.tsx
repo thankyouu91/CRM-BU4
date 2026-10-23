@@ -130,6 +130,7 @@ function Highlight({ text, query }: { text: string; query: string }) {
 }
 
 const kbd = "rounded border bg-muted px-1.5 py-0.5 font-sans text-[10px] font-medium leading-none text-muted-foreground";
+const isMac = () => /Mac|iPhone|iPad/.test(navigator.userAgent);
 
 /**
  * Quick search (Ctrl/Cmd+K from any page, or the header button): projects, tasks,
@@ -170,7 +171,7 @@ export function CommandPalette({ user }: { user: CurrentUser }) {
     (back && back !== document.body && back.isConnected ? back : triggerRef.current)?.focus();
   }, []);
 
-  const mac = useBrowserValue(() => /Mac|iPhone|iPad/.test(navigator.userAgent), false);
+  const mac = useBrowserValue(isMac, false);
   if (useChanged([pathname])) setOpen(false);
 
   // Ctrl/Cmd+K anywhere, also while typing in a field; again to close.

@@ -5,8 +5,10 @@ import { Moon, Sun } from "lucide-react";
 import { useBrowserValue } from "@/lib/client";
 import { cn } from "@/lib/utils";
 
+const pageIsDark = () => document.documentElement.classList.contains("dark");
+
 export function ThemeToggle({ className }: { className?: string }) {
-  const pageDark = useBrowserValue(() => document.documentElement.classList.contains("dark"), false);
+  const pageDark = useBrowserValue(pageIsDark, false);
   // What was picked here; until then the page's theme.
   const [picked, setPicked] = useState<boolean | null>(null);
   const dark = picked ?? pageDark;

@@ -4,7 +4,7 @@ import { useEffect, useId } from "react";
 import { createPortal } from "react-dom";
 import { AnimatePresence, motion } from "framer-motion";
 import { X } from "lucide-react";
-import { useBrowserValue } from "@/lib/client";
+import { useHydrated } from "@/lib/client";
 import { cn } from "@/lib/utils";
 
 function useEscape(open: boolean, onClose: () => void) {
@@ -27,7 +27,7 @@ function useEscape(open: boolean, onClose: () => void) {
  * HTML, which has none, and shows right after.
  */
 function useCanPortal() {
-  return useBrowserValue(() => true, false);
+  return useHydrated();
 }
 
 export function Modal({
