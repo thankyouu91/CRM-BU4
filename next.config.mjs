@@ -37,12 +37,14 @@ const securityHeaders = [
 
 const nextConfig = {
   poweredByHeader: false,
-  // Bundle Prisma's generated client for the workerd runtime (OpenNext).
-  serverExternalPackages: ["@prisma/client", ".prisma/client"],
+  // Packages with a "workerd" export condition, which OpenNext copies whole and bundles for
+  // the Worker: Prisma's generated client, and pg-cloudflare (the socket `pg` uses on Workers;
+  // Turbopack's file tracing only keeps its Node.js stub).
+  serverExternalPackages: ["@prisma/client", ".prisma/client", "pg-cloudflare"],
   experimental: {
     // Request bodies pass through middleware, which cuts them at 10 MB by default;
     // contract PDF uploads take up to MAX_UPLOAD_BYTES (lib/contract-files.ts).
-    middlewareClientMaxBodySize: "27mb",
+    proxyClientMaxBodySize: "27mb",
   },
   async headers() {
     return [
@@ -51,19 +53,6 @@ const nextConfig = {
       { source: "/((?!share/).*)", headers: [{ key: "Referrer-Policy", value: "strict-origin-when-cross-origin" }] },
       { source: "/share/:token", headers: [{ key: "Referrer-Policy", value: "no-referrer" }] },
     ];
-  },
-  webpack(config, { isServer, webpack }) {
-    if (!isServer) {
-      // pptxgenjs lazily imports node:fs / node:https on its Node-only code paths.
-      // They never run in the browser; strip the scheme and stub the modules.
-      config.plugins.push(
-        new webpack.NormalModuleReplacementPlugin(/^node:/, (resource) => {
-          resource.request = resource.request.replace(/^node:/, "");
-        }),
-      );
-      config.resolve.fallback = { ...config.resolve.fallback, fs: false, https: false };
-    }
-    return config;
   },
 };
 

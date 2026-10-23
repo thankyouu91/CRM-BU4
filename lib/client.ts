@@ -23,6 +23,8 @@ export async function api<T = unknown>(url: string, init?: ApiInit): Promise<T> 
   });
   const data = await res.json().catch(() => ({}));
   if (res.status === 401 && typeof window !== "undefined" && !url.includes("/api/auth/login")) {
+    // Session expired: a full page load drops all client state (no router outside components).
+    // eslint-disable-next-line @next/next/no-location-assign-relative-destination
     window.location.href = `/login?next=${encodeURIComponent(window.location.pathname)}`;
   }
   if (!res.ok) {

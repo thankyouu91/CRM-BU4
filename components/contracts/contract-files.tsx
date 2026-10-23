@@ -47,6 +47,8 @@ export function uploadContractFile(contractId: string, file: File, onProgress?: 
     xhr.upload.onprogress = (e) => e.lengthComputable && onProgress?.(Math.round((e.loaded / e.total) * 100));
     xhr.onload = () => {
       const data = (xhr.response ?? {}) as { files?: ContractFileDto[]; error?: string };
+      // Session expired: full page load to the login page, as api() in lib/client.ts does.
+      // eslint-disable-next-line @next/next/no-location-assign-relative-destination
       if (xhr.status === 401) window.location.href = `/login?next=${encodeURIComponent(window.location.pathname)}`;
       if (xhr.status >= 200 && xhr.status < 300 && data.files?.[0]) resolve(data.files[0]);
       else reject(new ApiError(data.error ?? "Không thể tải file lên", xhr.status));
