@@ -1,15 +1,13 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import Link from "next/link";
-import { CalendarClock, CheckCircle2, Clock, FileText, Loader2, Timer, TriangleAlert } from "lucide-react";
-import { Card, CardBody, CardHeader } from "@/components/ui/card";
-import { Avatar } from "@/components/ui/avatar";
-import { PriorityBadge } from "@/components/ui/badge";
-import { EmptyState, PageHeader, Segmented } from "@/components/ui/misc";
+import { CheckCircle2, Clock, Loader2, Timer, TriangleAlert } from "lucide-react";
+import { Card } from "@/components/ui/card";
+import { PageHeader, Segmented } from "@/components/ui/misc";
 import { ProgressRing } from "@/components/ui/progress";
 import { KpiTile } from "@/components/kpi";
 import { ProjectProgressCard } from "@/components/dashboard/project-progress-card";
+import { RecentReportsCard, UpcomingCard } from "@/components/dashboard/activity-cards";
 import {
   ChartCard,
   DataTable,
@@ -24,7 +22,7 @@ import {
 import { api } from "@/lib/client";
 import { useChartTheme } from "@/lib/chart-theme";
 import type { Summary } from "@/lib/stats";
-import { cn, formatDate, timeAgo } from "@/lib/utils";
+import { cn, formatDate } from "@/lib/utils";
 
 type Period = "day" | "month" | "quarter" | "year";
 
@@ -40,7 +38,6 @@ function greeting() {
   return h < 11 ? "Chào buổi sáng" : h < 14 ? "Chào buổi trưa" : h < 18 ? "Chào buổi chiều" : "Chào buổi tối";
 }
 
-const daysLeft = (iso: string) => Math.ceil((new Date(iso).getTime() - Date.now()) / 86_400_000);
 
 export function DashboardView({ initial, userName }: { initial: Summary; userName: string }) {
   const [period, setPeriod] = useState<Period>("month");
@@ -197,84 +194,8 @@ export function DashboardView({ initial, userName }: { initial: Summary; userNam
 
         {/* Deadlines + reports */}
         <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
-          <Card>
-            <CardHeader title="Hạn chót sắp tới" description="Công việc chưa xong đến hạn trong 14 ngày" />
-            <CardBody className="pt-3">
-              {data.upcoming.length === 0 ? (
-                <EmptyState icon={CalendarClock} title="Không có hạn chót gần" className="py-8" />
-              ) : (
-                <ul className="divide-y">
-                  {data.upcoming.map((t) => {
-                    const d = daysLeft(t.dueDate);
-                    return (
-                      <li key={t.id} className="flex items-center gap-3 py-3">
-                        <div
-                          className={cn(
-                            "flex h-11 w-11 shrink-0 flex-col items-center justify-center rounded-xl text-center leading-none",
-                            d <= 2 ? "bg-danger/10 text-danger" : "bg-muted text-foreground",
-                          )}
-                        >
-                          <span className="text-base font-bold">{new Date(t.dueDate).getDate()}</span>
-                          <span className="mt-0.5 text-[10px]">Th{new Date(t.dueDate).getMonth() + 1}</span>
-                        </div>
-                        <div className="min-w-0 flex-1">
-                          <p className="truncate text-sm font-medium">{t.title}</p>
-                          <p className="truncate text-xs text-muted-foreground">
-                            {t.projectName}
-                            {t.assigneeName && ` · ${t.assigneeName}`}
-                          </p>
-                        </div>
-                        <div className="flex flex-col items-end gap-1">
-                          <PriorityBadge priority={t.priority} />
-                          <span className="text-[11px] text-muted-foreground">
-                            {d <= 0 ? "Hôm nay" : `Còn ${d} ngày`}
-                          </span>
-                        </div>
-                      </li>
-                    );
-                  })}
-                </ul>
-              )}
-            </CardBody>
-          </Card>
-
-          <Card>
-            <CardHeader
-              title="Báo cáo tiến độ gần đây"
-              description="Báo cáo từ người thực hiện trong kỳ"
-              action={
-                <Link href="/inbox" className="text-xs font-medium text-primary hover:underline">
-                  Hộp báo cáo
-                </Link>
-              }
-            />
-            <CardBody className="pt-3">
-              {data.recentReports.length === 0 ? (
-                <EmptyState icon={FileText} title="Chưa có báo cáo trong kỳ" className="py-8" />
-              ) : (
-                <ul className="space-y-4">
-                  {data.recentReports.slice(0, 6).map((r) => (
-                    <li key={r.id} className="flex gap-3">
-                      <Avatar name={r.authorName} size="sm" color={r.authorColor} />
-                      <div className="min-w-0 flex-1">
-                        <p className="text-sm">
-                          <span className="font-medium">{r.authorName}</span>
-                          <span className="text-muted-foreground"> · {r.taskTitle}</span>
-                        </p>
-                        <p className="mt-0.5 line-clamp-2 text-xs text-muted-foreground">{r.content}</p>
-                        <div className="mt-1.5 flex items-center gap-3 text-[11px] text-muted-foreground">
-                          <span className="font-semibold text-foreground">{r.progress}%</span>
-                          <span>{r.hoursSpent} giờ</span>
-                          <span>{timeAgo(r.createdAt)}</span>
-                          {!r.reviewedAt && <span className="font-medium text-warning">Chờ xem xét</span>}
-                        </div>
-                      </div>
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </CardBody>
-          </Card>
+          <UpcomingCard upcoming={data.upcoming} />
+          <RecentReportsCard reports={data.recentReports} />
         </div>
         <p className="text-center text-xs text-muted-foreground">
           Dữ liệu cập nhật lúc {formatDate(new Date(), { hour: "2-digit", minute: "2-digit", day: "2-digit", month: "2-digit" })}

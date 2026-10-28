@@ -2,19 +2,18 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
-import { ChevronDown, TriangleAlert } from "lucide-react";
+import { TriangleAlert } from "lucide-react";
+import { CountTabs, ExpandableList, VISIBLE_ROWS, headerLinkClass } from "./expandable-list";
 import { Card, CardBody, CardHeader } from "@/components/ui/card";
 import { ProgressBar } from "@/components/ui/progress";
 import { PROJECT_STATUS } from "@/lib/constants";
 import { SCHEDULE_STATUS, type ScheduleStatus } from "@/lib/schedule";
 import { PROJECT_TABS, firstTab, groupProjects, needsAttention, type ProjectTab } from "@/lib/project-groups";
 import type { Summary } from "@/lib/stats";
-import { cn } from "@/lib/utils";
 
 const SLIPPING = new Set(["AT_RISK", "BEHIND", "OVERDUE"]);
 
-/** Rows shown before "Xem thêm": the card stays about as tall as its neighbour. */
-export const VISIBLE_ROWS = 6;
+export { VISIBLE_ROWS };
 
 type Project = Summary["projects"][number];
 
@@ -24,8 +23,7 @@ function Row({ p }: { p: Project }) {
   const barColor = !needsAttention(p) ? undefined : SLIPPING.has(p.schedule.status) ? schedule?.color : SCHEDULE_STATUS.BEHIND.color;
   const quiet = p.status === "PLANNING" || p.status === "ON_HOLD";
   return (
-    <li>
-      <Link
+    <Link
         href={`/projects/${p.id}`}
         className="group grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-3 gap-y-1 rounded-lg px-2 py-2 hover:bg-muted/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary sm:grid-cols-[minmax(0,1fr)_7rem_2.75rem]"
       >
@@ -52,8 +50,7 @@ function Row({ p }: { p: Project }) {
             </span>
           </>
         )}
-      </Link>
-    </li>
+    </Link>
   );
 }
 
@@ -65,10 +62,7 @@ function Row({ p }: { p: Project }) {
 export function ProjectProgressCard({ projects }: { projects: Project[] }) {
   const groups = useMemo(() => groupProjects(projects), [projects]);
   const [tab, setTab] = useState<ProjectTab>(() => firstTab(groups));
-  const [expanded, setExpanded] = useState(false);
   const rows = groups[tab];
-  const shown = expanded ? rows : rows.slice(0, VISIBLE_ROWS);
-  const hidden = rows.length - shown.length;
   const avg = rows.length ? Math.round(rows.reduce((a, p) => a + p.progress, 0) / rows.length) : 0;
 
   return (
@@ -77,67 +71,25 @@ export function ProjectProgressCard({ projects }: { projects: Project[] }) {
         title="Tiến độ dự án"
         description={rows.length ? `${rows.length} dự án · trung bình ${avg}% hoàn thành` : "Tỷ lệ hoàn thành hiện tại của từng dự án"}
         action={
-          <Link href="/projects" className="-my-1.5 -mr-2 inline-flex min-h-8 items-center rounded-md px-2 text-xs font-medium text-primary hover:bg-primary/5 hover:underline">
+          <Link href="/projects" className={headerLinkClass}>
             Xem tất cả
           </Link>
         }
       />
-      <div role="tablist" aria-label="Lọc dự án" className="mx-5 mt-4 flex gap-1 overflow-x-auto rounded-lg bg-muted p-1">
-        {PROJECT_TABS.map((t) => {
-          const n = groups[t.key].length;
-          const active = t.key === tab;
-          return (
-            <button
-              key={t.key}
-              type="button"
-              role="tab"
-              aria-selected={active}
-              onClick={() => {
-                setTab(t.key);
-                setExpanded(false);
-              }}
-              className={cn(
-                "flex flex-1 items-center justify-center gap-1.5 whitespace-nowrap rounded-md px-2.5 py-1.5 text-xs font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary",
-                active ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground",
-              )}
-            >
-              {t.label}
-              <span
-                className={cn(
-                  "rounded-full px-1.5 text-xs tabular-nums",
-                  t.key === "attention" && n > 0 ? "bg-danger/15 text-danger" : active ? "bg-muted" : "bg-card/60",
-                )}
-              >
-                {n}
-              </span>
-            </button>
-          );
-        })}
-      </div>
+      <CountTabs
+        label="Lọc dự án"
+        className="mx-5 mt-4"
+        value={tab}
+        onChange={(k) => setTab(k)}
+        tabs={PROJECT_TABS.map((t) => ({ key: t.key, label: t.label, count: groups[t.key].length, alert: t.key === "attention" }))}
+      />
       <CardBody className="flex-1 pt-3">
         {rows.length === 0 ? (
           <p className="py-8 text-center text-sm text-muted-foreground">
             {projects.length === 0 ? "Chưa có dự án nào." : tab === "attention" ? "Không có dự án nào trễ hay có việc quá hạn." : "Không có dự án nào trong mục này."}
           </p>
         ) : (
-          <>
-            <ul role="tabpanel" className={cn("-mx-2 divide-y divide-border/60", expanded && "max-h-[26rem] overflow-y-auto pr-1")}>
-              {shown.map((p) => (
-                <Row key={p.id} p={p} />
-              ))}
-            </ul>
-            {(hidden > 0 || expanded) && rows.length > VISIBLE_ROWS && (
-              <button
-                type="button"
-                onClick={() => setExpanded((e) => !e)}
-                aria-expanded={expanded}
-                className="mt-2 flex w-full items-center justify-center gap-1 rounded-lg py-1.5 text-xs font-medium text-primary hover:bg-primary/5"
-              >
-                {expanded ? "Thu gọn" : `Xem thêm ${hidden} dự án`}
-                <ChevronDown className={cn("h-3.5 w-3.5 transition-transform", expanded && "rotate-180")} aria-hidden />
-              </button>
-            )}
-          </>
+          <ExpandableList key={tab} role="tabpanel" items={rows} getKey={(p) => p.id} render={(p) => <Row p={p} />} unit="dự án" />
         )}
       </CardBody>
     </Card>
