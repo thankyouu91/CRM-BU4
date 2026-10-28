@@ -82,3 +82,15 @@ it("does not peek when the bar is already open", () => {
   expect(sidebar.className).not.toContain("shadow-2xl");
   vi.useRealTimers();
 });
+
+it("keeps a collapsed item's hidden name out of the layout, so the icon stays centred", () => {
+  render(<AppShell user={user()} pendingReports={2} reportOwed="tuần 44" initialCollapsed><p /></AppShell>);
+  for (const name of ["Tổng quan", /^Công việc của tôi/, /^Hộp báo cáo/]) {
+    const link = within(nav()).getByRole("link", { name });
+    expect(link.className).toContain("justify-center");
+    // The visually hidden name must be sr-only alone: "relative" or "flex-1" with it would put it back in the row.
+    const label = [...link.querySelectorAll("span")].find((s) => s.className.includes("sr-only"))!;
+    expect(label.className).toBe("sr-only");
+    for (const s of link.querySelectorAll("span[aria-hidden]")) expect(s.className).not.toMatch(/\brelative\b.*\babsolute\b|\babsolute\b.*\brelative\b/);
+  }
+});

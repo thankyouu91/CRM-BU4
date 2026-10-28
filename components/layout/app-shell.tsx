@@ -104,20 +104,21 @@ function NavLink({ item, active, collapsed, count, dot, onNavigate }: { item: Na
         />
       )}
       <Icon className={cn("relative h-[18px] w-[18px] shrink-0", active && "text-indigo-300")} aria-hidden />
-      <span className={cn("relative flex-1 whitespace-nowrap", collapsed && "sr-only")}>
+      {/* Collapsed, the name is for screen readers only: it must not also be a flex-1 box, or it takes the row and pushes the icon left. */}
+      <span className={collapsed ? "sr-only" : "relative flex-1 whitespace-nowrap"}>
         {item.label}
         {collapsed && count > 0 && `, ${shown} chưa duyệt`}
         {dot && <span className="sr-only">, {dot}</span>}
       </span>
       {dot && !count && (
-        <span aria-hidden title={dot} className={cn("relative h-2 w-2 rounded-full bg-amber-400", collapsed && "absolute right-2 top-2")} />
+        <span aria-hidden title={dot} className={cn("h-2 w-2 rounded-full bg-amber-400", collapsed ? "absolute right-2 top-2" : "relative")} />
       )}
       {count > 0 && (
         <span
           aria-hidden={collapsed}
           className={cn(
-            "relative rounded-full bg-rose-500 font-bold leading-none text-white",
-            collapsed ? "absolute right-1 top-1 px-1 py-0.5 text-[9px]" : "px-1.5 py-0.5 text-[10px]",
+            "rounded-full bg-rose-500 font-bold leading-none text-white",
+            collapsed ? "absolute right-1 top-1 px-1 py-0.5 text-[9px]" : "relative px-1.5 py-0.5 text-[10px]",
           )}
         >
           {shown}
