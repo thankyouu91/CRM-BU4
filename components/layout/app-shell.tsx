@@ -292,7 +292,7 @@ export function AppShell({
           onBlur={(e) => collapsed && !e.currentTarget.contains(e.relatedTarget as Node | null) && schedulePeek(false, 0)}
           onKeyDown={(e) => e.key === "Escape" && peek && schedulePeek(false, 0)}
           className={cn(
-            "fixed inset-y-0 left-0 z-30 hidden flex-col border-r bg-sidebar bg-texture py-3 transition-[width,box-shadow] duration-200 motion-reduce:transition-none lg:flex print:!hidden",
+            "fixed inset-y-0 left-0 z-30 hidden flex-col border-r bg-sidebar py-3 transition-[width,box-shadow] duration-200 motion-reduce:transition-none lg:flex print:!hidden",
             wide ? "w-60 overflow-hidden px-3" : "w-14 px-2",
             peek && "shadow-pop",
           )}
@@ -313,7 +313,7 @@ export function AppShell({
                 onClick={() => setMobileOpen(false)}
               />
               <motion.aside
-                className="absolute inset-y-0 left-0 flex w-72 flex-col border-r bg-sidebar bg-texture px-3 py-3"
+                className="absolute inset-y-0 left-0 flex w-72 flex-col border-r bg-sidebar px-3 py-3"
                 initial={{ x: "-100%" }}
                 animate={{ x: 0 }}
                 exit={{ x: "-100%" }}
@@ -332,7 +332,7 @@ export function AppShell({
         </AnimatePresence>
 
         <div className={cn("transition-[padding] duration-200 motion-reduce:transition-none print:!pl-0", collapsed ? "lg:pl-14" : "lg:pl-60")}>
-          <header className="sticky top-0 z-20 flex h-14 items-center gap-2 border-b bg-background bg-texture px-4 sm:px-6 lg:px-8 print:hidden">
+          <header className="sticky top-0 z-20 flex h-14 items-center gap-2 border-b bg-background px-4 sm:px-6 lg:px-8 print:hidden">
             <button
               onClick={() => setMobileOpen(true)}
               className="rounded-md p-2 text-muted-foreground hover:bg-muted lg:hidden"

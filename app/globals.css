@@ -23,8 +23,6 @@
     --sidebar-foreground: 24 24 27;
     --sidebar-muted: 99 99 107;
     --sidebar-accent: 236 236 238;
-    /* Fine grain on the page background (not on cards, tables or inputs): ink specks at a few percent. */
-    --texture: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 .07 0 0 0 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
     color-scheme: light;
   }
 
@@ -46,7 +44,6 @@
     --sidebar-foreground: 237 237 239;
     --sidebar-muted: 161 161 170;
     --sidebar-accent: 32 32 36;
-    --texture: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 .06 0 0 0 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
     color-scheme: dark;
   }
 
@@ -55,7 +52,7 @@
   }
 
   body {
-    @apply bg-background bg-texture text-foreground antialiased;
+    @apply bg-background text-foreground antialiased;
     /* Inter with its single-storey a; figures that line up use tabular-nums. */
     font-feature-settings: "cv11";
   }
@@ -66,11 +63,6 @@
 }
 
 @layer utilities {
-  /* The page grain (--texture); scrolls with the page, never fixed (smooth on phones). */
-  .bg-texture {
-    background-image: var(--texture);
-    background-size: 180px 180px;
-  }
   .scrollbar-thin {
     scrollbar-width: thin;
     scrollbar-color: rgb(var(--muted-foreground) / 0.3) transparent;
@@ -86,13 +78,6 @@
   *::after {
     animation-duration: 0.01ms !important;
     transition-duration: 0.01ms !important;
-  }
-}
-
-@media (prefers-reduced-transparency: reduce) {
-  :root,
-  .dark {
-    --texture: none;
   }
 }
 
@@ -116,7 +101,6 @@
     --success: 21 128 61;
     --warning: 180 83 9;
     --danger: 220 38 38;
-    --texture: none;
     color-scheme: light;
   }
   body {
