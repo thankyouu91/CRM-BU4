@@ -110,7 +110,7 @@ export function FinanceSection({ finance, periodLabel }: { finance: SummaryFinan
                         {formatVnd(t.totalCost, false)}
                         {t.totalCost > 0 && <span className="block text-xs text-muted-foreground">{t.costRatio}% giá trị</span>}
                       </td>
-                      <td className={cn("whitespace-nowrap px-3 py-3 text-right font-semibold tabular-nums", t.profit < 0 ? "text-danger" : "text-success")}>
+                      <td className={cn("whitespace-nowrap px-3 py-3 text-right font-medium tabular-nums", t.profit < 0 ? "text-danger" : "text-success")}>
                         {formatVnd(t.profit, false)}
                         {t.estimated > 0 && <span className="block text-xs font-normal italic text-muted-foreground">{t.estimated} HĐ ước tính</span>}
                       </td>

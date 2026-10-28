@@ -122,7 +122,8 @@ describe("PowerPoint export", () => {
     const xml = await Promise.all(Object.keys(zip.files).filter((f) => /^ppt\/slides\/slide\d+\.xml$/.test(f)).sort().map((f) => zip.file(f)!.async("string")));
     expect(xml).toHaveLength(4);
     for (let i = 0; i < 13; i++) expect(xml[0]).toContain(`Dự án ${String(i).padStart(2, "0")}`);
-    expect(xml[0]).toContain("13 dự án");
+    // The figure and its label are separate runs: the number carries the colour.
+    expect(xml[0]).toMatch(/<a:t>13<\/a:t>.*?<a:t> dự án<\/a:t>/);
     expect(xml[2]).toContain("Việc due");
     expect(xml[2]).toContain("Hạn 15/10");
   });

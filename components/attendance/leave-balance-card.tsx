@@ -108,7 +108,7 @@ export function LeaveBalanceCard({
         )}
       </div>
       <p className="flex items-baseline gap-1.5">
-        <span className={cn("text-3xl font-bold tabular-nums", balance.remaining < 0 ? "text-danger" : "text-primary")}>{formatDays(balance.remaining)}</span>
+        <span className={cn("text-3xl font-semibold tabular-nums", balance.remaining < 0 ? "text-danger" : "text-foreground")}>{formatDays(balance.remaining)}</span>
         <span className="text-sm text-muted-foreground">ngày còn lại</span>
       </p>
       <dl className="mt-3 space-y-1.5 text-sm">

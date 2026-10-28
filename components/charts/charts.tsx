@@ -300,7 +300,7 @@ export function StatusDonut({
         {rows.length > 0 && <Tooltip content={(p) => <ChartTooltip {...(p as object)} theme={theme} />} />}
       </PieChart>
       <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center">
-        <span className="text-3xl font-bold" style={{ color: theme.ink }}>
+        <span className="text-3xl font-semibold tabular-nums" style={{ color: theme.ink }}>
           {total}
         </span>
         <span className="text-xs" style={{ color: theme.muted }}>

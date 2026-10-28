@@ -65,21 +65,16 @@ export function ReportsView({
 
   return (
     <div>
-      <PageHeader
-        title="Trung tâm báo cáo"
-        description="Lọc số liệu theo ngày, tháng, quý, năm; xuất PDF, PowerPoint hoặc trình chiếu trực tuyến."
-        actions={<DeckActions deck={deck} disabled={loading} presentingAt={presentingAt} onPresentingChange={setPresentingAt} />}
-      />
+      <PageHeader title="Trung tâm báo cáo" description="Số liệu theo kỳ và dự án; xuất PDF, PowerPoint hoặc trình chiếu trực tuyến." />
 
       {/* One filter row scopes everything below */}
-      <div className="mb-6 flex flex-col gap-3 rounded-2xl border bg-card p-3 shadow-card lg:flex-row lg:items-center lg:justify-between">
-        <PeriodFilter value={period} onChange={setPeriod} label={data?.period.label ?? "…"} />
+      <div className="mb-5 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
         <div className="flex flex-wrap items-center gap-2">
-          {loading && <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />}
+          <PeriodFilter value={period} onChange={setPeriod} label={data?.period.label ?? "…"} />
           <select
             value={projectId}
             onChange={(e) => setProjectId(e.target.value)}
-            className="h-9 max-w-[260px] rounded-lg border bg-card px-2 text-sm"
+            className="h-9 max-w-[260px] rounded-md border bg-card px-2 text-sm"
             aria-label="Phạm vi dự án"
           >
             <option value="">Tất cả dự án</option>
@@ -89,6 +84,9 @@ export function ReportsView({
               </option>
             ))}
           </select>
+          {loading && <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />}
+        </div>
+        <div className="flex flex-wrap items-center gap-1">
           <Button variant="ghost" size="sm" onClick={() => setSharing(true)} disabled={customIncomplete || !data}>
             <Link2 className="h-4 w-4" /> Chia sẻ trình chiếu
           </Button>
@@ -101,18 +99,20 @@ export function ReportsView({
       </div>
 
       {customIncomplete ? (
-        <div className="rounded-2xl border border-dashed bg-card py-16 text-center text-sm text-muted-foreground">Chọn ngày bắt đầu và kết thúc để xem báo cáo.</div>
+        <div className="rounded-xl border border-dashed bg-card py-16 text-center text-sm text-muted-foreground">Chọn ngày bắt đầu và kết thúc để xem báo cáo.</div>
       ) : !data || !k || !deck ? (
         <div className="flex justify-center py-24">
           <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
         </div>
       ) : (
-        <div className={cn("space-y-6 transition-opacity", loading && "opacity-60")}>
+        <div className={cn("space-y-4 transition-opacity", loading && "opacity-60")}>
           {/* Deck preview */}
           <Card>
             <CardHeader
-              title="Bản trình chiếu tự động"
-              description={`${deck.slides.length} slide được tạo từ số liệu ${data.period.label.toLowerCase()} · bấm vào slide để trình chiếu từ đó`}
+              className="flex-col sm:flex-row sm:items-center"
+              title="Bản trình chiếu"
+              description={`${deck.slides.length} slide từ số liệu ${data.period.label.toLowerCase()}. Bấm vào một slide để trình chiếu từ đó.`}
+              action={<DeckActions deck={deck} disabled={loading} presentingAt={presentingAt} onPresentingChange={setPresentingAt} />}
             />
             <CardBody>
               <div className="scrollbar-thin -mx-1 flex gap-4 overflow-x-auto px-1 pb-2">
@@ -123,7 +123,7 @@ export function ReportsView({
                     className="group shrink-0 overflow-hidden rounded-xl border text-left transition-colors hover:border-foreground/30 focus-visible:ring-2"
                   >
                     <SlideScaler width={256}>
-                      <SlideView slide={s} meta={deck.meta} theme={DECK_THEMES.dark} index={i} total={deck.slides.length} />
+                      <SlideView slide={s} meta={deck.meta} theme={DECK_THEMES.light} index={i} total={deck.slides.length} />
                     </SlideScaler>
                     <p className="w-64 truncate px-3 py-2 text-xs text-muted-foreground group-hover:text-foreground">
                       {i + 1}. {slideTitle(s, deck.meta)}

@@ -23,7 +23,7 @@ export function DeckActions({
   presentingAt?: number | null;
   onPresentingChange?: (index: number | null) => void;
 }) {
-  const [themeId, setThemeId] = useState<DeckTheme["id"]>("dark");
+  const [themeId, setThemeId] = useState<DeckTheme["id"]>("light");
   const [transition, setTransition] = useState<TransitionKind>("slide");
   const [ownPresenting, setOwnPresenting] = useState<number | null>(null);
   const presenting = presentingAt !== undefined ? presentingAt : ownPresenting;
@@ -114,7 +114,7 @@ export function DeckActions({
 
       {busy &&
         createPortal(
-          <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-slate-950/80 backdrop-blur-sm">
+          <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/60">
             <div className="w-80 rounded-2xl border bg-card p-6 text-center shadow-pop">
               <Loader2 className="mx-auto h-8 w-8 animate-spin text-primary" />
               <p className="mt-4 font-semibold">{busy.kind === "pdf" ? "Đang tạo file PDF…" : "Đang tạo file PowerPoint…"}</p>

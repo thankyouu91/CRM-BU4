@@ -6,7 +6,7 @@ import { DARK, LIGHT, type ChartTheme } from "@/lib/chart-theme";
 export interface DeckTheme {
   id: "dark" | "light";
   name: string;
-  /** Slide background: solid base + linear accent (html2canvas-safe; no radial gradients). */
+  /** Slide background; `bgGradient` is kept for callers and is the same flat colour. */
   bg: string;
   bgGradient: string;
   panel: string;
@@ -23,42 +23,43 @@ export interface DeckTheme {
   chart: ChartTheme;
 }
 
+// Charcoal and zinc like the app: ink carries the structure, colour is kept for status.
 export const DECK_THEMES: Record<DeckTheme["id"], DeckTheme> = {
-  dark: {
-    id: "dark",
-    name: "Tối · Navy",
-    bg: "#0b1020",
-    bgGradient: "linear-gradient(135deg, #0b1020 0%, #111836 55%, #1a1446 100%)",
-    panel: "#141b30",
-    panelBorder: "#232c48",
-    ink: "#f1f5f9",
-    inkSecondary: "#cbd5e1",
-    muted: "#94a3b8",
-    accent: "#818cf8",
-    accentSoft: "#232a55",
-    track: "#232c48",
-    danger: "#f87171",
-    success: "#4ade80",
-    warning: "#fbbf24",
-    chart: { ...DARK, surface: "#141b30", grid: "#232c48", axis: "#334063", ink: "#f1f5f9", muted: "#94a3b8" },
-  },
   light: {
     id: "light",
     name: "Sáng · Trắng",
     bg: "#ffffff",
-    bgGradient: "linear-gradient(135deg, #ffffff 0%, #f5f7ff 60%, #eef0ff 100%)",
-    panel: "#f8fafc",
-    panelBorder: "#e2e8f0",
-    ink: "#0f172a",
-    inkSecondary: "#334155",
-    muted: "#64748b",
-    accent: "#4f46e5",
-    accentSoft: "#e0e7ff",
-    track: "#e2e8f0",
+    bgGradient: "#ffffff",
+    panel: "#fafafa",
+    panelBorder: "#e4e4e7",
+    ink: "#18181b",
+    inkSecondary: "#3f3f46",
+    muted: "#71717a",
+    accent: "#18181b",
+    accentSoft: "#f4f4f5",
+    track: "#e4e4e7",
     danger: "#dc2626",
-    success: "#16a34a",
+    success: "#15803d",
     warning: "#b45309",
-    chart: { ...LIGHT, surface: "#f8fafc" },
+    chart: { ...LIGHT, surface: "#fafafa" },
+  },
+  dark: {
+    id: "dark",
+    name: "Tối · Than",
+    bg: "#0f0f11",
+    bgGradient: "#0f0f11",
+    panel: "#18181b",
+    panelBorder: "#2a2a2e",
+    ink: "#fafafa",
+    inkSecondary: "#d4d4d8",
+    muted: "#a1a1aa",
+    accent: "#e4e4e7",
+    accentSoft: "#27272a",
+    track: "#2a2a2e",
+    danger: "#f87171",
+    success: "#4ade80",
+    warning: "#fbbf24",
+    chart: { ...DARK, surface: "#18181b", grid: "#2a2a2e", axis: "#3f3f46", ink: "#fafafa", muted: "#a1a1aa" },
   },
 };
 

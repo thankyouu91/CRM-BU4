@@ -2,7 +2,7 @@
 
 import { formatVndShort } from "@/lib/finance";
 import type PptxGenJS from "pptxgenjs";
-import { DECK_THEMES, SLIDE_H, type DeckTheme } from "@/components/deck/theme";
+import { DECK_THEMES, type DeckTheme } from "@/components/deck/theme";
 import type { TransitionKind } from "@/components/deck/presenter";
 import { WORKLOAD_SERIES, statusLegend } from "@/components/charts/charts";
 import { clipName, PROJECTS_LIST_MAX, type Deck, type DeckMeta, type SlideModel } from "@/lib/deck-model";
@@ -62,7 +62,7 @@ function panel(c: Ctx, slide: Slide, box: { x: number; y: number; w: number; h: 
     h: inch(box.h),
     fill: { color: hex(c.t.panel) },
     line: { color: hex(c.t.panelBorder), width: 0.75 },
-    rectRadius: 0.18,
+    rectRadius: 0.125,
   });
 }
 
@@ -105,14 +105,25 @@ function chartAxes(c: Ctx, n: number) {
 // Slide renderers
 // ---------------------------------------------------------------------------
 
+// Same frame as the screen (components/deck/slides.tsx SlideView): label, title, hairline, footer.
 function chrome(c: Ctx, slide: Slide, s: Exclude<SlideModel, { kind: "cover" }>, index: number, total: number) {
   const { t, meta } = c;
-  rect(c, slide, { x: 0, y: 0, w: 220, h: 6 }, t.accent, false);
-  text(slide, s.kicker.toUpperCase(), { x: 64, y: 48, w: 900, h: 22 }, { px: 14, bold: true, color: hex(t.accent), charSpacing: 2 });
-  text(slide, s.title, { x: 64, y: 74, w: 1000, h: 54 }, { px: 36, bold: true, color: hex(t.ink), fit: "shrink" });
-  text(slide, `${String(index + 1).padStart(2, "0")} / ${String(total).padStart(2, "0")}`, { x: 1016, y: 48, w: 200, h: 22 }, { px: 15, bold: true, color: hex(t.muted), align: "right" });
-  text(slide, `${meta.scopeLabel} · ${meta.periodLabel}`, { x: 64, y: 676, w: 700, h: 20 }, { px: 13, color: hex(t.muted) });
-  text(slide, `WorkHub · ${meta.generatedAt}`, { x: 816, y: 676, w: 400, h: 20 }, { px: 13, color: hex(t.muted), align: "right" });
+  text(slide, s.kicker, { x: 64, y: 52, w: 900, h: 22 }, { px: 15, color: hex(t.muted) });
+  text(slide, s.title, { x: 64, y: 78, w: 1100, h: 50 }, { px: 34, bold: true, color: hex(t.ink), fit: "shrink" });
+  rect(c, slide, { x: 64, y: 144, w: 1152, h: 1 }, t.panelBorder, false);
+  text(slide, `${meta.scopeLabel} · ${meta.periodLabel}`, { x: 64, y: 676, w: 800, h: 20 }, { px: 13, color: hex(t.muted) });
+  text(slide, `${index + 1} / ${total}`, { x: 1016, y: 676, w: 200, h: 20 }, { px: 13, color: hex(t.muted), align: "right" });
+}
+
+/** Inline figures ("13 dự án   2 đã xong …"): the number carries the colour, the label stays muted. */
+function figures(t: DeckTheme, items: { value: string | number; label: string; color?: string }[], lead?: string): PptxGenJS.TextProps[] {
+  return [
+    ...(lead ? [{ text: `${lead}        `, options: { bold: true, color: hex(t.ink), fontSize: pt(15) } }] : []),
+    ...items.flatMap((it, i) => [
+      { text: `${i ? "        " : ""}${it.value}`, options: { bold: true, color: hex(it.color ?? t.ink), fontSize: pt(18) } },
+      { text: ` ${it.label}`, options: { color: hex(t.muted), fontSize: pt(15) } },
+    ]),
+  ];
 }
 
 const TOP = 168;
@@ -128,13 +139,9 @@ function renderBody(c: Ctx, slide: Slide, s: SlideModel) {
         const x = LEFT + (i % 3) * (w + 24);
         const y = TOP + Math.floor(i / 3) * (196 + 24);
         panel(c, slide, { x, y, w, h: 196 });
-        text(slide, it.label, { x: x + 24, y: y + 24, w: w - 48, h: 24 }, { px: 17, color: hex(t.muted) });
-        text(slide, it.value, { x: x + 24, y: y + 64, w: w - 48, h: 72 }, {
-          px: 60,
-          bold: true,
-          color: hex(it.tone === "danger" ? t.danger : it.tone === "accent" ? t.accent : t.ink),
-        });
-        if (it.sub) text(slide, it.sub, { x: x + 24, y: y + 150, w: w - 48, h: 22 }, { px: 15, color: hex(t.inkSecondary) });
+        text(slide, it.label, { x: x + 24, y: y + 24, w: w - 48, h: 24 }, { px: 16, color: hex(t.muted) });
+        text(slide, it.value, { x: x + 24, y: y + 70, w: w - 48, h: 66 }, { px: 54, bold: true, color: hex(it.tone === "danger" ? t.danger : t.ink) });
+        if (it.sub) text(slide, it.sub, { x: x + 24, y: y + 150, w: w - 48, h: 22 }, { px: 15, color: hex(t.muted) });
       });
       return;
     }
@@ -142,15 +149,11 @@ function renderBody(c: Ctx, slide: Slide, s: SlideModel) {
     case "projects": {
       // Same layout as the screen (components/deck/slides.tsx ProjectsBody).
       const sm = s.summary;
-      const chips = [
-        { label: `${sm.total} dự án`, color: t.ink },
-        ...(sm.complete ? [{ label: `${sm.complete} đã xong toàn bộ việc`, color: t.success }] : []),
-        ...(sm.overdue ? [{ label: `${sm.overdue} có việc quá hạn`, color: t.danger }] : []),
-        ...(sm.empty ? [{ label: `${sm.empty} chưa có công việc`, color: t.muted }] : []),
-      ];
-      text(slide, chips.flatMap((ch, i) => [
-        { text: `${i ? "      " : ""}● `, options: { color: hex(ch.color), fontSize: pt(13) } },
-        { text: ch.label, options: { color: hex(t.inkSecondary), fontSize: pt(15), bold: true } },
+      text(slide, figures(t, [
+        { value: sm.total, label: "dự án" },
+        ...(sm.complete ? [{ value: sm.complete, label: "đã xong toàn bộ việc", color: t.success }] : []),
+        ...(sm.overdue ? [{ value: sm.overdue, label: "có việc quá hạn", color: t.danger }] : []),
+        ...(sm.empty ? [{ value: sm.empty, label: "chưa có công việc", color: t.muted }] : []),
       ]), { x: LEFT, y: TOP, w: WIDTH, h: 26 });
       const count = (r: (typeof s.rows)[number]) => (r.total ? `${r.done}/${r.total} việc` : "Chưa có việc");
       const top = TOP + 52;
@@ -158,17 +161,18 @@ function renderBody(c: Ctx, slide: Slide, s: SlideModel) {
         const rowH = s.rows.length > 4 ? 64 : 80;
         s.rows.forEach((r, i) => {
           const y = top + i * rowH;
-          slide.addShape(c.pres.ShapeType.ellipse, { x: inch(LEFT), y: inch(y + 7), w: inch(14), h: inch(14), fill: { color: hex(r.color) }, line: { color: hex(r.color), width: 0 } });
+          rect(c, slide, { x: LEFT, y: y + 9, w: 10, h: 10 }, r.color, false);
           text(slide, [
-            { text: clipName(r.name, 60), options: { bold: true, color: hex(t.ink), fontSize: pt(21) } },
-            { text: `   ${r.status}`, options: { color: hex(r.statusColor), fontSize: pt(13), bold: true } },
-          ], { x: LEFT + 26, y, w: 760, h: 28 }, { fit: "shrink" });
+            { text: clipName(r.name, 60), options: { bold: true, color: hex(t.ink), fontSize: pt(20) } },
+            { text: "   ● ", options: { color: hex(r.statusColor), fontSize: pt(11) } },
+            { text: r.status, options: { color: hex(t.inkSecondary), fontSize: pt(13) } },
+          ], { x: LEFT + 22, y, w: 760, h: 28 }, { fit: "shrink" });
           text(slide, [
             { text: count(r), options: { color: hex(t.muted), fontSize: pt(15) } },
-            ...(r.overdue ? [{ text: `   ${r.overdue} quá hạn`, options: { color: hex(t.danger), fontSize: pt(15), bold: true } }] : []),
-            { text: `   ${r.total ? `${r.progress}%` : "—"}`, options: { color: hex(r.total ? t.ink : t.muted), fontSize: pt(24), bold: true } },
+            ...(r.overdue ? [{ text: `   ${r.overdue} quá hạn`, options: { color: hex(t.danger), fontSize: pt(15) } }] : []),
+            { text: `   ${r.total ? `${r.progress}%` : "–"}`, options: { color: hex(r.total ? t.ink : t.muted), fontSize: pt(23), bold: true } },
           ], { x: LEFT + 760, y: y - 2, w: WIDTH - 760, h: 30 }, { align: "right" });
-          const barH = s.rows.length > 4 ? 10 : 14;
+          const barH = s.rows.length > 4 ? 6 : 8;
           rect(c, slide, { x: LEFT, y: y + 36, w: WIDTH, h: barH }, t.track);
           if (r.progress > 0) rect(c, slide, { x: LEFT, y: y + 36, w: (WIDTH * r.progress) / 100, h: barH }, t.accent);
         });
@@ -181,31 +185,26 @@ function renderBody(c: Ctx, slide: Slide, s: SlideModel) {
       s.rows.forEach((r, i) => {
         const x = LEFT + Math.floor(i / perColumn) * (colW + 40);
         const y = top + (i % perColumn) * rowH;
-        slide.addShape(c.pres.ShapeType.ellipse, { x: inch(x), y: inch(y + 7), w: inch(10), h: inch(10), fill: { color: hex(r.color) }, line: { color: hex(r.color), width: 0 } });
+        rect(c, slide, { x, y: y + 8, w: 8, h: 8 }, r.color, false);
         text(slide, [
           { text: clipName(r.name, 38), options: { bold: true, color: hex(t.ink), fontSize: pt(16) } },
-          { text: `  ${r.status}`, options: { color: hex(r.statusColor), fontSize: pt(11), bold: true } },
-        ], { x: x + 20, y: y + 1, w: colW - 200, h: 22 }, { fit: "shrink" });
+          { text: "  ● ", options: { color: hex(r.statusColor), fontSize: pt(10) } },
+          { text: r.status, options: { color: hex(t.inkSecondary), fontSize: pt(12) } },
+        ], { x: x + 18, y: y + 1, w: colW - 200, h: 22 }, { fit: "shrink" });
         text(slide, [
-          { text: `${r.overdue ? `${r.overdue} quá hạn · ` : ""}${count(r)}`, options: { color: hex(r.overdue ? t.danger : t.muted), fontSize: pt(13), bold: !!r.overdue } },
-          { text: `  ${r.total ? `${r.progress}%` : "—"}`, options: { color: hex(r.total ? t.ink : t.muted), fontSize: pt(19), bold: true } },
+          { text: `${r.overdue ? `${r.overdue} quá hạn, ` : ""}${count(r)}`, options: { color: hex(r.overdue ? t.danger : t.muted), fontSize: pt(13) } },
+          { text: `  ${r.total ? `${r.progress}%` : "–"}`, options: { color: hex(r.total ? t.ink : t.muted), fontSize: pt(18), bold: true } },
         ], { x: x + colW - 180, y: y - 2, w: 180, h: 26 }, { align: "right" });
-        rect(c, slide, { x, y: y + 30, w: colW, h: 6 }, t.track);
-        if (r.progress > 0) rect(c, slide, { x, y: y + 30, w: (colW * r.progress) / 100, h: 6 }, t.accent);
+        rect(c, slide, { x, y: y + 30, w: colW, h: 5 }, t.track);
+        if (r.progress > 0) rect(c, slide, { x, y: y + 30, w: (colW * r.progress) / 100, h: 5 }, t.accent);
       });
       return;
     }
 
     case "week": {
       // Same layout as the screen (components/deck/slides.tsx WeekBody).
-      const tone = (x?: string) => (x === "success" ? t.success : x === "danger" ? t.danger : x === "warning" ? t.warning : x === "accent" ? t.accent : t.muted);
-      text(slide, [
-        { text: `${s.period}     `, options: { bold: true, color: hex(t.ink), fontSize: pt(15) } },
-        ...s.stats.flatMap((st) => [
-          { text: `${st.value}`, options: { bold: true, color: hex(st.value ? tone(st.tone) : t.muted), fontSize: pt(17) } },
-          { text: ` ${st.label}      `, options: { color: hex(t.inkSecondary), fontSize: pt(14) } },
-        ]),
-      ], { x: LEFT, y: TOP, w: WIDTH, h: 28 }, { fit: "shrink" });
+      const tone = (x?: string) => (x === "success" ? t.success : x === "danger" ? t.danger : x === "warning" ? t.warning : x === "accent" ? t.ink : t.muted);
+      text(slide, figures(t, s.stats.map((st) => ({ value: st.value, label: st.label, color: st.value ? (st.tone ? tone(st.tone) : t.ink) : t.muted })), s.period), { x: LEFT, y: TOP, w: WIDTH, h: 28 }, { fit: "shrink" });
       const top = TOP + 52;
       if (!s.columns.length) {
         text(slide, "Không có công việc nào trong mục này.", { x: LEFT, y: top + 150, w: WIDTH, h: 30 }, { px: 20, color: hex(t.muted), align: "center" });
@@ -217,18 +216,18 @@ function renderBody(c: Ctx, slide: Slide, s: SlideModel) {
         col.forEach((line, li) => {
           const y = top + li * 36;
           if (line.kind === "project") {
-            slide.addShape(c.pres.ShapeType.ellipse, { x: inch(x), y: inch(y + 10), w: inch(10), h: inch(10), fill: { color: hex(line.color) }, line: { color: hex(line.color), width: 0 } });
+            rect(c, slide, { x, y: y + 11, w: 9, h: 9 }, line.color, false);
             text(slide, [
               { text: line.name, options: { bold: true, color: hex(t.ink), fontSize: pt(16) } },
               { text: `   ${line.continued ? "(tiếp)" : `${line.count} việc`}`, options: { color: hex(t.muted), fontSize: pt(13) } },
             ], { x: x + 20, y: y + 4, w: colW - 20, h: 24 }, { fit: "shrink" });
           } else {
-            rect(c, slide, { x: x + 4, y: y + 2, w: 2, h: 32 }, t.panelBorder, false);
+            rect(c, slide, { x: x + 4, y: y + 2, w: 1, h: 32 }, t.panelBorder, false);
             text(slide, [
               { text: line.title, options: { color: hex(t.inkSecondary), fontSize: pt(15) } },
               { text: `   ${line.who}`, options: { color: hex(t.muted), fontSize: pt(12) } },
             ], { x: x + 24, y: y + 7, w: colW - 200, h: 22 }, { fit: "shrink" });
-            text(slide, line.tag, { x: x + colW - 176, y: y + 9, w: 176, h: 20 }, { px: 12, bold: true, color: hex(tone(line.tone)), align: "right" });
+            text(slide, line.tag, { x: x + colW - 176, y: y + 9, w: 176, h: 20 }, { px: 13, color: hex(tone(line.tone)), align: "right" });
           }
         });
       });
@@ -246,29 +245,33 @@ function renderBody(c: Ctx, slide: Slide, s: SlideModel) {
         const w = listW - (r.level === 2 ? 28 : 0);
         slide.addShape(r.level === 0 ? c.pres.ShapeType.ellipse : c.pres.ShapeType.rect, {
           x: inch(x),
-          y: inch(y + 7),
-          w: inch(12),
-          h: inch(12),
+          y: inch(y + 8),
+          w: inch(10),
+          h: inch(10),
           fill: { color: hex(r.color) },
           line: { color: hex(r.color), width: 0 },
         });
         text(slide, [
-          { text: `${r.level === 2 ? "└ " : ""}${r.name}`, options: { bold: r.level < 2, color: hex(t.ink), fontSize: pt(r.level === 0 ? 19 : 17) } },
-          { text: `   ● `, options: { color: hex(r.statusColor), fontSize: pt(12) } },
-          { text: r.status, options: { color: hex(t.inkSecondary), fontSize: pt(12), bold: true } },
-        ], { x: x + 22, y, w: w * 0.55, h: 26 }, { fit: "shrink" });
+          { text: `${r.level === 2 ? "└ " : ""}${r.name}`, options: { bold: r.level < 2, color: hex(t.ink), fontSize: pt(r.level === 0 ? 18 : 16) } },
+          { text: `   ● `, options: { color: hex(r.statusColor), fontSize: pt(11) } },
+          { text: r.status, options: { color: hex(t.inkSecondary), fontSize: pt(13) } },
+        ], { x: x + 20, y, w: w * 0.55, h: 26 }, { fit: "shrink" });
         text(slide, [
           { text: r.deadline, options: { color: hex(t.muted), fontSize: pt(13) } },
           ...(r.planned !== null ? [{ text: `   KH ${r.planned}%`, options: { color: hex(t.muted), fontSize: pt(13) } }] : []),
-          { text: `   ${r.progress}%`, options: { color: hex(t.ink), fontSize: pt(22), bold: true } },
+          { text: `   ${r.progress}%`, options: { color: hex(t.ink), fontSize: pt(20), bold: true } },
         ], { x: x + w * 0.55, y: y - 2, w: w * 0.45, h: 30 }, { align: "right" });
         const barY = y + 34;
-        const barH = tight ? 8 : 10;
+        const barH = tight ? 6 : 8;
         rect(c, slide, { x, y: barY, w, h: barH }, t.track);
         if (r.progress > 0) rect(c, slide, { x, y: barY, w: (w * r.progress) / 100, h: barH }, t.accent);
-        if (r.planned !== null) rect(c, slide, { x: x + (w * r.planned) / 100 - 1.5, y: barY - 4, w: 3, h: barH + 8 }, t.ink, false);
+        // The plan tick sits in a ring of the slide colour so it reads on top of the bar too.
+        if (r.planned !== null) {
+          rect(c, slide, { x: x + (w * r.planned) / 100 - 3.5, y: barY - 6, w: 7, h: barH + 12 }, t.bg, false);
+          rect(c, slide, { x: x + (w * r.planned) / 100 - 1.5, y: barY - 4, w: 3, h: barH + 8 }, t.ink, false);
+        }
       });
-      text(slide, "Thanh = thực tế · vạch đứng = kế hoạch đến hôm nay (KH)", { x: LEFT, y: TOP + s.rows.length * rowH + 4, w: listW, h: 20 }, { px: 13, color: hex(t.muted) });
+      text(slide, "Thanh: thực tế. Vạch đứng: kế hoạch đến hôm nay (KH).", { x: LEFT, y: TOP + s.rows.length * rowH + 4, w: listW, h: 20 }, { px: 13, color: hex(t.muted) });
 
       // Work volume panel
       const px = LEFT + listW + 28;
@@ -276,18 +279,18 @@ function renderBody(c: Ctx, slide: Slide, s: SlideModel) {
       const wl = s.workload;
       const pct = (v: number) => (wl.total ? Math.round((v / wl.total) * 100) : 0);
       panel(c, slide, { x: px, y: TOP, w: pw, h: 468 });
-      text(slide, "Khối lượng công việc", { x: px + 24, y: TOP + 22, w: pw - 48, h: 24 }, { px: 17, bold: true, color: hex(t.ink) });
+      text(slide, "Khối lượng công việc", { x: px + 24, y: TOP + 22, w: pw - 48, h: 24 }, { px: 16, bold: true, color: hex(t.ink) });
       text(slide, "Tổng khối lượng", { x: px + 24, y: TOP + 62, w: pw - 48, h: 20 }, { px: 14, color: hex(t.muted) });
       text(slide, String(wl.total), { x: px + 24, y: TOP + 82, w: pw - 48, h: 50 }, { px: 44, bold: true, color: hex(t.ink) });
       const half = (pw - 48) / 2;
       text(slide, "Đã làm", { x: px + 24, y: TOP + 146, w: half, h: 20 }, { px: 14, color: hex(t.muted) });
       text(slide, [
-        { text: String(wl.done), options: { color: hex(t.success), bold: true, fontSize: pt(30) } },
+        { text: String(wl.done), options: { color: hex(t.success), bold: true, fontSize: pt(28) } },
         { text: `  ${pct(wl.done)}%`, options: { color: hex(t.muted), fontSize: pt(15) } },
       ], { x: px + 24, y: TOP + 166, w: half, h: 40 });
       text(slide, "Cần làm", { x: px + 24 + half, y: TOP + 146, w: half, h: 20 }, { px: 14, color: hex(t.muted) });
       text(slide, [
-        { text: String(wl.remaining), options: { color: hex(t.ink), bold: true, fontSize: pt(30) } },
+        { text: String(wl.remaining), options: { color: hex(t.ink), bold: true, fontSize: pt(28) } },
         { text: `  ${pct(wl.remaining)}%`, options: { color: hex(t.muted), fontSize: pt(15) } },
       ], { x: px + 24 + half, y: TOP + 166, w: half, h: 40 });
       const parts = [
@@ -298,21 +301,21 @@ function renderBody(c: Ctx, slide: Slide, s: SlideModel) {
       ].filter((p) => p.value > 0);
       const barX = px + 24;
       const barW = pw - 48;
-      rect(c, slide, { x: barX, y: TOP + 222, w: barW, h: 14 }, t.track);
+      rect(c, slide, { x: barX, y: TOP + 224, w: barW, h: 10 }, t.track);
       let cx = barX;
       for (const p of parts) {
         const segW = (barW * p.value) / Math.max(1, wl.total);
-        rect(c, slide, { x: cx, y: TOP + 222, w: Math.max(segW - 2, 0.5), h: 14 }, p.color, false);
+        rect(c, slide, { x: cx, y: TOP + 224, w: Math.max(segW - 2, 0.5), h: 10 }, p.color, false);
         cx += segW;
       }
       parts.forEach((p, i) => {
         const ly = TOP + 256 + i * 28;
-        rect(c, slide, { x: barX, y: ly + 4, w: 11, h: 11 }, p.color, false);
+        rect(c, slide, { x: barX, y: ly + 5, w: 10, h: 10 }, p.color, false);
         text(slide, p.label, { x: barX + 20, y: ly, w: barW - 80, h: 20 }, { px: 14, color: hex(t.inkSecondary) });
         text(slide, String(p.value), { x: barX + barW - 60, y: ly, w: 60, h: 20 }, { px: 14, bold: true, color: hex(t.ink), align: "right" });
       });
       if (wl.overdue > 0) {
-        text(slide, `${wl.overdue} việc đã quá hạn`, { x: barX, y: TOP + 256 + parts.length * 28 + 10, w: barW, h: 22 }, { px: 15, bold: true, color: hex(t.danger) });
+        text(slide, `${wl.overdue} việc đã quá hạn`, { x: barX, y: TOP + 256 + parts.length * 28 + 10, w: barW, h: 22 }, { px: 15, color: hex(t.danger) });
       }
       return;
     }
@@ -322,7 +325,7 @@ function renderBody(c: Ctx, slide: Slide, s: SlideModel) {
       const tiles = [
         { label: "Giá trị hợp đồng", value: formatVndShort(f.value), sub: `${f.count} hợp đồng`, color: t.ink },
         { label: "Chi phí thực hiện", value: formatVndShort(f.totalCost), sub: `Tỷ lệ chi phí ${f.costRatio}%`, color: t.ink },
-        { label: "Lợi nhuận gộp", value: formatVndShort(f.profit), sub: `Tỷ suất ${f.margin}%${f.estimated ? ` · ${f.estimated} HĐ ước tính` : ""}`, color: f.profit < 0 ? t.danger : t.success },
+        { label: "Lợi nhuận gộp", value: formatVndShort(f.profit), sub: `Tỷ suất ${f.margin}%${f.estimated ? `, ${f.estimated} HĐ ước tính` : ""}`, color: f.profit < 0 ? t.danger : t.success },
         { label: "Còn phải thu", value: formatVndShort(f.receivable), sub: `Đã thu ${formatVndShort(f.collected)}`, color: f.receivable > 0 ? t.danger : t.ink },
       ];
       const gap = 18;
@@ -331,8 +334,8 @@ function renderBody(c: Ctx, slide: Slide, s: SlideModel) {
         const x = LEFT + i * (tw + gap);
         panel(c, slide, { x, y: TOP, w: tw, h: 124 });
         text(slide, it.label, { x: x + 20, y: TOP + 18, w: tw - 40, h: 20 }, { px: 14, color: hex(t.muted) });
-        text(slide, it.value, { x: x + 20, y: TOP + 42, w: tw - 40, h: 44 }, { px: 34, bold: true, color: hex(it.color), fit: "shrink" });
-        text(slide, it.sub, { x: x + 20, y: TOP + 92, w: tw - 40, h: 20 }, { px: 13, color: hex(t.inkSecondary), fit: "shrink" });
+        text(slide, it.value, { x: x + 20, y: TOP + 42, w: tw - 40, h: 44 }, { px: 32, bold: true, color: hex(it.color), fit: "shrink" });
+        text(slide, it.sub, { x: x + 20, y: TOP + 92, w: tw - 40, h: 20 }, { px: 13, color: hex(t.muted), fit: "shrink" });
       });
       // Table: project | progress | value | profit (margin) | receivable
       const colX = [LEFT, LEFT + 360, LEFT + 610, LEFT + 790, LEFT + 990];
@@ -344,23 +347,23 @@ function renderBody(c: Ctx, slide: Slide, s: SlideModel) {
       rect(c, slide, { x: LEFT, y: headY + 26, w: WIDTH, h: 1 }, t.panelBorder, false);
       s.rows.forEach((r, i) => {
         const y = headY + 36 + i * 50;
-        rect(c, slide, { x: LEFT, y: y + 6, w: 11, h: 11 }, r.color, false);
-        text(slide, r.name, { x: LEFT + 22, y, w: colW[0] - 22, h: 24 }, { px: 17, bold: true, color: hex(t.ink), fit: "shrink" });
-        if (r.progress === null) text(slide, "—", { x: colX[1], y, w: colW[1], h: 24 }, { px: 14, color: hex(t.muted) });
+        rect(c, slide, { x: LEFT, y: y + 8, w: 8, h: 8 }, r.color, false);
+        text(slide, r.name, { x: LEFT + 20, y, w: colW[0] - 20, h: 24 }, { px: 16, bold: true, color: hex(t.ink), fit: "shrink" });
+        if (r.progress === null) text(slide, "–", { x: colX[1], y, w: colW[1], h: 24 }, { px: 14, color: hex(t.muted) });
         else {
-          rect(c, slide, { x: colX[1], y: y + 8, w: colW[1] - 60, h: 8 }, t.track);
-          if (r.progress > 0) rect(c, slide, { x: colX[1], y: y + 8, w: ((colW[1] - 60) * r.progress) / 100, h: 8 }, t.accent);
+          rect(c, slide, { x: colX[1], y: y + 9, w: colW[1] - 60, h: 6 }, t.track);
+          if (r.progress > 0) rect(c, slide, { x: colX[1], y: y + 9, w: ((colW[1] - 60) * r.progress) / 100, h: 6 }, t.accent);
           text(slide, `${r.progress}%`, { x: colX[1] + colW[1] - 52, y: y + 1, w: 52, h: 22 }, { px: 15, bold: true, color: hex(t.ink), align: "right" });
         }
-        text(slide, formatVndShort(r.value), { x: colX[2], y, w: colW[2], h: 24 }, { px: 17, bold: true, color: hex(t.ink), align: "right" });
+        text(slide, formatVndShort(r.value), { x: colX[2], y, w: colW[2], h: 24 }, { px: 16, color: hex(t.ink), align: "right" });
         text(slide, [
-          { text: formatVndShort(r.profit), options: { bold: true, color: hex(r.profit < 0 ? t.danger : t.success), fontSize: pt(17) } },
+          { text: formatVndShort(r.profit), options: { color: hex(r.profit < 0 ? t.danger : t.success), fontSize: pt(16) } },
           { text: ` (${r.margin}%)`, options: { color: hex(t.muted), fontSize: pt(13) } },
         ], { x: colX[3], y, w: colW[3], h: 24 }, { align: "right" });
-        text(slide, formatVndShort(r.receivable), { x: colX[4], y, w: colW[4], h: 24 }, { px: 17, bold: true, color: hex(r.receivable > 0 ? t.danger : t.ink), align: "right" });
+        text(slide, formatVndShort(r.receivable), { x: colX[4], y, w: colW[4], h: 24 }, { px: 16, color: hex(r.receivable > 0 ? t.danger : t.ink), align: "right" });
         rect(c, slide, { x: LEFT, y: y + 38, w: WIDTH, h: 1 }, t.panelBorder, false);
       });
-      text(slide, `${s.scopeNote} · Lợi nhuận gộp = giá trị HĐ − chi phí đào tạo, khảo thí và chi phí khác`, { x: LEFT, y: headY + 46 + s.rows.length * 50, w: WIDTH, h: 20 }, { px: 13, color: hex(t.muted) });
+      text(slide, `${s.scopeNote}. Lợi nhuận gộp = giá trị HĐ − chi phí đào tạo, khảo thí và chi phí khác.`, { x: LEFT, y: headY + 46 + s.rows.length * 50, w: WIDTH, h: 20 }, { px: 13, color: hex(t.muted) });
       return;
     }
 
@@ -389,7 +392,7 @@ function renderBody(c: Ctx, slide: Slide, s: SlideModel) {
         legendPos: "t",
         showTitle: !isTrend,
         title: "Giờ công theo thời gian",
-        titleColor: hex(t.inkSecondary),
+        titleColor: hex(t.muted),
         titleFontFace: FONT,
         titleFontSize: 11,
         ...chartAxes(c, s.data.length),
@@ -399,7 +402,7 @@ function renderBody(c: Ctx, slide: Slide, s: SlideModel) {
         const y = TOP + i * (statH + (isTrend ? 20 : 18));
         panel(c, slide, { x: LEFT + chartW + 24, y, w: 260, h: statH });
         text(slide, st.label, { x: LEFT + chartW + 46, y: y + 18, w: 216, h: 20 }, { px: 14, color: hex(t.muted) });
-        text(slide, st.value, { x: LEFT + chartW + 46, y: y + 44, w: 216, h: 44 }, { px: 32, bold: true, color: hex(t.ink) });
+        text(slide, st.value, { x: LEFT + chartW + 46, y: y + 44, w: 216, h: 44 }, { px: 30, bold: true, color: hex(t.ink) });
       });
       return;
     }
@@ -422,15 +425,19 @@ function renderBody(c: Ctx, slide: Slide, s: SlideModel) {
       });
       text(slide, String(total), { x: LEFT + 20, y: TOP + 180, w: 380, h: 50 }, { px: 44, bold: true, color: hex(t.ink), align: "center" });
       text(slide, "công việc", { x: LEFT + 20, y: TOP + 232, w: 380, h: 22 }, { px: 15, color: hex(t.muted), align: "center" });
+      // A list with hairlines, as on screen.
+      const lx = LEFT + 460;
+      const lw = WIDTH - 460;
+      const rowH = 66;
+      const top = TOP + Math.max(0, (470 - legend.length * rowH) / 2);
+      rect(c, slide, { x: lx, y: top, w: lw, h: 1 }, t.panelBorder, false);
       legend.forEach((l, i) => {
-        const y = TOP + 6 + i * 88;
-        const x = LEFT + 460;
-        const w = WIDTH - 460;
-        panel(c, slide, { x, y, w, h: 72 });
-        rect(c, slide, { x: x + 22, y: y + 28, w: 16, h: 16 }, l.color, false);
-        text(slide, l.label, { x: x + 54, y: y + 22, w: w - 260, h: 30 }, { px: 20, color: hex(t.ink) });
-        text(slide, String(l.count), { x: x + w - 200, y: y + 18, w: 100, h: 36 }, { px: 26, bold: true, color: hex(t.ink), align: "right" });
-        text(slide, `${l.pct}%`, { x: x + w - 90, y: y + 24, w: 66, h: 26 }, { px: 17, color: hex(t.muted), align: "right" });
+        const y = top + i * rowH;
+        rect(c, slide, { x: lx + 4, y: y + 27, w: 12, h: 12 }, l.color, false);
+        text(slide, l.label, { x: lx + 32, y: y + 20, w: lw - 240, h: 28 }, { px: 19, color: hex(t.ink) });
+        text(slide, String(l.count), { x: lx + lw - 200, y: y + 17, w: 120, h: 32 }, { px: 24, bold: true, color: hex(t.ink), align: "right" });
+        text(slide, `${l.pct}%`, { x: lx + lw - 70, y: y + 22, w: 66, h: 24 }, { px: 16, color: hex(t.muted), align: "right" });
+        rect(c, slide, { x: lx, y: y + rowH, w: lw, h: 1 }, t.panelBorder, false);
       });
       return;
     }
@@ -473,13 +480,13 @@ function renderBody(c: Ctx, slide: Slide, s: SlideModel) {
       top.forEach((p, i) => {
         const y = TOP + 50 + i * rowH;
         rect(c, slide, { x: tx + 1, y: y - 1, w: 398, h: 1 }, t.panelBorder, false);
-        slide.addShape(c.pres.ShapeType.ellipse, { x: inch(tx + 22), y: inch(y + 15), w: inch(34), h: inch(34), fill: { color: hex(p.avatarColor) }, line: { color: hex(p.avatarColor), width: 0 } });
-        text(slide, initials(p.name), { x: tx + 22, y: y + 15, w: 34, h: 34 }, { px: 12, bold: true, color: "FFFFFF", align: "center", valign: "middle" });
+        slide.addShape(c.pres.ShapeType.ellipse, { x: inch(tx + 22), y: inch(y + 16), w: inch(32), h: inch(32), fill: { color: hex(p.avatarColor) }, line: { color: hex(p.avatarColor), width: 0 } });
+        text(slide, initials(p.name), { x: tx + 22, y: y + 16, w: 32, h: 32 }, { px: 12, bold: true, color: "FFFFFF", align: "center", valign: "middle" });
         text(slide, [
           { text: p.name, options: { bold: true, color: hex(t.ink), fontSize: pt(16), breakLine: true } },
           { text: p.jobTitle ?? "", options: { color: hex(t.muted), fontSize: pt(12) } },
         ], { x: tx + 68, y: y + 12, w: 150, h: 42 }, { fit: "shrink" });
-        text(slide, String(p.done), { x: tx + 214, y: y + 20, w: 80, h: 26 }, { px: 20, bold: true, color: hex(t.ink), align: "right" });
+        text(slide, String(p.done), { x: tx + 214, y: y + 20, w: 80, h: 26 }, { px: 18, bold: true, color: hex(t.ink), align: "right" });
         text(slide, String(p.hours), { x: tx + 300, y: y + 22, w: 78, h: 24 }, { px: 16, color: hex(t.inkSecondary), align: "right" });
       });
       return;
@@ -487,28 +494,28 @@ function renderBody(c: Ctx, slide: Slide, s: SlideModel) {
 
     case "risks": {
       panel(c, slide, { x: LEFT, y: TOP, w: 400, h: 460 });
-      text(slide, "Công việc quá hạn", { x: LEFT + 24, y: TOP + 24, w: 352, h: 24 }, { px: 17, bold: true, color: hex(t.danger) });
-      text(slide, String(s.overdueTotal), { x: LEFT + 24, y: TOP + 56, w: 352, h: 100 }, { px: 84, bold: true, color: hex(s.overdueTotal ? t.danger : t.ink) });
+      text(slide, "Công việc quá hạn", { x: LEFT + 24, y: TOP + 24, w: 352, h: 24 }, { px: 16, bold: true, color: hex(t.ink) });
+      text(slide, String(s.overdueTotal), { x: LEFT + 24, y: TOP + 56, w: 352, h: 100 }, { px: 78, bold: true, color: hex(s.overdueTotal ? t.danger : t.ink) });
       s.byProject.slice(0, 5).forEach((p, i) => {
         const y = TOP + 184 + i * 38;
-        slide.addShape(c.pres.ShapeType.ellipse, { x: inch(LEFT + 24), y: inch(y + 6), w: inch(10), h: inch(10), fill: { color: hex(p.color) }, line: { color: hex(p.color), width: 0 } });
+        rect(c, slide, { x: LEFT + 24, y: y + 8, w: 8, h: 8 }, p.color, false);
         text(slide, p.name, { x: LEFT + 44, y, w: 290, h: 24 }, { px: 16, color: hex(t.inkSecondary), fit: "shrink" });
         text(slide, String(p.overdue), { x: LEFT + 330, y, w: 46, h: 24 }, { px: 16, bold: true, color: hex(t.ink), align: "right" });
       });
       const x = LEFT + 424;
       const w = WIDTH - 424;
       panel(c, slide, { x, y: TOP, w, h: 460 });
-      text(slide, "Hạn chót trong 14 ngày tới", { x: x + 24, y: TOP + 24, w: w - 48, h: 24 }, { px: 17, bold: true, color: hex(t.ink) });
+      text(slide, "Hạn chót trong 14 ngày tới", { x: x + 24, y: TOP + 24, w: w - 48, h: 24 }, { px: 16, bold: true, color: hex(t.ink) });
       s.upcoming.forEach((u, i) => {
         const y = TOP + 64 + i * 64;
         const d = new Date(u.dueDate);
-        slide.addShape(c.pres.ShapeType.roundRect, { x: inch(x + 24), y: inch(y), w: inch(54), h: inch(50), fill: { color: hex(t.accentSoft) }, line: { color: hex(t.accentSoft), width: 0 }, rectRadius: 0.12 });
+        slide.addShape(c.pres.ShapeType.roundRect, { x: inch(x + 24), y: inch(y), w: inch(52), h: inch(48), fill: { color: hex(t.panel) }, line: { color: hex(t.panelBorder), width: 0.75 }, rectRadius: 0.08 });
         text(slide, [
-          { text: String(d.getDate()), options: { bold: true, fontSize: pt(20), color: hex(t.accent), breakLine: true } },
-          { text: `Th${d.getMonth() + 1}`, options: { fontSize: pt(11), color: hex(t.accent) } },
-        ], { x: x + 24, y: y + 4, w: 54, h: 44 }, { align: "center", valign: "middle" });
-        text(slide, u.title, { x: x + 94, y: y + 4, w: w - 130, h: 24 }, { px: 17, bold: true, color: hex(t.ink), fit: "shrink" });
-        text(slide, `${u.projectName}${u.assigneeName ? ` · ${u.assigneeName}` : ""}`, { x: x + 94, y: y + 28, w: w - 130, h: 20 }, { px: 13, color: hex(t.muted) });
+          { text: String(d.getDate()), options: { bold: true, fontSize: pt(18), color: hex(t.ink), breakLine: true } },
+          { text: `Th${d.getMonth() + 1}`, options: { fontSize: pt(12), color: hex(t.muted) } },
+        ], { x: x + 24, y: y + 4, w: 52, h: 42 }, { align: "center", valign: "middle" });
+        text(slide, u.title, { x: x + 94, y: y + 4, w: w - 130, h: 24 }, { px: 16, bold: true, color: hex(t.ink), fit: "shrink" });
+        text(slide, `${u.projectName}${u.assigneeName ? `, ${u.assigneeName}` : ""}`, { x: x + 94, y: y + 28, w: w - 130, h: 20 }, { px: 13, color: hex(t.muted) });
       });
       return;
     }
@@ -519,27 +526,30 @@ function renderBody(c: Ctx, slide: Slide, s: SlideModel) {
         const x = LEFT + (i % 2) * (w + 24);
         const y = TOP + Math.floor(i / 2) * (218 + 24);
         panel(c, slide, { x, y, w, h: 218 });
-        text(slide, "“", { x: x + 22, y: y + 6, w: 40, h: 40 }, { px: 48, bold: true, color: hex(t.accent) });
+        text(slide, "“", { x: x + 22, y: y + 10, w: 40, h: 36 }, { px: 40, bold: true, color: hex(t.muted) });
         text(slide, q.content, { x: x + 24, y: y + 50, w: w - 48, h: 100 }, { px: 18, color: hex(t.ink), fit: "shrink" });
-        slide.addShape(c.pres.ShapeType.ellipse, { x: inch(x + 24), y: inch(y + 162), w: inch(34), h: inch(34), fill: { color: hex(q.color) }, line: { color: hex(q.color), width: 0 } });
-        text(slide, initials(q.author), { x: x + 24, y: y + 162, w: 34, h: 34 }, { px: 12, bold: true, color: "FFFFFF", align: "center", valign: "middle" });
+        slide.addShape(c.pres.ShapeType.ellipse, { x: inch(x + 24), y: inch(y + 163), w: inch(32), h: inch(32), fill: { color: hex(q.color) }, line: { color: hex(q.color), width: 0 } });
+        text(slide, initials(q.author), { x: x + 24, y: y + 163, w: 32, h: 32 }, { px: 12, bold: true, color: "FFFFFF", align: "center", valign: "middle" });
         text(slide, [
           { text: q.author, options: { bold: true, color: hex(t.ink), fontSize: pt(15), breakLine: true } },
           { text: q.task, options: { color: hex(t.muted), fontSize: pt(13) } },
         ], { x: x + 70, y: y + 160, w: w - 170, h: 40 });
-        text(slide, `${q.progress}%`, { x: x + w - 96, y: y + 168, w: 72, h: 24 }, { px: 15, bold: true, color: hex(t.accent), align: "right" });
+        text(slide, `${q.progress}%`, { x: x + w - 96, y: y + 168, w: 72, h: 24 }, { px: 15, bold: true, color: hex(t.inkSecondary), align: "right" });
       });
       return;
     }
 
     case "insights": {
+      // A list with hairlines, as on screen.
+      const rowH = 72;
+      rect(c, slide, { x: LEFT, y: TOP, w: WIDTH, h: 1 }, t.panelBorder, false);
       s.items.slice(0, 6).forEach((it, i) => {
-        const y = TOP + i * 76;
-        panel(c, slide, { x: LEFT, y, w: WIDTH, h: 64 });
-        const color = it.tone === "good" ? t.success : it.tone === "warn" ? t.warning : t.accent;
-        slide.addShape(c.pres.ShapeType.ellipse, { x: inch(LEFT + 22), y: inch(y + 20), w: inch(24), h: inch(24), fill: { color: hex(color) }, line: { color: hex(color), width: 0 } });
-        text(slide, it.tone === "good" ? "✓" : it.tone === "warn" ? "!" : "i", { x: LEFT + 22, y: y + 20, w: 24, h: 24 }, { px: 14, bold: true, color: hex(t.bg), align: "center", valign: "middle" });
-        text(slide, it.text, { x: LEFT + 64, y: y + 12, w: WIDTH - 88, h: 40 }, { px: 19, color: hex(t.ink), valign: "middle", fit: "shrink" });
+        const y = TOP + i * rowH;
+        const color = it.tone === "good" ? t.success : it.tone === "warn" ? t.warning : t.muted;
+        slide.addShape(c.pres.ShapeType.ellipse, { x: inch(LEFT + 4), y: inch(y + 25), w: inch(22), h: inch(22), fill: { color: hex(color) }, line: { color: hex(color), width: 0 } });
+        text(slide, it.tone === "good" ? "✓" : it.tone === "warn" ? "!" : "i", { x: LEFT + 4, y: y + 25, w: 22, h: 22 }, { px: 13, bold: true, color: hex(t.bg), align: "center", valign: "middle" });
+        text(slide, it.text, { x: LEFT + 44, y: y + 14, w: WIDTH - 52, h: 44 }, { px: 19, color: hex(t.ink), valign: "middle", fit: "shrink" });
+        rect(c, slide, { x: LEFT, y: y + rowH, w: WIDTH, h: 1 }, t.panelBorder, false);
       });
       return;
     }
@@ -548,7 +558,7 @@ function renderBody(c: Ctx, slide: Slide, s: SlideModel) {
       const big = s.bullets.length <= 5;
       text(
         slide,
-        s.bullets.map((b) => ({ text: b, options: { bullet: { indent: pt(24) }, color: hex(t.ink), fontSize: pt(big ? 26 : 22), paraSpaceAfter: big ? 14 : 8 } })),
+        s.bullets.map((b) => ({ text: b, options: { bullet: { code: "2013", indent: pt(28) }, color: hex(t.ink), fontSize: pt(big ? 24 : 20), paraSpaceAfter: big ? 14 : 8 } })),
         { x: LEFT, y: TOP, w: WIDTH, h: 460 },
         { fit: "shrink" },
       );
@@ -560,34 +570,21 @@ function renderBody(c: Ctx, slide: Slide, s: SlideModel) {
   }
 }
 
+// Same as the screen cover: wordmark, title and subtitle, a hairline over who prepared it and when.
 function renderCover(c: Ctx, slide: Slide, s: Extract<SlideModel, { kind: "cover" }>) {
   const { t, meta } = c;
-  slide.addShape(c.pres.ShapeType.ellipse, {
-    x: inch(1280 - 460 + 35),
-    y: inch(-160 + 35),
-    w: inch(550),
-    h: inch(550),
-    fill: { type: "solid", color: hex(t.bg), transparency: 100 },
-    line: { color: hex(t.accentSoft), width: 52 },
-  });
-  slide.addShape(c.pres.ShapeType.ellipse, {
-    x: inch(1280 - 120 - 420 + 1),
-    y: inch(720 - 200),
-    w: inch(420),
-    h: inch(420),
-    fill: { type: "solid", color: hex(t.bg), transparency: 100 },
-    line: { color: hex(t.panelBorder), width: 1.5 },
-  });
-  rect(c, slide, { x: 0, y: 0, w: 10, h: SLIDE_H }, t.accent, false);
-  text(slide, "WORKHUB · BÁO CÁO", { x: 96, y: 200, w: 800, h: 24 }, { px: 16, bold: true, color: hex(t.accent), charSpacing: 3 });
-  text(slide, s.title, { x: 96, y: 238, w: 820, h: 160 }, { px: 62, bold: true, color: hex(t.ink), fit: "shrink" });
-  text(slide, s.subtitle, { x: 96, y: 410, w: 820, h: 40 }, { px: 26, color: hex(t.inkSecondary) });
+  slide.addShape(c.pres.ShapeType.roundRect, { x: inch(96), y: inch(72), w: inch(30), h: inch(30), fill: { color: hex(t.ink) }, line: { color: hex(t.ink), width: 0 }, rectRadius: 0.07 });
+  text(slide, "W", { x: 96, y: 72, w: 30, h: 30 }, { px: 16, bold: true, color: hex(t.bg), align: "center", valign: "middle" });
+  text(slide, "WorkHub", { x: 138, y: 76, w: 300, h: 24 }, { px: 18, bold: true, color: hex(t.ink) });
+  text(slide, s.title, { x: 96, y: 236, w: 900, h: 150 }, { px: 58, bold: true, color: hex(t.ink), fit: "shrink", valign: "bottom" });
+  text(slide, s.subtitle, { x: 96, y: 400, w: 1000, h: 36 }, { px: 24, color: hex(t.inkSecondary) });
+  rect(c, slide, { x: 96, y: 636, w: 1088, h: 1 }, t.panelBorder, false);
   text(slide, [
     { text: "Người lập: ", options: { color: hex(t.muted) } },
     { text: meta.preparedBy, options: { color: hex(t.ink), bold: true } },
-    { text: "      Ngày lập: ", options: { color: hex(t.muted) } },
+    { text: "          Ngày lập: ", options: { color: hex(t.muted) } },
     { text: meta.generatedAt, options: { color: hex(t.ink), bold: true } },
-  ], { x: 96, y: 500, w: 820, h: 26 }, { px: 17 });
+  ], { x: 96, y: 652, w: 1000, h: 24 }, { px: 16 });
 }
 
 /** Insert a slide transition into every slide (pptxgenjs has no API for this). */

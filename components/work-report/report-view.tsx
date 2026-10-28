@@ -315,7 +315,7 @@ function HeaderCard({
           <Avatar name={data.author.name} color={data.author.avatarColor} size="md" className="print:hidden" />
           <div className="min-w-0">
             <p className="text-xs font-medium text-muted-foreground">Báo cáo công việc {kind}</p>
-            <h2 className="mt-0.5 text-lg font-bold leading-snug sm:text-xl">{data.period.label}</h2>
+            <h2 className="mt-0.5 text-lg font-semibold leading-snug sm:text-xl">{data.period.label}</h2>
             <p className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm">
               <span className="font-medium">{data.author.name}</span>
               {data.author.jobTitle && <span className="text-muted-foreground">· {data.author.jobTitle}</span>}

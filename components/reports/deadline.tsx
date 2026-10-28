@@ -41,7 +41,7 @@ export function DeadlineTable({ rows, firstColumn = "Hạng mục" }: { rows: De
             <tr key={r.id} className={cn("border-b last:border-0", r.level === 0 && rows.some((x) => x.level > 0) && "bg-muted/30")}>
               <td className="px-5 py-3">
                 <span className={cn("flex items-center gap-2", r.level === 2 && "pl-5", r.level < 2 ? "font-medium" : "text-[13px]")}>
-                  <span className="h-2.5 w-2.5 shrink-0 rounded" style={{ background: r.color }} />
+                  <span className="h-2 w-2 shrink-0 rounded-sm" style={{ background: r.color }} />
                   {r.level === 2 && <span className="-ml-1 text-muted-foreground">└</span>}
                   <span className="truncate">{r.name}</span>
                 </span>
@@ -50,7 +50,7 @@ export function DeadlineTable({ rows, firstColumn = "Hạng mục" }: { rows: De
                 {r.dueDate || r.startDate ? (
                   <>
                     <span className="tabular-nums">
-                      {formatShortDate(r.startDate) || "…"} → {formatShortDate(r.dueDate) || "…"}
+                      {formatShortDate(r.startDate) || "–"} → {formatShortDate(r.dueDate) || "–"}
                     </span>
                     {r.dueDate && r.schedule.status !== "DONE" && (
                       <span className={cn("block", (r.schedule.daysLeft ?? 0) < 0 ? "font-medium text-danger" : "text-muted-foreground")}>
@@ -66,11 +66,11 @@ export function DeadlineTable({ rows, firstColumn = "Hạng mục" }: { rows: De
                 <PlanBar actual={r.progress} planned={r.schedule.planned} height={6} showLabel />
                 <p className="mt-0.5 text-xs text-muted-foreground">{r.schedule.planned === null ? "Chưa có kế hoạch" : `Kế hoạch: ${r.schedule.planned}%`}</p>
               </td>
-              <td className="px-3 py-3 text-right font-semibold tabular-nums">{r.schedule.achievement === null ? "–" : `${r.schedule.achievement}%`}</td>
+              <td className="px-3 py-3 text-right font-medium tabular-nums">{r.schedule.achievement === null ? "–" : `${r.schedule.achievement}%`}</td>
               <td className="px-3 py-3 text-right tabular-nums">
-                <span className="font-semibold text-success">{r.workload.done}</span>
+                <span className="font-medium">{r.workload.done}</span>
                 <span className="text-muted-foreground"> / </span>
-                <span className="font-semibold">{r.workload.remaining}</span>
+                <span className="font-medium">{r.workload.remaining}</span>
                 {r.workload.overdue > 0 && <span className="block text-xs text-danger">{r.workload.overdue} quá hạn</span>}
               </td>
               <td className="px-5 py-3">
@@ -100,23 +100,23 @@ export function WorkloadCard({ workload: w }: { workload: Workload }) {
         <div className="mb-4 grid grid-cols-3 gap-3">
           <div>
             <p className="text-xs text-muted-foreground">Tổng khối lượng</p>
-            <p className="text-2xl font-bold tabular-nums">{w.total}</p>
+            <p className="mt-1 text-2xl font-semibold tabular-nums">{w.total}</p>
           </div>
           <div>
             <p className="text-xs text-muted-foreground">Đã làm</p>
-            <p className="text-2xl font-bold tabular-nums text-success">
+            <p className="mt-1 text-2xl font-semibold tabular-nums">
               {w.done} <span className="text-sm font-medium text-muted-foreground">({pct(w.done)}%)</span>
             </p>
           </div>
           <div>
             <p className="text-xs text-muted-foreground">Cần làm</p>
-            <p className="text-2xl font-bold tabular-nums">
+            <p className="mt-1 text-2xl font-semibold tabular-nums">
               {w.remaining} <span className="text-sm font-medium text-muted-foreground">({pct(w.remaining)}%)</span>
             </p>
             {w.overdue > 0 && <p className="text-xs font-medium text-danger">trong đó {w.overdue} quá hạn</p>}
           </div>
         </div>
-        <div className="flex h-3 w-full gap-0.5 overflow-hidden rounded-full bg-muted" role="img" aria-label={parts.map((p) => `${p.label} ${p.value}`).join(", ")}>
+        <div className="flex h-2 w-full gap-0.5 overflow-hidden rounded-full bg-muted" role="img" aria-label={parts.map((p) => `${p.label} ${p.value}`).join(", ")}>
           {parts
             .filter((p) => p.value > 0)
             .map((p) => (

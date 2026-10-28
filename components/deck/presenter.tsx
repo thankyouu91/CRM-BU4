@@ -47,7 +47,7 @@ const AUTOPLAY_MS = 8000;
 
 export function Presenter({
   deck,
-  initialTheme = "dark",
+  initialTheme = "light",
   initialTransition = "slide",
   startIndex = 0,
   onClose,
@@ -202,7 +202,7 @@ export function Presenter({
     >
       {/* Stage */}
       <div
-        className="relative overflow-hidden rounded-lg shadow-2xl"
+        className="relative overflow-hidden rounded-md"
         style={{ width: SLIDE_W * scale, height: SLIDE_H * scale, perspective: 1800, background: theme.bg }}
         onClick={(e) => {
           const r = (e.currentTarget as HTMLDivElement).getBoundingClientRect();
@@ -229,7 +229,7 @@ export function Presenter({
 
       {/* Progress bar */}
       <div className="absolute inset-x-0 top-0 h-1 bg-white/10">
-        <motion.div className="h-full bg-indigo-400" animate={{ width: `${((index + 1) / total) * 100}%` }} transition={{ duration: 0.4 }} />
+        <motion.div className="h-full bg-white/70" animate={{ width: `${((index + 1) / total) * 100}%` }} transition={{ duration: 0.4 }} />
       </div>
 
       {/* Controls */}
@@ -239,7 +239,7 @@ export function Presenter({
             initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 16 }}
-            className="absolute bottom-5 left-1/2 flex -translate-x-1/2 items-center gap-1 rounded-2xl border border-white/10 bg-slate-900/85 p-1.5 text-white shadow-2xl backdrop-blur-md"
+            className="absolute bottom-5 left-1/2 flex -translate-x-1/2 items-center gap-1 rounded-xl border border-white/10 bg-zinc-900 p-1.5 text-white shadow-pop"
             onClick={(e) => e.stopPropagation()}
           >
             <CtrlButton label="Slide trước (←)" onClick={prev} disabled={index === 0}>
@@ -262,7 +262,7 @@ export function Presenter({
               aria-label="Hiệu ứng chuyển slide"
             >
               {TRANSITIONS.map((t) => (
-                <option key={t.value} value={t.value} className="text-slate-900">
+                <option key={t.value} value={t.value} className="text-zinc-900">
                   {t.label}
                 </option>
               ))}
@@ -289,7 +289,7 @@ export function Presenter({
       </AnimatePresence>
 
       {playing && (
-        <div className="absolute bottom-0 left-0 h-0.5 bg-indigo-300/80" key={`play-${index}`} style={{ animation: `deck-play ${AUTOPLAY_MS}ms linear forwards` }} />
+        <div className="absolute bottom-0 left-0 h-0.5 bg-white/60" key={`play-${index}`} style={{ animation: `deck-play ${AUTOPLAY_MS}ms linear forwards` }} />
       )}
       <style>{`@keyframes deck-play{from{width:0}to{width:100%}}`}</style>
 
@@ -300,7 +300,7 @@ export function Presenter({
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="absolute inset-0 overflow-y-auto bg-slate-950/95 p-8"
+            className="absolute inset-0 overflow-y-auto bg-zinc-950/95 p-8"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="mx-auto mb-6 flex max-w-6xl items-center justify-between text-white">
@@ -321,14 +321,14 @@ export function Presenter({
                     setOverview(false);
                   }}
                   className={cn(
-                    "overflow-hidden rounded-xl text-left ring-2 transition hover:ring-indigo-400",
-                    i === index ? "ring-indigo-400" : "ring-white/10",
+                    "overflow-hidden rounded-xl text-left ring-2 transition hover:ring-white/60",
+                    i === index ? "ring-white" : "ring-white/10",
                   )}
                 >
                   <SlideScaler width={340}>
                     <SlideView slide={s} meta={deck.meta} theme={theme} index={i} total={total} />
                   </SlideScaler>
-                  <p className="truncate bg-slate-900 px-3 py-2 text-xs text-slate-300">
+                  <p className="truncate bg-zinc-900 px-3 py-2 text-xs text-zinc-300">
                     {i + 1}. {slideTitle(s, deck.meta)}
                   </p>
                 </motion.button>
