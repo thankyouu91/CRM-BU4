@@ -140,7 +140,7 @@ export function DateRangePicker({
                   <ChevronRight className="h-4 w-4" />
                 </button>
               </div>
-              <div className="grid grid-cols-7 text-center text-[10px] font-semibold uppercase text-muted-foreground">
+              <div className="grid grid-cols-7 text-center text-[10px] font-medium text-muted-foreground">
                 {WEEKDAYS.map((w) => (
                   <span key={w} className="pb-1">{w}</span>
                 ))}
@@ -172,7 +172,7 @@ export function DateRangePicker({
                   );
                 })}
               </div>
-              <p className="mt-2 text-[11px] text-muted-foreground">{anchor ? "Chọn ngày kết thúc" : "Bấm ngày bắt đầu rồi ngày kết thúc"}</p>
+              <p className="mt-2 text-xs text-muted-foreground">{anchor ? "Chọn ngày kết thúc" : "Bấm ngày bắt đầu rồi ngày kết thúc"}</p>
             </div>
           </div>
           <div className="mt-3 flex items-center gap-2 border-t pt-3">

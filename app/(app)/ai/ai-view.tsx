@@ -93,7 +93,7 @@ export function AiView({
       toast.success("Đã sao chép prompt");
       return true;
     } catch {
-      toast.error("Trình duyệt chặn sao chép — hãy bôi đen và sao chép thủ công");
+      toast.error("Trình duyệt chặn sao chép, hãy bôi đen và sao chép thủ công");
       return false;
     }
   };
@@ -102,7 +102,7 @@ export function AiView({
     await copy();
     const url = prompt.length <= MAX_URL_PROMPT ? `${CLAUDE_URL}?q=${encodeURIComponent(prompt)}` : CLAUDE_URL;
     window.open(url, "_blank", "noopener,noreferrer");
-    toast.message("Đã mở Claude", { description: "Prompt đã được sao chép — nếu ô chat trống, hãy dán (Ctrl/Cmd + V)." });
+    toast.message("Đã mở Claude", { description: "Prompt đã được sao chép. Nếu ô chat trống, hãy dán (Ctrl/Cmd + V)." });
   };
 
   const generate = async () => {
@@ -192,7 +192,7 @@ export function AiView({
           description={
             builtIn.ready
               ? "Claude viết báo cáo ngay trên trang từ số liệu thật của hệ thống, theo đúng quyền xem của bạn. Vẫn có thể sao chép prompt sang Claude.ai hoặc Claude Code."
-              : "Đóng gói số liệu thật của dashboard thành yêu cầu chuẩn để Claude viết báo cáo — không cần Claude API, không phát sinh chi phí API."
+              : "Đóng gói số liệu thật của dashboard thành yêu cầu chuẩn để Claude viết báo cáo, không cần Claude API, không phát sinh chi phí API."
           }
         />
       )}
@@ -211,7 +211,7 @@ export function AiView({
                   )}
                 >
                   <p className="flex items-center gap-2 text-sm font-semibold">
-                    {k.value === "slide-deck" ? <Presentation className="h-4 w-4 text-primary" /> : <FileText className="h-4 w-4 text-primary" />}
+                    {k.value === "slide-deck" ? <Presentation className="h-4 w-4 text-muted-foreground" /> : <FileText className="h-4 w-4 text-muted-foreground" />}
                     {k.label}
                   </p>
                   <p className="mt-1 text-xs text-muted-foreground">{k.desc}</p>
@@ -289,7 +289,7 @@ export function AiView({
               <pre className="scrollbar-thin max-h-[320px] overflow-auto whitespace-pre-wrap rounded-xl border bg-muted/40 p-4 font-mono text-xs leading-relaxed">
                 {customIncomplete ? "Chọn ngày bắt đầu và kết thúc…" : prompt || "Đang tải số liệu…"}
               </pre>
-              <p className="mt-2 text-right text-[11px] text-muted-foreground">{prompt.length.toLocaleString("vi-VN")} ký tự</p>
+              <p className="mt-2 text-right text-xs text-muted-foreground">{prompt.length.toLocaleString("vi-VN")} ký tự</p>
             </div>
             <div className="mt-3 flex flex-wrap gap-2">
               <Button variant={builtIn.ready ? "outline" : "primary"} onClick={openClaude} disabled={!prompt}>
@@ -307,7 +307,7 @@ export function AiView({
                 <Terminal className="h-3.5 w-3.5" /> Dùng với Claude Code
               </p>
               <p className="mt-1">Tải file rồi chạy trong thư mục chứa file:</p>
-              <code className="mt-1.5 block overflow-x-auto rounded-md bg-muted px-2 py-1.5 font-mono text-[11px] text-foreground">
+              <code className="mt-1.5 block overflow-x-auto rounded-md bg-muted px-2 py-1.5 font-mono text-xs text-foreground">
                 claude -p &quot;$(cat {fileBase}-prompt.md)&quot;
               </code>
             </div>
@@ -326,13 +326,13 @@ export function AiView({
             readOnly={gen !== "idle"}
             className="min-h-[200px] font-mono text-xs"
           />
-          {genInfo && gen === "idle" && <p className="mt-2 text-right text-[11px] text-muted-foreground">{genInfo}</p>}
+          {genInfo && gen === "idle" && <p className="mt-2 text-right text-xs text-muted-foreground">{genInfo}</p>}
           {answer.trim() && (
             <>
               <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
                 <p className="text-xs text-muted-foreground">
                   {deck ? (
-                    <span className="font-medium text-success">Nhận diện {outline.length} slide — sẵn sàng trình chiếu</span>
+                    <span className="font-medium text-success">Nhận diện {outline.length} slide, sẵn sàng trình chiếu</span>
                   ) : (
                     "Mẹo: dùng loại “Dàn ý trình chiếu” để Claude trả về định dạng slide."
                   )}

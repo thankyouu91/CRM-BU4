@@ -100,7 +100,7 @@ export function TeamSheet({ month, canEditHolidays, onOpen }: { month: string; c
           </tbody>
         </table>
       </div>
-      <p className="border-t px-4 py-2 text-[11px] text-muted-foreground">
+      <p className="border-t px-4 py-2 text-xs text-muted-foreground">
         Đi làm tính đến hôm nay với tháng hiện tại. Phép còn lại = được hưởng + tồn năm trước − đã nghỉ từ đầu năm đến hết tháng. File Excel có thêm từng ngày (X, P, Ô…) và trang chi tiết lý do nghỉ.
       </p>
       {holidays && <HolidaysModal year={Number(month.slice(0, 4))} onClose={() => setHolidays(false)} onChanged={() => void reload()} />}

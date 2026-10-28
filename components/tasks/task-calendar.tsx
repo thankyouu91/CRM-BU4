@@ -112,7 +112,7 @@ export function TaskCalendar({
   return (
     <section aria-label="Lịch công việc" className="mb-5 rounded-2xl border bg-card p-4">
       <div className="mb-3 flex flex-wrap items-center gap-2">
-        <CalendarDays className="h-4 w-4 text-primary" aria-hidden />
+        <CalendarDays className="h-4 w-4 text-muted-foreground" aria-hidden />
         <h2 className="text-sm font-semibold" aria-live="polite">Tháng {Number(m)}/{y}</h2>
         {loading && <Loader2 className="h-3.5 w-3.5 animate-spin text-muted-foreground" aria-label="Đang tải" />}
         <div className="ml-auto flex items-center gap-1">
@@ -133,7 +133,7 @@ export function TaskCalendar({
       <div role="grid" aria-label={`Công việc tháng ${Number(m)}/${y}`} className={cn("transition-opacity", loading && !current && "opacity-60")}>
         <div role="row" className="grid grid-cols-7 gap-1 pb-1">
           {WEEKDAYS.map((w) => (
-            <div key={w} role="columnheader" className="text-center text-[11px] font-semibold uppercase text-muted-foreground">
+            <div key={w} role="columnheader" className="text-center text-xs font-medium text-muted-foreground">
               {w}
             </div>
           ))}

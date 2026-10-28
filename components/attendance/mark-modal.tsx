@@ -148,10 +148,10 @@ export function MarkModal({
             {LEAVE_KIND_KEYS.map((k) => (
               <label key={k} className={cn("flex cursor-pointer items-center gap-2 rounded-lg border px-2.5 py-2 text-sm", kind === k && "border-primary bg-primary/5")}>
                 <input type="radio" name="leave-kind" className="accent-[hsl(var(--primary))]" checked={kind === k} onChange={() => setKind(k)} />
-                <span className={cn("w-8 shrink-0 rounded px-1 text-center text-[11px] font-semibold ring-1 ring-inset", KIND_TONE[k])}>{LEAVE_KINDS[k].code}</span>
+                <span className={cn("w-8 shrink-0 rounded px-1 text-center text-xs font-semibold ring-1 ring-inset", KIND_TONE[k])}>{LEAVE_KINDS[k].code}</span>
                 <span>{LEAVE_KINDS[k].label}</span>
-                {LEAVE_KINDS[k].annual && <span className="ml-auto text-[11px] text-muted-foreground">trừ phép năm</span>}
-                {LEAVE_KINDS[k].worked && <span className="ml-auto text-[11px] text-muted-foreground">tính công</span>}
+                {LEAVE_KINDS[k].annual && <span className="ml-auto text-xs text-muted-foreground">trừ phép năm</span>}
+                {LEAVE_KINDS[k].worked && <span className="ml-auto text-xs text-muted-foreground">tính công</span>}
               </label>
             ))}
           </div>

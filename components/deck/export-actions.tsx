@@ -68,7 +68,7 @@ export function DeckActions({
         <select
           value={themeId}
           onChange={(e) => setThemeId(e.target.value as DeckTheme["id"])}
-          className="h-10 rounded-lg border bg-card px-2 text-sm"
+          className="h-9 rounded-md border bg-card px-2 text-sm"
           aria-label="Giao diện slide"
           title="Giao diện slide"
         >
@@ -81,7 +81,7 @@ export function DeckActions({
         <select
           value={transition}
           onChange={(e) => setTransition(e.target.value as TransitionKind)}
-          className="h-10 rounded-lg border bg-card px-2 text-sm"
+          className="h-9 rounded-md border bg-card px-2 text-sm"
           aria-label="Hiệu ứng chuyển slide"
           title="Hiệu ứng chuyển slide (áp dụng cho trình chiếu và file PowerPoint)"
         >

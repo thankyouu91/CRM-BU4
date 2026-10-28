@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { CheckCircle2, Clock, Loader2, Timer, TriangleAlert } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { PageHeader, Segmented } from "@/components/ui/misc";
-import { ProgressRing } from "@/components/ui/progress";
+import { ProgressBar } from "@/components/ui/progress";
 import { KpiTile } from "@/components/kpi";
 import { ProjectProgressCard } from "@/components/dashboard/project-progress-card";
 import { RecentReportsCard, UpcomingCard } from "@/components/dashboard/activity-cards";
@@ -33,13 +33,7 @@ const PERIODS: { value: Period; label: string }[] = [
   { value: "year", label: "Năm nay" },
 ];
 
-function greeting() {
-  const h = new Date().getHours();
-  return h < 11 ? "Chào buổi sáng" : h < 14 ? "Chào buổi trưa" : h < 18 ? "Chào buổi chiều" : "Chào buổi tối";
-}
-
-
-export function DashboardView({ initial, userName }: { initial: Summary; userName: string }) {
+export function DashboardView({ initial }: { initial: Summary }) {
   const [period, setPeriod] = useState<Period>("month");
   const [data, setData] = useState(initial);
   const [loading, setLoading] = useState(false);
@@ -62,33 +56,30 @@ export function DashboardView({ initial, userName }: { initial: Summary; userNam
   }, [period]);
 
   const k = data.kpis;
-  const firstName = userName.trim().split(/\s+/).pop();
 
   return (
     <div>
       <PageHeader
-        title={`${greeting()}, ${firstName}`}
-        description={`Tổng quan hoạt động · ${data.period.label}`}
+        title="Tổng quan"
+        description={`Hoạt động ${data.period.label.toLowerCase()}`}
         actions={
           <div className="flex items-center gap-2">
             {loading && <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />}
-            <Segmented layoutId="dash-period" value={period} onChange={setPeriod} options={PERIODS} />
+            <Segmented value={period} onChange={setPeriod} options={PERIODS} />
           </div>
         }
       />
 
-      <div className={cn("space-y-6 transition-opacity", loading && "opacity-60")}>
+      <div className={cn("space-y-4 transition-opacity", loading && "opacity-60")}>
         {/* KPIs */}
-        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
-          <Card className="flex items-center gap-5 p-5 sm:col-span-2 xl:col-span-1 xl:flex-col xl:items-start xl:gap-3">
-            <ProgressRing value={k.overallProgress} size={84} stroke={8} label={<span className="text-lg font-bold">{k.overallProgress}%</span>} />
-            <div>
-              <p className="text-xs font-medium text-muted-foreground">Tiến độ tổng thể</p>
-              <p className="mt-1 text-sm">
-                <span className="font-semibold">{k.totalProjects}</span> dự án ·{" "}
-                <span className="font-semibold">{k.activeProjects}</span> đang chạy
-              </p>
-            </div>
+        <div className="grid grid-cols-2 gap-3 xl:grid-cols-5">
+          <Card className="col-span-2 px-4 py-3.5 xl:col-span-1">
+            <p className="text-xs font-medium text-muted-foreground">Tiến độ tổng thể</p>
+            <p className="mt-2 text-2xl font-semibold leading-none tracking-tight tabular-nums">{k.overallProgress}%</p>
+            <ProgressBar value={k.overallProgress} height={4} className="mt-2.5" />
+            <p className="mt-1.5 text-xs text-muted-foreground">
+              {k.totalProjects} dự án, {k.activeProjects} đang chạy
+            </p>
           </Card>
           <KpiTile
             label="Hoàn thành trong kỳ"
@@ -108,9 +99,8 @@ export function DashboardView({ initial, userName }: { initial: Summary; userNam
         </div>
 
         {/* Trend + status */}
-        <div className="grid grid-cols-1 gap-6 xl:grid-cols-3">
+        <div className="grid grid-cols-1 gap-4 xl:grid-cols-3">
           <ChartCard
-            id="trend"
             className="xl:col-span-2"
             title="Xu hướng công việc"
             description="Công việc tạo mới, hoàn thành và dự án mới theo thời gian"
@@ -129,7 +119,6 @@ export function DashboardView({ initial, userName }: { initial: Summary; userNam
             }
           />
           <ChartCard
-            id="status"
             title="Phân bổ trạng thái"
             description="Công việc trong kỳ theo trạng thái"
             chart={
@@ -161,11 +150,10 @@ export function DashboardView({ initial, userName }: { initial: Summary; userNam
         </div>
 
         {/* Projects + workload */}
-        <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
+        <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
           <ProjectProgressCard projects={data.projects} />
 
           <ChartCard
-            id="workload"
             title="Khối lượng theo nhân sự"
             description="Công việc được giao trong kỳ, theo tình trạng"
             legend={<Legend items={workloadLegend(theme)} />}
@@ -193,7 +181,7 @@ export function DashboardView({ initial, userName }: { initial: Summary; userNam
         </div>
 
         {/* Deadlines + reports */}
-        <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
+        <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
           <UpcomingCard upcoming={data.upcoming} />
           <RecentReportsCard reports={data.recentReports} />
         </div>

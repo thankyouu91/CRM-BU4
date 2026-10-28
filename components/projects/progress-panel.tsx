@@ -64,7 +64,7 @@ function Timeline({ project }: { project: ProjectDetailData }) {
   return (
     <div className="scrollbar-thin overflow-x-auto">
       <div className="min-w-[760px]">
-        <div className="flex border-b pb-2 text-[11px] text-muted-foreground">
+        <div className="flex border-b pb-2 text-xs text-muted-foreground">
           <div className="w-60 shrink-0 pl-1">Công việc</div>
           <div className="relative h-4 flex-1">
             {months.map((mo) => (
@@ -143,7 +143,7 @@ function Timeline({ project }: { project: ProjectDetailData }) {
             );
           })}
         </div>
-        <p className="mt-3 flex items-center gap-4 text-[11px] text-muted-foreground">
+        <p className="mt-3 flex items-center gap-4 text-xs text-muted-foreground">
           <span>Phần đậm = tiến độ đã hoàn thành · màu theo hạng mục · dải có viền = thời hạn hạng mục</span>
           <span className="flex items-center gap-1">
             <span className="h-2.5 w-4 rounded-sm ring-2 ring-danger" /> Quá hạn

@@ -30,7 +30,6 @@ export function ThemeChoice() {
 
   return (
     <Segmented
-      layoutId="theme-choice"
       value={choice}
       onChange={(c) => {
         setChoice(c);

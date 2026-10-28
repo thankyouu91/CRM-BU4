@@ -25,7 +25,7 @@ const LIMITS_HINT = `Chỉ file PDF, tối đa ${formatFileSize(MAX_FILE_BYTES)}
 function Reminder() {
   return (
     <p className="rounded-lg bg-warning/10 px-3 py-2 text-xs text-warning">
-      Hợp đồng đã hoàn thành — hãy đính kèm bản PDF đã ký để lưu trữ và báo cáo.
+      Hợp đồng đã hoàn thành: hãy đính kèm bản PDF đã ký để lưu trữ và báo cáo.
     </p>
   );
 }
@@ -119,7 +119,7 @@ function PdfDrop({ onFiles, busy, disabled, compact }: { onFiles: (files: File[]
         >
           chọn file
         </button>
-        <span className="block text-[11px]">{LIMITS_HINT}</span>
+        <span className="block text-xs">{LIMITS_HINT}</span>
       </p>
       <input
         ref={input}
@@ -146,7 +146,7 @@ function FileRow({ file, onDelete }: { file: ContractFileDto; onDelete?: () => P
         <a href={file.url} target="_blank" rel="noopener" className="block truncate text-sm font-medium hover:text-primary hover:underline" title={file.name}>
           {file.name}
         </a>
-        <p className="truncate text-[11px] text-muted-foreground">
+        <p className="truncate text-xs text-muted-foreground">
           {formatFileSize(file.size)} · {file.uploadedBy.name} · {formatDateTime(file.createdAt)}
         </p>
       </div>
@@ -265,7 +265,7 @@ export function ContractFiles({ contractId, onChanged, remind }: { contractId: s
                     <div className="h-full rounded-full bg-primary transition-[width]" style={{ width: `${u.pct}%` }} />
                   </div>
                 </div>
-                <span className="w-10 shrink-0 text-right text-[11px] tabular-nums text-muted-foreground">{u.pct}%</span>
+                <span className="w-10 shrink-0 text-right text-xs tabular-nums text-muted-foreground">{u.pct}%</span>
               </li>
             ))}
           </ul>
@@ -273,12 +273,12 @@ export function ContractFiles({ contractId, onChanged, remind }: { contractId: s
       )}
       {data && files.length === 0 && uploads.length === 0 && (remind ? <Reminder /> : <p className="text-xs text-muted-foreground">Chưa có file nào cho hợp đồng này.</p>)}
       {full ? (
-        <p className="text-xs text-muted-foreground">Đã đủ {MAX_FILES_PER_CONTRACT} file — xoá bớt để tải thêm.</p>
+        <p className="text-xs text-muted-foreground">Đã đủ {MAX_FILES_PER_CONTRACT} file, xoá bớt để tải thêm.</p>
       ) : (
         <PdfDrop onFiles={upload} busy={uploads.length > 0} disabled={!data} compact={files.length > 0} />
       )}
       {data && (
-        <p className="text-[11px] text-muted-foreground">
+        <p className="text-xs text-muted-foreground">
           {files.length}/{MAX_FILES_PER_CONTRACT} file · Kho lưu trữ hồ sơ: {formatFileSize(data.storage.used)} / {formatFileSize(data.storage.limit)}
         </p>
       )}
@@ -298,7 +298,7 @@ export function PendingFiles({ files, onChange, remind }: { files: File[]; onCha
               <FileText className="h-5 w-5 shrink-0 text-red-600 dark:text-red-400" />
               <div className="min-w-0 flex-1">
                 <p className="truncate text-sm font-medium">{f.name}</p>
-                <p className="text-[11px] text-muted-foreground">{formatFileSize(f.size)} · tải lên khi lưu hợp đồng</p>
+                <p className="text-xs text-muted-foreground">{formatFileSize(f.size)} · tải lên khi lưu hợp đồng</p>
               </div>
               <button onClick={() => onChange(files.filter((_, j) => j !== i))} className="rounded-md p-1.5 text-muted-foreground hover:bg-muted" title="Bỏ file">
                 <X className="h-4 w-4" />
@@ -339,7 +339,7 @@ export function FileCountButton({ count, onClick, warn }: { count: number; onCli
         e.stopPropagation();
         onClick();
       }}
-      title={count ? `${count} file PDF — bấm để xem` : "Chưa có file PDF — bấm để tải lên"}
+      title={count ? `${count} file PDF, bấm để xem` : "Chưa có file PDF, bấm để tải lên"}
       className={cn(
         "inline-flex items-center gap-1 whitespace-nowrap rounded-md px-2 py-1 text-xs font-medium tabular-nums transition-colors",
         count

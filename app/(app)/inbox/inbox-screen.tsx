@@ -51,7 +51,6 @@ export function InboxScreen({
   const tabs = (
     <div className="mb-5">
       <Segmented
-        layoutId="inbox-tab"
         value={tab}
         onChange={setTab}
         options={[

@@ -1,6 +1,5 @@
 "use client";
 
-import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
 
 export function EmptyState({
@@ -17,37 +16,33 @@ export function EmptyState({
   className?: string;
 }) {
   return (
-    <div className={cn("flex flex-col items-center justify-center px-6 py-14 text-center", className)}>
-      <div className="mb-4 rounded-2xl bg-primary/10 p-3.5 text-primary">
-        <Icon className="h-6 w-6" />
-      </div>
-      <p className="font-medium">{title}</p>
+    <div className={cn("flex flex-col items-center justify-center px-6 py-12 text-center", className)}>
+      <Icon className="mb-3 h-6 w-6 text-muted-foreground/70" />
+      <p className="text-sm font-medium">{title}</p>
       {description && <p className="mt-1 max-w-sm text-sm text-muted-foreground">{description}</p>}
-      {action && <div className="mt-5">{action}</div>}
+      {action && <div className="mt-4">{action}</div>}
     </div>
   );
 }
 
 export function Skeleton({ className }: { className?: string }) {
-  return <div className={cn("animate-pulse rounded-lg bg-muted", className)} />;
+  return <div className={cn("animate-pulse rounded-md bg-muted", className)} />;
 }
 
-/** Animated segmented control (used for period filters, view toggles, tabs). */
+/** Segmented control (period filters, view toggles, tabs). */
 export function Segmented<T extends string>({
   value,
   onChange,
   options,
   className,
-  layoutId,
 }: {
   value: T;
   onChange: (v: T) => void;
   options: { value: T; label: React.ReactNode }[];
   className?: string;
-  layoutId: string;
 }) {
   return (
-    <div className={cn("inline-flex rounded-lg bg-muted p-1", className)} role="tablist">
+    <div className={cn("inline-flex rounded-md bg-muted p-0.5", className)} role="tablist">
       {options.map((o) => {
         const active = o.value === value;
         return (
@@ -57,18 +52,11 @@ export function Segmented<T extends string>({
             aria-selected={active}
             onClick={() => onChange(o.value)}
             className={cn(
-              "relative rounded-md px-3 py-1.5 text-xs font-medium transition-colors",
-              active ? "text-foreground" : "text-muted-foreground hover:text-foreground",
+              "rounded-[5px] px-2.5 py-1 text-xs font-medium transition-colors",
+              active ? "bg-card text-foreground shadow-card ring-1 ring-border" : "text-muted-foreground hover:text-foreground",
             )}
           >
-            {active && (
-              <motion.span
-                layoutId={layoutId}
-                className="absolute inset-0 rounded-md bg-card shadow-sm"
-                transition={{ type: "spring", damping: 30, stiffness: 400 }}
-              />
-            )}
-            <span className="relative flex items-center gap-1.5">{o.label}</span>
+            <span className="flex items-center gap-1.5">{o.label}</span>
           </button>
         );
       })}
@@ -86,9 +74,9 @@ export function PageHeader({
   actions?: React.ReactNode;
 }) {
   return (
-    <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+    <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
       <div className="min-w-0">
-        <h1 className="text-2xl font-bold tracking-tight">{title}</h1>
+        <h1 className="text-xl font-semibold tracking-tight">{title}</h1>
         {description && <p className="mt-1 text-sm text-muted-foreground">{description}</p>}
       </div>
       {actions && <div className="flex flex-wrap items-center gap-2">{actions}</div>}

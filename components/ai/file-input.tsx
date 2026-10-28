@@ -27,14 +27,14 @@ export function AiFileInput({ files, onChange, disabled, reading, onReading }: {
         finally { onReading(false); }
       }} />
       <Button type="button" size="sm" variant="outline" loading={reading} disabled={disabled} onClick={() => input.current?.click()}><Paperclip className="h-3.5 w-3.5" /> Đính kèm file</Button>
-      <span className="text-[11px] text-muted-foreground">PDF, ảnh, Excel, Word, CSV/TXT · 3 file · 4 MB/file · tổng 8 MB</span>
+      <span className="text-xs text-muted-foreground">PDF, ảnh, Excel, Word, CSV/TXT · 3 file · 4 MB/file · tổng 8 MB</span>
     </div>
     {files.length > 0 && <>
       <ul className="flex flex-wrap gap-2" aria-label="Tài liệu đang đính kèm">{files.map(f => <li key={f.name} className="flex min-w-0 max-w-full items-center gap-1 rounded-lg border bg-muted/40 py-1 pl-2 text-xs">
         <span className="truncate" title={f.name}>{f.name}</span>
         <button type="button" disabled={disabled || reading} aria-label={`Bỏ file ${f.name}`} className="shrink-0 rounded p-1 hover:bg-muted disabled:opacity-40" onClick={() => onChange(files.filter(x => x !== f))}><X className="h-3.5 w-3.5" /></button>
       </li>)}</ul>
-      <p className="text-[11px] text-muted-foreground">File được gửi đến Claude khi bạn gửi câu hỏi hoặc trích xuất. File tiếp tục dùng cho câu hỏi sau đến khi bạn bỏ file; cần chọn lại sau khi tải lại trang.</p>
+      <p className="text-xs text-muted-foreground">File được gửi đến Claude khi bạn gửi câu hỏi hoặc trích xuất. File tiếp tục dùng cho câu hỏi sau đến khi bạn bỏ file; cần chọn lại sau khi tải lại trang.</p>
     </>}
   </div>;
 }

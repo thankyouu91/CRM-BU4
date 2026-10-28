@@ -43,7 +43,7 @@ export function ExpandableList<T>({
           type="button"
           onClick={() => setExpanded((e) => !e)}
           aria-expanded={expanded}
-          className="mt-2 flex min-h-8 w-full items-center justify-center gap-1 rounded-lg text-xs font-medium text-primary hover:bg-primary/5"
+          className="mt-2 flex min-h-8 w-full items-center justify-center gap-1 rounded-md text-xs font-medium text-muted-foreground hover:bg-muted hover:text-foreground"
         >
           {expanded ? "Thu gọn" : `Xem thêm ${items.length - visible} ${unit}`}
           <ChevronDown className={cn("h-3.5 w-3.5 transition-transform", expanded && "rotate-180")} aria-hidden />
@@ -68,7 +68,7 @@ export function CountTabs<K extends string>({
   className?: string;
 }) {
   return (
-    <div role="tablist" aria-label={label} className={cn("flex gap-1 overflow-x-auto rounded-lg bg-muted p-1", className)}>
+    <div role="tablist" aria-label={label} className={cn("flex gap-0.5 overflow-x-auto rounded-md bg-muted p-0.5", className)}>
       {tabs.map((t) => {
         const active = t.key === value;
         return (
@@ -79,12 +79,12 @@ export function CountTabs<K extends string>({
             aria-selected={active}
             onClick={() => onChange(t.key)}
             className={cn(
-              "flex flex-1 items-center justify-center gap-1.5 whitespace-nowrap rounded-md px-2.5 py-1.5 text-xs font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary",
-              active ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground",
+              "flex flex-1 items-center justify-center gap-1.5 whitespace-nowrap rounded-[5px] px-2.5 py-1 text-xs font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40",
+              active ? "bg-card text-foreground shadow-card ring-1 ring-border" : "text-muted-foreground hover:text-foreground",
             )}
           >
             {t.label}
-            <span className={cn("rounded-full px-1.5 text-xs tabular-nums", t.alert && t.count > 0 ? "bg-danger/15 text-danger" : active ? "bg-muted" : "bg-card/60")}>
+            <span className={cn("tabular-nums", t.alert && t.count > 0 ? "text-danger" : "text-muted-foreground")}>
               {t.count}
             </span>
           </button>

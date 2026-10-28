@@ -3,27 +3,27 @@
 // derived here, never stored.
 
 export const CONTRACT_STATUS = {
-  PLANNED: { label: "Chưa triển khai", bg: "bg-slate-100 text-slate-700 dark:bg-slate-500/15 dark:text-slate-300" },
-  IN_PROGRESS: { label: "Đang triển khai", bg: "bg-blue-100 text-blue-700 dark:bg-blue-500/15 dark:text-blue-300" },
-  TESTING: { label: "Khảo thí", bg: "bg-orange-100 text-orange-700 dark:bg-orange-500/15 dark:text-orange-300" },
-  COMPLETED: { label: "Hoàn thành", bg: "bg-emerald-100 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300" },
+  PLANNED: { label: "Chưa triển khai", bg: "bg-muted text-muted-foreground" },
+  IN_PROGRESS: { label: "Đang triển khai", bg: "bg-blue-50 text-blue-700 dark:bg-blue-500/10 dark:text-blue-300" },
+  TESTING: { label: "Khảo thí", bg: "bg-orange-50 text-orange-700 dark:bg-orange-500/10 dark:text-orange-300" },
+  COMPLETED: { label: "Hoàn thành", bg: "bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-300" },
 } as const;
 export type ContractStatusKey = keyof typeof CONTRACT_STATUS;
 export const CONTRACT_STATUSES = Object.keys(CONTRACT_STATUS) as ContractStatusKey[];
 
 export const PAYMENT_STATUS = {
-  UNPAID: { label: "Chưa thanh toán", bg: "bg-red-100 text-red-700 dark:bg-red-500/15 dark:text-red-300" },
-  PARTIAL: { label: "Đã tạm ứng", bg: "bg-amber-100 text-amber-700 dark:bg-amber-500/15 dark:text-amber-300" },
-  PAID: { label: "Đã hoàn tất", bg: "bg-emerald-100 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300" },
+  UNPAID: { label: "Chưa thanh toán", bg: "bg-red-50 text-red-700 dark:bg-red-500/10 dark:text-red-300" },
+  PARTIAL: { label: "Đã tạm ứng", bg: "bg-amber-50 text-amber-700 dark:bg-amber-500/10 dark:text-amber-300" },
+  PAID: { label: "Đã hoàn tất", bg: "bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-300" },
 } as const;
 export type PaymentStatusKey = keyof typeof PAYMENT_STATUS;
 
 /** Rating by gross margin. */
 export const RATINGS = [
-  { min: 30, label: "Tốt", bg: "bg-emerald-100 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300" },
-  { min: 15, label: "Khá", bg: "bg-blue-100 text-blue-700 dark:bg-blue-500/15 dark:text-blue-300" },
-  { min: 0, label: "Thấp", bg: "bg-amber-100 text-amber-700 dark:bg-amber-500/15 dark:text-amber-300" },
-  { min: -Infinity, label: "Lỗ", bg: "bg-red-100 text-red-700 dark:bg-red-500/15 dark:text-red-300" },
+  { min: 30, label: "Tốt", bg: "bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-300" },
+  { min: 15, label: "Khá", bg: "bg-blue-50 text-blue-700 dark:bg-blue-500/10 dark:text-blue-300" },
+  { min: 0, label: "Thấp", bg: "bg-amber-50 text-amber-700 dark:bg-amber-500/10 dark:text-amber-300" },
+  { min: -Infinity, label: "Lỗ", bg: "bg-red-50 text-red-700 dark:bg-red-500/10 dark:text-red-300" },
 ] as const;
 
 export interface ContractAmounts {

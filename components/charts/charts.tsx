@@ -123,7 +123,6 @@ export function ChartCard({
   table,
   legend,
   className,
-  id,
 }: {
   title: string;
   description?: string;
@@ -131,18 +130,16 @@ export function ChartCard({
   table: React.ReactNode;
   legend?: React.ReactNode;
   className?: string;
-  id: string;
 }) {
   const [view, setView] = useState<"chart" | "table">("chart");
   return (
     <Card className={cn("flex flex-col", className)}>
       <div className="flex items-start justify-between gap-3 px-5 pt-5">
         <div className="min-w-0">
-          <h3 className="text-[15px] font-semibold leading-tight">{title}</h3>
-          {description && <p className="mt-1 text-xs text-muted-foreground">{description}</p>}
+          <h3 className="text-sm font-semibold leading-5">{title}</h3>
+          {description && <p className="mt-0.5 text-xs text-muted-foreground">{description}</p>}
         </div>
         <Segmented
-          layoutId={`view-${id}`}
           value={view}
           onChange={setView}
           options={[

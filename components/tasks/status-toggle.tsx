@@ -31,7 +31,7 @@ export function StatusToggle({
       aria-label={done ? "Mở lại công việc" : "Đánh dấu hoàn thành"}
       className={cn(
         "flex shrink-0 items-center justify-center rounded-full transition-transform",
-        !disabled && onToggle && "hover:scale-110",
+        !disabled && onToggle && "hover:text-foreground",
         done ? "text-white" : "border-2",
       )}
       style={{

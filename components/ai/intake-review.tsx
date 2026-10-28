@@ -55,7 +55,7 @@ export function IntakeReview({ result, projects, canProject, canFinance, onProje
       const matches = p.kind === "project" && p.fields.name ? projects.filter(x => normal(x.name) === normal(p.fields.name!)) : [];
       return <section key={i} className="overflow-hidden rounded-xl border bg-card" aria-label={`Đề xuất ${i + 1}`}>
         <div className="border-b bg-muted/30 px-3 py-2.5">
-          <p className="text-[11px] font-medium text-muted-foreground">{p.kind === "project" ? "DỰ ÁN" : "HỢP ĐỒNG & CHI PHÍ"} · {i + 1}</p>
+          <p className="text-xs font-medium text-muted-foreground">{p.kind === "project" ? "DỰ ÁN" : "HỢP ĐỒNG & CHI PHÍ"} · {i + 1}</p>
           <h3 className="mt-1 break-words text-sm font-semibold">{p.fields.name ?? "Chưa tìm thấy tên trong tài liệu"}</h3>
         </div>
         <dl className="divide-y px-3">{(Object.keys(INTAKE_FIELDS) as IntakeField[]).filter(f => p.fields[f] !== null).map(field => <div key={field} className="grid gap-1 py-2 text-xs sm:grid-cols-[140px_minmax(0,1fr)]">

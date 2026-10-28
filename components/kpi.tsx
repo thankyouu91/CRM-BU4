@@ -16,20 +16,13 @@ export function KpiTile({
   className?: string;
 }) {
   return (
-    <div className={cn("rounded-2xl border bg-card p-5 shadow-card", className)}>
-      <div className="flex items-center justify-between">
-        <p className="text-xs font-medium text-muted-foreground">{label}</p>
-        <span
-          className={cn(
-            "flex h-8 w-8 items-center justify-center rounded-lg",
-            tone === "critical" ? "bg-danger/10 text-danger" : "bg-primary/10 text-primary",
-          )}
-        >
-          <Icon className="h-4 w-4" />
-        </span>
+    <div className={cn("rounded-xl border bg-card px-4 py-3.5", className)}>
+      <div className="flex items-center justify-between gap-2">
+        <p className="truncate text-xs font-medium text-muted-foreground">{label}</p>
+        <Icon className={cn("h-4 w-4 shrink-0", tone === "critical" ? "text-danger" : "text-muted-foreground")} />
       </div>
-      <p className="mt-3 text-[28px] font-bold leading-none tracking-tight">{value}</p>
-      {sub && <p className="mt-2 text-xs text-muted-foreground">{sub}</p>}
+      <p className={cn("mt-2 text-2xl font-semibold leading-none tracking-tight tabular-nums", tone === "critical" && "text-danger")}>{value}</p>
+      {sub && <p className="mt-1.5 text-xs text-muted-foreground">{sub}</p>}
     </div>
   );
 }

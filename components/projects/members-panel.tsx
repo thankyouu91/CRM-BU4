@@ -13,8 +13,8 @@ import { PROJECT_ROLE_INFO, PROJECT_ROLES, type ProjectRoleKey } from "@/lib/per
 import type { ProjectDetailData } from "./types";
 
 const ROLE_BADGE: Record<ProjectRoleKey, string> = {
-  MANAGER: "bg-amber-100 text-amber-700 dark:bg-amber-500/15 dark:text-amber-300",
-  MEMBER: "bg-sky-100 text-sky-700 dark:bg-sky-500/15 dark:text-sky-300",
+  MANAGER: "bg-muted text-foreground",
+  MEMBER: "bg-muted text-muted-foreground",
   VIEWER: "bg-muted text-muted-foreground",
 };
 
@@ -141,7 +141,7 @@ export function MembersPanel({
                 </td>
                 <td className="px-5 py-3">
                   <ProgressBar value={r.rate} height={6} showLabel />
-                  <p className="mt-1 text-[11px] text-muted-foreground">
+                  <p className="mt-1 text-xs text-muted-foreground">
                     {r.done}/{r.assigned} việc
                   </p>
                 </td>

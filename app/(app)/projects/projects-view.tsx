@@ -78,43 +78,38 @@ export function ProjectsView({ initial, directory, canCreate, canFinance, initia
         <Button onClick={() => setCreating(true)}><Plus className="h-4 w-4" />Tạo dự án</Button>
       </>} />
 
-    <section className="overflow-hidden rounded-xl border bg-card shadow-card" aria-label="Lịch hoạt động">
-      <div className="flex flex-wrap items-center justify-between gap-4 border-b px-4 py-4 sm:px-5">
-        <div className="flex items-center gap-3">
-          <span className="hidden rounded-lg bg-primary/10 p-2 text-primary sm:inline-flex"><CalendarDays className="h-5 w-5" /></span>
-          <div><p className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">Lịch triển khai</p><h2 aria-live="polite" className="mt-0.5 text-lg font-semibold tracking-tight">{period.label}</h2></div>
-        </div>
-        <div className="flex items-center gap-2">
-          <div className="inline-flex rounded-lg bg-muted p-1" role="group" aria-label="Chế độ lịch">
-            {VIEWS.map((option) => <button type="button" key={option.value} aria-pressed={view === option.value} onClick={() => selectPeriod(option.value, anchor)}
-              className={cn("rounded-md px-4 py-1.5 text-xs font-medium", view === option.value ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground")}>{option.label}</button>)}
+    <section className="overflow-hidden rounded-xl border bg-card" aria-label="Lịch hoạt động">
+      <div className="flex flex-wrap items-center justify-between gap-3 border-b px-4 py-3">
+        <div className="flex min-w-0 items-center gap-2">
+          <div className="flex items-center gap-1">
+            <Button variant="outline" size="icon" className="h-8 w-8" aria-label="Kỳ trước" onClick={() => selectPeriod(view, moveCalendar(view, anchor, -1))}><ChevronLeft className="h-4 w-4" /></Button>
+            <Button variant="outline" size="sm" onClick={() => selectPeriod(view, now)}>Hôm nay</Button>
+            <Button variant="outline" size="icon" className="h-8 w-8" aria-label="Kỳ tiếp theo" onClick={() => selectPeriod(view, moveCalendar(view, anchor, 1))}><ChevronRight className="h-4 w-4" /></Button>
           </div>
+          <h2 aria-live="polite" className="ml-1 truncate text-base font-semibold tracking-tight">{period.label}</h2>
+        </div>
+        <div className="inline-flex rounded-md bg-muted p-0.5" role="group" aria-label="Chế độ lịch">
+          {VIEWS.map((option) => <button type="button" key={option.value} aria-pressed={view === option.value} onClick={() => selectPeriod(option.value, anchor)}
+            className={cn("rounded-[5px] px-3 py-1 text-xs font-medium transition-colors", view === option.value ? "bg-card text-foreground shadow-card ring-1 ring-border" : "text-muted-foreground hover:text-foreground")}>{option.label}</button>)}
         </div>
       </div>
 
-      <div className="flex flex-wrap items-center gap-3 border-b px-4 py-3 sm:px-5">
-        <div className="flex items-center gap-1">
-          <Button variant="outline" size="icon" aria-label="Kỳ trước" onClick={() => selectPeriod(view, moveCalendar(view, anchor, -1))}><ChevronLeft className="h-4 w-4" /></Button>
-          <Button variant="outline" size="sm" className="h-9" onClick={() => selectPeriod(view, now)}>Hôm nay</Button>
-          <Button variant="outline" size="icon" aria-label="Kỳ tiếp theo" onClick={() => selectPeriod(view, moveCalendar(view, anchor, 1))}><ChevronRight className="h-4 w-4" /></Button>
-        </div>
+      <div className="flex flex-wrap items-center gap-2 border-b px-4 py-2.5">
         <input type="month" aria-label="Chọn tháng" min="1900-01" max="2200-12" value={calendarPeriod("month", anchor).key}
           onChange={(event) => { if (event.target.validity.valid && event.target.value) selectPeriod(view, calendarSelection(view, event.target.value, now).anchor); }}
-          className="h-9 min-w-0 rounded-lg border bg-card px-2 text-xs" />
-        <div className="hidden h-5 border-l xl:block" />
+          className="h-8 min-w-0 rounded-md border bg-card px-2 text-xs" />
         <label className="relative min-w-[160px] flex-1 sm:max-w-xs">
-          <Search className="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
-          <span className="sr-only">Tìm dự án</span><input value={q} onChange={(event) => setQ(event.target.value)} placeholder="Tìm dự án…" className="h-9 w-full rounded-lg border bg-card pl-9 pr-3 text-xs" />
+          <Search className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+          <span className="sr-only">Tìm dự án</span><input value={q} onChange={(event) => setQ(event.target.value)} placeholder="Tìm dự án…" className="h-8 w-full rounded-md border bg-card pl-8 pr-3 text-xs" />
         </label>
-        <select aria-label="Lọc trạng thái dự án" value={filter} onChange={(event) => setFilter(event.target.value)} className="h-9 rounded-lg border bg-card px-3 text-xs sm:ml-auto">
+        <select aria-label="Lọc trạng thái dự án" value={filter} onChange={(event) => setFilter(event.target.value)} className="h-8 rounded-md border bg-card px-2.5 text-xs">
           <option value="all">Tất cả trạng thái</option>{Object.entries(PROJECT_STATUS).map(([value, status]) => <option key={value} value={value}>{status.label}</option>)}
         </select>
-      </div>
-
-      <div className="flex flex-wrap items-center gap-x-5 gap-y-1 border-b px-5 py-3 text-xs text-muted-foreground" aria-live="polite">
-        <span><strong className="font-semibold tabular-nums text-foreground">{entries.length}</strong> dự án trong kỳ</span>
-        <span><strong className="font-semibold tabular-nums text-foreground">{dueCount}</strong> đến hạn trong kỳ</span>
-        {outside > 0 && <span className="ml-auto">{outside} dự án ngoài kỳ này</span>}
+        <p className="flex flex-wrap gap-x-4 text-xs text-muted-foreground sm:ml-auto" aria-live="polite">
+          <span><strong className="font-semibold tabular-nums text-foreground">{entries.length}</strong> dự án trong kỳ</span>
+          <span><strong className="font-semibold tabular-nums text-foreground">{dueCount}</strong> đến hạn</span>
+          {outside > 0 && <span>{outside} ngoài kỳ</span>}
+        </p>
       </div>
       {entries.length ? <ActivityTimeline entries={entries} period={period} view={view} now={now} /> : <EmptyState icon={CalendarDays}
         title={q || filter !== "all" ? "Không có dự án phù hợp trong kỳ" : "Chưa có hoạt động trong kỳ này"}

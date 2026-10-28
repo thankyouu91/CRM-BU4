@@ -57,7 +57,6 @@ export function MyWork({
   const tabs = (
     <div className="mb-5 print:hidden">
       <Segmented
-        layoutId="my-work-tab"
         value={tab}
         onChange={setTab}
         options={[

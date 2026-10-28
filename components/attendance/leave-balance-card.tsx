@@ -65,7 +65,7 @@ function EditBalanceModal({ personId, personName, balance, onClose, onSaved }: {
         </Field>
         <p className="rounded-lg bg-muted p-2.5 text-xs text-muted-foreground">
           Còn lại = được hưởng + tồn năm trước − số đã nghỉ phép theo lịch chấm công (hiện {formatDays(balance.used)} ngày):{" "}
-          <b className="text-foreground">{valid ? formatDays(Math.round((e + c - balance.used) * 10) / 10) : "—"} ngày</b>.
+          <b className="text-foreground">{valid ? formatDays(Math.round((e + c - balance.used) * 10) / 10) : "–"} ngày</b>.
         </p>
       </div>
     </Modal>
@@ -97,7 +97,7 @@ export function LeaveBalanceCard({
   return (
     <section className="rounded-2xl border bg-card p-4" aria-labelledby="leave-balance">
       <div className="mb-3 flex items-center gap-2">
-        <Palmtree className="h-4 w-4 text-primary" aria-hidden />
+        <Palmtree className="h-4 w-4 text-muted-foreground" aria-hidden />
         <h2 id="leave-balance" className="flex-1 text-sm font-semibold">
           Phép năm {balance.year}
         </h2>
@@ -120,7 +120,7 @@ export function LeaveBalanceCard({
         ))}
       </dl>
       {balance.note && <p className="mt-2 text-xs text-muted-foreground">Ghi chú: {balance.note}</p>}
-      <p className="mt-2 text-[11px] text-muted-foreground">Số đã nghỉ và còn lại tự tính từ lịch chấm công.</p>
+      <p className="mt-2 text-xs text-muted-foreground">Số đã nghỉ và còn lại tự tính từ lịch chấm công.</p>
       {editing && <EditBalanceModal personId={personId} personName={personName} balance={balance} onClose={() => setEditing(false)} onSaved={onSaved} />}
     </section>
   );

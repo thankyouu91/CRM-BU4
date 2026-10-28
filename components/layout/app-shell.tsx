@@ -70,16 +70,15 @@ const SETTINGS: NavItem = { href: "/settings", label: "Cài đặt", icon: Setti
 
 function Brand({ collapsed }: { collapsed?: boolean }) {
   return (
-    <Link href="/dashboard" className={cn("flex items-center gap-2.5", collapsed ? "justify-center" : "px-2")} aria-label="WorkHub, về Tổng quan">
-      <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-indigo-500 to-violet-600 text-white shadow-lg shadow-indigo-500/30">
-        <FolderKanban className="h-5 w-5" />
+    <Link
+      href="/dashboard"
+      className={cn("flex h-9 items-center gap-2.5 rounded-md", collapsed ? "justify-center" : "px-2")}
+      aria-label="WorkHub, về Tổng quan"
+    >
+      <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-sidebar-foreground text-sidebar">
+        <FolderKanban className="h-4 w-4" strokeWidth={2.25} />
       </span>
-      {!collapsed && (
-        <span className="whitespace-nowrap leading-tight">
-          <span className="block text-[15px] font-bold text-white">WorkHub</span>
-          <span className="block text-[11px] text-sidebar-muted">Quản lý & Báo cáo</span>
-        </span>
-      )}
+      {!collapsed && <span className="whitespace-nowrap text-sm font-semibold tracking-tight text-sidebar-foreground">WorkHub</span>}
     </Link>
   );
 }
@@ -93,34 +92,29 @@ function NavLink({ item, active, collapsed, count, dot, onNavigate }: { item: Na
       onClick={onNavigate}
       aria-current={active ? "page" : undefined}
       className={cn(
-        "group relative flex items-center rounded-xl py-2.5 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400",
-        collapsed ? "justify-center px-0" : "gap-3 px-3",
-        active ? "text-white" : "text-sidebar-muted hover:bg-white/5 hover:text-sidebar-foreground",
+        "group relative flex h-8 items-center rounded-md text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40",
+        collapsed ? "justify-center px-0" : "gap-2.5 px-2",
+        active
+          ? "bg-sidebar-accent font-medium text-sidebar-foreground"
+          : "text-sidebar-muted hover:bg-sidebar-accent/60 hover:text-sidebar-foreground",
       )}
     >
-      {active && (
-        <motion.span
-          layoutId="nav-active"
-          className="absolute inset-0 rounded-xl bg-white/10 ring-1 ring-white/10"
-          transition={{ type: "spring", damping: 30, stiffness: 380 }}
-        />
-      )}
-      <Icon className={cn("relative h-[18px] w-[18px] shrink-0", active && "text-indigo-300")} aria-hidden />
+      <Icon className="h-4 w-4 shrink-0" strokeWidth={active ? 2.25 : 2} aria-hidden />
       {/* Collapsed, the name is for screen readers only: it must not also be a flex-1 box, or it takes the row and pushes the icon left. */}
-      <span className={collapsed ? "sr-only" : "relative flex-1 whitespace-nowrap"}>
+      <span className={collapsed ? "sr-only" : "flex-1 whitespace-nowrap"}>
         {item.label}
         {collapsed && count > 0 && `, ${shown} chưa duyệt`}
         {dot && <span className="sr-only">, {dot}</span>}
       </span>
       {dot && !count && (
-        <span aria-hidden title={dot} className={cn("h-2 w-2 rounded-full bg-amber-400", collapsed ? "absolute right-2 top-2" : "relative")} />
+        <span aria-hidden title={dot} className={cn("h-1.5 w-1.5 rounded-full bg-warning", collapsed && "absolute right-2 top-1.5")} />
       )}
       {count > 0 && (
         <span
           aria-hidden={collapsed}
           className={cn(
-            "rounded-full bg-rose-500 font-bold leading-none text-white",
-            collapsed ? "absolute right-1 top-1 px-1 py-0.5 text-[9px]" : "relative px-1.5 py-0.5 text-[10px]",
+            "rounded-full bg-sidebar-foreground font-semibold tabular-nums leading-none text-sidebar",
+            collapsed ? "absolute -right-0.5 -top-0.5 px-1 py-0.5 text-[10px]" : "px-1.5 py-0.5 text-xs",
           )}
         >
           {shown}
@@ -130,7 +124,7 @@ function NavLink({ item, active, collapsed, count, dot, onNavigate }: { item: Na
       {collapsed && (
         <span
           aria-hidden
-          className="pointer-events-none absolute left-full top-1/2 z-50 ml-3 -translate-y-1/2 whitespace-nowrap rounded-lg bg-slate-900 px-2.5 py-1.5 text-xs font-medium text-white opacity-0 shadow-pop ring-1 ring-white/10 transition-opacity group-hover:opacity-100 group-focus-visible:opacity-100"
+          className="pointer-events-none absolute left-full top-1/2 z-50 ml-3 -translate-y-1/2 whitespace-nowrap rounded-md bg-foreground px-2 py-1 text-xs font-medium text-background opacity-0 shadow-pop transition-opacity group-hover:opacity-100 group-focus-visible:opacity-100"
         >
           {item.label}
         </span>
@@ -148,17 +142,17 @@ function SidebarNav({ user, collapsed, onNavigate }: { user: CurrentUser; collap
   const isActive = (href: string) => pathname === href || pathname.startsWith(`${href}/`);
   const allowed = (item: NavItem) => !item.permission || hasPermission(user, item.permission);
   return (
-    <nav aria-label="Điều hướng chính" className={cn("mt-6 flex min-h-0 flex-1 flex-col", !collapsed && "overflow-y-auto")}>
+    <nav aria-label="Điều hướng chính" className={cn("mt-5 flex min-h-0 flex-1 flex-col", !collapsed && "overflow-y-auto")}>
       {NAV.map((group, i) => {
         const items = group.items.filter(allowed);
         if (!items.length) return null;
         return (
-          <div key={group.title} role="group" aria-labelledby={`nav-${i}`} className={cn(i > 0 && "mt-4")}>
-            <p id={`nav-${i}`} className={cn(collapsed ? "sr-only" : "px-3 pb-1.5 text-[11px] font-semibold uppercase tracking-wider text-sidebar-muted/70")}>
+          <div key={group.title} role="group" aria-labelledby={`nav-${i}`} className={cn(i > 0 && "mt-5")}>
+            <p id={`nav-${i}`} className={cn(collapsed ? "sr-only" : "px-2 pb-1 text-xs font-medium text-sidebar-muted")}>
               {group.title}
             </p>
-            {collapsed && i > 0 && <div aria-hidden className="mx-auto mb-4 h-px w-6 bg-white/10" />}
-            <div className="space-y-1">
+            {collapsed && i > 0 && <div aria-hidden className="mx-auto mb-3 h-px w-5 bg-border" />}
+            <div className="space-y-0.5">
               {items.map((item) => (
                 <NavLink
                   key={item.href}
@@ -206,25 +200,25 @@ function UserMenu({ user }: { user: CurrentUser }) {
     <div ref={ref} className="relative">
       <button
         onClick={() => setOpen((o) => !o)}
-        className="flex items-center gap-2.5 rounded-xl py-1 pl-1 pr-2 transition-colors hover:bg-muted"
+        className="flex items-center gap-2 rounded-md py-1 pl-1 pr-1.5 transition-colors hover:bg-muted"
       >
         <Avatar name={user.name} color={user.avatarColor} />
         <span className="hidden text-left leading-tight sm:block">
           <span className="block text-sm font-medium">{user.name}</span>
-          <span className="block text-[11px] text-muted-foreground">{user.jobTitle ?? user.email}</span>
+          <span className="block text-xs text-muted-foreground">{user.jobTitle ?? user.email}</span>
         </span>
         <ChevronDown className="hidden h-4 w-4 text-muted-foreground sm:block" />
       </button>
       <AnimatePresence>
         {open && (
           <motion.div
-            initial={{ opacity: 0, y: -6, scale: 0.98 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: -6, scale: 0.98 }}
-            transition={{ duration: 0.15 }}
-            className="absolute right-0 top-full z-30 mt-2 w-64 rounded-xl border bg-card p-1.5 shadow-pop"
+            initial={{ opacity: 0, y: -4 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -4 }}
+            transition={{ duration: 0.12 }}
+            className="absolute right-0 top-full z-30 mt-1.5 w-60 rounded-lg border bg-card p-1 shadow-pop"
           >
-            <div className="border-b px-3 pb-3 pt-2">
+            <div className="mb-1 border-b px-2.5 pb-2.5 pt-1.5">
               <p className="truncate text-sm font-semibold">{user.name}</p>
               <p className="truncate text-xs text-muted-foreground">{user.email}</p>
               <div className="mt-2">
@@ -234,13 +228,13 @@ function UserMenu({ user }: { user: CurrentUser }) {
             <Link
               href="/settings"
               onClick={() => setOpen(false)}
-              className="mt-1 flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm hover:bg-muted"
+              className="flex items-center gap-2.5 rounded-md px-2.5 py-1.5 text-sm hover:bg-muted"
             >
               <KeyRound className="h-4 w-4 text-muted-foreground" /> Đổi mật khẩu
             </Link>
             <button
               onClick={logout}
-              className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-sm text-danger hover:bg-danger/10"
+              className="flex w-full items-center gap-2.5 rounded-md px-2.5 py-1.5 text-sm text-danger hover:bg-danger/10"
             >
               <LogOut className="h-4 w-4" /> Đăng xuất
             </button>
@@ -298,9 +292,9 @@ export function AppShell({
           onBlur={(e) => collapsed && !e.currentTarget.contains(e.relatedTarget as Node | null) && schedulePeek(false, 0)}
           onKeyDown={(e) => e.key === "Escape" && peek && schedulePeek(false, 0)}
           className={cn(
-            "fixed inset-y-0 left-0 z-30 hidden flex-col bg-sidebar py-6 transition-[width,box-shadow] duration-200 motion-reduce:transition-none lg:flex print:!hidden",
-            wide ? "w-64 overflow-hidden px-4" : "w-[72px] px-3",
-            peek && "shadow-2xl shadow-slate-950/40",
+            "fixed inset-y-0 left-0 z-30 hidden flex-col border-r bg-sidebar py-3 transition-[width,box-shadow] duration-200 motion-reduce:transition-none lg:flex print:!hidden",
+            wide ? "w-60 overflow-hidden px-3" : "w-14 px-2",
+            peek && "shadow-pop",
           )}
         >
           <Brand collapsed={!wide} />
@@ -312,22 +306,22 @@ export function AppShell({
           {mobileOpen && (
             <div className="fixed inset-0 z-40 lg:hidden">
               <motion.div
-                className="absolute inset-0 bg-slate-950/60"
+                className="absolute inset-0 bg-black/40"
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
                 onClick={() => setMobileOpen(false)}
               />
               <motion.aside
-                className="absolute inset-y-0 left-0 flex w-72 flex-col bg-sidebar px-4 py-6"
+                className="absolute inset-y-0 left-0 flex w-72 flex-col border-r bg-sidebar px-3 py-3"
                 initial={{ x: "-100%" }}
                 animate={{ x: 0 }}
                 exit={{ x: "-100%" }}
-                transition={{ type: "spring", damping: 30, stiffness: 320 }}
+                transition={{ duration: 0.2, ease: [0.32, 0.72, 0, 1] }}
               >
                 <div className="flex items-center justify-between">
                   <Brand />
-                  <button onClick={() => setMobileOpen(false)} className="rounded-lg p-2 text-sidebar-muted" aria-label="Đóng menu">
+                  <button onClick={() => setMobileOpen(false)} className="rounded-md p-2 text-sidebar-muted hover:bg-sidebar-accent" aria-label="Đóng menu">
                     <X className="h-5 w-5" />
                   </button>
                 </div>
@@ -337,24 +331,24 @@ export function AppShell({
           )}
         </AnimatePresence>
 
-        <div className={cn("transition-[padding] duration-200 motion-reduce:transition-none print:!pl-0", collapsed ? "lg:pl-[72px]" : "lg:pl-64")}>
-          <header className="sticky top-0 z-20 flex h-16 items-center gap-3 border-b bg-background/80 px-4 backdrop-blur-md sm:px-6 lg:px-8 print:hidden">
+        <div className={cn("transition-[padding] duration-200 motion-reduce:transition-none print:!pl-0", collapsed ? "lg:pl-14" : "lg:pl-60")}>
+          <header className="sticky top-0 z-20 flex h-14 items-center gap-2 border-b bg-background px-4 sm:px-6 lg:px-8 print:hidden">
             <button
               onClick={() => setMobileOpen(true)}
-              className="rounded-lg p-2 text-muted-foreground hover:bg-muted lg:hidden"
+              className="rounded-md p-2 text-muted-foreground hover:bg-muted lg:hidden"
               aria-label="Mở menu"
             >
               <Menu className="h-5 w-5" />
             </button>
             <button
               onClick={toggleSidebar}
-              className="-ml-2 hidden rounded-lg p-2 text-muted-foreground hover:bg-muted hover:text-foreground lg:inline-flex"
+              className="-ml-2 hidden rounded-md p-2 text-muted-foreground hover:bg-muted hover:text-foreground lg:inline-flex"
               aria-label={collapsed ? "Mở rộng thanh bên" : "Thu gọn thanh bên"}
               aria-controls="app-sidebar"
               aria-expanded={!collapsed}
               title={collapsed ? "Mở rộng thanh bên (giữ mở)" : "Thu gọn thanh bên (di chuột vào để mở tạm)"}
             >
-              {collapsed ? <PanelLeftOpen className="h-5 w-5" /> : <PanelLeftClose className="h-5 w-5" />}
+              {collapsed ? <PanelLeftOpen className="h-[18px] w-[18px]" /> : <PanelLeftClose className="h-[18px] w-[18px]" />}
             </button>
             <div className="flex-1" />
             <CommandPalette user={user} />

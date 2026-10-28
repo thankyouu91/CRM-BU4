@@ -73,7 +73,6 @@ export function PeriodFilter({
   return (
     <div className={cn("flex flex-wrap items-center gap-2", className)}>
       <Segmented
-        layoutId="report-period"
         value={value.type}
         onChange={(type) => onChange({ ...defaultPeriod(type), from: value.from, to: value.to })}
         options={[

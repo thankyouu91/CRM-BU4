@@ -24,7 +24,7 @@ export function timeAgo(iso: string, now = Date.now()): string {
 const ALERT_ICON = { critical: TriangleAlert, warning: ClipboardList, info: Info } as const;
 const ALERT_TONE = {
   critical: "bg-danger/10 text-danger",
-  warning: "bg-amber-100 text-amber-700 dark:bg-amber-500/15 dark:text-amber-300",
+  warning: "bg-warning/10 text-warning",
   info: "bg-primary/10 text-primary",
 } as const;
 
@@ -87,11 +87,11 @@ export function NotificationBell() {
         aria-expanded={open}
         aria-haspopup="dialog"
         aria-label={count ? `Thông báo, ${shown} mục cần xem` : "Thông báo"}
-        className="relative rounded-lg p-2 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+        className="relative rounded-md p-2 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
       >
-        <Bell className="h-5 w-5" />
+        <Bell className="h-[18px] w-[18px]" />
         {count > 0 && (
-          <span aria-hidden className="absolute right-1 top-1 min-w-[16px] rounded-full bg-rose-500 px-1 text-center text-[10px] font-bold leading-4 text-white">
+          <span aria-hidden className="absolute right-1 top-1 min-w-[16px] rounded-full bg-danger px-1 text-center text-[10px] font-semibold leading-4 text-white">
             {shown}
           </span>
         )}
@@ -101,10 +101,10 @@ export function NotificationBell() {
           <motion.div
             role="dialog"
             aria-label="Thông báo"
-            initial={{ opacity: 0, y: -6, scale: 0.98 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: -6, scale: 0.98 }}
-            transition={{ duration: 0.15 }}
+            initial={{ opacity: 0, y: -4 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -4 }}
+            transition={{ duration: 0.12 }}
             // Phones: the bell is not at the screen edge, so the panel spans the screen instead.
             className="fixed inset-x-3 top-16 z-30 overflow-hidden rounded-xl border bg-card shadow-pop sm:absolute sm:inset-x-auto sm:right-0 sm:top-full sm:mt-2 sm:w-[380px]"
           >
@@ -123,7 +123,7 @@ export function NotificationBell() {
                 <>
                   {alerts.length > 0 && (
                     <section aria-label="Cần chú ý" className="border-b p-2">
-                      <p className="px-2 pb-1 pt-1 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Cần chú ý</p>
+                      <p className="px-2 pb-1 pt-1 text-xs font-medium text-muted-foreground">Cần chú ý</p>
                       <ul>
                         {alerts.map((a) => (
                           <AlertRow key={a.id} alert={a} onOpen={() => go(a.link)} />
@@ -148,7 +148,7 @@ export function NotificationBell() {
                             <span className="min-w-0 flex-1">
                               <span className={cn("block break-words text-sm", !n.read && "font-semibold")}>{n.title}</span>
                               {n.body && <span className="mt-0.5 line-clamp-2 block break-words text-xs text-muted-foreground">{n.body}</span>}
-                              <span className="mt-0.5 block text-[11px] text-muted-foreground">
+                              <span className="mt-0.5 block text-xs text-muted-foreground">
                                 {n.actorName ? `${n.actorName} · ` : ""}
                                 {timeAgo(n.createdAt, new Date(feed.asOf).getTime())}
                               </span>

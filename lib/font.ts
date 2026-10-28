@@ -1,8 +1,8 @@
-import { Be_Vietnam_Pro } from "next/font/google";
+import { Inter } from "next/font/google";
 
-export const appFont = Be_Vietnam_Pro({
+// Inter is a variable font: every weight from one file, with full Vietnamese marks.
+export const appFont = Inter({
   subsets: ["latin", "vietnamese"],
-  weight: ["400", "500", "600", "700"],
   variable: "--font-sans",
   display: "swap",
 });

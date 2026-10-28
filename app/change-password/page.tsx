@@ -11,16 +11,12 @@ export default async function ChangePasswordPage() {
   if (!user.mustChangePassword) redirect("/settings");
 
   return (
-    <div className="flex min-h-screen items-center justify-center p-6">
-      <div className="w-full max-w-md rounded-2xl border bg-card p-8 shadow-card">
-        <div className="mb-6 flex items-center gap-3">
-          <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-primary/10 text-primary">
-            <ShieldCheck className="h-6 w-6" />
-          </span>
-          <div>
-            <h1 className="text-lg font-bold">Đặt mật khẩu mới</h1>
-            <p className="text-sm text-muted-foreground">Xin chào {user.name}, vui lòng đổi mật khẩu tạm thời trước khi tiếp tục.</p>
-          </div>
+    <div className="flex min-h-[100dvh] items-center justify-center p-6">
+      <div className="w-full max-w-md rounded-xl border bg-card p-6 sm:p-8">
+        <div className="mb-6">
+          <ShieldCheck className="mb-3 h-5 w-5 text-muted-foreground" />
+          <h1 className="text-lg font-semibold tracking-tight">Đặt mật khẩu mới</h1>
+          <p className="mt-1 text-sm text-muted-foreground">Xin chào {user.name}, vui lòng đổi mật khẩu tạm thời trước khi tiếp tục.</p>
         </div>
         <ForcedChangePassword />
       </div>

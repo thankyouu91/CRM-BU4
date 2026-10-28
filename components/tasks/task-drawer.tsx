@@ -221,7 +221,7 @@ function TaskPanel({
               disabled={!perms.manage}
               onChange={(e) => patch({ assigneeId: e.target.value || null })}
             >
-              <option value="">— Chưa giao —</option>
+              <option value="">Chưa giao</option>
               {people.map((u) => (
                 <option key={u.id} value={u.id}>
                   {personLabel(u)}
@@ -235,7 +235,7 @@ function TaskPanel({
               disabled={!perms.manage}
               onChange={(e) => patch({ categoryId: e.target.value || null })}
             >
-              <option value="">— Chưa phân loại —</option>
+              <option value="">Chưa phân loại</option>
               {categoryOptions(task.project.categories).map((c) => (
                 <option key={c.id} value={c.id}>
                   {c.label}
@@ -493,9 +493,9 @@ function Subtasks({
             >
               {s.title}
             </button>
-            {s._count.subtasks > 0 && <span className="text-[11px] text-muted-foreground">{s._count.subtasks} con</span>}
+            {s._count.subtasks > 0 && <span className="text-xs text-muted-foreground">{s._count.subtasks} con</span>}
             {s.dueDate && (
-              <span className={cn("text-[11px]", isOverdue(s.dueDate, s.status) ? "text-danger" : "text-muted-foreground")}>
+              <span className={cn("text-xs", isOverdue(s.dueDate, s.status) ? "text-danger" : "text-muted-foreground")}>
                 {formatShortDate(s.dueDate)}
               </span>
             )}
@@ -558,7 +558,7 @@ function Reports({
         method: "POST",
         body: { content, progress, hoursSpent: Number(hours) || 0 },
       });
-      toast.success(progress >= 100 ? "Đã gửi báo cáo — công việc chuyển sang Chờ duyệt" : "Đã gửi báo cáo cho quản lý");
+      toast.success(progress >= 100 ? "Đã gửi báo cáo, công việc chuyển sang Chờ duyệt" : "Đã gửi báo cáo cho quản lý");
       setContent("");
       setHours("");
       await onChanged();
@@ -691,7 +691,7 @@ function ReportItem({
           <CheckCircle2 className="mt-px h-3.5 w-3.5 shrink-0" />
           <span>
             {r.reviewer?.name ?? "Quản lý"} đã xem · {timeAgo(r.reviewedAt)}
-            {r.reviewNote && <span className="text-foreground/80"> — “{r.reviewNote}”</span>}
+            {r.reviewNote && <span className="text-foreground/80">: “{r.reviewNote}”</span>}
           </span>
         </div>
       ) : canReview ? (

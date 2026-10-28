@@ -1,16 +1,16 @@
 "use client";
 
-import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
 
 // Meters use one hue: bar length already encodes the value, so coloring by
 // value would double-encode it. Pass `color` only for entity identity.
+// They draw at their value (no grow-in on load) and ease only when it changes.
 
 export function ProgressBar({
   value,
   color,
   className,
-  height = 8,
+  height = 6,
   showLabel,
 }: {
   value: number;
@@ -30,12 +30,9 @@ export function ProgressBar({
         aria-valuemin={0}
         aria-valuemax={100}
       >
-        <motion.div
-          className={cn("absolute inset-y-0 left-0 rounded-full", !color && "bg-primary")}
-          style={color ? { background: color } : undefined}
-          initial={{ width: 0 }}
-          animate={{ width: `${v}%` }}
-          transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
+        <div
+          className={cn("absolute inset-y-0 left-0 rounded-full transition-[width] duration-300", !color && "bg-primary")}
+          style={{ width: `${v}%`, background: color }}
         />
       </div>
       {showLabel && <span className="w-9 shrink-0 text-right text-xs font-semibold tabular-nums">{v}%</span>}
@@ -70,23 +67,21 @@ export function ProgressRing({
     >
       <svg width={size} height={size} className="-rotate-90">
         <circle cx={size / 2} cy={size / 2} r={r} fill="none" strokeWidth={stroke} className="stroke-muted" />
-        <motion.circle
+        <circle
           cx={size / 2}
           cy={size / 2}
           r={r}
           fill="none"
           strokeWidth={stroke}
           strokeLinecap="round"
-          className={color ? undefined : "stroke-primary"}
+          className={cn("transition-[stroke-dashoffset] duration-300", !color && "stroke-primary")}
           stroke={color}
           strokeDasharray={c}
-          initial={{ strokeDashoffset: c }}
-          animate={{ strokeDashoffset: c - (v / 100) * c }}
-          transition={{ duration: 1, ease: [0.22, 1, 0.36, 1] }}
+          strokeDashoffset={c - (v / 100) * c}
         />
       </svg>
       <div className="absolute inset-0 flex flex-col items-center justify-center">
-        {label ?? <span className="text-sm font-bold">{v}%</span>}
+        {label ?? <span className="text-sm font-semibold tabular-nums">{v}%</span>}
       </div>
     </div>
   );
@@ -99,7 +94,7 @@ export function ProgressRing({
 export function PlanBar({
   actual,
   planned,
-  height = 8,
+  height = 6,
   className,
   showLabel,
 }: {
@@ -122,16 +117,11 @@ export function PlanBar({
           aria-valuemax={100}
           aria-label={p === null ? `Hoàn thành ${a}%` : `Hoàn thành ${a}%, kế hoạch ${p}%`}
         >
-          <motion.div
-            className="absolute inset-y-0 left-0 rounded-full bg-primary"
-            initial={{ width: 0 }}
-            animate={{ width: `${a}%` }}
-            transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
-          />
+          <div className="absolute inset-y-0 left-0 rounded-full bg-primary transition-[width] duration-300" style={{ width: `${a}%` }} />
         </div>
         {p !== null && (
           <span
-            className="absolute -inset-y-1 w-0.5 -translate-x-1/2 rounded-full bg-foreground/70"
+            className="absolute -inset-y-1 w-0.5 -translate-x-1/2 rounded-full bg-foreground ring-2 ring-card"
             style={{ left: `${p}%` }}
             title={`Kế hoạch đến hôm nay: ${p}%`}
           />

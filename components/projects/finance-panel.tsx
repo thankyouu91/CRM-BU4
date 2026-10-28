@@ -74,8 +74,8 @@ export function FinancePanel({ project, data, onChanged }: { project: ProjectDet
           <p className="text-xs text-muted-foreground">Đã thu / giá trị HĐ</p>
           <ProgressBar value={collectedPct} color="#1baf7a" className="mt-2" showLabel />
         </div>
-        <p className="text-[11px] text-muted-foreground md:col-span-3">
-          Số liệu dùng chung với trang Hợp đồng & chi phí và Trung tâm báo cáo — sửa ở đây là cập nhật ở mọi nơi.
+        <p className="text-xs text-muted-foreground md:col-span-3">
+          Số liệu dùng chung với trang Hợp đồng & chi phí và Trung tâm báo cáo: sửa ở đây là cập nhật ở mọi nơi.
         </p>
       </div>
 
@@ -84,21 +84,21 @@ export function FinancePanel({ project, data, onChanged }: { project: ProjectDet
       {completed &&
         data.contracts.length > 0 &&
         (missingFiles.length > 0 ? (
-          <div className="rounded-2xl border border-amber-300 bg-amber-50 p-5 dark:border-amber-500/30 dark:bg-amber-500/10">
+          <div className="rounded-xl border border-warning/30 bg-warning/5 p-4">
             <div className="flex items-start gap-3">
-              <FileWarning className="mt-0.5 h-5 w-5 shrink-0 text-amber-600 dark:text-amber-400" />
+              <FileWarning className="mt-0.5 h-4 w-4 shrink-0 text-warning" />
               <div className="min-w-0 flex-1">
-                <h3 className="font-semibold text-amber-900 dark:text-amber-200">Dự án đã hoàn thành — lưu hồ sơ hợp đồng (PDF)</h3>
-                <p className="mt-0.5 text-xs text-amber-800/90 dark:text-amber-200/80">
+                <h3 className="text-sm font-semibold">Dự án đã hoàn thành: lưu hồ sơ hợp đồng (PDF)</h3>
+                <p className="mt-0.5 text-xs text-muted-foreground">
                   Còn {missingFiles.length}/{data.contracts.length} hợp đồng chưa có file PDF. Tải bản hợp đồng đã ký lên để lưu trữ và hiện trong báo cáo.
                 </p>
-                <ul className="mt-3 divide-y divide-amber-200 rounded-xl border border-amber-200 bg-card dark:divide-amber-500/20 dark:border-amber-500/20">
+                <ul className="mt-3 divide-y rounded-lg border bg-card">
                   {missingFiles.map((c) => (
                     <li key={c.id} className="flex flex-wrap items-center gap-3 px-4 py-2.5">
                       <div className="min-w-0 flex-1">
                         <p className="truncate text-sm font-medium">{c.name}</p>
-                        <p className="truncate text-[11px] text-muted-foreground">
-                          {c.code || "Chưa có mã"} · {formatVnd(c.value)}
+                        <p className="truncate text-xs text-muted-foreground">
+                          {c.code || "Chưa có mã"}, {formatVnd(c.value)}
                         </p>
                       </div>
                       <UploadPdfButton contractId={c.id} onUploaded={onChanged} />
@@ -109,15 +109,15 @@ export function FinancePanel({ project, data, onChanged }: { project: ProjectDet
             </div>
           </div>
         ) : (
-          <p className="flex items-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-2.5 text-xs text-emerald-800 dark:border-emerald-500/30 dark:bg-emerald-500/10 dark:text-emerald-300">
-            <CircleCheck className="h-4 w-4 shrink-0" /> Đã lưu file PDF cho cả {data.contracts.length} hợp đồng của dự án đã hoàn thành.
+          <p className="flex items-center gap-2 rounded-lg border px-4 py-2.5 text-xs text-muted-foreground">
+            <CircleCheck className="h-4 w-4 shrink-0 text-success" /> Đã lưu file PDF cho cả {data.contracts.length} hợp đồng của dự án đã hoàn thành.
           </p>
         ))}
 
-      <div className="overflow-hidden rounded-2xl border bg-card shadow-card">
-        <div className="flex flex-wrap items-center justify-between gap-3 px-5 py-4">
+      <div className="overflow-hidden rounded-xl border bg-card">
+        <div className="flex flex-wrap items-center justify-between gap-3 border-b px-4 py-3">
           <div>
-            <h3 className="font-semibold">Hợp đồng của dự án ({data.contracts.length})</h3>
+            <h3 className="text-sm font-semibold">Hợp đồng của dự án ({data.contracts.length})</h3>
             <p className="text-xs text-muted-foreground">Bấm vào một dòng để sửa giá trị, chi phí hoặc số đã thu.</p>
           </div>
           <div className="flex gap-2">
@@ -163,7 +163,7 @@ export function FinancePanel({ project, data, onChanged }: { project: ProjectDet
                     <tr key={c.id} onClick={() => setEditing(c)} className="cursor-pointer border-b last:border-0 hover:bg-muted/40">
                       <td className="max-w-[300px] px-5 py-2.5">
                         <p className="truncate font-medium">{c.name}</p>
-                        <p className="truncate text-[11px] text-muted-foreground">
+                        <p className="truncate text-xs text-muted-foreground">
                           {c.code || "Chưa có mã"}
                           {c.partner ? ` · ${c.partner}` : ""}
                         </p>
@@ -181,10 +181,10 @@ export function FinancePanel({ project, data, onChanged }: { project: ProjectDet
                           m.basis === "estimate" && "italic",
                         )}
                       >
-                        {m.profit === null ? "—" : formatVnd(m.profit, false)}
+                        {m.profit === null ? "–" : formatVnd(m.profit, false)}
                       </td>
                       <td className="whitespace-nowrap px-3 py-2.5 text-right">
-                        {m.margin === null ? "—" : <Badge className={ratingBg(m.rating)}>{m.margin}%</Badge>}
+                        {m.margin === null ? "–" : <Badge className={ratingBg(m.rating)}>{m.margin}%</Badge>}
                       </td>
                       <td className="whitespace-nowrap px-3 py-2.5 text-right tabular-nums">{formatVnd(c.collected, false)}</td>
                       <td className={cn("whitespace-nowrap px-3 py-2.5 text-right font-medium tabular-nums", m.receivable > 0 && "text-danger")}>

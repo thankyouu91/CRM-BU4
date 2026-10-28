@@ -50,7 +50,6 @@ export function AiScreen({
         }
       />
       <Segmented
-        layoutId="ai-tab"
         value={tab}
         onChange={setTab}
         className="mb-5"

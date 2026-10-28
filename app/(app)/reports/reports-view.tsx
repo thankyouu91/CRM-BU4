@@ -67,7 +67,7 @@ export function ReportsView({
     <div>
       <PageHeader
         title="Trung tâm báo cáo"
-        description="Lọc số liệu theo ngày, tháng, quý, năm — xuất PDF, PowerPoint hoặc trình chiếu trực tuyến."
+        description="Lọc số liệu theo ngày, tháng, quý, năm; xuất PDF, PowerPoint hoặc trình chiếu trực tuyến."
         actions={<DeckActions deck={deck} disabled={loading} presentingAt={presentingAt} onPresentingChange={setPresentingAt} />}
       />
 
@@ -120,7 +120,7 @@ export function ReportsView({
                   <button
                     key={i}
                     onClick={() => setPresentingAt(i)}
-                    className="group shrink-0 overflow-hidden rounded-xl border text-left transition hover:-translate-y-0.5 hover:shadow-pop focus-visible:ring-2"
+                    className="group shrink-0 overflow-hidden rounded-xl border text-left transition-colors hover:border-foreground/30 focus-visible:ring-2"
                   >
                     <SlideScaler width={256}>
                       <SlideView slide={s} meta={deck.meta} theme={DECK_THEMES.dark} index={i} total={deck.slides.length} />
@@ -135,8 +135,8 @@ export function ReportsView({
           </Card>
 
           {/* KPIs */}
-          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-            <KpiTile label="Tiến độ tổng thể" value={`${k.overallProgress}%`} sub={`${k.totalProjects} dự án · ${k.activeProjects} đang chạy`} icon={CheckCircle2} />
+          <div className="grid grid-cols-2 gap-3 xl:grid-cols-4">
+            <KpiTile label="Tiến độ tổng thể" value={`${k.overallProgress}%`} sub={`${k.totalProjects} dự án, ${k.activeProjects} đang chạy`} icon={CheckCircle2} />
             <KpiTile label="Hoàn thành trong kỳ" value={`${k.doneTasks}/${k.totalTasks}`} sub={`Tỷ lệ ${k.completionRate}%`} icon={CheckCircle2} />
             <KpiTile label="Quá hạn" value={k.overdueTasks} icon={TriangleAlert} tone={k.overdueTasks ? "critical" : "default"} sub={`${k.inProgressTasks} việc đang thực hiện`} />
             <KpiTile label="Giờ công" value={k.hoursLogged} sub={`${k.reportsCount} báo cáo tiến độ`} icon={Timer} />
@@ -163,7 +163,6 @@ export function ReportsView({
           {/* Charts */}
           <div className="grid grid-cols-1 gap-6 xl:grid-cols-3">
             <ChartCard
-              id="r-trend"
               className="xl:col-span-2"
               title="Công việc & dự án mới"
               description={data.period.label}
@@ -182,7 +181,6 @@ export function ReportsView({
               }
             />
             <ChartCard
-              id="r-status"
               title="Trạng thái công việc"
               description="Công việc trong kỳ"
               chart={
@@ -212,7 +210,6 @@ export function ReportsView({
           </div>
 
           <ChartCard
-            id="r-hours"
             title="Giờ công được ghi nhận"
             description="Tổng giờ trong các báo cáo tiến độ theo thời gian"
             chart={<HoursChart data={data.trend} height={200} />}
@@ -229,7 +226,6 @@ export function ReportsView({
           />
 
           <ChartCard
-            id="r-hours-people"
             title="Giờ công theo người"
             description="Ai ghi nhận bao nhiêu giờ ở từng mốc thời gian · ô càng đậm càng nhiều giờ"
             chart={<HoursHeatmap people={data.people} trend={data.trend} />}
@@ -282,7 +278,7 @@ export function ReportsView({
                       </td>
                       <td className={cn("px-3 py-3 text-right tabular-nums", p.overdueTasks && "font-semibold text-danger")}>{p.overdueTasks}</td>
                       <td className="px-3 py-3 text-right tabular-nums">{p.members}</td>
-                      <td className="px-5 py-3 text-right text-muted-foreground">{p.dueDate ? formatDate(p.dueDate) : "—"}</td>
+                      <td className="px-5 py-3 text-right text-muted-foreground">{p.dueDate ? formatDate(p.dueDate) : "–"}</td>
                     </tr>
                   ))}
                 </tbody>

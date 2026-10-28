@@ -159,7 +159,6 @@ export function MyTasksView({
         actions={
           canSeeAll && (
             <Segmented
-              layoutId="task-scope"
               value={scope}
               onChange={(value) => { setScope(value); if (value === "mine" && issue === "unassigned") setIssue(null); restart(); }}
               options={[
@@ -175,10 +174,10 @@ export function MyTasksView({
       <TaskCalendar scope={scope} projectId={scope === "all" ? projectId : undefined} refreshKey={response?.asOf} initial={initialCalendar} onOpenTask={setOpenTask} />
 
       <div aria-busy={busy} className={cn("mb-6 grid grid-cols-2 gap-3 xl:grid-cols-4", busy && "opacity-60")}>
-        <KpiTile label="Chưa hoàn thành" value={data ? stats.open : "—"} icon={ListChecks} />
-        <KpiTile label="Đang thực hiện" value={data ? stats.active : "—"} sub="Gồm cả chờ duyệt" icon={Clock} />
-        <KpiTile label="Quá hạn" value={data ? stats.overdue : "—"} icon={TriangleAlert} tone={stats.overdue ? "critical" : "default"} sub={data ? stats.overdue ? "Ưu tiên xử lý ngay" : "Không có việc trễ" : undefined} />
-        <KpiTile label={period ? "Đã hoàn thành" : "Hoàn thành 7 ngày qua"} value={data ? period ? (stats.done ?? data.total - stats.open) : stats.doneWeek : "—"} sub={period ? "Deadline thuộc kỳ đang chọn" : undefined} icon={CheckCircle2} />
+        <KpiTile label="Chưa hoàn thành" value={data ? stats.open : "–"} icon={ListChecks} />
+        <KpiTile label="Đang thực hiện" value={data ? stats.active : "–"} sub="Gồm cả chờ duyệt" icon={Clock} />
+        <KpiTile label="Quá hạn" value={data ? stats.overdue : "–"} icon={TriangleAlert} tone={stats.overdue ? "critical" : "default"} sub={data ? stats.overdue ? "Ưu tiên xử lý ngay" : "Không có việc trễ" : undefined} />
+        <KpiTile label={period ? "Đã hoàn thành" : "Hoàn thành 7 ngày qua"} value={data ? period ? (stats.done ?? data.total - stats.open) : stats.doneWeek : "–"} sub={period ? "Deadline thuộc kỳ đang chọn" : undefined} icon={CheckCircle2} />
       </div>
 
       <div role="group" aria-label="Lọc danh sách theo deadline" className="mb-3 flex flex-wrap items-center gap-1.5">
@@ -247,7 +246,7 @@ export function MyTasksView({
           onChange={(e) => { setQ(e.target.value); restart(); }}
           placeholder="Tìm công việc…"
           aria-label="Tìm công việc"
-          className="h-10 w-full rounded-lg border bg-card pl-9 pr-3 text-sm outline-none focus:border-primary/60 focus:ring-2 focus:ring-primary/20"
+          className="h-9 w-full rounded-md border bg-card pl-9 pr-3 text-sm outline-none focus:border-primary/60 focus:ring-2 focus:ring-primary/20"
         />
       </div>
 
@@ -295,7 +294,7 @@ export function MyTasksView({
                   <ChevronRight className={cn("h-4 w-4 text-muted-foreground transition-transform", !isCollapsed && "rotate-90")} />
                   <Icon className={cn("h-4 w-4", b.tone ?? "text-muted-foreground")} />
                   <span className={cn("font-semibold", b.tone)}>{b.key === "later" && period ? "Sắp đến hạn" : b.label}</span>
-                  <span className="rounded-md bg-muted px-1.5 py-0.5 text-[11px] font-semibold text-muted-foreground">{rows.length}</span>
+                  <span className="rounded-md bg-muted px-1.5 py-0.5 text-xs font-semibold text-muted-foreground">{rows.length}</span>
                 </button>
                 </div>
                 <AnimatePresence initial={false}>
@@ -343,7 +342,7 @@ export function MyTasksView({
                             </div>
                           </div>
                           <span className={cn("w-12 text-right text-xs tabular-nums", b.key === "overdue" ? "font-semibold text-danger" : "text-muted-foreground")}>
-                            {t.dueDate ? zonedText(t.dueDate, "short") : "—"}
+                            {t.dueDate ? zonedText(t.dueDate, "short") : "–"}
                           </span>
                           {scope === "all" && (t.assignee ? <Avatar name={t.assignee.name} color={t.assignee.avatarColor} size="xs" /> : <span title="Chưa giao người" className="flex h-6 w-6 items-center justify-center rounded-full border border-dashed text-muted-foreground"><UserX className="h-3 w-3" /></span>)}
                           {taskMenu.button(t)}

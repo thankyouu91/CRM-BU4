@@ -11,7 +11,7 @@ import type { Summary } from "../lib/stats";
 
 const saved = vi.hoisted(() => ({ blob: null as Blob | null }));
 // next/font only works inside the Next.js build.
-vi.mock("next/font/google", () => ({ Be_Vietnam_Pro: () => ({ className: "font", style: { fontFamily: "Be Vietnam Pro" }, variable: "--font" }) }));
+vi.mock("next/font/google", () => ({ Inter: () => ({ className: "font", style: { fontFamily: "Inter" }, variable: "--font" }) }));
 vi.mock("../lib/export/save", () => ({ saveBlob: (b: Blob) => { saved.blob = b; }, fileSlug: (s: string) => s }));
 afterEach(cleanup);
 

@@ -48,7 +48,6 @@ export function WorkPeriodNav({
   return (
     <div className={cn("flex flex-wrap items-center gap-2", className)}>
       <Segmented
-        layoutId="work-period-type"
         value={value.type}
         onChange={switchType}
         options={[

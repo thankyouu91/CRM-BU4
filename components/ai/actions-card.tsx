@@ -76,7 +76,7 @@ export function ActionsCard({
   return (
     <section className="mt-3 overflow-hidden rounded-xl border border-primary/30 bg-primary/[0.03]" aria-label="Đề xuất thay đổi">
       <header className="flex flex-wrap items-center gap-2 border-b border-primary/20 px-3 py-2">
-        <ListChecks className="h-4 w-4 text-primary" />
+        <ListChecks className="h-4 w-4 text-muted-foreground" />
         <p className="text-sm font-medium">Đề xuất thay đổi ({actions.length})</p>
         <p className="ml-auto text-xs text-muted-foreground">
           {done ? `Đã áp dụng ${okCount}/${results!.length}` : dismissed ? "Đã bỏ qua, dữ liệu chưa thay đổi" : "Chưa có gì thay đổi cho đến khi bạn bấm Áp dụng"}
@@ -105,7 +105,7 @@ export function ActionsCard({
               )}
               <div className="min-w-0 flex-1">
                 <p className="break-words">
-                  <span className="mr-1.5 rounded bg-muted px-1.5 py-0.5 text-[11px] font-medium text-muted-foreground">{a.title}</span>
+                  <span className="mr-1.5 rounded bg-muted px-1.5 py-0.5 text-xs font-medium text-muted-foreground">{a.title}</span>
                   <span className="font-medium">{a.target}</span>
                 </p>
                 {a.lines.length > 0 && (

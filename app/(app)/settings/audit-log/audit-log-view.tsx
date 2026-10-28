@@ -40,24 +40,6 @@ interface Filters {
 
 const EMPTY: Filters = { group: "", action: "", actor: "", q: "", from: "", to: "" };
 
-const GROUP_TONE: Record<AuditGroup, string> = {
-  auth: "bg-sky-500/10 text-sky-700 dark:text-sky-300",
-  user: "bg-violet-500/10 text-violet-700 dark:text-violet-300",
-  project: "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300",
-  task: "bg-amber-500/10 text-amber-700 dark:text-amber-300",
-  contract: "bg-rose-500/10 text-rose-700 dark:text-rose-300",
-  workReport: "bg-slate-500/10 text-slate-700 dark:text-slate-300",
-  ai: "bg-indigo-500/10 text-indigo-700 dark:text-indigo-300",
-  share: "bg-teal-500/10 text-teal-700 dark:text-teal-300",
-  attendance: "bg-lime-500/10 text-lime-700 dark:text-lime-300",
-  system: "bg-zinc-500/10 text-zinc-700 dark:text-zinc-300",
-};
-
-function toneOf(action: string) {
-  const group = (AUDIT_ACTIONS as Record<string, { group: AuditGroup }>)[action]?.group;
-  return group ? GROUP_TONE[group] : "bg-muted text-muted-foreground";
-}
-
 function queryOf(f: Filters, cursor?: string | null) {
   const sp = new URLSearchParams();
   for (const [k, v] of Object.entries(f)) if (v) sp.set(k, v);
@@ -66,8 +48,8 @@ function queryOf(f: Filters, cursor?: string | null) {
 }
 
 function show(v: unknown): string {
-  if (v === null || v === undefined || v === "") return "—";
-  if (Array.isArray(v)) return v.length ? v.join(", ") : "—";
+  if (v === null || v === undefined || v === "") return "–";
+  if (Array.isArray(v)) return v.length ? v.join(", ") : "–";
   if (typeof v === "object") return JSON.stringify(v);
   return String(v);
 }
@@ -229,7 +211,7 @@ export function AuditLogView() {
                     <span className="text-xs tabular-nums text-muted-foreground">{formatDateTime(e.createdAt)}</span>
                     <span className="truncate font-medium">{e.actorName}</span>
                     <span className="flex min-w-0 items-start gap-2">
-                      <Badge className={cn("shrink-0", toneOf(e.action))}>{auditActionLabel(e.action)}</Badge>
+                      <Badge className="shrink-0 border bg-card text-foreground/80">{auditActionLabel(e.action)}</Badge>
                       <span className="min-w-0 flex-1 break-words">{e.summary}</span>
                       {expanded ? <ChevronDown className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" /> : <ChevronRight className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />}
                     </span>
@@ -238,7 +220,7 @@ export function AuditLogView() {
                     <div className="space-y-2 border-t bg-muted/20 px-4 py-3 sm:pl-[330px]">
                       {hasDetails ? <DetailLines details={e.details} /> : <p className="text-xs text-muted-foreground">Không có chi tiết thêm.</p>}
                       <p className="text-xs text-muted-foreground">
-                        IP: <span className="font-mono">{e.ip ?? "—"}</span> · Đối tượng: <span className="font-mono">{e.entityType}{e.entityId ? ` ${e.entityId}` : ""}</span>
+                        IP: <span className="font-mono">{e.ip ?? "–"}</span> · Đối tượng: <span className="font-mono">{e.entityType}{e.entityId ? ` ${e.entityId}` : ""}</span>
                       </p>
                     </div>
                   )}

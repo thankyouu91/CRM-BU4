@@ -4,43 +4,46 @@
 
 /* Theme tokens as RGB triplets so Tailwind opacity modifiers work (bg-primary/10). */
 @layer base {
+  /* Charcoal and zinc greys; color is kept for status (success, warning, danger) and data. */
   :root {
-    --background: 246 247 251;
-    --foreground: 15 23 42;
+    --background: 250 250 250;
+    --foreground: 24 24 27;
     --card: 255 255 255;
-    --muted: 241 243 248;
-    --muted-foreground: 100 116 139;
-    --border: 226 232 240;
-    --ring: 99 102 241;
-    --primary: 79 70 229;
-    --primary-foreground: 255 255 255;
-    --primary-soft: 238 242 255;
-    --success: 22 163 74;
-    --warning: 217 119 6;
+    --muted: 244 244 245;
+    --muted-foreground: 99 99 107;
+    --border: 228 228 231;
+    --ring: 24 24 27;
+    --primary: 24 24 27;
+    --primary-foreground: 250 250 250;
+    --primary-soft: 244 244 245;
+    --success: 21 128 61;
+    --warning: 180 83 9;
     --danger: 220 38 38;
-    --sidebar: 15 23 42;
-    --sidebar-foreground: 226 232 240;
-    --sidebar-muted: 148 163 184;
+    --sidebar: 250 250 250;
+    --sidebar-foreground: 24 24 27;
+    --sidebar-muted: 99 99 107;
+    --sidebar-accent: 236 236 238;
     color-scheme: light;
   }
 
   .dark {
-    --background: 9 11 20;
-    --foreground: 226 232 240;
-    --card: 17 21 34;
-    --muted: 26 31 48;
-    --muted-foreground: 148 163 184;
-    --border: 38 45 66;
-    --ring: 129 140 248;
-    --primary: 129 140 248;
-    --primary-foreground: 15 23 42;
-    --primary-soft: 30 32 66;
+    --background: 9 9 11;
+    --foreground: 237 237 239;
+    --card: 18 18 21;
+    --muted: 32 32 36;
+    --muted-foreground: 161 161 170;
+    --border: 39 39 43;
+    --ring: 212 212 216;
+    --primary: 237 237 239;
+    --primary-foreground: 24 24 27;
+    --primary-soft: 32 32 36;
     --success: 74 222 128;
     --warning: 251 191 36;
     --danger: 248 113 113;
-    --sidebar: 12 15 27;
-    --sidebar-foreground: 226 232 240;
-    --sidebar-muted: 125 137 160;
+    --sidebar: 12 12 14;
+    --sidebar-foreground: 237 237 239;
+    --sidebar-muted: 161 161 170;
+    --sidebar-accent: 32 32 36;
     color-scheme: dark;
   }
 
@@ -50,11 +53,12 @@
 
   body {
     @apply bg-background text-foreground antialiased;
-    font-feature-settings: "cv11", "ss01";
+    /* Inter with its single-storey a; figures that line up use tabular-nums. */
+    font-feature-settings: "cv11";
   }
 
   :focus-visible {
-    @apply outline-none ring-2 ring-ring/60 ring-offset-2 ring-offset-background;
+    @apply outline-none ring-2 ring-ring/40 ring-offset-1 ring-offset-background;
   }
 }
 
@@ -87,14 +91,14 @@
   :root,
   .dark {
     --background: 255 255 255;
-    --foreground: 15 23 42;
+    --foreground: 24 24 27;
     --card: 255 255 255;
-    --muted: 241 243 248;
-    --muted-foreground: 71 85 105;
-    --border: 203 213 225;
-    --primary: 79 70 229;
+    --muted: 244 244 245;
+    --muted-foreground: 82 82 91;
+    --border: 212 212 216;
+    --primary: 24 24 27;
     --primary-foreground: 255 255 255;
-    --success: 22 163 74;
+    --success: 21 128 61;
     --warning: 180 83 9;
     --danger: 220 38 38;
     color-scheme: light;

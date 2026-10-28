@@ -242,7 +242,7 @@ function ReportBody({
 
       {submitted && data.canReview && <ReviewCard data={data} onReviewed={(report) => setData((d) => (d ? { ...d, report } : d))} />}
 
-      <p className="hidden text-[10px] text-slate-500 print:block" suppressHydrationWarning>
+      <p className="hidden text-[10px] text-zinc-500 print:block" suppressHydrationWarning>
         In lúc {zonedText(new Date(), "datetime")} từ WorkHub · danh sách công việc là số liệu tại thời điểm in
         {data.snapshotAt ? `, so với lúc gửi ${zonedText(data.snapshotAt, "datetime")}` : ""}.
       </p>
@@ -314,7 +314,7 @@ function HeaderCard({
         <div className="flex min-w-0 items-start gap-3">
           <Avatar name={data.author.name} color={data.author.avatarColor} size="md" className="print:hidden" />
           <div className="min-w-0">
-            <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Báo cáo công việc {kind}</p>
+            <p className="text-xs font-medium text-muted-foreground">Báo cáo công việc {kind}</p>
             <h2 className="mt-0.5 text-lg font-bold leading-snug sm:text-xl">{data.period.label}</h2>
             <p className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm">
               <span className="font-medium">{data.author.name}</span>
@@ -372,7 +372,7 @@ function HeaderCard({
           </p>
           {r.editedSinceSubmit && (
             <p className="flex items-center gap-1.5 text-warning">
-              <TriangleAlert className="h-4 w-4" /> Ghi chú đã sửa sau khi gửi{data.canEdit ? " — bấm Gửi lại để cập nhật bản gửi" : ""}
+              <TriangleAlert className="h-4 w-4" /> Ghi chú đã sửa sau khi gửi{data.canEdit ? ", bấm Gửi lại để cập nhật bản gửi" : ""}
             </p>
           )}
           {r.reviewedAt ? (
@@ -497,7 +497,7 @@ function NoteField({
             rows={Math.min(12, Math.max(3, text.split("\n").length + 1))}
             className="min-h-0 bg-card print:hidden"
           />
-          <p className="hidden whitespace-pre-wrap text-sm print:block">{text || "—"}</p>
+          <p className="hidden whitespace-pre-wrap text-sm print:block">{text || "–"}</p>
         </>
       ) : (
         <p className="whitespace-pre-wrap text-sm">{text || <span className="text-muted-foreground">Chưa ghi.</span>}</p>
@@ -644,7 +644,7 @@ function Entries({ rows, openable, onOpen }: { rows: WorkRow<WorkEntry>[]; opena
   const hours = Math.round(rows.reduce((a, r) => a + rowItem(r).hoursSpent, 0) * 10) / 10;
   return (
     <div className="border-t">
-      <p className="flex items-center gap-1.5 px-5 pb-1 pt-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+      <p className="flex items-center gap-1.5 px-5 pb-1 pt-3 text-xs font-medium text-muted-foreground">
         <MessageSquareWarning className="h-3.5 w-3.5" /> Báo cáo tiến độ đã gửi · {rows.length} báo cáo · {hours} giờ
       </p>
       {groupByProject(rows).map((g) => (

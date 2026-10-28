@@ -354,7 +354,7 @@ export function ChatView({
       setCopiedId(m.id);
       setTimeout(() => setCopiedId((id) => (id === m.id ? null : id)), 2000);
     } catch {
-      toast.error("Trình duyệt chặn sao chép — hãy bôi đen và sao chép thủ công");
+      toast.error("Trình duyệt chặn sao chép, hãy bôi đen và sao chép thủ công");
     }
   };
 
@@ -435,7 +435,7 @@ export function ChatView({
     <div className="space-y-3">
       {groups.map(([group, items]) => (
         <div key={group}>
-          <p className="mb-1.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground">{CHAT_TEMPLATE_GROUPS[group]}</p>
+          <p className="mb-1.5 text-xs font-medium text-muted-foreground">{CHAT_TEMPLATE_GROUPS[group]}</p>
           <div className={cn("flex flex-wrap gap-1.5", !compact && "sm:grid sm:grid-cols-2")}>
             {items.map((t) => (
               <button
@@ -461,7 +461,7 @@ export function ChatView({
         {options}
         <Card className="hidden p-4 lg:block">
           <p className="mb-3 flex items-center gap-1.5 text-sm font-semibold">
-            <Sparkles className="h-4 w-4 text-primary" /> Prompt mẫu
+            <Sparkles className="h-4 w-4 text-muted-foreground" /> Prompt mẫu
           </p>
           {templateList(true)}
         </Card>
@@ -486,7 +486,7 @@ export function ChatView({
 
         <div ref={listRef} className="flex-1 space-y-5 overflow-y-auto px-4 py-5" aria-live="polite">
           {!builtIn.ready && (
-            <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-4 text-sm">
+            <div className="rounded-xl border border-warning/30 bg-warning/5 p-4 text-sm">
               <p className="font-medium">Chưa bật trợ lý AI tích hợp (Claude API).</p>
               <p className="mt-1 text-muted-foreground">
                 {builtIn.canEnable ? "Bạn là quản trị viên: thêm API key Anthropic để bật chat." : "Hãy nhờ quản trị viên bật trong Cài đặt."} Trong lúc đó, tab “Sao chép prompt” vẫn dùng được với Claude.ai.
@@ -502,9 +502,7 @@ export function ChatView({
           {messages.length === 0 ? (
             <div className="mx-auto max-w-2xl py-6">
               <div className="mb-6 text-center">
-                <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/10 text-primary">
-                  <Sparkles className="h-6 w-6" />
-                </div>
+                <Sparkles className="mx-auto mb-3 h-5 w-5 text-muted-foreground" />
                 <h2 className="text-lg font-semibold">Hỏi trợ lý AI về dự án của bạn</h2>
                 <p className="mt-1 text-sm text-muted-foreground">
                   Hỏi tự do hoặc đính kèm tài liệu để AI review, trích xuất tên dự án, số hợp đồng và chi phí. Với “Kèm số liệu hệ thống”, Claude dùng thêm số liệu theo quyền xem của bạn.
@@ -523,7 +521,7 @@ export function ChatView({
                 </div>
               ) : (
                 <div key={m.id} className="flex gap-2">
-                  <span className="mt-1 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
+                  <span className="mt-1 flex h-7 w-7 shrink-0 items-center justify-center rounded-full border bg-card text-muted-foreground">
                     <Sparkles className="h-3.5 w-3.5" />
                   </span>
                   <div className="min-w-0 max-w-[92%] flex-1">
@@ -631,7 +629,7 @@ export function ChatView({
               </Button>
             )}
           </div>
-          <p className={cn("mt-1.5 px-1 text-[11px] text-muted-foreground", tooLong && "text-danger")}>
+          <p className={cn("mt-1.5 px-1 text-xs text-muted-foreground", tooLong && "text-danger")}>
             {tooLong
               ? `Câu hỏi quá dài (${input.length.toLocaleString("vi-VN")}/${CHAT_MAX_CHARS.toLocaleString("vi-VN")} ký tự).`
               : builtIn.ready && remaining <= 0

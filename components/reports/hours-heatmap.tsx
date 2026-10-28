@@ -36,7 +36,7 @@ export function HoursHeatmap({ people, trend }: { people: Summary["people"]; tre
                   <span className="sr-only">{b.label}</span>
                 </th>
               ))}
-              <th scope="col" className="pl-2 text-right text-[11px] font-medium text-muted-foreground">Tổng</th>
+              <th scope="col" className="pl-2 text-right text-xs font-medium text-muted-foreground">Tổng</th>
             </tr>
           </thead>
           <tbody>
@@ -63,7 +63,7 @@ export function HoursHeatmap({ people, trend }: { people: Summary["people"]; tre
           </tbody>
         </table>
       </div>
-      <div aria-hidden className="mt-3 flex items-center justify-end gap-1.5 text-[11px] text-muted-foreground">
+      <div aria-hidden className="mt-3 flex items-center justify-end gap-1.5 text-xs text-muted-foreground">
         Ít
         {["bg-muted/60", "bg-primary/15", "bg-primary/30", "bg-primary/50", "bg-primary/70", "bg-primary"].map((c) => (
           <span key={c} className={cn("h-3 w-3 rounded-[3px]", c)} />

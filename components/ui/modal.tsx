@@ -48,7 +48,7 @@ export function Modal({
       {open && (
         <div className="fixed inset-0 z-50 flex items-end justify-center p-0 sm:items-center sm:p-4">
           <motion.div
-            className="absolute inset-0 bg-slate-950/50 backdrop-blur-[2px]"
+            className="absolute inset-0 bg-black/40"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
@@ -60,25 +60,25 @@ export function Modal({
             aria-labelledby={`${id}-title`}
             aria-describedby={description ? `${id}-description` : undefined}
             className={cn(
-              "relative flex max-h-[92vh] w-full flex-col rounded-t-2xl border bg-card shadow-pop sm:rounded-2xl",
+              "relative flex max-h-[92vh] w-full flex-col rounded-t-3xl border bg-card shadow-pop sm:rounded-3xl",
               width,
             )}
-            initial={{ opacity: 0, y: 24, scale: 0.98 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 16, scale: 0.98 }}
-            transition={{ type: "spring", damping: 28, stiffness: 340 }}
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 4 }}
+            transition={{ duration: 0.16, ease: "easeOut" }}
           >
-            <div className="flex items-start justify-between gap-4 border-b px-6 py-4">
+            <div className="flex items-start justify-between gap-4 border-b px-5 py-4">
               <div>
                 <h2 id={`${id}-title`} className="text-base font-semibold">{title}</h2>
                 {description && <p id={`${id}-description`} className="mt-0.5 text-xs text-muted-foreground">{description}</p>}
               </div>
-              <button onClick={onClose} className="rounded-md p-1 text-muted-foreground hover:bg-muted" aria-label="Đóng">
+              <button onClick={onClose} className="-mr-1 rounded-md p-1 text-muted-foreground hover:bg-muted hover:text-foreground" aria-label="Đóng">
                 <X className="h-4 w-4" />
               </button>
             </div>
-            <div className="scrollbar-thin overflow-y-auto px-6 py-5">{children}</div>
-            {footer && <div className="flex justify-end gap-2 border-t px-6 py-4">{footer}</div>}
+            <div className="scrollbar-thin overflow-y-auto px-5 py-5">{children}</div>
+            {footer && <div className="flex justify-end gap-2 border-t bg-muted/40 px-5 py-3">{footer}</div>}
           </motion.div>
         </div>
       )}
@@ -105,7 +105,7 @@ export function Drawer({
       {open && (
         <div className="fixed inset-0 z-40">
           <motion.div
-            className="absolute inset-0 bg-slate-950/40"
+            className="absolute inset-0 bg-black/30"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
@@ -118,7 +118,7 @@ export function Drawer({
             initial={{ x: "100%" }}
             animate={{ x: 0 }}
             exit={{ x: "100%" }}
-            transition={{ type: "spring", damping: 32, stiffness: 320 }}
+            transition={{ duration: 0.2, ease: [0.32, 0.72, 0, 1] }}
           >
             {children}
           </motion.aside>

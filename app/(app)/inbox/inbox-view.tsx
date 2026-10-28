@@ -2,7 +2,6 @@
 
 import { Pagination } from "@/components/ui/pagination";
 import { useState } from "react";
-import { AnimatePresence, motion } from "framer-motion";
 import { CheckCheck, CheckCircle2, Clock, Eye, Inbox, Loader2, Send } from "lucide-react";
 import { toast } from "sonner";
 import { Avatar } from "@/components/ui/avatar";
@@ -58,32 +57,31 @@ function ReportCard({
   };
 
   return (
-    <motion.li
-      layout
-      initial={{ opacity: 0, y: 8 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, x: 24 }}
-      className={cn("rounded-2xl border bg-card p-5 shadow-card", !r.reviewedAt && canReview && "border-l-4 border-l-warning")}
-    >
+    <li className="px-4 py-4 sm:px-5">
       <div className="flex flex-col gap-4 lg:flex-row">
         <div className="flex min-w-0 flex-1 gap-3">
           <Avatar name={r.author.name} color={r.author.avatarColor} size="md" />
           <div className="min-w-0 flex-1">
             <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm">
-              <span className="font-semibold">{r.author.name}</span>
+              <span className="font-medium">{r.author.name}</span>
               {r.author.jobTitle && <span className="text-xs text-muted-foreground">{r.author.jobTitle}</span>}
               <span className="text-xs text-muted-foreground" title={formatDateTime(r.createdAt)}>
-                · {timeAgo(r.createdAt)}
+                {timeAgo(r.createdAt)}
               </span>
+              {!r.reviewedAt && canReview && (
+                <span className="flex items-center gap-1 text-xs font-medium text-warning">
+                  <span aria-hidden className="h-1.5 w-1.5 rounded-full bg-warning" /> Chờ xem xét
+                </span>
+              )}
             </div>
-            <button onClick={() => onOpenTask(r.task.id)} className="mt-1 flex min-w-0 items-center gap-1.5 text-left text-sm hover:text-primary">
-              <span className="h-2 w-2 shrink-0 rounded-full" style={{ background: r.task.project.color }} />
-              <span className="truncate text-muted-foreground">{r.task.project.name} ›</span>
+            <button onClick={() => onOpenTask(r.task.id)} className="mt-0.5 flex min-w-0 items-center gap-1.5 text-left text-sm hover:underline">
+              <span className="h-2 w-2 shrink-0 rounded-sm" style={{ background: r.task.project.color }} />
+              <span className="truncate text-muted-foreground">{r.task.project.name} /</span>
               <span className="truncate font-medium">{r.task.title}</span>
             </button>
-            <p className="mt-3 whitespace-pre-wrap text-sm leading-relaxed">{r.content}</p>
-            <div className="mt-3 flex flex-wrap items-center gap-3 text-xs">
-              <span className="rounded-md bg-primary/10 px-2 py-0.5 font-semibold text-primary">Tiến độ {r.progress}%</span>
+            <p className="mt-2 whitespace-pre-wrap text-sm leading-relaxed">{r.content}</p>
+            <div className="mt-2.5 flex flex-wrap items-center gap-3 text-xs">
+              <span className="font-medium tabular-nums">Tiến độ {r.progress}%</span>
               {r.hoursSpent > 0 && (
                 <span className="flex items-center gap-1 text-muted-foreground">
                   <Clock className="h-3.5 w-3.5" /> {r.hoursSpent} giờ
@@ -96,14 +94,14 @@ function ReportCard({
 
         <div className="lg:w-80 lg:border-l lg:pl-5">
           {r.reviewedAt ? (
-            <div className="rounded-xl bg-success/10 p-3 text-sm">
+            <div className="text-sm">
               <p className="flex items-center gap-1.5 font-medium text-success">
                 <CheckCircle2 className="h-4 w-4" /> Đã xem xét
               </p>
-              <p className="mt-1 text-xs text-muted-foreground">
-                {r.reviewer?.name ?? "Quản lý"} · {timeAgo(r.reviewedAt)}
+              <p className="mt-0.5 text-xs text-muted-foreground">
+                {r.reviewer?.name ?? "Quản lý"}, {timeAgo(r.reviewedAt)}
               </p>
-              {r.reviewNote && <p className="mt-2 text-sm">“{r.reviewNote}”</p>}
+              {r.reviewNote && <p className="mt-2 rounded-md bg-muted px-3 py-2 text-sm">“{r.reviewNote}”</p>}
             </div>
           ) : canReview ? (
             <div className="space-y-2">
@@ -120,13 +118,13 @@ function ReportCard({
               </div>
             </div>
           ) : (
-            <p className="flex items-center gap-1.5 rounded-xl bg-warning/10 p-3 text-sm font-medium text-warning">
-              <Send className="h-4 w-4" /> Đã gửi · chờ quản lý xem xét
+            <p className="flex items-center gap-1.5 text-sm text-muted-foreground">
+              <Send className="h-4 w-4" /> Đã gửi, chờ quản lý xem xét
             </p>
           )}
         </div>
       </div>
-    </motion.li>
+    </li>
   );
 }
 
@@ -191,10 +189,9 @@ export function InboxView({
       />
       {tabs}
 
-      <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+      <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         {isManager ? (
           <Segmented
-            layoutId="inbox-box"
             value={box}
             onChange={(b) => {
               setBox(b);
@@ -208,7 +205,7 @@ export function InboxView({
                   <>
                     Nhận được
                     {!!data?.pendingCount && box === "received" && (
-                      <span className="rounded-full bg-rose-500 px-1.5 text-[10px] font-bold text-white">{data.pendingCount}</span>
+                      <span className="rounded-full bg-foreground px-1.5 text-[10px] font-semibold tabular-nums text-background">{data.pendingCount}</span>
                     )}
                   </>
                 ),
@@ -220,7 +217,6 @@ export function InboxView({
           <span />
         )}
         <Segmented
-          layoutId="inbox-status"
           value={status}
           onChange={(value) => { setStatus(value); setCursors([null]); }}
           options={[
@@ -236,7 +232,7 @@ export function InboxView({
           <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
         </div>
       ) : reports.length === 0 ? (
-        <div className="rounded-2xl border bg-card">
+        <div className="rounded-xl border bg-card">
           <EmptyState
             icon={Inbox}
             title={status === "pending" ? "Không còn báo cáo nào chờ xem xét" : "Chưa có báo cáo"}
@@ -244,12 +240,10 @@ export function InboxView({
           />
         </div>
       ) : (
-        <ul className={cn("space-y-4 transition-opacity", loading && "opacity-60")}>
-          <AnimatePresence initial={false}>
-            {reports.map((r) => (
-              <ReportCard key={r.id} r={r} canReview={canReview} onOpenTask={setOpenTask} onReviewed={refresh} />
-            ))}
-          </AnimatePresence>
+        <ul className={cn("divide-y rounded-xl border bg-card transition-opacity", loading && "opacity-60")}>
+          {reports.map((r) => (
+            <ReportCard key={r.id} r={r} canReview={canReview} onOpenTask={setOpenTask} onReviewed={refresh} />
+          ))}
         </ul>
       )}
 

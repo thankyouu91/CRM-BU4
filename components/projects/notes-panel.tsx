@@ -63,7 +63,6 @@ export function NotesPanel({ projectId, meId, canManage }: { projectId: string; 
       <div className="order-2 lg:order-1">
         <div className="mb-4 flex items-center justify-between gap-3">
           <Segmented
-            layoutId="notes-filter"
             value={filter}
             onChange={setFilter}
             options={[
@@ -131,7 +130,6 @@ export function NotesPanel({ projectId, meId, canManage }: { projectId: string; 
         <h3 className="font-semibold">Viết ghi chú / phản hồi</h3>
         <p className="mt-1 text-xs text-muted-foreground">Mọi thành viên dự án đều xem được.</p>
         <Segmented
-          layoutId="note-type"
           className="mt-4 w-full [&>button]:flex-1"
           value={type}
           onChange={setType}

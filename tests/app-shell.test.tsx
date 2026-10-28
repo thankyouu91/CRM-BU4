@@ -38,9 +38,9 @@ it("hides menu items the person has no permission for", () => {
 it("collapses to an icon bar, keeps names for screen readers and remembers the choice", () => {
   render(<AppShell user={user()} feed={feed({ pendingReports: 120 })}><p /></AppShell>);
   const sidebar = document.getElementById("app-sidebar")!;
-  expect(sidebar.className).toContain("w-64");
+  expect(sidebar.className).toContain("w-60");
   fireEvent.click(screen.getByRole("button", { name: "Thu gọn thanh bên" }));
-  expect(sidebar.className).toContain("w-[72px]");
+  expect(sidebar.className).toContain("w-14");
   expect(document.cookie).toContain("sidebar=collapsed");
   const toggle = screen.getByRole("button", { name: "Mở rộng thanh bên" });
   expect(toggle.getAttribute("aria-expanded")).toBe("false");
@@ -48,13 +48,13 @@ it("collapses to an icon bar, keeps names for screen readers and remembers the c
   expect(within(nav()).getByRole("link", { name: "Trung tâm báo cáo" })).toBeTruthy();
   expect(within(nav()).getByRole("link", { name: "Hộp báo cáo, 99+ chưa duyệt" })).toBeTruthy();
   fireEvent.click(toggle);
-  expect(sidebar.className).toContain("w-64");
+  expect(sidebar.className).toContain("w-60");
   expect(document.cookie).toContain("sidebar=expanded");
 });
 
 it("starts collapsed when the cookie says so", () => {
   render(<AppShell user={user()} feed={feed({ pendingReports: 0 })} initialCollapsed><p /></AppShell>);
-  expect(document.getElementById("app-sidebar")!.className).toContain("w-[72px]");
+  expect(document.getElementById("app-sidebar")!.className).toContain("w-14");
   expect(screen.getByRole("button", { name: "Mở rộng thanh bên" })).toBeTruthy();
 });
 
@@ -65,13 +65,13 @@ it("opens over the page while the pointer is on the collapsed bar, then folds ba
   const content = sidebar.parentElement!.lastElementChild as HTMLElement;
   fireEvent.mouseEnter(sidebar);
   act(() => vi.advanceTimersByTime(150));
-  expect(sidebar.className).toContain("w-64");
+  expect(sidebar.className).toContain("w-60");
   expect(within(nav()).getByText("Trung tâm báo cáo").className).not.toContain("sr-only");
-  expect(content.className).toContain("lg:pl-[72px]"); // the page does not move
+  expect(content.className).toContain("lg:pl-14"); // the page does not move
   expect(document.cookie).not.toContain("sidebar=expanded"); // a peek is not a choice
   fireEvent.mouseLeave(sidebar);
   act(() => vi.advanceTimersByTime(250));
-  expect(sidebar.className).toContain("w-[72px]");
+  expect(sidebar.className).toContain("w-14");
   vi.useRealTimers();
 });
 
@@ -81,7 +81,7 @@ it("does not peek when the bar is already open", () => {
   const sidebar = document.getElementById("app-sidebar")!;
   fireEvent.mouseEnter(sidebar);
   act(() => vi.advanceTimersByTime(150));
-  expect(sidebar.className).not.toContain("shadow-2xl");
+  expect(sidebar.className).not.toContain("shadow-pop");
   vi.useRealTimers();
 });
 

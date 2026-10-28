@@ -56,7 +56,6 @@ export function AttendanceView({ initial, initialTab }: { initial: View; initial
       <div className="mb-4 flex flex-wrap items-center gap-2">
         {teamTab && (
           <Segmented
-            layoutId="attendance-tab"
             value={tab}
             onChange={setTab}
             options={[
@@ -65,7 +64,7 @@ export function AttendanceView({ initial, initialTab }: { initial: View; initial
             ]}
           />
         )}
-        <div className="flex items-center gap-1 rounded-lg border bg-card p-1">
+        <div className="flex items-center gap-1 rounded-md border bg-card p-0.5">
           <button type="button" onClick={() => setMonth(shiftMonth(month, -1))} aria-label="Tháng trước" className="rounded-md p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground">
             <ChevronLeft className="h-4 w-4" />
           </button>
@@ -77,7 +76,7 @@ export function AttendanceView({ initial, initialTab }: { initial: View; initial
           </button>
         </div>
         {!current && (
-          <button type="button" onClick={() => setMonth(shown.today.slice(0, 7))} className="rounded-lg px-2.5 py-1.5 text-xs font-medium text-primary hover:bg-primary/10">
+          <button type="button" onClick={() => setMonth(shown.today.slice(0, 7))} className="rounded-md px-2.5 py-1.5 text-xs font-medium hover:bg-muted">
             Tháng này
           </button>
         )}
@@ -110,9 +109,9 @@ export function AttendanceView({ initial, initialTab }: { initial: View; initial
               <h2 className="text-sm font-semibold">{isSelf ? "Lịch của bạn" : shown.person.name}</h2>
               {shown.person.managerName && <span className="text-xs text-muted-foreground">· Quản lý trực tiếp: {shown.person.managerName}</span>}
               {!correct && requestFrom !== null && month < requestFrom.slice(0, 7) && (
-                <span className="rounded-full bg-muted px-2 py-0.5 text-[11px] text-muted-foreground">Tháng đã qua: chỉ quản lý ghi được</span>
+                <span className="rounded-full bg-muted px-2 py-0.5 text-xs text-muted-foreground">Tháng đã qua: chỉ quản lý ghi được</span>
               )}
-              {!correct && requestFrom === null && <span className="rounded-full bg-muted px-2 py-0.5 text-[11px] text-muted-foreground">Chỉ xem</span>}
+              {!correct && requestFrom === null && <span className="rounded-full bg-muted px-2 py-0.5 text-xs text-muted-foreground">Chỉ xem</span>}
             </div>
             <AttendanceCalendar days={shown.attendance.days} today={shown.today} canPick={canPick} onPick={(day, session) => setPicked({ day, session })} />
             <div className="mt-3">
@@ -129,7 +128,7 @@ export function AttendanceView({ initial, initialTab }: { initial: View; initial
                 {summary.map((r) => (
                   <div key={r.label} className={cn("flex items-center justify-between gap-2", r.strong && "border-t pt-1.5")}>
                     <dt className={cn("flex items-center gap-1.5", r.strong ? "font-semibold" : "text-muted-foreground")}>
-                      {"kind" in r && r.kind && <span className={cn("h-2 w-2 rounded-full ring-1 ring-inset", KIND_TONE[r.kind])} aria-hidden />}
+                      {"kind" in r && r.kind && <span className={cn("h-2.5 w-2.5 rounded-sm ring-1 ring-inset", KIND_TONE[r.kind])} aria-hidden />}
                       {r.label}
                     </dt>
                     <dd className={cn("tabular-nums", r.strong ? "font-semibold" : r.value === 0 ? "text-muted-foreground/50" : "font-medium")}>{formatDays(r.value)}</dd>
@@ -149,13 +148,13 @@ export function AttendanceView({ initial, initialTab }: { initial: View; initial
 
             <section className="rounded-2xl border bg-card p-4" aria-labelledby="month-notes">
               <h2 id="month-notes" className="mb-2 flex items-center gap-2 text-sm font-semibold">
-                <MessageSquareText className="h-4 w-4 text-primary" aria-hidden /> Nghỉ & công tác trong tháng
+                <MessageSquareText className="h-4 w-4 text-muted-foreground" aria-hidden /> Nghỉ & công tác trong tháng
               </h2>
               {shown.notes.length ? (
                 <ul className="space-y-2 text-sm">
                   {shown.notes.map((n) => (
                     <li key={`${n.day}-${n.session}`} className="flex gap-2">
-                      <span className={cn("mt-0.5 h-fit w-8 shrink-0 rounded px-1 text-center text-[11px] font-semibold ring-1 ring-inset", KIND_TONE[n.kind])}>{LEAVE_KINDS[n.kind].code}</span>
+                      <span className={cn("mt-0.5 h-fit w-8 shrink-0 rounded px-1 text-center text-xs font-semibold ring-1 ring-inset", KIND_TONE[n.kind])}>{LEAVE_KINDS[n.kind].code}</span>
                       <span className="min-w-0">
                         <span className="block text-xs text-muted-foreground">
                           {WEEKDAY_SHORT[weekdayOf(n.day)]} {n.day.slice(8)}/{n.day.slice(5, 7)} · {SESSION_LABEL[n.session]}

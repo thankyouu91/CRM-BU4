@@ -319,7 +319,7 @@ export function CommandPalette({ user }: { user: CurrentUser }) {
       {open &&
         createPortal(
           <div className="fixed inset-0 z-[60] flex items-start justify-center sm:px-4 sm:pt-[12vh]">
-            <div aria-hidden className="absolute inset-0 bg-slate-950/50 backdrop-blur-[2px]" onClick={() => close()} />
+            <div aria-hidden className="absolute inset-0 bg-black/40" onClick={() => close()} />
             <div
               ref={panelRef}
               role="dialog"
@@ -362,7 +362,7 @@ export function CommandPalette({ user }: { user: CurrentUser }) {
                 <div role="listbox" id={listId} aria-label="Kết quả tìm kiếm">
                   {groups.map((g) => (
                     <div key={g.key} role="presentation" className="pb-1">
-                      <div id={`${listId}-${g.key}`} aria-hidden className="px-4 pb-1 pt-2 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+                      <div id={`${listId}-${g.key}`} aria-hidden className="px-4 pb-1 pt-2 text-xs font-medium text-muted-foreground">
                         {g.label}
                       </div>
                       <div role="group" aria-labelledby={`${listId}-${g.key}`}>
@@ -414,7 +414,7 @@ export function CommandPalette({ user }: { user: CurrentUser }) {
                 {answered && !items.length && <p className="px-4 py-8 text-center text-sm text-muted-foreground">Không tìm thấy kết quả cho “{term}”</p>}
               </div>
 
-              <div className="hidden items-center gap-4 border-t px-4 py-2 text-[11px] text-muted-foreground sm:flex">
+              <div className="hidden items-center gap-4 border-t px-4 py-2 text-xs text-muted-foreground sm:flex">
                 <span className="flex items-center gap-1">
                   <kbd className={kbd}>↑</kbd>
                   <kbd className={kbd}>↓</kbd> chọn

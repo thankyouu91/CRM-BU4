@@ -25,11 +25,11 @@ export const ON_TRACK_TOLERANCE = 10;
 export const AT_RISK_TOLERANCE = 25;
 
 export const SCHEDULE_STATUS: Record<ScheduleStatus, { label: string; color: string; bg: string }> = {
-  DONE: { label: "Hoàn thành", color: "#1baf7a", bg: "bg-emerald-100 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300" },
-  ON_TRACK: { label: "Đúng tiến độ", color: "#2a78d6", bg: "bg-blue-100 text-blue-700 dark:bg-blue-500/15 dark:text-blue-300" },
-  AT_RISK: { label: "Có rủi ro", color: "#eda100", bg: "bg-amber-100 text-amber-700 dark:bg-amber-500/15 dark:text-amber-300" },
-  BEHIND: { label: "Chậm tiến độ", color: "#eb6834", bg: "bg-orange-100 text-orange-700 dark:bg-orange-500/15 dark:text-orange-300" },
-  OVERDUE: { label: "Trễ hạn", color: "#d03b3b", bg: "bg-red-100 text-red-700 dark:bg-red-500/15 dark:text-red-300" },
+  DONE: { label: "Hoàn thành", color: "#1baf7a", bg: "bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-300" },
+  ON_TRACK: { label: "Đúng tiến độ", color: "#2a78d6", bg: "bg-blue-50 text-blue-700 dark:bg-blue-500/10 dark:text-blue-300" },
+  AT_RISK: { label: "Có rủi ro", color: "#eda100", bg: "bg-amber-50 text-amber-700 dark:bg-amber-500/10 dark:text-amber-300" },
+  BEHIND: { label: "Chậm tiến độ", color: "#eb6834", bg: "bg-orange-50 text-orange-700 dark:bg-orange-500/10 dark:text-orange-300" },
+  OVERDUE: { label: "Trễ hạn", color: "#d03b3b", bg: "bg-red-50 text-red-700 dark:bg-red-500/10 dark:text-red-300" },
   NO_DEADLINE: { label: "Chưa có hạn", color: "#94a3b8", bg: "bg-muted text-muted-foreground" },
 };
 

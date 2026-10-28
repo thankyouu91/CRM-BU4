@@ -99,7 +99,7 @@ export function AiSettingsCard() {
       <CardHeader
         title={
           <span className="flex items-center gap-2">
-            <Sparkles className="h-4 w-4 text-primary" /> Trợ lý AI (Claude API)
+            <Sparkles className="h-4 w-4 text-muted-foreground" /> Trợ lý AI (Claude API)
           </span>
         }
         description="Nhập API key của Anthropic để mọi người bấm “Viết bằng AI” ngay trên trang Trợ lý AI. Key được mã hoá trước khi lưu và không bao giờ hiển thị lại. Chỉ quản trị viên thấy mục này."
@@ -122,7 +122,7 @@ export function AiSettingsCard() {
                   <KeyRound className="h-4 w-4 text-muted-foreground" />
                   <code className="font-mono text-xs">{s.key.hint}</code>
                   <span className="text-xs text-muted-foreground">
-                    Lưu bởi {s.key.setBy || "—"}
+                    Lưu bởi {s.key.setBy || "–"}
                     {s.key.setAt ? ` · ${formatDateTime(s.key.setAt)}` : ""}
                   </span>
                   <div className="ml-auto flex gap-2">
@@ -231,7 +231,7 @@ export function AiSettingsCard() {
                 <b>{data.usage.reports.toLocaleString("vi-VN")}</b> lượt dùng (báo cáo &amp; chat) · <b>{data.usage.people}</b> người dùng ·{" "}
                 {(data.usage.inputTokens + data.usage.outputTokens).toLocaleString("vi-VN")} token · ước tính <b>{usd(data.usage.costUsd)}</b>
               </p>
-              <p className="mt-1 text-[11px] text-muted-foreground">Ước tính theo bảng giá niêm yết. Số tiền thực tế xem trong Claude Console.</p>
+              <p className="mt-1 text-xs text-muted-foreground">Ước tính theo bảng giá niêm yết. Số tiền thực tế xem trong Claude Console.</p>
             </div>
           </>
         )}

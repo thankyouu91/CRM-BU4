@@ -176,7 +176,7 @@ function LevelsOverview({ canDelegate }: { canDelegate: boolean }) {
       <div className="mb-4 flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <h2 className="flex items-center gap-2 font-semibold">
-            <Layers3 className="h-4 w-4 text-primary" /> Các cấp phân quyền
+            <Layers3 className="h-4 w-4 text-muted-foreground" /> Các cấp phân quyền
           </h2>
           <p className="text-xs text-muted-foreground">
             Mỗi cấp có sẵn một nhóm quyền. Người có quyền “Quản lý nhân viên” cấp thêm quyền cho người ở cấp thấp hơn, trong phạm vi quyền của chính mình.
@@ -193,7 +193,7 @@ function LevelsOverview({ canDelegate }: { canDelegate: boolean }) {
           <div key={r} className="rounded-xl border bg-muted/30 p-3.5">
             <div className="flex items-center justify-between gap-2">
               <RoleBadge role={r} />
-              <span className="text-[11px] tabular-nums text-muted-foreground">Cấp {ROLE_LEVEL[r]}</span>
+              <span className="text-xs tabular-nums text-muted-foreground">Cấp {ROLE_LEVEL[r]}</span>
             </div>
             <p className="mt-2 text-xs leading-relaxed text-muted-foreground">{ROLE_INFO[r].summary}</p>
             <ul className="mt-2.5 space-y-1">
@@ -219,7 +219,7 @@ function ManagerSelect({ value, onChange, people, selfId }: { value: string; onC
   const options = people.filter((p) => p.active && p.id !== selfId);
   return (
     <Select value={value} onChange={(e) => onChange(e.target.value)} aria-label="Quản lý trực tiếp">
-      <option value="">— Chưa có —</option>
+      <option value="">Chưa có</option>
       {options.map((p) => (
         <option key={p.id} value={p.id}>
           {p.name}
@@ -335,7 +335,7 @@ function PermissionsModal({ member, actor, onClose, onSaved }: { member: Member;
     setBusy(true);
     try {
       await api(`/api/users/${member.id}`, { method: "PATCH", body: { role, permissions: granted } });
-      toast.success(roleChanged ? `Đã đổi cấp bậc của ${member.name} — họ cần đăng nhập lại` : `Đã cập nhật quyền của ${member.name}`);
+      toast.success(roleChanged ? `Đã đổi cấp bậc của ${member.name}, họ cần đăng nhập lại` : `Đã cập nhật quyền của ${member.name}`);
       onSaved();
       onClose();
     } catch (e) {
@@ -393,7 +393,7 @@ function EditMemberModal({ member, people, onClose, onSaved, isSelf }: { member:
         method: "PATCH",
         body: { email: v.email, name: v.name, jobTitle: v.jobTitle || null, managerId: v.managerId || null },
       });
-      toast.success(isSelf && v.email.trim().toLowerCase() !== member.email ? "Đã đổi email — vui lòng đăng nhập lại bằng email mới" : "Đã cập nhật");
+      toast.success(isSelf && v.email.trim().toLowerCase() !== member.email ? "Đã đổi email, vui lòng đăng nhập lại bằng email mới" : "Đã cập nhật");
       onSaved();
       onClose();
     } catch (e) {
@@ -463,7 +463,7 @@ function ResetPasswordModal({ member, onClose, onDone }: { member: Member; onClo
     setBusy(true);
     try {
       await api(`/api/users/${member.id}`, { method: "PATCH", body: { resetPassword: pw } });
-      toast.success("Đã đặt lại mật khẩu — mọi phiên đăng nhập của người dùng đã bị thu hồi");
+      toast.success("Đã đặt lại mật khẩu, mọi phiên đăng nhập của người dùng đã bị thu hồi");
       onDone(pw);
       onClose();
     } catch (e) {
@@ -538,7 +538,6 @@ export function TeamView({ actor, initialQuery = "" }: { actor: Actor; initialQu
 
       <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <Segmented
-          layoutId="team-role"
           value={role}
           onChange={setRole}
           className="max-w-full overflow-x-auto"
@@ -550,7 +549,7 @@ export function TeamView({ actor, initialQuery = "" }: { actor: Actor; initialQu
             value={q}
             onChange={(e) => setQ(e.target.value)}
             placeholder="Tìm theo tên, email, chức danh…"
-            className="h-10 w-full rounded-lg border bg-card pl-9 pr-3 text-sm outline-none focus:border-primary/60 focus:ring-2 focus:ring-primary/20"
+            className="h-9 w-full rounded-md border bg-card pl-9 pr-3 text-sm outline-none focus:border-primary/60 focus:ring-2 focus:ring-primary/20"
           />
         </div>
       </div>
@@ -609,11 +608,13 @@ export function TeamView({ actor, initialQuery = "" }: { actor: Actor; initialQu
                         {!u.active ? (
                           <Badge className="bg-muted text-muted-foreground">Đã vô hiệu hoá</Badge>
                         ) : u.mustChangePassword ? (
-                          <Badge className="bg-amber-100 text-amber-700 dark:bg-amber-500/15 dark:text-amber-300">
+                          <Badge className="bg-warning/10 text-warning">
                             <ShieldAlert className="h-3 w-3" /> Chờ đổi mật khẩu
                           </Badge>
                         ) : (
-                          <Badge className="bg-emerald-100 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300">Hoạt động</Badge>
+                          <Badge className="border bg-card text-foreground/80">
+                            <span aria-hidden className="h-1.5 w-1.5 rounded-full bg-success" /> Hoạt động
+                          </Badge>
                         )}
                       </td>
                       <td className="px-3 py-3 text-right tabular-nums">{u._count.assignedTasks}</td>
@@ -645,7 +646,7 @@ export function TeamView({ actor, initialQuery = "" }: { actor: Actor; initialQu
                               )}
                             </div>
                           ) : (
-                            <p className="text-right text-xs text-muted-foreground">{u.id === actor.id ? "—" : "Cấp ngang hoặc cao hơn"}</p>
+                            <p className="text-right text-xs text-muted-foreground">{u.id === actor.id ? "–" : "Cấp ngang hoặc cao hơn"}</p>
                           )}
                         </td>
                       )}

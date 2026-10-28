@@ -94,7 +94,7 @@ export function Kanban({
             <div className="flex items-center gap-2 px-4 py-3">
               <span className="h-2.5 w-2.5 rounded-full" style={{ background: meta.color }} />
               <h3 className="text-sm font-semibold">{meta.label}</h3>
-              <span className="ml-auto rounded-md bg-card px-1.5 py-0.5 text-[11px] font-semibold text-muted-foreground">{cards.length}</span>
+              <span className="ml-auto rounded-md bg-card px-1.5 py-0.5 text-xs font-semibold text-muted-foreground">{cards.length}</span>
             </div>
             <div className="flex min-h-[120px] flex-1 flex-col gap-2.5 px-3 pb-3">
               {cards.map((t) => {
@@ -118,14 +118,14 @@ export function Kanban({
                     )}
                   >
                     {t.parentId && (
-                      <p className="mb-1 flex items-center gap-1 truncate text-[11px] text-muted-foreground">
+                      <p className="mb-1 flex items-center gap-1 truncate text-xs text-muted-foreground">
                         <GitBranch className="h-3 w-3 shrink-0" /> {titleOf.get(t.parentId)}
                       </p>
                     )}
                     <div className="flex items-start gap-1"><p className="flex-1 text-sm font-medium leading-snug">{t.title}</p>{taskMenu.button(t)}</div>
                     <div className="mt-2 flex flex-wrap items-center gap-1.5">
                       {cat && (
-                        <span className="inline-flex items-center gap-1 rounded-md bg-muted px-1.5 py-0.5 text-[11px] text-muted-foreground">
+                        <span className="inline-flex items-center gap-1 rounded-md bg-muted px-1.5 py-0.5 text-xs text-muted-foreground">
                           <span className="h-1.5 w-1.5 rounded-full" style={{ background: cat.color }} />
                           {cat.name}
                         </span>
@@ -134,7 +134,7 @@ export function Kanban({
                     </div>
                     {t.effectiveProgress > 0 && t.status !== "DONE" && <ProgressBar value={t.effectiveProgress} height={5} className="mt-3" showLabel />}
                     <div className="mt-3 flex items-center justify-between">
-                      <span className={cn("flex items-center gap-1 text-[11px]", overdue ? "font-medium text-danger" : "text-muted-foreground")}>
+                      <span className={cn("flex items-center gap-1 text-xs", overdue ? "font-medium text-danger" : "text-muted-foreground")}>
                         {overdue ? <TriangleAlert className="h-3 w-3" /> : <CalendarDays className="h-3 w-3" />}
                         {t.dueDate ? formatShortDate(t.dueDate) : "Không hạn"}
                       </span>

@@ -119,7 +119,7 @@ export function CategoryModal({
           hint={hasChildren ? "Hạng mục này đang có hạng mục con nên luôn là hạng mục lớn." : undefined}
         >
           <Select value={parentId} disabled={hasChildren} onChange={(e) => setParentId(e.target.value)}>
-            <option value="">— Là hạng mục lớn —</option>
+            <option value="">Là hạng mục lớn</option>
             {mains.map((c) => (
               <option key={c.id} value={c.id}>
                 Hạng mục con của: {c.name}

@@ -107,14 +107,14 @@ function ImportModal({ open, defaultDate, onClose, onImported }: { open: boolean
               {rows.map((r) => (
                 <tr key={r.line} className={cn("border-t", !r.data && "bg-danger/5")}>
                   <td className="px-3 py-1.5 tabular-nums text-muted-foreground">{r.line}</td>
-                  <td className="max-w-[220px] truncate px-3 py-1.5">{r.data?.name ?? "—"}</td>
-                  <td className="px-3 py-1.5 text-right tabular-nums">{r.data ? formatVnd(r.data.value, false) : "—"}</td>
-                  <td className="px-3 py-1.5">{r.data ? monthOf(r.data.performedAt) : "—"}</td>
+                  <td className="max-w-[220px] truncate px-3 py-1.5">{r.data?.name ?? "–"}</td>
+                  <td className="px-3 py-1.5 text-right tabular-nums">{r.data ? formatVnd(r.data.value, false) : "–"}</td>
+                  <td className="px-3 py-1.5">{r.data ? monthOf(r.data.performedAt) : "–"}</td>
                   <td className="px-3 py-1.5 text-right tabular-nums">
-                    {r.data ? formatVnd(r.data.trainingCost + r.data.examCost + r.data.otherCost, false) : "—"}
+                    {r.data ? formatVnd(r.data.trainingCost + r.data.examCost + r.data.otherCost, false) : "–"}
                     {r.data?.expectedMargin != null && <span className="block text-[10px] text-muted-foreground">ước tính LN {r.data.expectedMargin}%</span>}
                   </td>
-                  <td className="px-3 py-1.5 text-right tabular-nums">{r.data ? formatVnd(r.data.collected, false) : "—"}</td>
+                  <td className="px-3 py-1.5 text-right tabular-nums">{r.data ? formatVnd(r.data.collected, false) : "–"}</td>
                   <td className="px-3 py-1.5">
                     {r.errors.map((e) => (
                       <span key={e} className="block text-danger">
@@ -143,12 +143,12 @@ function ImportModal({ open, defaultDate, onClose, onImported }: { open: boolean
 // ---------------------------------------------------------------------------
 
 const GROUPS = [
-  { label: "Thông tin hợp đồng", span: 4, cls: "bg-blue-600 text-white" },
-  { label: "Lịch trình", span: 1, cls: "bg-sky-600 text-white" },
-  { label: "Chi phí chi tiết", span: 4, cls: "bg-orange-600 text-white" },
-  { label: "Lợi nhuận & hiệu quả", span: 3, cls: "bg-emerald-600 text-white" },
-  { label: "Dòng tiền & trạng thái", span: 4, cls: "bg-violet-600 text-white" },
-  { label: "Hồ sơ", span: 1, cls: "bg-slate-600 text-white" },
+  { label: "Thông tin hợp đồng", span: 4 },
+  { label: "Lịch trình", span: 1 },
+  { label: "Chi phí chi tiết", span: 4 },
+  { label: "Lợi nhuận & hiệu quả", span: 3 },
+  { label: "Dòng tiền & trạng thái", span: 4 },
+  { label: "Hồ sơ", span: 1 },
 ];
 
 // "" = all; contracts without a PDF (all, or of completed projects only); contracts with one.
@@ -247,7 +247,7 @@ export function ContractsView({ projects, initial, initialQuery = "" }: { projec
       <div className="mb-5 flex flex-col gap-3">
         <div className="flex flex-wrap items-center gap-2">
           {!all && <PeriodFilter value={period} onChange={setPeriod} label={data?.period?.label ?? "…"} />}
-          <label className="flex h-10 cursor-pointer items-center gap-2 whitespace-nowrap rounded-lg border bg-card px-3 text-xs">
+          <label className="flex h-9 cursor-pointer items-center gap-2 whitespace-nowrap rounded-md border bg-card px-3 text-xs">
             <input type="checkbox" checked={all} onChange={(e) => setAll(e.target.checked)} className="accent-[rgb(var(--primary))]" />
             Tất cả thời gian
           </label>
@@ -282,7 +282,7 @@ export function ContractsView({ projects, initial, initialQuery = "" }: { projec
               value={q}
               onChange={(e) => setQ(e.target.value)}
               placeholder="Tìm mã, tên, đối tác…"
-              className="h-10 w-full rounded-lg border bg-card pl-9 pr-3 text-sm outline-none focus:border-primary/60 focus:ring-2 focus:ring-primary/20"
+              className="h-9 w-full rounded-md border bg-card pl-9 pr-3 text-sm outline-none focus:border-primary/60 focus:ring-2 focus:ring-primary/20"
             />
           </div>
         </div>
@@ -299,10 +299,10 @@ export function ContractsView({ projects, initial, initialQuery = "" }: { projec
           {totals && <SummaryCards t={totals} />}
           {totals && <ProfitWaterfall t={totals} />}
 
-          <div className="overflow-hidden rounded-2xl border bg-card shadow-card">
-            <div className="flex items-center justify-between px-5 py-4">
+          <div className="overflow-hidden rounded-xl border bg-card">
+            <div className="flex items-center justify-between border-b px-4 py-3">
               <div>
-                <h2 className="font-semibold">Báo cáo tổng hợp theo dõi hợp đồng & chi phí · {periodLabel}</h2>
+                <h2 className="text-sm font-semibold">Theo dõi hợp đồng & chi phí, {periodLabel.toLowerCase()}</h2>
                 <p className="text-xs text-muted-foreground">
                   Bấm vào một dòng để sửa. Lợi nhuận in nghiêng là ước tính theo tỷ suất dự kiến (chưa nhập chi phí).
                 </p>
@@ -322,15 +322,15 @@ export function ContractsView({ projects, initial, initialQuery = "" }: { projec
             ) : (
               <div className="overflow-x-auto">
                 <table className="w-full min-w-[1560px] text-[13px]">
-                  <thead className="text-[11px]">
+                  <thead className="text-xs">
                     <tr>
                       {GROUPS.map((g) => (
-                        <th key={g.label} colSpan={g.span} className={cn("border-x border-white/20 px-3 py-2 text-center font-semibold uppercase tracking-wide", g.cls)}>
+                        <th key={g.label} colSpan={g.span} className="border-b border-l px-3 py-2 text-left font-medium text-foreground first:border-l-0">
                           {g.label}
                         </th>
                       ))}
                     </tr>
-                    <tr className="border-b bg-muted/60 text-muted-foreground">
+                    <tr className="border-b bg-muted/50 text-muted-foreground">
                       {[
                         ["STT", "w-10 text-center"],
                         ["Hợp đồng / mã HĐ", "text-left"],
@@ -366,15 +366,14 @@ export function ContractsView({ projects, initial, initialQuery = "" }: { projec
                             <p className="truncate font-medium" title={c.name}>
                               {c.name}
                             </p>
-                            <p className="flex items-center gap-1.5 truncate text-[11px] text-muted-foreground" title={c.code ?? ""}>
+                            <p className="flex items-center gap-1.5 truncate text-xs text-muted-foreground" title={c.code ?? ""}>
                               {c.code || "Chưa có mã"}
                               {c.project && (
                                 <>
-                                  <span>·</span>
-                                  <span className="h-1.5 w-1.5 shrink-0 rounded-full" style={{ background: c.project.color }} /> {c.project.name}
+                                  <span aria-hidden className="ml-1 h-1.5 w-1.5 shrink-0 rounded-full" style={{ background: c.project.color }} /> {c.project.name}
                                   {c.project.progress !== undefined && (
                                     <span className="font-medium text-foreground/80" title="Tiến độ công việc của dự án">
-                                      · {c.project.progress}%
+                                      {c.project.progress}%
                                     </span>
                                   )}
                                 </>
@@ -382,7 +381,7 @@ export function ContractsView({ projects, initial, initialQuery = "" }: { projec
                             </p>
                           </td>
                           <td className="max-w-[200px] truncate px-3 py-2.5 text-muted-foreground" title={c.partner ?? ""}>
-                            {c.partner || "—"}
+                            {c.partner || "–"}
                           </td>
                           <td className="whitespace-nowrap px-3 py-2.5 text-right font-medium tabular-nums">{formatVnd(c.value, false)}</td>
                           <td className="whitespace-nowrap px-3 py-2.5 text-center text-xs">{monthOf(c.performedAt)}</td>
@@ -398,10 +397,10 @@ export function ContractsView({ projects, initial, initialQuery = "" }: { projec
                             )}
                             title={m.basis === "estimate" ? "Ước tính theo tỷ suất LN dự kiến (chưa nhập chi phí)" : undefined}
                           >
-                            {m.profit === null ? "—" : formatVnd(m.profit, false)}
+                            {m.profit === null ? "–" : formatVnd(m.profit, false)}
                           </td>
-                          <td className="whitespace-nowrap px-3 py-2.5 text-right font-semibold tabular-nums">{m.margin === null ? "—" : `${m.margin}%`}</td>
-                          <td className="px-3 py-2.5 text-center">{m.rating ? <Badge className={ratingBg(m.rating)}>{m.rating}</Badge> : "—"}</td>
+                          <td className="whitespace-nowrap px-3 py-2.5 text-right font-semibold tabular-nums">{m.margin === null ? "–" : `${m.margin}%`}</td>
+                          <td className="px-3 py-2.5 text-center">{m.rating ? <Badge className={ratingBg(m.rating)}>{m.rating}</Badge> : "–"}</td>
                           <td className="whitespace-nowrap px-3 py-2.5 text-right tabular-nums">{formatVnd(c.collected, false)}</td>
                           <td className={cn("whitespace-nowrap px-3 py-2.5 text-right font-medium tabular-nums", m.receivable > 0 && "text-danger")}>
                             {formatVnd(m.receivable, false)}
@@ -422,7 +421,7 @@ export function ContractsView({ projects, initial, initialQuery = "" }: { projec
                   {totals && (
                     <tfoot>
                       <tr className="border-t-2 bg-muted/60 font-semibold">
-                        <td colSpan={3} className="px-3 py-3 text-center uppercase tracking-wide">
+                        <td colSpan={3} className="px-3 py-3 text-center">
                           Tổng cộng ({totals.count})
                         </td>
                         <td className="whitespace-nowrap px-3 py-3 text-right tabular-nums">{formatVnd(totals.value, false)}</td>

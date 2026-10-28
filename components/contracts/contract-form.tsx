@@ -245,7 +245,7 @@ export function ContractModal({
       onClose={onClose}
       size="lg"
       title={contract ? "Sửa hợp đồng" : "Thêm hợp đồng"}
-      description="Nhập giá trị, chi phí và số đã thu — lợi nhuận, tỷ suất và công nợ được tính tự động."
+      description="Nhập giá trị, chi phí và số đã thu; lợi nhuận, tỷ suất và công nợ được tính tự động."
       footer={
         <>
           {contract && (
@@ -378,7 +378,7 @@ export function ContractModal({
               </Field>
               <Field label="Dự án liên kết" error={errors.projectId}>
                 {lockedProject ? (
-                  <p className="flex h-10 items-center gap-2 rounded-lg border bg-muted/40 px-3 text-sm">
+                  <p className="flex h-9 items-center gap-2 rounded-md border bg-muted/40 px-3 text-sm">
                     <span
                       className="h-2 w-2 shrink-0 rounded-full"
                       style={{ background: lockedProject.color }}
@@ -390,7 +390,7 @@ export function ContractModal({
                     value={v.projectId}
                     onChange={(e) => setV({ ...v, projectId: e.target.value })}
                   >
-                    <option value="">— Không liên kết —</option>
+                    <option value="">Không liên kết</option>
                     {projects.map((p) => (
                       <option key={p.id} value={p.id}>
                         {p.name}
@@ -412,7 +412,7 @@ export function ContractModal({
 
         {/* Live result */}
         <aside className="h-fit space-y-3 rounded-2xl border bg-muted/30 p-4 text-sm">
-          <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+          <p className="text-xs font-medium text-muted-foreground">
             Kết quả tính tự động
           </p>
           <Row
@@ -432,7 +432,7 @@ export function ContractModal({
           <div className="flex items-center justify-between">
             <span className="text-muted-foreground">Tỷ suất LN</span>
             <span className="flex items-center gap-2 font-semibold tabular-nums">
-              {m.margin === null ? "—" : `${m.margin}%`}
+              {m.margin === null ? "–" : `${m.margin}%`}
               {m.rating && (
                 <Badge className={ratingBg(m.rating)}>{m.rating}</Badge>
               )}
@@ -463,8 +463,8 @@ export function ContractModal({
           <p className="text-xs font-semibold uppercase tracking-wide text-red-600 dark:text-red-400">
             Hồ sơ hợp đồng (PDF)
           </p>
-          <p className="text-[11px] text-muted-foreground">
-            Bản hợp đồng đã ký, phụ lục, biên bản nghiệm thu — lưu trữ để tra
+          <p className="text-xs text-muted-foreground">
+            Bản hợp đồng đã ký, phụ lục, biên bản nghiệm thu: lưu trữ để tra
             cứu và báo cáo.
           </p>
         </div>
@@ -508,7 +508,7 @@ function Row({
         </span>
       </div>
       {sub && (
-        <p className="text-right text-[11px] text-muted-foreground">{sub}</p>
+        <p className="text-right text-xs text-muted-foreground">{sub}</p>
       )}
     </div>
   );

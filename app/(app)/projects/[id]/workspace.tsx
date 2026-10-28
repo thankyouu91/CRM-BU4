@@ -29,7 +29,7 @@ import { ProjectStatusBadge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ConfirmDialog } from "@/components/ui/confirm";
 import { Segmented } from "@/components/ui/misc";
-import { ProgressRing } from "@/components/ui/progress";
+import { ProgressBar } from "@/components/ui/progress";
 import { TaskDrawer } from "@/components/tasks/lazy-task-drawer";
 import { MountOnOpen } from "@/components/ui/mount-on-open";
 import { TaskList, type TaskFilters } from "@/components/projects/task-list";
@@ -176,16 +176,16 @@ export function ProjectWorkspace({
       </Link>
 
       {/* Header */}
-      <div className="relative mb-6 overflow-hidden rounded-2xl border bg-card p-6 shadow-card">
-        <span className="absolute inset-x-0 top-0 h-1" style={{ background: p.color }} />
-        <div className="flex flex-col gap-6 lg:flex-row lg:items-center">
+      <div className="mb-5 rounded-xl border bg-card p-5">
+        <div className="flex flex-col gap-5 lg:flex-row lg:items-start">
           <div className="min-w-0 flex-1">
             <div className="flex flex-wrap items-center gap-2.5">
-              <h1 className="text-2xl font-bold tracking-tight">{p.name}</h1>
+              <span aria-hidden className="h-2.5 w-2.5 shrink-0 rounded-sm" style={{ background: p.color }} />
+              <h1 className="text-xl font-semibold tracking-tight">{p.name}</h1>
               <ProjectStatusBadge status={p.status} />
             </div>
-            {p.description && <p className="mt-2 max-w-3xl text-sm text-muted-foreground">{p.description}</p>}
-            <div className="mt-4 flex flex-wrap items-center gap-x-6 gap-y-3 text-sm">
+            {p.description && <p className="mt-1.5 max-w-3xl text-sm text-muted-foreground">{p.description}</p>}
+            <div className="mt-3 flex flex-wrap items-center gap-x-5 gap-y-2 text-sm">
               <span className="text-muted-foreground">
                 Chủ dự án: <span className="font-medium text-foreground">{p.owner.name}</span>
               </span>
@@ -205,7 +205,7 @@ export function ProjectWorkspace({
               {(p.startDate || p.dueDate) && (
                 <span className="flex items-center gap-1.5 text-muted-foreground">
                   <CalendarDays className="h-4 w-4" />
-                  {formatDate(p.startDate) || "—"} → {formatDate(p.dueDate) || "—"}
+                  {formatDate(p.startDate) || "Chưa có"} → {formatDate(p.dueDate) || "Chưa có"}
                   {daysLeft !== null && p.status !== "COMPLETED" && (
                     <span className={daysLeft < 0 ? "font-medium text-danger" : "font-medium text-foreground"}>
                       ({daysLeft < 0 ? `trễ ${-daysLeft} ngày` : `còn ${daysLeft} ngày`})
@@ -219,28 +219,29 @@ export function ProjectWorkspace({
             </div>
           </div>
 
-          <div className="flex items-center gap-5">
-            <div className="text-right text-sm">
-              <p className="text-muted-foreground">
-                <span className="font-semibold text-foreground">{done}</span>/{p.tasks.length} công việc
-              </p>
-              {overdue > 0 && (
-                <p className="mt-1 flex items-center justify-end gap-1 text-xs font-medium text-danger">
-                  <TriangleAlert className="h-3.5 w-3.5" /> {overdue} quá hạn
-                </p>
-              )}
+          <div className="w-full shrink-0 lg:w-56">
+            <div className="flex items-baseline justify-between gap-3">
+              <span className="text-2xl font-semibold leading-none tracking-tight tabular-nums">{p.progress}%</span>
+              <span className="text-sm text-muted-foreground">
+                <span className="font-medium tabular-nums text-foreground">{done}</span>/{p.tasks.length} công việc
+              </span>
             </div>
-            <ProgressRing value={p.progress} size={96} stroke={9} label={<><span className="text-xl font-bold">{p.progress}%</span><span className="text-[10px] text-muted-foreground">hoàn thành</span></>} />
+            <ProgressBar value={p.progress} height={4} className="mt-2.5" />
+            {overdue > 0 && (
+              <p className="mt-2 flex items-center gap-1 text-xs font-medium text-danger">
+                <TriangleAlert className="h-3.5 w-3.5" /> {overdue} việc quá hạn
+              </p>
+            )}
           </div>
         </div>
 
-        <div className="mt-5 flex flex-wrap gap-2 border-t pt-5">
+        <div className="mt-4 flex flex-wrap gap-2 border-t pt-4">
           {canContribute ? (
             <Button size="sm" onClick={() => setCreating(true)}>
               <Plus className="h-4 w-4" /> Thêm công việc
             </Button>
           ) : (
-            <span className="flex items-center gap-1.5 rounded-lg bg-muted px-3 py-1.5 text-xs text-muted-foreground">
+            <span className="flex items-center gap-1.5 rounded-md bg-muted px-3 py-1.5 text-xs text-muted-foreground">
               <Eye className="h-3.5 w-3.5" /> Bạn đang xem dự án này ở chế độ chỉ xem
             </span>
           )}
@@ -273,9 +274,8 @@ export function ProjectWorkspace({
       </div>
 
       {/* Tabs */}
-      <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+      <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <Segmented
-          layoutId="project-tab"
           value={tab}
           onChange={setTab}
           className="max-w-full overflow-x-auto"
@@ -289,18 +289,17 @@ export function ProjectWorkspace({
         />
         {tab === "tasks" && (
           <div className="flex flex-wrap items-center gap-2">
-            <label className="flex cursor-pointer items-center gap-2 rounded-lg border bg-card px-3 py-1.5 text-xs">
+            <label className="flex h-8 cursor-pointer items-center gap-2 rounded-md border bg-card px-2.5 text-xs">
               <input type="checkbox" checked={filters.mine} onChange={(e) => setFilters({ ...filters, mine: e.target.checked })} className="accent-[rgb(var(--primary))]" />
               Việc của tôi
             </label>
             {view === "list" && (
-              <label className="flex cursor-pointer items-center gap-2 rounded-lg border bg-card px-3 py-1.5 text-xs">
+              <label className="flex h-8 cursor-pointer items-center gap-2 rounded-md border bg-card px-2.5 text-xs">
                 <input type="checkbox" checked={filters.hideDone} onChange={(e) => setFilters({ ...filters, hideDone: e.target.checked })} className="accent-[rgb(var(--primary))]" />
                 Ẩn việc đã xong
               </label>
             )}
             <Segmented
-              layoutId="task-view"
               value={view}
               onChange={setView}
               options={[

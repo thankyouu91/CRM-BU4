@@ -43,11 +43,11 @@ export function LoginForm({ showDemoHint }: { showDemoHint: boolean }) {
   };
 
   return (
-    <div className="w-full max-w-sm animate-fade-in">
-      <h2 className="text-2xl font-bold tracking-tight">Đăng nhập</h2>
-      <p className="mt-1.5 text-sm text-muted-foreground">Nhập tài khoản được quản trị viên cấp để tiếp tục.</p>
+    <div className="w-full">
+      <h1 className="text-xl font-semibold tracking-tight">Đăng nhập</h1>
+      <p className="mt-1 text-sm text-muted-foreground">Dùng tài khoản được quản trị viên cấp.</p>
 
-      <form onSubmit={submit} className="mt-8 space-y-4">
+      <form onSubmit={submit} className="mt-6 space-y-4">
         <Field label="Email hoặc tên đăng nhập" htmlFor="email">
           <div className="relative">
             <Mail className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -90,7 +90,7 @@ export function LoginForm({ showDemoHint }: { showDemoHint: boolean }) {
         </Field>
 
         {error && (
-          <div role="alert" className="rounded-lg border border-danger/30 bg-danger/10 px-3 py-2.5 text-sm text-danger">
+          <div role="alert" className="rounded-md border border-danger/30 bg-danger/5 px-3 py-2 text-sm text-danger">
             {error}
           </div>
         )}
@@ -101,7 +101,7 @@ export function LoginForm({ showDemoHint }: { showDemoHint: boolean }) {
       </form>
 
       {showDemoHint && (
-        <div className="mt-8 rounded-xl border border-dashed bg-muted/50 p-4 text-xs leading-relaxed text-muted-foreground">
+        <div className="mt-6 rounded-lg border border-dashed p-3.5 text-xs leading-relaxed text-muted-foreground">
           <p className="font-semibold text-foreground">Tài khoản demo (môi trường phát triển)</p>
           <p className="mt-1.5">
             Quản trị: <code className="font-mono text-foreground">admin@crm.local</code> /{" "}

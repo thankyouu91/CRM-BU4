@@ -67,10 +67,10 @@ export function BulkBar({ ids, onDone, onClear }: { ids: string[]; onDone: () =>
   };
 
   return (
-    <div role="region" aria-label="Sửa hàng loạt" className="sticky bottom-3 z-20 mt-4 rounded-2xl border border-primary/30 bg-card/95 p-3 shadow-pop backdrop-blur">
+    <div role="region" aria-label="Sửa hàng loạt" className="sticky bottom-3 z-20 mt-4 rounded-xl border bg-card p-3 shadow-pop">
       <div className="flex flex-wrap items-center gap-2">
         <p className="mr-1 flex items-center gap-1.5 text-sm font-semibold">
-          <ListChecks className="h-4 w-4 text-primary" /> Đã chọn {ids.length}
+          <ListChecks className="h-4 w-4 text-muted-foreground" /> Đã chọn {ids.length}
         </p>
         <label className="flex items-center gap-1.5">
           <UserRound className="h-4 w-4 text-muted-foreground" aria-hidden />

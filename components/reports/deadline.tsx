@@ -64,14 +64,14 @@ export function DeadlineTable({ rows, firstColumn = "Hạng mục" }: { rows: De
               </td>
               <td className="px-3 py-3">
                 <PlanBar actual={r.progress} planned={r.schedule.planned} height={6} showLabel />
-                <p className="mt-0.5 text-[11px] text-muted-foreground">{r.schedule.planned === null ? "Chưa có kế hoạch" : `Kế hoạch: ${r.schedule.planned}%`}</p>
+                <p className="mt-0.5 text-xs text-muted-foreground">{r.schedule.planned === null ? "Chưa có kế hoạch" : `Kế hoạch: ${r.schedule.planned}%`}</p>
               </td>
-              <td className="px-3 py-3 text-right font-semibold tabular-nums">{r.schedule.achievement === null ? "—" : `${r.schedule.achievement}%`}</td>
+              <td className="px-3 py-3 text-right font-semibold tabular-nums">{r.schedule.achievement === null ? "–" : `${r.schedule.achievement}%`}</td>
               <td className="px-3 py-3 text-right tabular-nums">
                 <span className="font-semibold text-success">{r.workload.done}</span>
                 <span className="text-muted-foreground"> / </span>
                 <span className="font-semibold">{r.workload.remaining}</span>
-                {r.workload.overdue > 0 && <span className="block text-[11px] text-danger">{r.workload.overdue} quá hạn</span>}
+                {r.workload.overdue > 0 && <span className="block text-xs text-danger">{r.workload.overdue} quá hạn</span>}
               </td>
               <td className="px-5 py-3">
                 <ScheduleBadge status={r.schedule.status} />

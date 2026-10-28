@@ -271,13 +271,13 @@ export function ProjectFormModal({
           {finance && (
             <section className="rounded-xl border border-dashed p-4">
               <p className="flex items-center gap-2 text-sm font-semibold">
-                <Wallet className="h-4 w-4 text-primary" /> Hợp đồng & chi phí <span className="text-xs font-normal text-muted-foreground">(tuỳ chọn)</span>
+                <Wallet className="h-4 w-4 text-muted-foreground" /> Hợp đồng & chi phí <span className="text-xs font-normal text-muted-foreground">(tuỳ chọn)</span>
               </p>
               {contracts === null ? (
                 <p className="mt-2 text-xs text-muted-foreground">Đang tải hợp đồng…</p>
               ) : !single ? (
                 <p className="mt-2 text-xs text-muted-foreground">
-                  Dự án có {contracts.length} hợp đồng — xem và sửa trong tab “Hợp đồng & chi phí” của dự án.
+                  Dự án có {contracts.length} hợp đồng. Xem và sửa trong tab “Hợp đồng & chi phí” của dự án.
                 </p>
               ) : (
                 <>
@@ -308,14 +308,14 @@ export function ProjectFormModal({
                     <p className="mt-3 rounded-lg bg-muted/50 px-3 py-2 text-xs">
                       Lợi nhuận gộp{" "}
                       <b className={preview.profit !== null && preview.profit < 0 ? "text-danger" : "text-success"}>
-                        {preview.profit === null ? "—" : formatVnd(preview.profit)}
+                        {preview.profit === null ? "–" : formatVnd(preview.profit)}
                       </b>
                       {preview.margin !== null && ` (${preview.margin}%)`} · Còn phải thu <b>{formatVnd(preview.receivable)}</b>
                     </p>
                   )}
                 </>
               )}
-              <p className="mt-2 text-[11px] text-muted-foreground">Lưu thành hợp đồng của dự án — dùng chung với trang Hợp đồng & chi phí và Trung tâm báo cáo.</p>
+              <p className="mt-2 text-xs text-muted-foreground">Lưu thành hợp đồng của dự án, dùng chung với trang Hợp đồng & chi phí và Trung tâm báo cáo.</p>
             </section>
           )}
         </div>
@@ -353,7 +353,7 @@ export function ProjectFormModal({
                       <Avatar name={u.name} color={u.avatarColor} size="xs" />
                       <span className="min-w-0 flex-1">
                         <span className="block truncate text-sm">{u.name}</span>
-                        {u.jobTitle && <span className="block truncate text-[11px] text-muted-foreground">{u.jobTitle}</span>}
+                        {u.jobTitle && <span className="block truncate text-xs text-muted-foreground">{u.jobTitle}</span>}
                       </span>
                     </button>
                     {owner ? (
@@ -364,7 +364,7 @@ export function ProjectFormModal({
                           aria-label={`Vai trò của ${u.name} trong dự án`}
                           value={role}
                           onChange={(e) => setRole(u.id, e.target.value as ProjectRoleKey)}
-                          className="h-7 shrink-0 rounded-md border bg-card px-1 text-[11px] outline-none focus:border-primary/60"
+                          className="h-7 shrink-0 rounded-md border bg-card px-1 text-xs outline-none focus:border-primary/60"
                         >
                           {PROJECT_ROLES.map((r) => (
                             <option key={r} value={r}>
@@ -379,7 +379,7 @@ export function ProjectFormModal({
               })}
             </ul>
           </div>
-          <p className="mt-2 text-[11px] leading-relaxed text-muted-foreground">
+          <p className="mt-2 text-xs leading-relaxed text-muted-foreground">
             {!editing && "Bạn sẽ tự động là chủ dự án. "}
             <b className="text-foreground/80">Quản lý dự án</b> sửa dự án & duyệt báo cáo · <b className="text-foreground/80">Thành viên</b> làm & báo cáo việc ·{" "}
             <b className="text-foreground/80">Chỉ xem</b> xem & góp ý.

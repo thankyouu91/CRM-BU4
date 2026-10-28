@@ -60,26 +60,26 @@ function TaskRow({ task, depth, ctx }: { task: ProjectTask; depth: number; ctx: 
           <p className={cn("truncate text-sm", task.status === "DONE" && "text-muted-foreground line-through", depth === 0 && "font-medium")}>
             {task.title}
           </p>
-          <div className="mt-0.5 flex items-center gap-3 text-[11px] text-muted-foreground sm:hidden">
+          <div className="mt-0.5 flex items-center gap-3 text-xs text-muted-foreground sm:hidden">
             {task.dueDate && <span className={cn(overdue && "text-danger")}>{formatShortDate(task.dueDate)}</span>}
             <span>{task.effectiveProgress}%</span>
           </div>
         </div>
         <div className="hidden shrink-0 items-center gap-3 sm:flex">
           {task.subtaskCount > 0 && (
-            <span className="flex items-center gap-1 text-[11px] text-muted-foreground" title="Task con hoàn thành">
+            <span className="flex items-center gap-1 text-xs text-muted-foreground" title="Task con hoàn thành">
               <GitBranch className="h-3.5 w-3.5" /> {doneKids}/{task.subtaskCount}
             </span>
           )}
           {task._count.reports > 0 && (
-            <span className="flex items-center gap-1 text-[11px] text-muted-foreground" title="Số báo cáo">
+            <span className="flex items-center gap-1 text-xs text-muted-foreground" title="Số báo cáo">
               <FileText className="h-3.5 w-3.5" /> {task._count.reports}
             </span>
           )}
           {task.priority !== "MEDIUM" && <PriorityBadge priority={task.priority} />}
           <span className={cn("flex w-[72px] items-center justify-end gap-1 text-xs tabular-nums", overdue ? "font-medium text-danger" : "text-muted-foreground")}>
             {overdue && <TriangleAlert className="h-3 w-3" />}
-            {task.dueDate ? formatShortDate(task.dueDate) : "—"}
+            {task.dueDate ? formatShortDate(task.dueDate) : "–"}
           </span>
           <div className="w-24">
             <ProgressBar value={task.effectiveProgress} height={6} showLabel />
@@ -276,9 +276,9 @@ export function TaskList({
       {uncategorized.length > 0 && (
         <section className="overflow-hidden rounded-2xl border bg-card shadow-card">
           <header className="flex items-center gap-3 px-4 py-3">
-            <span className="h-3 w-3 shrink-0 rounded bg-slate-400" />
+            <span className="h-3 w-3 shrink-0 rounded bg-zinc-400" />
             <h3 className="font-semibold">Chưa phân loại</h3>
-            <span className="rounded-md bg-muted px-1.5 py-0.5 text-[11px] font-medium text-muted-foreground">{uncategorized.length} việc</span>
+            <span className="rounded-md bg-muted px-1.5 py-0.5 text-xs font-medium text-muted-foreground">{uncategorized.length} việc</span>
           </header>
           {rows(uncategorized)}
           {quickAdd(null)}
@@ -298,7 +298,7 @@ function CategoryHeader({ category: c, main, menu }: { category: ProjectCategory
         {!main && <span className="mr-1 text-muted-foreground">└</span>}
         {c.name}
       </h3>
-      <span className="rounded-md bg-muted px-1.5 py-0.5 text-[11px] font-medium text-muted-foreground">{c.taskCount} việc</span>
+      <span className="rounded-md bg-muted px-1.5 py-0.5 text-xs font-medium text-muted-foreground">{c.taskCount} việc</span>
       {hasDates ? (
         <span className="flex items-center gap-1 text-xs text-muted-foreground">
           <CalendarDays className="h-3.5 w-3.5" />

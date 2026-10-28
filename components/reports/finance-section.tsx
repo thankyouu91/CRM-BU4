@@ -32,21 +32,21 @@ export function FinanceSection({ finance, periodLabel }: { finance: SummaryFinan
       <SummaryCards t={finance.totals} />
       <ProfitWaterfall t={finance.totals} />
       {finance.missingFiles.length > 0 && (
-        <div className="rounded-2xl border border-amber-300 bg-amber-50 px-5 py-4 dark:border-amber-500/30 dark:bg-amber-500/10">
-          <p className="flex items-center gap-2 text-sm font-semibold text-amber-900 dark:text-amber-200">
-            <FileWarning className="h-4 w-4 shrink-0" /> Dự án đã hoàn thành còn thiếu hồ sơ hợp đồng (PDF)
+        <div className="rounded-xl border border-warning/30 bg-warning/5 px-4 py-3.5">
+          <p className="flex items-center gap-2 text-sm font-semibold">
+            <FileWarning className="h-4 w-4 shrink-0 text-warning" /> Dự án đã hoàn thành còn thiếu hồ sơ hợp đồng (PDF)
           </p>
-          <p className="mt-0.5 text-xs text-amber-800/90 dark:text-amber-200/80">Tính trên mọi hợp đồng của dự án, không giới hạn theo kỳ. Bấm vào dự án để tải file lên.</p>
+          <p className="mt-0.5 text-xs text-muted-foreground">Tính trên mọi hợp đồng của dự án, không giới hạn theo kỳ. Bấm vào dự án để tải file lên.</p>
           <ul className="mt-3 flex flex-wrap gap-2">
             {finance.missingFiles.map((p) => (
               <li key={p.id}>
                 <Link
                   href={`/projects/${p.id}?tab=finance`}
-                  className="flex items-center gap-2 rounded-lg border border-amber-200 bg-card px-3 py-1.5 text-xs hover:border-amber-400 dark:border-amber-500/30"
+                  className="flex items-center gap-2 rounded-md border bg-card px-3 py-1.5 text-xs hover:border-foreground/30"
                 >
                   <span className="h-2 w-2 shrink-0 rounded-full" style={{ background: p.color }} />
                   <span className="font-medium">{p.name}</span>
-                  <span className="tabular-nums text-amber-700 dark:text-amber-300">
+                  <span className="tabular-nums text-warning">
                     thiếu {p.missing}/{p.contracts} HĐ
                   </span>
                 </Link>
@@ -89,14 +89,14 @@ export function FinanceSection({ finance, periodLabel }: { finance: SummaryFinan
                           </Link>
                         ) : (
                           <span className="flex items-center gap-2 text-muted-foreground">
-                            <span className="h-2.5 w-2.5 shrink-0 rounded bg-slate-400" />
+                            <span className="h-2.5 w-2.5 shrink-0 rounded bg-zinc-400" />
                             {p.name}
                           </span>
                         )}
                       </td>
                       <td className="px-3 py-3">
                         {p.progress === null ? (
-                          <span className="text-xs text-muted-foreground">—</span>
+                          <span className="text-xs text-muted-foreground">–</span>
                         ) : (
                           <>
                             <ProgressBar value={p.progress} height={6} showLabel />
@@ -108,11 +108,11 @@ export function FinanceSection({ finance, periodLabel }: { finance: SummaryFinan
                       <td className="whitespace-nowrap px-3 py-3 text-right font-medium tabular-nums">{formatVnd(t.value, false)}</td>
                       <td className="whitespace-nowrap px-3 py-3 text-right tabular-nums">
                         {formatVnd(t.totalCost, false)}
-                        {t.totalCost > 0 && <span className="block text-[11px] text-muted-foreground">{t.costRatio}% giá trị</span>}
+                        {t.totalCost > 0 && <span className="block text-xs text-muted-foreground">{t.costRatio}% giá trị</span>}
                       </td>
                       <td className={cn("whitespace-nowrap px-3 py-3 text-right font-semibold tabular-nums", t.profit < 0 ? "text-danger" : "text-success")}>
                         {formatVnd(t.profit, false)}
-                        {t.estimated > 0 && <span className="block text-[11px] font-normal italic text-muted-foreground">{t.estimated} HĐ ước tính</span>}
+                        {t.estimated > 0 && <span className="block text-xs font-normal italic text-muted-foreground">{t.estimated} HĐ ước tính</span>}
                       </td>
                       <td className="whitespace-nowrap px-3 py-3 text-right">
                         <Badge className={ratingBg(t.margin)}>{t.margin}%</Badge>
@@ -126,9 +126,9 @@ export function FinanceSection({ finance, periodLabel }: { finance: SummaryFinan
                           className={cn(
                             "inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-xs font-medium tabular-nums",
                             p.withFiles === t.count
-                              ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300"
+                              ? "bg-success/10 text-success"
                               : missing.has(p.id ?? "")
-                                ? "bg-amber-100 text-amber-800 dark:bg-amber-500/15 dark:text-amber-300"
+                                ? "bg-warning/10 text-warning"
                                 : "bg-muted text-muted-foreground",
                           )}
                         >

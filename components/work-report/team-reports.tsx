@@ -74,11 +74,11 @@ export function TeamWorkReportsView({
       ) : (
         <div className={cn("transition-opacity", loading && "opacity-60")}>
           <div className="mb-4 flex flex-wrap gap-2 text-xs">
-            <Chip className="bg-emerald-100 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300">
+            <Chip className="bg-success/10 text-success">
               Đã gửi {count.sent}/{members.length}
             </Chip>
-            {count.toReview > 0 && <Chip className="bg-amber-100 text-amber-800 dark:bg-amber-500/15 dark:text-amber-300">Chờ xem {count.toReview}</Chip>}
-            <Chip className="bg-slate-100 text-slate-700 dark:bg-slate-500/15 dark:text-slate-300">Nháp {count.draft}</Chip>
+            {count.toReview > 0 && <Chip className="bg-warning/10 text-warning">Chờ xem {count.toReview}</Chip>}
+            <Chip className="bg-muted text-muted-foreground">Nháp {count.draft}</Chip>
             <Chip className="bg-muted text-muted-foreground">Chưa có {count.none}</Chip>
           </div>
 
@@ -114,7 +114,7 @@ function MemberState({ m }: { m: TeamMemberReport }) {
   if (m.state === "DRAFT") {
     return (
       <span className="text-sm">
-        <span className="font-medium text-slate-600 dark:text-slate-300">Nháp</span>
+        <span className="font-medium text-muted-foreground">Nháp</span>
         <span className="text-xs text-muted-foreground"> · cập nhật {timeAgo(r.updatedAt)}</span>
       </span>
     );

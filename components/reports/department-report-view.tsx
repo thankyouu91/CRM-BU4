@@ -50,16 +50,16 @@ export function DepartmentReportView({ initial, projects }: {
       actions={<><Button variant="outline" onClick={reload} disabled={loading} aria-label="Làm mới báo cáo"><RefreshCw className="h-4 w-4" /></Button>
         <Button onClick={exportReport} disabled={!report} loading={exporting}><Download className="h-4 w-4" /> Xuất Excel gửi sếp</Button></>} />
 
-    <div className="mb-5 flex flex-wrap items-center justify-between gap-3 rounded-xl border bg-card p-3">
+    <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
       <div className="flex flex-wrap items-center gap-2">
-        <Button variant="ghost" size="icon" aria-label="Tuần báo cáo trước" onClick={() => select(shiftWorkPeriod(period, -1).key)}><ChevronLeft className="h-4 w-4" /></Button>
-        <label className="text-xs text-muted-foreground">Tuần báo cáo
-          <input aria-label="Chọn tuần báo cáo" type="week" value={week} onChange={e => select(e.target.value)} className="ml-2 h-9 rounded-lg border bg-card px-2 text-sm font-medium text-foreground" />
-        </label>
-        <Button variant="ghost" size="icon" aria-label="Tuần báo cáo tiếp theo" onClick={() => select(shiftWorkPeriod(period, 1).key)}><ChevronRight className="h-4 w-4" /></Button>
-        <Button variant="secondary" size="sm" onClick={() => select(today.key)}>Tuần hiện tại</Button>
+        <div className="flex items-center rounded-md border bg-card">
+          <button type="button" aria-label="Tuần báo cáo trước" onClick={() => select(shiftWorkPeriod(period, -1).key)} className="rounded-l-md p-2 hover:bg-muted"><ChevronLeft className="h-4 w-4" /></button>
+          <span aria-live="polite" className="min-w-[200px] px-2 text-center text-sm font-medium tabular-nums">{period.label}</span>
+          <button type="button" aria-label="Tuần báo cáo tiếp theo" onClick={() => select(shiftWorkPeriod(period, 1).key)} className="rounded-r-md p-2 hover:bg-muted"><ChevronRight className="h-4 w-4" /></button>
+        </div>
+        {week !== today.key && <Button variant="ghost" size="sm" onClick={() => select(today.key)}>Về tuần hiện tại</Button>}
       </div>
-      <select aria-label="Phạm vi dự án" value={projectId} onChange={e => select(week, e.target.value)} className="h-9 w-full rounded-lg border bg-card px-3 text-sm sm:max-w-xs">
+      <select aria-label="Phạm vi dự án" value={projectId} onChange={e => select(week, e.target.value)} className="h-9 w-full rounded-md border bg-card px-3 text-sm sm:max-w-xs">
         <option value="">Toàn bộ phạm vi được quyền xem</option>
         {projects.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
       </select>
@@ -69,10 +69,10 @@ export function DepartmentReportView({ initial, projects }: {
       : !report ? <div role="status" className="flex items-center justify-center gap-2 py-20 text-sm text-muted-foreground"><Loader2 className="h-5 w-5 animate-spin" /> Đang tải báo cáo phòng…</div>
       : <>
         <div className="mb-6 grid gap-3 lg:grid-cols-3">
-          {report.sections.map((section, index) => <a key={section.id} href={`#report-${section.id}`} className="rounded-xl border bg-card p-5 transition-colors hover:border-primary/50">
-            <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">{["Kết quả tuần trước", "Ưu tiên tuần này", "Kế hoạch tuần tới"][index]}</p>
+          {report.sections.map((section, index) => <a key={section.id} href={`#report-${section.id}`} className="rounded-xl border bg-card px-4 py-3.5 transition-colors hover:border-foreground/30">
+            <p className="text-xs font-medium text-muted-foreground">{["Kết quả tuần trước", "Ưu tiên tuần này", "Kế hoạch tuần tới"][index]}</p>
             <p className="mt-1 text-xs text-muted-foreground">{section.period.label}</p>
-            <p className="mt-4 text-3xl font-bold tabular-nums">{[report.counts.previousDone, report.counts.currentOpen, report.counts.nextPlanned][index]} <span className="text-sm font-normal text-muted-foreground">{["việc đã xong", "việc cần xử lý", "việc theo kế hoạch"][index]}</span></p>
+            <p className="mt-3 text-2xl font-semibold tabular-nums tracking-tight">{[report.counts.previousDone, report.counts.currentOpen, report.counts.nextPlanned][index]} <span className="text-sm font-normal text-muted-foreground">{["việc đã xong", "việc cần xử lý", "việc theo kế hoạch"][index]}</span></p>
             <p className="mt-2 text-xs text-muted-foreground">{[
               `${report.counts.previousOutstanding} việc đến hạn tuần trước vẫn chưa xong`,
               `${report.counts.carryover} việc tồn từ trước · ${report.counts.currentDone} đã xong · ${report.counts.blocked} bị chặn`,
@@ -88,22 +88,22 @@ export function DepartmentReportView({ initial, projects }: {
         </div>
         <div className="space-y-7">
           {report.sections.map(section => <section id={`report-${section.id}`} aria-label={section.title} key={section.id} className="scroll-mt-6 overflow-hidden rounded-xl border bg-card">
-            <div className="border-b px-5 py-4"><h2 className="font-semibold">{section.title}</h2><p className="mt-1 text-xs text-muted-foreground">{section.period.label}</p></div>
+            <div className="border-b px-5 py-4"><h2 className="text-sm font-semibold">{section.title}</h2><p className="mt-1 text-xs text-muted-foreground">{section.period.label}</p></div>
             {section.buckets.every(b => b.rows.length === 0) ? <p className="p-6 text-sm text-muted-foreground">Chưa có công việc phù hợp trong tuần này.</p>
               : section.buckets.filter(b => b.rows.length).map(b => <div key={b.id} className="border-b last:border-0">
-                <h3 className={cn("flex items-center gap-2 px-5 py-3 text-sm font-semibold", b.id === "carryover" || b.id === "outstanding" ? "bg-amber-50 text-amber-900 dark:bg-amber-900/20 dark:text-amber-200" : "bg-muted/40")}>
-                  {b.label}<span className="rounded bg-card/70 px-2 py-0.5 text-xs tabular-nums">{b.rows.length}</span>
+                <h3 className={cn("flex items-center gap-2 px-5 py-3 text-sm font-semibold", b.id === "carryover" || b.id === "outstanding" ? "bg-warning/5 text-warning" : "bg-muted/40")}>
+                  {b.label}<span className="text-xs font-normal tabular-nums text-muted-foreground">{b.rows.length}</span>
                 </h3>
                 <DepartmentTable rows={b.rows} label={`${section.title} · ${b.label}`} onOpen={setOpenTask} />
               </div>)}
           </section>)}
           {report.projectsWithoutWork.length > 0 && <section id="report-projects" aria-label="Dự án chưa có việc trong 3 tuần" className="scroll-mt-6 overflow-hidden rounded-xl border bg-card">
-            <div className="border-b px-5 py-4"><h2 className="flex items-center gap-2 font-semibold"><FolderOpen className="h-4 w-4 text-muted-foreground" /> Dự án chưa có việc trong 3 tuần <span className="text-muted-foreground">{report.projectsWithoutWork.length}</span></h2>
+            <div className="border-b px-5 py-4"><h2 className="flex items-center gap-2 text-sm font-semibold"><FolderOpen className="h-4 w-4 text-muted-foreground" /> Dự án chưa có việc trong 3 tuần <span className="text-muted-foreground">{report.projectsWithoutWork.length}</span></h2>
               <p className="mt-1 text-xs text-muted-foreground">Báo cáo đếm theo công việc. Dự án mới tạo chưa có công việc, hoặc việc còn lại bắt đầu và đến hạn sau tuần tới, được liệt kê ở đây để không bị sót.</p></div>
             <ProjectsTable projects={report.projectsWithoutWork} onOpen={setOpenTask} />
           </section>}
           <section aria-label="Công việc cần bổ sung lịch" className="overflow-hidden rounded-xl border bg-card">
-            <div className="border-b px-5 py-4"><h2 className="flex items-center gap-2 font-semibold"><TriangleAlert className="h-4 w-4 text-amber-600" /> Chưa có deadline <span className="text-muted-foreground">{report.unscheduled.length}</span></h2>
+            <div className="border-b px-5 py-4"><h2 className="flex items-center gap-2 text-sm font-semibold"><TriangleAlert className="h-4 w-4 text-warning" /> Chưa có deadline <span className="text-muted-foreground">{report.unscheduled.length}</span></h2>
               <p className="mt-1 text-xs text-muted-foreground">Cần chốt hạn hoàn thành để lên kế hoạch. Việc đang làm vẫn có thể xuất hiện ở tuần này.</p></div>
             {report.unscheduled.length ? <DepartmentTable rows={report.unscheduled.map(task => ({ task, updates: [] }))} label="Công việc chưa có deadline" onOpen={setOpenTask} />
               : <p className="p-5 text-sm text-muted-foreground">Mọi công việc chưa xong đã có deadline.</p>}
@@ -164,13 +164,13 @@ function DepartmentTable({ rows, label, onOpen }: { rows: DepartmentRow[]; label
         </th></tr>
         {group.rows.map(({ task: t, updates }) => <tr key={t.id} className="border-b align-top last:border-0 hover:bg-muted/20">
           <td className="px-5 py-3">
-            {t.parentTitle && <p className="mb-1 text-[11px] text-muted-foreground">Thuộc: {t.parentTitle}</p>}
+            {t.parentTitle && <p className="mb-1 text-xs text-muted-foreground">Thuộc: {t.parentTitle}</p>}
             <button onClick={() => onOpen(t.id)} className="text-left font-medium hover:text-primary hover:underline">{t.title}</button>
             {t.projectStatus === "ON_HOLD" && <p className="mt-1 text-xs text-amber-700 dark:text-amber-300">Dự án đang tạm dừng</p>}
             {t.description && <details className="mt-2 text-xs text-muted-foreground"><summary className="cursor-pointer">Nội dung công việc</summary><p className="mt-1 whitespace-pre-wrap break-words">{t.description}</p></details>}
             {updates.length > 0 && <details className="mt-2 text-xs" open><summary className="cursor-pointer font-medium text-muted-foreground">Cập nhật trong tuần ({updates.length})</summary>
               <ul className="mt-2 space-y-2 border-l-2 pl-3">{updates.map(update => <li key={update.id}>
-                <p className="text-[11px] text-muted-foreground">{zonedText(update.createdAt, "datetime")} · {update.author} · {update.progress}%</p>
+                <p className="text-xs text-muted-foreground">{zonedText(update.createdAt, "datetime")} · {update.author} · {update.progress}%</p>
                 <p className="mt-1 whitespace-pre-wrap break-words leading-relaxed">{update.content}</p>
               </li>)}</ul>
             </details>}
@@ -178,12 +178,12 @@ function DepartmentTable({ rows, label, onOpen }: { rows: DepartmentRow[]; label
           <td className="px-3 py-3 text-xs">{t.assignee?.name ?? <span className="text-amber-700 dark:text-amber-300">Chưa phân công</span>}</td>
           <td className="space-y-2 px-3 py-3"><TaskStatusBadge status={t.status} />
             {(t.priority === "HIGH" || t.priority === "URGENT") && <div><PriorityBadge priority={t.priority} /></div>}
-            {t.status === "DONE" && t.completedAt && <p className="text-[11px] text-muted-foreground">Xong {zonedText(t.completedAt)}</p>}
+            {t.status === "DONE" && t.completedAt && <p className="text-xs text-muted-foreground">Xong {zonedText(t.completedAt)}</p>}
           </td>
           <td className="px-3 py-3 text-right text-xs font-semibold tabular-nums">{t.progress}%</td>
           <td className="px-5 py-3 text-xs tabular-nums"><p className={cn(t.overdue && "font-semibold text-danger")}>{t.dueDate ? zonedText(t.dueDate) : "Chưa có hạn"}</p>
-            {t.overdue && <p className="mt-1 text-[11px] text-danger">Quá hạn</p>}
-            {t.startDate && <p className="mt-1 text-[11px] text-muted-foreground">Bắt đầu {zonedText(t.startDate)}</p>}
+            {t.overdue && <p className="mt-1 text-xs text-danger">Quá hạn</p>}
+            {t.startDate && <p className="mt-1 text-xs text-muted-foreground">Bắt đầu {zonedText(t.startDate)}</p>}
           </td>
         </tr>)}
       </Fragment>)}</tbody>

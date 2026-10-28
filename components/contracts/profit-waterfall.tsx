@@ -35,11 +35,14 @@ export function waterfallSteps(t: ContractTotals): { steps: WaterfallStep[]; com
   return { steps, complete };
 }
 
+const BAR_W = 112;
+
+// Value in ink, costs in grey; only the outcome carries a status color (profit or loss).
 const BAR = {
-  total: "bg-blue-600 dark:bg-blue-500",
-  cost: "bg-orange-500 dark:bg-orange-400",
-  result: "bg-emerald-600 dark:bg-emerald-500",
-  loss: "bg-red-600 dark:bg-red-500",
+  total: "bg-foreground/85",
+  cost: "bg-muted-foreground/35",
+  result: "bg-success",
+  loss: "bg-danger",
 };
 
 /** Waterfall of the contracts shown: how the contract value turns into gross profit. */
@@ -54,7 +57,7 @@ export function ProfitWaterfall({ t, className }: { t: ContractTotals; className
   const zero = pct(0);
 
   return (
-    <figure className={cn("rounded-2xl border bg-card p-5 shadow-card", className)}>
+    <figure className={cn("rounded-xl border bg-card p-4 sm:p-5", className)}>
       <figcaption className="flex flex-wrap items-baseline justify-between gap-2">
         <span className="text-sm font-semibold">Từ giá trị hợp đồng đến lợi nhuận gộp</span>
         <span className="text-xs text-muted-foreground">
@@ -66,7 +69,8 @@ export function ProfitWaterfall({ t, className }: { t: ContractTotals; className
 
       <div className="relative mt-3 h-56" role="img" aria-label={steps.map((s) => `${s.label} ${formatVnd(s.amount)}`).join(", ")}>
         {/* Room above the tallest bar for its amount. */}
-        <div aria-hidden className="absolute inset-x-0 bottom-0 top-6 flex items-stretch gap-3 sm:gap-6">
+        {/* Bars keep a readable width (at most BAR_W) however wide the card is; connectors join their edges. */}
+        <div aria-hidden className="absolute inset-x-0 bottom-0 top-6 flex items-stretch gap-4">
           {low < 0 && <div className="absolute inset-x-0 border-t border-dashed border-muted-foreground/40" style={{ bottom: `${zero}%` }} />}
           {steps.map((s, i) => {
             const bottom = pct(Math.min(s.from, s.to));
@@ -75,25 +79,28 @@ export function ProfitWaterfall({ t, className }: { t: ContractTotals; className
             const tone = s.kind === "result" && s.amount < 0 ? BAR.loss : BAR[s.kind];
             return (
               <div key={s.key} className="relative flex-1">
-                <div className={cn("absolute inset-x-0 rounded-md", tone)} style={{ bottom: `${bottom}%`, height: `${height}%` }} />
+                <div className={cn("absolute left-1/2 w-full -translate-x-1/2 rounded-[4px]", tone)} style={{ bottom: `${bottom}%`, height: `${height}%`, maxWidth: BAR_W }} />
                 <span
-                  className={cn("absolute inset-x-0 text-center text-xs font-semibold tabular-nums", s.kind === "cost" ? "text-orange-700 dark:text-orange-300" : "text-foreground")}
+                  className={cn("absolute inset-x-0 text-center text-xs font-semibold tabular-nums", s.kind === "cost" ? "text-muted-foreground" : "text-foreground")}
                   style={{ bottom: `calc(${bottom + height}% + 4px)` }}
                 >
                   {s.kind === "cost" ? `−${formatVndShort(-s.amount)}` : formatVndShort(s.amount)}
                 </span>
                 {/* Connector to the next bar, at the level this one ends. */}
                 {next && (
-                  <div className="absolute left-full w-3 border-t border-dashed border-muted-foreground/50 sm:w-6" style={{ bottom: `${pct(s.to)}%` }} />
+                  <div
+                    className="absolute border-t border-dashed border-muted-foreground/50"
+                    style={{ bottom: `${pct(s.to)}%`, left: `calc(50% + min(50%, ${BAR_W / 2}px))`, width: `calc(100% + 1rem - 2 * min(50%, ${BAR_W / 2}px))` }}
+                  />
                 )}
               </div>
             );
           })}
         </div>
       </div>
-      <div aria-hidden className="mt-2 flex gap-3 sm:gap-6">
+      <div aria-hidden className="mt-2 flex gap-4">
         {steps.map((s) => (
-          <span key={s.key} className="flex-1 text-center text-[11px] leading-tight text-muted-foreground">
+          <span key={s.key} className="flex-1 text-center text-xs leading-tight text-muted-foreground">
             {s.label}
           </span>
         ))}

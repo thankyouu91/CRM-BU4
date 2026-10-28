@@ -16,7 +16,7 @@ export function BackupsCard() {
   return (
     <Card>
       <CardHeader
-        title={<span className="flex items-center gap-2"><DatabaseBackup className="h-4 w-4 text-primary" /> Sao lưu dữ liệu</span>}
+        title={<span className="flex items-center gap-2"><DatabaseBackup className="h-4 w-4 text-muted-foreground" /> Sao lưu dữ liệu</span>}
         description="Tự động mỗi ngày lúc 2:00 (giờ Việt Nam): giữ 30 bản gần nhất và 12 bản đầu tháng. File PDF hợp đồng được lưu riêng trên R2."
       />
       <CardBody>

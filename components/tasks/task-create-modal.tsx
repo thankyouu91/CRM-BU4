@@ -117,7 +117,7 @@ export function TaskCreateModal({
         <div className="grid gap-4 sm:grid-cols-2">
           <Field label="Hạng mục">
             <Select value={categoryId} onChange={(e) => setCategoryId(e.target.value)}>
-              <option value="">— Chưa phân loại —</option>
+              <option value="">Chưa phân loại</option>
               {categoryOptions(categories).map((c) => (
                 <option key={c.id} value={c.id}>
                   {c.label}
@@ -127,7 +127,7 @@ export function TaskCreateModal({
           </Field>
           <Field label="Người phụ trách (PIC)" error={errors.assigneeId} hint={joinHint(people, assigneeId)}>
             <Select value={assigneeId} onChange={(e) => setAssigneeId(e.target.value)}>
-              <option value="">— Chưa giao —</option>
+              <option value="">Chưa giao</option>
               {people.map((u) => (
                 <option key={u.id} value={u.id}>
                   {personLabel(u)}

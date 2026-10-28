@@ -124,7 +124,7 @@ export function ShareDialog({
       <div className="space-y-6">
         <section aria-labelledby="share-internal">
           <h3 id="share-internal" className="mb-1 flex items-center gap-2 text-sm font-semibold">
-            <Link2 className="h-4 w-4 text-primary" aria-hidden /> Trong công ty
+            <Link2 className="h-4 w-4 text-muted-foreground" aria-hidden /> Trong công ty
           </h3>
           <p className="mb-2 text-xs text-muted-foreground">Người đã đăng nhập mở để xem, theo quyền của chính họ.</p>
           <CopyField value={internalUrl} label="Link nội bộ" />
@@ -132,7 +132,7 @@ export function ShareDialog({
 
         <section aria-labelledby="share-public" className="rounded-xl border p-4">
           <h3 id="share-public" className="mb-1 flex items-center gap-2 text-sm font-semibold">
-            <Globe className="h-4 w-4 text-primary" aria-hidden /> Người ngoài, không cần đăng nhập
+            <Globe className="h-4 w-4 text-muted-foreground" aria-hidden /> Người ngoài, không cần đăng nhập
           </h3>
           {!list.data ? (
             <p className="flex items-center gap-2 py-2 text-xs text-muted-foreground">
@@ -212,7 +212,7 @@ export function ShareDialog({
                     <span className="text-xs tabular-nums text-muted-foreground">{s.viewCount} lượt xem</span>
                     <span
                       className={cn(
-                        "rounded-full px-2 py-0.5 text-[11px] font-medium",
+                        "rounded-full px-2 py-0.5 text-xs font-medium",
                         s.status === "active" ? "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300" : "bg-muted text-muted-foreground",
                       )}
                     >
