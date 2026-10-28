@@ -63,3 +63,10 @@ it("says so when a tab is empty", () => {
   fireEvent.click(screen.getByRole("tab", { name: /Cần chú ý/ }));
   expect(screen.getByText("Không có dự án nào trễ hay có việc quá hạn.")).toBeTruthy();
 });
+
+it("says a project has no tasks yet instead of showing 0%", () => {
+  render(<ProjectProgressCard projects={[project(1, { totalTasks: 0, doneTasks: 0, progress: 0 })]} />);
+  const row = within(screen.getByRole("tabpanel")).getByRole("link");
+  expect(within(row).getByText("Chưa có công việc")).toBeTruthy();
+  expect(within(row).queryByText("0%")).toBeNull();
+});

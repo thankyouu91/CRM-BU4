@@ -32,19 +32,26 @@ function Row({ p }: { p: Project }) {
         <span className="flex min-w-0 items-center gap-2">
           <span className="h-2 w-2 shrink-0 rounded-full" style={{ background: p.color }} aria-hidden />
           <span className="truncate text-sm font-medium group-hover:text-primary">{p.name}</span>
-          {quiet && <span className="shrink-0 text-[11px] text-muted-foreground">{PROJECT_STATUS[p.status as keyof typeof PROJECT_STATUS]?.label}</span>}
+          {quiet && <span className="shrink-0 text-xs text-muted-foreground">{PROJECT_STATUS[p.status as keyof typeof PROJECT_STATUS]?.label}</span>}
           {p.overdueTasks > 0 && (
-            <span className="flex shrink-0 items-center gap-0.5 rounded-full bg-danger/10 px-1.5 py-0.5 text-[10px] font-semibold text-danger" title={`${p.overdueTasks} công việc quá hạn`}>
+            <span className="flex shrink-0 items-center gap-0.5 rounded-full bg-danger/10 px-1.5 py-0.5 text-xs font-semibold text-danger" title={`${p.overdueTasks} công việc quá hạn`}>
               <TriangleAlert className="h-3 w-3" aria-hidden />
               {p.overdueTasks}
               <span className="sr-only"> công việc quá hạn</span>
             </span>
           )}
         </span>
-        <span className="text-right text-sm font-semibold tabular-nums sm:order-last">{p.progress}%</span>
-        <span className="col-span-2 sm:col-span-1" title={`${p.doneTasks}/${p.totalTasks} công việc hoàn thành${schedule ? ` · ${schedule.label}` : ""}`}>
-          <ProgressBar value={p.progress} height={6} color={barColor} />
-        </span>
+        {p.totalTasks === 0 ? (
+          // No tasks yet: a 0% bar would read as "behind".
+          <span className="col-span-2 text-xs text-muted-foreground sm:col-span-2 sm:text-right">Chưa có công việc</span>
+        ) : (
+          <>
+            <span className="text-right text-sm font-semibold tabular-nums sm:order-last">{p.progress}%</span>
+            <span className="col-span-2 sm:col-span-1" title={`${p.doneTasks}/${p.totalTasks} công việc hoàn thành${schedule ? ` · ${schedule.label}` : ""}`}>
+              <ProgressBar value={p.progress} height={6} color={barColor} />
+            </span>
+          </>
+        )}
       </Link>
     </li>
   );
@@ -70,7 +77,7 @@ export function ProjectProgressCard({ projects }: { projects: Project[] }) {
         title="Tiến độ dự án"
         description={rows.length ? `${rows.length} dự án · trung bình ${avg}% hoàn thành` : "Tỷ lệ hoàn thành hiện tại của từng dự án"}
         action={
-          <Link href="/projects" className="text-xs font-medium text-primary hover:underline">
+          <Link href="/projects" className="-my-1.5 -mr-2 inline-flex min-h-8 items-center rounded-md px-2 text-xs font-medium text-primary hover:bg-primary/5 hover:underline">
             Xem tất cả
           </Link>
         }
@@ -97,7 +104,7 @@ export function ProjectProgressCard({ projects }: { projects: Project[] }) {
               {t.label}
               <span
                 className={cn(
-                  "rounded-full px-1.5 text-[10px] tabular-nums",
+                  "rounded-full px-1.5 text-xs tabular-nums",
                   t.key === "attention" && n > 0 ? "bg-danger/15 text-danger" : active ? "bg-muted" : "bg-card/60",
                 )}
               >
