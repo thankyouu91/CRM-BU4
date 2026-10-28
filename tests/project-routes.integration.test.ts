@@ -53,4 +53,15 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)("project and task routes on Post
     expect((await patch("tasks", t.id, { status: "DONE" })).status).toBe(200);
     expect((await db.project.findUniqueOrThrow({ where: { id: p.id } })).status).toBe("COMPLETED");
   });
+
+  it("lists the newest projects first on the dashboard", async () => {
+    const older = await db.project.create({ data: { name: "Dự án cũ", ownerId: userId, createdAt: new Date("2026-01-05") } });
+    const newer = await db.project.create({ data: { name: "Dự án mới", ownerId: userId, createdAt: new Date("2026-09-20") } });
+    const { getSummary } = await import("../lib/stats");
+    const { resolvePeriod } = await import("../lib/period");
+    const summary = await getSummary(me.current!, resolvePeriod("month", new Date()), "month");
+    const ids = summary.projects.map((p) => p.id);
+    expect(ids.indexOf(newer.id)).toBeGreaterThanOrEqual(0);
+    expect(ids.indexOf(newer.id)).toBeLessThan(ids.indexOf(older.id));
+  });
 });

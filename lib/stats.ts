@@ -313,7 +313,8 @@ export async function getSummary(
   const [projects, tasks, reports, categories, contractRows, completedContracts] = await Promise.all([
     prisma.project.findMany({
       where: projectWhere,
-      orderBy: { createdAt: "asc" },
+      // Newest first: the dashboard, the report center and the AI prompt list projects in this order.
+      orderBy: [{ createdAt: "desc" }, { id: "asc" }],
       select: {
         id: true,
         name: true,
