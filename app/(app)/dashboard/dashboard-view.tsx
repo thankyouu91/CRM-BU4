@@ -2,14 +2,14 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { motion } from "framer-motion";
 import { CalendarClock, CheckCircle2, Clock, FileText, Loader2, Timer, TriangleAlert } from "lucide-react";
 import { Card, CardBody, CardHeader } from "@/components/ui/card";
 import { Avatar } from "@/components/ui/avatar";
-import { PriorityBadge, ProjectStatusBadge } from "@/components/ui/badge";
+import { PriorityBadge } from "@/components/ui/badge";
 import { EmptyState, PageHeader, Segmented } from "@/components/ui/misc";
-import { ProgressBar, ProgressRing } from "@/components/ui/progress";
+import { ProgressRing } from "@/components/ui/progress";
 import { KpiTile } from "@/components/kpi";
+import { ProjectProgressCard } from "@/components/dashboard/project-progress-card";
 import {
   ChartCard,
   DataTable,
@@ -165,51 +165,7 @@ export function DashboardView({ initial, userName }: { initial: Summary; userNam
 
         {/* Projects + workload */}
         <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
-          <Card>
-            <CardHeader
-              title="Tiến độ dự án"
-              description="Tỷ lệ hoàn thành hiện tại của từng dự án"
-              action={
-                <Link href="/projects" className="text-xs font-medium text-primary hover:underline">
-                  Xem tất cả
-                </Link>
-              }
-            />
-            <CardBody className="space-y-5">
-              {data.projects.length === 0 && (
-                <p className="py-6 text-center text-sm text-muted-foreground">Chưa có dự án nào.</p>
-              )}
-              {data.projects.map((p, i) => (
-                <motion.div
-                  key={p.id}
-                  initial={{ opacity: 0, y: 6 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: i * 0.05 }}
-                >
-                  <Link href={`/projects/${p.id}`} className="group block">
-                    <div className="mb-2 flex items-center justify-between gap-3">
-                      <div className="flex min-w-0 items-center gap-2.5">
-                        <span className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ background: p.color }} />
-                        <span className="truncate text-sm font-medium group-hover:text-primary">{p.name}</span>
-                        <ProjectStatusBadge status={p.status} />
-                      </div>
-                      <span className="text-sm font-semibold">{p.progress}%</span>
-                    </div>
-                    <ProgressBar value={p.progress} />
-                    <p className="mt-1.5 text-xs text-muted-foreground">
-                      {p.doneTasks}/{p.totalTasks} công việc hoàn thành
-                      {p.overdueTasks > 0 && (
-                        <span className="text-danger">
-                          {" "}
-                          · <TriangleAlert className="inline h-3 w-3" /> {p.overdueTasks} quá hạn
-                        </span>
-                      )}
-                    </p>
-                  </Link>
-                </motion.div>
-              ))}
-            </CardBody>
-          </Card>
+          <ProjectProgressCard projects={data.projects} />
 
           <ChartCard
             id="workload"
