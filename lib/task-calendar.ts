@@ -16,6 +16,14 @@ export interface CalendarTask {
   project: { id: string; name: string; color: string };
 }
 
+/** One month of the calendar: GET /api/tasks/calendar, or sent with the page. */
+export interface CalendarResponse {
+  month: string;
+  asOf: string;
+  tasks: CalendarTask[];
+  truncated: boolean;
+}
+
 export interface CalendarDay {
   /** "YYYY-MM-DD" in Vietnam time. */
   day: string;

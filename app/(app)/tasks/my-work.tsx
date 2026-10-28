@@ -19,6 +19,7 @@ export function MyWork({
   tab: initialTab,
   canSeeAll,
   initialTasks,
+  initialCalendar,
   initialFilter,
   projects,
   initialReport,
@@ -27,6 +28,7 @@ export function MyWork({
   tab: MyWorkTab;
   canSeeAll: boolean;
   initialTasks?: Parameters<typeof MyTasksView>[0]["initial"];
+  initialCalendar?: Parameters<typeof MyTasksView>[0]["initialCalendar"];
   initialFilter?: Parameters<typeof MyTasksView>[0]["initialFilter"];
   projects: { id: string; name: string }[];
   initialReport?: WorkReportData;
@@ -80,7 +82,7 @@ export function MyWork({
     </div>
   );
 
-  if (tab === "list") return <MyTasksView canSeeAll={canSeeAll} initial={fresh ? initialTasks : undefined} initialFilter={initialFilter} projects={projects} tabs={tabs} />;
+  if (tab === "list") return <MyTasksView canSeeAll={canSeeAll} initial={fresh ? initialTasks : undefined} initialCalendar={fresh ? initialCalendar : undefined} initialFilter={initialFilter} projects={projects} tabs={tabs} />;
 
   return (
     <div>

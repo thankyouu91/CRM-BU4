@@ -1,17 +1,11 @@
 import type { NextRequest } from "next/server";
-import { prisma } from "@/lib/prisma";
 import { auth, ok, unauthorized } from "@/lib/api";
-import { projectVisibilityWhere } from "@/lib/rbac";
-import { monthOf, monthRange, parseMonth } from "@/lib/task-calendar";
-
-/** Tasks that touch a calendar month at most; the month view shows a few per day. */
-const LIMIT = 500;
+import { monthOf, parseMonth } from "@/lib/task-calendar";
+import { calendarTasks } from "@/lib/task-calendar-queries";
 
 /**
  * GET /api/tasks/calendar?month=2026-10&scope=mine|all[&projectId=]
- * The tasks behind the month calendar of "Công việc của tôi": finished in the month or
- * due in it. Grid days from the next and previous months are covered too (a week either
- * side), so the edges of the grid are not empty.
+ * The tasks behind the month calendar of "Công việc của tôi" (lib/task-calendar-queries.ts).
  */
 export async function GET(req: NextRequest) {
   const me = await auth();
@@ -19,26 +13,5 @@ export async function GET(req: NextRequest) {
   const sp = req.nextUrl.searchParams;
   const now = new Date();
   const month = parseMonth(sp.get("month")) ?? monthOf(now);
-  const range = monthRange(month);
-  const from = new Date(range.start.getTime() - 7 * 86_400_000);
-  const to = new Date(range.end.getTime() + 7 * 86_400_000);
-  const projectId = sp.get("projectId");
-  const rows = await prisma.task.findMany({
-    where: {
-      project: projectVisibilityWhere(me),
-      ...(sp.get("scope") === "all" ? {} : { assigneeId: me.id }),
-      ...(projectId ? { projectId } : {}),
-      OR: [
-        { status: "DONE", completedAt: { gte: from, lte: to } },
-        { status: { not: "DONE" }, dueDate: { gte: from, lte: to } },
-      ],
-    },
-    orderBy: [{ dueDate: { sort: "asc", nulls: "last" } }, { id: "asc" }],
-    take: LIMIT + 1,
-    select: {
-      id: true, title: true, status: true, progress: true, startDate: true, dueDate: true, completedAt: true,
-      project: { select: { id: true, name: true, color: true } },
-    },
-  });
-  return ok({ month, asOf: now.toISOString(), tasks: rows.slice(0, LIMIT), truncated: rows.length > LIMIT });
+  return ok(await calendarTasks(me, { month, scope: sp.get("scope") === "all" ? "all" : "mine", projectId: sp.get("projectId") }, now));
 }

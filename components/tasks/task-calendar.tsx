@@ -4,10 +4,9 @@ import { useMemo, useState } from "react";
 import { CalendarDays, ChevronLeft, ChevronRight, Loader2 } from "lucide-react";
 import { ProgressBar } from "@/components/ui/progress";
 import { useApi } from "@/lib/client";
-import { calendarMonth, monthOf, shiftMonth, type CalendarDay, type CalendarTask } from "@/lib/task-calendar";
+import { calendarMonth, monthOf, shiftMonth, type CalendarDay, type CalendarResponse } from "@/lib/task-calendar";
 import { cn } from "@/lib/utils";
 
-interface CalendarResponse { month: string; asOf: string; tasks: CalendarTask[]; truncated: boolean }
 
 // Glowing dots: the glow is a coloured shadow, so it reads on the light and the dark theme.
 const KINDS = [
@@ -87,11 +86,24 @@ function DayPopover({ d, onOpenTask, alignRight, above }: { d: CalendarDay; onOp
  * on a deadline. Pointing at (or tabbing to) a day
  * lists its tasks with project and progress; choosing one opens it.
  */
-export function TaskCalendar({ scope, projectId, refreshKey, onOpenTask }: { scope: "mine" | "all"; projectId?: string; refreshKey?: unknown; onOpenTask: (id: string) => void }) {
+export function TaskCalendar({
+  scope,
+  projectId,
+  refreshKey,
+  initial,
+  onOpenTask,
+}: {
+  scope: "mine" | "all";
+  projectId?: string;
+  refreshKey?: unknown;
+  /** The month the server rendered with the page: shown at once instead of a second request. */
+  initial?: CalendarResponse;
+  onOpenTask: (id: string) => void;
+}) {
   const [month, setMonth] = useState<string | null>(null);
   const shown = month ?? monthOf(new Date());
   const url = `/api/tasks/calendar?month=${shown}&scope=${scope}${projectId ? `&projectId=${projectId}` : ""}${refreshKey ? `&v=${String(refreshKey)}` : ""}`;
-  const { data, loading, error, reload } = useApi<CalendarResponse>(url);
+  const { data, loading, error, reload } = useApi<CalendarResponse>(url, { initial: initial?.month === shown ? initial : undefined });
   const current = data?.month === shown ? data : null;
   const grid = useMemo(() => calendarMonth(current?.tasks ?? [], shown, new Date(current?.asOf ?? Date.now())), [current, shown]);
   const [y, m] = shown.split("-");

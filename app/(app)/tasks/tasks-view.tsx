@@ -16,6 +16,7 @@ import { StatusToggle } from "@/components/tasks/status-toggle";
 import { TaskDrawer } from "@/components/tasks/lazy-task-drawer";
 import { BulkBar } from "@/components/tasks/bulk-bar";
 import { TaskCalendar } from "@/components/tasks/task-calendar";
+import type { CalendarResponse } from "@/lib/task-calendar";
 import { api, ApiError, useApi, useDebouncedValue } from "@/lib/client";
 import { groupBy } from "@/lib/task-tree";
 import { DEADLINE_FILTERS, taskDeadlineBucket, taskDeadlinePeriods, type DeadlineBucket, type DeadlineFilter } from "@/lib/task-deadlines";
@@ -65,12 +66,15 @@ const BUCKETS: { key: Bucket; label: string; icon: React.ComponentType<{ classNa
 export function MyTasksView({
   canSeeAll,
   initial,
+  initialCalendar,
   initialFilter,
   projects = [],
   tabs,
 }: {
   canSeeAll: boolean;
   initial?: TaskPage;
+  /** This month's calendar, sent with the page together with `initial`. */
+  initialCalendar?: CalendarResponse;
   initialFilter?: { scope: "mine" | "all"; issue: Issue | null };
   projects?: { id: string; name: string }[];
   tabs?: React.ReactNode;
@@ -168,7 +172,7 @@ export function MyTasksView({
       />
       {tabs}
 
-      <TaskCalendar scope={scope} projectId={scope === "all" ? projectId : undefined} refreshKey={response?.asOf} onOpenTask={setOpenTask} />
+      <TaskCalendar scope={scope} projectId={scope === "all" ? projectId : undefined} refreshKey={response?.asOf} initial={initialCalendar} onOpenTask={setOpenTask} />
 
       <div aria-busy={busy} className={cn("mb-6 grid grid-cols-2 gap-3 xl:grid-cols-4", busy && "opacity-60")}>
         <KpiTile label="Chưa hoàn thành" value={data ? stats.open : "—"} icon={ListChecks} />
