@@ -305,6 +305,7 @@ tests/            Unit test (Vitest)
 worker.ts         Điểm vào Worker: ứng dụng OpenNext + cron sao lưu hằng ngày
 wrangler.jsonc    Cấu hình Cloudflare Worker
 scripts/          Deploy Cloudflare, tạo mật khẩu database (SCRAM), khôi phục bản sao lưu
+.claude/settings.json  Plugin Claude Code dùng chung cho dự án: UI UX Pro Max (cài từ github.com/nextlevelbuilder/ui-ux-pro-max-skill)
 ```
 
 ## Lệnh
