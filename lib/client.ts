@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { signalDataChanged } from "./live-signal";
 
 export class ApiError extends Error {
   constructor(
@@ -31,8 +32,13 @@ export async function api<T = unknown>(url: string, init?: ApiInit): Promise<T> 
     const fields = (data.fields ?? data.details) as Record<string, string> | undefined;
     throw new ApiError(data.error ?? "Đã có lỗi xảy ra", res.status, fields);
   }
+  if (changesData(url, init?.method)) signalDataChanged();
   return data as T;
 }
+
+/** A write that may move the live counts (not the feed's own requests or sign-in/out). */
+const changesData = (url: string, method = "GET") =>
+  method.toUpperCase() !== "GET" && !url.startsWith("/api/notifications") && !url.startsWith("/api/auth/");
 
 /** How a task should look right after a change, before the server answers. */
 export interface ChangeHint {

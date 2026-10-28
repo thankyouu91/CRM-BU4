@@ -81,6 +81,12 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)("bulk edits, notifications and A
     expect(one.unread).toBe(2);
     const all = await (await readRoute.POST(new NextRequest("http://local/api/notifications/read", { method: "POST", body: JSON.stringify({ all: true }) }))).json();
     expect(all.unread).toBe(0);
+    // The sidebar's inbox count travels with the feed: the lead manages the project, An does not.
+    await db.taskReport.create({ data: { taskId: tasks[0], authorId: ids.an, content: "Xong một nửa", progress: 50 } });
+    session.user = as(ids.lead, "LEAD");
+    expect(await (await feedRoute.GET()).json()).toMatchObject({ pendingReports: 1 });
+    session.user = as(ids.an);
+    expect(await (await feedRoute.GET()).json()).toMatchObject({ pendingReports: 0 });
   });
 
   it("lets an administrator outside a project take its work, joining it, and nobody else", async () => {

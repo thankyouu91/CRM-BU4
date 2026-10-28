@@ -93,7 +93,7 @@ Chuông trên thanh trên cùng (`components/layout/notification-bell.tsx`, `lib
 
 - **Thông báo lưu lại:** được giao công việc (giao nhiều việc một lúc thì gộp thành một thông báo), được thêm vào dự án, báo cáo tiến độ được duyệt, báo cáo tuần/tháng được cấp trên xem (kèm nhận xét), nhân sự mình quản lý trực tiếp xin nghỉ. Không ai nhận thông báo về thao tác của chính mình. Bấm để mở đúng công việc, dự án hoặc báo cáo; *Đánh dấu đã đọc* cho tất cả. Thông báo cũ hơn 90 ngày được xoá trong tác vụ hằng đêm.
 - **Cần chú ý** (tính lại mỗi lần mở, không lưu): việc của bạn đã quá hạn, việc đến hạn hôm nay hoặc ngày mai, báo cáo tuần chưa gửi; cấp trên thấy số người chưa gửi báo cáo tuần.
-- Chuông tự cập nhật khi chuyển trang, khi quay lại tab và vài phút một lần.
+- **Dữ liệu sống một nguồn** (`components/layout/live-feed.tsx`): chuông, số đếm *Hộp báo cáo* và chấm nhắc báo cáo tuần trên thanh bên lấy chung một nguồn. Bản đầu tiên gửi kèm trang (không cần request riêng); sau đó tự làm mới khi chuyển trang (tối đa 20 giây một lần), khi quay lại tab, 2 phút một lần, và ngay sau khi bạn lưu bất cứ thay đổi nào qua `api()` (`lib/live-signal.ts`), nên số đếm không còn đứng yên tới khi tải lại trang.
 
 ### Nhắc báo cáo tuần
 

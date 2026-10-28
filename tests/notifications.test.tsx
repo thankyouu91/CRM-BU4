@@ -3,6 +3,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { assignmentNotices, dueWeeklyReport, zonedClock } from "../lib/notifications";
 import { NotificationBell, timeAgo } from "../components/layout/notification-bell";
+import { LiveFeedProvider } from "../components/layout/live-feed";
 import { bulkMessage } from "../components/tasks/bulk-bar";
 
 const push = vi.fn();
@@ -43,6 +44,8 @@ describe("notification rules", () => {
 describe("notification bell", () => {
   const feed = {
     unread: 1,
+    pendingReports: 0,
+    reportOwed: null,
     asOf: "2026-10-13T10:00:00.000Z",
     alerts: [{ id: "overdue", tone: "critical", title: "2 việc của bạn đã quá hạn", body: "“A”, “B”", link: "/tasks?issue=overdue" }],
     items: [
@@ -54,7 +57,7 @@ describe("notification bell", () => {
   it("counts unread notices and alerts, opens a notice and marks it read", async () => {
     const fetch = vi.fn(async (url: string, init?: RequestInit) => ({ ok: true, status: 200, json: async () => (url.endsWith("/read") ? { unread: 0, sent: JSON.parse(String(init?.body)) } : feed) }));
     vi.stubGlobal("fetch", fetch);
-    await act(async () => { render(<NotificationBell />); });
+    await act(async () => { render(<LiveFeedProvider initial={null}><NotificationBell /></LiveFeedProvider>); });
     const bell = screen.getByRole("button", { name: "Thông báo, 2 mục cần xem" });
     await act(async () => { fireEvent.click(bell); });
     const panel = screen.getByRole("dialog", { name: "Thông báo" });
@@ -71,7 +74,7 @@ describe("notification bell", () => {
   it("marks everything read and closes with Escape", async () => {
     const fetch = vi.fn<(url: string, init?: RequestInit) => Promise<unknown>>(async (url) => ({ ok: true, status: 200, json: async () => (url.endsWith("/read") ? { unread: 0 } : { ...feed, alerts: [] }) }));
     vi.stubGlobal("fetch", fetch);
-    await act(async () => { render(<NotificationBell />); });
+    await act(async () => { render(<LiveFeedProvider initial={null}><NotificationBell /></LiveFeedProvider>); });
     await act(async () => { fireEvent.click(screen.getByRole("button", { name: "Thông báo, 1 mục cần xem" })); });
     await act(async () => { fireEvent.click(screen.getByRole("button", { name: /Đánh dấu đã đọc/ })); });
     expect(JSON.parse(String(fetch.mock.calls.find(([url]) => url === "/api/notifications/read")![1]!.body))).toEqual({ all: true });

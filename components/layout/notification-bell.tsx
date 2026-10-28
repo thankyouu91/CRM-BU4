@@ -1,17 +1,14 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
-import { usePathname, useRouter } from "next/navigation";
+import { useEffect, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
 import { Bell, CalendarCheck, CheckCheck, ClipboardList, Info, TriangleAlert, UserPlus } from "lucide-react";
 import { api } from "@/lib/client";
-import type { NotificationAlert, NotificationFeed, NotificationItem } from "@/lib/notifications";
+import type { NotificationAlert, NotificationItem } from "@/lib/notifications";
 import { cn } from "@/lib/utils";
 import { zonedText } from "@/lib/work-report";
-
-/** Refresh at most this often on navigation; also on focus and every few minutes while visible. */
-const FRESH_MS = 20_000;
-const POLL_MS = 120_000;
+import { useLiveFeed } from "./live-feed";
 
 /** "vừa xong", "5 phút trước", "3 giờ trước", "hôm qua", or the date. */
 export function timeAgo(iso: string, now = Date.now()): string {
@@ -32,37 +29,12 @@ const ALERT_TONE = {
 } as const;
 
 export function NotificationBell() {
-  const [feed, setFeed] = useState<NotificationFeed | null>(null);
+  // The feed is shared with the sidebar and kept fresh by LiveFeedProvider.
+  const { feed, setFeed, refresh: load } = useLiveFeed();
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
   const button = useRef<HTMLButtonElement>(null);
-  const loadedAt = useRef(0);
   const router = useRouter();
-  const pathname = usePathname();
-
-  const load = useCallback(async (force = false) => {
-    if (!force && Date.now() - loadedAt.current < FRESH_MS) return;
-    loadedAt.current = Date.now();
-    try {
-      setFeed(await api<NotificationFeed>("/api/notifications"));
-    } catch {
-      loadedAt.current = 0; // try again on the next occasion
-    }
-  }, []);
-
-  // Navigation, focus and a slow poll while the tab is visible.
-  useEffect(() => void load(), [load, pathname]);
-  useEffect(() => {
-    const onFocus = () => document.visibilityState === "visible" && load();
-    const timer = setInterval(() => document.visibilityState === "visible" && load(true), POLL_MS);
-    window.addEventListener("focus", onFocus);
-    document.addEventListener("visibilitychange", onFocus);
-    return () => {
-      clearInterval(timer);
-      window.removeEventListener("focus", onFocus);
-      document.removeEventListener("visibilitychange", onFocus);
-    };
-  }, [load]);
 
   useEffect(() => {
     if (!open) return;

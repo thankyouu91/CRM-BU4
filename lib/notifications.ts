@@ -10,6 +10,7 @@ import { addDays, endOfDay } from "date-fns";
 import { prisma } from "./prisma";
 import { APP_TIMEZONE } from "./period";
 import { canViewWorkReport } from "./permissions";
+import { managedProjectsWhere } from "./rbac";
 import type { CurrentUser } from "./session";
 import { shiftWorkPeriod, workPeriodOf, type WorkPeriod } from "./work-report";
 
@@ -47,6 +48,10 @@ export interface NotificationFeed {
   items: NotificationItem[];
   unread: number;
   alerts: NotificationAlert[];
+  /** Unreviewed progress reports on projects this person manages (the inbox count in the sidebar). */
+  pendingReports: number;
+  /** "tuần 42" while this person's weekly report is due and not sent (the dot in the sidebar). */
+  reportOwed: string | null;
   asOf: string;
 }
 
@@ -130,8 +135,8 @@ const endOfTomorrow = (now: Date) => new Date(endOfDay(addDays(new TZDate(now.ge
 
 const plural = (n: number, word: string) => `${n} ${word}`;
 
-/** What needs this person's attention now. */
-export async function liveAlerts(user: CurrentUser, now = new Date()): Promise<NotificationAlert[]> {
+/** What needs this person's attention now. `owed` is passed in when the caller needs it too. */
+export async function liveAlerts(user: CurrentUser, now = new Date(), owedReport: Promise<WorkPeriod | null> = weeklyReportOwed(user, now)): Promise<NotificationAlert[]> {
   const mine = { assigneeId: user.id, status: { not: "DONE" as const }, project: { status: { notIn: ["CANCELLED" as const, "COMPLETED" as const] } } };
   const reportPeriod = dueWeeklyReport(now);
   const soon = { gte: now, lte: endOfTomorrow(now) };
@@ -140,7 +145,7 @@ export async function liveAlerts(user: CurrentUser, now = new Date()): Promise<N
     prisma.task.count({ where: { ...mine, dueDate: { lt: now } } }),
     prisma.task.findMany({ where: { ...mine, dueDate: soon }, orderBy: { dueDate: "asc" }, take: 2, select: { title: true } }),
     prisma.task.count({ where: { ...mine, dueDate: soon } }),
-    weeklyReportOwed(user, now),
+    owedReport,
     reportPeriod && user.role !== "MEMBER" ? unsentTeamReports(user, reportPeriod) : Promise.resolve(0),
   ]);
   const alerts: NotificationAlert[] = [];
@@ -161,16 +166,31 @@ async function unsentTeamReports(viewer: CurrentUser, period: WorkPeriod): Promi
   return users.filter((u) => canViewWorkReport(viewer, u) && !u.workReports.length).length;
 }
 
+/** Unreviewed progress reports on the projects this person manages. */
+export function pendingReportCount(user: CurrentUser): Promise<number> {
+  return prisma.taskReport.count({ where: { reviewedAt: null, task: { project: managedProjectsWhere(user) } } });
+}
+
+/**
+ * Everything live about this person in one wave of queries: the bell's notices and
+ * alerts, the inbox count and the weekly report dot. The layout sends it with the
+ * page; the browser refreshes it through GET /api/notifications.
+ */
 export async function notificationFeed(user: CurrentUser, now = new Date()): Promise<NotificationFeed> {
-  const [rows, unread, alerts] = await Promise.all([
+  const owed = weeklyReportOwed(user, now);
+  const [rows, unread, alerts, owedPeriod, pendingReports] = await Promise.all([
     prisma.notification.findMany({ where: { userId: user.id }, orderBy: [{ createdAt: "desc" }, { id: "desc" }], take: NOTIFICATION_LIMIT }),
     prisma.notification.count({ where: { userId: user.id, readAt: null } }),
-    liveAlerts(user, now),
+    liveAlerts(user, now, owed),
+    owed,
+    pendingReportCount(user),
   ]);
   return {
     items: rows.map((n) => ({ id: n.id, type: n.type, title: n.title, body: n.body, link: n.link, actorName: n.actorName, read: !!n.readAt, createdAt: n.createdAt.toISOString() })),
     unread,
     alerts,
+    pendingReports,
+    reportOwed: owedPeriod ? owedPeriod.short.toLowerCase() : null,
     asOf: now.toISOString(),
   };
 }

@@ -2,7 +2,6 @@
 
 import { Pagination } from "@/components/ui/pagination";
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
 import { CheckCheck, CheckCircle2, Clock, Eye, Inbox, Loader2, Send } from "lucide-react";
 import { toast } from "sonner";
@@ -140,7 +139,6 @@ export function InboxView({
   initial?: { reports: InboxReport[]; pendingCount: number; total: number; nextCursor: string | null };
   tabs?: React.ReactNode;
 }) {
-  const router = useRouter();
   const [box, setBox] = useState<Box>(isManager ? "received" : "sent");
   const [status, setStatus] = useState<Status>(isManager ? "pending" : "all");
   const [openTask, setOpenTask] = useState<string | null>(null);
@@ -149,10 +147,10 @@ export function InboxView({
   const cursor = cursors[cursors.length - 1];
   const { data, loading, error, reload } = useApi<{ reports: InboxReport[]; pendingCount: number; total: number; nextCursor: string | null }>(`/api/reports/inbox?box=${box}&status=${status}${cursor ? `&cursor=${encodeURIComponent(cursor)}` : ""}`, { initial });
 
+  // The sidebar count follows on its own: every review goes through api(), which refreshes the live feed.
   const refresh = async () => {
     if (cursors.length > 1) setCursors([null]);
     else await reload();
-    router.refresh(); // update the sidebar badge
   };
 
   const markAllSeen = async () => {

@@ -28,8 +28,10 @@ import { Avatar } from "@/components/ui/avatar";
 import { RoleBadge } from "@/components/ui/badge";
 import { ThemeToggle } from "./theme-toggle";
 import { NotificationBell } from "./notification-bell";
+import { LiveFeedProvider, useLiveFeed } from "./live-feed";
 import { CommandPalette } from "./command-palette";
 import type { CurrentUser } from "@/lib/session";
+import type { NotificationFeed } from "@/lib/notifications";
 import { clearApiCache } from "@/lib/client";
 import { cn } from "@/lib/utils";
 import { hasPermission, type PermissionKey } from "@/lib/permissions";
@@ -137,8 +139,12 @@ function NavLink({ item, active, collapsed, count, dot, onNavigate }: { item: Na
   );
 }
 
-function SidebarNav({ user, pendingReports, reportOwed, collapsed, onNavigate }: { user: CurrentUser; pendingReports: number; reportOwed?: string | null; collapsed?: boolean; onNavigate?: () => void }) {
+function SidebarNav({ user, collapsed, onNavigate }: { user: CurrentUser; collapsed?: boolean; onNavigate?: () => void }) {
   const pathname = usePathname();
+  // Live counts, shared with the bell (LiveFeedProvider): they follow new reports and the person's own saves.
+  const { feed } = useLiveFeed();
+  const pendingReports = feed?.pendingReports ?? 0;
+  const reportOwed = feed?.reportOwed ?? null;
   const isActive = (href: string) => pathname === href || pathname.startsWith(`${href}/`);
   const allowed = (item: NavItem) => !item.permission || hasPermission(user, item.permission);
   return (
@@ -247,15 +253,13 @@ function UserMenu({ user }: { user: CurrentUser }) {
 
 export function AppShell({
   user,
-  pendingReports,
-  reportOwed = null,
+  feed,
   initialCollapsed = false,
   children,
 }: {
   user: CurrentUser;
-  pendingReports: number;
-  /** "tuần 42" when this person's weekly report is due and not sent. */
-  reportOwed?: string | null;
+  /** The live feed as the server rendered it: bell, inbox count, weekly report dot. */
+  feed: NotificationFeed | null;
   /** The sidebar is a narrow icon bar (from the cookie, so the server renders it the same). */
   initialCollapsed?: boolean;
   children: React.ReactNode;
@@ -283,82 +287,84 @@ export function AppShell({
   };
 
   return (
-    <div className="min-h-screen">
-      {/* Desktop sidebar */}
-      <aside
-        id="app-sidebar"
-        onMouseEnter={() => collapsed && schedulePeek(true, 120)}
-        onMouseLeave={() => collapsed && schedulePeek(false, 200)}
-        onFocus={(e) => collapsed && e.target.matches(":focus-visible") && schedulePeek(true, 0)}
-        onBlur={(e) => collapsed && !e.currentTarget.contains(e.relatedTarget as Node | null) && schedulePeek(false, 0)}
-        onKeyDown={(e) => e.key === "Escape" && peek && schedulePeek(false, 0)}
-        className={cn(
-          "fixed inset-y-0 left-0 z-30 hidden flex-col bg-sidebar py-6 transition-[width,box-shadow] duration-200 motion-reduce:transition-none lg:flex print:!hidden",
-          wide ? "w-64 overflow-hidden px-4" : "w-[72px] px-3",
-          peek && "shadow-2xl shadow-slate-950/40",
-        )}
-      >
-        <Brand collapsed={!wide} />
-        <SidebarNav user={user} pendingReports={pendingReports} reportOwed={reportOwed} collapsed={!wide} />
-      </aside>
+    <LiveFeedProvider initial={feed}>
+      <div className="min-h-screen">
+        {/* Desktop sidebar */}
+        <aside
+          id="app-sidebar"
+          onMouseEnter={() => collapsed && schedulePeek(true, 120)}
+          onMouseLeave={() => collapsed && schedulePeek(false, 200)}
+          onFocus={(e) => collapsed && e.target.matches(":focus-visible") && schedulePeek(true, 0)}
+          onBlur={(e) => collapsed && !e.currentTarget.contains(e.relatedTarget as Node | null) && schedulePeek(false, 0)}
+          onKeyDown={(e) => e.key === "Escape" && peek && schedulePeek(false, 0)}
+          className={cn(
+            "fixed inset-y-0 left-0 z-30 hidden flex-col bg-sidebar py-6 transition-[width,box-shadow] duration-200 motion-reduce:transition-none lg:flex print:!hidden",
+            wide ? "w-64 overflow-hidden px-4" : "w-[72px] px-3",
+            peek && "shadow-2xl shadow-slate-950/40",
+          )}
+        >
+          <Brand collapsed={!wide} />
+          <SidebarNav user={user} collapsed={!wide} />
+        </aside>
 
-      {/* Mobile sidebar */}
-      <AnimatePresence>
-        {mobileOpen && (
-          <div className="fixed inset-0 z-40 lg:hidden">
-            <motion.div
-              className="absolute inset-0 bg-slate-950/60"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              onClick={() => setMobileOpen(false)}
-            />
-            <motion.aside
-              className="absolute inset-y-0 left-0 flex w-72 flex-col bg-sidebar px-4 py-6"
-              initial={{ x: "-100%" }}
-              animate={{ x: 0 }}
-              exit={{ x: "-100%" }}
-              transition={{ type: "spring", damping: 30, stiffness: 320 }}
+        {/* Mobile sidebar */}
+        <AnimatePresence>
+          {mobileOpen && (
+            <div className="fixed inset-0 z-40 lg:hidden">
+              <motion.div
+                className="absolute inset-0 bg-slate-950/60"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                onClick={() => setMobileOpen(false)}
+              />
+              <motion.aside
+                className="absolute inset-y-0 left-0 flex w-72 flex-col bg-sidebar px-4 py-6"
+                initial={{ x: "-100%" }}
+                animate={{ x: 0 }}
+                exit={{ x: "-100%" }}
+                transition={{ type: "spring", damping: 30, stiffness: 320 }}
+              >
+                <div className="flex items-center justify-between">
+                  <Brand />
+                  <button onClick={() => setMobileOpen(false)} className="rounded-lg p-2 text-sidebar-muted" aria-label="Đóng menu">
+                    <X className="h-5 w-5" />
+                  </button>
+                </div>
+                <SidebarNav user={user} onNavigate={() => setMobileOpen(false)} />
+              </motion.aside>
+            </div>
+          )}
+        </AnimatePresence>
+
+        <div className={cn("transition-[padding] duration-200 motion-reduce:transition-none print:!pl-0", collapsed ? "lg:pl-[72px]" : "lg:pl-64")}>
+          <header className="sticky top-0 z-20 flex h-16 items-center gap-3 border-b bg-background/80 px-4 backdrop-blur-md sm:px-6 lg:px-8 print:hidden">
+            <button
+              onClick={() => setMobileOpen(true)}
+              className="rounded-lg p-2 text-muted-foreground hover:bg-muted lg:hidden"
+              aria-label="Mở menu"
             >
-              <div className="flex items-center justify-between">
-                <Brand />
-                <button onClick={() => setMobileOpen(false)} className="rounded-lg p-2 text-sidebar-muted" aria-label="Đóng menu">
-                  <X className="h-5 w-5" />
-                </button>
-              </div>
-              <SidebarNav user={user} pendingReports={pendingReports} reportOwed={reportOwed} onNavigate={() => setMobileOpen(false)} />
-            </motion.aside>
-          </div>
-        )}
-      </AnimatePresence>
-
-      <div className={cn("transition-[padding] duration-200 motion-reduce:transition-none print:!pl-0", collapsed ? "lg:pl-[72px]" : "lg:pl-64")}>
-        <header className="sticky top-0 z-20 flex h-16 items-center gap-3 border-b bg-background/80 px-4 backdrop-blur-md sm:px-6 lg:px-8 print:hidden">
-          <button
-            onClick={() => setMobileOpen(true)}
-            className="rounded-lg p-2 text-muted-foreground hover:bg-muted lg:hidden"
-            aria-label="Mở menu"
-          >
-            <Menu className="h-5 w-5" />
-          </button>
-          <button
-            onClick={toggleSidebar}
-            className="-ml-2 hidden rounded-lg p-2 text-muted-foreground hover:bg-muted hover:text-foreground lg:inline-flex"
-            aria-label={collapsed ? "Mở rộng thanh bên" : "Thu gọn thanh bên"}
-            aria-controls="app-sidebar"
-            aria-expanded={!collapsed}
-            title={collapsed ? "Mở rộng thanh bên (giữ mở)" : "Thu gọn thanh bên (di chuột vào để mở tạm)"}
-          >
-            {collapsed ? <PanelLeftOpen className="h-5 w-5" /> : <PanelLeftClose className="h-5 w-5" />}
-          </button>
-          <div className="flex-1" />
-          <CommandPalette user={user} />
-          <NotificationBell />
-          <ThemeToggle />
-          <UserMenu user={user} />
-        </header>
-        <main className="mx-auto w-full max-w-[1400px] px-4 py-6 sm:px-6 lg:px-8 lg:py-8 print:!max-w-none print:!p-0">{children}</main>
+              <Menu className="h-5 w-5" />
+            </button>
+            <button
+              onClick={toggleSidebar}
+              className="-ml-2 hidden rounded-lg p-2 text-muted-foreground hover:bg-muted hover:text-foreground lg:inline-flex"
+              aria-label={collapsed ? "Mở rộng thanh bên" : "Thu gọn thanh bên"}
+              aria-controls="app-sidebar"
+              aria-expanded={!collapsed}
+              title={collapsed ? "Mở rộng thanh bên (giữ mở)" : "Thu gọn thanh bên (di chuột vào để mở tạm)"}
+            >
+              {collapsed ? <PanelLeftOpen className="h-5 w-5" /> : <PanelLeftClose className="h-5 w-5" />}
+            </button>
+            <div className="flex-1" />
+            <CommandPalette user={user} />
+            <NotificationBell />
+            <ThemeToggle />
+            <UserMenu user={user} />
+          </header>
+          <main className="mx-auto w-full max-w-[1400px] px-4 py-6 sm:px-6 lg:px-8 lg:py-8 print:!max-w-none print:!p-0">{children}</main>
+        </div>
       </div>
-    </div>
+    </LiveFeedProvider>
   );
 }
