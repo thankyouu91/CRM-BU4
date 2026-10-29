@@ -10,12 +10,14 @@ export const metadata = { title: "Pet Town" };
 export default async function TaTuaPage() {
   const me = (await getCurrentUser())!;
   let src: string | null = null;
+  let token: string | null = null;
   let error: string | null = null;
   try {
     const session = await memberSession(me);
-    src = gameFrameUrl(session.token);
+    token = session.token;
+    src = gameFrameUrl(token);
   } catch (err) {
     error = err instanceof GameError ? err.message : "Máy chủ game gặp sự cố, thử lại sau.";
   }
-  return <GameFrame src={src} error={error} admin={isAdmin(me)} />;
+  return <GameFrame src={src} token={token} error={error} admin={isAdmin(me)} />;
 }

@@ -9,7 +9,7 @@ import { INVITE_PATH, PLAY_HOST, PLAY_PATH, playHostRedirect } from "@/lib/petde
 // Routes reachable without a session. /share/<token> is a public presentation link:
 // the page checks the token itself (lib/report-share.ts).
 // Pet Town: the game's static files and its API (which checks its own token), the guest page and its API.
-const PUBLIC_PATHS = ["/login", "/api/auth/login", "/share", "/ta-tua/game", "/ta-tua/api", "/ta-tua/khach", "/api/ta-tua/guest", INVITE_PATH, PLAY_PATH];
+const PUBLIC_PATHS = ["/login", "/api/auth/login", "/share", "/ta-tua/game", "/ta-tua/api", "/ta-tua/khach", "/api/ta-tua/guest", "/api/ta-tua/account", INVITE_PATH, PLAY_PATH];
 const SHARE_PATH = "/share";
 // Routes a session flagged "must change password" may still reach.
 const PASSWORD_CHANGE_PATHS = ["/change-password", "/api/auth/change-password", "/api/auth/logout", "/api/auth/me"];

@@ -5,8 +5,9 @@ import { useState } from "react";
 import { Gamepad2, Maximize2, RefreshCw, SlidersHorizontal } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { EmptyState, PageHeader } from "@/components/ui/misc";
+import { CredentialsNotice } from "@/components/tatua/account";
 
-export function GameFrame({ src, error, admin }: { src: string | null; error: string | null; admin: boolean }) {
+export function GameFrame({ src, token, error, admin }: { src: string | null; token: string | null; error: string | null; admin: boolean }) {
   const [reloads, setReloads] = useState(0);
   return (
     <div className="flex h-full flex-col">
@@ -34,13 +35,11 @@ export function GameFrame({ src, error, admin }: { src: string | null; error: st
         }
       />
       {src ? (
-        <iframe
-          key={reloads}
-          src={src}
-          title="Pet Town"
-          className="h-[calc(100dvh-11.5rem)] min-h-[560px] w-full rounded-xl border bg-card"
-          allow="autoplay"
-        />
+        // The reminder bar (until the player sets a password) shares the game's viewport-sized box.
+        <div className="flex h-[calc(100dvh-11.5rem)] min-h-[560px] flex-col">
+          {token && <CredentialsNotice token={token} className="mb-3 rounded-xl border" />}
+          <iframe key={reloads} src={src} title="Pet Town" className="min-h-0 w-full flex-1 rounded-xl border bg-card" allow="autoplay" />
+        </div>
       ) : (
         <div className="rounded-xl border bg-card">
           <EmptyState icon={Gamepad2} title="Chưa vào chơi được" description={error ?? "Máy chủ game chưa sẵn sàng."} />

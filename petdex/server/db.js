@@ -9,6 +9,9 @@ const isWorkers = typeof navigator !== 'undefined' && navigator.userAgent === 'C
  * Tạo bảng còn thiếu và thêm cột cho bảng cũ. Gọi sau khi cắm backend (Node: tự chạy ở cuối file;
  * Durable Object: trong constructor). Chạy lại bao nhiêu lần cũng được.
  */
+/** Khóa so tên đăng nhập: NFC, viết thường (cả chữ có dấu). */
+export const loginKey = (name) => String(name ?? '').normalize('NFC').trim().toLowerCase();
+
 export function ensureSchema() {
   db.exec(`
   PRAGMA foreign_keys = ON;
@@ -478,8 +481,14 @@ addColumn('users', 'locked_slots', 'INTEGER NOT NULL DEFAULT 0');
   addColumn('users', 'banned', 'INTEGER NOT NULL DEFAULT 0');
   addColumn('users', 'invite_id', 'INTEGER');
   addColumn('users', 'last_seen_at', 'INTEGER NOT NULL DEFAULT 0');
+  // Khóa đăng nhập: tên đã chuẩn hóa NFC và viết thường đủ cả chữ có dấu (COLLATE NOCASE chỉ gộp A–Z).
+  addColumn('users', 'login_key', 'TEXT');
+  const unkeyed = db.prepare('SELECT id, username FROM users WHERE login_key IS NULL').all();
+  const setKey = db.prepare('UPDATE users SET login_key = ? WHERE id = ?');
+  for (const u of unkeyed) setKey.run(loginKey(u.username), u.id);
   db.exec(`
   CREATE UNIQUE INDEX IF NOT EXISTS users_crm ON users(crm_user_id) WHERE crm_user_id IS NOT NULL;
+  CREATE INDEX IF NOT EXISTS users_login_key ON users(login_key);
   CREATE TABLE IF NOT EXISTS guest_invites (
     id         INTEGER PRIMARY KEY AUTOINCREMENT,
     code       TEXT NOT NULL UNIQUE,
@@ -509,7 +518,7 @@ const q = {
 
   userById: db.prepare('SELECT * FROM users WHERE id = ?'),
   userByName: db.prepare('SELECT * FROM users WHERE username = ?'),
-  insertUser: db.prepare('INSERT INTO users (username, pass_hash, coins, created_at) VALUES (?, ?, 0, ?)'),
+  insertUser: db.prepare('INSERT INTO users (username, pass_hash, coins, created_at, login_key) VALUES (?, ?, 0, ?, ?)'),
   setActivePet: db.prepare('UPDATE users SET active_pet_id = ? WHERE id = ?'),
   setDaily: db.prepare('UPDATE users SET last_daily_at = ?, daily_day = ?, streak = ? WHERE id = ?'),
   setWarehouse: db.prepare('UPDATE users SET warehouse = ? WHERE id = ?'),
@@ -561,7 +570,7 @@ export const getUser = (id) => q.userById.get(id);
 export const allUsers = () => q.allUsers.all();
 export const findUserByName = (username) => q.userByName.get(username);
 /** Tạo người chơi với ví rỗng; xu khởi điểm được ghi vào sổ cái bởi nơi gọi. */
-export const createUser = (username, passHash, now = Date.now()) => Number(q.insertUser.run(username, passHash, now).lastInsertRowid);
+export const createUser = (username, passHash, now = Date.now()) => Number(q.insertUser.run(username, passHash, now, loginKey(username)).lastInsertRowid);
 export const setActivePet = (userId, petId) => q.setActivePet.run(petId, userId);
 export const setDaily = (userId, at, day, streak) => q.setDaily.run(at, day, streak, userId);
 export const setWarehouse = (userId, level) => q.setWarehouse.run(level, userId);
@@ -620,8 +629,11 @@ const w = {
   residents: db.prepare(`SELECT u.id, u.username, u.display_name, u.active_pet_id FROM users u JOIN pets p ON p.id = u.active_pet_id
     WHERE u.banned = 0 ORDER BY u.last_seen_at DESC, u.id DESC LIMIT ?`),
   recentSession: db.prepare('SELECT token FROM sessions WHERE user_id = ? AND created_at > ? ORDER BY created_at DESC LIMIT 1'),
-  insertLinked: db.prepare("INSERT INTO users (username, pass_hash, coins, created_at, kind, crm_user_id, display_name, invite_id) VALUES (?, '', 0, ?, ?, ?, ?, ?)"),
+  insertLinked: db.prepare("INSERT INTO users (username, pass_hash, coins, created_at, kind, crm_user_id, display_name, invite_id, login_key) VALUES (?, '', 0, ?, ?, ?, ?, ?, ?)"),
   setDisplayName: db.prepare('UPDATE users SET display_name = ? WHERE id = ?'),
+  setCredentials: db.prepare('UPDATE users SET username = ?, pass_hash = ?, login_key = ? WHERE id = ?'),
+  userByLogin: db.prepare("SELECT * FROM users WHERE login_key = ? ORDER BY (pass_hash <> '') DESC, id LIMIT 1"),
+  deleteOtherSessions: db.prepare('DELETE FROM sessions WHERE user_id = ? AND token <> ?'),
   setBanned: db.prepare('UPDATE users SET banned = ? WHERE id = ?'),
   deleteSessions: db.prepare('DELETE FROM sessions WHERE user_id = ?'),
   touchSeen: db.prepare('UPDATE users SET last_seen_at = ? WHERE id = ? AND last_seen_at < ?'),
@@ -660,8 +672,14 @@ export const residentUsers = (limit) => w.residents.all(limit);
 /** Token của phiên mở gần đây (trong `maxAgeMs`), để mỗi lần mở trang không tạo phiên mới. */
 export const recentToken = (userId, maxAgeMs = 7 * 86_400_000) => w.recentSession.get(userId, Date.now() - maxAgeMs)?.token;
 export const createLinkedUser = (username, { kind, crmUserId = null, displayName = null, inviteId = null }, now = Date.now()) =>
-  Number(w.insertLinked.run(username, now, kind, crmUserId, displayName, inviteId).lastInsertRowid);
+  Number(w.insertLinked.run(username, now, kind, crmUserId, displayName, inviteId, loginKey(username)).lastInsertRowid);
 export const setDisplayName = (userId, name) => w.setDisplayName.run(name, userId);
+/** Tên đăng nhập + mật khẩu (đã băm) để vào thẳng trang chơi. */
+export const setCredentials = (userId, username, passHash) => w.setCredentials.run(username, passHash, loginKey(username), userId);
+/** Người chơi theo tên đăng nhập, không phân biệt hoa thường kể cả chữ có dấu ("Đức" = "đức"). */
+export const findUserByLogin = (name) => w.userByLogin.get(loginKey(name));
+/** Đăng xuất mọi nơi khác, giữ phiên đang dùng. */
+export const revokeOtherSessions = (userId, keepToken) => w.deleteOtherSessions.run(userId, keepToken);
 export const setBanned = (userId, banned) => {
   w.setBanned.run(banned ? 1 : 0, userId);
   if (banned) w.deleteSessions.run(userId);

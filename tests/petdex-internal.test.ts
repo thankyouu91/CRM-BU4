@@ -181,3 +181,75 @@ describe("Pet Town internal API", () => {
     expect(typeof overview.data.treasury).toBe("number");
   });
 });
+
+describe("Pet Town name + password accounts", () => {
+  it("signs up with a name and a password, then signs in with them", async () => {
+    const reg = await internal("POST", "/account/register", { username: "Mèo_Mun", password: "meomun1" });
+    expect(reg.status).toBe(200);
+    expect(reg.data).toMatchObject({ username: "Mèo_Mun", displayName: "Mèo_Mun", kind: "player", hasPassword: true });
+    const me = await game("GET", "/me", reg.data.token as string);
+    expect((me.data.user as Json).coins).toBe(150); // same welcome coins as everyone
+
+    expect((await internal("POST", "/account/register", { username: "mèo_mun", password: "khac123" })).data.error).toMatch(/đã có người dùng/);
+    expect((await internal("POST", "/account/register", { username: "có dấu cách", password: "abcdef" })).status).toBe(400);
+    expect((await internal("POST", "/account/register", { username: "NganNgan", password: "12345" })).data.error).toMatch(/6 ký tự/);
+
+    const login = await internal("POST", "/account/login", { username: "Mèo_Mun", password: "meomun1" });
+    expect(login.status).toBe(200);
+    expect(login.data.userId).toBe(reg.data.userId);
+    expect((await game("GET", "/me", login.data.token as string)).status).toBe(200);
+    expect((await internal("POST", "/account/login", { username: "Mèo_Mun", password: "sai-roi" })).data.error).toBe("Sai tên đăng nhập hoặc mật khẩu.");
+    expect((await internal("POST", "/account/login", { username: "KhongCo", password: "abcdef" })).data.error).toBe("Sai tên đăng nhập hoặc mật khẩu.");
+  });
+
+  it("lets an existing member or guest add a password and keep their account", async () => {
+    const sso = await internal("POST", "/sso", { crmUserId: "crm-pass", name: "Lý Thường Kiệt" });
+    const before = await internal("POST", "/guest/resume", { token: sso.data.token });
+    expect(before.data).toMatchObject({ ok: true, kind: "member", hasPassword: false, username: "Lý_Thường_Kiệt" });
+    // signing in by the old name without a password says how to add one
+    expect((await internal("POST", "/account/login", { username: "Lý_Thường_Kiệt", password: "" })).data.error).toMatch(/chưa có mật khẩu/);
+
+    const taken = await internal("POST", "/account/credentials", { token: sso.data.token, username: "Mèo_Mun", password: "binh123" });
+    expect(taken.data.error).toMatch(/đã có người dùng/);
+    const set = await internal("POST", "/account/credentials", { token: sso.data.token, username: "BinhTran", password: "binh123" });
+    expect(set.data).toMatchObject({ userId: sso.data.userId, username: "BinhTran", displayName: "Lý Thường Kiệt", hasPassword: true });
+    const login = await internal("POST", "/account/login", { username: "binhtran", password: "binh123" });
+    expect(login.data.userId).toBe(sso.data.userId);
+    expect((await internal("POST", "/guest/resume", { token: login.data.token })).data).toMatchObject({ hasPassword: true });
+    // WorkHub sign-in still finds the same account after the rename
+    expect((await internal("POST", "/sso", { crmUserId: "crm-pass", name: "Lý Thường Kiệt" })).data.userId).toBe(sso.data.userId);
+    expect((await internal("POST", "/account/credentials", { token: "khong-hop-le", username: "Ai_Do", password: "abcdef" })).status).toBe(400);
+  });
+
+  it("compares login names without case, accented letters included", async () => {
+    const reg = await internal("POST", "/account/register", { username: "Đức_Anh", password: "ducanh1" });
+    expect(reg.status).toBe(200);
+    expect((await internal("POST", "/account/login", { username: "đức_anh", password: "ducanh1" })).data.userId).toBe(reg.data.userId);
+    expect((await internal("POST", "/account/login", { username: "ĐỨC_ANH", password: "ducanh1" })).data.userId).toBe(reg.data.userId);
+    // decomposed (NFD) spelling of the same name
+    expect((await internal("POST", "/account/login", { username: "Đức_Anh".normalize("NFD"), password: "ducanh1" })).data.userId).toBe(reg.data.userId);
+    expect((await internal("POST", "/account/register", { username: "ĐỨC_anh", password: "khac123" })).data.error).toMatch(/đã có người dùng/);
+  });
+
+  it("changing a password needs the current one and signs every other session out", async () => {
+    const reg = await internal("POST", "/account/register", { username: "Thay_Mat_Khau", password: "cu12345" });
+    const other = await internal("POST", "/account/login", { username: "Thay_Mat_Khau", password: "cu12345" });
+    const token = reg.data.token as string;
+    const noCurrent = await internal("POST", "/account/credentials", { token, username: "Thay_Mat_Khau", password: "moi12345" });
+    expect(noCurrent.data.error).toBe("Mật khẩu hiện tại chưa đúng.");
+    const wrong = await internal("POST", "/account/credentials", { token, currentPassword: "sai", username: "Thay_Mat_Khau", password: "moi12345" });
+    expect(wrong.status).toBe(400);
+    const ok = await internal("POST", "/account/credentials", { token, currentPassword: "cu12345", username: "Thay_Mat_Khau", password: "moi12345" });
+    expect(ok.data).toMatchObject({ hasPassword: true });
+    expect((await game("GET", "/me", token)).status).toBe(200); // this session stays
+    expect((await game("GET", "/me", other.data.token as string)).status).toBe(401); // the other one is gone
+    expect((await internal("POST", "/account/login", { username: "Thay_Mat_Khau", password: "cu12345" })).status).toBe(400);
+    expect((await internal("POST", "/account/login", { username: "Thay_Mat_Khau", password: "moi12345" })).status).toBe(200);
+  });
+
+  it("a banned player cannot sign in", async () => {
+    const reg = await internal("POST", "/account/register", { username: "BiKhoa", password: "abcdef" });
+    await internal("POST", `/admin/players/${reg.data.userId}/status`, { banned: true, actor: "Admin" });
+    expect((await internal("POST", "/account/login", { username: "BiKhoa", password: "abcdef" })).data.error).toMatch(/khóa/);
+  });
+});

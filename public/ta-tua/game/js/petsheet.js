@@ -51,7 +51,9 @@ export function rigSheet(speciesId, stageKey, wear = {}) {
   RIG_ROWS.forEach(([name, anim, mirror], row) => {
     const def = RIG_ANIMS[anim];
     def.frames.forEach((pose, i) => {
-      g.drawImage(drawFrame(speciesId, stageKey, { ...pose, mirror: mirror ? !pose.mirror : pose.mirror }, wear, i), i * RIG_FW, row * RIG_FH);
+      // Chỉ lấy RIG_FH hàng trên của khung (cao hơn ô), để 3 hàng bị cắt không lấn sang đầu ô hàng dưới.
+      const frame = drawFrame(speciesId, stageKey, { ...pose, mirror: mirror ? !pose.mirror : pose.mirror }, wear, i);
+      g.drawImage(frame, 0, 0, RIG_FW, RIG_FH, i * RIG_FW, row * RIG_FH, RIG_FW, RIG_FH);
     });
     anims[name] = { row, frames: def.frames.length, fps: def.fps };
   });

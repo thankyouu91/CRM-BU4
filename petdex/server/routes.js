@@ -1,5 +1,5 @@
 // node:crypto qua namespace: trên Workers scrypt có thể thiếu, chỉ được lỗi khi gọi, không lỗi lúc nạp module.
-import * as nodeCrypto from 'node:crypto';
+import { hashPassword, verifyPassword } from './passwords.js';
 import { settings } from './settings.js';
 import { Router } from './router.js';
 import { DAILY_CAPS, GAMES } from '../../public/ta-tua/game/js/shared/minigames.js';
@@ -32,15 +32,6 @@ import { getSpecies, listSpecies } from './species.js';
 import { richList } from './wallet.js';
 
 export const api = Router();
-
-function hashPassword(password, salt = nodeCrypto.randomBytes(16).toString('hex')) {
-  return `${salt}:${nodeCrypto.scryptSync(password, salt, 32).toString('hex')}`;
-}
-
-function verifyPassword(password, stored) {
-  const [salt, hash] = stored.split(':');
-  return nodeCrypto.timingSafeEqual(Buffer.from(hash, 'hex'), nodeCrypto.scryptSync(password, salt, 32));
-}
 
 function cleanPetName(raw) {
   const name = String(raw ?? '').replace(/\s+/g, ' ').trim();

@@ -1,8 +1,9 @@
 import { getCurrentUser } from "@/lib/session";
 import { GameError, memberSession } from "@/lib/petdex";
 import { PlayScreen } from "@/components/tatua/play-screen";
+import { playMetadata } from "@/lib/petdex-public";
 
-export const metadata = { title: "Pet Town · Server 1" };
+export const metadata = playMetadata;
 
 // Full-screen play page (play.petfarm.online/server1). A WorkHub member signed in on this site
 // plays with their account; anyone else plays with the guest session this browser keeps.

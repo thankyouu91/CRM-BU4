@@ -145,11 +145,23 @@ try {
   assert((await invite.text()).includes("Link mời này không còn hiệu lực"), "/invitation renders");
   const oldInvite = await fetch(`${origin}/ta-tua/khach/deadbeef00`, { redirect: "manual", signal: AbortSignal.timeout(20000) });
   assert.equal(oldInvite.headers.get("location"), "https://play.petfarm.online/invitation/deadbeef00", "old invite links move to the game domain");
+  // Name + password accounts (scrypt inside the Durable Object): sign up, sign in, and an existing member adds a password.
+  const account = (body) =>
+    fetch(`${origin}/api/ta-tua/account`, { method: "POST", headers: { "content-type": "application/json", Origin: origin }, body: JSON.stringify(body), signal: AbortSignal.timeout(20000) }).then(async (res) => ({ status: res.status, data: await res.json() }));
+  const smokeName = `Smoke_${Date.now().toString(36)}`;
+  const signup = await account({ action: "register", username: smokeName, password: "smoke-pass" });
+  assert.equal(signup.status, 200, `sign-up: ${JSON.stringify(signup.data)}`);
+  assert(signup.data.token && signup.data.hasPassword, "sign-up returns a play session");
+  const signin = await account({ action: "login", username: smokeName, password: "smoke-pass" });
+  assert.equal(signin.data.userId, signup.data.userId, "sign-in finds the same account");
+  assert.equal((await account({ action: "login", username: smokeName, password: "wrong-pass" })).status, 400, "wrong password refused");
+  const memberSet = await account({ action: "credentials", token, username: `${smokeName}m`, password: "smoke-pass" });
+  assert.equal(memberSet.data.hasPassword, true, `member adds a password: ${JSON.stringify(memberSet.data)}`);
   const gameDir = await fetch(`${origin}/ta-tua/game/`, { signal: AbortSignal.timeout(20000) });
   assert.equal(gameDir.status, 200, "game page is served at its folder path (no redirect)");
   const gamePage = await fetch(`${origin}/ta-tua/game/index.html`, { signal: AbortSignal.timeout(20000) });
   assert.equal(gamePage.status, 200, "game page is served as a static asset");
-  console.log("Worker smoke passed: login, project calendar, My Tasks, public share link, deadline APIs, department report, analytics, AI intake route and Pet Town (game API, Durable Object, sign-in, park WebSocket) on workerd + PostgreSQL.");
+  console.log("Worker smoke passed: login, project calendar, My Tasks, public share link, deadline APIs, department report, analytics, AI intake route and Pet Town (game API, Durable Object, sign-in, name + password accounts, park WebSocket) on workerd + PostgreSQL.");
 } catch (error) {
   console.error(logs);
   throw error;

@@ -1,3 +1,5 @@
+import type { Metadata } from "next";
+
 // Pet Town addresses that both the server and the browser use (no server-only imports here, so
 // middleware, client components and pages can all share them).
 
@@ -13,23 +15,38 @@ export const INVITE_PATH = "/invitation";
 export const inviteUrl = (code: string) => `${PLAY_ORIGIN}${INVITE_PATH}/${code}`;
 export const playUrl = () => `${PLAY_ORIGIN}${PLAY_PATH}`;
 
+/** What a shared play or invite link shows in a chat preview: the game's own name, nothing of WorkHub. */
+export const PLAY_SITE_NAME = "Petfarm Server";
+export const PLAY_TITLE = "Pet Town · Petfarm Server 1";
+export const playMetadata: Metadata = {
+  title: { absolute: PLAY_TITLE },
+  description: PLAY_SITE_NAME,
+  applicationName: PLAY_SITE_NAME,
+  openGraph: { type: "website", siteName: PLAY_SITE_NAME, title: PLAY_TITLE, description: PLAY_SITE_NAME, locale: "vi_VN" },
+  twitter: { card: "summary", title: PLAY_TITLE, description: PLAY_SITE_NAME },
+};
+
 /**
  * The game document shown in an iframe. Cloudflare serves the folder's index.html at the folder
  * path directly; `next dev` does not, so it keeps the file name there.
  */
 export const GAME_PAGE = process.env.NODE_ENV === "production" ? "/ta-tua/game/" : "/ta-tua/game/index.html";
 
-/** Where the browser keeps a guest's play session (per site: the game domain has its own). */
+/** Where the browser keeps a play session: an invite guest or a name + password account (per site). */
 export const GUEST_SESSION_KEY = "tatua.guest";
 export interface GuestSession {
   token: string;
   name: string;
-  /** The invite the guest came in with, to pick a different name later. */
+  /** The invite the guest came in with, to pick a different name later ("" for a password account). */
   code: string;
+  /** "guest" | "player" | "member", as the game last reported it. */
+  kind?: string;
+  /** Whether the account can sign in with a name and password (reported by the game, not stored). */
+  hasPassword?: boolean;
 }
 
 /** Game pages and what they need; on the game domain everything else of WorkHub is out of reach. */
-const PLAY_HOST_PATHS = [PLAY_PATH, INVITE_PATH, "/ta-tua/game", "/ta-tua/api", "/ta-tua/ws", "/ta-tua/khach", "/api/ta-tua/guest", "/login", "/api/auth", "/change-password"];
+const PLAY_HOST_PATHS = [PLAY_PATH, INVITE_PATH, "/ta-tua/game", "/ta-tua/api", "/ta-tua/ws", "/ta-tua/khach", "/api/ta-tua/guest", "/api/ta-tua/account", "/login", "/api/auth", "/change-password"];
 
 /**
  * On the game domain: where to send a request for a WorkHub page instead (null = serve it).

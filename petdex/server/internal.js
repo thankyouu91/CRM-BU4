@@ -3,6 +3,7 @@
 // còn /internal chỉ gọi được qua stub từ chính ứng dụng (máy chủ dev Node đòi khóa nội bộ).
 import { economy } from './bank.js';
 import * as store from './db.js';
+import { hashPassword, verifyPassword } from './passwords.js';
 import { GameError, RULES, clamp } from './game.js';
 import { KINDS, post, treasuryBalance } from './ledger.js';
 import { parkUsers } from './playground.js';
@@ -28,7 +29,7 @@ export function usernameFrom(name) {
     .slice(0, NAME_MAX);
   if (base.length < 3) base = `${base}_${'bé'}`.slice(0, NAME_MAX);
   let candidate = base;
-  for (let n = 2; store.findUserByName(candidate); n++) {
+  for (let n = 2; store.findUserByName(candidate) || store.findUserByLogin(candidate); n++) {
     const suffix = `_${n}`;
     candidate = base.slice(0, NAME_MAX - suffix.length) + suffix;
   }
@@ -75,6 +76,7 @@ function playerRow(u, now = Date.now()) {
     createdAt: u.created_at,
     lastSeenAt: u.last_seen_at,
     inviteId: u.invite_id,
+    hasPassword: Boolean(u.pass_hash),
     crmUserId: u.crm_user_id,
   };
 }
@@ -120,11 +122,77 @@ internalApi.post('/guest', (req, res) => {
   res.json(result);
 });
 
-/** Khách quay lại với token cũ: còn hợp lệ thì dùng tiếp, không thì điền tên lại. */
+/** Quay lại với token trình duyệt đã giữ (khách mời hoặc tài khoản tên + mật khẩu): còn hợp lệ thì dùng tiếp. */
 internalApi.post('/guest/resume', (req, res) => {
   const user = store.userForToken(req.body?.token);
-  if (!user || user.banned || user.kind !== 'guest') return res.json({ ok: false });
-  res.json({ ok: true, username: user.username, displayName: user.display_name });
+  if (!user || user.banned) return res.json({ ok: false });
+  res.json({ ok: true, ...accountOf(user) });
+});
+
+// ---- Tài khoản tên + mật khẩu (play.petfarm.online): tự đăng ký, lần sau đăng nhập thẳng ----
+const accountOf = (u) => ({ userId: u.id, username: u.username, displayName: u.display_name ?? u.username, kind: u.kind, hasPassword: Boolean(u.pass_hash) });
+
+function loginName(raw) {
+  const name = String(raw ?? '').normalize('NFC').trim();
+  if (!/^[\p{L}\p{N}_]{3,20}$/u.test(name)) throw new GameError('Tên đăng nhập 3–20 ký tự, chỉ gồm chữ, số và dấu _ (không dấu cách).');
+  return name;
+}
+
+function newPassword(raw) {
+  const password = String(raw ?? '');
+  if (password.length < 6) throw new GameError('Mật khẩu cần ít nhất 6 ký tự.');
+  if (password.length > 72) throw new GameError('Mật khẩu tối đa 72 ký tự.');
+  return password;
+}
+
+/** Tên đã có người dùng (so cả "Đức" với "đức"), trừ chính người `exceptId`. */
+const nameTaken = (username, exceptId = null) =>
+  [store.findUserByName(username), store.findUserByLogin(username)].some((u) => u && u.id !== exceptId);
+
+internalApi.post('/account/register', (req, res) => {
+  const username = loginName(req.body?.username);
+  const password = newPassword(req.body?.password);
+  const result = store.transaction(() => {
+    if (nameTaken(username)) throw new GameError('Tên này đã có người dùng, chọn tên khác nhé.');
+    const id = store.createUser(username, hashPassword(password));
+    store.setDisplayName(id, username);
+    post({ userId: id, delta: RULES.startCoins, kind: 'opening', memo: 'Quà chào mừng' });
+    return { token: store.issueToken(id), ...accountOf(store.getUser(id)) };
+  });
+  res.json(result);
+});
+
+internalApi.post('/account/login', (req, res) => {
+  const user = store.findUserByLogin(req.body?.username);
+  // Tên có từ trước (vào bằng WorkHub hoặc link mời) nhưng chưa có mật khẩu: chỉ cách bổ sung.
+  if (user && !user.pass_hash && !user.banned) {
+    throw new GameError('Tài khoản này chưa có mật khẩu. Vào lại như lần trước (WorkHub hoặc link mời trên máy cũ), rồi bấm "Đặt ngay" ở thanh nhắc phía trên để bổ sung mật khẩu.');
+  }
+  if (!user || !verifyPassword(String(req.body?.password ?? ''), user.pass_hash)) throw new GameError('Sai tên đăng nhập hoặc mật khẩu.');
+  if (user.banned) throw new GameError('Tài khoản chơi của bạn đã bị quản trị viên khóa.');
+  res.json({ token: store.issueToken(user.id), ...accountOf(user) });
+});
+
+/**
+ * Người chơi cũ (vào bằng WorkHub hoặc link mời) đặt tên đăng nhập + mật khẩu lần đầu. Tài khoản đã
+ * có mật khẩu thì phải nhập đúng mật khẩu hiện tại mới đổi được, và mọi phiên khác bị đăng xuất.
+ */
+internalApi.post('/account/credentials', (req, res) => {
+  const token = req.body?.token;
+  const user = store.userForToken(token);
+  if (!user || user.banned) throw new GameError('Phiên chơi đã hết hạn, mở lại trang nhé.');
+  if (user.pass_hash && !verifyPassword(String(req.body?.currentPassword ?? ''), user.pass_hash)) {
+    throw new GameError('Mật khẩu hiện tại chưa đúng.');
+  }
+  const username = loginName(req.body?.username);
+  const password = newPassword(req.body?.password);
+  const result = store.transaction(() => {
+    if (nameTaken(username, user.id)) throw new GameError('Tên này đã có người dùng, chọn tên khác nhé.');
+    store.setCredentials(user.id, username, hashPassword(password));
+    if (user.pass_hash) store.revokeOtherSessions(user.id, token);
+    return accountOf(store.getUser(user.id));
+  });
+  res.json(result);
 });
 
 // ---- Bảng quản trị ----
