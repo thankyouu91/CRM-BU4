@@ -59,7 +59,8 @@ export function checkShift({ pet, stage, careerId, hours, hoursToday, busy, maxH
   if (careerId !== 'shop' && careerId !== 'factory' && !CAREERS[careerId]) throw new GameError('Không có nghề này.');
   if (!SHIFT_HOURS.includes(hours)) throw new GameError('Ca làm chỉ có 1, 2 hoặc 4 giờ.');
   if (stageIndex(stage) < stageIndex(MIN_STAGE)) throw new GameError(`${pet.name} còn bé quá, chưa đi làm được.`);
-  if (busy) throw new GameError(`${pet.name} đang làm ca khác rồi.`);
+  // `busy`: việc bé đang làm ('work' | 'school' | 'bath'), hoặc true/false
+  if (busy) throw new GameError(`${pet.name} ${{ school: 'đang đi học', bath: 'đang tắm' }[busy] ?? 'đang làm ca khác'}, xong rồi hẵng nhận ca.`);
   if (pet.sick) throw new GameError(`${pet.name} đang ốm, đưa bé đi khám rồi hẵng đi làm.`);
   if (hoursToday + hours > maxHours) {
     throw new GameError(`Hôm nay ${pet.name} chỉ làm thêm được ${Math.max(0, maxHours - hoursToday)} giờ nữa (tuổi này làm tối đa ${maxHours} giờ/ngày).`);

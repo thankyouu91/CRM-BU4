@@ -63,6 +63,14 @@ export function closeModal() {
 
 export const modalOpen = () => closeCurrent !== null;
 
+/** Bé đang bận việc gì (busyKind từ máy chủ; thiếu thì là ca làm). `away`: bé rời nhà lúc đó. */
+export const BUSY = {
+  work: { icon: '💼', text: 'đang đi làm', until: 'về lúc', away: true },
+  school: { icon: '📚', text: 'đang đi học', until: 'về lúc', away: true },
+  bath: { icon: '🛁', text: 'đang tắm', until: 'xong lúc', away: false },
+};
+export const busyOf = (pet) => (pet?.busyUntil && pet.busyUntil > Date.now() ? BUSY[pet.busyKind] ?? BUSY.work : null);
+
 export const fmt = (n) => Math.round(n).toLocaleString('vi-VN');
 /** Số phần → số lô (1 lô = 10 phần). */
 export const fmtLots = (qty) => (qty / 10).toLocaleString('vi-VN', { maximumFractionDigits: 1 });

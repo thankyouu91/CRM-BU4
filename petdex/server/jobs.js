@@ -1,7 +1,7 @@
 // Trung tâm việc làm: nhận ca theo giờ thật, nhận lương, lên kỹ năng và thăng bậc.
 import { db, listPets, savePet, skillsOf, transaction } from './db.js';
 import { dayKey } from './clock.js';
-import { GameError, HOUR, ageInfo, isBusy, stageRules, tick } from './game.js';
+import { GameError, HOUR, ageInfo, busyKind, isBusy, stageRules, tick } from './game.js';
 import { seniorityBonus } from '../../public/ta-tua/game/js/shared/pets.js';
 import { post } from './ledger.js';
 import {
@@ -49,6 +49,7 @@ export function jobsView(userId, now = Date.now()) {
       sick: Boolean(pet.sick),
       stage: ageInfo(pet.born_at, now).stage,
       busyUntil: isBusy(pet, now) ? pet.busy_until : null,
+      busyKind: busyKind(pet, now),
       hoursToday: q.hoursToday.get(pet.id, day).h,
       maxHours: sr.maxHours ?? 8, // theo tuổi
       workFactor: sr.work ?? 1,
@@ -107,7 +108,7 @@ export function startShift(userId, { petId, career, hours, businessId = null, fa
       careerId: terms ? 'shop' : plant ? 'factory' : career,
       hours,
       hoursToday: q.hoursToday.get(pet.id, day).h,
-      busy: isBusy(pet, now),
+      busy: busyKind(pet, now),
       maxHours: sr.maxHours ?? 8,
     });
     const endsAt = now + hours * HOUR;
@@ -150,7 +151,7 @@ export function startShift(userId, { petId, career, hours, businessId = null, fa
       q.insertShift.run(userId, pet.id, career, rank, hours, pay, day, now, endsAt, null, 0, null);
       message = `${pet.name} bắt đầu ca ${CAREERS[career].name} ${hours} giờ, xong ca nhận ${pay} 🪙.`;
     }
-    savePet({ ...pet, busy_from: now, busy_until: endsAt });
+    savePet({ ...pet, busy_from: now, busy_until: endsAt, busy_kind: 'work' });
     return { message, endsAt };
   });
 }

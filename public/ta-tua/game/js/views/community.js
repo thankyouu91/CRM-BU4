@@ -1,7 +1,7 @@
 // Bạn bè và Hội: kết bạn, thăm nhà, thả tim, tặng quà; lập/gia nhập Hội, góp quỹ, nâng cấp, dự án tuần.
 import { api } from '../api.js';
 import { createPetFigure } from '../sprite.js';
-import { esc, fmt, openModal, closeModal, viewHead, ageText } from '../ui.js';
+import { busyOf, esc, fmt, openModal, closeModal, viewHead, ageText } from '../ui.js';
 
 let tab = 'friends';
 let emblem = null;
@@ -83,7 +83,7 @@ export function renderCommunity(root, ctx) {
           <div class="visit-pet">
             <div class="friend-pet big" data-vfig="${p.id}"></div>
             <b>${esc(p.name)}${p.id === v.activePetId ? ' ⭐' : ''}</b>
-            <small class="muted">Lv ${p.level} · ${ageText(p.age.days)} · ${p.mood.label}${p.busyUntil ? ' · đang đi làm' : ''}</small>
+            <small class="muted">Lv ${p.level} · ${ageText(p.age.days)} · ${p.mood.label}${busyOf(p) ? ` · ${busyOf(p).text}` : ''}</small>
           </div>`).join('')}</div>
         <button class="btn pink" data-pick="like" ${v.likedToday ? 'disabled' : ''}>${v.likedToday ? '💖 Hôm nay đã thả tim' : '💖 Thả tim nhà này'}</button>`,
       onPick: (pick) => {

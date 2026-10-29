@@ -136,7 +136,7 @@ export function attendClass(userId, petId, skill, now = Date.now(), rand = Math.
     const { before, after } = growSkill(pet.id, skill, raw);
     const end = now + SCHOOL.minutes * 60_000;
     const outcome = mutatePet(userId, petId, (p) => ({
-      pet: { ...applyEffect(p, { energy: -SCHOOL.energy }), busy_from: now, busy_until: end },
+      pet: { ...applyEffect(p, { energy: -SCHOOL.energy }), busy_from: now, busy_until: end, busy_kind: 'school' },
       xp: 5,
     }), { now });
     const gain = Math.round((after - before) * 10) / 10;

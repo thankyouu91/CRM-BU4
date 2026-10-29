@@ -447,6 +447,7 @@ function addColumn(table, column, definition) {
 }
 addColumn('pets', 'busy_from', 'INTEGER');
 addColumn('pets', 'busy_until', 'INTEGER');
+addColumn('pets', 'busy_kind', 'TEXT'); // bé bận việc gì: 'work' | 'school' | 'bath' (trống = ca làm cũ)
 addColumn('users', 'warehouse', 'INTEGER NOT NULL DEFAULT 0');
 addColumn('users', 'advanced', 'INTEGER NOT NULL DEFAULT 0');
 addColumn('users', 'streak', 'INTEGER NOT NULL DEFAULT 0');
@@ -535,7 +536,7 @@ const q = {
   insertPet: db.prepare('INSERT INTO pets (owner_id, name, species, born_at, updated_at) VALUES (?, ?, ?, ?, ?)'),
   savePet: db.prepare(`
     UPDATE pets SET level = ?, xp = ?, fullness = ?, happiness = ?, energy = ?, accessory = ?, updated_at = ?,
-      busy_from = ?, busy_until = ?, hygiene = ?, health = ?, sick = ?
+      busy_from = ?, busy_until = ?, busy_kind = ?, hygiene = ?, health = ?, sick = ?
     WHERE id = ?`),
   setTraits: db.prepare('UPDATE pets SET traits = ? WHERE id = ?'),
   wearOf: db.prepare('SELECT slot, item_id FROM pet_wear WHERE pet_id = ?'),
@@ -600,7 +601,7 @@ export const insertPet = (ownerId, name, species, now) =>
 export const savePet = (pet) =>
   q.savePet.run(
     pet.level, pet.xp, pet.fullness, pet.happiness, pet.energy, pet.accessory ?? null, pet.updated_at,
-    pet.busy_from ?? null, pet.busy_until ?? null, pet.hygiene ?? 80, pet.health ?? 90, pet.sick ?? null, pet.id,
+    pet.busy_from ?? null, pet.busy_until ?? null, pet.busy_kind ?? null, pet.hygiene ?? 80, pet.health ?? 90, pet.sick ?? null, pet.id,
   );
 export const setBornAt = (petId, bornAt) => q.setBornAt.run(bornAt, petId);
 export const leaderboard = (limit = 20) => q.leaderboard.all(limit);

@@ -1,6 +1,6 @@
 // Trung tâm việc làm: chọn bé, chọn nghề và số giờ; theo dõi ca đang làm, nhận lương.
 import { api } from '../api.js';
-import { countdown, esc, fmt, viewHead } from '../ui.js';
+import { busyOf, countdown, esc, fmt, viewHead } from '../ui.js';
 import { seniorityBonus } from '../shared/pets.js';
 
 let selectedPet = null;
@@ -43,7 +43,7 @@ export function renderJobs(root, ctx) {
     const next = rules.promotion[state.rank - 1];
     const hoursLeft = pet.maxHours - pet.hoursToday;
     let blocked = '';
-    if (pet.busyUntil) blocked = 'Bé đang làm ca khác';
+    if (pet.busyUntil) blocked = pet.busyKind && pet.busyKind !== 'work' ? `Bé ${busyOf(pet)?.text ?? 'đang bận'}, xong rồi hẵng nhận ca` : 'Bé đang làm ca khác';
     else if (pet.sick) blocked = 'Bé đang ốm, đưa đi Phòng khám trước đã';
     else if (hoursLeft <= 0) blocked = `Hôm nay làm đủ ${pet.maxHours} giờ rồi`;
     else if (pet.fullness < 15) blocked = 'Bé đói quá, cho ăn rồi hẵng đi làm';
@@ -126,7 +126,7 @@ export function renderJobs(root, ctx) {
       ${shifts.length ? `<section class="card shifts"><h3>📋 Ca làm</h3>${shifts.map(shiftRow).join('')}</section>` : ''}
       <nav class="switcher">
         ${pets.map((p) => `<button class="btn small ${p.id === pet.id ? 'current' : ''}" data-job-pet="${p.id}">
-          ${p.busyUntil ? '💼 ' : ''}${esc(p.name)}</button>`).join('')}
+          ${busyOf(p) ? `${busyOf(p).icon} ` : ''}${esc(p.name)}</button>`).join('')}
       </nav>
       <section class="card work-status">
         <div><span class="muted">Năng lượng</span><b>⚡ ${pet.energy}</b></div>

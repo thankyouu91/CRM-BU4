@@ -122,7 +122,7 @@ export function visit(userId, friendId) {
     username: friend.username,
     pets: listPets(friendId).map((p) => {
       const d = describePet(p);
-      return { id: d.id, name: d.name, species: d.species, level: d.level, wear: d.wear, mood: d.mood, age: d.age, busyUntil: d.busyUntil, skills: skillsOf(d.id) };
+      return { id: d.id, name: d.name, species: d.species, level: d.level, wear: d.wear, mood: d.mood, age: d.age, busyUntil: d.busyUntil, busyKind: d.busyKind, skills: skillsOf(d.id) };
     }),
     activePetId: friend.active_pet_id,
     likes: q.likesTotal.get(friendId).n,

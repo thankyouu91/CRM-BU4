@@ -158,6 +158,46 @@ describe("Pet Town internal API", () => {
     expect(view).toMatchObject({ maxHours: 2, workFactor: 0.5 });
   });
 
+  it("a bath keeps the pet at home: it is 'đang tắm', not at work, and does not tire it like a shift", async () => {
+    const { data } = await internal("POST", "/sso", { crmUserId: "crm-bath", name: "Phạm Tắm" });
+    const token = data.token as string;
+    const catalog = await call(api, "/api", "GET", "/catalog");
+    const species = (catalog.data.species as Json[]).find((s) => s.adoptable && !s.mascot) as Json;
+    const pet = ((await game("POST", "/pets", token, { name: "Bé Sạch", species: species.id })).data.pets as Json[])[0] as Json;
+    expect((await game("POST", `/pets/${pet.id}/bath`, token)).status).toBe(200);
+    const mine = ((await game("GET", "/me", token)).data.pets as Json[]).find((p) => p.id === pet.id) as Json;
+    expect(mine).toMatchObject({ busyKind: "bath" });
+    expect(mine.busyUntil).toBeGreaterThan(Date.now());
+    const jobs = await game("GET", "/jobs", token);
+    expect((jobs.data.pets as Json[]).find((p) => p.id === pet.id)).toMatchObject({ busyKind: "bath" });
+    const career = Object.keys(catalog.data.careers as Json)[0];
+    const shift = await game("POST", "/jobs/start", token, { petId: pet.id, career, hours: 1 });
+    expect(shift.data.error).toMatch(/đang tắm/);
+    expect((await game("POST", `/pets/${pet.id}/play`, token, {})).data.error).toMatch(/đang tắm/);
+
+    // over the same hour a bath leaves the pet resting, a shift tires it
+    const { tick } = await import("@/petdex/server/game.js");
+    const t0 = Date.now();
+    const base = { ...mine, species: species.id, born_at: t0 - 30 * 86_400_000, updated_at: t0, energy: 50, fullness: 80, happiness: 80, hygiene: 80, health: 90, traits: [], busy_from: t0, busy_until: t0 + 3_600_000 };
+    const afterBath = tick({ ...base, busy_kind: "bath" }, t0 + 3_600_000);
+    const afterWork = tick({ ...base, busy_kind: "work" }, t0 + 3_600_000);
+    expect(afterBath.energy).toBeGreaterThan(50);
+    expect(afterWork.energy).toBeLessThan(50);
+  });
+
+  it("a work shift is reported as work", async () => {
+    const { data } = await internal("POST", "/sso", { crmUserId: "crm-shift", name: "Lê Làm" });
+    const token = data.token as string;
+    const catalog = await call(api, "/api", "GET", "/catalog");
+    const species = (catalog.data.species as Json[]).find((s) => s.adoptable && !s.mascot) as Json;
+    const pet = ((await game("POST", "/pets", token, { name: "Bé Chăm", species: species.id })).data.pets as Json[])[0] as Json;
+    const career = Object.keys(catalog.data.careers as Json)[0];
+    expect((await game("POST", "/jobs/start", token, { petId: pet.id, career, hours: 1 })).status).toBe(200);
+    const mine = ((await game("GET", "/me", token)).data.pets as Json[]).find((p) => p.id === pet.id) as Json;
+    expect(mine).toMatchObject({ busyKind: "work" });
+    expect((await game("POST", `/pets/${pet.id}/bath`, token)).data.error).toMatch(/đang bận/);
+  });
+
   it("bans and unbans: a banned player is signed out of the game", async () => {
     const { data } = await internal("POST", "/sso", { crmUserId: "crm-ban", name: "Phạm Dung" });
     const id = data.userId as number;

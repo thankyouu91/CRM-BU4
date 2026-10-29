@@ -105,9 +105,13 @@ export class GameError extends Error {}
 
 export const clamp = (value, lo = 0, hi = 100) => Math.min(hi, Math.max(lo, value));
 
-/** Số giờ trong [from, to] trùng với lúc bé đang bận (ca làm). */
+/** Bé đang bận việc gì: 'work' (ca làm), 'school' (lớp học) hay 'bath' (tắm); lúc rảnh là null. */
+export const busyKind = (pet, now = Date.now()) => (isBusy(pet, now) ? pet.busy_kind ?? 'work' : null);
+const BUSY_TEXT = { work: 'đang đi làm', school: 'đang đi học', bath: 'đang tắm' };
+
+/** Số giờ trong [from, to] trùng với lúc bé bận việc hao sức (ca làm, lớp học); tắm tính như lúc rảnh. */
 function busyHours(pet, from, to) {
-  if (!pet.busy_from || !pet.busy_until) return 0;
+  if (!pet.busy_from || !pet.busy_until || pet.busy_kind === 'bath') return 0;
   return Math.max(0, Math.min(to, pet.busy_until) - Math.max(from, pet.busy_from)) / HOUR;
 }
 
@@ -158,7 +162,7 @@ export function rollSickness(pet, hours, rand = Math.random) {
 export function bathe(pet, now = Date.now()) {
   if (isBusy(pet, now)) throw new GameError(`${pet.name} đang bận, xong việc rồi tắm nhé.`);
   return {
-    pet: { ...applyEffect(pet, { hygiene: 100, happiness: 5 }), busy_from: now, busy_until: now + HEALTH.bathMinutes * 60_000 },
+    pet: { ...applyEffect(pet, { hygiene: 100, happiness: 5 }), busy_from: now, busy_until: now + HEALTH.bathMinutes * 60_000, busy_kind: 'bath' },
     xp: 2,
     coins: 0,
   };
@@ -221,7 +225,8 @@ export function useItem(pet, item) {
 }
 
 export function play(pet, toy) {
-  if (isBusy(pet, pet.updated_at)) throw new GameError(`${pet.name} đang đi làm, về rồi chơi nhé.`);
+  const kind = busyKind(pet, pet.updated_at);
+  if (kind) throw new GameError(`${pet.name} ${BUSY_TEXT[kind]}, xong rồi chơi nhé.`);
   if (pet.energy < 15) throw new GameError(`${pet.name} mệt quá, để bé nghỉ chút đã.`);
   if (pet.fullness < 10) throw new GameError(`${pet.name} đói quá, không chơi nổi.`);
   const bonus = toy?.play ?? {};
@@ -274,6 +279,7 @@ export function describePet(row, now = Date.now()) {
     age: ageInfo(pet.born_at, now),
     mood: mood(pet),
     busyUntil: isBusy(pet, now) ? pet.busy_until : null,
+    busyKind: busyKind(pet, now),
     life: lifeOf(pet, now),
   };
 }

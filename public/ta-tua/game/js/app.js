@@ -22,7 +22,7 @@ import {
 } from './shared/pets.js';
 import {
   $, MOOD_ICONS, STAT_ICONS, STAT_LABELS, TYPE_LABELS,
-  ageText, clock, closeModal, countdown, effectText, esc, fmt, formatWait, modalOpen, openModal, toast, viewHead,
+  ageText, busyOf, clock, closeModal, countdown, effectText, esc, fmt, formatWait, modalOpen, openModal, toast, viewHead,
 } from './ui.js';
 import { renderBank } from './views/bank.js';
 import { renderBazaar } from './views/bazaar.js';
@@ -437,7 +437,8 @@ function renderHome(root) {
   const pet = currentPet();
   state.petId = pet.id;
   const isActive = pet.id === state.me.user.activePetId;
-  const busyLeft = pet.busyUntil ? pet.busyUntil - Date.now() : 0;
+  const busy = busyOf(pet);
+  const busyLeft = busy ? pet.busyUntil - Date.now() : 0;
   const nextStage = state.catalog.stages.find((s) => s.minDays > pet.age.days);
   const growNote = nextStage ? ` · còn ${Math.ceil((nextStage.minDays - pet.age.days) / 7)} ngày nữa thành ${nextStage.label}` : '';
   const countOf = (type) => ownedOfType(type).reduce((n, i) => n + qtyOf(i.id), 0);
@@ -450,9 +451,11 @@ function renderHome(root) {
       <section class="card room-card mood-${pet.mood.key}">
         <div class="room" id="room">
           <div class="figure-slot" id="figure-slot" title="Chạm để chào ${esc(pet.name)}"></div>
-          ${busyLeft > 0
-            ? `<div class="away-note pixel-box">💼 ${esc(pet.name)} đang đi làm<br><small>về lúc ${clock(pet.busyUntil)} · còn ${countdown(busyLeft)}</small></div>`
-            : `<div class="mood-bubble">${MOOD_ICONS[pet.mood.key]} ${pet.mood.label}</div>`}
+          ${busy?.away
+            ? `<div class="away-note pixel-box">${busy.icon} ${esc(pet.name)} ${busy.text}<br><small>${busy.until} ${clock(pet.busyUntil)} · còn ${countdown(busyLeft)}</small></div>`
+            : busy
+              ? `<div class="mood-bubble">${busy.icon} ${busy.text[0].toUpperCase()}${busy.text.slice(1)} · còn ${countdown(busyLeft)}</div>`
+              : `<div class="mood-bubble">${MOOD_ICONS[pet.mood.key]} ${pet.mood.label}</div>`}
         </div>
       </section>
       <section class="card pet-info">
@@ -476,11 +479,11 @@ function renderHome(root) {
         </div>
         <div class="actions">
           <button class="btn primary" data-act="feed"><b>🍽️</b>Cho ăn<small>${countOf('food')} món trong túi</small></button>
-          <button class="btn pink" data-act="play" ${busyLeft > 0 ? 'disabled' : ''}><b>🎾</b>Chơi đùa<small>${busyLeft > 0 ? 'Bé đang đi làm' : '−15 ⚡ · +4 🪙'}</small></button>
+          <button class="btn pink" data-act="play" ${busyLeft > 0 ? 'disabled' : ''}><b>🎾</b>Chơi đùa<small>${busy ? `Bé ${busy.text}` : '−15 ⚡ · +4 🪙'}</small></button>
           <button class="btn gold" data-go="jobs">
-            <b>💼</b>Đi làm<small>${busyLeft > 0 ? `Về sau ${countdown(busyLeft)}` : 'Chọn nghề, nhận ca'}</small>
+            <b>💼</b>Đi làm<small>${busy ? `${busy.away ? 'Về' : 'Rảnh'} sau ${countdown(busyLeft)}` : 'Chọn nghề, nhận ca'}</small>
           </button>
-          <button class="btn mint" data-act="bath" ${busyLeft > 0 ? 'disabled' : ''}><b>🛁</b>Tắm<small>${busyLeft > 0 ? 'Bé đang bận' : `Miễn phí · 🫧 ${pet.hygiene}`}</small></button>
+          <button class="btn mint" data-act="bath" ${busyLeft > 0 ? 'disabled' : ''}><b>🛁</b>Tắm<small>${busy ? `Bé ${busy.text}` : `Miễn phí · 🫧 ${pet.hygiene}`}</small></button>
           <button class="btn" data-act="care"><b>💊</b>Chăm sóc<small>${countOf('care')} món trong túi</small></button>
           <button class="btn" data-act="dress"><b>🎀</b>Trang phục<small>${wornIds(pet).length ? `Đang đeo ${wornIds(pet).length}/4 món` : 'Chưa đeo gì'}</small></button>
           ${isActive
@@ -496,7 +499,7 @@ function renderHome(root) {
   const figure = figureOf(pet, 1.25);
   figure.sprite.play(idleAnim(pet));
   slot.append(figure.el);
-  slot.hidden = busyLeft > 0;
+  slot.hidden = Boolean(busy?.away); // đi làm, đi học thì vắng nhà; tắm thì vẫn ở nhà
 
   const stage = {
     room,
