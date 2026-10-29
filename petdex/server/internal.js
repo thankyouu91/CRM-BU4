@@ -8,7 +8,10 @@ import { KINDS, post, treasuryBalance } from './ledger.js';
 import { parkUsers } from './playground.js';
 import { Router } from './router.js';
 import { SKILLS } from './rules/careers.js';
+import { createPet } from './eggs.js';
+import { slotsOf } from './lifecycle.js';
 import { bus, snapshot } from './service.js';
+import { getSpecies, listSpecies } from './species.js';
 import { ledgerPage, netWorth, richList } from './wallet.js';
 
 export const internalApi = Router();
@@ -157,7 +160,27 @@ internalApi.get('/admin/players/:id', (req, res) => {
     invite: user.invite_id ? store.inviteById(user.invite_id) : null,
     skills: SKILLS,
     maxLevel: RULES.maxLevel ?? 100,
+    slots: slotsOf(user.id),
+    // Mọi loài, kể cả loài hiếm chỉ nở từ trứng: quản trị viên tặng được bất kỳ loài nào.
+    species: listSpecies().map((s) => ({ id: s.id, name: s.name, element: s.element, rarity: s.rarity })),
   });
+});
+
+internalApi.post('/admin/players/:id/pets', (req, res) => {
+  const user = userOf(req);
+  const species = getSpecies(String(req.body?.species ?? ''));
+  if (!species) throw new GameError('Không có loài này.');
+  const name = String(req.body?.name ?? '').replace(/\s+/g, ' ').trim() || species.name;
+  if (name.length > 16) throw new GameError('Tên thú cưng dài 1–16 ký tự.');
+  const actor = actorOf(req);
+  const pet = store.transaction(() => {
+    if (slotsOf(user.id).free <= 0) throw new GameError(`Người chơi đã hết ô nuôi (tối đa ${RULES.maxPets}, tính cả trứng đang ấp và ô tưởng niệm).`);
+    const { petId } = createPet(user.id, name, species.id);
+    store.adminLog(actor, 'pet_grant', user.id, { petId, petName: name, species: species.id, speciesName: species.name, rarity: species.rarity });
+    return { id: petId, name, species: species.id };
+  });
+  bus.emit('pet:changed', user.id);
+  res.json({ ok: true, pet });
 });
 
 internalApi.post('/admin/players/:id/coins', (req, res) => {

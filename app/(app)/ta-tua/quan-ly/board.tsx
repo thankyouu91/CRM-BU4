@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Ban, Coins, Copy, Gamepad2, Link2, Pencil, RefreshCw, Search, ShieldCheck, Users } from "lucide-react";
+import { Ban, Coins, Copy, Gamepad2, Gift, Link2, Pencil, RefreshCw, Search, ShieldCheck, Users } from "lucide-react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -75,6 +75,8 @@ interface Detail {
   ledger: { id: number; delta: number; balance: number; kind: string; memo: string | null; at: number }[];
   invite: { label: string } | null;
   skills: Record<string, { name: string }>;
+  slots: { max: number; used: number; free: number };
+  species: { id: string; name: string; element: string; rarity: string }[];
 }
 interface Overview {
   byKind: { kind: string; n: number; coins: number; banned: number }[];
@@ -447,6 +449,8 @@ function PlayerDetail({ detail, onChanged, onClose }: { detail: Detail; onChange
           </CardBody>
         </Card>
 
+        <GrantPet detail={detail} onChanged={onChanged} />
+
         <div>
           <h3 className="mb-2 text-sm font-semibold">Thú cưng và chỉ số</h3>
           {detail.pets.length ? (
@@ -488,6 +492,60 @@ function PlayerDetail({ detail, onChanged, onClose }: { detail: Detail; onChange
         danger={!player.banned}
       />
     </div>
+  );
+}
+
+const RARITY_LABEL: Record<string, string> = { huyenthoai: "Huyền thoại", quy: "Quý", hiem: "Hiếm", thuong: "Thường" };
+const RARITY_ORDER = ["huyenthoai", "quy", "hiem", "thuong"];
+const ELEMENT_LABEL: Record<string, string> = { kim: "Kim", moc: "Mộc", thuy: "Thủy", hoa: "Hỏa", tho: "Thổ" };
+
+/** Give a player a new pet of any species, rare ones included; it takes a free pet slot. */
+function GrantPet({ detail, onChanged }: { detail: Detail; onChanged: () => void }) {
+  const { player, slots } = detail;
+  const [species, setSpecies] = useState("");
+  const [name, setName] = useState("");
+  const [busy, setBusy] = useState(false);
+  const groups = RARITY_ORDER.map((r) => [r, detail.species.filter((s) => s.rarity === r)] as const).filter(([, list]) => list.length);
+  const others = detail.species.filter((s) => !RARITY_ORDER.includes(s.rarity));
+  const chosen = detail.species.find((s) => s.id === species);
+  const grant = async () => {
+    if (!chosen) return toast.error("Chọn một loài");
+    setBusy(true);
+    try {
+      await api(`${ADMIN}/players/${player.id}/pets`, { method: "POST", body: { species: chosen.id, name: name.trim() || chosen.name, playerName: player.displayName, speciesName: chosen.name } });
+      toast.success(`Đã tặng ${name.trim() || chosen.name} cho ${player.displayName}`);
+      setSpecies("");
+      setName("");
+      onChanged();
+    } catch (err) {
+      toast.error(errorText(err));
+    } finally {
+      setBusy(false);
+    }
+  };
+  return (
+    <Card>
+      <CardHeader
+        title={<span className="flex items-center gap-2"><Gift className="h-4 w-4 text-muted-foreground" /> Tặng thú cưng</span>}
+        description={`Tặng bất kỳ loài nào, kể cả loài hiếm chỉ nở từ trứng. Bé mới chiếm một ô nuôi: đang dùng ${slots.used}/${slots.max}.`}
+      />
+      <CardBody className="grid gap-3 pt-3 sm:grid-cols-[1fr_12rem_auto]">
+        <Field label="Loài">
+          <Select value={species} onChange={(e) => setSpecies(e.target.value)} aria-label="Loài">
+            <option value="">Chọn loài…</option>
+            {groups.map(([rarity, list]) => (
+              <optgroup key={rarity} label={RARITY_LABEL[rarity]}>
+                {list.map((s) => <option key={s.id} value={s.id}>{s.name} · {ELEMENT_LABEL[s.element] ?? s.element}</option>)}
+              </optgroup>
+            ))}
+            {others.length > 0 && <optgroup label="Khác">{others.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}</optgroup>}
+          </Select>
+        </Field>
+        <Field label="Tên bé" hint="trống = tên loài"><Input value={name} onChange={(e) => setName(e.target.value)} placeholder={chosen?.name ?? "Tên"} maxLength={16} /></Field>
+        <div className="flex items-start pt-6"><Button onClick={grant} loading={busy} disabled={!chosen || slots.free <= 0}><Gift className="h-4 w-4" /> Tặng</Button></div>
+        {slots.free <= 0 && <p className="text-xs text-danger sm:col-span-3">Người chơi đã hết ô nuôi; cần giải phóng một ô trong game trước.</p>}
+      </CardBody>
+    </Card>
   );
 }
 
@@ -652,7 +710,7 @@ function InvitesTab() {
   );
 }
 
-const LOG_LABEL: Record<string, string> = { coins: "Cộng/trừ xu", pet: "Sửa chỉ số bé", ban: "Khoá", unban: "Mở khoá", rename: "Đổi tên", invite: "Tạo link mời", invite_revoke: "Thu hồi link" };
+const LOG_LABEL: Record<string, string> = { coins: "Cộng/trừ xu", pet: "Sửa chỉ số bé", pet_grant: "Tặng thú cưng", ban: "Khoá", unban: "Mở khoá", rename: "Đổi tên", invite: "Tạo link mời", invite_revoke: "Thu hồi link" };
 
 function LogTab() {
   const { data, error, loading, reload } = useLoad<{ log: LogRow[] }>(`${ADMIN}/log?limit=100`);
@@ -661,6 +719,7 @@ function LogTab() {
     const d = row.details ?? {};
     if (row.action === "coins") return `${Number(d.delta) >= 0 ? "+" : "−"}${Math.abs(Number(d.delta)).toLocaleString("vi-VN")} xu${d.memo ? ` · ${String(d.memo)}` : ""} · ví còn ${Number(d.balance).toLocaleString("vi-VN")}`;
     if (row.action === "pet") return `${String(d.petName ?? "")}: ${Object.entries((d.changes as Record<string, number>) ?? {}).map(([k, v]) => `${STAT_LABEL[k] ?? k} ${v}`).concat(Object.entries((d.skills as Record<string, number>) ?? {}).map(([k, v]) => `${k} ${v}`)).join(", ")}`;
+    if (row.action === "pet_grant") return `${String(d.petName ?? "")} (${String(d.speciesName ?? d.species ?? "")}${d.rarity ? `, ${RARITY_LABEL[String(d.rarity)] ?? String(d.rarity)}` : ""})`;
     if (row.action === "rename") return `${String(d.from ?? "")} → ${String(d.to ?? "")}`;
     if (row.action === "invite") return `“${String(d.label ?? "")}”${d.maxUses ? ` · ${String(d.maxUses)} lượt` : ""}`;
     if (row.action === "invite_revoke") return `#${String(d.id ?? "")}`;

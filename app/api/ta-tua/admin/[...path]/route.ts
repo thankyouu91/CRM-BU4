@@ -9,7 +9,7 @@ import { isAdmin } from "@/lib/rbac";
 // internal admin API (petdex/server/internal.js); every change is also written to WorkHub's
 // audit log with the administrator as actor.
 
-const ALLOWED = /^(overview|log|invites(\/\d+\/revoke)?|players(\/\d+(\/(coins|status|name|pets\/\d+))?)?)$/;
+const ALLOWED = /^(overview|log|invites(\/\d+\/revoke)?|players(\/\d+(\/(coins|status|name|pets(\/\d+)?))?)?)$/;
 
 type Params = { params: Promise<{ path: string[] }> };
 
@@ -26,6 +26,7 @@ function describe(path: string, body: Record<string, unknown>): { action: AuditA
     const delta = Number(body.delta);
     return { action: "tatua.coins", entityId: id, summary: `${delta >= 0 ? "Cộng" : "Trừ"} ${Math.abs(delta).toLocaleString("vi-VN")} xu ${delta >= 0 ? "cho" : "của"} ${player}${body.memo ? `: ${body.memo}` : ""}` };
   }
+  if (/^players\/\d+\/pets$/.test(path)) return { action: "tatua.pet_grant", entityId: id, summary: `Tặng thú cưng ${body.speciesName ? `“${String(body.speciesName)}” ` : ""}cho ${player}` };
   if (/^players\/\d+\/pets\/\d+$/.test(path)) return { action: "tatua.pet", entityId: id, summary: `Sửa chỉ số thú cưng ${body.petName ? `“${body.petName}” ` : ""}của ${player}` };
   if (/^players\/\d+\/status$/.test(path)) return { action: body.banned ? "tatua.ban" : "tatua.unban", entityId: id, summary: `${body.banned ? "Khoá" : "Mở khoá"} ${player}` };
   if (/^players\/\d+\/name$/.test(path)) return { action: "tatua.rename", entityId: id, summary: `Đổi tên ${player} thành “${String(body.displayName ?? "")}”` };
@@ -53,8 +54,8 @@ export async function POST(req: NextRequest, { params }: Params) {
     const path = (await params).path.join("/");
     if (!ALLOWED.test(path)) return forbidden("Đường dẫn không hợp lệ");
     const body = ((await req.json().catch(() => ({}))) ?? {}) as Record<string, unknown>;
-    // playerName / petName only label the audit entry; the game gets the rest.
-    const payload = Object.fromEntries(Object.entries(body).filter(([key]) => key !== "playerName" && key !== "petName"));
+    // playerName / petName / speciesName only label the audit entry; the game gets the rest.
+    const payload = Object.fromEntries(Object.entries(body).filter(([key]) => !["playerName", "petName", "speciesName"].includes(key)));
     const res = await relay(req, path, { ...payload, actor: me.name });
     if (res.ok) {
       const entry = describe(path, body);

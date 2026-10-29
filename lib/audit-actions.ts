@@ -75,6 +75,7 @@ export const AUDIT_ACTIONS = {
 
   "tatua.coins": { label: "Cộng/trừ xu người chơi", group: "tatua" },
   "tatua.pet": { label: "Sửa chỉ số thú cưng", group: "tatua" },
+  "tatua.pet_grant": { label: "Tặng thú cưng", group: "tatua" },
   "tatua.ban": { label: "Khoá người chơi", group: "tatua" },
   "tatua.unban": { label: "Mở khoá người chơi", group: "tatua" },
   "tatua.rename": { label: "Đổi tên người chơi", group: "tatua" },

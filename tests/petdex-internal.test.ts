@@ -102,6 +102,26 @@ describe("Tà tưa internal API", () => {
     expect((await internal("POST", `/admin/players/${id}/pets/999`, { fullness: 1, actor: "Admin" })).status).toBe(400);
   });
 
+  it("grants a pet of any species, rare ones included, within the pet slots", async () => {
+    const { data } = await internal("POST", "/sso", { crmUserId: "crm-grant", name: "Võ Trần Long" });
+    const id = data.userId as number;
+    const detail = await internal("GET", `/admin/players/${id}`);
+    expect((detail.data.species as Json[]).some((s) => s.id === "hoang_long" && s.rarity === "huyenthoai")).toBe(true);
+    expect(detail.data.slots).toMatchObject({ used: 0, free: 4 });
+    expect((await internal("POST", `/admin/players/${id}/pets`, { species: "no_such", actor: "Admin" })).status).toBe(400);
+    const granted = await internal("POST", `/admin/players/${id}/pets`, { species: "hoang_long", actor: "Admin" });
+    expect(granted.data).toMatchObject({ ok: true, pet: { name: "Hoàng Long", species: "hoang_long" } });
+    const me = await game("GET", "/me", data.token as string);
+    const pets = me.data.pets as Json[];
+    expect(pets.map((p) => p.species)).toEqual(["hoang_long"]);
+    expect((me.data.user as Json).activePetId).toBe(pets[0].id); // first pet becomes the main one
+    expect((me.data.user as Json).coins).toBe(150); // a grant costs nothing
+    for (let i = 0; i < 3; i++) expect((await internal("POST", `/admin/players/${id}/pets`, { species: "thanh_long", name: `Rồng ${i}`, actor: "Admin" })).status).toBe(200);
+    expect((await internal("POST", `/admin/players/${id}/pets`, { species: "bach_ho", actor: "Admin" })).data.error).toMatch(/hết ô nuôi/);
+    const log = await internal("GET", "/admin/log?limit=1");
+    expect((log.data.log as Json[])[0]).toMatchObject({ action: "pet_grant" });
+  });
+
   it("bans and unbans: a banned player is signed out of the game", async () => {
     const { data } = await internal("POST", "/sso", { crmUserId: "crm-ban", name: "Phạm Dung" });
     const id = data.userId as number;
@@ -113,7 +133,7 @@ describe("Tà tưa internal API", () => {
     expect((await internal("POST", `/admin/players/${id}/status`, { banned: false, actor: "Admin" })).data).toEqual({ ok: true, banned: false });
     expect((await internal("POST", "/sso", { crmUserId: "crm-ban", name: "Phạm Dung" })).status).toBe(200);
     const log = await internal("GET", "/admin/log?limit=3");
-    expect((log.data.log as Json[]).map((l) => l.action)).toEqual(["unban", "ban", "pet"]);
+    expect((log.data.log as Json[]).map((l) => l.action)).toEqual(["unban", "ban", "pet_grant"]);
   });
 
   it("overview counts players by kind", async () => {
