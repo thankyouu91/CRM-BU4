@@ -1,12 +1,12 @@
 import { getCloudflareContext } from "@opennextjs/cloudflare";
 import { isWorkers } from "./prisma";
+import { GAME_PAGE } from "./petdex-public";
 
 // Tà tưa: the Petdex game server (petdex/server). On Cloudflare it is the "park" Durable Object,
 // reached through its binding, so its internal API is never on the network. In local development
 // it is the Node server from `npm run petdex:dev` (port 3200), which asks for the dev key.
 
 export const GAME_BASE = "/ta-tua";
-export const GAME_PAGE = `${GAME_BASE}/game/index.html`;
 
 /** The game answered with an error (its messages are Vietnamese and safe to show). */
 export class GameError extends Error {

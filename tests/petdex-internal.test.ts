@@ -9,6 +9,7 @@ process.env.PETDEX_DB = ":memory:";
 type Json = Record<string, unknown>;
 let internalApi: unknown;
 let api: unknown;
+let store: { db: { prepare(sql: string): { run(...args: unknown[]): unknown } } };
 let handleFetch: (router: unknown, request: Request, opts: { prefix: string }) => Promise<Response>;
 
 const call = async (router: unknown, prefix: string, method: string, path: string, body?: unknown, headers: Record<string, string> = {}) => {
@@ -22,6 +23,7 @@ beforeAll(async () => {
   ({ internalApi } = await import("@/petdex/server/internal.js"));
   ({ api } = await import("@/petdex/server/routes.js"));
   ({ handleFetch } = await import("@/petdex/server/router.js"));
+  store = (await import("@/petdex/server/db.js")) as unknown as typeof store;
   (await import("@/petdex/server/migrate.js")).migrate();
   (await import("@/petdex/server/scheduler.js")).runDue();
 });
@@ -74,13 +76,30 @@ describe("Tà tưa internal API", () => {
     const { data } = await internal("POST", "/sso", { crmUserId: "crm-coins", name: "Trần Bình" });
     const id = data.userId as number;
     expect((await internal("POST", `/admin/players/${id}/coins`, { delta: 0, actor: "Admin" })).status).toBe(400);
-    expect((await internal("POST", `/admin/players/${id}/coins`, { delta: 350, memo: "Thưởng", actor: "Admin" })).data).toEqual({ ok: true, coins: 500 });
-    expect((await internal("POST", `/admin/players/${id}/coins`, { delta: -501, actor: "Admin" })).data).toEqual({ error: "Không đủ xu." });
+    expect((await internal("POST", `/admin/players/${id}/coins`, { delta: 350, memo: "Thưởng", actor: "Admin" })).data).toMatchObject({ ok: true, coins: 500, delta: 350 });
+    expect((await internal("POST", `/admin/players/${id}/coins`, { delta: -501, actor: "Admin" })).data).toEqual({ error: "Không đủ xu: ví có 500 xu, tối đa trừ được 500 xu." });
     const detail = await internal("GET", `/admin/players/${id}`);
     expect((detail.data.player as Json).coins).toBe(500);
     expect((detail.data.ledger as Json[])[0]).toMatchObject({ delta: 350, kind: "admin" });
     const players = await internal("GET", "/admin/players?q=Bình");
     expect((players.data.players as Json[]).map((p) => p.displayName)).toEqual(["Trần Bình"]);
+  });
+
+  it("subtracts from the wallet, then savings, and can take everything available", async () => {
+    const { data } = await internal("POST", "/sso", { crmUserId: "crm-coins2", name: "Võ Trần Long" });
+    const id = data.userId as number;
+    const token = data.token as string;
+    await internal("POST", `/admin/players/${id}/coins`, { delta: 850, actor: "Admin" }); // wallet 1000
+    store.db.prepare("INSERT OR REPLACE INTO bank_accounts (user_id, savings, accrued, updated_at) VALUES (?, 300, 0, ?)").run(id, Date.now());
+    const detail = await internal("GET", `/admin/players/${id}`);
+    expect(detail.data.spendable).toEqual({ wallet: 1000, savings: 300 });
+    // wallet first, then savings
+    expect((await internal("POST", `/admin/players/${id}/coins`, { delta: -1100, actor: "Admin" })).data).toMatchObject({ ok: true, coins: 0, savings: 200, delta: -1100, fromWallet: 1000, fromSavings: 100 });
+    // more than there is: refused with the limit, or everything with clamp
+    expect((await internal("POST", `/admin/players/${id}/coins`, { delta: -5000, actor: "Admin" })).data).toEqual({ error: "Không đủ xu: ví có 0, tiết kiệm 200 xu, tối đa trừ được 200 xu." });
+    expect((await internal("POST", `/admin/players/${id}/coins`, { delta: -5000, clamp: true, actor: "Admin" })).data).toMatchObject({ ok: true, coins: 0, savings: 0, delta: -200, fromSavings: 200 });
+    expect((await internal("POST", `/admin/players/${id}/coins`, { delta: -1, clamp: true, actor: "Admin" })).status).toBe(400);
+    expect((await game("GET", "/me", token)).data.user).toMatchObject({ coins: 0 });
   });
 
   it("edits a pet's stats and skills with clamping", async () => {
@@ -120,6 +139,23 @@ describe("Tà tưa internal API", () => {
     expect((await internal("POST", `/admin/players/${id}/pets`, { species: "bach_ho", actor: "Admin" })).data.error).toMatch(/hết ô nuôi/);
     const log = await internal("GET", "/admin/log?limit=1");
     expect((log.data.log as Json[])[0]).toMatchObject({ action: "pet_grant" });
+  });
+
+  it("lets a level 1 newborn work light shifts: up to 2 hours a day at 50% pay", async () => {
+    const { data } = await internal("POST", "/sso", { crmUserId: "crm-work", name: "Đinh Công" });
+    const token = data.token as string;
+    const catalog = await call(api, "/api", "GET", "/catalog");
+    const species = (catalog.data.species as Json[]).find((s) => s.adoptable && !s.mascot) as Json;
+    const adopted = await game("POST", "/pets", token, { name: "Bé Mới", species: species.id });
+    const pet = (adopted.data.pets as Json[])[0] as Json;
+    expect(pet.level).toBe(1);
+    expect((pet.age as Json).stage).toBe("baby");
+    const career = Object.keys(catalog.data.careers as Json)[0];
+    const shift = await game("POST", "/jobs/start", token, { petId: pet.id, career, hours: 1 });
+    expect(shift.status).toBe(200);
+    const jobs = await game("GET", "/jobs", token);
+    const view = (jobs.data.pets as Json[]).find((p) => p.id === pet.id) as Json;
+    expect(view).toMatchObject({ maxHours: 2, workFactor: 0.5 });
   });
 
   it("bans and unbans: a banned player is signed out of the game", async () => {

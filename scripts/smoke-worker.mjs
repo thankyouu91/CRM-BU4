@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { createHash, randomBytes, randomUUID } from "node:crypto";
 import { spawn } from "node:child_process";
+import { request } from "node:http";
 import { setTimeout as sleep } from "node:timers/promises";
 import { PrismaClient } from "@prisma/client";
 import { PrismaPg } from "@prisma/adapter-pg";
@@ -91,7 +92,7 @@ try {
   const play = await fetch(`${origin}/ta-tua`, { headers: { Cookie: cookie }, redirect: "manual", signal: AbortSignal.timeout(20000) });
   assert.equal(play.status, 200, "/ta-tua status");
   const playHtml = await play.text();
-  const token = /\/ta-tua\/game\/index\.html#token=([a-f0-9]+)/.exec(playHtml)?.[1];
+  const token = /\/ta-tua\/game\/(?:index\.html)?#token=([a-f0-9]+)/.exec(playHtml)?.[1];
   assert(token, `/ta-tua must embed the game with a play session: ${/Chưa vào chơi được.{0,300}/s.exec(playHtml)?.[0].replace(/<[^>]+>/g, " ") ?? playHtml.slice(0, 300)}`);
   const me = await fetch(`${origin}/ta-tua/api/me`, { headers: { Authorization: `Bearer ${token}` }, signal: AbortSignal.timeout(20000) });
   assert.equal(me.status, 200, "the play session works against the Durable Object");
@@ -123,6 +124,29 @@ try {
   };
   assert.equal(await park(token), "connect", "a play session opens the park");
   assert.equal(await park("not-a-token"), "connect_error", "the park refuses a bad token");
+  // The game's own domain shows only the game: WorkHub pages go to the play page, WorkHub APIs are not there.
+  // (fetch drops a custom Host header, so these go through node:http)
+  const onPlayHost = (path) => new Promise((resolve, reject) => {
+    const req = request(`${origin}${path}`, { headers: { Host: "play.petfarm.online", Cookie: cookie }, timeout: 20000 }, (res) => {
+      res.resume();
+      resolve({ status: res.statusCode, location: res.headers.location ?? "" });
+    });
+    req.on("error", reject);
+    req.end();
+  });
+  const playRoot = await onPlayHost("/dashboard");
+  assert.equal(playRoot.status, 307, "game domain: WorkHub pages redirect");
+  assert(playRoot.location.endsWith("/server1"), "game domain: to the play page");
+  const playApi = await onPlayHost("/api/projects");
+  assert.equal(playApi.status, 404, "game domain: no WorkHub API");
+  const play1 = await fetch(`${origin}/server1`, { headers: { Cookie: cookie }, signal: AbortSignal.timeout(20000) });
+  assert(/\/ta-tua\/game\/(?:index\.html)?#token=[a-f0-9]+/.test(await play1.text()), "/server1 signs a member in");
+  const invite = await fetch(`${origin}/invitation/deadbeef00`, { signal: AbortSignal.timeout(20000) });
+  assert((await invite.text()).includes("Link mời này không còn hiệu lực"), "/invitation renders");
+  const oldInvite = await fetch(`${origin}/ta-tua/khach/deadbeef00`, { redirect: "manual", signal: AbortSignal.timeout(20000) });
+  assert.equal(oldInvite.headers.get("location"), "https://play.petfarm.online/invitation/deadbeef00", "old invite links move to the game domain");
+  const gameDir = await fetch(`${origin}/ta-tua/game/`, { signal: AbortSignal.timeout(20000) });
+  assert.equal(gameDir.status, 200, "game page is served at its folder path (no redirect)");
   const gamePage = await fetch(`${origin}/ta-tua/game/index.html`, { signal: AbortSignal.timeout(20000) });
   assert.equal(gamePage.status, 200, "game page is served as a static asset");
   console.log("Worker smoke passed: login, project calendar, My Tasks, public share link, deadline APIs, department report, analytics, AI intake route and Tà tưa (game API, Durable Object, sign-in, park WebSocket) on workerd + PostgreSQL.");

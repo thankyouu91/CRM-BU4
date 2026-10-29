@@ -37,14 +37,13 @@ export function renderJobs(root, ctx) {
   function careerCard(id, career, pet) {
     const state = pet.careers[id] ?? { rank: 1, hours: 0 };
     const skill = pet.skills[career.skill] ?? 0;
-    // Lương theo tuổi (nhí nhố 60%, thiếu niên 85%) và thâm niên từ Trưởng thành (+1% mỗi 10 giờ ở nghề, tối đa 30%).
+    // Lương theo tuổi (sơ sinh 50%, nhí nhố 60%, thiếu niên 85%) và thâm niên từ Trưởng thành (+1% mỗi 10 giờ ở nghề, tối đa 30%).
     const senior = pet.seniority ? seniorityBonus(state.hours) : 0;
     const perHour = Math.round(career.pay[state.rank - 1] * (0.8 + skill / 200) * pet.workFactor * (1 + senior));
     const next = rules.promotion[state.rank - 1];
     const hoursLeft = pet.maxHours - pet.hoursToday;
     let blocked = '';
-    if (pet.stage === 'baby') blocked = 'Bé cần tròn 2 tuần tuổi';
-    else if (pet.busyUntil) blocked = 'Bé đang làm ca khác';
+    if (pet.busyUntil) blocked = 'Bé đang làm ca khác';
     else if (pet.sick) blocked = 'Bé đang ốm, đưa đi Phòng khám trước đã';
     else if (hoursLeft <= 0) blocked = `Hôm nay làm đủ ${pet.maxHours} giờ rồi`;
     else if (pet.fullness < 15) blocked = 'Bé đói quá, cho ăn rồi hẵng đi làm';
@@ -80,7 +79,7 @@ export function renderJobs(root, ctx) {
 
   /** Trực quầy của mình và các tin tuyển người làm thuê ở quầy người khác. */
   function shopJobs(pet) {
-    const blocked = pet.stage === 'baby' || pet.busyUntil || pet.sick || pet.hoursToday >= pet.maxHours || pet.fullness < 15;
+    const blocked = pet.busyUntil || pet.sick || pet.hoursToday >= pet.maxHours || pet.fullness < 15;
     const hoursLeft = pet.maxHours - pet.hoursToday;
     const buttons = (businessId, wage) => rules.shiftHours.map((h) => `
       <button class="btn small" data-shop-shift="${businessId}:${h}" ${blocked || h > hoursLeft || pet.energy < h * 10 ? 'disabled' : ''}>
@@ -100,7 +99,7 @@ export function renderJobs(root, ctx) {
   /** Đứng máy ở xưởng của mình (không lương) và các xưởng người khác đang tuyển công nhân. */
   function factoryJobs(pet) {
     if (!data.myFactories.length && !data.factoryJobs.length) return '';
-    const blocked = pet.stage === 'baby' || pet.busyUntil || pet.sick || pet.hoursToday >= pet.maxHours || pet.fullness < 15;
+    const blocked = pet.busyUntil || pet.sick || pet.hoursToday >= pet.maxHours || pet.fullness < 15;
     const hoursLeft = pet.maxHours - pet.hoursToday;
     const buttons = (factoryId, wage) => rules.shiftHours.map((h) => `
       <button class="btn small" data-factory-shift="${factoryId}:${h}" ${blocked || h > hoursLeft || pet.energy < h * 10 ? 'disabled' : ''}>

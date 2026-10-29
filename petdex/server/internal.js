@@ -161,6 +161,8 @@ internalApi.get('/admin/players/:id', (req, res) => {
     skills: SKILLS,
     maxLevel: RULES.maxLevel ?? 100,
     slots: slotsOf(user.id),
+    // Số trừ được ngay: ví + tài khoản tiết kiệm (không gồm tiền gửi kỳ hạn).
+    spendable: { wallet: user.coins, savings: savingsOf(user.id) },
     // Mọi loài, kể cả loài hiếm chỉ nở từ trứng: quản trị viên tặng được bất kỳ loài nào.
     species: listSpecies().map((s) => ({ id: s.id, name: s.name, element: s.element, rarity: s.rarity })),
   });
@@ -183,18 +185,46 @@ internalApi.post('/admin/players/:id/pets', (req, res) => {
   res.json({ ok: true, pet });
 });
 
+const savingsOf = (userId) => Number(store.db.prepare('SELECT savings FROM bank_accounts WHERE user_id = ?').get(userId)?.savings ?? 0);
+const vnd = (n) => n.toLocaleString('vi-VN');
+
+/**
+ * Cộng hoặc trừ xu. Trừ thì lấy ví trước, thiếu thì lấy tiếp từ tài khoản tiết kiệm (không đụng tiền gửi
+ * kỳ hạn). Không đủ cả hai thì báo số tối đa trừ được; gửi `clamp: true` để trừ hết số đang có.
+ */
 internalApi.post('/admin/players/:id/coins', (req, res) => {
   const user = userOf(req);
   const delta = Number(req.body?.delta);
   if (!Number.isInteger(delta) || delta === 0 || Math.abs(delta) > 1_000_000_000) throw new GameError('Số xu phải là số nguyên khác 0.');
   const memo = String(req.body?.memo ?? '').trim().slice(0, 120) || (delta > 0 ? 'Quản trị viên cộng xu' : 'Quản trị viên trừ xu');
   const actor = actorOf(req);
-  const coins = store.transaction(() => {
-    const balance = post({ userId: user.id, delta, kind: 'admin', memo: `${memo} (${actor})` });
-    store.adminLog(actor, 'coins', user.id, { delta, memo, balance });
-    return balance;
+  const clamp = Boolean(req.body?.clamp);
+  const result = store.transaction(() => {
+    const note = `${memo} (${actor})`;
+    if (delta > 0) {
+      const coins = post({ userId: user.id, delta, kind: 'admin', memo: note });
+      store.adminLog(actor, 'coins', user.id, { delta, memo, balance: coins });
+      return { coins, savings: savingsOf(user.id), delta, fromWallet: delta, fromSavings: 0 };
+    }
+    const wallet = store.getUser(user.id).coins;
+    const savings = savingsOf(user.id);
+    const available = wallet + savings;
+    let want = -delta;
+    if (want > available) {
+      if (!clamp || available <= 0) {
+        throw new GameError(`Không đủ xu: ví có ${vnd(wallet)}${savings ? `, tiết kiệm ${vnd(savings)}` : ''} xu, tối đa trừ được ${vnd(available)} xu.`);
+      }
+      want = available;
+    }
+    const fromWallet = Math.min(wallet, want);
+    const fromSavings = want - fromWallet;
+    if (fromWallet) post({ userId: user.id, delta: -fromWallet, kind: 'admin', memo: note });
+    if (fromSavings) post({ userId: user.id, account: 'savings', delta: -fromSavings, kind: 'admin', memo: note });
+    const coins = store.getUser(user.id).coins;
+    store.adminLog(actor, 'coins', user.id, { delta: -want, requested: delta, memo, balance: coins, fromSavings });
+    return { coins, savings: savingsOf(user.id), delta: -want, fromWallet, fromSavings };
   });
-  res.json({ ok: true, coins });
+  res.json({ ok: true, ...result });
 });
 
 const PET_STATS = ['fullness', 'happiness', 'energy', 'hygiene', 'health'];

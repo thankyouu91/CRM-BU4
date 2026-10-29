@@ -108,7 +108,7 @@ export function renderBusiness(root, ctx) {
             <span class="countdown">${d.startsAt > Date.now() ? 'sắp vào' : countdown(d.endsAt - Date.now())}</span></li>`).join('')}</ul>`
           : '<p class="muted">Chưa có ai trực. Quầy chỉ bán khi có bé đứng quầy.</p>'}
         <div class="duty-pets">${pets.map((p) => {
-          const blocked = p.busyUntil ? 'đang bận' : p.age.stage === 'baby' ? 'còn bé' : '';
+          const blocked = p.busyUntil ? 'đang bận' : '';
           return `<div class="duty-pet"><b>${esc(p.name)}</b>${blocked ? `<small class="muted">${blocked}</small>` : [1, 2, 4].map((h) => `
             <button class="btn small" data-duty="${p.id}:${h}">${h} giờ</button>`).join('')}</div>`;
         }).join('')}</div>

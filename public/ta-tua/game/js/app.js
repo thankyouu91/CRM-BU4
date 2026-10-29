@@ -437,7 +437,6 @@ function renderHome(root) {
   const pet = currentPet();
   state.petId = pet.id;
   const isActive = pet.id === state.me.user.activePetId;
-  const isBaby = pet.age.stage === 'baby';
   const busyLeft = pet.busyUntil ? pet.busyUntil - Date.now() : 0;
   const nextStage = state.catalog.stages.find((s) => s.minDays > pet.age.days);
   const growNote = nextStage ? ` · còn ${Math.ceil((nextStage.minDays - pet.age.days) / 7)} ngày nữa thành ${nextStage.label}` : '';
@@ -479,7 +478,7 @@ function renderHome(root) {
           <button class="btn primary" data-act="feed"><b>🍽️</b>Cho ăn<small>${countOf('food')} món trong túi</small></button>
           <button class="btn pink" data-act="play" ${busyLeft > 0 ? 'disabled' : ''}><b>🎾</b>Chơi đùa<small>${busyLeft > 0 ? 'Bé đang đi làm' : '−15 ⚡ · +4 🪙'}</small></button>
           <button class="btn gold" data-go="jobs">
-            <b>💼</b>Đi làm<small>${isBaby ? 'Bé cần 2 tuần tuổi' : busyLeft > 0 ? `Về sau ${countdown(busyLeft)}` : 'Chọn nghề, nhận ca'}</small>
+            <b>💼</b>Đi làm<small>${busyLeft > 0 ? `Về sau ${countdown(busyLeft)}` : 'Chọn nghề, nhận ca'}</small>
           </button>
           <button class="btn mint" data-act="bath" ${busyLeft > 0 ? 'disabled' : ''}><b>🛁</b>Tắm<small>${busyLeft > 0 ? 'Bé đang bận' : `Miễn phí · 🫧 ${pet.hygiene}`}</small></button>
           <button class="btn" data-act="care"><b>💊</b>Chăm sóc<small>${countOf('care')} món trong túi</small></button>

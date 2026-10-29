@@ -31,7 +31,8 @@ export const PROMOTION = [
 ];
 /** Kỹ năng chính tăng mỗi giờ làm (trước khi giảm dần theo độ cao). */
 export const SKILL_PER_HOUR = 0.6;
-const MIN_STAGE = 'kid';
+// Đi làm từ cấp 1: bé sơ sinh nhận được ca nhẹ (2 giờ/ngày, lương 50%, theo LIFE_STAGES).
+const MIN_STAGE = 'baby';
 
 export function initialSkills(rand) {
   return Object.fromEntries(Object.keys(SKILLS).map((k) => [k, Math.round((5 + rand() * 10) * 10) / 10]));
@@ -57,7 +58,7 @@ export function canPromote(rank, hoursDone, skill) {
 export function checkShift({ pet, stage, careerId, hours, hoursToday, busy, maxHours = MAX_HOURS_PER_DAY }) {
   if (careerId !== 'shop' && careerId !== 'factory' && !CAREERS[careerId]) throw new GameError('Không có nghề này.');
   if (!SHIFT_HOURS.includes(hours)) throw new GameError('Ca làm chỉ có 1, 2 hoặc 4 giờ.');
-  if (stageIndex(stage) < stageIndex(MIN_STAGE)) throw new GameError(`${pet.name} còn bé quá, 2 tuần tuổi mới đi làm được.`);
+  if (stageIndex(stage) < stageIndex(MIN_STAGE)) throw new GameError(`${pet.name} còn bé quá, chưa đi làm được.`);
   if (busy) throw new GameError(`${pet.name} đang làm ca khác rồi.`);
   if (pet.sick) throw new GameError(`${pet.name} đang ốm, đưa bé đi khám rồi hẵng đi làm.`);
   if (hoursToday + hours > maxHours) {

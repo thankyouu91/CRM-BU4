@@ -13,6 +13,7 @@ import { EmptyState, PageHeader, Skeleton } from "@/components/ui/misc";
 import { Drawer } from "@/components/ui/modal";
 import { api, ApiError } from "@/lib/client";
 import { cn } from "@/lib/utils";
+import { inviteUrl, playUrl } from "@/lib/petdex-public";
 
 // Tà tưa management board. Everything goes through /api/ta-tua/admin/* (administrators only),
 // which relays to the game server and writes WorkHub's audit log.
@@ -76,6 +77,8 @@ interface Detail {
   invite: { label: string } | null;
   skills: Record<string, { name: string }>;
   slots: { max: number; used: number; free: number };
+  /** What can be taken right now: wallet + savings account (term deposits are locked). */
+  spendable: { wallet: number; savings: number };
   species: { id: string; name: string; element: string; rarity: string }[];
 }
 interface Overview {
@@ -369,13 +372,21 @@ function PlayerDetail({ detail, onChanged, onClose }: { detail: Detail; onChange
   const [renaming, setRenaming] = useState(false);
   const [name, setName] = useState(player.displayName);
 
-  const adjust = async (sign: 1 | -1) => {
+  const spendable = detail.spendable.wallet + detail.spendable.savings;
+  const [confirmAll, setConfirmAll] = useState<number | null>(null);
+  const adjust = async (sign: 1 | -1, clamp = false) => {
     const amount = Math.abs(Math.trunc(Number(delta)));
     if (!amount) return toast.error("Nhập số xu");
+    // More than the player has: offer to take everything available instead of failing.
+    if (sign < 0 && amount > spendable && !clamp) {
+      if (spendable <= 0) return toast.error("Người chơi không còn xu trong ví hay tiết kiệm để trừ");
+      return setConfirmAll(amount);
+    }
     setBusy(true);
     try {
-      const res = await api<{ coins: number }>(`${ADMIN}/players/${player.id}/coins`, { method: "POST", body: { delta: sign * amount, memo, playerName: player.displayName } });
-      toast.success(`${sign > 0 ? "Đã cộng" : "Đã trừ"} ${amount.toLocaleString("vi-VN")} xu, ví còn ${res.coins.toLocaleString("vi-VN")}`);
+      const res = await api<{ coins: number; delta: number; fromSavings: number }>(`${ADMIN}/players/${player.id}/coins`, { method: "POST", body: { delta: sign * amount, memo, clamp, playerName: player.displayName } });
+      const done = Math.abs(res.delta);
+      toast.success(`${sign > 0 ? "Đã cộng" : "Đã trừ"} ${done.toLocaleString("vi-VN")} xu${res.fromSavings ? ` (${res.fromSavings.toLocaleString("vi-VN")} từ tiết kiệm)` : ""}, ví còn ${res.coins.toLocaleString("vi-VN")}`);
       setDelta("");
       setMemo("");
       onChanged();
@@ -440,7 +451,7 @@ function PlayerDetail({ detail, onChanged, onClose }: { detail: Detail; onChange
         </div>
 
         <Card>
-          <CardHeader title={<span className="flex items-center gap-2"><Coins className="h-4 w-4 text-muted-foreground" /> Cộng hoặc trừ xu</span>} description="Ghi vào sổ cái của người chơi với lý do; trừ không được quá số xu trong ví." />
+          <CardHeader title={<span className="flex items-center gap-2"><Coins className="h-4 w-4 text-muted-foreground" /> Cộng hoặc trừ xu</span>} description={`Ghi vào sổ cái của người chơi với lý do. Trừ thì lấy ví trước, thiếu thì lấy tiếp từ tiết kiệm; trừ được tối đa ${spendable.toLocaleString("vi-VN")} xu. Hàng hoá, đồ đạc và tiền gửi kỳ hạn trong tài sản ròng không trừ được.`} />
           <CardBody className="grid gap-3 pt-3 sm:grid-cols-[10rem_1fr_auto_auto]">
             <Field label="Số xu"><Input type="number" min={1} step={1} value={delta} onChange={(e) => setDelta(e.target.value)} placeholder="500" /></Field>
             <Field label="Lý do"><Input value={memo} onChange={(e) => setMemo(e.target.value)} placeholder="Thưởng tháng, đền bù lỗi…" maxLength={120} /></Field>
@@ -482,6 +493,15 @@ function PlayerDetail({ detail, onChanged, onClose }: { detail: Detail; onChange
           )}
         </div>
       </div>
+      <ConfirmDialog
+        open={confirmAll !== null}
+        onClose={() => setConfirmAll(null)}
+        onConfirm={async () => { await adjust(-1, true); }}
+        title="Không đủ xu để trừ"
+        message={`Bạn muốn trừ ${(confirmAll ?? 0).toLocaleString("vi-VN")} xu, nhưng ${player.displayName} chỉ có ${detail.spendable.wallet.toLocaleString("vi-VN")} xu trong ví${detail.spendable.savings ? ` và ${detail.spendable.savings.toLocaleString("vi-VN")} xu tiết kiệm` : ""}. Trừ hết ${spendable.toLocaleString("vi-VN")} xu đang có?`}
+        confirmLabel={`Trừ hết ${spendable.toLocaleString("vi-VN")} xu`}
+        danger
+      />
       <ConfirmDialog
         open={confirmBan}
         onClose={() => setConfirmBan(false)}
@@ -607,8 +627,7 @@ function InvitesTab() {
   const [expires, setExpires] = useState("");
   const [busy, setBusy] = useState(false);
   const [revoking, setRevoking] = useState<Invite | null>(null);
-  const origin = typeof window === "undefined" ? "" : window.location.origin;
-  const linkOf = (code: string) => `${origin}/ta-tua/khach/${code}`;
+  const linkOf = (code: string) => inviteUrl(code);
 
   const create = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -648,7 +667,10 @@ function InvitesTab() {
   return (
     <div className="space-y-4">
       <Card>
-        <CardHeader title="Tạo link mời khách" description="Người nhận link chỉ cần điền tên là vào chơi, không cần tài khoản WorkHub. Có thể giới hạn số lượt và hạn dùng." />
+        <CardHeader
+          title="Tạo link mời khách"
+          description={<>Người nhận link chỉ cần điền tên là vào chơi, không cần tài khoản WorkHub. Có thể giới hạn số lượt và hạn dùng. Khách đã vào thì lần sau mở thẳng <a href={playUrl()} target="_blank" rel="noreferrer" className="underline">{playUrl().replace(/^https?:\/\//, "")}</a>.</>}
+        />
         <CardBody className="grid gap-3 pt-3 sm:grid-cols-[1fr_8rem_11rem_auto]">
           <Field label="Nhãn"><Input value={label} onChange={(e) => setLabel(e.target.value)} placeholder="Bạn bè phòng Marketing" maxLength={60} /></Field>
           <Field label="Số lượt" hint="trống = không giới hạn"><Input type="number" min={1} max={10000} value={maxUses} onChange={(e) => setMaxUses(e.target.value)} placeholder="∞" /></Field>

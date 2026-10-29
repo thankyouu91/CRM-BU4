@@ -28,7 +28,9 @@ test('nghề: kiểm tra trước khi nhận ca', () => {
   const pet = { name: 'Boba', energy: 100, fullness: 80 };
   const ok = { pet, stage: 'kid', careerId: 'porter', hours: 2, hoursToday: 0, busy: false };
   assert.doesNotThrow(() => checkShift(ok));
-  assert.throws(() => checkShift({ ...ok, stage: 'baby' }), GameError);
+  // Đi làm từ cấp 1: bé sơ sinh nhận ca nhẹ được, nhưng không quá 2 giờ/ngày.
+  assert.doesNotThrow(() => checkShift({ ...ok, stage: 'baby', maxHours: 2 }));
+  assert.throws(() => checkShift({ ...ok, stage: 'baby', maxHours: 2, hoursToday: 1 }), GameError);
   assert.throws(() => checkShift({ ...ok, hours: 3 }), GameError);
   assert.throws(() => checkShift({ ...ok, hoursToday: 7 }), GameError);
   assert.throws(() => checkShift({ ...ok, busy: true }), GameError);

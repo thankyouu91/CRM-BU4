@@ -25,7 +25,7 @@ export function GameFrame({ src, error, admin }: { src: string | null; error: st
                 <Button variant="outline" size="sm" onClick={() => setReloads((n) => n + 1)}>
                   <RefreshCw className="h-4 w-4" /> Tải lại
                 </Button>
-                <Button variant="outline" size="sm" onClick={() => window.open(src, "_blank", "noopener")}>
+                <Button variant="outline" size="sm" onClick={() => window.open("/server1", "_blank", "noopener")}>
                   <Maximize2 className="h-4 w-4" /> Mở tab riêng
                 </Button>
               </>

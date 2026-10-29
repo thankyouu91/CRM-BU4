@@ -1,20 +1,9 @@
-import { GameError, gameJson } from "@/lib/petdex";
-import { GuestEntry } from "./guest-entry";
+import { redirect } from "next/navigation";
+import { INVITE_PATH, inviteUrl } from "@/lib/petdex-public";
 
-export const metadata = { title: "Tà tưa · Khách mời" };
-
-// Public page behind an invite link: a guest types a name and plays, no WorkHub account needed.
-export default async function GuestPage({ params }: { params: Promise<{ code: string }> }) {
+// Invite links shared before the game had its own domain: send them to the new address.
+export default async function OldGuestPage({ params }: { params: Promise<{ code: string }> }) {
   const { code } = await params;
-  let valid = false;
-  let label: string | null = null;
-  let error: string | null = null;
-  if (/^[a-f0-9]{6,64}$/i.test(code)) {
-    try {
-      ({ valid, label } = await gameJson<{ valid: boolean; label: string | null }>(`/internal/invites/${code}`));
-    } catch (err) {
-      error = err instanceof GameError ? err.message : "Máy chủ game gặp sự cố, thử lại sau.";
-    }
-  }
-  return <GuestEntry code={code} valid={valid} label={label} error={error} />;
+  const safe = /^[a-f0-9]{6,64}$/i.test(code) ? code : "";
+  redirect(process.env.NODE_ENV === "production" ? inviteUrl(safe) : `${INVITE_PATH}/${safe}`);
 }
