@@ -62,9 +62,9 @@
   }
 }
 
-/* The dark theme's night scene (components/layout/night-sky.tsx) shows through:
-   the page goes clear and the surfaces over it turn translucent. */
-.dark[data-night] {
+/* The backdrop scenes (components/layout/scene-backdrop.tsx) show through: the page
+   goes clear and the surfaces over it turn translucent. Dark theme: the night sky. */
+.dark[data-scene="night"] {
   --background: 5 8 16;
   --card: 9 13 25;
   --muted: 20 27 45;
@@ -72,18 +72,43 @@
   --sidebar: 5 8 16;
   --sidebar-accent: 26 34 56;
 }
-.dark[data-night] body {
+.dark[data-scene="night"] body {
   background-color: transparent;
 }
-.dark[data-night] .bg-card {
+.dark[data-scene="night"] .bg-card {
   background-color: rgb(var(--card) / 0.78);
 }
-.dark[data-night] .rounded-xl.border.bg-card {
+.dark[data-scene="night"] .rounded-xl.border.bg-card {
   backdrop-filter: blur(6px);
   -webkit-backdrop-filter: blur(6px);
 }
-.dark[data-night] :is(header.bg-background, aside.bg-sidebar) {
+.dark[data-scene="night"] :is(header.bg-background, aside.bg-sidebar) {
   background-color: rgb(var(--background) / 0.72);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+}
+
+/* Light theme: the valley at dawn. White surfaces with a cool, bluish edge and a soft shadow. */
+:root:not(.dark)[data-scene="dawn"] {
+  --background: 255 255 255;
+  --muted: 240 243 247;
+  --border: 222 227 235;
+  --sidebar: 255 255 255;
+  --sidebar-accent: 232 237 244;
+}
+:root:not(.dark)[data-scene="dawn"] body {
+  background-color: transparent;
+}
+:root:not(.dark)[data-scene="dawn"] .bg-card {
+  background-color: rgb(255 255 255 / 0.74);
+}
+:root:not(.dark)[data-scene="dawn"] .rounded-xl.border.bg-card {
+  box-shadow: 0 1px 2px rgb(27 35 51 / 0.04), 0 8px 24px -12px rgb(27 35 51 / 0.12);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+}
+:root:not(.dark)[data-scene="dawn"] :is(header.bg-background, aside.bg-sidebar) {
+  background-color: rgb(255 255 255 / 0.6);
   backdrop-filter: blur(6px);
   -webkit-backdrop-filter: blur(6px);
 }
