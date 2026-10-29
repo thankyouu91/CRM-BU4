@@ -1,0 +1,405 @@
+import { burst, flyTo, floatText } from './fx.js';
+import { PARK_PX, mountParkScene } from './scenes.js';
+import { createPetFigure } from './sprite.js';
+import { $, esc, toast } from './ui.js';
+
+const SPEED = 190; // đơn vị thế giới mỗi giây
+const BASE_SCALE = 0.6;
+const CUDDLE_GAP = 62; // đứng cách bạn bao xa khi vuốt ve
+
+const clamp = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
+
+/** Vẽ công viên và nối socket; trả về hàm dọn dẹp khi rời màn. */
+export function mountPark(root, ctx) {
+  root.innerHTML = `
+    <div class="park">
+      <div class="park-wrap" id="park-wrap">
+        <div class="park-world" id="park-world"></div>
+        <div class="park-status" id="park-status">Đang vào công viên…</div>
+      </div>
+      <aside class="card park-side">
+        <h3>🌳 Công viên · <span id="online-count">0</span> bạn</h3>
+        <div class="emotes">
+          <button class="btn small" data-emote="wave">👋 Vẫy</button>
+          <button class="btn small" data-emote="jump">🦘 Nhảy</button>
+          <button class="btn small" data-emote="spin">🌀 Xoay</button>
+        </div>
+        <ul class="online" id="online-list"></ul>
+        <div class="chat-log" id="chat-log"></div>
+        <form class="chat-form" id="chat-form">
+          <input name="text" maxlength="120" autocomplete="off" placeholder="Nói gì đó…" />
+          <button class="btn primary small">Gửi</button>
+        </form>
+        <p class="hint">Bấm lên bãi cỏ để đi tới đó. Bấm vào bé khác để vuốt ve 💖 hoặc tặng quà 🎁.</p>
+      </aside>
+    </div>`;
+
+  const wrap = $('#park-wrap', root);
+  const worldEl = $('#park-world', root);
+  const statusEl = $('#park-status', root);
+  const logEl = $('#chat-log', root);
+  const listEl = $('#online-list', root);
+  const unmountScene = mountParkScene(worldEl);
+
+  let world = { width: 1000, height: 600, minX: 50, maxX: 950, minY: 318, maxY: 585 };
+  let scale = 1;
+  let selfId = null;
+  let menu = null;
+  const entities = new Map();
+
+  const speciesOf = (id) => ctx.catalog.species.find((s) => s.id === id) ?? ctx.catalog.species[0];
+  const petHeight = (e) => e.figure.height;
+  /** Điểm trên thân bé: 0 là chân, 1 là đỉnh khung hình. */
+  const pointOn = (e, frac) => ({ x: e.x - 4, y: e.y - petHeight(e) * frac });
+
+  const resize = new ResizeObserver(() => {
+    scale = wrap.clientWidth / world.width;
+    worldEl.style.transform = `scale(${scale})`;
+    if (menu) positionMenu();
+  });
+  resize.observe(wrap);
+
+  function setStatus(text) {
+    statusEl.hidden = !text;
+    statusEl.textContent = text ?? '';
+  }
+
+  function log(html, cls = '') {
+    const line = document.createElement('p');
+    line.className = cls;
+    line.innerHTML = html;
+    logEl.append(line);
+    while (logEl.children.length > 80) logEl.firstChild.remove();
+    logEl.scrollTop = logEl.scrollHeight;
+  }
+
+  // ---- thú cưng trên sân ----
+
+  function place(e) {
+    e.el.style.left = `${e.x}px`;
+    e.el.style.top = `${e.y}px`;
+    e.el.style.zIndex = String(Math.round(e.y));
+  }
+
+  function setPet(e, player) {
+    e.data = player;
+    e.figure?.destroy();
+    e.figure = createPetFigure(speciesOf(player.pet.species), BASE_SCALE, player.pet.wear, { stage: player.pet.stage, ageScale: player.pet.scale });
+    e.el.insertBefore(e.figure.el, e.nameEl);
+    e.nameEl.innerHTML = `${esc(player.pet.name)} <b>Lv ${player.pet.level}</b><small>${esc(player.username)}</small>`;
+  }
+
+  function addPlayer(player) {
+    removePlayer(player.id);
+    const el = document.createElement('div');
+    el.className = `pg-pet${player.id === selfId ? ' self' : ''}`;
+    el.dataset.id = player.id;
+    el.innerHTML = '<div class="pg-bubble"></div><div class="pg-name"></div>';
+    const e = {
+      id: player.id,
+      el,
+      nameEl: el.querySelector('.pg-name'),
+      bubbleEl: el.querySelector('.pg-bubble'),
+      x: player.x, y: player.y, tx: player.x, ty: player.y,
+      facing: 'runRight',
+      dustAt: 0,
+      onArrive: null,
+      bubbleTimer: 0,
+    };
+    setPet(e, player);
+    entities.set(player.id, e);
+    worldEl.append(el);
+    place(e);
+    renderOnline();
+  }
+
+  function removePlayer(id) {
+    const e = entities.get(id);
+    if (!e) return;
+    clearTimeout(e.bubbleTimer);
+    e.figure.destroy();
+    e.el.remove();
+    entities.delete(id);
+    if (menu?.targetId === id) closeMenu();
+    renderOnline();
+  }
+
+  function renderOnline() {
+    $('#online-count', root).textContent = entities.size;
+    listEl.innerHTML = [...entities.values()].map((e) => `
+      <li class="${e.id === selfId ? 'me' : ''}" data-id="${esc(e.id)}">
+        <span>🐾 ${esc(e.data.pet.name)} <small class="muted">Lv ${e.data.pet.level}</small></span>
+        <span class="muted">${esc(e.data.username)}${e.id === selfId ? ' (bạn)' : ''}</span>
+      </li>`).join('');
+  }
+
+  function say(id, text) {
+    const e = entities.get(id);
+    if (!e) return;
+    e.bubbleEl.textContent = text;
+    e.bubbleEl.classList.add('show');
+    clearTimeout(e.bubbleTimer);
+    e.bubbleTimer = setTimeout(() => e.bubbleEl.classList.remove('show'), 4500);
+  }
+
+  function particles(id, frac, options) {
+    const e = entities.get(id);
+    if (!e) return;
+    const { x, y } = pointOn(e, frac);
+    burst(worldEl, x, y, { px: PARK_PX, ...options });
+  }
+
+  // ---- vòng lặp di chuyển ----
+
+  let last = performance.now();
+  let raf = requestAnimationFrame(step);
+
+  function step(now) {
+    const dt = Math.min(0.05, (now - last) / 1000);
+    last = now;
+    for (const e of entities.values()) {
+      const dx = e.tx - e.x;
+      const dy = e.ty - e.y;
+      const dist = Math.hypot(dx, dy);
+      const sprite = e.figure.sprite;
+      if (dist > 0.5) {
+        const k = Math.min(1, (SPEED * dt) / dist);
+        e.x += dx * k;
+        e.y += dy * k;
+        if (Math.abs(dx) > dist * 0.2) e.facing = dx > 0 ? 'runRight' : 'runLeft';
+        if (!sprite.busy) sprite.play(e.facing);
+        e.figure.body.style.transform = `translateY(${-Math.abs(Math.sin(now / 85)) * 5}px)`;
+        if (now - e.dustAt > 170) {
+          e.dustAt = now;
+          const back = e.facing === 'runRight' ? -1 : 1;
+          burst(worldEl, e.x + back * 14, e.y - 3, { icon: 'dust', count: 1, spread: 16, rise: 10, life: 520, px: PARK_PX, stagger: 0 });
+        }
+        place(e);
+      } else {
+        if (e.figure.body.style.transform) e.figure.body.style.transform = '';
+        if (!sprite.busy && sprite.anim !== 'idle') sprite.play('idle');
+        if (e.onArrive) {
+          const done = e.onArrive;
+          e.onArrive = null;
+          done();
+        }
+      }
+    }
+    if (menu) positionMenu();
+    raf = requestAnimationFrame(step);
+  }
+
+  function moveSelf(x, y, onArrive = null) {
+    const me = entities.get(selfId);
+    if (!me) return;
+    me.tx = clamp(x, world.minX, world.maxX);
+    me.ty = clamp(y, world.minY, world.maxY);
+    me.onArrive = onArrive;
+    socket.emit('pg:move', { x: me.tx, y: me.ty });
+  }
+
+  /** Chạy tới cạnh bé kia rồi mới vuốt ve. */
+  function approach(targetId, action) {
+    const me = entities.get(selfId);
+    const target = entities.get(targetId);
+    if (!me || !target) return;
+    const side = me.x < target.x ? -1 : 1;
+    let x = target.x + side * CUDDLE_GAP;
+    if (x < world.minX || x > world.maxX) x = target.x - side * CUDDLE_GAP;
+    if (Math.hypot(me.x - x, me.y - target.y) < 12) return action();
+    moveSelf(x, target.y + 2, action);
+  }
+
+  // ---- menu tương tác với bé khác ----
+
+  function closeMenu() {
+    menu?.el.remove();
+    menu = null;
+  }
+
+  function positionMenu() {
+    const e = entities.get(menu.targetId);
+    if (!e) return closeMenu();
+    const w = menu.el.offsetWidth;
+    const h = menu.el.offsetHeight;
+    const below = (e.y + 44) * scale;
+    const above = (e.y - petHeight(e)) * scale - h - 8;
+    const top = below + h + 8 > wrap.clientHeight ? above : below;
+    menu.el.style.left = `${clamp(e.x * scale - w / 2, 6, wrap.clientWidth - w - 6)}px`;
+    menu.el.style.top = `${Math.max(6, top)}px`;
+  }
+
+  function openMenu(targetId) {
+    closeMenu();
+    const e = entities.get(targetId);
+    if (!e || targetId === selfId) return;
+    const inventory = ctx.me().inventory;
+    const gifts = Object.values(ctx.catalog.items).filter((i) => (i.type === 'food' || i.type === 'care') && inventory[i.id] > 0);
+    const el = document.createElement('div');
+    el.className = 'pg-menu card';
+    el.innerHTML = `
+      <h4>${esc(e.data.pet.name)} <small class="muted">của ${esc(e.data.username)}</small></h4>
+      <button class="btn pink small" data-cuddle>💖 Vuốt ve</button>
+      <span class="label">🎁 Tặng quà từ túi đồ</span>
+      <div class="gifts">
+        ${gifts.length
+          ? gifts.map((i) => `<button class="btn small" data-gift="${i.id}" title="${esc(i.name)}">${i.icon}<sup>${inventory[i.id]}</sup></button>`).join('')
+          : '<span class="muted">Túi chưa có gì để tặng.</span>'}
+      </div>`;
+    el.addEventListener('click', (ev) => {
+      ev.stopPropagation();
+      const gift = ev.target.closest('[data-gift]');
+      if (ev.target.closest('[data-cuddle]')) approach(targetId, () => socket.emit('pg:cuddle', { targetId }));
+      else if (gift) socket.emit('pg:gift', { targetId, itemId: gift.dataset.gift });
+      else return;
+      closeMenu();
+    });
+    wrap.append(el);
+    menu = { targetId, el };
+    positionMenu();
+  }
+
+  // ---- thao tác của người chơi ----
+
+  worldEl.addEventListener('click', (ev) => {
+    const petEl = ev.target.closest('.pg-pet');
+    if (petEl) {
+      if (petEl.dataset.id === selfId) socket.emit('pg:emote', { kind: 'jump' });
+      else openMenu(petEl.dataset.id);
+      return;
+    }
+    closeMenu();
+    if (!selfId) return;
+    const rect = worldEl.getBoundingClientRect();
+    moveSelf(((ev.clientX - rect.left) / rect.width) * world.width, ((ev.clientY - rect.top) / rect.height) * world.height);
+  });
+
+  listEl.addEventListener('click', (ev) => {
+    const row = ev.target.closest('li[data-id]');
+    if (row) openMenu(row.dataset.id);
+  });
+
+  root.querySelector('.emotes').addEventListener('click', (ev) => {
+    const btn = ev.target.closest('[data-emote]');
+    if (btn) socket.emit('pg:emote', { kind: btn.dataset.emote });
+  });
+
+  $('#chat-form', root).addEventListener('submit', (ev) => {
+    ev.preventDefault();
+    const input = ev.currentTarget.elements.text;
+    const text = input.value.trim();
+    if (!text) return;
+    socket.emit('pg:chat', { text });
+    input.value = '';
+  });
+
+  const onKey = (ev) => ev.key === 'Escape' && closeMenu();
+  document.addEventListener('keydown', onKey);
+
+  // ---- socket ----
+
+  const socket = window.io({ auth: { token: ctx.token } });
+  const nameOf = (id) => esc(entities.get(id)?.data.username ?? 'Ai đó');
+  const petOf = (id) => esc(entities.get(id)?.data.pet.name ?? 'một bé');
+
+  socket.on('connect', () => {
+    setStatus('Đang vào công viên…');
+    socket.emit('pg:join');
+  });
+  socket.on('connect_error', (err) => setStatus(`Không kết nối được: ${err.message}`));
+  socket.on('disconnect', (reason) => {
+    if (reason !== 'io client disconnect') setStatus('Mất kết nối, đang thử lại…');
+  });
+
+  socket.on('pg:state', ({ selfId: id, world: w, players }) => {
+    selfId = id;
+    world = w;
+    for (const key of [...entities.keys()]) removePlayer(key);
+    players.forEach(addPlayer);
+    setStatus(null);
+    log('Bạn đã vào công viên. Chào mọi người đi! 👋', 'sys');
+    particles(selfId, 0.5, { icon: 'sparkle', count: 5, spread: 90, rise: 60 });
+  });
+
+  socket.on('pg:joined', (player) => {
+    addPlayer(player);
+    particles(player.id, 0.5, { icon: 'sparkle', count: 5, spread: 90, rise: 60 });
+    log(`${esc(player.username)} dắt ${esc(player.pet.name)} vào công viên`, 'sys');
+  });
+
+  socket.on('pg:left', ({ id }) => {
+    if (entities.has(id)) log(`${nameOf(id)} đã về nhà`, 'sys');
+    removePlayer(id);
+  });
+
+  socket.on('pg:moved', ({ id, x, y }) => {
+    const e = entities.get(id);
+    if (e) Object.assign(e, { tx: x, ty: y });
+  });
+
+  socket.on('pg:player', (player) => {
+    const e = entities.get(player.id);
+    if (!e) return addPlayer(player);
+    setPet(e, player);
+    renderOnline();
+  });
+
+  socket.on('pg:chat', ({ id, username, text }) => {
+    say(id, text);
+    log(`<b>${esc(username)}</b>: ${esc(text)}`);
+  });
+
+  socket.on('pg:emote', ({ id, kind }) => {
+    const e = entities.get(id);
+    if (!e) return;
+    e.figure.sprite.play(kind, { once: true });
+    if (kind === 'wave') particles(id, 0.9, { icon: 'note', count: 2, spread: 50, rise: 50, life: 1300 });
+    if (kind === 'spin') particles(id, 0.55, { icon: 'twinkle', count: 6, spread: 110, rise: 50 });
+    if (kind === 'jump') setTimeout(() => particles(id, 0, { icon: 'dust', count: 4, spread: 60, rise: 12, life: 600, stagger: 0 }), 420);
+  });
+
+  socket.on('pg:fx', ({ from, to, kind, icon }) => {
+    if (kind === 'cuddle') {
+      entities.get(to)?.figure.sprite.play('jump', { once: true });
+      entities.get(from)?.figure.sprite.play('wave', { once: true });
+      particles(to, 0.75, { icon: 'heart', count: 6, spread: 80, rise: 70 });
+      particles(from, 0.75, { icon: 'heart', count: 2, spread: 40, rise: 50 });
+      log(`💖 ${nameOf(from)} vuốt ve ${petOf(to)}`, 'sys');
+    } else if (kind === 'gift') {
+      const giver = entities.get(from);
+      const receiver = entities.get(to);
+      if (giver && receiver) {
+        flyTo(worldEl, pointOn(giver, 0.7), pointOn(receiver, 0.7), esc(icon), { size: 36, arc: 110 }).then(() => {
+          receiver.figure.sprite.play('wave', { once: true });
+          particles(to, 0.7, { icon: 'sparkle', count: 6, spread: 90, rise: 50 });
+        });
+      }
+      log(`🎁 ${nameOf(from)} tặng ${nameOf(to)} ${esc(icon)}`, 'sys');
+    }
+  });
+
+  socket.on('me:changed', (payload) => {
+    if (payload?.levelUps?.length && selfId) {
+      const me = entities.get(selfId);
+      particles(selfId, 0.6, { icon: 'sparkle', count: 12, spread: 160, rise: 100 });
+      if (me) floatText(worldEl, me.x, me.y - petHeight(me) - 10, 'LÊN CẤP!', { color: '#ffd75e', size: 26 });
+    }
+    ctx.onMeChanged(payload);
+  });
+  socket.on('pg:error', ({ message }) => toast(message, 'error'));
+  socket.on('pg:kicked', () => {
+    setStatus('Bạn vừa vào công viên từ một tab khác.');
+    socket.disconnect();
+  });
+
+  return () => {
+    cancelAnimationFrame(raf);
+    resize.disconnect();
+    document.removeEventListener('keydown', onKey);
+    socket.removeAllListeners();
+    socket.disconnect();
+    closeMenu();
+    for (const id of [...entities.keys()]) removePlayer(id);
+    unmountScene();
+  };
+}

@@ -1,0 +1,105 @@
+/* Giai đoạn 1B: quầy trà sữa, Tòa thị chính, bạn bè, Hội, nhiệm vụ ngày. */
+
+.link-btn { border: 0; background: none; padding: 2px 4px; color: var(--muted); font-weight: 800; text-decoration: underline; }
+.link-btn.danger { color: #c0444f; justify-self: start; }
+.check { display: inline-flex !important; align-items: center; gap: 6px; }
+.check input { width: auto; }
+
+/* ---------- Nhiệm vụ trên bản đồ ---------- */
+.quest-board { padding: 14px 16px; display: grid; gap: 10px; }
+.quest-board h3 { font-size: 1.2rem; }
+.quest-list { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }
+.quest {
+  display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 4px 10px; align-content: start; align-items: center;
+  padding: 10px 12px; border-radius: 14px; background: var(--surface-2); border: 2px solid var(--line); font-weight: 700; font-size: .9rem;
+}
+.quest > span, .quest .bar, .quest small { grid-column: 1; }
+.quest .bar { height: 8px; }
+.quest .btn, .quest .badge { grid-column: 2; grid-row: 1 / span 3; }
+.quest.done { opacity: .65; }
+.quest.chest { background: #fff4cf; border-color: var(--gold); }
+
+/* ---------- Quầy ---------- */
+.biz-view { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+.biz-setup, .biz-hero, .biz-box.wide { grid-column: 1 / -1; }
+.biz-setup, .biz-box { padding: 18px; display: grid; gap: 10px; align-content: start; }
+.biz-box h3, .biz-setup h3 { font-size: 1.25rem; }
+.biz-box p { margin: 0; }
+.loc-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+.loc {
+  display: grid; gap: 3px; justify-items: center; text-align: center; padding: 14px 8px;
+  border: 2px solid var(--line); border-radius: 16px; background: #fff; font-weight: 700; font-size: .88rem;
+}
+.loc b { font-size: 1rem; }
+.loc-icon { font-size: 2rem; }
+.loc.current { border-color: var(--tea); background: #fff6ea; box-shadow: 0 4px 0 var(--tea-deep); }
+.biz-hero { padding: 18px; display: grid; grid-template-columns: 1fr auto; gap: 8px 16px; align-items: center; }
+.biz-hero h3 { font-size: 1.6rem; }
+.biz-hero p { margin: 2px 0 0; }
+.biz-hero .cb-stats { grid-column: 1 / -1; margin: 4px 0 0; }
+.menu-list { display: grid; gap: 8px; }
+.menu-row {
+  display: grid; grid-template-columns: minmax(0, 1fr) 80px auto; gap: 4px 8px; align-items: center;
+  padding: 8px 10px; border-radius: 12px; background: var(--surface-2);
+}
+.menu-row select, .menu-row input {
+  padding: 6px 8px; border-radius: 10px; border: 2px solid var(--line-strong); background: #fff; font-weight: 700; width: 100%;
+}
+.menu-row small { grid-column: 1 / 3; }
+.stock-list, .duty-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.stock-list li, .duty-list li { display: flex; justify-content: space-between; gap: 8px; padding: 6px 10px; border-radius: 10px; background: var(--surface-2); font-size: .9rem; }
+.duty-pets { display: grid; gap: 6px; }
+.duty-pet { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.duty-pet b { min-width: 90px; }
+.job-form { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 10px; border-radius: 12px; border: 2px dashed var(--line-strong); }
+.job-form label { display: flex; align-items: center; gap: 6px; font-weight: 700; font-size: .85rem; }
+.job-form input[type="number"] { width: 70px; padding: 4px 8px; }
+.upgrade-row { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 8px 0; border-bottom: 1px dashed var(--line); }
+.upgrade-row:last-child { border-bottom: 0; }
+.job-row { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; padding: 10px 12px; border-radius: 14px; background: var(--surface-2); }
+.job-row .shift-buttons { min-width: 240px; }
+
+/* ---------- Tòa thị chính ---------- */
+.town-grid, .com-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+.town-box, .com-box { padding: 18px; display: grid; gap: 10px; align-content: start; }
+.town-box.wide, .com-box.wide { grid-column: 1 / -1; }
+.town-box h3, .com-box h3 { font-size: 1.25rem; }
+.town-box h4, .com-box h4 { margin: 4px 0 0; font-family: var(--font-display); }
+.town-box p, .com-box p { margin: 0; }
+.flow-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 5px; }
+.flow-list li { display: flex; justify-content: space-between; align-items: center; gap: 8px; padding: 6px 10px; border-radius: 10px; background: var(--surface-2); font-size: .9rem; }
+.proposal-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+.proposal { display: grid; gap: 6px; align-content: start; padding: 14px; border-radius: 16px; background: #fff; border: 2px solid var(--line); }
+.proposal h4 { font-family: var(--font-display); font-size: 1.1rem; margin: 0; }
+.proposal p { margin: 0; }
+.proposal.voted { border-color: var(--mint-deep); background: #eef9f5; }
+.proposal-icon { font-size: 2rem; }
+
+/* ---------- Bạn bè & Hội ---------- */
+.friend-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 12px; }
+.friend-card { display: grid; grid-template-columns: 80px 1fr; gap: 6px 10px; align-items: center; padding: 10px 12px; border-radius: 16px; background: var(--surface-2); }
+.friend-card .row { grid-column: 1 / -1; }
+.friend-pet { height: 80px; display: flex; align-items: flex-end; justify-content: center; overflow: hidden; }
+.friend-pet.big { height: 140px; }
+.visit-pets { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 10px; margin: 10px 0; }
+.visit-pet { display: grid; justify-items: center; text-align: center; gap: 2px; padding: 8px; border-radius: 14px; background: var(--surface-2); }
+.emblems { display: flex; flex-wrap: wrap; gap: 6px; }
+.emblem { width: 44px; height: 44px; font-size: 1.4rem; border-radius: 12px; border: 2px solid var(--line); background: #fff; }
+.emblem.current { border-color: var(--tea); box-shadow: 0 3px 0 var(--tea-deep); }
+.guild-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.guild-list li { display: grid; grid-template-columns: 30px 40px 1fr auto; gap: 10px; align-items: center; padding: 8px 12px; border-radius: 14px; background: var(--surface-2); }
+.guild-emblem { font-size: 1.8rem; text-align: center; }
+.guild-emblem.big { font-size: 3rem; }
+.guild-hero { grid-column: 1 / -1; grid-template-columns: auto 1fr auto; align-items: center; }
+
+@media (max-width: 960px) {
+  .biz-view, .town-grid, .com-grid { grid-template-columns: 1fr; }
+  .proposal-grid { grid-template-columns: 1fr; }
+  .quest-list { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 640px) {
+  .loc-grid { grid-template-columns: 1fr; }
+  .quest-list { grid-template-columns: 1fr; }
+  .menu-row { grid-template-columns: 1fr 70px; }
+  .job-row .shift-buttons { min-width: 0; width: 100%; }
+}

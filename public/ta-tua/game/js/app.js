@@ -1,0 +1,1009 @@
+import { api, embedded, session } from './api.js';
+import { io } from './socket.js';
+
+// park.js gọi window.io như với socket.io; đây là bản WebSocket thuần của game.
+window.io = io;
+
+// WorkHub đưa token phiên chơi vào #token=... (không qua query để không lọt vào log); đọc xong thì xóa khỏi URL.
+{
+  const hashParams = new URLSearchParams(location.hash.slice(1));
+  if (hashParams.has('token')) {
+    session.token = hashParams.get('token');
+    history.replaceState(null, '', location.pathname + location.search);
+  }
+}
+import { burst, floatText, flyTo } from './fx.js';
+import { mountPark } from './park.js';
+import { mountRoomScene } from './scenes.js';
+import { createPetFigure } from './sprite.js';
+import { itemIcon } from './itemart.js';
+import {
+  EGG, EGG_ODDS, ELEMENTS, ELEMENT_RULES, LIFE, LIFE_STAGES, RARITIES, RELATIONS, SLOTS, foodBonus, fullSetOf, relation, wearBonus,
+} from './shared/pets.js';
+import {
+  $, MOOD_ICONS, STAT_ICONS, STAT_LABELS, TYPE_LABELS,
+  ageText, clock, closeModal, countdown, effectText, esc, fmt, formatWait, modalOpen, openModal, toast, viewHead,
+} from './ui.js';
+import { renderBank } from './views/bank.js';
+import { renderBazaar } from './views/bazaar.js';
+import { renderBusiness } from './views/business.js';
+import { renderClinic } from './views/clinic.js';
+import { renderCommunity } from './views/community.js';
+import { renderContracts } from './views/contracts.js';
+import { renderCredit } from './views/credit.js';
+import { renderFactory } from './views/factory.js';
+import { renderGarden } from './views/garden.js';
+import { renderKitchen } from './views/kitchen.js';
+import { renderSchool } from './views/school.js';
+import { renderTownhall } from './views/townhall.js';
+import { renderGames } from './views/games.js';
+import { renderJobs } from './views/jobs.js';
+import { renderMap } from './views/map.js';
+import { renderMarket } from './views/market.js';
+import { renderNews } from './views/news.js';
+import { renderWallet as renderWalletView } from './views/wallet.js';
+
+const state = {
+  catalog: null, // { items, species, rules, stages, careers, commodities, ... }
+  me: null, // { user, pets, inventory, economy, badges }
+  view: 'map',
+  petId: null, // bé đang xem ở Nhà / Túi đồ
+  shopFilter: 'all',
+  adopting: false,
+  adoptSpecies: null,
+};
+
+const VIEW_NAMES = [
+  'map', 'home', 'shop', 'bag', 'park', 'ranks', 'jobs', 'games', 'bank', 'market', 'wallet', 'news', 'business', 'townhall', 'community',
+  'garden', 'kitchen', 'school', 'clinic', 'factory', 'contracts', 'bazaar', 'credit',
+];
+const TYPE_ORDER = ['food', 'care', 'toy', 'accessory', 'egg'];
+const IDLE_BY_MOOD = { great: 'idle', ok: 'idle', hungry: 'wait', tired: 'think', sad: 'sad', sick: 'sad', dirty: 'wait' };
+
+let teardown = null; // dọn sprite/socket của màn đang hiển thị
+let homeStage = null; // căn phòng + thú cưng đang hiện ở màn Nhà, để chạy hiệu ứng
+let authFigure = null;
+let renderSeq = 0;
+let busy = false;
+
+const items = () => state.catalog.items;
+const speciesOf = (id) => state.catalog.species.find((s) => s.id === id) ?? state.catalog.species[0];
+const wornIds = (pet) => Object.values(pet?.wear ?? {}).filter(Boolean);
+const isWorn = (pet, itemId) => wornIds(pet).includes(itemId);
+/** Giai đoạn tuổi từ số tuần (bảng vàng chỉ gửi số tuần). */
+const stageOfWeeks = (weeks) => state.catalog.stages.findLast((s) => weeks * 7 >= s.minDays)?.key ?? 'young';
+const figureOf = (pet, base) => createPetFigure(speciesOf(pet.species), base, pet.wear, { stage: pet.age.stage, ageScale: pet.age.scale });
+const qtyOf = (itemId) => state.me.inventory[itemId] ?? 0;
+const isConsumable = (item) => item.type === 'food' || item.type === 'care';
+const ownedOfType = (type) => Object.values(items()).filter((i) => i.type === type && qtyOf(i.id) > 0);
+const bestLevel = () => Math.max(0, ...state.me.pets.map((p) => p.level));
+const idleAnim = (pet) => IDLE_BY_MOOD[pet?.mood.key] ?? 'idle';
+/** Giá siêu thị hiện tại = giá gốc × chỉ số giá của Ngân hàng Trung ương. */
+const priceOf = (item) => Math.max(1, Math.round(item.price * (state.me?.economy.priceIndex ?? 1)));
+const activePet = () => state.me.pets.find((p) => p.id === state.me.user.activePetId) ?? state.me.pets[0] ?? null;
+
+function currentPet() {
+  const { pets, user } = state.me;
+  return pets.find((p) => p.id === state.petId) ?? pets.find((p) => p.id === user.activePetId) ?? pets[0];
+}
+
+// ---------------------------------------------------------------- khởi động
+
+async function boot() {
+  try {
+    state.catalog = await api('/catalog');
+  } catch (err) {
+    document.body.innerHTML = `<p class="empty">Không kết nối được máy chủ: ${esc(err.message)}</p>`;
+    return;
+  }
+  if (session.token) {
+    try {
+      state.me = await api('/me');
+      return showApp();
+    } catch (err) {
+      if (err.status === 401) session.token = null;
+    }
+  }
+  showAuth();
+}
+
+function showAuth() {
+  teardown?.();
+  teardown = null;
+  $('#app').hidden = true;
+  $('#auth-screen').hidden = false;
+  // Nhúng trong WorkHub: không có đăng nhập bằng mật khẩu, chỉ báo cách vào lại.
+  $('#auth-form').hidden = embedded;
+  $('#auth-embedded').hidden = !embedded;
+  authFigure?.destroy();
+  const species = state.catalog.species[0];
+  if (species) {
+    authFigure = createPetFigure(species, 0.7);
+    authFigure.sprite.play('wave');
+    $('#auth-pet').replaceChildren(authFigure.el);
+  }
+}
+
+function showApp() {
+  authFigure?.destroy();
+  authFigure = null;
+  $('#auth-screen').hidden = true;
+  $('#app').hidden = false;
+  const fromHash = location.hash.slice(1);
+  state.view = VIEW_NAMES.includes(fromHash) ? fromHash : 'map';
+  render();
+}
+
+async function logout() {
+  if (session.token) api('/auth/logout', {}).catch(() => {});
+  session.token = null;
+  state.me = null;
+  closeModal();
+  showAuth();
+}
+
+$('#auth-form').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const mode = e.submitter?.value === 'register' ? 'register' : 'login';
+  const body = Object.fromEntries(new FormData(e.currentTarget));
+  $('#auth-error').textContent = '';
+  try {
+    const { token, ...me } = await api(`/auth/${mode}`, body);
+    session.token = token;
+    state.me = me;
+    state.petId = null;
+    showApp();
+    if (mode === 'register') toast(`Chào ${me.user.username}! Bạn có ${me.user.coins} 🪙 để bắt đầu.`);
+  } catch (err) {
+    $('#auth-error').textContent = err.message;
+  }
+});
+
+// ---------------------------------------------------------------- điều hướng & vẽ
+
+function go(view, filter) {
+  state.adopting = false;
+  if (filter) state.shopFilter = filter;
+  if (location.hash !== `#${view}`) location.hash = view;
+  else render();
+}
+
+window.addEventListener('hashchange', () => {
+  const view = location.hash.slice(1);
+  if (!state.me || !VIEW_NAMES.includes(view)) return;
+  state.view = view;
+  state.adopting = false;
+  render();
+});
+
+function render() {
+  teardown?.();
+  teardown = null;
+  homeStage = null;
+  renderSeq += 1;
+  closeModal();
+  for (const tab of document.querySelectorAll('#tabs button')) tab.classList.toggle('active', tab.dataset.view === state.view);
+  renderWallet();
+  const views = {
+    map: renderMap, home: renderHome, shop: renderShop, bag: renderBag, park: renderPark, ranks: renderRanks,
+    jobs: renderJobs, games: renderGames, bank: renderBank, market: renderMarket, wallet: renderWalletView, news: renderNews,
+    business: renderBusiness, townhall: renderTownhall, community: renderCommunity,
+    garden: renderGarden, kitchen: renderKitchen, school: renderSchool, clinic: renderClinic,
+    factory: renderFactory, contracts: renderContracts, bazaar: renderBazaar, credit: renderCredit,
+  };
+  const out = views[state.view]($('#view'), ctx);
+  if (typeof out === 'function') teardown = out;
+}
+
+/** Những gì các màn trong views/ được dùng từ app. */
+const ctx = {
+  get catalog() {
+    return state.catalog;
+  },
+  get me() {
+    return state.me;
+  },
+  act: (path, body, opts) => act(path, body, opts),
+  go: (view) => go(view),
+  refresh: () => render(),
+  refreshMe: async () => {
+    state.me = await api('/me');
+    renderWallet();
+  },
+  /** Cập nhật trạng thái từ phản hồi có `result` mà không vẽ lại màn (dùng khi đang mở lớp phủ). */
+  applyResult(res) {
+    const { result, ...me } = res;
+    state.me = me;
+    renderWallet();
+    celebrate(result?.levelUps, result?.petName);
+  },
+  fail(err) {
+    if (err?.status === 401) return logout();
+    toast(err?.message ?? 'Có lỗi xảy ra.', 'error');
+  },
+  toast,
+  bestLevel: () => bestLevel(),
+  activePet: () => activePet(),
+};
+
+function renderWallet() {
+  const { user } = state.me;
+  $('#coin-count').textContent = `🪙 ${user.coins.toLocaleString('vi-VN')}`;
+  $('#username').textContent = user.username;
+  const wait = user.dailyReadyAt - Date.now();
+  const daily = $('#daily-btn');
+  daily.disabled = wait > 0;
+  daily.classList.toggle('ready', wait <= 0);
+  daily.innerHTML = wait > 0
+    ? `⏳ <span class="label">Quà sau ${formatWait(wait)}</span>`
+    : `🎁 <span class="label">Nhận quà ngày${user.streak ? ` · 🔥${user.streak}` : ''}</span>`;
+  daily.title = `Chuỗi đăng nhập ${user.streak} ngày. Nhận liên tiếp mỗi ngày để quà tăng dần tới 120 xu.`;
+}
+
+/** Tải lại trạng thái (chỉ số tụt dần theo thời gian, quà từ người khác...) mà không làm phiền người đang thao tác. */
+async function refreshMe() {
+  if (!state.me) return;
+  try {
+    state.me = await api('/me');
+  } catch (err) {
+    if (err.status === 401) logout();
+    return;
+  }
+  const busyScreen = modalOpen() || $('#adopt-form') || document.activeElement?.matches('input, select');
+  if (['home', 'bag', 'shop'].includes(state.view) && !busyScreen) render();
+  else renderWallet();
+}
+
+setInterval(() => document.visibilityState === 'visible' && refreshMe(), 30_000);
+
+/**
+ * Gọi một hành động, cập nhật trạng thái, thông báo rồi diễn hiệu ứng `fx(stage, result)` ở màn Nhà.
+ * `onResult(result)` cho các màn khác thêm thông báo riêng.
+ */
+async function act(path, body = {}, { fx, onDone, onResult } = {}) {
+  if (busy) return;
+  busy = true;
+  try {
+    const { result, ...me } = await api(path, body);
+    state.me = me;
+    onDone?.(me);
+    if (state.view === 'park') renderWallet();
+    else render();
+    if (result?.message) toast(result.message);
+    onResult?.(result ?? {});
+    if (homeStage && fx) {
+      homeStage.room.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      fx(homeStage, result ?? {});
+    }
+    celebrate(result?.levelUps, result?.petName);
+  } catch (err) {
+    if (err.status === 401) return logout();
+    toast(err.message, 'error');
+  } finally {
+    busy = false;
+  }
+}
+
+function celebrate(levelUps = [], petName = 'Bé') {
+  for (const { level, reward } of levelUps) toast(`🎉 ${petName} lên cấp ${level}! Thưởng ${reward} 🪙`, 'level');
+  if (!levelUps.length || !homeStage) return;
+  const stage = homeStage;
+  setTimeout(() => {
+    const head = stage.at(0.85);
+    stage.react('jump');
+    burst(stage.room, head.x, head.y, { icon: 'sparkle', count: 14, spread: 260, rise: 150, life: 1400 });
+    floatText(stage.room, head.x, head.y - 30, 'LÊN CẤP!', { color: '#ffd75e', size: 30, rise: 70 });
+  }, 900);
+}
+
+// ---------------------------------------------------------------- hiệu ứng ở màn Nhà
+
+function showGain(stage, gain = {}) {
+  const head = stage.at(0.8);
+  if (gain.xp) floatText(stage.room, head.x + 70, head.y, `+${gain.xp} XP`, { color: '#ffe27a', delay: 150 });
+  if (gain.coins) floatText(stage.room, head.x - 70, head.y + 10, `+${gain.coins} 🪙`, { color: '#fff3c4', delay: 350 });
+}
+
+/** Món đồ bay từ cửa sổ vào miệng bé, rồi bung hạt theo loại đồ. */
+async function useItemFx(stage, item, result) {
+  const mouth = stage.at(0.5);
+  const from = { x: stage.room.clientWidth - 90, y: stage.room.clientHeight * 0.3 };
+  await flyTo(stage.room, from, mouth, item.icon, { size: 46 });
+  if (item.type === 'food') {
+    stage.react('jump');
+    burst(stage.room, mouth.x, mouth.y, { icon: 'crumb', count: 7, fall: true, rise: 50, spread: 80, life: 700, stagger: 15 });
+    burst(stage.room, mouth.x, mouth.y - 40, { icon: 'heart', count: 4, spread: 90 });
+  } else if (item.id === 'bath') {
+    stage.react('spin');
+    burst(stage.room, mouth.x, mouth.y, { icon: 'bubble', count: 10, spread: 180, rise: 140, life: 1600, stagger: 70 });
+  } else {
+    stage.react('jump');
+    burst(stage.room, mouth.x, mouth.y - 20, { icon: 'sparkle', count: 8, spread: 160, rise: 90 });
+  }
+  showGain(stage, result.gain);
+}
+
+async function playFx(stage, toy, result) {
+  stage.react('spin');
+  const feet = stage.at(0.05);
+  if (toy) {
+    const left = { x: feet.x - 110, y: feet.y - 10 };
+    const right = { x: feet.x + 110, y: feet.y - 10 };
+    await flyTo(stage.room, left, right, toy.icon, { size: 38, arc: 150, duration: 700, spin: 540 });
+    await flyTo(stage.room, right, { x: feet.x - 40, y: feet.y }, toy.icon, { size: 38, arc: 80, duration: 450, spin: 360 });
+  }
+  burst(stage.room, feet.x, stage.at(0.6).y, { icon: 'twinkle', count: 8, spread: 200, rise: 90 });
+  burst(stage.room, feet.x, feet.y, { icon: 'dust', count: 4, spread: 90, rise: 14, life: 600, stagger: 0 });
+  showGain(stage, result.gain);
+}
+
+function sparkleFx(anim, icon = 'sparkle') {
+  return (stage) => {
+    stage.react(anim);
+    const head = stage.at(0.8);
+    burst(stage.room, head.x, head.y, { icon, count: 7, spread: 160, rise: 80 });
+  };
+}
+
+/** Thỉnh thoảng bé tự thể hiện tâm trạng: ngáp ngủ, rơi nước mắt, lấp lánh khi vui. */
+function moodTick(stage, pet) {
+  const head = stage.at(0.82);
+  if (pet.mood.key === 'tired') burst(stage.room, head.x + 40, head.y, { icon: 'zzz', count: 1, spread: 30, rise: 60, life: 2000 });
+  else if (pet.mood.key === 'sad') burst(stage.room, head.x - 18, stage.at(0.62).y, { icon: 'drop', count: 1, spread: 6, rise: 40, fall: true, life: 900 });
+  else if (pet.mood.key === 'great' && Math.random() < 0.5) burst(stage.room, head.x, head.y, { icon: 'twinkle', count: 2, spread: 150, rise: 40, life: 1200 });
+}
+
+// ---------------------------------------------------------------- Nhà
+
+function meter(kind, label, value, max) {
+  const pct = Math.max(0, Math.min(100, Math.round((value / max) * 100)));
+  const low = kind !== 'xp' && pct < 25 ? 'low' : '';
+  return `
+    <div class="meter">
+      <div class="meter-head"><span>${label}</span><span>${value}/${max}</span></div>
+      <div class="bar ${kind} ${low}"><i style="width:${pct}%"></i></div>
+    </div>`;
+}
+
+/** Giai đoạn đời của bé đang có luật gì, và lời báo khi bé đã rất già. */
+function lifeNotes(pet) {
+  const stage = LIFE_STAGES.find((s) => s.key === pet.age.stage);
+  const warn = pet.life?.warn
+    ? `<p class="life-warn">🌙 ${esc(pet.name)} đã rất già, còn khoảng ${pet.life.left} ngày thật nữa là về với sao trời.
+        Dành thời gian chơi với bé, mặc bộ đồ đẹp nhất, dắt bé ra công viên nhé.</p>`
+    : '';
+  return `${stage ? `<p class="stage-note">${esc(stage.note)}</p>` : ''}${warn}`;
+}
+
+/** Tin bé vừa về với sao trời (trong 3 ngày qua). */
+function memorialNotice() {
+  const [m] = state.me.memorials ?? [];
+  if (!m) return '';
+  const skill = state.catalog.skills[m.heirloom];
+  return `<section class="card memorial-note">🌠 <b>${esc(m.name)}</b> đã về với sao trời sau ${m.weeks} tuần, lên tới cấp ${m.level}.
+    ${skill ? `Bé để lại kỷ vật: bé nuôi kế tiếp được +${LIFE.heirloom} ${skill.icon} ${skill.name}.` : ''}
+    <button class="btn small" data-go="ranks" data-ranks-go="stars">Thăm Đồi Sao</button></section>`;
+}
+
+/** Dòng hành, độ hiếm và vận khí của bé ở màn Nhà. */
+function elementLine(pet) {
+  const el = ELEMENTS[pet.element];
+  if (!el) return '';
+  const sp = speciesOf(pet.species);
+  const r = RARITIES[sp.rarity] ?? RARITIES.thuong;
+  const lucky = pet.element === state.me.fortune;
+  return `<p class="element-line" style="--el:${el.color}">
+    <span class="el-chip" title="${esc(`${el.temper}. ${el.perk}.`)}">${el.icon} ${el.name}</span>
+    <span class="stars" style="color:${r.color}" title="${r.name}">${'★'.repeat(r.stars)}</span>
+    <small class="muted">${esc(sp.name)}${sp.mascot ? ' · linh vật' : sp.guest ? ' · khách mời' : ''}</small>
+    ${lucky ? `<span class="badge fortune">🌟 Hôm nay hành ${el.name} vượng: +${ELEMENT_RULES.fortune * 100}% XP và lương</span>` : ''}
+  </p>`;
+}
+
+/** Hiệu quả bộ đồ đang mặc: tốc độ lên kỹ năng theo hợp mệnh, và thưởng lương khi đủ bộ cùng hành. */
+function outfitSummary(pet) {
+  const el = ELEMENTS[pet.element];
+  if (!el) return '<p class="muted small">Mỗi bé đeo được 4 món cùng lúc, mỗi khe một món.</p>';
+  const pct = Math.round(wearBonus(pet.wear, pet.element) * 100);
+  const set = fullSetOf(pet.wear);
+  return `<p class="muted small">Mỗi bé đeo 4 món, mỗi khe một món. Đồ hành nuôi dưỡng bé ${el.icon} ${el.name} (tương sinh) +10% tốc độ lên kỹ năng,
+      cùng hành +5%, đồ kỵ mệnh −5%. Đủ 4 khe cùng một hành thì +${ELEMENT_RULES.fullSet * 100}% lương.</p>
+    <p class="outfit-now">Đang mặc: <b class="${pct > 0 ? 'up' : pct < 0 ? 'down' : ''}">${pct > 0 ? '+' : ''}${pct}%</b> tốc độ lên kỹ năng${set ? ` · ✨ đủ bộ hành ${ELEMENTS[set].name}: +${ELEMENT_RULES.fullSet * 100}% lương` : ''}</p>`;
+}
+
+function petSwitcher(current, { withAdopt }) {
+  const { pets, user } = state.me;
+  const { rules } = state.catalog;
+  const chips = pets.map((p) => `
+    <button class="btn small ${p.id === current.id ? 'current' : ''}" data-pet="${p.id}">
+      ${p.id === user.activePetId ? '⭐ ' : ''}${esc(p.name)} · Lv ${p.level}
+    </button>`);
+  const { eggs, slots } = state.me;
+  if (withAdopt && slots.free > 0) {
+    chips.push(`<button class="btn small" data-act="adopt">➕ Nhận nuôi thêm · ${rules.adoptCost} 🪙</button>`);
+  }
+  if (withAdopt && slots.locked) {
+    chips.push(`<button class="btn small" data-act="reopen" title="Ô của bé đã về với sao trời">🕯️ Ô tưởng niệm · mở lại ${fmt(slots.reopenCost)} 🪙</button>`);
+  }
+  if (withAdopt && eggs.length) {
+    const ready = eggs.filter((e) => e.ready).length;
+    chips.push(`<button class="btn small ${ready ? 'gold' : ''}" data-act="adopt">${ready ? `🐣 ${ready} trứng nở rồi!` : `🥚 ${eggs.length} trứng đang ấp`}</button>`);
+  }
+  return `<nav class="switcher">${chips.join('')}</nav>`;
+}
+
+function renderHome(root) {
+  if (!state.me.pets.length || state.adopting) return renderAdopt(root);
+  const pet = currentPet();
+  state.petId = pet.id;
+  const isActive = pet.id === state.me.user.activePetId;
+  const isBaby = pet.age.stage === 'baby';
+  const busyLeft = pet.busyUntil ? pet.busyUntil - Date.now() : 0;
+  const nextStage = state.catalog.stages.find((s) => s.minDays > pet.age.days);
+  const growNote = nextStage ? ` · còn ${Math.ceil((nextStage.minDays - pet.age.days) / 7)} ngày nữa thành ${nextStage.label}` : '';
+  const countOf = (type) => ownedOfType(type).reduce((n, i) => n + qtyOf(i.id), 0);
+  const { skills } = state.catalog;
+
+  root.innerHTML = `
+    ${petSwitcher(pet, { withAdopt: true })}
+    ${memorialNotice()}
+    <div class="home">
+      <section class="card room-card mood-${pet.mood.key}">
+        <div class="room" id="room">
+          <div class="figure-slot" id="figure-slot" title="Chạm để chào ${esc(pet.name)}"></div>
+          ${busyLeft > 0
+            ? `<div class="away-note pixel-box">💼 ${esc(pet.name)} đang đi làm<br><small>về lúc ${clock(pet.busyUntil)} · còn ${countdown(busyLeft)}</small></div>`
+            : `<div class="mood-bubble">${MOOD_ICONS[pet.mood.key]} ${pet.mood.label}</div>`}
+        </div>
+      </section>
+      <section class="card pet-info">
+        <div class="pet-title">
+          <h2>${esc(pet.name)}</h2>
+          <span class="badge level">Lv ${pet.level}</span>
+          ${isActive ? '<span class="badge star">⭐ Thú chính</span>' : ''}
+        </div>
+        ${elementLine(pet)}
+        <p class="age-line">🎂 ${ageText(pet.age.days)} · ${pet.age.label}${growNote}</p>
+        ${lifeNotes(pet)}
+        ${meter('xp', '⭐ Kinh nghiệm', pet.xp, pet.xpNext)}
+        ${pet.sick ? `<div class="sick-note">${pet.sick.icon} ${esc(pet.name)} đang bị <b>${esc(pet.sick.name.toLowerCase())}</b>: chưa đi làm, đi học hay chơi mini-game được.
+          <button class="btn small pink" data-go="clinic">🩺 Đưa đi khám</button></div>` : ''}
+        ${['fullness', 'happiness', 'energy', 'hygiene', 'health'].map((s) => meter(s, `${STAT_ICONS[s]} ${STAT_LABELS[s]}`, pet[s], 100)).join('')}
+        ${pet.traits.length ? `<div class="trait-row">${pet.traits.map((t) => state.catalog.care.traits[t]).filter(Boolean)
+          .map((t) => `<span class="trait-chip" title="${esc(t.desc)}">${t.icon} ${esc(t.name)}</span>`).join('')}</div>` : ''}
+        <div class="skills-row">
+          ${Object.entries(skills).map(([id, s]) => `
+            <span class="skill-chip" title="${s.name}">${s.icon}<b>${Math.floor(pet.skills?.[id] ?? 0)}</b></span>`).join('')}
+        </div>
+        <div class="actions">
+          <button class="btn primary" data-act="feed"><b>🍽️</b>Cho ăn<small>${countOf('food')} món trong túi</small></button>
+          <button class="btn pink" data-act="play" ${busyLeft > 0 ? 'disabled' : ''}><b>🎾</b>Chơi đùa<small>${busyLeft > 0 ? 'Bé đang đi làm' : '−15 ⚡ · +4 🪙'}</small></button>
+          <button class="btn gold" data-go="jobs">
+            <b>💼</b>Đi làm<small>${isBaby ? 'Bé cần 2 tuần tuổi' : busyLeft > 0 ? `Về sau ${countdown(busyLeft)}` : 'Chọn nghề, nhận ca'}</small>
+          </button>
+          <button class="btn mint" data-act="bath" ${busyLeft > 0 ? 'disabled' : ''}><b>🛁</b>Tắm<small>${busyLeft > 0 ? 'Bé đang bận' : `Miễn phí · 🫧 ${pet.hygiene}`}</small></button>
+          <button class="btn" data-act="care"><b>💊</b>Chăm sóc<small>${countOf('care')} món trong túi</small></button>
+          <button class="btn" data-act="dress"><b>🎀</b>Trang phục<small>${wornIds(pet).length ? `Đang đeo ${wornIds(pet).length}/4 món` : 'Chưa đeo gì'}</small></button>
+          ${isActive
+            ? '<button class="btn" data-go="park"><b>🌳</b>Ra công viên<small>Gặp bạn mới</small></button>'
+            : '<button class="btn" data-act="activate"><b>⭐</b>Chọn thú chính<small>Để dắt ra công viên</small></button>'}
+          <button class="btn ${pet.sick ? 'pink' : ''}" data-go="clinic"><b>🩺</b>Phòng khám<small>${pet.sick ? 'Bé đang ốm!' : `❤️ ${pet.health}`}</small></button>
+        </div>
+      </section>
+    </div>`;
+
+  const room = $('#room');
+  const slot = $('#figure-slot');
+  const figure = figureOf(pet, 1.25);
+  figure.sprite.play(idleAnim(pet));
+  slot.append(figure.el);
+  slot.hidden = busyLeft > 0;
+
+  const stage = {
+    room,
+    figure,
+    feet: { x: 0, y: 0 },
+    /** Điểm trên thân bé: 0 là chân, 1 là đỉnh khung hình. */
+    at(frac) {
+      return { x: this.feet.x - 4, y: this.feet.y - figure.height * frac };
+    },
+    react(anim) {
+      figure.sprite.play(anim, { once: true, then: idleAnim(pet) });
+    },
+  };
+  const unmountRoom = mountRoomScene(room, {
+    onLayout: ({ x, y }) => {
+      stage.feet = { x, y };
+      slot.style.left = `${x}px`;
+      slot.style.top = `${y}px`;
+    },
+  });
+  const moodTimer = setInterval(() => moodTick(stage, pet), 2600);
+  homeStage = stage;
+  teardown = () => {
+    clearInterval(moodTimer);
+    unmountRoom();
+    figure.destroy();
+  };
+}
+
+const pickRow = (item, side, { current = false } = {}) => `
+  <button class="pick ${current ? 'current' : ''}" data-pick="${item.id}">
+    <b>${itemIcon(item, 3)}</b>
+    <span>${esc(item.name)}<small>${esc(effectText(item))}</small></span>
+    <span class="badge">${side}</span>
+  </button>`;
+
+const emptyPick = (type) => `
+  <div class="empty">
+    <b>🫙</b>
+    <p>Túi chưa có ${TYPE_LABELS[type].toLowerCase()} nào.</p>
+    <button class="btn primary" data-pick="shop:${type}">Ghé cửa hàng</button>
+  </div>`;
+
+function pickConsumable(type, title) {
+  const pet = currentPet();
+  const list = ownedOfType(type);
+  openModal({
+    title: `${title} cho ${pet.name}`,
+    html: list.length
+      ? `<div class="pick-list">${list.map((i) => pickRow(i, `×${qtyOf(i.id)}${foodBonus(i.element, pet.element) ? ` · 🌟 +${ELEMENT_RULES.food * 100}% XP` : ''}`)).join('')}</div>`
+      : emptyPick(type),
+    onPick: (id) => {
+      if (id.startsWith('shop:')) return go('shop', id.slice(5));
+      act(`/pets/${pet.id}/use`, { itemId: id }, { fx: (stage, result) => useItemFx(stage, items()[id], result) });
+    },
+  });
+}
+
+const ACTIONS = {
+  feed: () => pickConsumable('food', 'Cho ăn'),
+  care: () => pickConsumable('care', 'Chăm sóc'),
+  bath: () => act(`/pets/${currentPet().id}/bath`, {}, { fx: sparkleFx('jump', 'sparkle') }),
+  activate: () => act(`/pets/${currentPet().id}/active`, {}, { fx: sparkleFx('wave', 'heart') }),
+  adopt: () => {
+    state.adopting = true;
+    render();
+  },
+  reopen: () => {
+    const { reopenCost } = state.me.slots;
+    if (confirm(`Mở lại ô tưởng niệm với giá ${fmt(reopenCost)} xu để nuôi thêm bé mới?`)) act('/slots/reopen');
+  },
+  'cancel-adopt': () => {
+    state.adopting = false;
+    render();
+  },
+  play: () => {
+    const pet = currentPet();
+    const toys = ownedOfType('toy');
+    if (!toys.length) return act(`/pets/${pet.id}/play`, {}, { fx: (stage, result) => playFx(stage, null, result) });
+    openModal({
+      title: `Chơi với ${pet.name}`,
+      html: `<div class="pick-list">
+        <button class="pick" data-pick="none"><b>🤸</b><span>Chơi tay không<small>💖 +12  ⭐ +10 XP</small></span><span class="badge">Miễn phí</span></button>
+        ${toys.map((t) => pickRow(t, 'Của bạn')).join('')}
+      </div>`,
+      onPick: (id) => {
+        const toy = id === 'none' ? null : items()[id];
+        act(`/pets/${pet.id}/play`, toy ? { toyId: id } : {}, { fx: (stage, result) => playFx(stage, toy, result) });
+      },
+    });
+  },
+  dress: () => {
+    const pet = currentPet();
+    const list = ownedOfType('accessory');
+    // Tủ đồ theo 4 khe: mỗi khe một món, đồ gắn vào đầu, mặt, cổ, lưng của bé.
+    const slotRows = Object.entries(SLOTS).map(([slot, s]) => {
+      const mine = list.filter((i) => i.slot === slot);
+      const worn = pet.wear?.[slot];
+      const remove = worn
+        ? `<button class="pick" data-pick="slot:${slot}"><b>🚫</b><span>Tháo ${esc(items()[worn]?.name ?? '')}<small>Để trống khe ${s.name.toLowerCase()}</small></span><span class="badge">Tháo</span></button>`
+        : '';
+      const rows = mine.map((i) => {
+        const rel = RELATIONS[relation(i.element, pet.element)];
+        const tag = rel.bonus > 0 ? ` · ${rel.short}` : rel.bonus < 0 ? ` · ${rel.short}` : '';
+        return pickRow(i, worn === i.id ? 'Đang đeo' : `${ELEMENTS[i.element].icon} Đeo${tag}`, { current: worn === i.id });
+      }).join('');
+      return `<h4 class="slot-head">${s.icon} ${s.name}</h4>${remove}${rows || '<p class="muted small">Chưa có món nào cho khe này.</p>'}`;
+    }).join('');
+    openModal({
+      title: `Trang phục cho ${pet.name}`,
+      html: list.length
+        ? `${outfitSummary(pet)}
+           ${speciesOf(pet.species).guest ? '<p class="muted small">Bé khách mời Petdex ôm đồ trước ngực nên đồ ở cổ nằm khuất phía sau.</p>' : ''}
+           <div class="pick-list">${slotRows}</div>`
+        : emptyPick('accessory'),
+      onPick: (id) => {
+        if (id.startsWith('shop:')) return go('shop', id.slice(5));
+        const body = id.startsWith('slot:') ? { slot: id.slice(5) } : { itemId: id };
+        act(`/pets/${pet.id}/equip`, body, { fx: sparkleFx('spin') });
+      },
+    });
+  },
+};
+
+// ---------------------------------------------------------------- Nhận nuôi
+
+/** Trứng ngũ hành: trứng trong túi đem ấp, trứng đang ấp đếm giờ, trứng nở thì đặt tên. */
+function eggPanel() {
+  const { eggs } = state.me;
+  const bag = Object.values(items()).filter((i) => i.type === 'egg' && qtyOf(i.id) > 0);
+  const full = state.me.pets.length + eggs.length >= state.catalog.rules.maxPets;
+  const odds = Object.entries(EGG_ODDS).map(([k, p]) => `${p * 100}% ${RARITIES[k].name}`).join(', ');
+  const cards = [
+    ...bag.map((i) => `
+      <div class="egg-card" style="--el:${ELEMENTS[i.element].color}">${itemIcon(i, 4)}
+        <b>${esc(i.name)}</b><small>trong túi · ×${qtyOf(i.id)}</small>
+        <button class="btn small gold" data-incubate="${i.id}" ${full ? 'disabled' : ''}>Ấp trứng</button>
+      </div>`),
+    ...eggs.map((e) => {
+      const item = items()[`egg_${e.element}`];
+      return `
+      <div class="egg-card ${e.ready ? 'ready' : ''}" style="--el:${ELEMENTS[e.element].color}">${itemIcon(item, 4)}
+        <b>${esc(item.name)}</b>
+        ${e.ready
+          ? `<form class="egg-hatch" data-egg="${e.id}"><input name="name" maxlength="16" required placeholder="Tên bé" />
+              <button class="btn small primary">🐣 Cho nở</button></form>`
+          : `<small>nở sau ${countdown(e.hatchAt - Date.now())}</small>`}
+      </div>`;
+    }),
+  ];
+  return `
+    <section class="egg-panel">
+      <h3>🥚 Trứng ngũ hành</h3>
+      <p class="muted small">Mua ở Siêu thị (cần bé cấp ${EGG.minLevel}), ấp ${EGG.hours} giờ thì nở ra một bé của hành đó: ${odds}.
+        Loài hiếm chỉ có từ trứng. Trứng đang ấp giữ một ô nuôi.</p>
+      ${cards.length ? `<div class="egg-list">${cards.join('')}</div>`
+        : '<p class="muted small">Chưa có quả trứng nào. <button class="btn small" data-go="shop" data-filter="egg">Mua trứng</button></p>'}
+    </section>`;
+}
+
+function renderAdopt(root) {
+  const { rules } = state.catalog;
+  const all = state.catalog.species.filter((s) => s.adoptable);
+  const filter = state.adoptElement ?? 'all';
+  const species = all.filter((s) => filter === 'all' || s.element === filter);
+  const first = state.me.pets.length === 0;
+  if (!species.some((s) => s.id === state.adoptSpecies)) state.adoptSpecies = species[0]?.id ?? null;
+
+  if (!species.length) {
+    root.innerHTML = `
+      <section class="card empty">
+        <b>🥚</b>
+        <h2>Công viên chưa có loài thú nào</h2>
+        <p class="muted">Cài một bé bằng <code>npx petdex@latest install boba</code> rồi chạy <code>npm run import-pets</code>.</p>
+      </section>`;
+    return;
+  }
+
+  root.innerHTML = `
+    <section class="card adopt">
+      <div class="view-head">
+        <div>
+          <h2>${first ? 'Chào mừng tới Petdex Park!' : 'Nhận nuôi thêm một bé'}</h2>
+          <p class="muted">${first ? 'Chọn một bé để bắt đầu. Bé đầu tiên miễn phí 💝' : `Phí nhận nuôi ${rules.adoptCost} 🪙 · mỗi người tối đa ${rules.maxPets} bé`}</p>
+        </div>
+        ${first ? '' : '<button class="btn" data-act="cancel-adopt">← Quay lại</button>'}
+      </div>
+      ${first ? '' : eggPanel()}
+      ${state.me.slots.free > 0 ? '' : `<p class="life-warn">Đã hết ô nuôi (tối đa ${rules.maxPets}, tính cả trứng đang ấp${state.me.slots.locked ? ' và ô tưởng niệm' : ''}).
+        ${state.me.slots.locked ? `<button class="btn small" data-act="reopen">🕯️ Mở lại ô tưởng niệm · ${fmt(state.me.slots.reopenCost)} 🪙</button>` : ''}</p>`}
+      <div class="filters adopt-elements">
+        ${[['all', '🐾 Tất cả'], ...Object.entries(ELEMENTS).map(([k, e]) => [k, `${e.icon} ${e.name}`])].map(([k, label]) => `
+          <button class="btn small ${filter === k ? 'current' : ''}" data-adopt-el="${k}">${label}</button>`).join('')}
+      </div>
+      <p class="muted small">Mỗi hành lớn lên một kiểu: ${filter === 'all' ? 'chọn một hành để xem đặc điểm.' : esc(`${ELEMENTS[filter].temper}. ${ELEMENTS[filter].perk}.`)}
+        ${first ? 'Loài hiếm chỉ nở từ trứng ngũ hành, mua ở Siêu thị khi bé lên cấp 3.' : 'Loài hiếm chỉ nở từ trứng ngũ hành ở trên.'}</p>
+      <div class="species-grid">
+        ${species.map((s) => `
+          <button class="species-card ${s.id === state.adoptSpecies ? 'selected' : ''}" data-species="${esc(s.id)}" style="--el:${ELEMENTS[s.element].color}">
+            <div class="slot"></div>
+            <h3>${esc(s.name)}</h3>
+            <p><span class="el-chip">${ELEMENTS[s.element].icon} ${ELEMENTS[s.element].name}</span>${s.mascot ? ' <span class="el-chip guest">🧋 Linh vật</span>' : s.guest ? ' <span class="el-chip guest">Khách mời Petdex</span>' : ''}</p>
+            <p>${esc(s.description)}</p>
+          </button>`).join('')}
+      </div>
+      <form class="adopt-form" id="adopt-form">
+        <input name="name" maxlength="16" required placeholder="Đặt tên cho bé, ví dụ: ${esc(speciesOf(state.adoptSpecies).name)}" />
+        <button class="btn primary">${first ? 'Nhận nuôi 🏡' : `Nhận nuôi · ${rules.adoptCost} 🪙`}</button>
+      </form>
+    </section>`;
+
+  const figures = species.map((s, i) => {
+    // Nhận nuôi là nhận một bé sơ sinh, nên vẽ dáng sơ sinh.
+    const figure = createPetFigure(s, s.rig ? 0.8 : 0.62, {}, { stage: 'baby', ageScale: 1 });
+    root.querySelectorAll('.species-card .slot')[i].append(figure.el);
+    return figure;
+  });
+  teardown = () => figures.forEach((f) => f.destroy());
+}
+
+// ---------------------------------------------------------------- Cửa hàng
+
+function renderShop(root) {
+  const filter = state.shopFilter;
+  const coins = state.me.user.coins;
+  const level = bestLevel();
+  const list = Object.values(items())
+    .filter((i) => filter === 'all' || i.type === filter)
+    .sort((a, b) => TYPE_ORDER.indexOf(a.type) - TYPE_ORDER.indexOf(b.type) || a.price - b.price);
+
+  const buyArea = (item) => {
+    const owned = qtyOf(item.id);
+    if (item.minLevel && level < item.minLevel) return `<span class="badge">🔒 Cần Lv ${item.minLevel}</span>`;
+    if (!isConsumable(item) && owned) return '<span class="badge star">✓ Đã có</span>';
+    const bulk = isConsumable(item)
+      ? `<button class="btn small" data-buy="${item.id}" data-qty="5" ${coins < priceOf(item) * 5 ? 'disabled' : ''}>×5</button>`
+      : '';
+    return `<div class="row">${bulk}<button class="btn small primary" data-buy="${item.id}" data-qty="1" ${coins < priceOf(item) ? 'disabled' : ''}>Mua</button></div>`;
+  };
+
+  const index = state.me.economy.priceIndex;
+  const indexNote = Math.abs(index - 1) > 0.001
+    ? ` Giá đang ${index > 1 ? 'cao' : 'thấp'} hơn gốc ${Math.abs(Math.round((index - 1) * 100))}% theo chỉ số giá của Ngân hàng Trung ương.`
+    : '';
+  root.innerHTML = `
+    ${viewHead('🏪 Siêu thị', `Đồ ăn và đồ chăm sóc dùng là hết. Đồ chơi và phụ kiện mua một lần, dùng mãi.${indexNote}`)}
+    <div class="filters">
+      ${['all', ...TYPE_ORDER].map((t) => `
+        <button class="btn small ${t === filter ? 'current' : ''}" data-filter="${t}">${t === 'all' ? 'Tất cả' : TYPE_LABELS[t]}</button>`).join('')}
+    </div>
+    <div class="item-grid">
+      ${list.map((item) => {
+        const owned = qtyOf(item.id);
+        const locked = item.minLevel && level < item.minLevel;
+        return `
+          <article class="card item-card ${locked ? 'locked' : ''}">
+            ${owned && isConsumable(item) ? `<span class="badge owned">Có ${owned}</span>` : ''}
+            <div class="icon">${itemIcon(item)}</div>
+            <span class="type-tag">${TYPE_LABELS[item.type]}${item.slot ? ` · ${SLOTS[item.slot].name}` : ''}${item.element ? ` · ${ELEMENTS[item.element].icon} ${ELEMENTS[item.element].name}` : ''}</span>
+            <h3>${esc(item.name)}</h3>
+            <p>${esc(item.desc ?? '')}</p>
+            <p class="effects">${esc(effectText(item))}</p>
+            <div class="foot"><span class="price">${priceOf(item)} 🪙</span>${buyArea(item)}</div>
+          </article>`;
+      }).join('')}
+    </div>`;
+}
+
+// ---------------------------------------------------------------- Túi đồ
+
+function renderBag(root) {
+  const pet = state.me.pets.length ? currentPet() : null;
+  const owned = Object.values(items())
+    .filter((i) => qtyOf(i.id) > 0)
+    .sort((a, b) => TYPE_ORDER.indexOf(a.type) - TYPE_ORDER.indexOf(b.type) || a.price - b.price);
+
+  const useButton = (item) => {
+    if (!pet) return '';
+    const name = esc(pet.name);
+    if (isConsumable(item)) return `<button class="btn small primary" data-use="${item.id}">Cho ${name} dùng</button>`;
+    if (item.type === 'toy') return `<button class="btn small pink" data-toy="${item.id}">Chơi cùng ${name}</button>`;
+    if (item.type === 'egg') return `<button class="btn small gold" data-incubate="${item.id}">Ấp trứng</button>`;
+    return isWorn(pet, item.id)
+      ? `<button class="btn small" data-equip="" data-slot="${item.slot}">Tháo ra</button>`
+      : `<button class="btn small mint" data-equip="${item.id}">Đeo cho ${name}</button>`;
+  };
+
+  root.innerHTML = `
+    <div class="view-head">
+      <div>
+        <h2>🎒 Túi đồ</h2>
+        <p class="muted">${pet ? `Đang dùng đồ cho <b>${esc(pet.name)}</b>. Đổi bé ở bên dưới.` : 'Nhận nuôi một bé để dùng đồ nhé.'}</p>
+      </div>
+      <button class="btn" data-go="shop">🛍️ Mua thêm</button>
+    </div>
+    ${pet ? petSwitcher(pet, { withAdopt: false }) : ''}
+    ${owned.length ? `
+      <div class="item-grid">
+        ${owned.map((item) => `
+          <article class="card item-card">
+            ${isConsumable(item) ? `<span class="badge owned">×${qtyOf(item.id)}</span>` : ''}
+            ${pet && isWorn(pet, item.id) ? '<span class="badge star owned">Đang đeo</span>' : ''}
+            <div class="icon">${itemIcon(item)}</div>
+            <span class="type-tag">${TYPE_LABELS[item.type]}${item.slot ? ` · ${SLOTS[item.slot].name}` : ''}</span>
+            <h3>${esc(item.name)}</h3>
+            <p class="effects">${esc(effectText(item))}</p>
+            <div class="foot">${useButton(item)}</div>
+          </article>`).join('')}
+      </div>`
+    : `
+      <section class="card empty">
+        <b>🎒</b>
+        <h2>Túi đồ trống trơn</h2>
+        <p class="muted">Ghé cửa hàng mua đồ ăn, đồ chơi và phụ kiện cho bé.</p>
+        <button class="btn primary" data-go="shop">Tới cửa hàng</button>
+      </section>`}`;
+}
+
+// ---------------------------------------------------------------- Xếp hạng
+
+async function renderRanks(root) {
+  const seq = renderSeq;
+  const byWorth = state.ranksBy === 'networth';
+  const stars = state.ranksBy === 'stars';
+  const subtitle = stars ? 'Nơi các bé đã về với sao trời được nhớ mãi.' : byWorth ? '"Forbes Phố Trân Châu": 20 người có tài sản ròng lớn nhất.' : '20 bé cấp cao nhất cả phố.';
+  root.innerHTML = `
+    ${viewHead(stars ? '🌠 Đồi Sao' : '🏆 Bảng vàng', subtitle)}
+    <div class="filters">
+      <button class="btn small ${byWorth || stars ? '' : 'current'}" data-ranks="level">⭐ Cấp độ</button>
+      <button class="btn small ${byWorth ? 'current' : ''}" data-ranks="networth">💎 Tài sản ròng</button>
+      <button class="btn small ${stars ? 'current' : ''}" data-ranks="stars">🌠 Đồi Sao</button>
+    </div>
+    <section class="card ranks" id="rank-list"><div class="empty muted">Đang tải…</div></section>`;
+  let rows;
+  try {
+    rows = await api(stars ? '/memorials?scope=all' : byWorth ? '/leaderboard?by=networth' : '/leaderboard');
+  } catch (err) {
+    if (seq === renderSeq) $('#rank-list').innerHTML = `<div class="empty">${esc(err.message)}</div>`;
+    return;
+  }
+  if (seq !== renderSeq) return; // người chơi đã chuyển màn khác
+
+  const medals = ['🥇', '🥈', '🥉'];
+  const list = $('#rank-list');
+  if (stars) {
+    list.innerHTML = rows.length
+      ? rows.map((m) => `
+        <div class="rank-row memorial ${m.owner === state.me.user.username ? 'me' : ''}">
+          <span class="rank-no">🕯️</span>
+          <div class="rank-avatar"></div>
+          <div><h3>${esc(m.name)}</h3><p>${esc(speciesOf(m.species).name)} của ${esc(m.owner)} · sống ${m.weeks} tuần · về với sao trời ${new Date(m.diedAt).toLocaleDateString('vi-VN')}</p></div>
+          <span class="badge level rank-level">Lv ${m.level}</span>
+        </div>`).join('')
+      : '<div class="empty muted">Đồi Sao còn trống. Mong các bé sống thật lâu.</div>';
+    const avatars = list.querySelectorAll('.rank-avatar');
+    const figures = rows.map((m, i) => {
+      const figure = createPetFigure(speciesOf(m.species), 0.3, m.wear, { stage: 'elder', ageScale: 1 });
+      avatars[i].append(figure.el);
+      return figure;
+    });
+    teardown = () => figures.forEach((f) => f.destroy());
+    return;
+  }
+  if (byWorth) {
+    list.innerHTML = rows.map((r, i) => `
+      <div class="rank-row worth ${r.username === state.me.user.username ? 'me' : ''}">
+        <span class="rank-no">${medals[i] ?? i + 1}</span>
+        <div><h3>${esc(r.username)}</h3></div>
+        <span class="badge level rank-level">💎 ${fmt(r.total)} 🪙</span>
+      </div>`).join('') || '<div class="empty muted">Chưa có ai.</div>';
+    return;
+  }
+  list.innerHTML = rows.length
+    ? rows.map((r, i) => `
+        <div class="rank-row ${r.owner === state.me.user.username ? 'me' : ''}">
+          <span class="rank-no">${medals[i] ?? i + 1}</span>
+          <div class="rank-avatar"></div>
+          <div><h3>${esc(r.name)}</h3><p>của ${esc(r.owner)} · ${r.weeks} tuần tuổi</p></div>
+          <span class="badge level rank-level">Lv ${r.level}</span>
+        </div>`).join('')
+    : '<div class="empty muted">Chưa có bé nào. Hãy là người đầu tiên!</div>';
+
+  const avatars = list.querySelectorAll('.rank-avatar');
+  const figures = rows.map((r, i) => {
+    const figure = createPetFigure(speciesOf(r.species), 0.3, r.wear, { stage: stageOfWeeks(r.weeks), ageScale: 1 });
+    avatars[i].append(figure.el);
+    return figure;
+  });
+  teardown = () => figures.forEach((f) => f.destroy());
+}
+
+// ---------------------------------------------------------------- Công viên
+
+function renderPark(root) {
+  if (!state.me.pets.length) {
+    root.innerHTML = `
+      <section class="card empty">
+        <b>🌳</b>
+        <h2>Công viên đang chờ bạn</h2>
+        <p class="muted">Nhận nuôi một bé trước rồi dắt bé ra đây chơi nhé.</p>
+        <button class="btn primary" data-go="home">Nhận nuôi ngay</button>
+      </section>`;
+    return;
+  }
+  teardown = mountPark(root, {
+    token: session.token,
+    catalog: state.catalog,
+    me: () => state.me,
+    onMeChanged: async ({ notice, levelUps, petName } = {}) => {
+      await refreshMe();
+      if (notice) toast(notice);
+      celebrate(levelUps, petName);
+    },
+  });
+}
+
+// ---------------------------------------------------------------- sự kiện chung
+
+$('#tabs').addEventListener('click', (e) => {
+  const tab = e.target.closest('button[data-view]');
+  if (tab) go(tab.dataset.view);
+});
+
+$('#daily-btn').addEventListener('click', () =>
+  act('/daily', {}, {
+    fx: (stage) => {
+      stage.react('jump');
+      burst(stage.room, stage.room.clientWidth / 2, 20, { icon: 'coin', count: 12, fall: true, rise: 260, spread: 360, life: 1400, stagger: 60 });
+    },
+  }));
+
+$('#coin-count').addEventListener('click', () => go('wallet'));
+
+$('#logout-btn').addEventListener('click', () => {
+  if (embedded) return; // phiên do WorkHub quản lý
+  if (confirm('Đăng xuất khỏi Petdex Park?')) logout();
+});
+if (embedded) $('#logout-btn').title = 'Tài khoản WorkHub của bạn';
+
+$('#view').addEventListener('click', (e) => {
+  if (e.target.closest('#figure-slot') && homeStage) {
+    const head = homeStage.at(0.85);
+    homeStage.react('wave');
+    burst(homeStage.room, head.x, head.y, { icon: 'heart', count: 2, spread: 60, rise: 60 });
+    return;
+  }
+  const el = e.target.closest('button');
+  if (!el || el.disabled) return;
+  const d = el.dataset;
+  const pet = state.me.pets.length ? currentPet() : null;
+
+  if (d.act) return ACTIONS[d.act]?.();
+  if (d.pet) {
+    state.petId = Number(d.pet);
+    return render();
+  }
+  if (d.ranksGo) state.ranksBy = d.ranksGo;
+  if (d.go) return go(d.go, d.filter);
+  if (d.filter) {
+    state.shopFilter = d.filter;
+    return render();
+  }
+  if (d.incubate) return act('/eggs/incubate', { itemId: d.incubate });
+  if (d.adoptEl) {
+    state.adoptElement = d.adoptEl;
+    return render();
+  }
+  if (d.ranks) {
+    state.ranksBy = d.ranks;
+    return render();
+  }
+  if (d.buy) return act('/shop/buy', { itemId: d.buy, qty: Number(d.qty) });
+  if (d.species) {
+    state.adoptSpecies = d.species;
+    for (const card of document.querySelectorAll('.species-card')) card.classList.toggle('selected', card === el);
+    return;
+  }
+  if (!pet) return;
+  if (d.use) return act(`/pets/${pet.id}/use`, { itemId: d.use });
+  if (d.toy) return act(`/pets/${pet.id}/play`, { toyId: d.toy });
+  if (d.equip !== undefined) return act(`/pets/${pet.id}/equip`, d.equip ? { itemId: d.equip } : { slot: d.slot });
+});
+
+$('#view').addEventListener('submit', (e) => {
+  const egg = e.target.closest('.egg-hatch');
+  if (egg) {
+    e.preventDefault();
+    act(`/eggs/${egg.dataset.egg}/hatch`, { name: new FormData(egg).get('name') }, {
+      fx: sparkleFx('jump', 'sparkle'),
+      onDone: (me) => {
+        state.adopting = false;
+        state.petId = me.pets.at(-1)?.id ?? null;
+      },
+    });
+    return;
+  }
+  if (e.target.id !== 'adopt-form') return;
+  e.preventDefault();
+  const name = new FormData(e.target).get('name');
+  act('/pets', { name, species: state.adoptSpecies }, {
+    fx: sparkleFx('wave', 'heart'),
+    onDone: (me) => {
+      state.adopting = false;
+      state.petId = me.pets.at(-1)?.id ?? null;
+    },
+  });
+});
+
+boot();

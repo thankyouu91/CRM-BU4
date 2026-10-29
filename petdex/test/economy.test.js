@@ -1,0 +1,138 @@
+// Kiểm thử tích hợp trên DB tạm trong RAM: chạy các hệ thống kinh tế với đồng hồ giả rồi đối soát sổ cái.
+import assert from 'node:assert/strict';
+import test from 'node:test';
+
+process.env.PETDEX_DB = ':memory:';
+const store = await import('../server/db.js');
+const { DAY, GameError, HOUR } = await import('../server/game.js');
+const { post } = await import('../server/ledger.js');
+const { migrate } = await import('../server/migrate.js');
+const { runDue } = await import('../server/scheduler.js');
+const jobs = await import('../server/jobs.js');
+const market = await import('../server/market.js');
+const bank = await import('../server/bank.js');
+const games = await import('../server/minigames.js');
+const wallet = await import('../server/wallet.js');
+const { fishSequence } = await import('../../public/ta-tua/game/js/shared/minigames.js');
+
+const T0 = Date.parse('2026-11-02T03:00:00Z'); // 10 giờ sáng thứ Hai, giờ Việt Nam
+const coins = (userId) => store.getUser(userId).coins;
+
+function newPlayer(name, money = 2000) {
+  const id = store.createUser(name, 'x', T0);
+  post({ userId: id, delta: money, kind: 'opening', now: T0 });
+  const petId = store.insertPet(id, `Bé ${name}`, 'test_pet', T0 - 45 * DAY); // loài lạ, tuổi Trưởng thành: số liệu trung tính
+  store.savePet({ ...store.getPet(petId), fullness: 90, energy: 100, updated_at: T0 });
+  for (const skill of ['strength', 'agility', 'intellect', 'charm', 'craft']) store.setSkill(petId, skill, 10);
+  store.setActivePet(id, petId);
+  return { id, petId };
+}
+
+migrate(T0);
+runDue(T0);
+const alice = newPlayer('alice');
+const bob = newPlayer('bob');
+
+test('ca làm: bé bận trong ca, xong ca mới nhận lương, lên kỹ năng', () => {
+  const before = coins(alice.id);
+  jobs.startShift(alice.id, { petId: alice.petId, career: 'porter', hours: 2 }, T0);
+  assert.throws(() => jobs.startShift(alice.id, { petId: alice.petId, career: 'tutor', hours: 1 }, T0 + HOUR), GameError);
+  const [shift] = jobs.jobsView(alice.id, T0 + HOUR).shifts;
+  assert.equal(shift.ready, false);
+  assert.throws(() => jobs.claimShift(alice.id, shift.id, T0 + HOUR), GameError);
+  const result = jobs.claimShift(alice.id, shift.id, T0 + 2 * HOUR);
+  assert.equal(coins(alice.id), before + shift.pay);
+  assert.ok(result.skill.gain > 0);
+  assert.throws(() => jobs.claimShift(alice.id, shift.id, T0 + 3 * HOUR), GameError);
+  assert.equal(jobs.jobsView(alice.id, T0 + 2 * HOUR).pets[0].careers.porter.hours, 2);
+});
+
+test('Sàn: mua bán với NPC, phí, tác động giá, hàng tươi bị hư', () => {
+  const t = T0 + 3 * HOUR;
+  const price0 = market.currentPrices().milk;
+  const before = coins(alice.id);
+  const buy = market.placeOrder(alice.id, { commodity: 'milk', side: 'buy', qty: 25, type: 'market' }, t);
+  assert.equal(buy.filled, 25);
+  assert.equal(coins(alice.id), before - buy.amount - buy.fee);
+  assert.ok(market.currentPrices().milk > price0);
+  assert.equal(market.marketView(alice.id, t).holdings.milk.qty, 25);
+
+  const sell = market.placeOrder(alice.id, { commodity: 'milk', side: 'sell', qty: 10, type: 'market' }, t);
+  assert.equal(sell.filled, 10);
+  assert.equal(market.marketView(alice.id, t).holdings.milk.qty, 15);
+  assert.throws(() => market.placeOrder(alice.id, { commodity: 'milk', side: 'sell', qty: 50, type: 'market' }, t), GameError);
+
+  const later = market.marketView(alice.id, t + 4 * DAY);
+  assert.equal(later.holdings.milk, undefined);
+  assert.deepEqual(later.spoiled.map((s) => s.commodity), ['milk']);
+});
+
+test('Sàn: lệnh giới hạn ký quỹ, hủy thì hoàn; lệnh của người chơi khớp với nhau', () => {
+  const t = T0 + 4 * HOUR;
+  const price = market.currentPrices().sugar;
+  const before = coins(alice.id);
+  const low = market.placeOrder(alice.id, { commodity: 'sugar', side: 'buy', qty: 20, type: 'limit', limit: price * 0.9 }, t);
+  assert.ok(low.orderId);
+  assert.ok(coins(alice.id) < before);
+  assert.throws(() => market.placeOrder(alice.id, { commodity: 'sugar', side: 'buy', qty: 20, type: 'limit', limit: price * 0.5 }, t), GameError);
+  market.cancelOrder(alice.id, low.orderId, t);
+  assert.equal(coins(alice.id), before);
+
+  market.placeOrder(bob.id, { commodity: 'sugar', side: 'buy', qty: 30, type: 'market' }, t);
+  const ask = market.currentPrices().sugar;
+  const rest = market.placeOrder(bob.id, { commodity: 'sugar', side: 'sell', qty: 20, type: 'limit', limit: ask }, t);
+  assert.ok(rest.orderId);
+  const bobBefore = coins(bob.id);
+  const take = market.placeOrder(alice.id, { commodity: 'sugar', side: 'buy', qty: 20, type: 'market' }, t);
+  assert.equal(take.filled, 20);
+  assert.ok(coins(bob.id) > bobBefore);
+  assert.equal(market.marketView(bob.id, t).orders.length, 0);
+});
+
+test('ngân hàng: tiết kiệm có lãi, kỳ hạn tự tất toán, Ngân hàng Trung ương họp tuần', () => {
+  const t = T0 + 5 * HOUR;
+  bank.moveSavings(bob.id, 'deposit', 500, t);
+  bank.moveSavings(bob.id, 'withdraw', 100, t);
+  assert.throws(() => bank.moveSavings(bob.id, 'withdraw', 10_000, t), GameError);
+  bank.openDeposit(bob.id, 200, 7, t);
+  const before = coins(bob.id);
+
+  runDue(T0 + 8 * DAY);
+  const view = bank.bankView(bob.id, T0 + 8 * DAY);
+  assert.ok(view.savings > 400, `tiết kiệm ${view.savings}`);
+  assert.equal(view.deposits.length, 0);
+  assert.ok(coins(bob.id) > before + 200, 'kỳ hạn trả gốc và lãi về ví');
+  assert.ok(view.history.length >= 1, 'đã có phiên họp Ngân hàng Trung ương');
+});
+
+test('mini-game: thưởng theo luật chung, chặn gian lận và nộp hai lần', () => {
+  const t = T0 + 9 * DAY;
+  // Bé bị bỏ mặc 9 ngày nên có thể đã ốm: chăm lại cho khỏe trước khi chơi.
+  store.savePet({ ...store.getPet(alice.petId), fullness: 90, energy: 100, hygiene: 90, health: 90, sick: null, updated_at: t });
+  const session = games.startGame(alice.id, 'fishing', t);
+  const casts = fishSequence(session.seed).slice(0, 8).map(() => true);
+  assert.throws(() => games.finishGame(alice.id, session.id, { caught: casts }, t + 2000), GameError);
+  const again = games.startGame(alice.id, 'fishing', t);
+  const result = games.finishGame(alice.id, again.id, { caught: casts }, t + 20_000);
+  assert.ok(result.portions.fish > 0);
+  assert.throws(() => games.finishGame(alice.id, again.id, { caught: casts }, t + 21_000), GameError);
+});
+
+test('sổ cái khớp từng xu với số dư, báo cáo phân loại đúng', () => {
+  const sum = store.db.prepare('SELECT COALESCE(SUM(delta), 0) AS s FROM ledger WHERE user_id = ? AND account = ?');
+  for (const { id } of [alice, bob]) {
+    assert.equal(sum.get(id, 'wallet').s, coins(id));
+    const savings = store.db.prepare('SELECT savings FROM bank_accounts WHERE user_id = ?').get(id)?.savings ?? 0;
+    assert.equal(sum.get(id, 'savings').s, savings);
+  }
+  const treasury = store.db.prepare("SELECT COALESCE(SUM(delta), 0) AS s FROM ledger WHERE account = 'treasury'").get().s;
+  assert.equal(treasury, store.db.prepare("SELECT balance FROM accounts WHERE id = 'treasury'").get()?.balance ?? 0);
+
+  const report = wallet.report(alice.id, 30, T0 + 9 * DAY + HOUR);
+  const kinds = (list) => list.map((r) => r.kind);
+  assert.ok(kinds(report.income).includes('salary'));
+  assert.ok(kinds(report.income).includes('market_sell'));
+  assert.ok(kinds(report.expense).includes('market_buy'));
+  assert.ok(kinds(report.expense).includes('fee'));
+  assert.ok(wallet.netWorth(alice.id, T0 + 9 * DAY).total > 0);
+});

@@ -13,6 +13,7 @@ export const AUDIT_GROUPS = {
   share: "Chia sẻ ra ngoài",
   attendance: "Chấm công & nghỉ phép",
   system: "Hệ thống & sao lưu",
+  tatua: "Tà tưa",
 } as const;
 export type AuditGroup = keyof typeof AUDIT_GROUPS;
 
@@ -71,6 +72,14 @@ export const AUDIT_ACTIONS = {
   "holiday.delete": { label: "Xoá ngày nghỉ lễ", group: "attendance" },
 
   "backup.download": { label: "Tải bản sao lưu", group: "system" },
+
+  "tatua.coins": { label: "Cộng/trừ xu người chơi", group: "tatua" },
+  "tatua.pet": { label: "Sửa chỉ số thú cưng", group: "tatua" },
+  "tatua.ban": { label: "Khoá người chơi", group: "tatua" },
+  "tatua.unban": { label: "Mở khoá người chơi", group: "tatua" },
+  "tatua.rename": { label: "Đổi tên người chơi", group: "tatua" },
+  "tatua.invite": { label: "Tạo link mời khách", group: "tatua" },
+  "tatua.invite_revoke": { label: "Thu hồi link mời", group: "tatua" },
 } as const satisfies Record<string, { label: string; group: AuditGroup }>;
 
 export type AuditAction = keyof typeof AUDIT_ACTIONS;

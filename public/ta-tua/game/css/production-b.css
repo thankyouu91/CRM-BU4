@@ -1,0 +1,237 @@
+/* Giai đoạn 2: Khu công nghiệp, Hợp đồng, Chợ Phiên, Tín dụng. */
+
+/* ---------- Dùng chung cho 4 màn (tiền tố pb-) ---------- */
+.pb-page .view-head { align-items: flex-start; }
+.pb-links { display: flex; gap: 6px; flex-wrap: wrap; }
+.pb-page h4 { margin: 0; font-family: var(--font-display); font-size: 1.05rem; }
+.pb-page select {
+  width: 100%; padding: 10px 12px; border: 2px solid var(--line-strong); border-radius: 14px;
+  background: #fff; font-weight: 700; outline: none;
+}
+.pb-page select:focus { border-color: var(--tea); box-shadow: 0 0 0 4px #c8915f33; }
+.pb-page .cb-stats small { font-size: .75rem; font-weight: 700; }
+.pb-page .chip.current { background: var(--ink); border-color: var(--ink); color: #fff; }
+.pb-page .link-btn:disabled { opacity: .5; cursor: not-allowed; }
+
+.pb-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.pb-list > li {
+  display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap;
+  padding: 7px 10px; border-radius: 12px; background: var(--surface-2); font-size: .9rem;
+}
+.pb-list > li > b { text-align: right; }
+.pb-list > li.down { background: #fdeceb; }
+
+.pb-warn, .pb-note, .pb-ok { margin: 0; padding: 8px 12px; border-radius: 12px; font-size: .88rem; font-weight: 700; }
+.pb-warn { background: #fdeceb; border: 2px solid #f0b4b4; color: #a33a36; }
+.pb-note { background: #fff3e0; border: 2px dashed var(--line-strong); color: var(--tea-deep); }
+.pb-ok { background: #eef9f5; border: 2px solid var(--mint); color: var(--mint-deep); }
+.badge.pb-bad { background: #fdeceb; border-color: #f0b4b4; color: #a33a36; }
+.badge.pb-warn-badge { background: #fff1d6; border-color: var(--gold); color: var(--gold-deep); }
+
+.pb-help { padding: 12px 18px; }
+.pb-help summary { cursor: pointer; font-family: var(--font-display); font-weight: 800; font-size: 1.1rem; list-style-position: inside; }
+.pb-help ul { margin: 10px 0 2px; padding-left: 20px; display: grid; gap: 6px; font-size: .9rem; font-weight: 600; }
+
+/* ---------- Khu công nghiệp ---------- */
+.factory-view { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; align-items: start; }
+.factory-view > .pb-help, .factory-build, .factory-toll { grid-column: 1 / -1; }
+.factory-card, .factory-build, .factory-toll { padding: 18px; display: grid; gap: 12px; align-content: start; min-width: 0; }
+.factory-card h3, .factory-build h3, .factory-toll h3 { font-size: 1.3rem; }
+.factory-card p, .factory-toll p { margin: 0; }
+.factory-head { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 10px; align-items: center; }
+.factory-icon {
+  font-size: 2rem; width: 54px; height: 54px; display: grid; place-items: center; flex: none;
+  border-radius: 16px; background: var(--surface-2); border: 2px solid var(--line);
+}
+.factory-icon.small { font-size: 1.4rem; width: 40px; height: 40px; border-radius: 12px; }
+.factory-card .cb-stats { margin: 0; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.factory-block { display: grid; gap: 8px; padding-top: 10px; border-top: 2px dashed var(--line); }
+.factory-block .job-form { padding: 8px 10px; }
+.factory-progress { display: grid !important; gap: 4px; }
+.factory-progress .bar, .factory-mytoll .bar { height: 8px; }
+.factory-chart { border-radius: 12px; background: #fffdf8; border: 2px solid var(--line); }
+.factory-table { font-size: .82rem; }
+.factory-table th, .factory-table td { padding: 5px 6px; }
+
+.factory-kinds { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 12px; }
+.factory-kind {
+  display: grid; gap: 8px; justify-items: center; text-align: center; align-content: start;
+  padding: 14px 12px; border-radius: 18px; background: #fff; border: 2px solid var(--line);
+}
+.factory-kind h4 { font-size: 1.15rem; }
+.factory-recipe { margin: 0; font-size: 1.05rem; font-weight: 800; }
+.factory-recipe small { font-size: .78rem; font-weight: 700; }
+.factory-facts { list-style: none; margin: 0; padding: 0; width: 100%; display: grid; gap: 3px; font-size: .85rem; }
+.factory-facts li { display: flex; justify-content: space-between; gap: 6px; padding: 3px 8px; border-radius: 8px; background: var(--surface-2); }
+.factory-kind .btn { width: 100%; }
+
+.factory-offers > li.factory-offer { display: grid; gap: 10px; align-items: stretch; }
+.factory-offer.open { background: #fff6ea; box-shadow: inset 0 0 0 2px var(--tea); }
+.factory-offer-head { display: grid; grid-template-columns: auto minmax(0, 1fr) auto auto; gap: 10px; align-items: center; }
+.factory-fee { display: grid; justify-items: end; line-height: 1.1; }
+.factory-fee b { font-family: var(--font-display); font-size: 1.15rem; }
+.factory-order { display: grid; gap: 8px; padding: 10px; border-radius: 12px; background: #fff; border: 2px solid var(--line); }
+.factory-order label { display: grid; gap: 4px; font-weight: 800; font-size: .88rem; }
+.factory-order .quick { margin-top: 0; }
+.factory-order-preview .pb-list > li { background: var(--surface-2); }
+.factory-order-preview .pb-list > li.down { background: #fdeceb; }
+.pb-list > li.factory-mytoll { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 10px; }
+.factory-mytoll > div { display: grid; gap: 4px; }
+
+/* ---------- Hợp đồng cung ứng ---------- */
+.contract-view { display: grid; gap: 16px; }
+.contract-summary { padding: 6px 14px; }
+.contract-grid { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); gap: 16px; align-items: start; }
+.contract-main, .contract-side { display: grid; gap: 16px; min-width: 0; }
+.contract-box { padding: 18px; display: grid; gap: 10px; align-content: start; }
+.contract-box h3 { font-size: 1.25rem; }
+.contract-box.highlight { border-color: var(--gold); box-shadow: 0 6px 0 var(--gold-deep); background: #fffaf0; }
+.contract-card { display: grid; gap: 8px; padding: 12px 14px; border-radius: 16px; background: #fff; border: 2px solid var(--line); }
+.contract-card.active { border-color: var(--mint); }
+.contract-card p { margin: 0; }
+.contract-head { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 10px; align-items: center; }
+.contract-icon {
+  font-size: 1.7rem; width: 46px; height: 46px; display: grid; place-items: center;
+  border-radius: 14px; background: var(--surface-2); border: 2px solid var(--line);
+}
+.contract-icon.small { font-size: 1.2rem; width: 36px; height: 36px; border-radius: 10px; }
+.contract-lead { font-size: .92rem; }
+.contract-terms { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; }
+.contract-terms > div { display: grid; gap: 1px; padding: 6px 8px; border-radius: 12px; background: var(--surface-2); min-width: 0; }
+.contract-terms span { font-size: .75rem; }
+.contract-terms b { font-family: var(--font-display); font-size: 1.05rem; }
+.contract-terms small { font-size: .72rem; font-weight: 800; }
+.contract-progress { display: grid; gap: 4px; }
+.contract-progress .bar { height: 10px; }
+.contract-card .link-btn.danger { justify-self: start; }
+.pb-list > li.contract-past { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 10px; }
+.contract-form { display: grid; gap: 10px; }
+.contract-form label { display: grid; gap: 4px; font-weight: 800; font-size: .88rem; }
+.contract-form .quick { margin-top: -4px; }
+.contract-role { width: 100%; }
+.contract-role button { flex: 1; padding: 8px 12px; }
+.contract-form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.contract-preview { display: grid; gap: 6px; padding: 10px; border-radius: 14px; background: var(--surface-2); border: 2px solid var(--line); }
+.contract-preview .pb-list > li { background: #fff; }
+.contract-preview .pb-list > li.down { background: #fdeceb; }
+.contract-preview p { margin: 0; }
+
+/* ---------- Chợ Phiên ---------- */
+.bazaar-view { display: grid; gap: 14px; }
+.bazaar-tabs { display: flex; width: 100%; }
+.bazaar-tabs button { flex: 1; padding: 10px 8px; font-size: .95rem; }
+.bazaar-tabs small { font-weight: 700; opacity: .8; }
+.bazaar-body { display: grid; gap: 14px; }
+.bazaar-toolbar { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; }
+.bazaar-chips { display: flex; gap: 6px; flex-wrap: wrap; }
+.bazaar-chips .chip { font-size: .85rem; padding: 5px 11px; }
+.bazaar-sort button { padding: 5px 10px; font-size: .85rem; }
+.bazaar-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 12px; }
+.bazaar-card { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 10px; align-items: center; padding: 12px 14px; }
+.bazaar-card.mine { background: #fff6d8; border-color: var(--gold); }
+.bazaar-icon {
+  font-size: 2rem; width: 56px; height: 56px; display: grid; place-items: center; flex: none;
+  border-radius: 16px; background: var(--surface-2); border: 2px solid var(--line);
+}
+.bazaar-icon.small { font-size: 1.4rem; width: 40px; height: 40px; border-radius: 12px; }
+.bazaar-info { display: grid; gap: 2px; min-width: 0; }
+.bazaar-info b { font-size: 1.02rem; }
+.bazaar-info small { font-size: .78rem; }
+.bazaar-price { display: grid; justify-items: end; gap: 4px; text-align: right; }
+.bazaar-price > b { font-family: var(--font-display); font-size: 1.3rem; line-height: 1; }
+.bazaar-price > small { font-size: .72rem; font-weight: 800; max-width: 110px; }
+.bazaar-box { padding: 16px 18px; display: grid; gap: 10px; align-content: start; }
+.bazaar-box h3 { font-size: 1.2rem; }
+.bazaar-box p { margin: 0; }
+.pb-list > li.bazaar-mine { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 10px; }
+.bazaar-sell-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 8px; }
+.bazaar-sell {
+  display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 4px 10px; align-items: center;
+  padding: 10px 12px; border-radius: 14px; background: var(--surface-2);
+}
+.bazaar-sell-info { display: grid; gap: 1px; min-width: 0; }
+.bazaar-sell-info small { font-size: .76rem; }
+.bazaar-sell-action { display: flex; gap: 6px; align-items: center; }
+.bazaar-sell-action input { width: 84px; padding: 6px 8px; border-radius: 10px; }
+.bazaar-net { grid-column: 2 / -1; font-size: .78rem; color: var(--muted); }
+.bazaar-net b { color: var(--mint-deep); }
+
+/* ---------- Tín dụng ---------- */
+.credit-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; align-items: start; }
+.credit-loans, .credit-grid > .pb-help { grid-column: 1 / -1; }
+.credit-box { padding: 18px; display: grid; gap: 10px; align-content: start; min-width: 0; }
+.credit-box h3 { font-size: 1.25rem; }
+.credit-box p { margin: 0; }
+.credit-score-row { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.credit-score .big-number { font-size: 3.2rem; margin: 0; }
+.badge.credit-tier { font-size: .95rem; padding: 4px 12px; border-color: var(--line-strong); color: var(--pearl); }
+.credit-gauge { position: relative; padding: 6px 0; }
+.credit-track { position: relative; height: 16px; border-radius: 999px; overflow: hidden; border: 2px solid var(--line-strong); background: #f2e3d1; }
+.credit-track i { position: absolute; top: 0; bottom: 0; }
+.credit-needle {
+  position: absolute; top: 0; width: 6px; height: 28px; margin-left: -3px; border-radius: 3px;
+  background: var(--ink); box-shadow: 0 0 0 2px #fff;
+}
+.credit-scale { display: flex; justify-content: space-between; font-size: .75rem; color: var(--muted); margin-top: -4px; }
+.credit-next { display: grid; gap: 4px; }
+.credit-next .bar { height: 10px; }
+.credit-score .cb-stats { margin: 0; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.credit-tiers { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.credit-tiers li {
+  display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 10px; align-items: center;
+  padding: 8px 10px; border-radius: 14px; background: var(--surface-2); border: 2px solid transparent; font-size: .9rem;
+}
+.credit-tiers li.current { background: #fff6d8; border-color: var(--gold); }
+.credit-tier-icon { font-size: 1.3rem; width: 38px; height: 38px; display: grid; place-items: center; border-radius: 12px; border: 2px solid var(--line-strong); }
+.credit-rules { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; font-size: .88rem; }
+.credit-rules li { display: grid; grid-template-columns: 48px 1fr; gap: 8px; align-items: center; padding: 5px 8px; border-radius: 10px; background: var(--surface-2); }
+.credit-rules b { font-family: var(--font-display); font-size: 1.05rem; text-align: right; }
+.credit-box > .btn { justify-self: start; }
+.pb-list.credit-events > li { display: grid; grid-template-columns: 44px minmax(0, 1fr) auto; gap: 8px; }
+.credit-events b { font-family: var(--font-display); text-align: right; }
+.credit-advanced { display: grid; gap: 8px; justify-items: start; padding: 10px 12px; border-radius: 14px; background: #fff6d8; border: 2px dashed var(--gold); }
+.credit-borrow { display: grid; gap: 10px; }
+.credit-borrow label { display: grid; gap: 4px; font-weight: 800; font-size: .88rem; }
+.credit-borrow .quick { margin-top: -4px; }
+.credit-terms .term small { font-size: .75rem; }
+.credit-preview { padding: 10px; border-radius: 14px; background: var(--surface-2); border: 2px solid var(--line); }
+.credit-preview p { margin: 0; }
+.credit-preview .pb-list > li { background: #fff; }
+.credit-loan { display: grid; gap: 8px; padding: 12px 14px; border-radius: 16px; background: #fff; border: 2px solid var(--line); }
+.credit-loan.late { border-color: var(--gold); }
+.credit-loan.defaulted { border-color: #f0b4b4; background: #fffafa; }
+.credit-loan .bar { height: 10px; }
+.credit-loan .cb-stats { margin: 0; }
+.credit-loan + .credit-loan { margin-top: 4px; }
+.credit-repay { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.credit-repay input { flex: 1 1 140px; width: auto; padding: 8px 12px; }
+
+/* ---------- Màn hẹp ---------- */
+@media (max-width: 960px) {
+  .factory-view, .contract-grid, .credit-grid { grid-template-columns: 1fr; }
+}
+@media (max-width: 640px) {
+  .pb-help { padding: 10px 14px; }
+  .factory-card, .factory-build, .factory-toll, .contract-box, .credit-box { padding: 14px; }
+  .factory-head { grid-template-columns: auto minmax(0, 1fr); }
+  .factory-head > .badge { grid-column: 1 / -1; justify-self: start; }
+  .factory-offer-head { grid-template-columns: auto minmax(0, 1fr) auto; }
+  .factory-offer-head > .btn { grid-column: 1 / -1; }
+  .factory-kinds { grid-template-columns: 1fr; }
+  .contract-terms { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .contract-head { grid-template-columns: auto minmax(0, 1fr); }
+  .contract-head > .badge { grid-column: 1 / -1; justify-self: start; }
+  .bazaar-grid, .bazaar-sell-list { grid-template-columns: 1fr; }
+  .bazaar-card { grid-template-columns: auto minmax(0, 1fr); }
+  .bazaar-price { grid-column: 1 / -1; grid-template-columns: auto 1fr auto; align-items: center; justify-items: start; text-align: left; }
+  .bazaar-price > small { max-width: none; }
+  .bazaar-price > .btn { justify-self: end; }
+  .bazaar-sell { grid-template-columns: auto minmax(0, 1fr); }
+  .bazaar-sell-action { grid-column: 1 / -1; }
+  .bazaar-sell-action input { flex: 1; width: auto; }
+  .bazaar-net { grid-column: 1 / -1; }
+  .bazaar-tabs button { font-size: .85rem; padding: 8px 4px; }
+  .bazaar-sort { width: 100%; }
+  .bazaar-sort button { flex: 1; }
+  .credit-score .big-number { font-size: 2.6rem; }
+}

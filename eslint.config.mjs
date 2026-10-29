@@ -19,7 +19,8 @@ const config = defineConfig([
     },
   },
   // .claude/: local tool data (agent worktrees are full checkouts with their own builds).
-  globalIgnores([".claude/**", "node_modules/**", ".next/**", ".open-next/**", ".wrangler/**", ".wrangler-dry-run/**", ".release/**", "next-env.d.ts", "cloudflare-env.d.ts"]),
+  // petdex/ and public/ta-tua/game/: the vendored Petdex game, plain JavaScript with its own style.
+  globalIgnores(["petdex/**", "public/ta-tua/game/**", ".claude/**", "node_modules/**", ".next/**", ".open-next/**", ".wrangler/**", ".wrangler-dry-run/**", ".release/**", "next-env.d.ts", "cloudflare-env.d.ts"]),
 ]);
 
 export default config;

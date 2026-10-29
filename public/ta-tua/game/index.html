@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Petdex Park</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧋</text></svg>" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Nunito:wght@600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/style.css" />
+  <link rel="stylesheet" href="css/economy.css" />
+  <link rel="stylesheet" href="css/community.css" />
+  <link rel="stylesheet" href="css/townmap.css" />
+  <link rel="stylesheet" href="css/games.css" />
+  <link rel="stylesheet" href="css/production-a.css" />
+  <link rel="stylesheet" href="css/production-b.css" />
+</head>
+<body>
+  <section id="auth-screen" class="auth" hidden>
+    <div class="auth-card card">
+      <div class="auth-pet" id="auth-pet"></div>
+      <h1 class="logo">Petdex <span>Park</span></h1>
+      <p class="muted">Nuôi thú cưng, sắm đồ xinh và ra công viên chơi cùng mọi người.</p>
+      <p class="muted" id="auth-embedded" hidden>Phiên chơi đã hết hoặc chưa đăng nhập. Mở lại mục <b>Tà tưa</b> trong WorkHub, hoặc mở lại link mời của bạn.</p>
+      <form id="auth-form" class="auth-form">
+        <input name="username" placeholder="Tên người chơi" autocomplete="username" required minlength="3" maxlength="20" />
+        <input name="password" type="password" placeholder="Mật khẩu" autocomplete="current-password" required minlength="4" />
+        <div class="row">
+          <button class="btn primary" value="login">Đăng nhập</button>
+          <button class="btn" value="register">Tạo tài khoản</button>
+        </div>
+        <p class="form-error" id="auth-error" role="alert"></p>
+      </form>
+    </div>
+  </section>
+
+  <div id="app" hidden>
+    <header class="topbar">
+      <div class="logo small">🧋 Petdex <span>Park</span></div>
+      <nav class="tabs" id="tabs">
+        <button data-view="map"><i>🗺️</i><span>Phố</span></button>
+        <button data-view="home"><i>🏠</i><span>Nhà</span></button>
+        <button data-view="bag"><i>🎒</i><span>Túi đồ</span></button>
+        <button data-view="wallet"><i>👛</i><span>Ví</span></button>
+        <button data-view="community"><i>👥</i><span>Bạn bè</span></button>
+        <button data-view="park"><i>🌳</i><span>Công viên</span></button>
+      </nav>
+      <div class="wallet">
+        <button class="chip daily" id="daily-btn" type="button">🎁 Quà ngày</button>
+        <button class="chip coins" id="coin-count" type="button" title="Mở ví">🪙 0</button>
+        <button class="chip" id="logout-btn" type="button" title="Đăng xuất">👤 <span id="username"></span></button>
+      </div>
+    </header>
+    <main id="view" class="view"></main>
+  </div>
+
+  <div id="modal-root"></div>
+  <div id="toasts" aria-live="polite"></div>
+
+  <script type="module" src="js/app.js"></script>
+</body>
+</html>

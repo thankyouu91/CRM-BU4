@@ -1,0 +1,210 @@
+/* Giai đoạn 2: Vườn, Bếp, Trường học, Phòng khám. */
+
+/* ---------- Dùng chung ---------- */
+.garden-grid, .kitchen-grid, .clinic-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; align-items: start; }
+.garden-grid > .wide, .kitchen-grid > .wide, .clinic-grid > .wide { grid-column: 1 / -1; }
+.garden-box, .kitchen-box, .school-box, .clinic-box { padding: 18px; display: grid; gap: 10px; align-content: start; min-width: 0; }
+.garden-box h3, .kitchen-box h3, .school-box h3, .clinic-box h3,
+.kitchen-recipes h3, .school-classes h3, .clinic-pets h3 { font-size: 1.25rem; }
+.garden-box h3 small, .kitchen-box h3 small { font-family: var(--font-body); font-size: .85rem; }
+.garden-box p, .kitchen-box p, .school-box p, .clinic-box p { margin: 0; }
+.kitchen-icon, .school-icon {
+  flex: none; display: grid; place-items: center; width: 52px; height: 52px; font-size: 1.9rem;
+  border-radius: 16px; background: var(--surface-2); border: 2px solid var(--line);
+}
+.kitchen-icon.small { width: 44px; height: 44px; font-size: 1.5rem; border-radius: 14px; }
+
+/* ---------- Vườn ---------- */
+.garden-plots { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(140px, 100%), 1fr)); gap: 10px; }
+.garden-plot {
+  position: relative; display: grid; gap: 4px; justify-items: center; align-content: start; text-align: center;
+  min-width: 0; padding: 12px 8px 10px; border-radius: 18px;
+  background: linear-gradient(180deg, #fff8ec 0 45%, #ecd2ae 45% 100%);
+  border: 2px solid #d9b98e; box-shadow: 0 4px 0 #cfa877; font-weight: 700;
+}
+.garden-plot > b { font-size: .95rem; }
+.garden-plot small { font-size: .78rem; line-height: 1.25; }
+.garden-plot-icon {
+  display: grid; place-items: center; width: 54px; height: 54px; font-size: 2rem; line-height: 1;
+  border-radius: 50%; background: #8a5a3b; box-shadow: inset 0 -5px 0 #6e4329;
+}
+.garden-plot.is-empty { background: #fbf1e3; border-style: dashed; box-shadow: none; }
+.garden-plot.is-empty .garden-plot-icon { background: #e5cfb1; box-shadow: inset 0 -5px 0 #d4b68f; font-size: 1.5rem; }
+.garden-plot.is-ready { background: linear-gradient(180deg, #fff6d2 0 45%, #f6dc8c 45% 100%); border-color: var(--gold-deep); box-shadow: 0 4px 0 var(--gold-deep); }
+.garden-plot.is-ready .garden-plot-icon { animation: garden-bob 1.6s ease-in-out infinite; }
+.garden-plot.has-pests { border-color: var(--pink-deep); box-shadow: 0 4px 0 var(--pink-deep); }
+.garden-bar { width: 100%; height: 10px; }
+.garden-bar > i { background: var(--mint-deep); }
+.garden-left { font-family: var(--font-display); font-weight: 800; color: var(--tea-deep); }
+.garden-ripe { font-family: var(--font-display); font-weight: 800; color: var(--gold-deep); font-size: .9rem !important; }
+.garden-badges { display: flex; flex-wrap: wrap; gap: 4px; justify-content: center; }
+.garden-badge { font-size: .72rem; padding: 2px 7px; }
+.garden-badge.water { background: #e4f4fb; border-color: var(--sky); color: #2f7fa3; }
+.garden-badge.pest { background: #fdeaee; border-color: var(--pink); color: #b4475f; }
+.garden-plot-actions { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; margin-top: 2px; }
+.garden-plot-actions .btn { padding: 5px 10px; font-size: .82rem; }
+.garden-expand {
+  font: inherit; color: var(--tea-deep); cursor: pointer; justify-content: center; align-content: center;
+  background: #fffaf3; border: 2px dashed var(--tea); box-shadow: none; min-height: 150px;
+}
+.garden-expand .garden-plot-icon { background: var(--surface-2); box-shadow: none; border: 2px dashed var(--tea); }
+.garden-expand small { font-family: var(--font-display); font-size: 1rem !important; font-weight: 800; color: var(--ink); }
+.garden-expand:hover { background: var(--surface-2); }
+.garden-note { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; padding: 10px 12px; border-radius: 14px; background: #eef9f5; border: 2px solid #cdeee3; }
+.garden-note p { flex: 1 1 220px; }
+.garden-help { padding: 8px 12px; border-radius: 12px; background: #e4f4fb; border: 2px solid var(--sky); font-size: .9rem; }
+.garden-help b { font-family: var(--font-display); font-size: 1.1rem; }
+.garden-friend-list { display: flex; flex-wrap: wrap; gap: 6px; }
+.garden-friend-list .chip { max-width: 100%; overflow: hidden; text-overflow: ellipsis; }
+.garden-friend-list .chip.current { background: var(--mint); border-color: var(--mint-deep); color: #fff; }
+.garden-visit { display: grid; gap: 8px; padding: 12px; border-radius: 16px; background: var(--surface-2); border: 2px dashed var(--line-strong); }
+.garden-visit .garden-plot { background: linear-gradient(180deg, #fffdf8 0 45%, #ecd2ae 45% 100%); }
+.garden-visit .garden-plot.is-ready { background: linear-gradient(180deg, #fff6d2 0 45%, #f6dc8c 45% 100%); }
+.garden-guide { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.garden-guide li { display: grid; grid-template-columns: 36px minmax(0, 1fr) auto; gap: 8px; align-items: center; padding: 8px 10px; border-radius: 12px; background: var(--surface-2); }
+.garden-guide li small { display: block; }
+.garden-guide-icon { font-size: 1.6rem; text-align: center; }
+.garden-guide-price { font-family: var(--font-display); font-weight: 800; white-space: nowrap; text-align: right; }
+.garden-guide-price small { display: block; font-family: var(--font-body); font-size: .72rem; color: var(--danger); }
+.garden-pick small + small { margin-top: 1px; }
+.garden-pick:disabled { opacity: .5; cursor: not-allowed; }
+.garden-pick:disabled:hover { border-color: var(--line); background: #fff; }
+
+@keyframes garden-bob { 50% { transform: translateY(-4px) rotate(-4deg); } }
+
+/* ---------- Bếp ---------- */
+.kitchen-chef-head { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 12px; align-items: center; }
+.kitchen-hat { font-size: 2.2rem; width: 56px; height: 56px; display: grid; place-items: center; border-radius: 50%; background: #fff; border: 2px solid var(--line-strong); }
+.kitchen-chef .link-btn { padding: 0; color: var(--tea-deep); }
+.kitchen-recipes { display: grid; gap: 8px; min-width: 0; }
+.kitchen-recipes > p { margin: 0; }
+.kitchen-recipe-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(240px, 100%), 1fr)); gap: 14px; }
+.kitchen-recipe { padding: 14px 16px; display: grid; gap: 8px; align-content: start; min-width: 0; }
+.kitchen-recipe header { display: flex; gap: 10px; align-items: center; }
+.kitchen-recipe h4 { margin: 0; font-family: var(--font-display); font-size: 1.15rem; }
+.kitchen-recipe p { margin: 0; }
+.kitchen-recipe.is-short .kitchen-icon { filter: grayscale(.6); opacity: .8; }
+.kitchen-inputs { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
+.kitchen-inputs li { display: flex; justify-content: space-between; gap: 8px; padding: 4px 10px; border-radius: 10px; background: var(--surface-2); font-size: .88rem; }
+.kitchen-inputs li.down { background: #fdeef0; }
+.kitchen-inputs b { font-variant-numeric: tabular-nums; }
+.kitchen-effect { display: flex; flex-wrap: wrap; gap: 4px 10px; font-weight: 800; }
+.kitchen-mix { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.kitchen-mix li {
+  display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap;
+  padding: 6px 8px 6px 12px; border-radius: 12px; background: var(--surface-2); border: 2px solid transparent; font-size: .9rem;
+}
+.kitchen-mix li.is-on { background: #fdeef3; border-color: var(--pink); }
+.kitchen-step { display: inline-flex; align-items: center; gap: 6px; }
+.kitchen-step .btn { width: 34px; height: 34px; padding: 0; border-radius: 10px; font-size: 1.1rem; }
+.kitchen-step b { min-width: 22px; text-align: center; font-family: var(--font-display); font-size: 1.15rem; }
+.kitchen-dishes { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.kitchen-dish {
+  display: grid; grid-template-columns: 44px minmax(0, 1fr); gap: 6px 10px; align-items: center;
+  padding: 10px 12px; border-radius: 14px; background: var(--surface-2); border: 2px solid transparent;
+}
+.kitchen-dish.q1 { border-color: #f6d9a8; }
+.kitchen-dish.q2 { background: #fff6d8; border-color: var(--gold); }
+.kitchen-dish.is-soon .kitchen-left { color: var(--danger); }
+.kitchen-dish-main { display: grid; gap: 2px; min-width: 0; }
+.kitchen-dish-main small { font-size: .8rem; }
+.kitchen-dish-actions { grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: 6px; }
+.kitchen-left { font-weight: 800; color: var(--tea-deep); }
+.kitchen-q { font-size: .72rem; padding: 1px 8px; }
+.kitchen-q.q1 { background: #fff0d9; border-color: #f2c98a; color: #a8661c; }
+.kitchen-q.q2 { background: var(--gold); border-color: var(--gold-deep); color: var(--pearl); }
+.kitchen-bazaar { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; padding: 10px 12px; border-radius: 14px; border: 2px dashed var(--line-strong); }
+.kitchen-bazaar span { flex: 1 1 200px; }
+
+/* ---------- Trường học ---------- */
+.school-grid { display: grid; grid-template-columns: minmax(0, 340px) minmax(0, 1fr); gap: 16px; align-items: start; }
+.school-pet-head { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.school-pet-head h3 { font-size: 1.6rem; margin-right: 2px; }
+.school-sick { background: #fdeaee; border-color: var(--pink); color: #b4475f; }
+.school-traits { display: flex; flex-wrap: wrap; gap: 6px; }
+.school-trait { font-size: .82rem; padding: 4px 10px; cursor: help; }
+.school-trait.is-bookworm { background: #eef0ff; border-color: #a9b2ea; color: #4a55a8; }
+.school-bookworm { padding: 8px 12px; border-radius: 12px; background: #eef0ff; border: 2px solid #c9cff4; color: #3f4a99; font-size: .88rem; }
+.school-skills { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.school-skills li { display: grid; grid-template-columns: minmax(0, 1fr) 90px 40px; gap: 8px; align-items: center; font-size: .9rem; padding: 2px 4px; border-radius: 10px; }
+.school-skills li b { text-align: right; font-variant-numeric: tabular-nums; }
+.school-skills .bar { height: 10px; }
+.school-skills li.is-flash { background: #fff4cf; animation: school-glow 1.6s ease-out; }
+.school-classes { display: grid; gap: 10px; min-width: 0; }
+.school-class-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(230px, 100%), 1fr)); gap: 14px; }
+.school-class { position: relative; padding: 14px 16px; display: grid; gap: 8px; align-content: start; min-width: 0; }
+.school-class header { display: flex; gap: 10px; align-items: center; }
+.school-class h4 { margin: 0; font-family: var(--font-display); font-size: 1.15rem; }
+.school-class p { margin: 0; }
+.school-class .bar { height: 10px; }
+.school-class.is-full { opacity: .8; }
+.school-class.is-flash { border-color: var(--gold-deep); animation: school-glow 1.6s ease-out; }
+.school-now { display: flex; align-items: baseline; gap: 4px; }
+.school-now b { font-family: var(--font-display); font-size: 1.6rem; line-height: 1; margin-left: auto; }
+.school-dots { display: flex; align-items: center; gap: 5px; }
+.school-dots i { width: 12px; height: 12px; border-radius: 50%; background: #f2e3d1; border: 2px solid var(--line-strong); }
+.school-dots i.on { background: var(--mint); border-color: var(--mint-deep); }
+.school-dots small { margin-left: 4px; font-size: .78rem; }
+.school-uses { color: var(--tea-deep); }
+.school-pop {
+  position: absolute; top: 10px; right: 12px; z-index: 2; pointer-events: none;
+  padding: 3px 10px; border-radius: 999px; background: var(--gold); border: 2px solid var(--gold-deep);
+  font-family: var(--font-display); font-weight: 800; color: var(--pearl);
+  animation: school-pop 2.6s ease-out forwards;
+}
+.school-busy { font-family: var(--font-display); font-weight: 800; }
+
+@keyframes school-pop {
+  0% { opacity: 0; transform: translateY(12px) scale(.8); }
+  15% { opacity: 1; transform: translateY(0) scale(1.1); }
+  25% { transform: scale(1); }
+  80% { opacity: 1; transform: translateY(-6px); }
+  100% { opacity: 0; transform: translateY(-18px); }
+}
+@keyframes school-glow { from { box-shadow: 0 0 0 6px #f4c24f88, var(--shadow); } }
+
+/* ---------- Phòng khám ---------- */
+.clinic-pets { display: grid; gap: 10px; min-width: 0; }
+.clinic-pet-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(270px, 100%), 1fr)); gap: 14px; }
+.clinic-pet { padding: 16px; display: grid; gap: 10px; align-content: start; min-width: 0; }
+.clinic-pet.is-sick { border-color: var(--pink); box-shadow: 0 6px 0 #f6c9d3; background: #fffafb; }
+.clinic-pet-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; }
+.clinic-pet-head h3 { font-size: 1.35rem; }
+.clinic-pet p { margin: 0; }
+.clinic-sick { background: #fdeaee; border-color: var(--pink); color: #b4475f; white-space: nowrap; }
+.clinic-bill { display: grid; gap: 4px; padding: 10px 12px; border-radius: 14px; background: var(--surface-2); border: 2px solid var(--line); font-size: .9rem; }
+.clinic-bill b { font-variant-numeric: tabular-nums; }
+.clinic-pay { padding-top: 4px; border-top: 1px dashed var(--line-strong); }
+.clinic-pay b { font-family: var(--font-display); font-size: 1.15rem; }
+.clinic-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.clinic-actions .btn:first-child { flex: 1 1 180px; }
+.clinic-plans { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(210px, 100%), 1fr)); gap: 12px; }
+.clinic-plan { display: grid; gap: 6px; align-content: start; padding: 14px; border-radius: 16px; background: #fff; border: 2px solid var(--line); }
+.clinic-plan.is-current { border-color: var(--mint-deep); background: #eef9f5; box-shadow: 0 4px 0 var(--mint-deep); }
+.clinic-plan p { margin: 0; }
+.clinic-plan .badge { justify-self: start; }
+.clinic-plan-head { display: flex; align-items: center; gap: 8px; }
+.clinic-plan-head h4 { margin: 0; font-family: var(--font-display); font-size: 1.1rem; }
+.clinic-plan-icon { font-size: 1.7rem; }
+.clinic-plan-price { font-weight: 800; color: var(--muted); }
+.clinic-plan-price b { font-family: var(--font-display); font-size: 1.8rem; color: var(--ink); }
+.clinic-tips ul { margin: 0; padding: 0; list-style: none; display: grid; gap: 6px; }
+.clinic-tips li { padding: 8px 12px; border-radius: 12px; background: var(--surface-2); font-size: .9rem; line-height: 1.4; }
+
+/* ---------- Màn hẹp ---------- */
+@media (max-width: 960px) {
+  .garden-grid, .kitchen-grid, .clinic-grid, .school-grid { grid-template-columns: 1fr; }
+}
+@media (max-width: 640px) {
+  .garden-box, .kitchen-box, .school-box, .clinic-box { padding: 14px; }
+  .garden-plot-icon { width: 46px; height: 46px; font-size: 1.7rem; }
+  .garden-expand { min-height: 130px; }
+  .kitchen-chef-head { grid-template-columns: auto minmax(0, 1fr); }
+  .kitchen-chef-head .btn { grid-column: 1 / -1; justify-self: start; }
+  .kitchen-dish-actions .btn { flex: 1 1 auto; }
+  .school-skills li { grid-template-columns: minmax(0, 1fr) 70px 36px; }
+  .clinic-actions .btn { flex: 1 1 auto; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .garden-plot.is-ready .garden-plot-icon, .school-pop, .school-class.is-flash, .school-skills li.is-flash { animation: none; }
+}

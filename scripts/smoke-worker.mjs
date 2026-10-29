@@ -83,7 +83,49 @@ try {
   });
   assert.equal(intake.status, 400, "Intake must validate files inside workerd without calling AI");
   assert.equal((await intake.json()).fields.attachments, "Chọn file để trích xuất");
-  console.log("Worker smoke passed: login, project calendar, My Tasks, public share link, deadline APIs, department report, analytics and AI intake route on workerd + PostgreSQL.");
+  // Tà tưa: the game API and its Durable Object (SQLite) answer through the Worker; a member is
+  // signed into the game on the /ta-tua page; the management board is for administrators only.
+  const catalog = await fetch(`${origin}/ta-tua/api/catalog`, { signal: AbortSignal.timeout(20000) });
+  assert.equal(catalog.status, 200, "/ta-tua/api/catalog status");
+  assert((await catalog.json()).species.length > 0, "game catalog has species");
+  const play = await fetch(`${origin}/ta-tua`, { headers: { Cookie: cookie }, redirect: "manual", signal: AbortSignal.timeout(20000) });
+  assert.equal(play.status, 200, "/ta-tua status");
+  const playHtml = await play.text();
+  const token = /\/ta-tua\/game\/index\.html#token=([a-f0-9]+)/.exec(playHtml)?.[1];
+  assert(token, `/ta-tua must embed the game with a play session: ${/Chưa vào chơi được.{0,300}/s.exec(playHtml)?.[0].replace(/<[^>]+>/g, " ") ?? playHtml.slice(0, 300)}`);
+  const me = await fetch(`${origin}/ta-tua/api/me`, { headers: { Authorization: `Bearer ${token}` }, signal: AbortSignal.timeout(20000) });
+  assert.equal(me.status, 200, "the play session works against the Durable Object");
+  assert.equal((await me.json()).user.coins, 150, "a new member gets the welcome coins");
+  const board = await fetch(`${origin}/api/ta-tua/admin/overview`, { headers: { Cookie: cookie }, signal: AbortSignal.timeout(20000) });
+  assert.equal(board.status, 403, "the management board is for administrators only");
+  // The game's internal API (SSO, management) is only reachable through the Durable Object stub.
+  for (const path of ["/internal/health", "/ta-tua/internal/health", "/ta-tua/api/%2e%2e/internal/health", "/ta-tua/api/internal/health"]) {
+    const response = await fetch(`${origin}${path}`, { redirect: "manual", signal: AbortSignal.timeout(20000) });
+    const text = await response.text();
+    assert(!(response.status === 200 && text.includes('"ok":true')), `the internal API must not be reachable at ${path}`);
+  }
+  // The park's WebSocket reaches the Durable Object: a valid play token connects, a bad one is refused.
+  const park = async (playToken) => {
+    const ws = new WebSocket(`${origin.replace(/^http/, "ws")}/ta-tua/ws`);
+    try {
+      return await new Promise((resolve, reject) => {
+        const timer = setTimeout(() => reject(new Error("park WebSocket timed out")), 15000);
+        ws.addEventListener("open", () => ws.send(JSON.stringify(["auth", { token: playToken }])));
+        ws.addEventListener("message", (event) => {
+          clearTimeout(timer);
+          resolve(JSON.parse(event.data)[0]);
+        });
+        ws.addEventListener("error", () => reject(new Error("park WebSocket failed")));
+      });
+    } finally {
+      ws.close();
+    }
+  };
+  assert.equal(await park(token), "connect", "a play session opens the park");
+  assert.equal(await park("not-a-token"), "connect_error", "the park refuses a bad token");
+  const gamePage = await fetch(`${origin}/ta-tua/game/index.html`, { signal: AbortSignal.timeout(20000) });
+  assert.equal(gamePage.status, 200, "game page is served as a static asset");
+  console.log("Worker smoke passed: login, project calendar, My Tasks, public share link, deadline APIs, department report, analytics, AI intake route and Tà tưa (game API, Durable Object, sign-in, park WebSocket) on workerd + PostgreSQL.");
 } catch (error) {
   console.error(logs);
   throw error;

@@ -9,6 +9,7 @@ import {
   ChartColumn,
   ChevronDown,
   FolderKanban,
+  Gamepad2,
   Inbox,
   KeyRound,
   LayoutDashboard,
@@ -18,6 +19,7 @@ import {
   PanelLeftClose,
   PanelLeftOpen,
   Settings,
+  SlidersHorizontal,
   Sparkles,
   Users,
   Wallet,
@@ -38,7 +40,7 @@ import { cn } from "@/lib/utils";
 import { hasPermission, type PermissionKey } from "@/lib/permissions";
 import { SIDEBAR_COOKIE } from "@/lib/constants";
 
-type NavItem = { href: string; label: string; icon: typeof Users; badge?: "inbox" | "report"; permission?: PermissionKey };
+type NavItem = { href: string; label: string; icon: typeof Users; badge?: "inbox" | "report"; permission?: PermissionKey; adminOnly?: boolean };
 
 // Grouped by what people come to do; settings sit apart at the bottom.
 const NAV: { title: string; items: NavItem[] }[] = [
@@ -68,6 +70,9 @@ const NAV: { title: string; items: NavItem[] }[] = [
   },
 ];
 const SETTINGS: NavItem = { href: "/settings", label: "Cài đặt", icon: Settings };
+// Tà tưa (the Petdex game) sits at the bottom with settings; its management board is for administrators.
+const GAME: NavItem = { href: "/ta-tua", label: "Tà tưa", icon: Gamepad2 };
+const GAME_ADMIN: NavItem = { href: "/ta-tua/quan-ly", label: "Quản lý Tà tưa", icon: SlidersHorizontal, adminOnly: true };
 
 function Brand({ collapsed }: { collapsed?: boolean }) {
   return (
@@ -141,7 +146,7 @@ function SidebarNav({ user, collapsed, onNavigate }: { user: CurrentUser; collap
   const pendingReports = feed?.pendingReports ?? 0;
   const reportOwed = feed?.reportOwed ?? null;
   const isActive = (href: string) => pathname === href || pathname.startsWith(`${href}/`);
-  const allowed = (item: NavItem) => !item.permission || hasPermission(user, item.permission);
+  const allowed = (item: NavItem) => (!item.permission || hasPermission(user, item.permission)) && (!item.adminOnly || user.role === "ADMIN");
   return (
     <nav aria-label="Điều hướng chính" className={cn("mt-5 flex min-h-0 flex-1 flex-col", !collapsed && "overflow-y-auto")}>
       {NAV.map((group, i) => {
@@ -169,7 +174,9 @@ function SidebarNav({ user, collapsed, onNavigate }: { user: CurrentUser; collap
           </div>
         );
       })}
-      <div className="mt-auto pt-4">
+      <div className="mt-auto space-y-0.5 pt-4">
+        <NavLink item={GAME} active={isActive(GAME.href) && !isActive(GAME_ADMIN.href)} collapsed={collapsed} count={0} onNavigate={onNavigate} />
+        {allowed(GAME_ADMIN) && <NavLink item={GAME_ADMIN} active={isActive(GAME_ADMIN.href)} collapsed={collapsed} count={0} onNavigate={onNavigate} />}
         <NavLink item={SETTINGS} active={isActive(SETTINGS.href)} collapsed={collapsed} count={0} onNavigate={onNavigate} />
       </div>
     </nav>

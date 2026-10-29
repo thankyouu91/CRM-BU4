@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Xưởng tạo hình pet</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🐾</text></svg>" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Nunito:wght@600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/style.css" />
+  <link rel="stylesheet" href="css/petlab.css" />
+</head>
+<body>
+  <main class="view lab">
+    <header class="lab-head">
+      <div>
+        <h1>🐾 Xưởng tạo hình pet ngũ hành</h1>
+        <p class="muted">Linh vật Boba và 50 loài ngũ hành vẽ trên cùng một bộ khung, 6 giai đoạn tuổi, đồ đeo gắn vào điểm neo đầu · mặt · cổ · lưng.
+          Bấm vào một bé để xem hoạt ảnh và thử đồ.</p>
+      </div>
+      <a class="btn small" href="index.html">← Về Phố Trân Châu</a>
+    </header>
+    <section class="card lab-controls">
+      <div class="chip-row" id="element-filter"></div>
+      <div class="chip-row" id="rarity-filter"></div>
+      <div class="chip-row" id="stage-filter"></div>
+      <label class="lab-toggle"><input type="checkbox" id="show-anchors" /> Hiện điểm neo</label>
+      <label class="lab-toggle"><input type="checkbox" id="dress-all" checked /> Cả đàn mặc đồ đang thử</label>
+    </section>
+    <div class="lab-layout">
+      <section class="lab-gallery" id="gallery"></section>
+      <aside class="card lab-detail" id="detail"></aside>
+    </div>
+  </main>
+  <script type="module" src="js/petlab.js"></script>
+</body>
+</html>

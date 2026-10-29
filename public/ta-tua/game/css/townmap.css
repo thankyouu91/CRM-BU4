@@ -1,0 +1,94 @@
+/* ---------- Bản đồ phố Trân Châu ---------- */
+.tm-wrap {
+  position: relative; overflow: hidden; aspect-ratio: 1000 / 600;
+  border-radius: var(--radius); border: 2px solid var(--line-strong); box-shadow: var(--shadow);
+  background: #92cf76; user-select: none; -webkit-tap-highlight-color: transparent;
+}
+.tm-world { position: absolute; left: 0; top: 0; width: 1000px; height: 600px; transform-origin: 0 0; }
+
+/* Mỗi toà một ô vẽ riêng: nhấc lên và viền sáng khi rê chuột / chọn bằng bàn phím */
+.tm-slot { position: absolute; pointer-events: none; transition: transform .12s ease-out; }
+.tm-slot.hot { transform: translateY(-3px); }
+.tm-slot.hot .tm-art {
+  filter: drop-shadow(3px 0 0 #fff1c2) drop-shadow(-3px 0 0 #fff1c2) drop-shadow(0 3px 0 #fff1c2) drop-shadow(0 -3px 0 #fff1c2);
+}
+.tm-slot.shake { animation: tm-shake .4s linear; }
+
+/* Lớp nút & nhãn nằm trên cùng */
+.tm-ui { position: absolute; inset: 0; pointer-events: none; }
+.tm-place {
+  position: absolute; margin: 0; padding: 0; border: 0; border-radius: 0;
+  background: none; color: var(--ink); font: inherit; outline: none;
+  pointer-events: auto; cursor: pointer;
+}
+.tm-place:hover, .tm-place:focus-visible, .tm-place.tip { z-index: 3; }
+.tm-tag {
+  position: absolute; left: 50%; bottom: calc(100% + 4px);
+  display: flex; flex-direction: column; align-items: center; gap: 10px;
+  transform: translate(calc(-50% + var(--tm-dx, 0px)), var(--tm-dy, 0px)) scale(var(--tm-k, 1)); transform-origin: 50% 100%;
+}
+.tm-tag .tm-label {
+  display: block; width: max-content; max-width: calc(110px / var(--tm-k, 1));
+  padding: 0 5px;
+  font-family: var(--font-display); font-weight: 800; font-size: 14px; line-height: 1.3; text-align: center;
+}
+.tm-label i { font-style: normal; margin-right: 3px; }
+.tm-place:focus-visible .tm-label { --pixel-line: var(--gold-deep); background: #fff1c2; }
+.tm-place.locked .tm-label { background: #ece6df; color: var(--muted); }
+.tm-place.shake .tm-label { animation: tm-shake .4s linear; }
+@media (hover: hover) {
+  .tm-place:hover .tm-label { background: #fff1c2; }
+  .tm-place.locked:hover .tm-label { background: #f5efe8; }
+}
+
+/* Bong bóng thông báo nhún nhảy */
+.tm-tag .tm-badge {
+  position: relative; width: max-content; max-width: calc(220px / var(--tm-k, 1));
+  padding: 2px 8px; background: #fff1c2;
+  font-family: var(--font-display); font-size: 13px; font-weight: 800; line-height: 1.25; text-align: center;
+  animation: tm-bob 1.2s ease-in-out infinite;
+}
+.tm-badge::before, .tm-badge::after { content: ''; position: absolute; background: var(--pixel-line); }
+.tm-badge::before { left: calc(50% - 6px); top: calc(100% + 3px); width: 9px; height: 3px; }
+.tm-badge::after { left: calc(50% - 3px); top: calc(100% + 6px); width: 3px; height: 3px; }
+
+/* Lý do còn khoá: hiện khi rê chuột, chọn bằng bàn phím hoặc chạm (2 giây) */
+.tm-tag .tm-tip {
+  --pixel-line: #2e1d14;
+  position: absolute; top: calc(100% + 9px); left: 50%; transform: translateX(-50%);
+  width: max-content; max-width: calc(200px / var(--tm-k, 1));
+  padding: 2px 8px; background: #4a3326; color: #fffaf0;
+  font-size: 12px; font-weight: 800; line-height: 1.3; text-align: center;
+  opacity: 0; transition: opacity .15s; pointer-events: none;
+}
+.tm-place:not(.locked) .tm-tip { display: none; }
+.tm-place.edge-l .tm-tip { left: 0; transform: none; }
+.tm-place.edge-r .tm-tip { left: auto; right: 0; transform: none; }
+.tm-place.locked:focus-visible .tm-tip, .tm-place.locked.tip .tm-tip { opacity: 1; }
+@media (hover: hover) {
+  .tm-place.locked:hover .tm-tip { opacity: 1; }
+}
+
+/* Khung hẹp (điện thoại): chỉ còn biểu tượng */
+.tm-compact .tm-tag .tm-label { padding: 0 2px; font-size: 15px; line-height: 1.2; }
+.tm-compact .tm-label b { display: none; }
+.tm-compact .tm-label i { margin: 0; }
+.tm-compact .tm-tag .tm-tip { font-size: 11px; }
+/* Thông báo thu thành chấm "!" ở góc nhãn; nội dung vẫn có trong aria-label của nút */
+.tm-compact .tm-tag .tm-badge {
+  position: absolute; right: -9px; top: -10px; width: 12px; height: 12px; padding: 0;
+  overflow: hidden; color: transparent; font-size: 0; background: #ff6f91; --pixel-line: #7a2335;
+}
+.tm-compact .tm-badge::before {
+  content: '!'; position: static; display: block; width: auto; height: auto; background: none;
+  color: #fff; font-size: 11px; line-height: 12px; text-align: center;
+}
+.tm-compact .tm-badge::after { display: none; }
+
+@keyframes tm-bob { 50% { transform: translateY(-5px); } }
+@keyframes tm-shake {
+  20% { transform: translateX(-4px); }
+  40% { transform: translateX(4px); }
+  60% { transform: translateX(-3px); }
+  80% { transform: translateX(3px); }
+}
