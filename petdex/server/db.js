@@ -618,7 +618,7 @@ export function takeItem(userId, itemId, qty = 1) {
 // Workers, Durable Object cắm backend của nó rồi gọi ensureSchema().
 if (!isWorkers && !hasBackend()) {
   const { openNodeSqlite } = await import('./sql/node-sqlite.js');
-  const file = process.env.PETDEX_DB ?? new URL('../data/petdex.db', import.meta.url).pathname;
+  const file = process.env.PETDEX_DB ?? new URL('../data/petdex.db', import.meta.url);
   setBackend(await openNodeSqlite(file));
   ensureSchema();
 }

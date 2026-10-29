@@ -3,8 +3,10 @@
 // thành import tĩnh (workerd không có node:sqlite; module này không bao giờ chạy ở đó).
 const load = (name) => import(/* @vite-ignore */ `node:${name}`);
 
-export async function openNodeSqlite(file) {
-  const [{ DatabaseSync }, { mkdirSync }, path] = await Promise.all([load('sqlite'), load('fs'), load('path')]);
+/** `target`: đường dẫn file, URL file: (đổi bằng fileURLToPath, vì `.pathname` hỏng trên Windows) hoặc ':memory:'. */
+export async function openNodeSqlite(target) {
+  const [{ DatabaseSync }, { mkdirSync }, path, { fileURLToPath }] = await Promise.all([load('sqlite'), load('fs'), load('path'), load('url')]);
+  const file = target instanceof URL ? fileURLToPath(target) : target;
   if (file !== ':memory:') mkdirSync(path.dirname(file), { recursive: true });
   const native = new DatabaseSync(file);
   native.exec('PRAGMA journal_mode = WAL; PRAGMA foreign_keys = ON;');
