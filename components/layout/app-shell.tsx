@@ -30,6 +30,7 @@ import { ThemeToggle } from "./theme-toggle";
 import { NotificationBell } from "./notification-bell";
 import { LiveFeedProvider, useLiveFeed } from "./live-feed";
 import { CommandPalette } from "./command-palette";
+import { NightSky } from "./night-sky";
 import type { CurrentUser } from "@/lib/session";
 import type { NotificationFeed } from "@/lib/notifications";
 import { clearApiCache } from "@/lib/client";
@@ -282,6 +283,7 @@ export function AppShell({
 
   return (
     <LiveFeedProvider initial={feed}>
+      <NightSky />
       <div className="min-h-screen">
         {/* Desktop sidebar */}
         <aside
