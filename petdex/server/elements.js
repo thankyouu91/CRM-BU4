@@ -9,7 +9,8 @@ export const isFortunate = (pet, now = Date.now()) => elementOfSpecies(pet.speci
 
 /** Hệ số lên kỹ năng `skill`: sở trường của loài × bộ đồ hợp mệnh (kỵ mệnh nặng nhất cũng không dưới 50%). */
 export function skillFactor(pet, skill) {
-  return statsOfSpecies(pet.species).growth[skill] * Math.max(0.5, 1 + wearBonus(pet.wear, elementOfSpecies(pet.species)));
+  const gear = 1 + (pet.bonus?.stats ?? 0) / 100; // trang phục: % "Chỉ số"
+  return statsOfSpecies(pet.species).growth[skill] * Math.max(0.5, 1 + wearBonus(pet.wear, elementOfSpecies(pet.species))) * gear;
 }
 
 /** Cộng `raw` điểm kỹ năng cho bé `petId` theo hệ số ngũ hành; trả về điểm trước và sau. */
@@ -29,6 +30,7 @@ export function elementPay(pet, now = Date.now(), careerSkill = null) {
   let k = 1;
   if (isFortunate(pet, now)) k += ELEMENT_RULES.fortune;
   if (fullSetOf(pet.wear)) k += ELEMENT_RULES.fullSet;
+  k += (pet.bonus?.income ?? 0) / 100; // trang phục: % "Thu nhập ca làm"
   if (careerSkill === 'strength' && elementOfSpecies(pet.species) === 'hoa') k += ELEMENT_RULES.perks.hoa.strengthPay;
   return k;
 }

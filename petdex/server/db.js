@@ -1,4 +1,5 @@
 import { GameError } from './game.js';
+import { sumBonus } from '../../public/ta-tua/game/js/shared/gear.js';
 import { db, hasBackend, setBackend, transaction } from './sql/backend.js';
 
 export { db, transaction };
@@ -448,6 +449,7 @@ function addColumn(table, column, definition) {
 addColumn('pets', 'busy_from', 'INTEGER');
 addColumn('pets', 'busy_until', 'INTEGER');
 addColumn('pets', 'busy_kind', 'TEXT'); // bé bận việc gì: 'work' | 'school' | 'bath' (trống = ca làm cũ)
+addColumn('pet_wear', 'gear_id', 'INTEGER'); // bản trang phục đang đeo (bảng gear)
 addColumn('users', 'warehouse', 'INTEGER NOT NULL DEFAULT 0');
 addColumn('users', 'advanced', 'INTEGER NOT NULL DEFAULT 0');
 addColumn('users', 'streak', 'INTEGER NOT NULL DEFAULT 0');
@@ -510,6 +512,38 @@ addColumn('users', 'locked_slots', 'INTEGER NOT NULL DEFAULT 0');
     created_at INTEGER NOT NULL
   );
   CREATE INDEX IF NOT EXISTS admin_log_time ON admin_log(id DESC);
+  -- Trang phục người chơi sở hữu: mỗi món một bản, có cấp và các dòng chỉ số (JSON { income, stats, trade, luck }).
+  -- listed = 1 khi đang bày bán ở Chợ Phiên (không đeo được, không ai khác thấy trong tủ đồ).
+  CREATE TABLE IF NOT EXISTS gear (
+    id         INTEGER PRIMARY KEY AUTOINCREMENT,
+    owner_id   INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    item_id    TEXT NOT NULL,
+    tier       TEXT NOT NULL,
+    affixes    TEXT NOT NULL DEFAULT '{}',
+    source     TEXT NOT NULL,
+    listed     INTEGER NOT NULL DEFAULT 0,
+    created_at INTEGER NOT NULL
+  );
+  CREATE INDEX IF NOT EXISTS gear_owner ON gear(owner_id);
+  -- Mã quà: quản trị viên tạo, người chơi nhập trong game. rewards = JSON { coins, items: { mã món: số lượng }, gear: [{ itemId, tier }] }.
+  CREATE TABLE IF NOT EXISTS gift_codes (
+    id         INTEGER PRIMARY KEY AUTOINCREMENT,
+    code       TEXT NOT NULL UNIQUE COLLATE NOCASE,
+    label      TEXT NOT NULL,
+    rewards    TEXT NOT NULL,
+    max_uses   INTEGER,
+    uses       INTEGER NOT NULL DEFAULT 0,
+    expires_at INTEGER,
+    created_by TEXT NOT NULL,
+    created_at INTEGER NOT NULL,
+    revoked_at INTEGER
+  );
+  CREATE TABLE IF NOT EXISTS gift_redemptions (
+    code_id    INTEGER NOT NULL REFERENCES gift_codes(id) ON DELETE CASCADE,
+    user_id    INTEGER NOT NULL,
+    created_at INTEGER NOT NULL,
+    PRIMARY KEY (code_id, user_id)
+  );
   -- Link đặt mật khẩu do quản trị viên tạo: dùng một lần, có hạn; chỉ lưu mã đã băm.
   CREATE TABLE IF NOT EXISTS password_links (
     code_hash  TEXT PRIMARY KEY,
@@ -551,8 +585,9 @@ const q = {
   setTraits: db.prepare('UPDATE pets SET traits = ? WHERE id = ?'),
   wearOf: db.prepare('SELECT slot, item_id FROM pet_wear WHERE pet_id = ?'),
   setWear: db.prepare(`
-    INSERT INTO pet_wear (pet_id, slot, item_id) VALUES (?, ?, ?)
-    ON CONFLICT (pet_id, slot) DO UPDATE SET item_id = excluded.item_id`),
+    INSERT INTO pet_wear (pet_id, slot, item_id, gear_id) VALUES (?, ?, ?, ?)
+    ON CONFLICT (pet_id, slot) DO UPDATE SET item_id = excluded.item_id, gear_id = excluded.gear_id`),
+  petGear: db.prepare('SELECT g.affixes FROM pet_wear w JOIN gear g ON g.id = w.gear_id WHERE w.pet_id = ?'),
   clearWear: db.prepare('DELETE FROM pet_wear WHERE pet_id = ? AND slot = ?'),
   clearAllWear: db.prepare('DELETE FROM pet_wear WHERE pet_id = ?'),
   unequipItem: db.prepare('DELETE FROM pet_wear WHERE item_id = ? AND pet_id IN (SELECT id FROM pets WHERE owner_id = ?)'),
@@ -594,11 +629,13 @@ export const deleteSession = (token) => q.deleteSession.run(token);
 /** Đọc bé kèm `traits` đã giải mã thành mảng. */
 /** Đồ bé đang đeo: { head, face, neck, back } → mã món. */
 export const wearOf = (petId) => Object.fromEntries(q.wearOf.all(petId).map((r) => [r.slot, r.item_id]));
-const withTraits = (row) => row && { ...row, traits: JSON.parse(row.traits ?? '[]'), wear: wearOf(row.id) };
-/** Đeo `itemId` vào `slot` (null là tháo); không có `slot` thì tháo hết. */
-export function setWear(petId, slot, itemId) {
+/** Tổng % các dòng chỉ số của trang phục bé đang đeo: { income, stats, trade, luck }. */
+export const gearBonusOf = (petId) => sumBonus(q.petGear.all(petId).map((r) => JSON.parse(r.affixes)));
+const withTraits = (row) => row && { ...row, traits: JSON.parse(row.traits ?? '[]'), wear: wearOf(row.id), bonus: gearBonusOf(row.id) };
+/** Đeo `itemId` (bản trang phục `gearId`) vào `slot` (null là tháo); không có `slot` thì tháo hết. */
+export function setWear(petId, slot, itemId, gearId = null) {
   if (!slot) q.clearAllWear.run(petId);
-  else if (itemId) q.setWear.run(petId, slot, itemId);
+  else if (itemId) q.setWear.run(petId, slot, itemId, gearId);
   else q.clearWear.run(petId, slot);
 }
 export const unequipItem = (ownerId, itemId) => q.unequipItem.run(itemId, ownerId);

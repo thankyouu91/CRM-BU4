@@ -14,8 +14,10 @@ import { MeadowShell } from "./meadow";
 /** `next dev` cannot proxy WebSockets: the park then connects to the local game server directly. */
 const DEV_WS = process.env.NODE_ENV !== "production" ? "ws://127.0.0.1:3200/ta-tua/ws" : null;
 
-export function frameSrc(token: string) {
+/** The game page with its session in the hash; `member` sessions sign out in WorkHub, not in the game. */
+export function frameSrc(token: string, { member = false }: { member?: boolean } = {}) {
   const params = new URLSearchParams({ token });
+  if (member) params.set("who", "member");
   if (DEV_WS) params.set("ws", DEV_WS);
   return `${GAME_PAGE}#${params.toString()}`;
 }
@@ -59,7 +61,16 @@ export function forgetGuest() {
   }
 }
 
-function Frame({ token, who, action }: { token: string; who: string; action: React.ReactNode }) {
+function Frame({ token, who, action, member = false, onLeave }: { token: string; who: string; action: React.ReactNode; member?: boolean; onLeave?: () => void }) {
+  // "Đăng xuất" in the game's own account menu asks this page to do the real sign-out.
+  useEffect(() => {
+    if (!onLeave) return;
+    const onMessage = (e: MessageEvent) => {
+      if (e.origin === window.location.origin && (e.data as { type?: string } | null)?.type === "petdex:logout") onLeave();
+    };
+    window.addEventListener("message", onMessage);
+    return () => window.removeEventListener("message", onMessage);
+  }, [onLeave]);
   return (
     <div className="flex h-dvh flex-col bg-background">
       <header className="flex h-12 shrink-0 items-center gap-3 border-b bg-background px-4">
@@ -71,7 +82,7 @@ function Frame({ token, who, action }: { token: string; who: string; action: Rea
         <span className="ml-auto">{action}</span>
       </header>
       <CredentialsNotice token={token} />
-      <iframe src={frameSrc(token)} title="Pet Town" className="min-h-0 w-full flex-1" allow="autoplay" />
+      <iframe src={frameSrc(token, { member })} title="Pet Town" className="min-h-0 w-full flex-1" allow="autoplay" />
     </div>
   );
 }
@@ -105,6 +116,7 @@ export function PlayScreen({ member }: { member: { name: string; token: string }
   if (member) {
     return (
       <Frame
+        member
         token={member.token}
         who={`${member.name} · tài khoản WorkHub`}
         action={<span className="text-xs text-muted-foreground">Phiên chơi theo tài khoản WorkHub</span>}
@@ -122,6 +134,7 @@ export function PlayScreen({ member }: { member: { name: string; token: string }
     return (
       <Frame
         token={guest.token}
+        onLeave={leave}
         who={guest.kind === "guest" ? `Khách mời · ${guest.name}` : guest.name}
         action={
           <button onClick={leave} className="flex items-center gap-1.5 rounded-md px-2 py-1 text-xs text-muted-foreground hover:bg-muted hover:text-foreground">

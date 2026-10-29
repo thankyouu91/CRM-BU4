@@ -9,6 +9,7 @@ const { post } = await import('../server/ledger.js');
 const { migrate } = await import('../server/migrate.js');
 const { listSpecies, getSpecies } = await import('../server/species.js');
 const bazaar = await import('../server/bazaar.js');
+const gear = await import('../server/gear.js');
 const { ELEMENTS, LIFE_STAGES, SLOTS, SPECIES, WEARABLES, elementOfSpecies, relation, speciesStats } = await import('../../public/ta-tua/game/js/shared/pets.js');
 
 const T0 = Date.parse('2026-11-02T03:00:00Z');
@@ -83,9 +84,20 @@ test('chuyển phụ kiện cũ sang khe; bán món đang đeo ở Chợ Phiên 
   migrate(T0);
   assert.deepEqual(store.wearOf(petId), { face: 'glasses' });
 
+  // trang phục có cấp: món đang có thành bản Xanh lam, bé đeo đúng bản đó
   store.addItem(userId, 'glasses', 1);
-  bazaar.listForSale(userId, { kind: 'item', ref: 'glasses', price: 120 }, T0);
-  assert.deepEqual(store.wearOf(petId), {}, 'hết món trong túi thì tháo khỏi bé');
+  store.db.prepare("DELETE FROM meta WHERE key = 'migrated_gear_v1'").run();
+  migrate(T0);
+  const [g] = gear.listGear(userId);
+  assert.equal(g.itemId, 'glasses');
+  assert.equal(g.tier, 'blue');
+  assert.equal(Object.keys(g.affixes).length, 1);
+  assert.equal(g.wornBy, petId);
+  assert.equal(store.inventory(userId).glasses ?? 0, 0, 'phụ kiện không còn nằm trong túi đồ thường');
+
+  assert.throws(() => bazaar.listForSale(userId, { kind: 'item', ref: 'glasses', price: 120 }, T0), /từng món/);
+  bazaar.listForSale(userId, { kind: 'gear', ref: String(g.id), price: 120 }, T0);
+  assert.deepEqual(store.wearOf(petId), {}, 'bày bán món đang đeo thì bé tự tháo');
 });
 
 // ---------------------------------------------------------------- bước 2.5B: ngũ hành trong luật chơi

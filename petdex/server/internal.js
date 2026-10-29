@@ -4,7 +4,10 @@
 import { economy } from './bank.js';
 import * as store from './db.js';
 import { digest, hashPassword, randomCode, verifyPassword } from './passwords.js';
-import { GameError, RULES, clamp } from './game.js';
+import { createGear, createRandomGear, deleteGear, describeGear, gearConfig, getGear, listGear, setGearConfig, updateGear } from './gear.js';
+import { createGiftCode, giftCodeById, giftRedemptions, giftView, listGiftCodes, revokeGiftCode } from './gifts.js';
+import { AFFIXES, DEFAULT_GEAR_CONFIG, TIERS } from '../../public/ta-tua/game/js/shared/gear.js';
+import { GameError, ITEMS, RULES, clamp } from './game.js';
 import { KINDS, post, treasuryBalance } from './ledger.js';
 import { parkUsers } from './playground.js';
 import { Router } from './router.js';
@@ -249,6 +252,109 @@ internalApi.post('/account/setup', (req, res) => {
   res.json(result);
 });
 
+// ---- Trang phục có cấp và mã quà (bảng quản lý) ----
+
+/** Cấu hình quay đồ và tỷ lệ rớt trong mini-game. */
+internalApi.get('/admin/gear-config', (_req, res) => {
+  res.json({ config: gearConfig(), defaults: DEFAULT_GEAR_CONFIG, tiers: TIERS, affixes: AFFIXES });
+});
+internalApi.post('/admin/gear-config', (req, res) => {
+  const actor = actorOf(req);
+  const config = store.transaction(() => {
+    const next = setGearConfig(req.body?.config ?? {});
+    store.adminLog(actor, 'gear_config', null, next);
+    return next;
+  });
+  res.json({ ok: true, config });
+});
+
+/** Tặng một món trang phục: món (hoặc ngẫu nhiên), cấp (hoặc quay), dòng chỉ số tự nhập (hoặc quay). */
+internalApi.post('/admin/players/:id/gear', (req, res) => {
+  const user = userOf(req);
+  const itemId = req.body?.itemId && req.body.itemId !== 'random' ? String(req.body.itemId) : null;
+  const tier = req.body?.tier && req.body.tier !== 'random' ? String(req.body.tier) : null;
+  const affixes = req.body?.affixes && Object.keys(req.body.affixes).length ? req.body.affixes : null;
+  if (affixes && !tier) throw new GameError('Tự nhập dòng chỉ số thì chọn luôn cấp.');
+  const actor = actorOf(req);
+  const gear = store.transaction(() => {
+    const made = itemId ? createGear(user.id, itemId, { tier, affixes, source: 'admin' }) : createRandomGear(user.id, { tier, source: 'admin' });
+    const view = describeGear(made);
+    store.adminLog(actor, 'gear_grant', user.id, { gearId: made.id, item: view.name, tier: made.tier, affixes: made.affixes });
+    return view;
+  });
+  bus.emit('pet:changed', user.id);
+  res.json({ ok: true, gear });
+});
+
+/** Sửa cấp và dòng chỉ số một món của người chơi. */
+internalApi.post('/admin/gear/:gearId', (req, res) => {
+  const before = getGear(req.params.gearId);
+  if (!before) throw new GameError('Không có món này.');
+  const actor = actorOf(req);
+  const gear = store.transaction(() => {
+    const after = updateGear(before.id, { tier: String(req.body?.tier ?? ''), affixes: req.body?.affixes });
+    store.adminLog(actor, 'gear_edit', before.owner_id, { gearId: before.id, item: before.item_id, from: { tier: before.tier, affixes: before.affixes }, to: { tier: after.tier, affixes: after.affixes } });
+    return describeGear(after);
+  });
+  bus.emit('pet:changed', before.owner_id);
+  res.json({ ok: true, gear });
+});
+
+internalApi.post('/admin/gear/:gearId/delete', (req, res) => {
+  const g = getGear(req.params.gearId);
+  if (!g) throw new GameError('Không có món này.');
+  if (g.listed) throw new GameError('Món này đang bày bán ở Chợ Phiên, chờ tin hết hạn hoặc người chơi gỡ tin.');
+  const actor = actorOf(req);
+  store.transaction(() => {
+    deleteGear(g.id);
+    store.adminLog(actor, 'gear_delete', g.owner_id, { gearId: g.id, item: g.item_id, tier: g.tier, affixes: g.affixes });
+  });
+  bus.emit('pet:changed', g.owner_id);
+  res.json({ ok: true });
+});
+
+internalApi.get('/admin/gift-codes', (_req, res) => {
+  res.json({
+    codes: listGiftCodes(),
+    // phần quà chọn được: vật phẩm thường (trang phục tặng theo cấp ở mục riêng)
+    items: Object.values(ITEMS).filter((i) => i.type !== 'accessory').map((i) => ({ id: i.id, name: i.name, icon: i.icon ?? '', type: i.type })),
+    wearables: Object.values(ITEMS).filter((i) => i.type === 'accessory').map((i) => ({ id: i.id, name: i.name, slot: i.slot })),
+  });
+});
+
+/** Tạo mã quà. `count` > 1 tạo một loạt mã ngẫu nhiên cùng phần quà (ô mã để trống). */
+internalApi.post('/admin/gift-codes', (req, res) => {
+  const maxUses = req.body?.maxUses == null || req.body.maxUses === '' ? null : Number(req.body.maxUses);
+  const expiresAt = req.body?.expiresAt == null || req.body.expiresAt === '' ? null : Number(req.body.expiresAt);
+  const count = req.body?.count == null || req.body.count === '' ? 1 : Number(req.body.count);
+  if (!Number.isInteger(count) || count < 1 || count > 200) throw new GameError('Số mã mỗi lần tạo từ 1 đến 200.');
+  if (count > 1 && req.body?.code) throw new GameError('Tạo nhiều mã một lúc thì để trống ô mã, hệ thống tự sinh.');
+  const actor = actorOf(req);
+  const codes = store.transaction(() => {
+    const made = Array.from({ length: count }, () => createGiftCode({ code: req.body?.code || null, label: req.body?.label, rewards: req.body?.rewards, maxUses, expiresAt, createdBy: actor }));
+    const first = made[0];
+    store.adminLog(actor, 'gift_code', null, { ids: made.map((m) => m.id), codes: made.map((m) => m.code), label: first.label, rewards: first.rewardsText, maxUses, expiresAt });
+    return made;
+  });
+  res.json({ ok: true, code: codes[0], codes });
+});
+
+internalApi.get('/admin/gift-codes/:id', (req, res) => {
+  const row = giftCodeById(req.params.id);
+  if (!row) throw new GameError('Không có mã này.');
+  res.json({ code: giftView(row), redemptions: giftRedemptions(row.id) });
+});
+
+internalApi.post('/admin/gift-codes/:id/revoke', (req, res) => {
+  const row = giftCodeById(req.params.id);
+  if (!row) throw new GameError('Không có mã này.');
+  const actor = actorOf(req);
+  store.transaction(() => {
+    if (revokeGiftCode(row.id)) store.adminLog(actor, 'gift_code_revoke', null, { id: row.id, code: row.code });
+  });
+  res.json({ ok: true });
+});
+
 // ---- Bảng quản trị ----
 internalApi.get('/admin/overview', (_req, res) => {
   const now = Date.now();
@@ -287,6 +393,8 @@ internalApi.get('/admin/players/:id', (req, res) => {
     spendable: { wallet: user.coins, savings: savingsOf(user.id) },
     // Mọi loài, kể cả loài hiếm chỉ nở từ trứng: quản trị viên tặng được bất kỳ loài nào.
     species: listSpecies().map((s) => ({ id: s.id, name: s.name, element: s.element, rarity: s.rarity })),
+    gear: listGear(user.id, { includeListed: true }),
+    wearables: Object.values(ITEMS).filter((i) => i.type === 'accessory').map((i) => ({ id: i.id, name: i.name, slot: i.slot, element: i.element })),
   });
 });
 

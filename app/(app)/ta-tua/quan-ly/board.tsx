@@ -11,28 +11,29 @@ import { ConfirmDialog } from "@/components/ui/confirm";
 import { Field, Input, Select } from "@/components/ui/input";
 import { EmptyState, PageHeader, Skeleton } from "@/components/ui/misc";
 import { Drawer } from "@/components/ui/modal";
-import { api, ApiError } from "@/lib/client";
+import { api } from "@/lib/client";
 import { cn } from "@/lib/utils";
 import { inviteUrl, passwordUrl, playUrl } from "@/lib/petdex-public";
+import { GearConfigTab, GiftCodesTab, PlayerGear, type GearView, type Wearable } from "./gear";
+import { ADMIN, errorText, Failure, useLoad, when } from "./shared";
 
 // Pet Town management board. Everything goes through /api/ta-tua/admin/* (administrators only),
 // which relays to the game server and writes WorkHub's audit log.
 
-const ADMIN = "/api/ta-tua/admin";
 const KIND_LABEL: Record<string, string> = { member: "Nhân viên", guest: "Khách mời", player: "Tự đăng ký" };
 const STAT_LABEL: Record<string, string> = { fullness: "No bụng", happiness: "Vui vẻ", energy: "Năng lượng", hygiene: "Sạch sẽ", health: "Sức khỏe" };
 const STATS = Object.keys(STAT_LABEL);
 const TABS = [
   { key: "overview", label: "Tổng quan" },
   { key: "players", label: "Người chơi" },
+  { key: "gear", label: "Trang phục & rớt đồ" },
+  { key: "gifts", label: "Mã quà" },
   { key: "invites", label: "Link mời khách" },
   { key: "log", label: "Nhật ký" },
 ] as const;
 type Tab = (typeof TABS)[number]["key"];
 
 const coins = (n: number) => `${Math.round(n).toLocaleString("vi-VN")} 🪙`;
-const when = (ts: number | null | undefined) => (ts ? new Date(ts).toLocaleString("vi-VN", { hour: "2-digit", minute: "2-digit", day: "2-digit", month: "2-digit", year: "numeric" }) : "Chưa");
-const errorText = (err: unknown) => (err instanceof ApiError ? err.message : "Đã có lỗi xảy ra");
 
 interface Player {
   id: number;
@@ -81,6 +82,8 @@ interface Detail {
   /** What can be taken right now: wallet + savings account (term deposits are locked). */
   spendable: { wallet: number; savings: number };
   species: { id: string; name: string; element: string; rarity: string }[];
+  gear: GearView[];
+  wearables: Wearable[];
 }
 interface Overview {
   byKind: { kind: string; n: number; coins: number; banned: number }[];
@@ -125,7 +128,7 @@ export function Board() {
     <div>
       <PageHeader
         title="Quản lý Pet Town"
-        description="Người chơi, xu, chỉ số thú cưng, link mời khách và nhật ký. Mọi thay đổi đều ghi vào nhật ký hệ thống."
+        description="Người chơi, xu, chỉ số thú cưng, trang phục, mã quà, link mời khách và nhật ký. Mọi thay đổi đều ghi vào nhật ký hệ thống."
         actions={
           <Link href="/ta-tua" className="inline-flex h-8 items-center gap-1.5 rounded-md border bg-card px-2.5 text-xs font-medium hover:bg-muted">
             <Gamepad2 className="h-4 w-4" /> Vào chơi
@@ -147,28 +150,12 @@ export function Board() {
       </div>
       {tab === "overview" && <OverviewTab />}
       {tab === "players" && <PlayersTab />}
+      {tab === "gear" && <GearConfigTab />}
+      {tab === "gifts" && <GiftCodesTab />}
       {tab === "invites" && <InvitesTab />}
       {tab === "log" && <LogTab />}
     </div>
   );
-}
-
-function useLoad<T>(url: string) {
-  const [data, setData] = useState<T | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
-  const reload = useCallback(() => {
-    setLoading(true);
-    api<T>(url)
-      .then((d) => {
-        setData(d);
-        setError(null);
-      })
-      .catch((err) => setError(errorText(err)))
-      .finally(() => setLoading(false));
-  }, [url]);
-  useEffect(reload, [reload]);
-  return { data, error, loading, reload };
 }
 
 function Stat({ label, value, hint }: { label: string; value: React.ReactNode; hint?: string }) {
@@ -179,14 +166,6 @@ function Stat({ label, value, hint }: { label: string; value: React.ReactNode; h
         <p className="mt-1 text-2xl font-semibold tabular-nums">{value}</p>
         {hint && <p className="mt-0.5 text-xs text-muted-foreground">{hint}</p>}
       </CardBody>
-    </Card>
-  );
-}
-
-function Failure({ error, onRetry }: { error: string; onRetry: () => void }) {
-  return (
-    <Card>
-      <EmptyState icon={Gamepad2} title="Không đọc được dữ liệu game" description={error} action={<Button variant="outline" size="sm" onClick={onRetry}><RefreshCw className="h-4 w-4" /> Thử lại</Button>} />
     </Card>
   );
 }
@@ -464,6 +443,8 @@ function PlayerDetail({ detail, onChanged, onClose }: { detail: Detail; onChange
         <PasswordLink key={player.id} player={player} />
 
         <GrantPet detail={detail} onChanged={onChanged} />
+
+        <PlayerGear player={player} gear={detail.gear} wearables={detail.wearables} pets={detail.pets} onChanged={onChanged} />
 
         <div>
           <h3 className="mb-2 text-sm font-semibold">Thú cưng và chỉ số</h3>
@@ -784,7 +765,10 @@ function InvitesTab() {
   );
 }
 
-const LOG_LABEL: Record<string, string> = { coins: "Cộng/trừ xu", pet: "Sửa chỉ số bé", pet_grant: "Tặng thú cưng", ban: "Khoá", unban: "Mở khoá", rename: "Đổi tên", invite: "Tạo link mời", invite_revoke: "Thu hồi link", password_link: "Tạo link đặt mật khẩu", password_set: "Đặt mật khẩu qua link" };
+const LOG_LABEL: Record<string, string> = { coins: "Cộng/trừ xu", pet: "Sửa chỉ số bé", pet_grant: "Tặng thú cưng", ban: "Khoá", unban: "Mở khoá", rename: "Đổi tên", invite: "Tạo link mời", invite_revoke: "Thu hồi link", password_link: "Tạo link đặt mật khẩu", password_set: "Đặt mật khẩu qua link", gear_config: "Chỉnh tỷ lệ trang phục", gear_grant: "Tặng trang phục", gear_edit: "Sửa trang phục", gear_delete: "Xoá trang phục", gift_code: "Tạo mã quà", gift_code_revoke: "Thu hồi mã quà" };
+const TIER_LABEL: Record<string, string> = { blue: "Xanh lam", green: "Xanh lục", gold: "Vàng", red: "Đỏ" };
+const AFFIX_LABEL: Record<string, string> = { income: "thu nhập", stats: "chỉ số", trade: "giao dịch", luck: "may mắn" };
+const affixList = (a: unknown) => Object.entries((a as Record<string, number>) ?? {}).map(([k, v]) => `+${v}% ${AFFIX_LABEL[k] ?? k}`).join(", ");
 
 function LogTab() {
   const { data, error, loading, reload } = useLoad<{ log: LogRow[] }>(`${ADMIN}/log?limit=100`);
@@ -797,6 +781,18 @@ function LogTab() {
     if (row.action === "rename") return `${String(d.from ?? "")} → ${String(d.to ?? "")}`;
     if (row.action === "invite") return `“${String(d.label ?? "")}”${d.maxUses ? ` · ${String(d.maxUses)} lượt` : ""}`;
     if (row.action === "invite_revoke") return `#${String(d.id ?? "")}`;
+    if (row.action === "gear_grant") return `${String(d.item ?? "")} (${TIER_LABEL[String(d.tier)] ?? String(d.tier ?? "")}): ${affixList(d.affixes)}`;
+    if (row.action === "gear_edit") {
+      const from = (d.from ?? {}) as { tier?: string; affixes?: unknown };
+      const to = (d.to ?? {}) as { tier?: string; affixes?: unknown };
+      return `#${String(d.gearId ?? "")} ${TIER_LABEL[String(from.tier)] ?? ""} (${affixList(from.affixes)}) → ${TIER_LABEL[String(to.tier)] ?? ""} (${affixList(to.affixes)})`;
+    }
+    if (row.action === "gear_delete") return `#${String(d.gearId ?? "")} ${String(d.item ?? "")} (${TIER_LABEL[String(d.tier)] ?? ""})`;
+    if (row.action === "gift_code") {
+      const codes = Array.isArray(d.codes) ? (d.codes as string[]) : [];
+      return `“${String(d.label ?? "")}” · ${codes.length > 1 ? `${codes.length} mã` : codes[0] ?? ""} · ${String(d.rewards ?? "")}`;
+    }
+    if (row.action === "gift_code_revoke") return String(d.code ?? "");
     return "";
   };
   return (

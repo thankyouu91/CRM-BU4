@@ -3,6 +3,7 @@ import { allPets, allUsers, db, getMeta, setBornAt, setMeta, setSkill, setTraits
 import { HOUR, ITEMS, PET_DAY_MS } from './game.js';
 import { post } from './ledger.js';
 import { initialSkills } from './rules/careers.js';
+import { createGear, setGearListed } from './gear.js';
 import { rollTraits } from './rules/production.js';
 import { TREASURY_SEED } from './rules/town.js';
 
@@ -54,7 +55,37 @@ const steps = {
       const item = pet.accessory && ITEMS[pet.accessory];
       if (item?.slot) setWear(pet.id, item.slot, item.id);
     }
+  },  /**
+   * Trang phục có cấp: mỗi phụ kiện người chơi đang có thành một bản cấp Xanh lam với 1 dòng chỉ số ngẫu nhiên;
+   * bé đang đeo món nào thì đeo đúng bản đó; tin Chợ Phiên đang bán phụ kiện chuyển thành tin bán bản đó.
+   */
+  gear_v1(now) {
+    const accessory = (id) => ITEMS[id]?.type === 'accessory';
+    const owned = db.prepare('SELECT user_id, item_id, qty FROM inventory WHERE qty > 0').all().filter((r) => accessory(r.item_id));
+    const spare = new Map(); // `${userId}|${itemId}` → [gearId…] chưa đeo
+    for (const r of owned) {
+      const ids = [];
+      for (let i = 0; i < r.qty; i++) ids.push(createGear(r.user_id, r.item_id, { tier: 'blue', source: 'legacy' }, now).id);
+      spare.set(`${r.user_id}|${r.item_id}`, ids);
+    }
+    const dropInv = db.prepare('DELETE FROM inventory WHERE user_id = ? AND item_id = ?');
+    for (const r of owned) dropInv.run(r.user_id, r.item_id);
+    const worn = db.prepare('SELECT w.pet_id, w.slot, w.item_id, p.owner_id FROM pet_wear w JOIN pets p ON p.id = w.pet_id WHERE w.gear_id IS NULL').all();
+    for (const w of worn) {
+      if (!accessory(w.item_id)) continue;
+      const key = `${w.owner_id}|${w.item_id}`;
+      const gearId = spare.get(key)?.shift() ?? createGear(w.owner_id, w.item_id, { tier: 'blue', source: 'legacy' }, now).id;
+      setWear(w.pet_id, w.slot, w.item_id, gearId);
+    }
+    const listings = db.prepare("SELECT id, seller_id, ref FROM listings WHERE status = 'open' AND kind = 'item'").all().filter((l) => accessory(l.ref));
+    const relist = db.prepare("UPDATE listings SET kind = 'gear', ref = ? WHERE id = ?");
+    for (const l of listings) {
+      const g = createGear(l.seller_id, l.ref, { tier: 'blue', source: 'legacy' }, now);
+      setGearListed(g.id, true);
+      relist.run(String(g.id), l.id);
+    }
   },
+
 };
 
 export function migrate(now = Date.now()) {

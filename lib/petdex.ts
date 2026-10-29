@@ -69,8 +69,9 @@ export function memberSession(user: { id: string; name: string }): Promise<GameS
 }
 
 /** Where the iframe points: the token travels in the fragment, which never reaches a server log. */
+/** The game page for a WorkHub member's session (signs out in WorkHub, so the game hides its own sign-out). */
 export function gameFrameUrl(token: string): string {
-  const params = new URLSearchParams({ token });
+  const params = new URLSearchParams({ token, who: "member" });
   // `next dev` cannot proxy WebSockets, so the park connects to the game server directly.
   if (!isWorkers && process.env.NODE_ENV !== "production") params.set("ws", `${devOrigin().replace(/^http/, "ws")}${GAME_BASE}/ws`);
   return `${GAME_PAGE}#${params.toString()}`;

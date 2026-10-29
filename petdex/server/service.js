@@ -7,6 +7,7 @@ import { xpFactor } from './elements.js';
 import { eggsView } from './eggs.js';
 import { recentMemorials, slotsOf } from './lifecycle.js';
 import { fortuneOf } from '../../public/ta-tua/game/js/shared/pets.js';
+import { listGear, wornGear } from './gear.js';
 
 /** Phát 'pet:changed' (userId) để sân chơi cập nhật thẻ thú cưng khi chủ thay đổi ở nơi khác. */
 export { bus } from './events.js';
@@ -32,9 +33,12 @@ export function snapshot(userId, now = Date.now()) {
       taxDue: user.tax_due,
       advanced: Boolean(user.advanced),
       credit: user.credit,
+      hasPassword: Boolean(user.pass_hash),
+      kind: user.kind,
     },
-    pets: store.listPets(userId).map((pet) => ({ ...describePet(pet, now), skills: store.skillsOf(pet.id) })),
+    pets: store.listPets(userId).map((pet) => ({ ...describePet(pet, now), skills: store.skillsOf(pet.id), bonus: pet.bonus, gear: wornGear(pet.id) })),
     inventory: store.inventory(userId),
+    gear: listGear(userId),
     economy: { priceIndex, baseRate },
     eggs: eggsView(userId, now),
     slots: slotsOf(userId),

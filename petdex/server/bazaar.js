@@ -4,6 +4,8 @@ import { economy, indexedPrice } from './bank.js';
 import { DAY, GameError, HOUR, ITEMS, isConsumable } from './game.js';
 import { chargeFee, post } from './ledger.js';
 import { giveDish, takeDish } from './farm.js';
+import { getGear, describeGear, listGear, setGearListed, tradeBonus, transferGear } from './gear.js';
+import { TIER_VALUE } from '../../public/ta-tua/game/js/shared/gear.js';
 import { BAZAAR, DISHES, KITCHEN, QUALITY, dishValue } from './rules/production.js';
 
 const q = {
@@ -34,6 +36,13 @@ function describe(l) {
     const item = ITEMS[l.ref];
     return { name: item.name, icon: item.icon, type: item.type };
   }
+  if (l.kind === 'gear') {
+    const g = getGear(l.ref);
+    const item = ITEMS[g?.item_id];
+    if (!g || !item) return { name: 'Trang phục', icon: '🎀', type: 'accessory' };
+    const view = describeGear(g);
+    return { name: `${item.name} · ${view.tierName}`, icon: item.icon, type: 'accessory', itemId: item.id, tier: g.tier, lines: view.lines };
+  }
   const dish = DISHES[l.ref];
   return { name: dish.name, icon: dish.icon, type: 'dish', quality: QUALITY[l.quality].name, spoilsAt: dishExpiry(l.made_at) };
 }
@@ -54,6 +63,7 @@ const listingView = (l, userId) => ({
 /** Trả hàng về cho người bán khi tin hết hạn hoặc bị gỡ (món ăn đã hư thì mất). */
 function giveBack(l, now) {
   if (l.kind === 'item') addItem(l.seller_id, l.ref, 1);
+  else if (l.kind === 'gear') setGearListed(l.ref, false);
   else if (dishExpiry(l.made_at) > now) giveDish(l.seller_id, l.ref, l.quality, l.made_at, now);
 }
 
@@ -72,15 +82,21 @@ export function listForSale(userId, { kind, ref, price }, now = Date.now()) {
     if (kind === 'item') {
       const item = ITEMS[ref];
       if (!item) throw new GameError('Không có món này.');
+      if (item.type === 'accessory') throw new GameError('Trang phục bán theo từng món: chọn món ở mục Trang phục.');
       refPrice = indexedPrice(item.price);
       row = { ref, quality: 0, madeAt: null, expiresAt: now + BAZAAR.hours * HOUR };
+    } else if (kind === 'gear') {
+      const g = getGear(ref);
+      if (!g || g.owner_id !== userId || g.listed) throw new GameError('Không tìm thấy món trang phục này.');
+      refPrice = indexedPrice(ITEMS[g.item_id].price) * (TIER_VALUE[g.tier] ?? 1);
+      row = { ref: String(g.id), quality: 0, madeAt: null, expiresAt: now + BAZAAR.hours * HOUR };
     } else if (kind === 'dish') {
       const owned = q.dishes.all(userId, now).find((d) => d.id === Number(ref));
       if (!owned) throw new GameError('Không tìm thấy món này.');
       refPrice = dishValue(owned.recipe, owned.quality, economy().priceIndex);
       row = { ref: owned.recipe, quality: owned.quality, madeAt: owned.made_at, expiresAt: Math.min(now + BAZAAR.hours * HOUR, owned.expires_at) };
     } else {
-      throw new GameError('Chỉ bán được đồ siêu thị hoặc món tự nấu.');
+      throw new GameError('Chỉ bán được đồ siêu thị, trang phục hoặc món tự nấu.');
     }
     const [lo, hi] = BAZAAR.band.map((k) => Math.max(1, Math.round(refPrice * k)));
     if (price < lo || price > hi) throw new GameError(`Giá phải từ ${lo} đến ${hi} xu (giá tham chiếu ${refPrice}).`);
@@ -88,6 +104,8 @@ export function listForSale(userId, { kind, ref, price }, now = Date.now()) {
     if (kind === 'item') {
       takeItem(userId, ref, 1);
       if (!inventory(userId)[ref]) unequipItem(userId, ref);
+    } else if (kind === 'gear') {
+      setGearListed(row.ref, true);
     } else {
       takeDish(userId, Number(ref), now);
     }
@@ -110,10 +128,12 @@ export function buyListing(userId, listingId, now = Date.now()) {
     const fee = Math.max(1, Math.round(l.price * BAZAAR.saleFee));
     post({ userId, delta: -l.price, kind: 'bazaar_buy', memo: `${what.name} của ${seller.username}`, now });
     post({ userId: l.seller_id, delta: l.price - fee, kind: 'bazaar_sale', memo: `${what.name} cho ${getUser(userId).username} (đã trừ phí ${fee})`, now });
+    tradeBonus(l.seller_id, l.price - fee, `Chợ Phiên: ${what.name}`, now);
     // Phí bán: một nửa vào ngân sách thị trấn, một nửa bị hủy.
     if (Math.floor(fee / 2) > 0) post({ account: 'treasury', delta: Math.floor(fee / 2), kind: 'fee', memo: 'Phí Chợ Phiên', now });
     if (q.sell.run(userId, now, l.id).changes === 0) throw new GameError('Món này vừa có người mua mất rồi.');
     if (l.kind === 'item') addItem(userId, l.ref, 1);
+    else if (l.kind === 'gear') transferGear(l.ref, userId);
     else giveDish(userId, l.ref, l.quality, l.made_at, now);
     return { message: `🛍️ Đã mua ${what.icon} ${what.name} giá ${l.price} 🪙.` };
   });
@@ -148,7 +168,8 @@ export function bazaarView(userId, now = Date.now()) {
     sold: q.recent.all(userId).map((l) => ({ ...listingView(l, userId), status: l.status, buyer: l.buyer, soldAt: l.sold_at })),
     bought: q.bought.all(userId).map((l) => ({ ...listingView(l, userId), soldAt: l.sold_at })),
     sellable: {
-      items: Object.entries(inv).filter(([id, n]) => n > 0 && ITEMS[id]).map(([id, n]) => ({
+      gear: listGear(userId).map((g) => ({ ...g, refPrice: indexedPrice(ITEMS[g.itemId].price) * (TIER_VALUE[g.tier] ?? 1) })),
+      items: Object.entries(inv).filter(([id, n]) => n > 0 && ITEMS[id] && ITEMS[id].type !== 'accessory').map(([id, n]) => ({
         ref: id, name: ITEMS[id].name, icon: ITEMS[id].icon, qty: n, refPrice: indexedPrice(ITEMS[id].price),
       })),
       dishes: q.dishes.all(userId, now).map((d) => ({

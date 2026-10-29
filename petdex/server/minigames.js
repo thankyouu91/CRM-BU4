@@ -9,6 +9,11 @@ import { addGoods } from './market.js';
 import { growSkill } from './elements.js';
 import { track } from './quests.js';
 import { mutatePet } from './service.js';
+import { createRandomGear, describeGear, gearConfig } from './gear.js';
+import { COMMODITIES, LOT } from './rules/market.js';
+
+/** Nguyên liệu thô có thể rớt sau một ván (vật liệu cho bếp, xưởng). */
+const MATERIALS = Object.keys(COMMODITIES).filter((c) => COMMODITIES[c].kind === 'raw');
 
 /** Phần thưởng nguyên liệu của mini-game ứng với mặt hàng trên Sàn. */
 const GOODS = { fish: 'fish', pearl: 'pearl' };
@@ -52,6 +57,30 @@ export function startGame(userId, game, now = Date.now()) {
   return { id, game, seed, duration: GAMES[game].duration };
 }
 
+/**
+ * Phần thưởng thêm của một ván: vật liệu (tỷ lệ `materialChance`) và trang phục (tỷ lệ `gearDropChance`),
+ * cả hai tăng theo % May mắn của bé chơi. Quản trị viên chỉnh tỷ lệ trên bảng quản lý.
+ */
+export function rollDrops(userId, pet, now = Date.now(), rand = Math.random) {
+  const config = gearConfig();
+  const luck = pet?.bonus?.luck ?? 0;
+  const boost = 1 + luck / 100;
+  const drops = { material: null, gear: null };
+  if (rand() * 100 < config.materialChance * boost) {
+    const commodity = MATERIALS[Math.floor(rand() * MATERIALS.length)];
+    const [lo, hi] = config.materialQty;
+    const want = lo + Math.floor(rand() * (hi - lo + 1));
+    // `materialQty` tính bằng lô (mỗi lô LOT phần), như hàng trên Sàn
+    const got = addGoods(userId, commodity, want * LOT, now, { allowPartial: true });
+    drops.material = { commodity, name: COMMODITIES[commodity].name, icon: COMMODITIES[commodity].icon, qty: got, wanted: want * LOT };
+  }
+  if (rand() * 100 < config.gearDropChance * boost) {
+    const g = createRandomGear(userId, { source: 'minigame', luck, rand }, now);
+    drops.gear = describeGear(g);
+  }
+  return drops;
+}
+
 export function finishGame(userId, sessionId, result, now = Date.now()) {
   return transaction(() => {
     const session = q.session.get(String(sessionId));
@@ -78,6 +107,7 @@ export function finishGame(userId, sessionId, result, now = Date.now()) {
 
     const { before, after } = growSkill(session.pet_id, verdict.skill.name, verdict.skill.amount);
     const outcome = mutatePet(userId, session.pet_id, (pet) => ({ pet, xp: 3 }), { now, kind: 'minigame' });
+    const drops = rollDrops(userId, outcome.pet, now);
     track(userId, 'minigame', 1, now);
 
     return {
@@ -89,6 +119,7 @@ export function finishGame(userId, sessionId, result, now = Date.now()) {
       capped: coins < verdict.coins || Object.keys(GOODS).some((k) => stored[k] < (verdict.portions[k] ?? 0)),
       skill: { id: verdict.skill.name, gain: Math.round((after - before) * 10) / 10 },
       detail: verdict.detail ?? null,
+      drops,
       petName: outcome.pet.name,
       levelsGained: outcome.levelsGained,
     };

@@ -455,3 +455,33 @@ input:focus { border-color: var(--tea); box-shadow: 0 0 0 4px #c8915f33; }
 .memorial-note .btn { margin-left: auto; }
 .rank-row.memorial .rank-no { font-size: 1.3rem; }
 .memorial-note .btn { background: #fff8e6; color: var(--ink); border-color: #fff8e6; }
+
+/* ---------------------------------------------------------------- trang phục có cấp */
+.tier-chip {
+  display: inline-block; padding: 1px 7px; border-radius: 999px; font-size: .72rem; font-weight: 700;
+  vertical-align: middle; color: #fff; letter-spacing: .01em;
+}
+.tier-blue { --tier: #4f8fd6; }
+.tier-green { --tier: #3fa860; }
+.tier-gold { --tier: #e0a21c; }
+.tier-red { --tier: #e2493b; }
+.tier-chip.tier-blue, .tier-chip.tier-green, .tier-chip.tier-gold, .tier-chip.tier-red { background: var(--tier); }
+.gear-card { border-color: color-mix(in srgb, var(--tier) 55%, transparent); box-shadow: inset 0 3px 0 var(--tier); }
+.gear-card.tier-red { box-shadow: inset 0 3px 0 var(--tier), 0 0 0 1px color-mix(in srgb, var(--tier) 35%, transparent); }
+.gear-lines { margin: 4px 0 0; padding: 0; list-style: none; font-size: .82rem; display: grid; gap: 2px; }
+.gear-bonus-line { display: flex; flex-wrap: wrap; gap: 6px; margin: 6px 0 0; }
+.gear-bonus { font-size: .78rem; padding: 2px 8px; border-radius: 999px; background: var(--surface-2); border: 1px solid var(--line, #e7d9c8); }
+.section-title { margin: 18px 0 8px; font-size: 1rem; }
+.section-title small { font-weight: 400; }
+/* menu tên người chơi */
+.account-menu { display: grid; gap: 14px; }
+.account-menu section { display: grid; gap: 8px; }
+.account-menu h4 { margin: 0; font-size: .95rem; }
+.account-menu .row { display: flex; gap: 8px; }
+.account-menu input { flex: 1; min-width: 0; }
+.account-menu .note { margin: 0; font-size: .82rem; color: var(--muted); }
+.account-menu .msg { margin: 0; font-size: .85rem; }
+.account-menu .msg.error { color: #c0392b; }
+.account-menu .msg.ok { color: var(--mint-deep, #2f8f6b); }
+.account-menu .account-fields { display: grid; gap: 8px; }
+.gear-lines-inline { display: block; font-size: .78rem; color: var(--ink); }

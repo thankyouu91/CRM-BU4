@@ -1,6 +1,7 @@
 // Khu vui chơi: chọn mini-game, chơi trong lớp phủ, gửi kết quả cho server rồi hiện phần thưởng.
 import { api } from '../api.js';
 import { esc, fmt, fmtLots, viewHead } from '../ui.js';
+import { TIERS } from '../shared/gear.js';
 
 export function renderGames(root, ctx) {
   root.innerHTML = `${viewHead('🎮 Khu vui chơi & Hồ câu', 'Mỗi ván tốn 5 năng lượng của bé chính. Xu và nguyên liệu nhận được có giới hạn mỗi ngày.')}
@@ -53,6 +54,14 @@ export function renderGames(root, ctx) {
     if (r.portions?.pearl) parts.push(`<li>${commodities.pearl.icon} <b>+${fmtLots(r.portions.pearl)} lô</b> trân châu vào kho</li>`);
     if (r.skill?.gain) parts.push(`<li>${skills[r.skill.id].icon} ${skills[r.skill.id].name} <b>+${r.skill.gain}</b></li>`);
     parts.push('<li>⭐ <b>+3 XP</b></li>');
+    const m = r.drops?.material;
+    if (m?.qty) parts.push(`<li>${m.icon} Rớt vật liệu: <b>+${fmtLots(m.qty)} lô</b> ${esc(m.name)} vào kho</li>`);
+    else if (m) parts.push(`<li class="muted">${m.icon} Rớt ${esc(m.name)} nhưng kho đã đầy</li>`);
+    const g = r.drops?.gear;
+    if (g) {
+      parts.push(`<li>🎀 Rớt trang phục: <b>${esc(g.name)}</b> <span class="tier-chip tier-${g.tier}">${TIERS[g.tier]?.name ?? g.tier}</span>
+        <small class="gear-lines-inline">${(g.lines ?? []).map(esc).join(' · ')}</small></li>`);
+    }
     overlay.querySelector('.mg-host').innerHTML = `
       <div class="mg-result">
         <div class="mg-score">${r.score}</div>

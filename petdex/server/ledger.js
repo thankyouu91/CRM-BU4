@@ -12,6 +12,8 @@ export const KINDS = {
   salary: { group: 'income', label: 'Lương' },
   minigame: { group: 'income', label: 'Mini-game' },
   market_sell: { group: 'income', label: 'Bán trên Sàn' },
+  gear_trade: { group: 'income', label: 'Thưởng giao dịch (trang phục)' },
+  gift_code: { group: 'income', label: 'Mã quà' },
   interest: { group: 'income', label: 'Lãi ngân hàng' },
   shop: { group: 'expense', label: 'Siêu thị' },
   adopt: { group: 'expense', label: 'Nhận nuôi' },

@@ -88,7 +88,9 @@ try {
   // signed into the game on the /ta-tua page; the management board is for administrators only.
   const catalog = await fetch(`${origin}/ta-tua/api/catalog`, { signal: AbortSignal.timeout(20000) });
   assert.equal(catalog.status, 200, "/ta-tua/api/catalog status");
-  assert((await catalog.json()).species.length > 0, "game catalog has species");
+  const catalogData = await catalog.json();
+  assert(catalogData.species.length > 0, "game catalog has species");
+  assert.deepEqual(Object.keys(catalogData.gear?.tiers ?? {}), ["blue", "green", "gold", "red"], "game catalog lists the gear tiers");
   const play = await fetch(`${origin}/ta-tua`, { headers: { Cookie: cookie }, redirect: "manual", signal: AbortSignal.timeout(20000) });
   assert.equal(play.status, 200, "/ta-tua status");
   const playHtml = await play.text();
@@ -96,9 +98,18 @@ try {
   assert(token, `/ta-tua must embed the game with a play session: ${/Chưa vào chơi được.{0,300}/s.exec(playHtml)?.[0].replace(/<[^>]+>/g, " ") ?? playHtml.slice(0, 300)}`);
   const me = await fetch(`${origin}/ta-tua/api/me`, { headers: { Authorization: `Bearer ${token}` }, signal: AbortSignal.timeout(20000) });
   assert.equal(me.status, 200, "the play session works against the Durable Object");
-  assert.equal((await me.json()).user.coins, 150, "a new member gets the welcome coins");
+  const meData = await me.json();
+  assert.equal(meData.user.coins, 150, "a new member gets the welcome coins");
+  assert(Array.isArray(meData.gear), "the snapshot carries the player's gear");
+  const redeem = await fetch(`${origin}/ta-tua/api/gifts/redeem`, { method: "POST", headers: { Authorization: `Bearer ${token}`, "content-type": "application/json" }, body: JSON.stringify({ code: "KHONG-CO-MA" }), signal: AbortSignal.timeout(20000) });
+  assert.equal(redeem.status, 400, "an unknown gift code is refused");
+  assert.match((await redeem.json()).error, /Mã quà không đúng/, "gift code refusal message");
   const board = await fetch(`${origin}/api/ta-tua/admin/overview`, { headers: { Cookie: cookie }, signal: AbortSignal.timeout(20000) });
   assert.equal(board.status, 403, "the management board is for administrators only");
+  for (const path of ["gear-config", "gift-codes"]) {
+    const res = await fetch(`${origin}/api/ta-tua/admin/${path}`, { headers: { Cookie: cookie }, signal: AbortSignal.timeout(20000) });
+    assert.equal(res.status, 403, `board ${path} is for administrators only`);
+  }
   // The game's internal API (SSO, management) is only reachable through the Durable Object stub.
   for (const path of ["/internal/health", "/ta-tua/internal/health", "/ta-tua/api/%2e%2e/internal/health", "/ta-tua/api/internal/health"]) {
     const response = await fetch(`${origin}${path}`, { redirect: "manual", signal: AbortSignal.timeout(20000) });
@@ -166,7 +177,7 @@ try {
   assert.equal(gameDir.status, 200, "game page is served at its folder path (no redirect)");
   const gamePage = await fetch(`${origin}/ta-tua/game/index.html`, { signal: AbortSignal.timeout(20000) });
   assert.equal(gamePage.status, 200, "game page is served as a static asset");
-  console.log("Worker smoke passed: login, project calendar, My Tasks, public share link, deadline APIs, department report, analytics, AI intake route and Pet Town (game API, Durable Object, sign-in, name + password accounts, park WebSocket) on workerd + PostgreSQL.");
+  console.log("Worker smoke passed: login, project calendar, My Tasks, public share link, deadline APIs, department report, analytics, AI intake route and Pet Town (game API, Durable Object, sign-in, name + password accounts, gear and gift codes, park WebSocket) on workerd + PostgreSQL.");
 } catch (error) {
   console.error(logs);
   throw error;

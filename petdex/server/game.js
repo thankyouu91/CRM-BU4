@@ -162,7 +162,7 @@ export function rollSickness(pet, hours, rand = Math.random) {
 export function bathe(pet, now = Date.now()) {
   if (isBusy(pet, now)) throw new GameError(`${pet.name} đang bận, xong việc rồi tắm nhé.`);
   return {
-    pet: { ...applyEffect(pet, { hygiene: 100, happiness: 5 }), busy_from: now, busy_until: now + HEALTH.bathMinutes * 60_000, busy_kind: 'bath' },
+    pet: { ...applyEffect(pet, boostEffect(pet, { hygiene: 100, happiness: 5 })), busy_from: now, busy_until: now + HEALTH.bathMinutes * 60_000, busy_kind: 'bath' },
     xp: 2,
     coins: 0,
   };
@@ -216,12 +216,19 @@ export function mood(pet) {
 
 // Mỗi hành động trả về { pet, xp, coins }; settle() lo phần lên cấp.
 
+/** % "Chỉ số" từ trang phục bé đang đeo làm phần cộng của chăm sóc mạnh hơn (phần trừ giữ nguyên). */
+export function boostEffect(pet, effect = {}) {
+  const pct = pet.bonus?.stats ?? 0;
+  if (!pct) return effect;
+  return Object.fromEntries(Object.entries(effect).map(([k, v]) => [k, v > 0 ? Math.round(v * (1 + pct / 100)) : v]));
+}
+
 export function useItem(pet, item) {
   if (!item || !isConsumable(item)) throw new GameError('Món này không dùng trực tiếp được.');
   if (item.type === 'food' && pet.fullness >= 97) throw new GameError(`${pet.name} no căng bụng rồi!`);
   // Món hợp mệnh (cùng hành hoặc hành nuôi dưỡng bé) cho thêm 20% XP.
   const xp = Math.round((item.xp ?? 0) * (item.type === 'food' && has(pet, 'glutton') ? 1.3 : 1) * (1 + foodBonus(item.element, elementOfSpecies(pet.species))));
-  return { pet: applyEffect(pet, item.effect), xp, coins: 0 };
+  return { pet: applyEffect(pet, boostEffect(pet, item.effect)), xp, coins: 0 };
 }
 
 export function play(pet, toy) {
@@ -232,7 +239,7 @@ export function play(pet, toy) {
   const bonus = toy?.play ?? {};
   const joy = (12 + (bonus.happiness ?? 0)) * (has(pet, 'playful') ? 1.5 : 1);
   return {
-    pet: applyEffect(pet, { energy: -15, fullness: -5, hygiene: -5, happiness: Math.round(joy) }),
+    pet: applyEffect(pet, boostEffect(pet, { energy: -15, fullness: -5, hygiene: -5, happiness: Math.round(joy) })),
     xp: 10 + (bonus.xp ?? 0),
     coins: 4,
   };

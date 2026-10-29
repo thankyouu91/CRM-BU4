@@ -1,6 +1,9 @@
 // Chợ Phiên: người chơi bày bán đồ dư trong túi và món tự nấu cho nhau, giá tự đặt trong khoảng cho phép.
 import { api } from '../api.js';
 import { ago, countdown, esc, fmt, viewHead } from '../ui.js';
+import { TIERS } from '../shared/gear.js';
+
+const tierChip = (tier) => (TIERS[tier] ? `<span class="tier-chip tier-${tier}">${TIERS[tier].name}</span>` : '');
 
 const TYPES = { food: 'Đồ ăn', care: 'Chăm sóc', toy: 'Đồ chơi', accessory: 'Phụ kiện', dish: 'Món nấu' };
 const SORTS = { new: 'Mới nhất', deal: 'Giá hời', ending: 'Sắp hết hạn' };
@@ -47,7 +50,7 @@ export function renderBazaar(root, ctx) {
 
   function buyButton(l) {
     if (l.mine) return `<button class="btn small" data-bz-cancel="${l.id}">Gỡ tin</button>`;
-    if (l.kind === 'item' && permanent(l.type) && owned(l.ref)) return '<button class="btn small" disabled title="Đồ dùng mãi mãi, bạn đã có rồi">Đã có</button>';
+    if (l.kind === 'item' && permanent(l.type) && l.type !== 'accessory' && owned(l.ref)) return '<button class="btn small" disabled title="Đồ dùng mãi mãi, bạn đã có rồi">Đã có</button>';
     if (ctx.me.user.coins < l.price) return '<button class="btn small" disabled>Thiếu xu</button>';
     return `<button class="btn small mint" data-bz-buy-id="${l.id}">Mua</button>`;
   }
@@ -57,8 +60,9 @@ export function renderBazaar(root, ctx) {
     return `<article class="card bazaar-card ${l.mine ? 'mine' : ''}">
       <span class="bazaar-icon">${l.icon}</span>
       <div class="bazaar-info">
-        <b>${esc(l.name)}</b>${l.quality ? ` <span class="badge">${esc(l.quality)}</span>` : ''}
+        <b>${esc(l.name)}</b>${l.quality ? ` <span class="badge">${esc(l.quality)}</span>` : ''}${l.tier ? ` ${tierChip(l.tier)}` : ''}
         <small class="type-tag">${TYPES[l.type] ?? esc(l.type)}</small>
+        ${l.lines?.length ? `<small class="gear-lines-inline">${l.lines.map(esc).join(' · ')}</small>` : ''}
         <small class="muted">${l.mine ? '<span class="badge star">Tin của bạn</span>' : `Người bán <b>${esc(l.seller)}</b>`}</small>
         <small class="muted">⏳ còn ${until(l.expiresAt)}${l.spoilsAt ? ` · 🦠 hư sau ${until(l.spoilsAt)}` : ''}</small>
       </div>
@@ -90,7 +94,10 @@ export function renderBazaar(root, ctx) {
     const price = drafts[key] ?? String(s.refPrice);
     const full = data.open >= rules.maxListings;
     let note = '';
-    if (kind === 'item') {
+    if (kind === 'gear') {
+      note = `<small class="gear-lines-inline">${tierChip(s.tier)} ${(s.lines ?? []).map(esc).join(' · ')}</small>`
+        + (s.wornBy ? '<small class="down">Bé đang đeo món này, bày bán sẽ tháo ra.</small>' : '');
+    } else if (kind === 'item') {
       const item = items[s.ref];
       const worn = item?.type === 'accessory' && s.qty === 1 && ctx.me.pets.some((p) => Object.values(p.wear ?? {}).includes(s.ref));
       if (worn) note = '<small class="down">Bé đang đeo món này, bày bán sẽ tháo ra.</small>';
@@ -101,7 +108,7 @@ export function renderBazaar(root, ctx) {
     return `<form class="bazaar-sell" data-bz-sell="${kind}" data-ref="${esc(s.ref)}" data-refprice="${s.refPrice}">
       <span class="bazaar-icon small">${s.icon}</span>
       <div class="bazaar-sell-info">
-        <b>${esc(s.name)}</b>${kind === 'item' ? ` <small class="muted">×${s.qty}</small>` : ` <span class="badge">${esc(s.quality)}</span>`}
+        <b>${esc(s.name)}</b>${kind === 'item' ? ` <small class="muted">×${s.qty}</small>` : kind === 'dish' ? ` <span class="badge">${esc(s.quality)}</span>` : ''}
         <small class="muted">Tham chiếu ${fmt(s.refPrice)} 🪙 · cho phép ${fmt(lo)}–${fmt(hi)}</small>
         ${note}
       </div>
@@ -127,6 +134,7 @@ export function renderBazaar(root, ctx) {
     const full = data.open >= rules.maxListings
       ? `<p class="pb-note">Bạn đang bày đủ ${rules.maxListings} món. Gỡ bớt hoặc đợi bán xong để bày thêm.</p>` : '';
     const { items: inv, dishes } = data.sellable;
+    const gear = (data.sellable.gear ?? []).map((g) => ({ ...g, ref: String(g.id), icon: items[g.itemId]?.icon ?? '🎀' }));
     return `${notice}
       <section class="card bazaar-box">
         <h3>🏷️ Đang bày <small class="muted">(${data.open}/${rules.maxListings})</small></h3>
@@ -143,6 +151,11 @@ export function renderBazaar(root, ctx) {
         <h3>🎒 Đồ trong túi</h3>
         ${inv.length ? `<div class="bazaar-sell-list">${inv.map((s) => sellRow('item', s)).join('')}</div>`
           : '<p class="muted">Túi đồ trống. Mua ở cửa hàng hoặc nhận quà từ bạn bè.</p>'}
+      </section>
+      <section class="card bazaar-box">
+        <h3>🎀 Trang phục</h3>
+        ${gear.length ? `<div class="bazaar-sell-list">${gear.map((s) => sellRow('gear', s)).join('')}</div>`
+          : '<p class="muted">Chưa có món trang phục nào. Mua ở cửa hàng, nhận từ mini-game hoặc mã quà.</p>'}
       </section>
       <section class="card bazaar-box">
         <h3>🍲 Món tự nấu</h3>
@@ -186,7 +199,9 @@ export function renderBazaar(root, ctx) {
         <li>Phí đăng tin <b>${pc(rules.listFee)}</b> trả ngay và không hoàn; bán được thì trừ thêm <b>${pc(rules.saleFee)}</b> vào tiền bạn nhận.</li>
         <li>Tin còn <b>${rules.hours} giờ</b>. Hết hạn hoặc gỡ tin thì món về lại túi (món nấu đã hư thì mất).</li>
         <li>Mỗi người bày tối đa <b>${rules.maxListings} món</b>; tài khoản cần đủ ${rules.minAccountDays} ngày tuổi mới được bày bán.</li>
-        <li>Đồ dùng mãi mãi (đồ chơi, phụ kiện) chỉ mua được nếu bạn chưa có.</li>
+        <li>Đồ chơi dùng mãi mãi chỉ mua được nếu bạn chưa có.</li>
+        <li>Trang phục bán theo từng món, giữ nguyên cấp và dòng chỉ số; giá tham chiếu theo cấp (Xanh lam ×1, Xanh lục ×2, Vàng ×4, Đỏ ×8 giá cửa hàng).</li>
+        <li>Bán được hàng, bé chính có dòng "Thu nhập giao dịch" thì nhận thêm % đó.</li>
       </ul>
     </details>`;
   }

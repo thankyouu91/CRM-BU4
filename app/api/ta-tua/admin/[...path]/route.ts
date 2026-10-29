@@ -9,7 +9,10 @@ import { isAdmin } from "@/lib/rbac";
 // internal admin API (petdex/server/internal.js); every change is also written to WorkHub's
 // audit log with the administrator as actor.
 
-const ALLOWED = /^(overview|log|invites(\/\d+\/revoke)?|players(\/\d+(\/(coins|status|name|password-link|pets(\/\d+)?))?)?)$/;
+const ALLOWED = /^(overview|log|gear-config|gear\/\d+(\/delete)?|gift-codes(\/\d+(\/revoke)?)?|invites(\/\d+\/revoke)?|players(\/\d+(\/(coins|status|name|password-link|gear|pets(\/\d+)?))?)?)$/;
+
+/** Body fields that only label the audit entry; the game never sees them. */
+const LABEL_FIELDS = ["playerName", "petName", "speciesName", "itemName", "tierName"];
 
 type Params = { params: Promise<{ path: string[] }> };
 
@@ -32,6 +35,15 @@ function describe(path: string, body: Record<string, unknown>): { action: AuditA
   if (/^players\/\d+\/name$/.test(path)) return { action: "tatua.rename", entityId: id, summary: `Đổi tên ${player} thành “${String(body.displayName ?? "")}”` };
   // the one-time code is only in the response, never in the audit entry
   if (/^players\/\d+\/password-link$/.test(path)) return { action: "tatua.password_link", entityId: id, summary: `Tạo link đặt mật khẩu cho ${player} (dùng một lần, 24 giờ)` };
+  if (/^players\/\d+\/gear$/.test(path)) return { action: "tatua.gear_grant", entityId: id, summary: `Tặng trang phục ${String(body.itemName ?? "ngẫu nhiên")} (${String(body.tierName ?? "cấp ngẫu nhiên")}) cho ${player}` };
+  if (/^gear\/\d+$/.test(path)) return { action: "tatua.gear_edit", entityId: id, summary: `Sửa cấp và chỉ số trang phục #${id}${body.itemName ? ` “${String(body.itemName)}”` : ""}${body.playerName ? ` của ${player}` : ""}` };
+  if (/^gear\/\d+\/delete$/.test(path)) return { action: "tatua.gear_delete", entityId: id, summary: `Xoá trang phục #${id}${body.itemName ? ` “${String(body.itemName)}”` : ""}${body.playerName ? ` của ${player}` : ""}` };
+  if (path === "gear-config") return { action: "tatua.gear_config", entityId: null, summary: "Chỉnh tỷ lệ cấp, biên độ chỉ số trang phục và tỷ lệ rớt đồ mini-game" };
+  if (path === "gift-codes") {
+    const n = Number(body.count) > 1 ? Number(body.count) : 1;
+    return { action: "tatua.gift_code", entityId: null, summary: `Tạo ${n > 1 ? `${n} mã quà` : "mã quà"} “${String(body.label || "Mã quà")}”` };
+  }
+  if (/^gift-codes\/\d+\/revoke$/.test(path)) return { action: "tatua.gift_code_revoke", entityId: id, summary: `Thu hồi mã quà #${id}` };
   if (path === "invites") return { action: "tatua.invite", entityId: null, summary: `Tạo link mời khách “${String(body.label ?? "Khách mời")}”` };
   if (/^invites\/\d+\/revoke$/.test(path)) return { action: "tatua.invite_revoke", entityId: path.split("/")[1], summary: `Thu hồi link mời #${path.split("/")[1]}` };
   return null;
@@ -56,8 +68,8 @@ export async function POST(req: NextRequest, { params }: Params) {
     const path = (await params).path.join("/");
     if (!ALLOWED.test(path)) return forbidden("Đường dẫn không hợp lệ");
     const body = ((await req.json().catch(() => ({}))) ?? {}) as Record<string, unknown>;
-    // playerName / petName / speciesName only label the audit entry; the game gets the rest.
-    const payload = Object.fromEntries(Object.entries(body).filter(([key]) => !["playerName", "petName", "speciesName"].includes(key)));
+    // Label fields only describe the audit entry; the game gets the rest.
+    const payload = Object.fromEntries(Object.entries(body).filter(([key]) => !LABEL_FIELDS.includes(key)));
     const res = await relay(req, path, { ...payload, actor: me.name });
     if (res.ok) {
       const entry = describe(path, body);

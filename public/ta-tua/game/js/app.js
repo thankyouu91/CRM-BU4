@@ -9,9 +9,22 @@ window.io = io;
   const hashParams = new URLSearchParams(location.hash.slice(1));
   if (hashParams.has('token')) {
     session.token = hashParams.get('token');
+    // #who=member: phiên do tài khoản WorkHub quản lý (đăng xuất ở WorkHub, không ở đây).
+    try {
+      sessionStorage.setItem('petdex.who', hashParams.get('who') ?? 'player');
+    } catch {
+      // không lưu được: coi như người chơi thường
+    }
     history.replaceState(null, '', location.pathname + location.search);
   }
 }
+const isMemberSession = () => {
+  try {
+    return sessionStorage.getItem('petdex.who') === 'member';
+  } catch {
+    return false;
+  }
+};
 import { burst, floatText, flyTo } from './fx.js';
 import { mountPark } from './park.js';
 import { mountRoomScene } from './scenes.js';
@@ -20,6 +33,7 @@ import { itemIcon } from './itemart.js';
 import {
   EGG, EGG_ODDS, ELEMENTS, ELEMENT_RULES, LIFE, LIFE_STAGES, RARITIES, RELATIONS, SLOTS, foodBonus, fullSetOf, relation, wearBonus,
 } from './shared/pets.js';
+import { AFFIXES, AFFIX_ORDER, TIERS, TIER_ORDER, affixText } from './shared/gear.js';
 import {
   $, MOOD_ICONS, STAT_ICONS, STAT_LABELS, TYPE_LABELS,
   ageText, busyOf, clock, closeModal, countdown, effectText, esc, fmt, formatWait, modalOpen, openModal, toast, viewHead,
@@ -76,6 +90,11 @@ const figureOf = (pet, base) => createPetFigure(speciesOf(pet.species), base, pe
 const qtyOf = (itemId) => state.me.inventory[itemId] ?? 0;
 const isConsumable = (item) => item.type === 'food' || item.type === 'care';
 const ownedOfType = (type) => Object.values(items()).filter((i) => i.type === type && qtyOf(i.id) > 0);
+/** Trang phục (bản có cấp) người chơi đang có, không gồm món đang bày bán. */
+const myGear = () => state.me.gear ?? [];
+const tierChip = (tier) => (TIERS[tier] ? `<span class="tier-chip tier-${tier}">${TIERS[tier].name}</span>` : '');
+const gearLines = (g) => AFFIX_ORDER.filter((a) => g.affixes?.[a]).map((a) => affixText(a, g.affixes[a])).join(' · ');
+const petName = (id) => state.me.pets.find((p) => p.id === id)?.name ?? 'bé khác';
 const bestLevel = () => Math.max(0, ...state.me.pets.map((p) => p.level));
 const idleAnim = (pet) => IDLE_BY_MOOD[pet?.mood.key] ?? 'idle';
 /** Giá siêu thị hiện tại = giá gốc × chỉ số giá của Ngân hàng Trung ương. */
@@ -400,6 +419,13 @@ function elementLine(pet) {
   </p>`;
 }
 
+/** Tổng % trang phục bé đang đeo cộng lại (mỗi loại tối đa 100%). */
+function gearBonusLine(pet) {
+  const b = pet.bonus ?? {};
+  const parts = AFFIX_ORDER.filter((a) => b[a]).map((a) => `<span class="gear-bonus" title="${esc(AFFIXES[a].desc)}">${affixText(a, b[a])}</span>`);
+  return parts.length ? `<p class="gear-bonus-line">${parts.join('')}</p>` : '';
+}
+
 /** Hiệu quả bộ đồ đang mặc: tốc độ lên kỹ năng theo hợp mệnh, và thưởng lương khi đủ bộ cùng hành. */
 function outfitSummary(pet) {
   const el = ELEMENTS[pet.element];
@@ -408,7 +434,9 @@ function outfitSummary(pet) {
   const set = fullSetOf(pet.wear);
   return `<p class="muted small">Mỗi bé đeo 4 món, mỗi khe một món. Đồ hành nuôi dưỡng bé ${el.icon} ${el.name} (tương sinh) +10% tốc độ lên kỹ năng,
       cùng hành +5%, đồ kỵ mệnh −5%. Đủ 4 khe cùng một hành thì +${ELEMENT_RULES.fullSet * 100}% lương.</p>
-    <p class="outfit-now">Đang mặc: <b class="${pct > 0 ? 'up' : pct < 0 ? 'down' : ''}">${pct > 0 ? '+' : ''}${pct}%</b> tốc độ lên kỹ năng${set ? ` · ✨ đủ bộ hành ${ELEMENTS[set].name}: +${ELEMENT_RULES.fullSet * 100}% lương` : ''}</p>`;
+    <p class="outfit-now">Đang mặc: <b class="${pct > 0 ? 'up' : pct < 0 ? 'down' : ''}">${pct > 0 ? '+' : ''}${pct}%</b> tốc độ lên kỹ năng${set ? ` · ✨ đủ bộ hành ${ELEMENTS[set].name}: +${ELEMENT_RULES.fullSet * 100}% lương` : ''}</p>
+    <p class="muted small">Trang phục có cấp ${TIER_ORDER.map((t) => tierChip(t)).join(' → ')}, lần lượt 1–4 dòng chỉ số; các dòng của đồ đang đeo cộng dồn cho bé.</p>
+    ${gearBonusLine(pet)}`;
 }
 
 function petSwitcher(current, { withAdopt }) {
@@ -593,18 +621,27 @@ const ACTIONS = {
   },
   dress: () => {
     const pet = currentPet();
-    const list = ownedOfType('accessory');
-    // Tủ đồ theo 4 khe: mỗi khe một món, đồ gắn vào đầu, mặt, cổ, lưng của bé.
+    const list = myGear();
+    const tierRank = (t) => TIER_ORDER.indexOf(t);
+    // Tủ đồ theo 4 khe: mỗi khe một món, đồ gắn vào đầu, mặt, cổ, lưng của bé. Mỗi món là một bản có cấp riêng.
     const slotRows = Object.entries(SLOTS).map(([slot, s]) => {
-      const mine = list.filter((i) => i.slot === slot);
-      const worn = pet.wear?.[slot];
-      const remove = worn
-        ? `<button class="pick" data-pick="slot:${slot}"><b>🚫</b><span>Tháo ${esc(items()[worn]?.name ?? '')}<small>Để trống khe ${s.name.toLowerCase()}</small></span><span class="badge">Tháo</span></button>`
+      const mine = list.filter((g) => g.slot === slot).sort((a, b) => tierRank(b.tier) - tierRank(a.tier) || b.id - a.id);
+      const worn = pet.gear?.[slot];
+      const remove = pet.wear?.[slot]
+        ? `<button class="pick" data-pick="slot:${slot}"><b>🚫</b><span>Tháo ${esc(items()[pet.wear[slot]]?.name ?? '')}<small>Để trống khe ${s.name.toLowerCase()}</small></span><span class="badge">Tháo</span></button>`
         : '';
-      const rows = mine.map((i) => {
-        const rel = RELATIONS[relation(i.element, pet.element)];
-        const tag = rel.bonus > 0 ? ` · ${rel.short}` : rel.bonus < 0 ? ` · ${rel.short}` : '';
-        return pickRow(i, worn === i.id ? 'Đang đeo' : `${ELEMENTS[i.element].icon} Đeo${tag}`, { current: worn === i.id });
+      const rows = mine.map((g) => {
+        const item = items()[g.itemId];
+        const rel = RELATIONS[relation(item.element, pet.element)];
+        const tag = rel.bonus ? ` · ${rel.short}` : '';
+        const here = worn?.gearId === g.id;
+        const elsewhere = g.wornBy && g.wornBy !== pet.id ? ` · đang đeo cho ${esc(petName(g.wornBy))}` : '';
+        return `
+          <button class="pick ${here ? 'current' : ''}" data-pick="gear:${g.id}">
+            <b>${itemIcon(item, 3)}</b>
+            <span>${esc(item.name)} ${tierChip(g.tier)}<small>${esc(gearLines(g))}${elsewhere}</small></span>
+            <span class="badge">${here ? 'Đang đeo' : `${ELEMENTS[item.element].icon} Đeo${tag}`}</span>
+          </button>`;
       }).join('');
       return `<h4 class="slot-head">${s.icon} ${s.name}</h4>${remove}${rows || '<p class="muted small">Chưa có món nào cho khe này.</p>'}`;
     }).join('');
@@ -617,7 +654,7 @@ const ACTIONS = {
         : emptyPick('accessory'),
       onPick: (id) => {
         if (id.startsWith('shop:')) return go('shop', id.slice(5));
-        const body = id.startsWith('slot:') ? { slot: id.slice(5) } : { itemId: id };
+        const body = id.startsWith('slot:') ? { slot: id.slice(5) } : { gearId: Number(id.slice(5)) };
         act(`/pets/${pet.id}/equip`, body, { fx: sparkleFx('spin') });
       },
     });
@@ -722,6 +759,13 @@ function renderAdopt(root) {
 
 // ---------------------------------------------------------------- Cửa hàng
 
+/** Tỷ lệ ra từng cấp khi mua phụ kiện, ví dụ "Xanh lam 60% · … · Đỏ 2%". */
+function tierOdds() {
+  const odds = state.catalog.gear?.odds ?? {};
+  const total = TIER_ORDER.reduce((s, t) => s + (odds[t] ?? 0), 0) || 1;
+  return TIER_ORDER.map((t) => `${TIERS[t].name} ${Math.round(((odds[t] ?? 0) / total) * 1000) / 10}%`).join(' · ');
+}
+
 function renderShop(root) {
   const filter = state.shopFilter;
   const coins = state.me.user.coins;
@@ -733,6 +777,9 @@ function renderShop(root) {
   const buyArea = (item) => {
     const owned = qtyOf(item.id);
     if (item.minLevel && level < item.minLevel) return `<span class="badge">🔒 Cần Lv ${item.minLevel}</span>`;
+    if (item.type === 'accessory') {
+      return `<div class="row"><button class="btn small primary" data-buy="${item.id}" data-qty="1" ${coins < priceOf(item) ? 'disabled' : ''}>Mua · quay cấp</button></div>`;
+    }
     if (!isConsumable(item) && owned) return '<span class="badge star">✓ Đã có</span>';
     const bulk = isConsumable(item)
       ? `<button class="btn small" data-buy="${item.id}" data-qty="5" ${coins < priceOf(item) * 5 ? 'disabled' : ''}>×5</button>`
@@ -745,7 +792,7 @@ function renderShop(root) {
     ? ` Giá đang ${index > 1 ? 'cao' : 'thấp'} hơn gốc ${Math.abs(Math.round((index - 1) * 100))}% theo chỉ số giá của Ngân hàng Trung ương.`
     : '';
   root.innerHTML = `
-    ${viewHead('🏪 Siêu thị', `Đồ ăn và đồ chăm sóc dùng là hết. Đồ chơi và phụ kiện mua một lần, dùng mãi.${indexNote}`)}
+    ${viewHead('🏪 Siêu thị', `Đồ ăn và đồ chăm sóc dùng là hết. Đồ chơi mua một lần, dùng mãi. Phụ kiện mỗi lần mua là một món mới, quay ra cấp ${tierOdds()}; May mắn của bé chính giúp ra cấp cao.${indexNote}`)}
     <div class="filters">
       ${['all', ...TYPE_ORDER].map((t) => `
         <button class="btn small ${t === filter ? 'current' : ''}" data-filter="${t}">${t === 'all' ? 'Tất cả' : TYPE_LABELS[t]}</button>`).join('')}
@@ -762,6 +809,7 @@ function renderShop(root) {
             <h3>${esc(item.name)}</h3>
             <p>${esc(item.desc ?? '')}</p>
             <p class="effects">${esc(effectText(item))}</p>
+            ${item.type === 'accessory' && myGear().some((g) => g.itemId === item.id) ? `<p class="muted small">Đang có ${myGear().filter((g) => g.itemId === item.id).length} món</p>` : ''}
             <div class="foot"><span class="price">${priceOf(item)} 🪙</span>${buyArea(item)}</div>
           </article>`;
       }).join('')}
@@ -770,10 +818,38 @@ function renderShop(root) {
 
 // ---------------------------------------------------------------- Túi đồ
 
+/** Tủ trang phục trong Túi đồ: mỗi món một thẻ có cấp, dòng chỉ số và nút đeo/tháo cho bé đang chọn. */
+function gearShelf(pet) {
+  const list = [...myGear()].sort((a, b) => TIER_ORDER.indexOf(b.tier) - TIER_ORDER.indexOf(a.tier) || b.id - a.id);
+  if (!list.length) return '';
+  const button = (g) => {
+    if (!pet) return '';
+    if (pet.gear?.[g.slot]?.gearId === g.id) return `<button class="btn small" data-unequip-slot="${g.slot}">Tháo ra</button>`;
+    return `<button class="btn small mint" data-equip-gear="${g.id}">Đeo cho ${esc(pet.name)}</button>`;
+  };
+  return `
+    <h3 class="section-title">🎀 Trang phục <small class="muted">${list.length} món</small></h3>
+    <div class="item-grid">
+      ${list.map((g) => {
+        const item = items()[g.itemId];
+        return `
+          <article class="card item-card gear-card tier-${g.tier}">
+            ${g.wornBy ? `<span class="badge star owned">Đang đeo · ${esc(petName(g.wornBy))}</span>` : ''}
+            <div class="icon">${itemIcon(item)}</div>
+            <span class="type-tag">${SLOTS[g.slot].name} · ${ELEMENTS[item.element].icon} ${ELEMENTS[item.element].name}</span>
+            <h3>${esc(item.name)} ${tierChip(g.tier)}</h3>
+            <ul class="gear-lines">${AFFIX_ORDER.filter((a) => g.affixes[a]).map((a) => `<li title="${esc(AFFIXES[a].desc)}">${affixText(a, g.affixes[a])}</li>`).join('')}</ul>
+            <div class="foot">${button(g)}</div>
+          </article>`;
+      }).join('')}
+    </div>
+    ${Object.values(items()).some((i) => qtyOf(i.id) > 0 && i.type !== 'accessory') ? '<h3 class="section-title">🧺 Đồ dùng</h3>' : ''}`;
+}
+
 function renderBag(root) {
   const pet = state.me.pets.length ? currentPet() : null;
   const owned = Object.values(items())
-    .filter((i) => qtyOf(i.id) > 0)
+    .filter((i) => qtyOf(i.id) > 0 && i.type !== 'accessory')
     .sort((a, b) => TYPE_ORDER.indexOf(a.type) - TYPE_ORDER.indexOf(b.type) || a.price - b.price);
 
   const useButton = (item) => {
@@ -796,7 +872,8 @@ function renderBag(root) {
       <button class="btn" data-go="shop">🛍️ Mua thêm</button>
     </div>
     ${pet ? petSwitcher(pet, { withAdopt: false }) : ''}
-    ${owned.length ? `
+    ${gearShelf(pet)}
+    ${owned.length || myGear().length ? `
       <div class="item-grid">
         ${owned.map((item) => `
           <article class="card item-card">
@@ -934,10 +1011,108 @@ $('#daily-btn').addEventListener('click', () =>
 $('#coin-count').addEventListener('click', () => go('wallet'));
 
 $('#logout-btn').addEventListener('click', () => {
-  if (embedded) return; // phiên do WorkHub quản lý
-  if (confirm('Đăng xuất khỏi Petdex Park?')) logout();
+  if (!embedded) {
+    if (confirm('Đăng xuất khỏi Petdex Park?')) logout();
+    return;
+  }
+  openAccountMenu();
 });
-if (embedded) $('#logout-btn').title = 'Tài khoản WorkHub của bạn';
+if (embedded) $('#logout-btn').title = 'Tài khoản: nhập mã quà, đổi mật khẩu, đăng xuất';
+
+/**
+ * Menu tên người chơi (bản nhúng trong WorkHub / play.petfarm.online): nhập mã quà, đặt hoặc đổi mật khẩu,
+ * đăng xuất. Mật khẩu đổi qua API tài khoản của WorkHub (cùng tên miền với khung game).
+ */
+function openAccountMenu() {
+  const u = state.me.user;
+  const member = isMemberSession();
+  openModal({
+    title: `👤 ${u.username}`,
+    html: `<div class="account-menu">
+      <section>
+        <h4>🎁 Nhập mã quà</h4>
+        <form class="row" data-form="gift">
+          <input name="code" placeholder="Ví dụ: ABCD-EFGH" maxlength="32" autocomplete="off" required aria-label="Mã quà" />
+          <button class="btn primary" type="submit">Nhận quà</button>
+        </form>
+        <p class="msg" data-msg="gift" role="status"></p>
+      </section>
+      <section>
+        <h4>🔑 ${u.hasPassword ? 'Đổi mật khẩu' : 'Đặt mật khẩu'}</h4>
+        <p class="note">${u.hasPassword
+          ? `Đăng nhập bằng tên <b>${esc(u.username)}</b>. Đổi xong, các máy khác đang đăng nhập sẽ bị đăng xuất.`
+          : `Đặt mật khẩu để lần sau vào thẳng trang chơi bằng tên <b>${esc(u.username)}</b>.`}</p>
+        <form data-form="password" class="account-fields">
+          ${u.hasPassword ? '<input name="current" type="password" placeholder="Mật khẩu hiện tại" autocomplete="current-password" required aria-label="Mật khẩu hiện tại" />' : ''}
+          <input name="password" type="password" placeholder="Mật khẩu mới (ít nhất 6 ký tự)" minlength="6" maxlength="72" autocomplete="new-password" required aria-label="Mật khẩu mới" />
+          <input name="confirm" type="password" placeholder="Nhập lại mật khẩu mới" autocomplete="new-password" required aria-label="Nhập lại mật khẩu mới" />
+          <button class="btn" type="submit">Lưu mật khẩu</button>
+        </form>
+        <p class="msg" data-msg="password" role="status"></p>
+      </section>
+      <section>
+        ${member
+          ? '<p class="note">Bạn đang chơi bằng tài khoản WorkHub: đăng xuất ở WorkHub.</p>'
+          : '<button class="btn" type="button" data-account="logout">🚪 Đăng xuất</button>'}
+      </section>
+    </div>`,
+  });
+  const box = document.querySelector('.account-menu');
+  const say = (key, text, ok) => {
+    const el = box.querySelector(`[data-msg="${key}"]`);
+    el.textContent = text;
+    el.className = `msg ${ok ? 'ok' : 'error'}`;
+  };
+  box.querySelector('[data-form="gift"]').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const input = e.currentTarget.elements.code;
+    const btn = e.currentTarget.querySelector('button');
+    btn.disabled = true;
+    try {
+      const { result, ...me } = await api('/gifts/redeem', { code: input.value.trim() });
+      state.me = me;
+      say('gift', result?.message ?? 'Đã nhận quà!', true);
+      toast(result?.message ?? 'Đã nhận quà!');
+      input.value = '';
+      renderWallet();
+    } catch (err) {
+      say('gift', err.message, false);
+    } finally {
+      btn.disabled = false;
+    }
+  });
+  box.querySelector('[data-form="password"]').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const f = e.currentTarget.elements;
+    if (f.password.value.length < 6) return say('password', 'Mật khẩu cần ít nhất 6 ký tự.', false);
+    if (f.password.value !== f.confirm.value) return say('password', 'Hai lần nhập mật khẩu chưa khớp.', false);
+    const btn = e.currentTarget.querySelector('button');
+    btn.disabled = true;
+    try {
+      const res = await fetch(`${location.origin}/api/ta-tua/account`, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ action: 'credentials', token: session.token, username: u.username, password: f.password.value, currentPassword: f.current?.value }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error ?? 'Không lưu được, thử lại nhé.');
+      state.me.user.hasPassword = true;
+      for (const input of [f.current, f.password, f.confirm]) if (input) input.value = '';
+      say('password', `Đã lưu. Lần sau đăng nhập bằng tên ${u.username} và mật khẩu mới.`, true);
+    } catch (err) {
+      say('password', err.message, false);
+    } finally {
+      btn.disabled = false;
+    }
+  });
+  box.querySelector('[data-account="logout"]')?.addEventListener('click', () => {
+    if (!confirm('Đăng xuất khỏi Pet Town?')) return;
+    closeModal();
+    // Trang chơi bên ngoài (play.petfarm.online) lo đăng xuất: hủy phiên ở máy chủ và quên token trên trình duyệt.
+    if (window.parent !== window) window.parent.postMessage({ type: 'petdex:logout' }, location.origin);
+    else logout();
+  });
+}
 
 $('#view').addEventListener('click', (e) => {
   if (e.target.closest('#figure-slot') && homeStage) {
@@ -980,7 +1155,8 @@ $('#view').addEventListener('click', (e) => {
   if (!pet) return;
   if (d.use) return act(`/pets/${pet.id}/use`, { itemId: d.use });
   if (d.toy) return act(`/pets/${pet.id}/play`, { toyId: d.toy });
-  if (d.equip !== undefined) return act(`/pets/${pet.id}/equip`, d.equip ? { itemId: d.equip } : { slot: d.slot });
+  if (d.equipGear) return act(`/pets/${pet.id}/equip`, { gearId: Number(d.equipGear) });
+  if (d.unequipSlot) return act(`/pets/${pet.id}/equip`, { slot: d.unequipSlot });
 });
 
 $('#view').addEventListener('submit', (e) => {

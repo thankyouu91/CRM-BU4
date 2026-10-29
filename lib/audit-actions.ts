@@ -82,6 +82,12 @@ export const AUDIT_ACTIONS = {
   "tatua.password_link": { label: "Tạo link đặt mật khẩu", group: "tatua" },
   "tatua.invite": { label: "Tạo link mời khách", group: "tatua" },
   "tatua.invite_revoke": { label: "Thu hồi link mời", group: "tatua" },
+  "tatua.gear_config": { label: "Chỉnh tỷ lệ trang phục và rớt đồ", group: "tatua" },
+  "tatua.gear_grant": { label: "Tặng trang phục", group: "tatua" },
+  "tatua.gear_edit": { label: "Sửa trang phục người chơi", group: "tatua" },
+  "tatua.gear_delete": { label: "Xoá trang phục người chơi", group: "tatua" },
+  "tatua.gift_code": { label: "Tạo mã quà", group: "tatua" },
+  "tatua.gift_code_revoke": { label: "Thu hồi mã quà", group: "tatua" },
 } as const satisfies Record<string, { label: string; group: AuditGroup }>;
 
 export type AuditAction = keyof typeof AUDIT_ACTIONS;

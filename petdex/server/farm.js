@@ -9,6 +9,7 @@ import { CROPS, DISHES, GARDEN, KITCHEN, QUALITY, dishValue, harvestYield, rollQ
 import { mutatePet } from './service.js';
 import { track } from './quests.js';
 import { isElement } from './elements.js';
+import { tradeBonus } from './gear.js';
 import { ELEMENT_RULES, elementOfSpecies, foodBonus } from '../../public/ta-tua/game/js/shared/pets.js';
 
 const q = {
@@ -205,7 +206,9 @@ export function cook(userId, { recipe, inputs }, now = Date.now(), rand = Math.r
     // Bé hành Kim vào bếp: nấu như có thêm 15 Khéo tay.
     const craft = (skillsOf(user.active_pet_id).craft ?? 0)
       + (isElement(getPet(user.active_pet_id)?.species, 'kim') ? ELEMENT_RULES.perks.kim.cookCraft : 0);
-    const quality = rollQuality(craft, rand);
+    // Trang phục bé chính: % "May mắn" làm món dễ ra loại Ngon hơn.
+    const luck = getPet(user.active_pet_id)?.bonus?.luck ?? 0;
+    const quality = rollQuality(craft, () => rand() / (1 + luck / 100));
     q.insertDish.run(userId, id, quality, now, now + KITCHEN.shelfDays * DAY);
     const discovered = dish.hidden && !known;
     q.learn.run(userId, id);
@@ -249,7 +252,8 @@ export function sellDishToNpc(userId, dishId, now = Date.now()) {
     const price = Math.round(dishValue(d.recipe, d.quality, economy().priceIndex) * KITCHEN.npcRate);
     q.deleteDish.run(d.id);
     post({ userId, delta: price, kind: 'kitchen_sale', memo: DISHES[d.recipe].name, now });
-    return { message: `Bán ${DISHES[d.recipe].name} cho quán ăn đầu phố: +${price} 🪙` };
+    const extra = tradeBonus(userId, price, `Bán ${DISHES[d.recipe].name} cho quán ăn`, now);
+    return { message: `Bán ${DISHES[d.recipe].name} cho quán ăn đầu phố: +${price} 🪙${extra ? ` (+${extra} 🪙 nhờ trang phục)` : ''}` };
   });
 }
 

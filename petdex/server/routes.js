@@ -30,6 +30,9 @@ import { payStipend } from './town.js';
 import { bus, mutatePet, ownedPet, snapshot } from './service.js';
 import { getSpecies, listSpecies } from './species.js';
 import { richList } from './wallet.js';
+import { createGear, equipGear, gearConfig, userBonus } from './gear.js';
+import { redeemGiftCode } from './gifts.js';
+import { TIERS as GEAR_TIERS } from '../../public/ta-tua/game/js/shared/gear.js';
 
 export const api = Router();
 
@@ -62,6 +65,7 @@ api.get('/catalog', (_req, res) => {
     items: ITEMS,
     species: listSpecies(),
     rules: RULES,
+    gear: { tiers: GEAR_TIERS, odds: gearConfig().odds },
     unlocks: UNLOCKS,
     stages: STAGES,
     skills: SKILLS,
@@ -243,30 +247,46 @@ api.post('/pets/:id/play', auth, (req, res) => {
   });
 });
 
-/** Đeo đồ theo khe: `{ itemId }` đeo vào khe của món; `{ slot }` tháo khe đó; không gửi gì thì tháo hết. */
+/** Đeo đồ theo khe: `{ gearId }` đeo bản trang phục đó vào khe của nó; `{ slot }` tháo khe đó; không gửi gì thì tháo hết. */
 api.post('/pets/:id/equip', auth, (req, res) => {
   const pet = ownedPet(req.user.id, req.params.id);
-  const itemId = req.body?.itemId ?? null;
-  let item = null;
-  if (itemId) {
-    item = findItem(itemId);
-    if (item.type !== 'accessory') throw new GameError('Món này không đeo được.');
-    requireOwned(req.user.id, item);
+  if (req.body?.gearId != null) {
+    const { gear, item } = store.transaction(() => equipGear(req.user.id, pet, Number(req.body.gearId)));
+    bus.emit('pet:changed', req.user.id);
+    return reply(res, req.user.id, { petName: pet.name, message: `${pet.name} đeo ${item.icon} ${item.name} (${gear.tierName}), xinh quá!` });
   }
-  const slot = item?.slot ?? (req.body?.slot ? String(req.body.slot) : null);
+  const slot = req.body?.slot ? String(req.body.slot) : null;
   if (slot && !['head', 'face', 'neck', 'back'].includes(slot)) throw new GameError('Không có khe đồ này.');
-  store.setWear(pet.id, slot, item?.id ?? null);
+  store.setWear(pet.id, slot, null);
   bus.emit('pet:changed', req.user.id);
-  reply(res, req.user.id, {
-    petName: pet.name,
-    message: item ? `${pet.name} đeo ${item.icon} ${item.name}, xinh quá!` : slot ? `${pet.name} đã tháo đồ.` : `${pet.name} đã tháo hết đồ.`,
-  });
+  reply(res, req.user.id, { petName: pet.name, message: slot ? `${pet.name} đã tháo đồ.` : `${pet.name} đã tháo hết đồ.` });
+});
+
+/** Nhập mã quà (ô trong menu tên người chơi). */
+api.post('/gifts/redeem', auth, (req, res) => {
+  const result = redeemGiftCode(req.user.id, req.body?.code);
+  bus.emit('pet:changed', req.user.id);
+  reply(res, req.user.id, result);
 });
 
 api.post('/shop/buy', auth, (req, res) => {
   const item = findItem(req.body?.itemId);
   const qty = Number(req.body?.qty ?? 1);
   if (!Number.isInteger(qty) || qty < 1 || qty > 20) throw new GameError('Số lượng không hợp lệ.');
+  // Trang phục: mỗi lần mua là một bản mới, cấp quay ngẫu nhiên (May mắn của bé chính giúp ra cấp cao).
+  if (item.type === 'accessory') {
+    if (qty !== 1) throw new GameError('Trang phục mua từng món một.');
+    const bestLevel = Math.max(0, ...store.listPets(req.user.id).map((p) => p.level));
+    if (item.minLevel && bestLevel < item.minLevel) throw new GameError(`Cần một bé đạt cấp ${item.minLevel} để mua món này.`);
+    const gear = store.transaction(() => {
+      post({ userId: req.user.id, delta: -indexedPrice(item.price), kind: 'shop', memo: item.name });
+      return createGear(req.user.id, item.id, { source: 'shop', luck: userBonus(req.user.id).luck });
+    });
+    return reply(res, req.user.id, {
+      gear: gear.id,
+      message: `Đã mua ${item.icon} ${item.name}: cấp ${GEAR_TIERS[gear.tier].name}${gear.tier === 'red' ? ' 🔥' : gear.tier === 'gold' ? ' ✨' : ''}!`,
+    });
+  }
   store.transaction(() => {
     const owned = store.inventory(req.user.id)[item.id] ?? 0;
     if (!isConsumable(item) && (owned > 0 || qty > 1)) throw new GameError(`Bạn đã có ${item.name} rồi, món này dùng mãi mãi.`);
