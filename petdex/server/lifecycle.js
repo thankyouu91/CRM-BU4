@@ -1,6 +1,7 @@
 // Vòng đời: theo dõi sức khỏe cả đời, bé hết tuổi thọ thì về với sao trời, Đồi Sao tưởng niệm,
 // kỷ vật cho bé kế tiếp, ô tưởng niệm và phí mở lại ô.
 import { db, getUser, listPets, setActivePet, transaction } from './db.js';
+import { bus } from './events.js';
 import { indexedPrice } from './bank.js';
 import { startOfDay } from './clock.js';
 import { DAY, GameError, RULES, ageInfo, isBusy, lifeOf, tick } from './game.js';
@@ -79,6 +80,8 @@ function passAway(row, at) {
 
   const left = listPets(row.owner_id);
   if (user.active_pet_id === row.id) setActivePet(row.owner_id, left[0]?.id ?? null);
+  // Công viên: bé mất thì rời công viên (hoặc bé còn lại thay chỗ).
+  bus.emit('pet:changed', row.owner_id);
   if (left.length === 0 && q.eggCount.get(row.owner_id).n === 0) {
     // Bé cuối cùng: không khóa ô, tặng một trứng Thường cùng hành, nở sau 3 ngày, để người chơi không bị kẹt.
     const element = sp.element ?? 'thuy';

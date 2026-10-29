@@ -617,6 +617,8 @@ if (!isWorkers && !hasBackend()) {
 // ---- WorkHub (Tà tưa): phiên, tài khoản liên kết, khách mời, nhật ký quản trị ----
 const w = {
   userByCrm: db.prepare('SELECT * FROM users WHERE crm_user_id = ?'),
+  residents: db.prepare(`SELECT u.id, u.username, u.display_name, u.active_pet_id FROM users u JOIN pets p ON p.id = u.active_pet_id
+    WHERE u.banned = 0 ORDER BY u.last_seen_at DESC, u.id DESC LIMIT ?`),
   recentSession: db.prepare('SELECT token FROM sessions WHERE user_id = ? AND created_at > ? ORDER BY created_at DESC LIMIT 1'),
   insertLinked: db.prepare("INSERT INTO users (username, pass_hash, coins, created_at, kind, crm_user_id, display_name, invite_id) VALUES (?, '', 0, ?, ?, ?, ?, ?)"),
   setDisplayName: db.prepare('UPDATE users SET display_name = ? WHERE id = ?'),
@@ -653,6 +655,8 @@ export function issueToken(userId) {
   return token;
 }
 export const userByCrm = (crmUserId) => w.userByCrm.get(crmUserId);
+/** Người chơi chưa bị khóa và còn bé sống (bé chính), mới hoạt động gần đây trước. */
+export const residentUsers = (limit) => w.residents.all(limit);
 /** Token của phiên mở gần đây (trong `maxAgeMs`), để mỗi lần mở trang không tạo phiên mới. */
 export const recentToken = (userId, maxAgeMs = 7 * 86_400_000) => w.recentSession.get(userId, Date.now() - maxAgeMs)?.token;
 export const createLinkedUser = (username, { kind, crmUserId = null, displayName = null, inviteId = null }, now = Date.now()) =>

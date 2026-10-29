@@ -86,7 +86,9 @@ export function mountPark(root, ctx) {
     e.figure?.destroy();
     e.figure = createPetFigure(speciesOf(player.pet.species), BASE_SCALE, player.pet.wear, { stage: player.pet.stage, ageScale: player.pet.scale });
     e.el.insertBefore(e.figure.el, e.nameEl);
-    e.nameEl.innerHTML = `${esc(player.pet.name)} <b>Lv ${player.pet.level}</b><small>${esc(player.username)}</small>`;
+    e.nameEl.innerHTML = `${esc(player.pet.name)} <b>Lv ${player.pet.level}</b><small>${player.offline ? '💤 ' : ''}${esc(player.username)}</small>`;
+    e.el.classList.toggle('away', Boolean(player.offline));
+    e.el.title = player.offline ? `${player.username} đang vắng, bé vẫn dạo công viên` : '';
   }
 
   function addPlayer(player) {
@@ -105,6 +107,9 @@ export function mountPark(root, ctx) {
       dustAt: 0,
       onArrive: null,
       bubbleTimer: 0,
+      // Cư dân (chủ đang vắng) tự đi dạo quanh chỗ của mình; mỗi máy thấy một kiểu, không gửi lên máy chủ.
+      home: { x: player.x, y: player.y },
+      wanderAt: performance.now() + 1500 + Math.random() * 6000,
     };
     setPet(e, player);
     entities.set(player.id, e);
@@ -126,10 +131,11 @@ export function mountPark(root, ctx) {
 
   function renderOnline() {
     $('#online-count', root).textContent = entities.size;
-    listEl.innerHTML = [...entities.values()].map((e) => `
-      <li class="${e.id === selfId ? 'me' : ''}" data-id="${esc(e.id)}">
+    const all = [...entities.values()].sort((a, b) => (a.id === selfId ? -1 : b.id === selfId ? 1 : Number(Boolean(a.data.offline)) - Number(Boolean(b.data.offline))));
+    listEl.innerHTML = all.map((e) => `
+      <li class="${e.id === selfId ? 'me' : ''}${e.data.offline ? ' away' : ''}" data-id="${esc(e.id)}">
         <span>🐾 ${esc(e.data.pet.name)} <small class="muted">Lv ${e.data.pet.level}</small></span>
-        <span class="muted">${esc(e.data.username)}${e.id === selfId ? ' (bạn)' : ''}</span>
+        <span class="muted">${esc(e.data.username)}${e.id === selfId ? ' (bạn)' : e.data.offline ? ' · vắng' : ''}</span>
       </li>`).join('');
   }
 
@@ -182,6 +188,10 @@ export function mountPark(root, ctx) {
           const done = e.onArrive;
           e.onArrive = null;
           done();
+        } else if (e.data.offline && now > e.wanderAt) {
+          e.wanderAt = now + 4000 + Math.random() * 8000;
+          e.tx = clamp(e.home.x + (Math.random() - 0.5) * 220, world.minX, world.maxX);
+          e.ty = clamp(e.home.y + (Math.random() - 0.5) * 90, world.minY, world.maxY);
         }
       }
     }
@@ -321,14 +331,19 @@ export function mountPark(root, ctx) {
     particles(selfId, 0.5, { icon: 'sparkle', count: 5, spread: 90, rise: 60 });
   });
 
+  const dropResident = (userId) => {
+    for (const e of [...entities.values()]) if (e.data.offline && e.data.userId === userId) removePlayer(e.id);
+  };
+
   socket.on('pg:joined', (player) => {
+    dropResident(player.userId);
     addPlayer(player);
     particles(player.id, 0.5, { icon: 'sparkle', count: 5, spread: 90, rise: 60 });
     log(`${esc(player.username)} dắt ${esc(player.pet.name)} vào công viên`, 'sys');
   });
 
-  socket.on('pg:left', ({ id }) => {
-    if (entities.has(id)) log(`${nameOf(id)} đã về nhà`, 'sys');
+  socket.on('pg:left', ({ id, quiet }) => {
+    if (entities.has(id) && !quiet) log(`${nameOf(id)} đã về nhà, bé vẫn ở lại chơi`, 'sys');
     removePlayer(id);
   });
 
@@ -339,7 +354,10 @@ export function mountPark(root, ctx) {
 
   socket.on('pg:player', (player) => {
     const e = entities.get(player.id);
-    if (!e) return addPlayer(player);
+    if (!e) {
+      if (!player.offline) dropResident(player.userId);
+      return addPlayer(player);
+    }
     setPet(e, player);
     renderOnline();
   });

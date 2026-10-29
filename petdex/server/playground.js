@@ -31,7 +31,34 @@ function petCard(row) {
   };
 }
 
-const view = (p) => ({ id: p.id, userId: p.userId, username: p.username, x: p.x, y: p.y, pet: p.pet });
+const view = (p) => ({ id: p.id, userId: p.userId, username: p.username, x: p.x, y: p.y, pet: p.pet, offline: Boolean(p.offline) });
+
+/** Cư dân hiện trong công viên kể cả khi chủ không online, nhiều nhất bấy nhiêu người (mới hoạt động trước). */
+export const MAX_RESIDENTS = 50;
+const residentId = (userId) => `r${userId}`;
+const nameOf = (user) => user.display_name || user.username;
+
+/** Chỗ đứng cố định theo người chơi, để mọi người cùng thấy cư dân ở một chỗ khi vào công viên. */
+function homeSpot(userId) {
+  // mulberry32: mã người chơi liên tiếp vẫn cho chỗ đứng trải đều khắp bãi cỏ
+  let a = (userId * 0x9e3779b9) | 0;
+  const r = () => {
+    a = (a + 0x6d2b79f5) | 0;
+    let t = Math.imul(a ^ (a >>> 15), 1 | a);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+  return { x: Math.round(WORLD.minX + 40 + r() * (WORLD.maxX - WORLD.minX - 80)), y: Math.round(WORLD.minY + 20 + r() * (WORLD.maxY - WORLD.minY - 30)) };
+}
+
+/** Thẻ cư dân của một người chơi (đang vắng), hoặc null nếu không còn bé sống hay đã bị khóa. */
+function residentOf(userId) {
+  const user = store.getUser(userId);
+  if (!user || user.banned || !user.active_pet_id) return null;
+  const row = store.getPet(user.active_pet_id);
+  if (!row) return null;
+  return { id: residentId(user.id), userId: user.id, username: nameOf(user), ...homeSpot(user.id), pet: petCard(row), offline: true };
+}
 
 export function attachPlayground(io) {
   const players = new Map(); // socket.id -> người chơi đang ở công viên
@@ -43,14 +70,17 @@ export function attachPlayground(io) {
   function refresh(player) {
     const user = store.getUser(player.userId);
     const row = user?.active_pet_id && store.getPet(user.active_pet_id);
-    if (!row) return;
+    if (!row) return; // bé mất: giữ người chơi tới khi rời công viên
     player.pet = petCard(row);
     io.to(ROOM).emit('pg:player', view(player));
   }
 
   bus.on('pet:changed', (userId) => {
     const player = playerOfUser(userId);
-    if (player) refresh(player);
+    if (player) return refresh(player);
+    const resident = residentOf(userId);
+    if (resident) io.to(ROOM).emit('pg:player', { ...view(resident), quiet: true });
+    else io.to(ROOM).emit('pg:left', { id: residentId(userId), quiet: true });
   });
 
   function leave(socketId) {
@@ -58,6 +88,11 @@ export function attachPlayground(io) {
     if (!players.delete(socketId)) return;
     if (!playerOfUser(player.userId)) parkUsers.delete(player.userId);
     io.to(ROOM).emit('pg:left', { id: socketId });
+    // Về nhà nhưng bé vẫn ở lại công viên như một cư dân.
+    if (!playerOfUser(player.userId)) {
+      const resident = residentOf(player.userId);
+      if (resident) io.to(ROOM).emit('pg:player', { ...view(resident), quiet: true });
+    }
   }
 
   io.use((socket, next) => {
@@ -84,10 +119,20 @@ export function attachPlayground(io) {
       return player;
     };
 
+    /** Bé được bấm vào: người đang online, hoặc cư dân (chủ đang vắng). */
     const other = (targetId) => {
-      const target = players.get(targetId);
-      if (!target || target.id === socket.id) throw new GameError('Bạn ấy vừa rời công viên.');
-      return target;
+      const online = players.get(targetId);
+      if (online) {
+        if (online.id === socket.id) throw new GameError('Đó là bé của bạn mà.');
+        return online;
+      }
+      const m = /^r(\d+)$/.exec(String(targetId ?? ''));
+      const userId = m && Number(m[1]);
+      const live = userId && playerOfUser(userId);
+      if (live) return live;
+      const resident = userId && userId !== socket.data.userId && residentOf(userId);
+      if (!resident) throw new GameError('Bé này vừa rời công viên.');
+      return resident;
     };
 
     on('pg:join', () => {
@@ -107,7 +152,7 @@ export function attachPlayground(io) {
       const player = players.get(socket.id) ?? {
         id: socket.id,
         userId: user.id,
-        username: user.username,
+        username: nameOf(user),
         x: randomIn(WORLD.minX + 100, WORLD.maxX - 100),
         y: randomIn(WORLD.minY + 60, WORLD.maxY - 20),
         lastChat: 0,
@@ -118,8 +163,10 @@ export function attachPlayground(io) {
       players.set(socket.id, player);
       parkUsers.add(user.id);
       socket.join(ROOM);
-      socket.emit('pg:state', { selfId: socket.id, world: WORLD, players: [...players.values()].map(view) });
-      if (isNew) socket.to(ROOM).emit('pg:joined', view(player));
+      const online = new Set([...players.values()].map((p) => p.userId));
+      const residents = store.residentUsers(MAX_RESIDENTS).filter((u) => !online.has(u.id)).map((u) => residentOf(u.id)).filter(Boolean);
+      socket.emit('pg:state', { selfId: socket.id, world: WORLD, players: [...players.values()].map(view).concat(residents) });
+      if (isNew) socket.to(ROOM).emit('pg:joined', view(player)); // client bỏ thẻ cư dân cùng userId
     });
 
     on('pg:move', ({ x, y }) => {

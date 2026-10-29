@@ -1,4 +1,3 @@
-import { EventEmitter } from 'node:events';
 import * as store from './db.js';
 import { economy } from './bank.js';
 import { dayKey, nextDay, startOfDay } from './clock.js';
@@ -10,7 +9,8 @@ import { recentMemorials, slotsOf } from './lifecycle.js';
 import { fortuneOf } from '../../public/ta-tua/game/js/shared/pets.js';
 
 /** Phát 'pet:changed' (userId) để sân chơi cập nhật thẻ thú cưng khi chủ thay đổi ở nơi khác. */
-export const bus = new EventEmitter();
+export { bus } from './events.js';
+import { bus } from './events.js';
 
 const q = {
   readyShifts: store.db.prepare('SELECT COUNT(*) AS n FROM shifts WHERE user_id = ? AND claimed_at IS NULL AND ends_at <= ?'),
