@@ -3,7 +3,7 @@
 // còn /internal chỉ gọi được qua stub từ chính ứng dụng (máy chủ dev Node đòi khóa nội bộ).
 import { economy } from './bank.js';
 import * as store from './db.js';
-import { hashPassword, verifyPassword } from './passwords.js';
+import { digest, hashPassword, randomCode, verifyPassword } from './passwords.js';
 import { GameError, RULES, clamp } from './game.js';
 import { KINDS, post, treasuryBalance } from './ledger.js';
 import { parkUsers } from './playground.js';
@@ -164,9 +164,9 @@ internalApi.post('/account/register', (req, res) => {
 
 internalApi.post('/account/login', (req, res) => {
   const user = store.findUserByLogin(req.body?.username);
-  // Tên có từ trước (vào bằng WorkHub hoặc link mời) nhưng chưa có mật khẩu: chỉ cách bổ sung.
+  // Tên có từ trước nhưng chưa có mật khẩu: trang đăng nhập đưa ra cách tạo (không nói gì thêm về tài khoản).
   if (user && !user.pass_hash && !user.banned) {
-    throw new GameError('Tài khoản này chưa có mật khẩu. Vào lại như lần trước (WorkHub hoặc link mời trên máy cũ), rồi bấm "Đặt ngay" ở thanh nhắc phía trên để bổ sung mật khẩu.');
+    return res.status(409).json({ error: 'Tài khoản này chưa có mật khẩu.', reason: 'no_password' });
   }
   if (!user || !verifyPassword(String(req.body?.password ?? ''), user.pass_hash)) throw new GameError('Sai tên đăng nhập hoặc mật khẩu.');
   if (user.banned) throw new GameError('Tài khoản chơi của bạn đã bị quản trị viên khóa.');
@@ -191,6 +191,60 @@ internalApi.post('/account/credentials', (req, res) => {
     store.setCredentials(user.id, username, hashPassword(password));
     if (user.pass_hash) store.revokeOtherSessions(user.id, token);
     return accountOf(store.getUser(user.id));
+  });
+  res.json(result);
+});
+
+/**
+ * Tạo mật khẩu cho tài khoản cũ chưa có mật khẩu, khi trình duyệt này vẫn giữ phiên chơi của chính
+ * tài khoản đó (`tokens`: các token trình duyệt còn lưu). Biết tên thôi thì không đủ.
+ */
+internalApi.post('/account/claim', (req, res) => {
+  const user = store.findUserByLogin(req.body?.username);
+  const tokens = (Array.isArray(req.body?.tokens) ? req.body.tokens : []).filter((t) => typeof t === 'string').slice(0, 5);
+  const owns = Boolean(user) && tokens.some((t) => store.userForToken(t)?.id === user.id);
+  if (!owns || user.pass_hash || user.banned) {
+    return res.status(409).json({ error: 'Trình duyệt này không xác nhận được tài khoản. Nhờ quản trị viên gửi link đặt mật khẩu cho bạn.', reason: 'no_proof' });
+  }
+  const password = newPassword(req.body?.password);
+  const result = store.transaction(() => {
+    store.setCredentials(user.id, user.username, hashPassword(password));
+    return { token: store.issueToken(user.id), ...accountOf(store.getUser(user.id)) };
+  });
+  res.json(result);
+});
+
+// ---- Link đặt mật khẩu do quản trị viên tạo (dùng một lần, 24 giờ) ----
+const PASSWORD_LINK_TTL = 24 * 3_600_000;
+
+/** Link còn dùng được: tài khoản của nó (chưa bị khóa), hoặc null. */
+function passwordLinkUser(code) {
+  const link = typeof code === 'string' && /^[a-f0-9]{32}$/.test(code) ? store.livePasswordLink(digest(code)) : undefined;
+  const user = link ? store.getUser(link.user_id) : null;
+  return user && !user.banned ? { link, user } : null;
+}
+
+internalApi.get('/password-links/:code', (req, res) => {
+  const found = passwordLinkUser(req.params.code);
+  if (!found) return res.json({ valid: false });
+  const { link, user } = found;
+  res.json({ valid: true, username: user.username, displayName: user.display_name ?? user.username, hasPassword: Boolean(user.pass_hash), expiresAt: link.expires_at });
+});
+
+/** Mở link: đặt tên đăng nhập + mật khẩu, đăng nhập luôn; mọi phiên cũ của tài khoản bị đăng xuất. */
+internalApi.post('/account/setup', (req, res) => {
+  const found = passwordLinkUser(req.body?.code);
+  if (!found) throw new GameError('Link đặt mật khẩu không còn hiệu lực. Nhờ quản trị viên tạo link mới.');
+  const { user } = found;
+  const username = loginName(req.body?.username);
+  const password = newPassword(req.body?.password);
+  const result = store.transaction(() => {
+    if (nameTaken(username, user.id)) throw new GameError('Tên này đã có người dùng, chọn tên khác nhé.');
+    if (!store.usePasswordLink(digest(req.body.code))) throw new GameError('Link đặt mật khẩu không còn hiệu lực. Nhờ quản trị viên tạo link mới.');
+    store.setCredentials(user.id, username, hashPassword(password));
+    store.revokeSessions(user.id);
+    store.adminLog(user.display_name ?? user.username, 'password_set', user.id, { via: 'link' });
+    return { token: store.issueToken(user.id), ...accountOf(store.getUser(user.id)) };
   });
   res.json(result);
 });
@@ -356,6 +410,20 @@ internalApi.post('/admin/players/:id/name', (req, res) => {
     store.adminLog(actorOf(req), 'rename', user.id, { from: user.display_name, to: name });
   });
   res.json({ ok: true });
+});
+
+/** Link đặt (hoặc đặt lại) mật khẩu cho người chơi: mã chỉ trả về ở đây, nhật ký không ghi mã. */
+internalApi.post('/admin/players/:id/password-link', (req, res) => {
+  const user = userOf(req);
+  if (user.banned) throw new GameError('Tài khoản này đang bị khóa, mở khóa trước đã.');
+  const actor = actorOf(req);
+  const code = randomCode();
+  const expiresAt = store.transaction(() => {
+    const until = store.createPasswordLink(user.id, digest(code), { createdBy: actor, ttlMs: PASSWORD_LINK_TTL });
+    store.adminLog(actor, 'password_link', user.id, { expiresAt: until });
+    return until;
+  });
+  res.json({ code, expiresAt });
 });
 
 internalApi.get('/admin/invites', (_req, res) => res.json({ invites: store.listInvites().map((i) => ({ ...i, usable: inviteUsable(i) })) }));

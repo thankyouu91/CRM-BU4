@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Ban, Coins, Copy, Gamepad2, Gift, Link2, Pencil, RefreshCw, Search, ShieldCheck, Users } from "lucide-react";
+import { Ban, Coins, Copy, Gamepad2, Gift, KeyRound, Link2, Pencil, RefreshCw, Search, ShieldCheck, Users } from "lucide-react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -13,7 +13,7 @@ import { EmptyState, PageHeader, Skeleton } from "@/components/ui/misc";
 import { Drawer } from "@/components/ui/modal";
 import { api, ApiError } from "@/lib/client";
 import { cn } from "@/lib/utils";
-import { inviteUrl, playUrl } from "@/lib/petdex-public";
+import { inviteUrl, passwordUrl, playUrl } from "@/lib/petdex-public";
 
 // Pet Town management board. Everything goes through /api/ta-tua/admin/* (administrators only),
 // which relays to the game server and writes WorkHub's audit log.
@@ -50,6 +50,7 @@ interface Player {
   createdAt: number;
   lastSeenAt: number;
   inviteId: number | null;
+  hasPassword: boolean;
 }
 interface Pet {
   id: number;
@@ -460,6 +461,8 @@ function PlayerDetail({ detail, onChanged, onClose }: { detail: Detail; onChange
           </CardBody>
         </Card>
 
+        <PasswordLink key={player.id} player={player} />
+
         <GrantPet detail={detail} onChanged={onChanged} />
 
         <div>
@@ -512,6 +515,55 @@ function PlayerDetail({ detail, onChanged, onClose }: { detail: Detail; onChange
         danger={!player.banned}
       />
     </div>
+  );
+}
+
+/** A one-time link (24 hours) for the player to set, or reset, a login name and password. */
+function PasswordLink({ player }: { player: Player }) {
+  const [busy, setBusy] = useState(false);
+  const [link, setLink] = useState<{ url: string; expiresAt: number } | null>(null);
+  const create = async () => {
+    setBusy(true);
+    try {
+      const res = await api<{ code: string; expiresAt: number }>(`${ADMIN}/players/${player.id}/password-link`, { method: "POST", body: { playerName: player.displayName } });
+      setLink({ url: passwordUrl(res.code), expiresAt: res.expiresAt });
+    } catch (err) {
+      toast.error(errorText(err));
+    } finally {
+      setBusy(false);
+    }
+  };
+  const copy = async () => {
+    if (!link) return;
+    try {
+      await navigator.clipboard.writeText(link.url);
+      toast.success("Đã chép link");
+    } catch {
+      toast.error("Không chép được, hãy chọn và sao chép thủ công");
+    }
+  };
+  return (
+    <Card>
+      <CardHeader
+        title={<span className="flex items-center gap-2"><KeyRound className="h-4 w-4 text-muted-foreground" /> Mật khẩu đăng nhập</span>}
+        description={`${player.hasPassword ? "Đã có mật khẩu." : "Chưa có mật khẩu."} Link cho người chơi tự đặt${player.hasPassword ? " lại" : ""} tên đăng nhập và mật khẩu: dùng một lần, hết hạn sau 24 giờ; tạo link mới thì link cũ hết hiệu lực.`}
+      />
+      <CardBody className="space-y-3 pt-3">
+        {link ? (
+          <>
+            <div className="flex gap-2">
+              <Input readOnly value={link.url} onFocus={(e) => e.currentTarget.select()} aria-label="Link đặt mật khẩu" />
+              <Button variant="outline" onClick={copy}><Copy className="h-4 w-4" /> Chép</Button>
+            </div>
+            <p className="text-xs text-muted-foreground">Chỉ gửi cho đúng người chơi. Hết hạn lúc {when(link.expiresAt)}; link không được lưu lại ở đâu khác.</p>
+          </>
+        ) : (
+          <Button variant="outline" onClick={create} loading={busy}>
+            <KeyRound className="h-4 w-4" /> {player.hasPassword ? "Tạo link đặt lại mật khẩu" : "Tạo link đặt mật khẩu"}
+          </Button>
+        )}
+      </CardBody>
+    </Card>
   );
 }
 
@@ -732,7 +784,7 @@ function InvitesTab() {
   );
 }
 
-const LOG_LABEL: Record<string, string> = { coins: "Cộng/trừ xu", pet: "Sửa chỉ số bé", pet_grant: "Tặng thú cưng", ban: "Khoá", unban: "Mở khoá", rename: "Đổi tên", invite: "Tạo link mời", invite_revoke: "Thu hồi link" };
+const LOG_LABEL: Record<string, string> = { coins: "Cộng/trừ xu", pet: "Sửa chỉ số bé", pet_grant: "Tặng thú cưng", ban: "Khoá", unban: "Mở khoá", rename: "Đổi tên", invite: "Tạo link mời", invite_revoke: "Thu hồi link", password_link: "Tạo link đặt mật khẩu", password_set: "Đặt mật khẩu qua link" };
 
 function LogTab() {
   const { data, error, loading, reload } = useLoad<{ log: LogRow[] }>(`${ADMIN}/log?limit=100`);

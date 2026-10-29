@@ -79,6 +79,7 @@ export const AUDIT_ACTIONS = {
   "tatua.ban": { label: "Khoá người chơi", group: "tatua" },
   "tatua.unban": { label: "Mở khoá người chơi", group: "tatua" },
   "tatua.rename": { label: "Đổi tên người chơi", group: "tatua" },
+  "tatua.password_link": { label: "Tạo link đặt mật khẩu", group: "tatua" },
   "tatua.invite": { label: "Tạo link mời khách", group: "tatua" },
   "tatua.invite_revoke": { label: "Thu hồi link mời", group: "tatua" },
 } as const satisfies Record<string, { label: string; group: AuditGroup }>;

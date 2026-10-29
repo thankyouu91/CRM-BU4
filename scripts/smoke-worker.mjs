@@ -157,6 +157,11 @@ try {
   assert.equal((await account({ action: "login", username: smokeName, password: "wrong-pass" })).status, 400, "wrong password refused");
   const memberSet = await account({ action: "credentials", token, username: `${smokeName}m`, password: "smoke-pass" });
   assert.equal(memberSet.data.hasPassword, true, `member adds a password: ${JSON.stringify(memberSet.data)}`);
+  const noPassword = await account({ action: "login", username: `${smokeName}x`, password: "" });
+  assert.equal(noPassword.status, 400, "login with an empty password for an unknown name is refused");
+  const setupPage = await fetch(`${origin}/password/${"0".repeat(32)}`, { signal: AbortSignal.timeout(20000) });
+  assert((await setupPage.text()).includes("đã dùng rồi hoặc đã hết hạn"), "/password/<code> renders");
+  assert.equal((await onPlayHost(`/password/${"0".repeat(32)}`)).status, 200, "game domain serves the password link page");
   const gameDir = await fetch(`${origin}/ta-tua/game/`, { signal: AbortSignal.timeout(20000) });
   assert.equal(gameDir.status, 200, "game page is served at its folder path (no redirect)");
   const gamePage = await fetch(`${origin}/ta-tua/game/index.html`, { signal: AbortSignal.timeout(20000) });

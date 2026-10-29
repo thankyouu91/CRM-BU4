@@ -6,6 +6,8 @@ import { clientIp, rateLimit } from "@/lib/rate-limit";
 
 // Pet Town accounts on the game domain: anyone can sign up with a name and a password and later
 // sign straight in with them. Players who came in through WorkHub or an invite set theirs here too.
+// An old account without a password gets one either from a browser that still holds its session
+// ("claim") or from a one-time link an administrator made ("setup").
 
 export interface GameAccount {
   token?: string;
@@ -19,8 +21,11 @@ export interface GameAccount {
 const credentials = { username: z.string().trim().min(1).max(40), password: z.string().min(1).max(200) };
 const schema = z.discriminatedUnion("action", [
   z.object({ action: z.literal("register"), ...credentials }),
-  z.object({ action: z.literal("login"), ...credentials }),
+  // An empty password is allowed here: it is how an old account without a password is found.
+  z.object({ action: z.literal("login"), username: credentials.username, password: z.string().max(200) }),
   z.object({ action: z.literal("credentials"), token: z.string().min(16).max(128), currentPassword: z.string().max(200).optional(), ...credentials }),
+  z.object({ action: z.literal("claim"), tokens: z.array(z.string().min(16).max(128)).max(5), ...credentials }),
+  z.object({ action: z.literal("setup"), code: z.string().regex(/^[a-f0-9]{32}$/), ...credentials }),
 ]);
 
 export async function POST(req: NextRequest) {
@@ -39,7 +44,7 @@ export async function POST(req: NextRequest) {
     try {
       return ok(await gameJson<GameAccount>(`/internal/account/${action}`, { body }));
     } catch (err) {
-      if (err instanceof GameError) return badRequest(err.message);
+      if (err instanceof GameError) return badRequest(err.message, err.reason ? { reason: err.reason } : undefined);
       throw err;
     }
   });

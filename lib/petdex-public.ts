@@ -12,18 +12,23 @@ export const PLAY_PATH = "/server1";
 /** Invite links: /invitation/<code>. */
 export const INVITE_PATH = "/invitation";
 
+/** One-time links an administrator makes for a player to set a password: /password/<code>. */
+export const PASSWORD_PATH = "/password";
+
 export const inviteUrl = (code: string) => `${PLAY_ORIGIN}${INVITE_PATH}/${code}`;
+export const passwordUrl = (code: string) => `${PLAY_ORIGIN}${PASSWORD_PATH}/${code}`;
 export const playUrl = () => `${PLAY_ORIGIN}${PLAY_PATH}`;
 
 /** What a shared play or invite link shows in a chat preview: the game's own name, nothing of WorkHub. */
 export const PLAY_SITE_NAME = "Petfarm Server";
 export const PLAY_TITLE = "Pet Town · Petfarm Server 1";
+export const PLAY_DESCRIPTION = "Petfarm, có làm mới có ăn.";
 export const playMetadata: Metadata = {
   title: { absolute: PLAY_TITLE },
-  description: PLAY_SITE_NAME,
+  description: PLAY_DESCRIPTION,
   applicationName: PLAY_SITE_NAME,
-  openGraph: { type: "website", siteName: PLAY_SITE_NAME, title: PLAY_TITLE, description: PLAY_SITE_NAME, locale: "vi_VN" },
-  twitter: { card: "summary", title: PLAY_TITLE, description: PLAY_SITE_NAME },
+  openGraph: { type: "website", siteName: PLAY_SITE_NAME, title: PLAY_TITLE, description: PLAY_DESCRIPTION, locale: "vi_VN" },
+  twitter: { card: "summary", title: PLAY_TITLE, description: PLAY_DESCRIPTION },
 };
 
 /**
@@ -46,7 +51,7 @@ export interface GuestSession {
 }
 
 /** Game pages and what they need; on the game domain everything else of WorkHub is out of reach. */
-const PLAY_HOST_PATHS = [PLAY_PATH, INVITE_PATH, "/ta-tua/game", "/ta-tua/api", "/ta-tua/ws", "/ta-tua/khach", "/api/ta-tua/guest", "/api/ta-tua/account", "/login", "/api/auth", "/change-password"];
+const PLAY_HOST_PATHS = [PLAY_PATH, INVITE_PATH, PASSWORD_PATH, "/ta-tua/game", "/ta-tua/api", "/ta-tua/ws", "/ta-tua/khach", "/api/ta-tua/guest", "/api/ta-tua/account", "/login", "/api/auth", "/change-password"];
 
 /**
  * On the game domain: where to send a request for a WorkHub page instead (null = serve it).

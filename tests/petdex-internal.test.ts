@@ -287,6 +287,61 @@ describe("Pet Town name + password accounts", () => {
     expect((await internal("POST", "/account/login", { username: "Thay_Mat_Khau", password: "moi12345" })).status).toBe(200);
   });
 
+  it("an old account without a password: the name alone gets only 'chưa có mật khẩu', and a password needs proof", async () => {
+    const sso = await internal("POST", "/sso", { crmUserId: "crm-claim", name: "Hồ Xuân Hương" });
+    const name = sso.data.username as string;
+    const login = await internal("POST", "/account/login", { username: name, password: "" });
+    expect(login.status).toBe(409);
+    expect(login.data).toEqual({ error: "Tài khoản này chưa có mật khẩu.", reason: "no_password" });
+
+    // knowing the name is not enough, nor is another player's session
+    const stranger = await internal("POST", "/account/register", { username: "Nguoi_La", password: "abcdef" });
+    for (const tokens of [[], ["x".repeat(48)], [stranger.data.token]]) {
+      const res = await internal("POST", "/account/claim", { username: name, password: "chiem123", tokens });
+      expect(res.status).toBe(409);
+      expect(res.data.reason).toBe("no_proof");
+    }
+    // the browser that still holds this account's session can set it
+    const claimed = await internal("POST", "/account/claim", { username: name.toUpperCase(), password: "xuanhuong1", tokens: [stranger.data.token, sso.data.token] });
+    expect(claimed.status).toBe(200);
+    expect(claimed.data).toMatchObject({ userId: sso.data.userId, username: name, hasPassword: true });
+    expect((await internal("POST", "/account/login", { username: name, password: "xuanhuong1" })).data.userId).toBe(sso.data.userId);
+    // once it has a password, claiming again does nothing
+    const again = await internal("POST", "/account/claim", { username: name, password: "doilai123", tokens: [sso.data.token] });
+    expect(again.data.reason).toBe("no_proof");
+  });
+
+  it("an administrator's password link works once, for 24 hours, and the newest one wins", async () => {
+    const guest = await internal("POST", "/sso", { crmUserId: "crm-link", name: "Trưng Trắc" });
+    const userId = guest.data.userId as number;
+    const first = await internal("POST", `/admin/players/${userId}/password-link`, { actor: "Admin" });
+    const second = await internal("POST", `/admin/players/${userId}/password-link`, { actor: "Admin" });
+    expect(second.data.code).toMatch(/^[a-f0-9]{32}$/);
+    expect((second.data.expiresAt as number) - Date.now()).toBeGreaterThan(23.9 * 3_600_000);
+    expect((await internal("GET", `/password-links/${first.data.code}`)).data).toEqual({ valid: false }); // replaced
+    expect((await internal("GET", `/password-links/${second.data.code}`)).data).toMatchObject({ valid: true, displayName: "Trưng Trắc", hasPassword: false });
+
+    const used = await internal("POST", "/account/setup", { code: second.data.code, username: "Trung_Trac", password: "trungtrac1" });
+    expect(used.status).toBe(200);
+    expect(used.data).toMatchObject({ userId, username: "Trung_Trac", hasPassword: true });
+    expect((await game("GET", "/me", guest.data.token as string)).status).toBe(401); // old sessions signed out
+    expect((await game("GET", "/me", used.data.token as string)).status).toBe(200);
+    expect((await internal("POST", "/account/login", { username: "trung_trac", password: "trungtrac1" })).data.userId).toBe(userId);
+    // single use
+    expect((await internal("POST", "/account/setup", { code: second.data.code, username: "Trung_Trac", password: "khac1234" })).data.error).toMatch(/không còn hiệu lực/);
+    expect((await internal("GET", `/password-links/${second.data.code}`)).data).toEqual({ valid: false });
+    // the admin log records the link and its use, never the code
+    const log = await internal("GET", "/admin/log");
+    const entries = (log.data.entries ?? log.data.log ?? log.data) as Json[];
+    const mine = (Array.isArray(entries) ? entries : []).filter((e) => e.user_id === userId);
+    expect(mine.map((e) => e.action)).toEqual(expect.arrayContaining(["password_link", "password_set"]));
+    expect(JSON.stringify(log.data)).not.toContain(second.data.code as string);
+    // expired
+    const third = await internal("POST", `/admin/players/${userId}/password-link`, { actor: "Admin" });
+    store.db.prepare("UPDATE password_links SET expires_at = 1 WHERE used_at IS NULL").run();
+    expect((await internal("POST", "/account/setup", { code: third.data.code, username: "Trung_Trac", password: "khac1234" })).data.error).toMatch(/không còn hiệu lực/);
+  });
+
   it("a banned player cannot sign in", async () => {
     const reg = await internal("POST", "/account/register", { username: "BiKhoa", password: "abcdef" });
     await internal("POST", `/admin/players/${reg.data.userId}/status`, { banned: true, actor: "Admin" });

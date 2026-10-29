@@ -9,7 +9,7 @@ import { isAdmin } from "@/lib/rbac";
 // internal admin API (petdex/server/internal.js); every change is also written to WorkHub's
 // audit log with the administrator as actor.
 
-const ALLOWED = /^(overview|log|invites(\/\d+\/revoke)?|players(\/\d+(\/(coins|status|name|pets(\/\d+)?))?)?)$/;
+const ALLOWED = /^(overview|log|invites(\/\d+\/revoke)?|players(\/\d+(\/(coins|status|name|password-link|pets(\/\d+)?))?)?)$/;
 
 type Params = { params: Promise<{ path: string[] }> };
 
@@ -30,6 +30,8 @@ function describe(path: string, body: Record<string, unknown>): { action: AuditA
   if (/^players\/\d+\/pets\/\d+$/.test(path)) return { action: "tatua.pet", entityId: id, summary: `Sửa chỉ số thú cưng ${body.petName ? `“${body.petName}” ` : ""}của ${player}` };
   if (/^players\/\d+\/status$/.test(path)) return { action: body.banned ? "tatua.ban" : "tatua.unban", entityId: id, summary: `${body.banned ? "Khoá" : "Mở khoá"} ${player}` };
   if (/^players\/\d+\/name$/.test(path)) return { action: "tatua.rename", entityId: id, summary: `Đổi tên ${player} thành “${String(body.displayName ?? "")}”` };
+  // the one-time code is only in the response, never in the audit entry
+  if (/^players\/\d+\/password-link$/.test(path)) return { action: "tatua.password_link", entityId: id, summary: `Tạo link đặt mật khẩu cho ${player} (dùng một lần, 24 giờ)` };
   if (path === "invites") return { action: "tatua.invite", entityId: null, summary: `Tạo link mời khách “${String(body.label ?? "Khách mời")}”` };
   if (/^invites\/\d+\/revoke$/.test(path)) return { action: "tatua.invite_revoke", entityId: path.split("/")[1], summary: `Thu hồi link mời #${path.split("/")[1]}` };
   return null;

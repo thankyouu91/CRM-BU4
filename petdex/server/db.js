@@ -510,6 +510,16 @@ addColumn('users', 'locked_slots', 'INTEGER NOT NULL DEFAULT 0');
     created_at INTEGER NOT NULL
   );
   CREATE INDEX IF NOT EXISTS admin_log_time ON admin_log(id DESC);
+  -- Link đặt mật khẩu do quản trị viên tạo: dùng một lần, có hạn; chỉ lưu mã đã băm.
+  CREATE TABLE IF NOT EXISTS password_links (
+    code_hash  TEXT PRIMARY KEY,
+    user_id    INTEGER NOT NULL,
+    created_by TEXT NOT NULL,
+    created_at INTEGER NOT NULL,
+    expires_at INTEGER NOT NULL,
+    used_at    INTEGER
+  );
+  CREATE INDEX IF NOT EXISTS password_links_user ON password_links(user_id);
   `);
 }
 
@@ -656,6 +666,10 @@ const w = {
   revokeInvite: db.prepare('UPDATE guest_invites SET revoked_at = ? WHERE id = ? AND revoked_at IS NULL'),
 
   insertLog: db.prepare('INSERT INTO admin_log (actor, action, user_id, details, created_at) VALUES (?, ?, ?, ?, ?)'),
+  insertPasswordLink: db.prepare('INSERT INTO password_links (code_hash, user_id, created_by, created_at, expires_at) VALUES (?, ?, ?, ?, ?)'),
+  retirePasswordLinks: db.prepare('UPDATE password_links SET used_at = ? WHERE user_id = ? AND used_at IS NULL'),
+  passwordLink: db.prepare('SELECT * FROM password_links WHERE code_hash = ?'),
+  usePasswordLink: db.prepare('UPDATE password_links SET used_at = ? WHERE code_hash = ? AND used_at IS NULL'),
   logs: db.prepare('SELECT l.*, u.username, u.display_name FROM admin_log l LEFT JOIN users u ON u.id = l.user_id ORDER BY l.id DESC LIMIT ?'),
 };
 
@@ -709,5 +723,21 @@ export const listInvites = () => w.invites.all();
 export const useInvite = (id) => w.useInvite.run(id);
 export const revokeInvite = (id, now = Date.now()) => w.revokeInvite.run(now, id).changes > 0;
 
+/**
+ * Link đặt mật khẩu mới cho người chơi (các link cũ chưa dùng của người đó hết hiệu lực).
+ * `codeHash` là mã đã băm: mã gốc chỉ trả về cho quản trị viên một lần.
+ */
+export function createPasswordLink(userId, codeHash, { createdBy, ttlMs }, now = Date.now()) {
+  w.retirePasswordLinks.run(now, userId);
+  w.insertPasswordLink.run(codeHash, userId, createdBy, now, now + ttlMs);
+  return now + ttlMs;
+}
+/** Link còn dùng được (chưa dùng, chưa hết hạn), hoặc undefined. */
+export function livePasswordLink(codeHash, now = Date.now()) {
+  const link = w.passwordLink.get(codeHash);
+  return link && !link.used_at && link.expires_at > now ? link : undefined;
+}
+/** Đánh dấu đã dùng; false nếu đã có người dùng trước. */
+export const usePasswordLink = (codeHash, now = Date.now()) => w.usePasswordLink.run(now, codeHash).changes > 0;
 export const adminLog = (actor, action, userId, details) => w.insertLog.run(actor, action, userId ?? null, details == null ? null : JSON.stringify(details), Date.now());
 export const adminLogs = (limit = 50) => w.logs.all(limit).map((r) => ({ ...r, details: r.details ? JSON.parse(r.details) : null }));

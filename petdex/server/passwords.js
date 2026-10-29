@@ -5,6 +5,10 @@ export function hashPassword(password, salt = nodeCrypto.randomBytes(16).toStrin
   return `${salt}:${nodeCrypto.scryptSync(password, salt, 32).toString('hex')}`;
 }
 
+/** Băm mã một lần (link đặt mật khẩu) trước khi lưu, để dữ liệu lộ ra cũng không dùng được link. */
+export const digest = (code) => nodeCrypto.createHash('sha256').update(String(code)).digest('hex');
+export const randomCode = () => nodeCrypto.randomBytes(16).toString('hex');
+
 /** Tài khoản chưa đặt mật khẩu (pass_hash rỗng) không bao giờ khớp. */
 export function verifyPassword(password, stored) {
   const [salt, hash] = String(stored ?? '').split(':');

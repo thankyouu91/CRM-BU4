@@ -7,7 +7,7 @@ import { Field, Input } from "@/components/ui/input";
 import { Modal } from "@/components/ui/modal";
 import { Segmented } from "@/components/ui/misc";
 import { api, ApiError } from "@/lib/client";
-import { playUrl } from "@/lib/petdex-public";
+import { GUEST_SESSION_KEY, playUrl } from "@/lib/petdex-public";
 import { cn } from "@/lib/utils";
 import type { GameAccount } from "@/app/api/ta-tua/account/route";
 
@@ -24,65 +24,124 @@ const nameHint = "3–20 ký tự: chữ, số hoặc dấu _, không dấu các
 
 const failure = (err: unknown) => (err instanceof ApiError ? err.message : "Không gửi được, thử lại nhé.");
 
-function checkNew(username: string, password: string, confirm: string): string | null {
-  if (!NAME_RULE.test(username.normalize("NFC"))) return `Tên đăng nhập ${nameHint}`;
+function checkPassword(password: string, confirm: string): string | null {
   if (password.length < 6) return "Mật khẩu cần ít nhất 6 ký tự.";
   if (password !== confirm) return "Hai lần nhập mật khẩu chưa khớp.";
   return null;
 }
 
-/** Sign in or sign up with a name and a password (the play page, when the browser has no session). */
+function checkNew(username: string, password: string, confirm: string): string | null {
+  if (!NAME_RULE.test(username.normalize("NFC"))) return `Tên đăng nhập ${nameHint}`;
+  return checkPassword(password, confirm);
+}
+
+const NO_PROOF = "Trình duyệt này không còn phiên chơi của tài khoản này. Nhờ quản trị viên gửi link đặt mật khẩu cho bạn.";
+
+/** Play sessions this browser still keeps (the play page's and the game page's copies). */
+function storedTokens(): string[] {
+  try {
+    const guest = JSON.parse(localStorage.getItem(GUEST_SESSION_KEY) ?? "null") as { token?: string } | null;
+    return [guest?.token, localStorage.getItem("petdex.token")].filter((t): t is string => typeof t === "string" && t.length >= 16);
+  } catch {
+    return [];
+  }
+}
+
+/**
+ * Sign in or sign up with a name and a password (the play page, when the browser has no session).
+ * An old account that has no password yet ("claim") gets one here only if this browser still holds
+ * that account's play session; otherwise an administrator's one-time link is the way.
+ */
 export function AccountForm({ onSignedIn }: { onSignedIn: (account: GameAccount & { token: string }) => void }) {
-  const [mode, setMode] = useState<"login" | "register">("login");
+  const [mode, setMode] = useState<"login" | "register" | "claim">("login");
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
+  const [noPassword, setNoPassword] = useState(false);
+  const [noProof, setNoProof] = useState(false);
+
+  const reset = (next: "login" | "register" | "claim") => {
+    setMode(next);
+    setMessage(null);
+    setNoPassword(false);
+    setNoProof(false);
+    setPassword("");
+    setConfirm("");
+  };
+
+  const startClaim = () => {
+    if (!storedTokens().length) return setNoProof(true);
+    setMode("claim");
+    setMessage(null);
+    setPassword("");
+    setConfirm("");
+  };
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     const name = username.trim();
-    const problem = mode === "register" ? checkNew(name, password, confirm) : null;
+    const problem = mode === "register" ? checkNew(name, password, confirm) : mode === "claim" ? checkPassword(password, confirm) : null;
     if (problem) return setMessage(problem);
     setBusy(true);
     setMessage(null);
     try {
-      const account = await api<GameAccount>("/api/ta-tua/account", { method: "POST", body: { action: mode, username: name, password } });
+      const body = mode === "claim" ? { action: "claim", username: name, password, tokens: storedTokens() } : { action: mode, username: name, password };
+      const account = await api<GameAccount>("/api/ta-tua/account", { method: "POST", body });
       if (account.token) onSignedIn({ ...account, token: account.token });
     } catch (err) {
-      setMessage(failure(err));
+      const reason = err instanceof ApiError ? err.fields?.reason : undefined;
+      if (reason === "no_password") setNoPassword(true);
+      else if (reason === "no_proof") {
+        reset("login");
+        setNoPassword(true);
+        setNoProof(true);
+      } else setMessage(failure(err));
       setBusy(false);
     }
   };
 
+  const claiming = mode === "claim";
+  const newPassword = mode !== "login";
   return (
     <form onSubmit={submit} className="space-y-3">
       <Segmented
-        value={mode}
-        onChange={(m) => {
-          setMode(m);
-          setMessage(null);
-        }}
+        value={claiming ? "login" : mode}
+        onChange={reset}
         options={[
           { value: "login", label: "Đăng nhập" },
           { value: "register", label: "Tạo tài khoản" },
         ]}
       />
       <Field label="Tên đăng nhập" htmlFor="tt-username" hint={mode === "register" ? nameHint : undefined}>
-        <Input id="tt-username" value={username} onChange={(e) => setUsername(e.target.value)} autoComplete="username" maxLength={20} required autoFocus />
+        <Input
+          id="tt-username"
+          value={username}
+          onChange={(e) => {
+            setUsername(e.target.value);
+            setNoPassword(false);
+            setNoProof(false);
+          }}
+          autoComplete="username"
+          maxLength={20}
+          required
+          readOnly={claiming}
+          autoFocus
+        />
       </Field>
-      <Field label="Mật khẩu" htmlFor="tt-password" hint={mode === "register" ? "Ít nhất 6 ký tự." : undefined}>
+      {claiming && <p className="text-sm text-muted-foreground">Trình duyệt này còn phiên chơi của tài khoản. Đặt mật khẩu để lần sau đăng nhập bằng tên này.</p>}
+      <Field label={claiming ? "Mật khẩu mới" : "Mật khẩu"} htmlFor="tt-password" hint={newPassword ? "Ít nhất 6 ký tự." : undefined}>
         <Input
           id="tt-password"
           type="password"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
-          autoComplete={mode === "register" ? "new-password" : "current-password"}
-          required
+          autoComplete={newPassword ? "new-password" : "current-password"}
+          required={newPassword}
         />
       </Field>
-      {mode === "register" && (
+      {newPassword && (
         <Field label="Nhập lại mật khẩu" htmlFor="tt-confirm">
           <Input id="tt-confirm" type="password" value={confirm} onChange={(e) => setConfirm(e.target.value)} autoComplete="new-password" required />
         </Field>
@@ -92,9 +151,26 @@ export function AccountForm({ onSignedIn }: { onSignedIn: (account: GameAccount 
           {message}
         </p>
       )}
-      <Button type="submit" className="w-full" loading={busy} disabled={!username.trim() || !password}>
-        {mode === "register" ? "Tạo tài khoản và vào chơi" : "Vào chơi"}
+      {noPassword && mode === "login" && (
+        <div role="alert" className="space-y-2 rounded-md border bg-muted/50 p-3 text-sm">
+          <p className="font-medium">Tài khoản này chưa có mật khẩu.</p>
+          {noProof ? (
+            <p className="text-muted-foreground">{NO_PROOF}</p>
+          ) : (
+            <Button type="button" size="sm" variant="outline" onClick={startClaim}>
+              <KeyRound className="h-4 w-4" /> Tạo mật khẩu
+            </Button>
+          )}
+        </div>
+      )}
+      <Button type="submit" className="w-full" loading={busy} disabled={!username.trim() || (newPassword && !password)}>
+        {mode === "register" ? "Tạo tài khoản và vào chơi" : claiming ? "Lưu mật khẩu và vào chơi" : "Vào chơi"}
       </Button>
+      {claiming && (
+        <button type="button" onClick={() => reset("login")} className="w-full rounded-md py-1.5 text-xs text-muted-foreground hover:bg-muted hover:text-foreground">
+          ← Quay lại đăng nhập
+        </button>
+      )}
     </form>
   );
 }

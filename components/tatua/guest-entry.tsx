@@ -69,7 +69,7 @@ export function GuestEntry({ code, valid, label, error }: { code: string; valid:
           Đăng nhập ở đây
         </Link>
       </p>
-      <p className="mt-6 text-xs text-muted-foreground">Một trò chơi trong WorkHub. Dữ liệu chơi chỉ dùng cho vui, không liên quan tới công việc.</p>
+      <p className="mt-6 text-xs text-muted-foreground">Pet Town trên Petfarm Server. Dữ liệu trong game chỉ để chơi cho vui.</p>
     </MeadowShell>
   );
 }

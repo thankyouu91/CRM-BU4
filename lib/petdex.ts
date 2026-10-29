@@ -13,6 +13,8 @@ export class GameError extends Error {
   constructor(
     message: string,
     public status: number,
+    /** A machine-readable cause the game adds to some refusals (e.g. "no_password"). */
+    public reason?: string,
   ) {
     super(message);
   }
@@ -50,8 +52,8 @@ export async function gameFetch(path: string, init: { method?: "GET" | "POST"; b
 /** JSON call that throws GameError with the game's message when it refuses. */
 export async function gameJson<T>(path: string, init: { method?: "GET" | "POST"; body?: unknown } = {}): Promise<T> {
   const res = await gameFetch(path, init);
-  const data = (await res.json().catch(() => ({}))) as T & { error?: string };
-  if (!res.ok) throw new GameError(data.error ?? "Máy chủ game gặp sự cố.", res.status);
+  const data = (await res.json().catch(() => ({}))) as T & { error?: string; reason?: string };
+  if (!res.ok) throw new GameError(data.error ?? "Máy chủ game gặp sự cố.", res.status, data.reason);
   return data;
 }
 
