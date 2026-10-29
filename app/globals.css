@@ -80,12 +80,24 @@
 }
 .dark[data-scene="night"] .rounded-xl.border.bg-card {
   backdrop-filter: blur(6px);
-  -webkit-backdrop-filter: blur(6px);
 }
-.dark[data-scene="night"] :is(header.bg-background, aside.bg-sidebar) {
+.dark[data-scene="night"] aside.bg-sidebar {
   background-color: rgb(var(--background) / 0.72);
   backdrop-filter: blur(6px);
-  -webkit-backdrop-filter: blur(6px);
+}
+/* The header is nearly solid: the page scrolls under it and must not read through. */
+.dark[data-scene="night"] header.sticky {
+  background-color: rgb(var(--background) / 0.9);
+  backdrop-filter: blur(6px);
+}
+
+/* Cells that stay put while a table scrolls (the timeline's name and progress columns)
+   keep a solid fill, so the bars that slide under them do not show through. */
+[data-scene] .sticky.bg-card {
+  background-color: rgb(var(--card));
+}
+[data-scene] .group:hover > .sticky.bg-card {
+  background-color: rgb(var(--muted));
 }
 
 /* Light theme: the valley at dawn. White surfaces with a cool, bluish edge and a soft shadow. */
@@ -105,12 +117,14 @@
 :root:not(.dark)[data-scene="dawn"] .rounded-xl.border.bg-card {
   box-shadow: 0 1px 2px rgb(27 35 51 / 0.04), 0 8px 24px -12px rgb(27 35 51 / 0.12);
   backdrop-filter: blur(6px);
-  -webkit-backdrop-filter: blur(6px);
 }
-:root:not(.dark)[data-scene="dawn"] :is(header.bg-background, aside.bg-sidebar) {
+:root:not(.dark)[data-scene="dawn"] aside.bg-sidebar {
   background-color: rgb(255 255 255 / 0.6);
   backdrop-filter: blur(6px);
-  -webkit-backdrop-filter: blur(6px);
+}
+:root:not(.dark)[data-scene="dawn"] header.sticky {
+  background-color: rgb(255 255 255 / 0.9);
+  backdrop-filter: blur(6px);
 }
 
 @layer utilities {

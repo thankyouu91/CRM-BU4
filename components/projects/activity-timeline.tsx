@@ -46,18 +46,19 @@ export function ActivityTimeline({ entries, period, view, now }: {
     </div>
 
     <div className="scrollbar-thin hidden overflow-x-auto md:block" role="region" aria-label={`Lịch dự án ${period.label}, cuộn ngang để xem toàn bộ`} tabIndex={0}>
-      {/* Name and progress stay in view (sticky) when the days scroll sideways on narrower screens. */}
+      {/* Name and progress stay in view (sticky) when the days scroll sideways on narrower screens.
+          Everything here stays under z-20, so nothing paints over the app header while the page scrolls. */}
       <div className={cn("relative", view === "month" ? "min-w-[1040px]" : "min-w-[880px]")}>
         <div className="grid grid-cols-[280px_minmax(0,1fr)_80px] border-b">
-          <div className="sticky left-0 z-20 flex items-center border-r bg-card px-4 text-xs font-medium text-muted-foreground">Dự án / Người phụ trách</div>
+          <div className="sticky left-0 z-[2] flex items-center border-r bg-card px-4 text-xs font-medium text-muted-foreground">Dự án / Người phụ trách</div>
           <div className="relative grid h-12" style={{ gridTemplateColumns: grid }}>
             {period.columns.map((column) => <div key={column.key} className={cn("flex flex-col items-center justify-center border-r text-xs", column.weekend && "bg-muted/60 text-muted-foreground")}>
               <span className="font-medium tabular-nums">{column.label}</span>
               {view === "month" && <span className="text-[10px] leading-3 text-muted-foreground">{column.detail}</span>}
             </div>)}
-            {today !== null && <span className="absolute bottom-0 z-10 h-1 w-3 -translate-x-1/2 rounded-t bg-danger" style={{ left: `${today}%` }} />}
+            {today !== null && <span className="absolute bottom-0 z-[1] h-1 w-3 -translate-x-1/2 rounded-t bg-danger" style={{ left: `${today}%` }} />}
           </div>
-          <div className="sticky right-0 z-20 flex items-center justify-center border-l bg-card text-xs font-medium text-muted-foreground">Tiến độ</div>
+          <div className="sticky right-0 z-[2] flex items-center justify-center border-l bg-card text-xs font-medium text-muted-foreground">Tiến độ</div>
         </div>
 
         <div className="relative">
@@ -65,10 +66,10 @@ export function ActivityTimeline({ entries, period, view, now }: {
             <div className="absolute inset-0 grid" style={{ gridTemplateColumns: grid }}>
               {period.columns.map((column) => <div key={column.key} className={cn("border-r border-border/50", column.weekend && "bg-muted/40")} />)}
             </div>
-            {today !== null && <div className="absolute inset-y-0 z-10 border-l border-danger/60" style={{ left: `${today}%` }} />}
+            {today !== null && <div className="absolute inset-y-0 z-[1] border-l border-danger/60" style={{ left: `${today}%` }} />}
           </div>
         {entries.map(({ project: p, timing, span }) => <div key={p.id} className="group relative grid grid-cols-[280px_minmax(0,1fr)_80px] border-b last:border-b-0">
-          <Link href={`/projects/${p.id}`} title={p.name} className="sticky left-0 z-20 flex min-h-[68px] items-start gap-2.5 border-r bg-card px-4 py-3 group-hover:bg-muted">
+          <Link href={`/projects/${p.id}`} title={p.name} className="sticky left-0 z-[2] flex min-h-[68px] items-start gap-2.5 border-r bg-card px-4 py-3 group-hover:bg-muted">
             <span className="mt-1.5 h-2 w-2 shrink-0 rounded-sm" style={{ background: p.color }} />
             <div className="min-w-0"><h3 className="truncate text-sm font-medium">{p.name}</h3>
               <div className="mt-1 flex items-center gap-2"><ProjectStatusBadge status={p.status} /><span className="truncate text-xs text-muted-foreground">{p.owner.name}</span></div>
@@ -76,11 +77,11 @@ export function ActivityTimeline({ entries, period, view, now }: {
           </Link>
           <div className="relative min-h-[68px]">
             {timing.kind === "deadline" ? <Link href={`/projects/${p.id}`} aria-label={`${p.name}: ${projectDateLabel(p)}`} title={`${p.name}\n${projectDateLabel(p)}`}
-              className="absolute top-1/2 z-10 flex h-8 w-8 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-md border bg-card hover:border-foreground/30"
+              className="absolute top-1/2 z-[1] flex h-8 w-8 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-md border bg-card hover:border-foreground/30"
               style={{ left: `clamp(18px, ${span.left + span.width / 2}%, calc(100% - 18px))`, color: p.color }}><Flag className="h-4 w-4" /></Link>
               : <Link href={`/projects/${p.id}`} aria-label={`${p.name}: ${projectDateLabel(p)}, tiến độ ${p.progress}%`}
                 title={`${p.name}\n${projectDateLabel(p)}\n${p.doneTasks}/${p.totalTasks} công việc hoàn thành`}
-                className={cn("absolute top-1/2 z-10 h-8 -translate-y-1/2 overflow-hidden rounded-md bg-card hover:ring-1 hover:ring-foreground/30", timing.kind === "open" && "border border-dashed", span.continuesBefore && "rounded-l-none", span.continuesAfter && "rounded-r-none")}
+                className={cn("absolute top-1/2 z-[1] h-8 -translate-y-1/2 overflow-hidden rounded-md bg-card hover:ring-1 hover:ring-foreground/30", timing.kind === "open" && "border border-dashed", span.continuesBefore && "rounded-l-none", span.continuesAfter && "rounded-r-none")}
                 style={{ left: `${span.left}%`, width: `${span.width}%`, borderColor: p.color }}>
                 <span aria-hidden className="absolute inset-0 opacity-[0.14]" style={{ background: p.color }} />
                 <span aria-hidden className="absolute inset-y-0 left-0 opacity-[0.28]" style={{ background: p.color, width: `${clampProgress(p.progress)}%` }} />
@@ -90,7 +91,7 @@ export function ActivityTimeline({ entries, period, view, now }: {
                 </span>
               </Link>}
           </div>
-          <div className="sticky right-0 z-20 flex items-center justify-center border-l bg-card px-3 group-hover:bg-muted"><Progress value={p.progress} /></div>
+          <div className="sticky right-0 z-[2] flex items-center justify-center border-l bg-card px-3 group-hover:bg-muted"><Progress value={p.progress} /></div>
         </div>)}
         </div>
       </div>
