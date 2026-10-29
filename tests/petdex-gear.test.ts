@@ -222,15 +222,26 @@ describe("Pet Town gift codes", () => {
 
     const a = await player("Nhan_Qua_A", 0);
     const before = ((await game("GET", "/me", a.token)).data.user as Json).coins as number;
-    const got = await game("POST", "/gifts/redeem", a.token, { code: code.toLowerCase() });
+    // Pin the roll so the random piece is also a crown, in another tier (16th of 22 wearables, Xanh lục):
+    // the fixed gold crown must still be there.
+    const realRandom = Math.random;
+    Math.random = () => 0.7;
+    let got;
+    try {
+      got = await game("POST", "/gifts/redeem", a.token, { code: code.toLowerCase() });
+    } finally {
+      Math.random = realRandom;
+    }
     expect(got.status).toBe(200);
     expect((got.data.result as Json).message).toMatch(/Quà khai trương/);
+    const given = (got.data.result as Json).gear as Json[];
+    expect(given.map((g) => [g.itemId, g.tier])).toEqual([["crown", "gold"], ["crown", "green"]]);
     const me = (await game("GET", "/me", a.token)).data;
     expect((me.user as Json).coins).toBe(before + 500);
     expect((me.inventory as Json).bath).toBe(2);
     const gear = me.gear as Json[];
     expect(gear).toHaveLength(2);
-    expect(gear.find((g) => g.itemId === "crown")).toMatchObject({ tier: "gold" });
+    expect(gear.some((g) => g.itemId === "crown" && g.tier === "gold")).toBe(true);
     expect((await game("POST", "/gifts/redeem", a.token, { code })).data.error).toMatch(/nhận quà của mã này rồi/);
 
     const b = await player("Nhan_Qua_B", 0);
