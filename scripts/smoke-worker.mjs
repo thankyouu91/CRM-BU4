@@ -145,6 +145,23 @@ try {
     req.on("error", reject);
     req.end();
   });
+  // The Petfarm website (www.petfarm.online): the landing page at "/", nothing of WorkHub.
+  const onSiteHost = (path) => new Promise((resolve, reject) => {
+    const req = request(`${origin}${path}`, { headers: { Host: "www.petfarm.online" }, timeout: 20000 }, (res) => {
+      let text = "";
+      res.setEncoding("utf8");
+      res.on("data", (chunk) => { text += chunk; });
+      res.on("end", () => resolve({ status: res.statusCode, location: res.headers.location ?? "", text }));
+    });
+    req.on("error", reject);
+    req.end();
+  });
+  const site = await onSiteHost("/");
+  assert.equal(site.status, 200, "website: landing page status");
+  assert(site.text.includes("Nuôi bé, đi làm") && site.text.includes("/petfarm/map.webp"), "website: landing page renders");
+  assert.equal((await onSiteHost("/dashboard")).location, "/", "website: WorkHub pages go home");
+  assert.equal((await onSiteHost("/api/projects")).status, 404, "website: no WorkHub API");
+  assert.equal((await fetch(`${origin}/petfarm/map.webp`, { signal: AbortSignal.timeout(20000) })).status, 200, "website pictures are static assets");
   const playRoot = await onPlayHost("/dashboard");
   assert.equal(playRoot.status, 307, "game domain: WorkHub pages redirect");
   assert(playRoot.location.endsWith("/server1"), "game domain: to the play page");
@@ -177,7 +194,7 @@ try {
   assert.equal(gameDir.status, 200, "game page is served at its folder path (no redirect)");
   const gamePage = await fetch(`${origin}/ta-tua/game/index.html`, { signal: AbortSignal.timeout(20000) });
   assert.equal(gamePage.status, 200, "game page is served as a static asset");
-  console.log("Worker smoke passed: login, project calendar, My Tasks, public share link, deadline APIs, department report, analytics, AI intake route and Pet Town (game API, Durable Object, sign-in, name + password accounts, gear and gift codes, park WebSocket) on workerd + PostgreSQL.");
+  console.log("Worker smoke passed: login, project calendar, My Tasks, public share link, deadline APIs, department report, analytics, AI intake route and Pet Town (game API, Durable Object, sign-in, name + password accounts, gear and gift codes, park WebSocket) and the Petfarm website on workerd + PostgreSQL.");
 } catch (error) {
   console.error(logs);
   throw error;

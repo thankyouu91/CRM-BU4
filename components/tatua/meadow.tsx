@@ -40,6 +40,20 @@ export function MeadowShell({ children }: { children: React.ReactNode }) {
   );
 }
 
+/** The meadow alone, filling its positioned parent (the Petfarm site's hero). */
+export function MeadowCanvas({ className }: { className?: string }) {
+  const [host, setHost] = useState<HTMLCanvasElement | null>(null);
+  useEffect(() => (host ? startMeadow(host) : undefined), [host]);
+  return (
+    <canvas
+      ref={setHost}
+      aria-hidden
+      className={cn("absolute inset-0 h-full w-full print:hidden", className)}
+      style={{ background: "linear-gradient(#9fd6ff, #cdeeff 34%, #fff4dc 56%, #98d67a 63%, #6fb554)" }}
+    />
+  );
+}
+
 // ---------------------------------------------------------------- engine
 
 type RigSheet = { url: string; frameW: number; frameH: number; cols: number; anims: Record<string, { row: number; frames: number; fps: number }> };
@@ -572,7 +586,14 @@ function startMeadow(canvas: HTMLCanvasElement): () => void {
     } else placePets();
   }
 
-  const onVisibility = () => (document.visibilityState === "visible" ? run() : cancelAnimationFrame(raf));
+  // runs only while the tab is shown and the canvas is on screen (it can scroll away inside a page)
+  let inView = true;
+  const onVisibility = () => (document.visibilityState === "visible" && inView ? run() : cancelAnimationFrame(raf));
+  const seen = new IntersectionObserver(([entry]) => {
+    if (entry.isIntersecting === inView) return;
+    inView = entry.isIntersecting;
+    onVisibility();
+  });
   let resizeTimer = 0;
   const sizer = new ResizeObserver(() => {
     if (canvas.clientWidth === W && canvas.clientHeight === H) return;
@@ -585,6 +606,13 @@ function startMeadow(canvas: HTMLCanvasElement): () => void {
 
   // pointing at a pet: it jumps with a heart and shows its name; clicking: it spins in a shower of hearts
   const onScene = (e: Event) => !(e.target instanceof Element && e.target.closest("[data-meadow-card]"));
+  /** The pointer in canvas coordinates, or null outside the canvas. */
+  const local = (e: MouseEvent) => {
+    const r = canvas.getBoundingClientRect();
+    const x = e.clientX - r.left;
+    const y = e.clientY - r.top;
+    return x >= 0 && y >= 0 && x <= r.width && y <= r.height ? { x, y } : null;
+  };
   const petAt = (x: number, y: number) => {
     for (let i = pets.length - 1; i >= 0; i--) {
       const b = boxOf(pets[i]);
@@ -606,7 +634,7 @@ function startMeadow(canvas: HTMLCanvasElement): () => void {
     still();
   }
   const onPointerMove = (e: PointerEvent) => {
-    pointer = onScene(e) ? { x: e.clientX, y: e.clientY } : null;
+    pointer = onScene(e) ? local(e) : null;
     setHover(pointer ? petAt(pointer.x, pointer.y) : null);
   };
   // a finger lifted, or the pointer left the window: nothing is pointed at any more
@@ -616,8 +644,9 @@ function startMeadow(canvas: HTMLCanvasElement): () => void {
     setHover(null);
   };
   const onClick = (e: MouseEvent) => {
-    if (reduce || !onScene(e)) return;
-    const p = petAt(e.clientX, e.clientY);
+    const at = reduce || !onScene(e) ? null : local(e);
+    if (!at) return;
+    const p = petAt(at.x, at.y);
     if (!p) return;
     p.act = "spin";
     p.born = performance.now();
@@ -630,6 +659,7 @@ function startMeadow(canvas: HTMLCanvasElement): () => void {
   run();
   document.addEventListener("visibilitychange", onVisibility);
   sizer.observe(canvas);
+  seen.observe(canvas);
   window.addEventListener("pointermove", onPointerMove);
   window.addEventListener("pointerup", onPointerGone);
   window.addEventListener("pointercancel", onPointerGone);
@@ -655,6 +685,7 @@ function startMeadow(canvas: HTMLCanvasElement): () => void {
     clearTimeout(resizeTimer);
     document.removeEventListener("visibilitychange", onVisibility);
     sizer.disconnect();
+    seen.disconnect();
     window.removeEventListener("pointermove", onPointerMove);
     window.removeEventListener("pointerup", onPointerGone);
     window.removeEventListener("pointercancel", onPointerGone);

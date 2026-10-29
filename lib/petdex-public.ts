@@ -50,6 +50,24 @@ export interface GuestSession {
   hasPassword?: boolean;
 }
 
+/** The Petfarm website (www.petfarm.online): one landing page about the game, served by this app at SITE_PATH. */
+export const SITE_ORIGIN = (process.env.NEXT_PUBLIC_PETFARM_SITE_ORIGIN || "https://www.petfarm.online").replace(/\/+$/, "");
+export const SITE_HOST = new URL(SITE_ORIGIN).host;
+/** The bare domain (petfarm.online) moves to SITE_HOST. */
+export const SITE_APEX = SITE_HOST.replace(/^www\./, "");
+export const SITE_PATH = "/petfarm";
+
+/**
+ * On the website's domain: what to do with a request. "/" shows the landing page; the game's own
+ * pages (play page, invites, password links) move to the game domain; anything else goes home.
+ */
+export function siteHostRoute(pathname: string): { rewrite: string } | { redirect: string } | { notFound: true } {
+  if (pathname === "/") return { rewrite: SITE_PATH };
+  if (pathname.startsWith("/api/")) return { notFound: true };
+  if ([PLAY_PATH, INVITE_PATH, PASSWORD_PATH].some((p) => pathname === p || pathname.startsWith(`${p}/`))) return { redirect: `${PLAY_ORIGIN}${pathname}` };
+  return { redirect: "/" };
+}
+
 /** Game pages and what they need; on the game domain everything else of WorkHub is out of reach. */
 const PLAY_HOST_PATHS = [PLAY_PATH, INVITE_PATH, PASSWORD_PATH, "/ta-tua/game", "/ta-tua/api", "/ta-tua/ws", "/ta-tua/khach", "/api/ta-tua/guest", "/api/ta-tua/account", "/login", "/api/auth", "/change-password"];
 
