@@ -13,7 +13,7 @@ export const AUDIT_GROUPS = {
   share: "Chia sẻ ra ngoài",
   attendance: "Chấm công & nghỉ phép",
   system: "Hệ thống & sao lưu",
-  tatua: "Tà tưa",
+  tatua: "Pet Town",
 } as const;
 export type AuditGroup = keyof typeof AUDIT_GROUPS;
 

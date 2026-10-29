@@ -70,9 +70,9 @@ const NAV: { title: string; items: NavItem[] }[] = [
   },
 ];
 const SETTINGS: NavItem = { href: "/settings", label: "Cài đặt", icon: Settings };
-// Tà tưa (the Petdex game) sits at the bottom with settings; its management board is for administrators.
-const GAME: NavItem = { href: "/ta-tua", label: "Tà tưa", icon: Gamepad2 };
-const GAME_ADMIN: NavItem = { href: "/ta-tua/quan-ly", label: "Quản lý Tà tưa", icon: SlidersHorizontal, adminOnly: true };
+// Pet Town (the Petdex game) sits at the bottom with settings; its management board is for administrators.
+const GAME: NavItem = { href: "/ta-tua", label: "Pet Town", icon: Gamepad2 };
+const GAME_ADMIN: NavItem = { href: "/ta-tua/quan-ly", label: "Quản lý Pet Town", icon: SlidersHorizontal, adminOnly: true };
 
 function Brand({ collapsed }: { collapsed?: boolean }) {
   return (

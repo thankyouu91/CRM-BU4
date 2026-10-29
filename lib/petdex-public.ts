@@ -1,4 +1,4 @@
-// Tà tưa addresses that both the server and the browser use (no server-only imports here, so
+// Pet Town addresses that both the server and the browser use (no server-only imports here, so
 // middleware, client components and pages can all share them).
 
 /** The game's own domain: invite links and the full-screen play page live there. */

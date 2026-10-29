@@ -50,7 +50,7 @@
   "triggers": {
     "crons": ["0 19 * * *"]
   },
-  // Tà tưa (petdex/): the whole game server runs in one SQLite-backed Durable Object named "park"
+  // Pet Town (petdex/): the whole game server runs in one SQLite-backed Durable Object named "park"
   // (worker.ts routes /ta-tua/api and /ta-tua/ws to it; lib/petdex.ts calls its internal API).
   "durable_objects": {
     "bindings": [{ "name": "PETDEX", "class_name": "PetdexPark" }]

@@ -50,11 +50,11 @@ function Frame({ src, who, action }: { src: string; who: string; action: React.R
         <span className="flex h-7 w-7 items-center justify-center rounded-md bg-foreground text-background">
           <Gamepad2 className="h-4 w-4" />
         </span>
-        <span className="text-sm font-semibold">Tà tưa</span>
+        <span className="text-sm font-semibold">Pet Town</span>
         <span className="truncate text-xs text-muted-foreground">{who}</span>
         <span className="ml-auto">{action}</span>
       </header>
-      <iframe src={src} title="Tà tưa" className="min-h-0 w-full flex-1" allow="autoplay" />
+      <iframe src={src} title="Pet Town" className="min-h-0 w-full flex-1" allow="autoplay" />
     </div>
   );
 }
@@ -120,7 +120,7 @@ export function PlayScreen({ member }: { member: { name: string; token: string }
         <span className="mb-4 flex h-10 w-10 items-center justify-center rounded-lg bg-foreground text-background">
           <Gamepad2 className="h-5 w-5" />
         </span>
-        <h1 className="text-lg font-semibold">Tà tưa</h1>
+        <h1 className="text-lg font-semibold">Pet Town</h1>
         {checking ? (
           <p className="mt-1 text-sm text-muted-foreground">Đang mở phiên chơi…</p>
         ) : (

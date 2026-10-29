@@ -28,7 +28,7 @@ beforeAll(async () => {
   (await import("@/petdex/server/scheduler.js")).runDue();
 });
 
-describe("Tà tưa internal API", () => {
+describe("Pet Town internal API", () => {
   it("signs a member in once and keeps the same game account", async () => {
     const first = await internal("POST", "/sso", { crmUserId: "crm-1", name: "Nguyễn Văn An" });
     expect(first.status).toBe(200);

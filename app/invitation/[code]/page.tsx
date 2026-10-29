@@ -1,7 +1,7 @@
 import { GameError, gameJson } from "@/lib/petdex";
 import { GuestEntry } from "@/components/tatua/guest-entry";
 
-export const metadata = { title: "Tà tưa · Lời mời" };
+export const metadata = { title: "Pet Town · Lời mời" };
 
 // Public invite page (play.petfarm.online/invitation/<code>): a guest types a name and plays,
 // no WorkHub account needed.

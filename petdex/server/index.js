@@ -116,5 +116,5 @@ server.on('upgrade', (req, socket, head) => {
 });
 
 server.listen(PORT, () => {
-  console.log(`🧋 Petdex Park (Tà tưa) đang chạy: http://localhost:${PORT}/ta-tua/game/index.html`);
+  console.log(`🧋 Petdex Park (Pet Town) đang chạy: http://localhost:${PORT}/ta-tua/game/index.html`);
 });

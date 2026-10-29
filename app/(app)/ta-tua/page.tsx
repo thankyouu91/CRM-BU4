@@ -3,9 +3,9 @@ import { isAdmin } from "@/lib/rbac";
 import { GameError, gameFrameUrl, memberSession } from "@/lib/petdex";
 import { GameFrame } from "./game-frame";
 
-export const metadata = { title: "Tà tưa" };
+export const metadata = { title: "Pet Town" };
 
-// Tà tưa: the Petdex Park game, signed in as the WorkHub member (the game account is created on
+// Pet Town: the Petdex Park game, signed in as the WorkHub member (the game account is created on
 // the first visit). The game itself is a separate document in an iframe (public/ta-tua/game).
 export default async function TaTuaPage() {
   const me = (await getCurrentUser())!;

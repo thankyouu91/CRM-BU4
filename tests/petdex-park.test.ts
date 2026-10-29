@@ -57,7 +57,7 @@ beforeAll(async () => {
   attachPlayground(hub);
 });
 
-describe("Tà tưa park residents", () => {
+describe("Pet Town park residents", () => {
   it("shows every player with a living pet, online or not, and swaps them as they come and go", async () => {
     const an = await player("p-an", "An");
     const binh = await player("p-binh", "Bình");

@@ -50,5 +50,5 @@ next-env.d.ts
 .wrangler-dry-run/
 .release/
 
-# Tà tưa: local SQLite of the game server (npm run petdex:dev)
+# Pet Town: local SQLite of the game server (npm run petdex:dev)
 petdex/data/

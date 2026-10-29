@@ -19,7 +19,7 @@ Dashboard quản lý dự án và công việc cho doanh nghiệp: giao việc t
 | 8 | AI hỗ trợ báo cáo | Trang **Trợ lý AI**: tab **Trò chuyện** để chat với Claude (prompt mẫu, chọn phạm vi, kỳ, độ dài, người đọc) khi đã có Claude API key; tab **Sao chép prompt** đóng gói số liệu thật thành báo cáo. **Viết bằng AI** ngay trên trang khi quản trị viên đã nhập Claude API key (xem [Trợ lý AI tích hợp](#trợ-lý-ai-tích-hợp-claude-api)); hoặc mở Claude.ai điền sẵn / sao chép / tải file cho Claude Code rồi dán kết quả lại. Kết quả xem trước được, lưu thành ghi chú dự án, hoặc biến dàn ý thành slide để trình chiếu & xuất file |
 | 10 | Báo cáo tuần trước đã làm, tuần này / tuần tới (hoặc tháng) làm gì, gửi sếp | Tab **Báo cáo tuần / tháng** trong *Công việc của tôi*: ba mục lấy trực tiếp từ công việc và dự án của bạn, ghi chú tự lưu, gửi cấp trên, xuất Excel và in / lưu PDF; cấp trên xem cả đội trong *Hộp báo cáo*. Xem [Báo cáo công việc tuần / tháng](#báo-cáo-công-việc-tuần--tháng) |
 | 11 | Chấm công sáng / chiều, xin nghỉ, xuất Excel theo tháng, tồn phép năm | Trang **Chấm công**: mặc định đi làm đủ buổi (thứ 2 đến thứ 6 sáng và chiều, thứ 7 buổi sáng), bấm vào buổi bận để xin nghỉ và ghi lý do, buổi đã ghi chỉ quản lý sửa được; mọi người xem được lịch và bảng công tháng của cả công ty, **xuất Excel** theo mẫu bảng chấm công; phép năm được hưởng và tồn năm trước sửa được, số đã nghỉ và còn lại tự tính từ lịch. Xem [Chấm công & nghỉ phép](#chấm-công--nghỉ-phép) |
-| 12 | Game “Tà tưa” cho mọi người trong công ty, khách mời không cần tài khoản, bảng quản lý cho quản trị viên | Mục **Tà tưa** cuối thanh bên: game nuôi thú [Petdex Park](https://github.com/thankyouu91/Petdex) chạy ngay trong WorkHub. Xem mục [Tà tưa](#tà-tưa-game-petdex-park) |
+| 12 | Game “Pet Town” cho mọi người trong công ty, khách mời không cần tài khoản, bảng quản lý cho quản trị viên | Mục **Pet Town** cuối thanh bên: game nuôi thú [Petdex Park](https://github.com/thankyouu91/Petdex) chạy ngay trong WorkHub. Xem mục [Pet Town](#pet-town-game-petdex-park) |
 
 ### Phân quyền
 
@@ -158,16 +158,16 @@ Bấm **Ctrl K** (⌘ K trên Mac) ở bất kỳ trang nào, kể cả khi đan
 - **Bàn phím:** ↑ ↓ chọn, Home / End về đầu / cuối, Enter mở, Esc đóng. Công việc mở trang dự án kèm chi tiết công việc (`/projects/<id>?task=<id>`); hợp đồng và nhân sự mở trang tương ứng, lọc sẵn theo mã hợp đồng / tên (`?q=`).
 - Mã nguồn: `app/api/search` (2–100 ký tự), `lib/search-queries.ts`, `components/layout/command-palette.tsx`.
 
-### Tà tưa (game Petdex Park)
+### Pet Town (game Petdex Park)
 
 Game nuôi thú cưng nhiều người chơi [Petdex Park](https://github.com/thankyouu91/Petdex) (luật chơi đầy đủ ở `petdex/README.md`) chạy ngay trong WorkHub, trên cùng Worker.
 
-- **Nhân viên:** mục **Tà tưa** ở cuối thanh bên. Lần đầu mở, game tự tạo tài khoản chơi gắn với tài khoản WorkHub (tên hiển thị là họ tên, 150 xu chào mừng); không có mật khẩu riêng. Nút *Mở tab riêng* mở game toàn màn hình.
+- **Nhân viên:** mục **Pet Town** ở cuối thanh bên. Lần đầu mở, game tự tạo tài khoản chơi gắn với tài khoản WorkHub (tên hiển thị là họ tên, 150 xu chào mừng); không có mật khẩu riêng. Nút *Mở tab riêng* mở game toàn màn hình.
 - **Công viên luôn đông vui:** mọi người chơi còn bé sống (và không bị khoá) đều có mặt ở công viên kể cả khi không online, hiện là *vắng* và tự đi dạo quanh chỗ của mình; vẫn vuốt ve, tặng quà được. Khi chủ online thì bé thành nhân vật thật, rời đi thì ở lại làm cư dân; bé mất thì rời công viên. Hiện tối đa 50 cư dân, ưu tiên người mới hoạt động.
 - **Tên miền riêng của game:** `https://play.petfarm.online` (Custom Domain của worker `crm`). Trên tên miền này chỉ có game: `/server1` là trang chơi toàn màn hình, `/invitation/<mã>` là link mời; trang và API khác của WorkHub chuyển về `/server1` hoặc trả 404. Đổi tên miền bằng biến `NEXT_PUBLIC_PETDEX_PLAY_ORIGIN` lúc build.
 - **Khách mời (người ngoài):** quản trị viên tạo **link mời** (nhãn, giới hạn số lượt, hạn dùng), dạng `https://play.petfarm.online/invitation/<mã>`. Người nhận điền tên là vào `/server1` chơi, không cần tài khoản WorkHub. Trình duyệt nhớ phiên nên lần sau mở thẳng `https://play.petfarm.online/server1`; *Đổi tên khác* để vào như người mới. Link cũ `/ta-tua/khach/<mã>` tự chuyển sang link mới.
 - **Nhân viên trên tên miền game:** mở `https://play.petfarm.online/server1`, đăng nhập bằng tài khoản WorkHub (một lần cho tên miền này) là chơi bằng tài khoản của mình; trong WorkHub, nút *Mở tab riêng* cũng mở `/server1`. Khách không vào được phần nào khác của WorkHub. Thu hồi link thì không nhận khách mới, khách đã vào vẫn chơi tiếp.
-- **Quản lý Tà tưa** (chỉ quản trị viên): *Tổng quan* (số người chơi theo loại, hoạt động hôm nay / 7 ngày, xu trong ví và tiết kiệm, ngân sách thị trấn, dòng xu 7 ngày theo hạng mục, giàu nhất phố); *Người chơi* (tìm theo tên, lọc nhân viên / khách; bấm một người để xem ví, tiết kiệm, tài sản ròng, tín dụng, giao dịch gần đây, **cộng / trừ xu** kèm lý do (ghi vào sổ cái của game, không trừ quá số dư), **tặng thú cưng** bất kỳ loài nào, kể cả loài hiếm và huyền thoại chỉ nở từ trứng (chiếm một ô nuôi, tối đa 4), **sửa chỉ số từng bé** (no bụng, vui vẻ, năng lượng, sạch sẽ, sức khỏe, cấp, XP, 5 kỹ năng), đổi tên, **khoá / mở khoá** (khoá thì bị đăng xuất khỏi game ngay)); *Link mời khách*; *Nhật ký* các thao tác quản trị. Mọi thay đổi cũng ghi vào **Nhật ký thao tác** của WorkHub (nhóm *Tà tưa*).
+- **Quản lý Pet Town** (chỉ quản trị viên): *Tổng quan* (số người chơi theo loại, hoạt động hôm nay / 7 ngày, xu trong ví và tiết kiệm, ngân sách thị trấn, dòng xu 7 ngày theo hạng mục, giàu nhất phố); *Người chơi* (tìm theo tên, lọc nhân viên / khách; bấm một người để xem ví, tiết kiệm, tài sản ròng, tín dụng, giao dịch gần đây, **cộng / trừ xu** kèm lý do (ghi vào sổ cái của game, không trừ quá số dư), **tặng thú cưng** bất kỳ loài nào, kể cả loài hiếm và huyền thoại chỉ nở từ trứng (chiếm một ô nuôi, tối đa 4), **sửa chỉ số từng bé** (no bụng, vui vẻ, năng lượng, sạch sẽ, sức khỏe, cấp, XP, 5 kỹ năng), đổi tên, **khoá / mở khoá** (khoá thì bị đăng xuất khỏi game ngay)); *Link mời khách*; *Nhật ký* các thao tác quản trị. Mọi thay đổi cũng ghi vào **Nhật ký thao tác** của WorkHub (nhóm *Pet Town*).
 - **Kiến trúc:** máy chủ game (`petdex/server`) chạy trong một **Durable Object** có SQLite (`PetdexPark`, binding `PETDEX`, một object tên `park`): dữ liệu game nằm trong SQLite của object, alarm mỗi phút chạy nhịp giá Sàn và quyết toán nửa đêm, công viên dùng WebSocket thuần. `worker.ts` chuyển `/ta-tua/api/*` và `/ta-tua/ws` vào object; giao diện game là file tĩnh `public/ta-tua/game` hiển thị trong iframe. API nội bộ (đăng nhập một lần, khách mời, quản trị) chỉ gọi được qua stub từ ứng dụng (`lib/petdex.ts`), không có đường public. Mã gốc dùng Express, socket.io và `node:sqlite`; bản trong repo thay bằng router nhỏ (`router.js`), hub WebSocket (`hub.js`) và lớp SQL cắm được (`sql/`) để cùng một mã chạy trên Node lẫn Workers.
 - **Chạy trên máy:** `npm run petdex:dev` (cổng 3200, dữ liệu ở `petdex/data/`) song song với `npm run dev`; Next chuyển `/ta-tua/api` sang đó, công viên nối thẳng WebSocket tới cổng 3200. Test riêng của game: `npm run test:petdex` (chạy trong CI).
 - **Sao lưu:** dữ liệu game không nằm trong Postgres nên không có trong bản sao lưu hằng ngày; Cloudflare giữ lịch sử khôi phục điểm thời gian 30 ngày cho SQLite của Durable Object.
@@ -318,7 +318,7 @@ lib/              prisma, phiên đăng nhập, phân quyền, thống kê theo 
 prisma/           schema, migrations, seed, tạo admin, SQL bảo mật Supabase
 tests/            Unit test (Vitest)
 worker.ts         Điểm vào Worker: ứng dụng OpenNext + cron sao lưu hằng ngày + chuyển /ta-tua vào Durable Object của game
-petdex/           Máy chủ game Tà tưa (Petdex Park): luật chơi, API, Durable Object, test riêng
+petdex/           Máy chủ game Pet Town (Petdex Park): luật chơi, API, Durable Object, test riêng
 public/ta-tua/game/  Giao diện game (HTML/JS tĩnh, hiển thị trong iframe)
 wrangler.jsonc    Cấu hình Cloudflare Worker
 scripts/          Deploy Cloudflare, tạo mật khẩu database (SCRAM), khôi phục bản sao lưu
@@ -335,5 +335,5 @@ scripts/          Deploy Cloudflare, tạo mật khẩu database (SCRAM), khôi 
 | `npm run deploy` | Build & deploy bằng Wrangler (cần đăng nhập Cloudflare) |
 | `npm run typecheck` / `npm run lint` | Kiểm tra TypeScript / ESLint (ESLint CLI, cấu hình `eslint.config.mjs`) |
 | `npm test` | Unit test (Vitest) |
-| `npm run petdex:dev` / `npm run test:petdex` | Máy chủ game Tà tưa trên máy (cổng 3200) / test luật chơi của game |
+| `npm run petdex:dev` / `npm run test:petdex` | Máy chủ game Pet Town trên máy (cổng 3200) / test luật chơi của game |
 | `npm run db:seed` / `npm run admin:create` | Dữ liệu mẫu / tạo quản trị viên |

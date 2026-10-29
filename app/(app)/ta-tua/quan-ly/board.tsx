@@ -15,7 +15,7 @@ import { api, ApiError } from "@/lib/client";
 import { cn } from "@/lib/utils";
 import { inviteUrl, playUrl } from "@/lib/petdex-public";
 
-// Tà tưa management board. Everything goes through /api/ta-tua/admin/* (administrators only),
+// Pet Town management board. Everything goes through /api/ta-tua/admin/* (administrators only),
 // which relays to the game server and writes WorkHub's audit log.
 
 const ADMIN = "/api/ta-tua/admin";
@@ -123,7 +123,7 @@ export function Board() {
   return (
     <div>
       <PageHeader
-        title="Quản lý Tà tưa"
+        title="Quản lý Pet Town"
         description="Người chơi, xu, chỉ số thú cưng, link mời khách và nhật ký. Mọi thay đổi đều ghi vào nhật ký hệ thống."
         actions={
           <Link href="/ta-tua" className="inline-flex h-8 items-center gap-1.5 rounded-md border bg-card px-2.5 text-xs font-medium hover:bg-muted">
@@ -325,7 +325,7 @@ function PlayersTab() {
               </table>
             </div>
           ) : (
-            <EmptyState icon={Users} title="Chưa có người chơi nào" description="Nhân viên mở mục Tà tưa lần đầu sẽ xuất hiện ở đây; khách mời vào bằng link." />
+            <EmptyState icon={Users} title="Chưa có người chơi nào" description="Nhân viên mở mục Pet Town lần đầu sẽ xuất hiện ở đây; khách mời vào bằng link." />
           )}
         </Card>
       )}

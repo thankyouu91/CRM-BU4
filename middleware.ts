@@ -8,7 +8,7 @@ import { INVITE_PATH, PLAY_HOST, PLAY_PATH, playHostRedirect } from "@/lib/petde
 
 // Routes reachable without a session. /share/<token> is a public presentation link:
 // the page checks the token itself (lib/report-share.ts).
-// Tà tưa: the game's static files and its API (which checks its own token), the guest page and its API.
+// Pet Town: the game's static files and its API (which checks its own token), the guest page and its API.
 const PUBLIC_PATHS = ["/login", "/api/auth/login", "/share", "/ta-tua/game", "/ta-tua/api", "/ta-tua/khach", "/api/ta-tua/guest", INVITE_PATH, PLAY_PATH];
 const SHARE_PATH = "/share";
 // Routes a session flagged "must change password" may still reach.
@@ -21,7 +21,7 @@ export async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
   const isApi = pathname.startsWith("/api/");
 
-  // Tà tưa's own domain (play.petfarm.online) shows the game only: "/" and WorkHub pages go to the play page.
+  // Pet Town's own domain (play.petfarm.online) shows the game only: "/" and WorkHub pages go to the play page.
   if (req.headers.get("host") === PLAY_HOST) {
     const to = playHostRedirect(pathname);
     if (to) return isApi ? NextResponse.json({ error: "Không tìm thấy" }, { status: 404 }) : NextResponse.redirect(new URL(to, req.url));

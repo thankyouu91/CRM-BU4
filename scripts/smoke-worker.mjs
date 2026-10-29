@@ -84,7 +84,7 @@ try {
   });
   assert.equal(intake.status, 400, "Intake must validate files inside workerd without calling AI");
   assert.equal((await intake.json()).fields.attachments, "Chọn file để trích xuất");
-  // Tà tưa: the game API and its Durable Object (SQLite) answer through the Worker; a member is
+  // Pet Town: the game API and its Durable Object (SQLite) answer through the Worker; a member is
   // signed into the game on the /ta-tua page; the management board is for administrators only.
   const catalog = await fetch(`${origin}/ta-tua/api/catalog`, { signal: AbortSignal.timeout(20000) });
   assert.equal(catalog.status, 200, "/ta-tua/api/catalog status");
@@ -149,7 +149,7 @@ try {
   assert.equal(gameDir.status, 200, "game page is served at its folder path (no redirect)");
   const gamePage = await fetch(`${origin}/ta-tua/game/index.html`, { signal: AbortSignal.timeout(20000) });
   assert.equal(gamePage.status, 200, "game page is served as a static asset");
-  console.log("Worker smoke passed: login, project calendar, My Tasks, public share link, deadline APIs, department report, analytics, AI intake route and Tà tưa (game API, Durable Object, sign-in, park WebSocket) on workerd + PostgreSQL.");
+  console.log("Worker smoke passed: login, project calendar, My Tasks, public share link, deadline APIs, department report, analytics, AI intake route and Pet Town (game API, Durable Object, sign-in, park WebSocket) on workerd + PostgreSQL.");
 } catch (error) {
   console.error(logs);
   throw error;

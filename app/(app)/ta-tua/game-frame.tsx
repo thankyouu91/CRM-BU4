@@ -11,7 +11,7 @@ export function GameFrame({ src, error, admin }: { src: string | null; error: st
   return (
     <div className="flex h-full flex-col">
       <PageHeader
-        title="Tà tưa"
+        title="Pet Town"
         description="Nuôi bé, đi làm, buôn bán và gặp đồng nghiệp ở công viên Phố Trân Châu."
         actions={
           <>
@@ -37,7 +37,7 @@ export function GameFrame({ src, error, admin }: { src: string | null; error: st
         <iframe
           key={reloads}
           src={src}
-          title="Tà tưa"
+          title="Pet Town"
           className="h-[calc(100dvh-11.5rem)] min-h-[560px] w-full rounded-xl border bg-card"
           allow="autoplay"
         />

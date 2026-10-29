@@ -5,7 +5,7 @@ import type { AuditAction } from "@/lib/audit-actions";
 import { gameFetch } from "@/lib/petdex";
 import { isAdmin } from "@/lib/rbac";
 
-// Tà tưa management board: administrators only. Requests are relayed to the game server's
+// Pet Town management board: administrators only. Requests are relayed to the game server's
 // internal admin API (petdex/server/internal.js); every change is also written to WorkHub's
 // audit log with the administrator as actor.
 
@@ -39,7 +39,7 @@ export async function GET(req: NextRequest, { params }: Params) {
   return handle(async () => {
     const me = await auth();
     if (!me) return unauthorized();
-    if (!isAdmin(me)) return forbidden("Chỉ quản trị viên mới vào được bảng quản lý Tà tưa");
+    if (!isAdmin(me)) return forbidden("Chỉ quản trị viên mới vào được bảng quản lý Pet Town");
     const path = (await params).path.join("/");
     if (!ALLOWED.test(path)) return forbidden("Đường dẫn không hợp lệ");
     return relay(req, path);
@@ -50,7 +50,7 @@ export async function POST(req: NextRequest, { params }: Params) {
   return handle(async () => {
     const me = await auth();
     if (!me) return unauthorized();
-    if (!isAdmin(me)) return forbidden("Chỉ quản trị viên mới vào được bảng quản lý Tà tưa");
+    if (!isAdmin(me)) return forbidden("Chỉ quản trị viên mới vào được bảng quản lý Pet Town");
     const path = (await params).path.join("/");
     if (!ALLOWED.test(path)) return forbidden("Đường dẫn không hợp lệ");
     const body = ((await req.json().catch(() => ({}))) ?? {}) as Record<string, unknown>;

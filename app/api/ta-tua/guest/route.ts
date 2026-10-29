@@ -4,7 +4,7 @@ import { badRequest, handle, ok } from "@/lib/api";
 import { GameError, gameJson, type GameSession } from "@/lib/petdex";
 import { clientIp, rateLimit } from "@/lib/rate-limit";
 
-// Tà tưa guest entry: no WorkHub account. A guest opens an invite link, types a name and gets a
+// Pet Town guest entry: no WorkHub account. A guest opens an invite link, types a name and gets a
 // play session; a returning guest resumes the session the browser kept.
 
 const enterSchema = z.object({ code: z.string().min(6).max(64), name: z.string().trim().min(2).max(40) });

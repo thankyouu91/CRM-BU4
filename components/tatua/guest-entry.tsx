@@ -48,7 +48,7 @@ export function GuestEntry({ code, valid, label, error }: { code: string; valid:
         <span className="mb-4 flex h-10 w-10 items-center justify-center rounded-lg bg-foreground text-background">
           <Gamepad2 className="h-5 w-5" />
         </span>
-        <h1 className="text-lg font-semibold">Tà tưa</h1>
+        <h1 className="text-lg font-semibold">Pet Town</h1>
         <p className="mt-1 text-sm text-muted-foreground">
           {valid ? `Bạn được mời vào chơi${label ? ` (${label})` : ""}. Điền tên để bắt đầu, không cần tài khoản.` : error ?? "Link mời này không còn hiệu lực. Hãy xin link mới từ người đã mời bạn."}
         </p>

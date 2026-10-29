@@ -2,7 +2,7 @@ import { getCloudflareContext } from "@opennextjs/cloudflare";
 import { isWorkers } from "./prisma";
 import { GAME_PAGE } from "./petdex-public";
 
-// Tà tưa: the Petdex game server (petdex/server). On Cloudflare it is the "park" Durable Object,
+// Pet Town: the Petdex game server (petdex/server). On Cloudflare it is the "park" Durable Object,
 // reached through its binding, so its internal API is never on the network. In local development
 // it is the Node server from `npm run petdex:dev` (port 3200), which asks for the dev key.
 
@@ -31,7 +31,7 @@ export async function gameFetch(path: string, init: { method?: "GET" | "POST"; b
   const body = init.body === undefined ? undefined : JSON.stringify(init.body);
   if (isWorkers) {
     const env = getCloudflareContext().env as unknown as { PETDEX?: DurableObjectNamespaceLike };
-    if (!env.PETDEX) throw new GameError("Tà tưa chưa được bật trên máy chủ này.", 503);
+    if (!env.PETDEX) throw new GameError("Pet Town chưa được bật trên máy chủ này.", 503);
     const stub = env.PETDEX.get(env.PETDEX.idFromName("park"));
     return stub.fetch(new Request(`https://petdex.internal${path}`, { method, headers: { "content-type": "application/json" }, body }));
   }

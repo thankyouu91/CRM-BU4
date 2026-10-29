@@ -471,7 +471,7 @@ addColumn('pets', 'health_avg', 'REAL NOT NULL DEFAULT 80');
 addColumn('pets', 'health_days', 'INTEGER NOT NULL DEFAULT 0');
 addColumn('users', 'locked_slots', 'INTEGER NOT NULL DEFAULT 0');
 
-  // ---- WorkHub (Tà tưa): tài khoản liên kết, khách mời và nhật ký quản trị ----
+  // ---- WorkHub (Pet Town): tài khoản liên kết, khách mời và nhật ký quản trị ----
   addColumn('users', 'kind', "TEXT NOT NULL DEFAULT 'player'"); // 'member' (nhân viên WorkHub) | 'guest' (khách mời) | 'player' (đăng ký trực tiếp)
   addColumn('users', 'crm_user_id', 'TEXT');
   addColumn('users', 'display_name', 'TEXT');
@@ -614,7 +614,7 @@ if (!isWorkers && !hasBackend()) {
   ensureSchema();
 }
 
-// ---- WorkHub (Tà tưa): phiên, tài khoản liên kết, khách mời, nhật ký quản trị ----
+// ---- WorkHub (Pet Town): phiên, tài khoản liên kết, khách mời, nhật ký quản trị ----
 const w = {
   userByCrm: db.prepare('SELECT * FROM users WHERE crm_user_id = ?'),
   residents: db.prepare(`SELECT u.id, u.username, u.display_name, u.active_pet_id FROM users u JOIN pets p ON p.id = u.active_pet_id
