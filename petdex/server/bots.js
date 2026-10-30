@@ -12,6 +12,7 @@ import { GameError, HOUR, RULES } from './game.js';
 import { post } from './ledger.js';
 import { buildResponse } from './router.js';
 import { makeContext, think } from './bot-brain.js';
+import { clanLevelOf, clanPerks } from '../../public/ta-tua/game/js/shared/clan.js';
 
 export const BOT_RULES = {
   /** Trần số tài khoản bot; quản trị viên đặt mục tiêu trong khoảng này (tăng dần 50 → 200 → 500 → 1000). */
@@ -395,6 +396,82 @@ export async function runBots(api, now = Date.now(), rand = Math.random, { budge
 
 // ---------------------------------------------------------------- quản trị
 
+// ---------------------------------------------------------------- quản trị: đưa bot vào / rút bot khỏi gia tộc
+
+/** Mỗi lần quản trị viên đưa (hoặc rút) tối đa chừng này bot. */
+export const BOT_CLAN_MAX = 50;
+
+const qc = {
+  // Bot chưa ở gia tộc nào, bé cấp cao trước (dễ đủ cấp mở Gia tộc hơn).
+  free: db.prepare(`
+    SELECT b.user_id, b.token, u.display_name, (SELECT MAX(level) FROM pets p WHERE p.owner_id = b.user_id) AS level
+    FROM bots b JOIN users u ON u.id = b.user_id
+    WHERE NOT EXISTS (SELECT 1 FROM clan_members m WHERE m.user_id = b.user_id)
+    ORDER BY level DESC, b.user_id LIMIT ?`),
+  // Bot thường (không phải tộc trưởng) đang ở gia tộc này, vào sau ra trước.
+  members: db.prepare(`
+    SELECT b.user_id, b.token, u.display_name FROM clan_members m JOIN bots b ON b.user_id = m.user_id JOIN users u ON u.id = b.user_id
+    WHERE m.clan_id = ? AND m.role <> 'leader' ORDER BY m.joined_at DESC LIMIT ?`),
+  clans: db.prepare(`
+    SELECT c.id, c.name, c.emblem, c.xp, COUNT(m.user_id) AS members,
+      COALESCE(SUM(CASE WHEN EXISTS (SELECT 1 FROM bots b WHERE b.user_id = m.user_id) THEN 1 ELSE 0 END), 0) AS bots
+    FROM clans c LEFT JOIN clan_members m ON m.clan_id = c.id WHERE c.dissolved_at IS NULL GROUP BY c.id ORDER BY c.name`),
+  clan: db.prepare('SELECT id, name, emblem FROM clans WHERE id = ? AND dissolved_at IS NULL'),
+};
+
+/** Gia tộc đang hoạt động, kèm số thành viên, số bot trong đó và sức chứa theo cấp: cho bảng quản trị chọn gia tộc. */
+export const adminBotClans = () => qc.clans.all().map((c) => ({
+  id: c.id, name: c.name, emblem: c.emblem, level: clanLevelOf(c.xp), members: c.members, bots: c.bots, maxMembers: clanPerks(clanLevelOf(c.xp)).maxMembers,
+}));
+
+const botCount = (n) => {
+  const k = Math.floor(Number(n));
+  if (!Number.isFinite(k) || k < 1 || k > BOT_CLAN_MAX) throw new GameError(`Số bot phải từ 1 đến ${BOT_CLAN_MAX}.`);
+  return k;
+};
+
+/** Gom lý do thất bại giống nhau thành "lý do (số bot)". */
+const reasons = (fails) => [...fails.reduce((m, r) => m.set(r, (m.get(r) ?? 0) + 1), new Map())].map(([r, k]) => `${r} (${k})`);
+
+/**
+ * Cho `count` bot chưa có gia tộc xin vào gia tộc `clanId`. Mỗi bot gọi đúng route xin vào của người chơi, nên mọi luật
+ * vẫn áp dụng (cấp mở Gia tộc, gia tộc đủ người...). Dừng khi đủ số hoặc gia tộc đã đầy.
+ */
+export async function sendBotsToClan(api, clanId, count, actor = 'Quản trị viên') {
+  const clan = qc.clan.get(clanId);
+  if (!clan) throw new GameError('Không tìm thấy gia tộc này.');
+  const want = botCount(count);
+  const joined = [];
+  const fails = [];
+  for (const bot of qc.free.all(want * 3)) {
+    if (joined.length >= want) break;
+    const r = await botCall(api, bot.token, 'POST', `/clans/${clanId}/join`);
+    if (r.ok) joined.push(bot.display_name);
+    else {
+      const why = r.body?.error ?? `lỗi ${r.status}`;
+      fails.push(why);
+      if (/đủ người/.test(why)) break;
+    }
+  }
+  if (joined.length) adminLog(actor, 'bots_join_clan', null, { clanId, clan: clan.name, bots: joined });
+  return { clan: `${clan.emblem} ${clan.name}`, joined, failed: reasons(fails) };
+}
+
+/** Cho tối đa `count` bot thường (không phải tộc trưởng) rời gia tộc `clanId`, qua đúng route rời gia tộc của người chơi. */
+export async function recallBotsFromClan(api, clanId, count, actor = 'Quản trị viên') {
+  const clan = qc.clan.get(clanId);
+  if (!clan) throw new GameError('Không tìm thấy gia tộc này.');
+  const left = [];
+  const fails = [];
+  for (const bot of qc.members.all(clanId, botCount(count))) {
+    const r = await botCall(api, bot.token, 'POST', '/clans/leave');
+    if (r.ok) left.push(bot.display_name);
+    else fails.push(r.body?.error ?? `lỗi ${r.status}`);
+  }
+  if (left.length) adminLog(actor, 'bots_leave_clan', null, { clanId, clan: clan.name, bots: left });
+  return { clan: `${clan.emblem} ${clan.name}`, left, failed: reasons(fails) };
+}
+
 export function adminBotsView(now = Date.now(), limit = 300) {
   const rows = q.bots.all(now, limit);
   const stats = db.prepare('SELECT COUNT(*) AS total, COALESCE(SUM(is_bot), 0) AS bots FROM users').get();
@@ -406,6 +483,8 @@ export function adminBotsView(now = Date.now(), limit = 300) {
     lastTick,
     today: today.day === dayKey(now) ? today : { day: dayKey(now), actions: 0, sessions: 0, created: 0 },
     players: { total: stats.total, bots: stats.bots, real: stats.total - stats.bots },
+    clans: adminBotClans(),
+    clanMax: BOT_CLAN_MAX,
     bots: rows.map((b) => ({
       userId: b.user_id, username: b.username, displayName: b.display_name, coins: b.coins, joinedAt: b.joined,
       lastAction: b.last_action, lastAt: b.last_at, nextAt: b.next_at, actions: b.actions, level: b.level ?? 0,

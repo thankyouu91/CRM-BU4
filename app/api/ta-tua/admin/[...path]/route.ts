@@ -9,7 +9,7 @@ import { isAdmin } from "@/lib/rbac";
 // internal admin API (petdex/server/internal.js); every change is also written to WorkHub's
 // audit log with the administrator as actor.
 
-const ALLOWED = /^(overview|log|announcements(\/\d+\/delete)?|gear-config|gear\/\d+(\/delete)?|gift-codes(\/\d+(\/revoke)?)?|industries\/(status|unmerge|merge|heavy)|commerce|arena(\/\d+\/cancel)?|bots(\/config)?|clan-bank(\/freeze)?|bonds\/issue|chat(\/\d+\/delete)?|mail|clans(\/(config|macro|plots\/\d+|evasion\/\d+\/(collect|dismiss)))?|invites(\/\d+\/revoke)?|players(\/\d+(\/(coins|status|name|password-link|gear|mute|pets(\/\d+)?))?)?)$/;
+const ALLOWED = /^(overview|log|announcements(\/\d+\/delete)?|gear-config|gear\/\d+(\/delete)?|gift-codes(\/\d+(\/revoke)?)?|industries\/(status|unmerge|merge|heavy)|commerce|arena(\/\d+\/cancel)?|bots(\/(config|join-clan|leave-clan))?|clan-bank(\/freeze)?|bonds\/issue|chat(\/\d+\/delete)?|mail|clans(\/(config|macro|plots\/\d+|evasion\/\d+\/(collect|dismiss)))?|invites(\/\d+\/revoke)?|players(\/\d+(\/(coins|status|name|password-link|gear|mute|pets(\/\d+)?))?)?)$/;
 
 /** Body fields that only label the audit entry; the game never sees them. */
 const LABEL_FIELDS = ["challenger", "defender", "targetName", "announcementTitle", "playerName", "petName", "speciesName", "itemName", "tierName", "clanName", "plotCode", "author"];
@@ -62,6 +62,13 @@ function describe(path: string, body: Record<string, unknown>): { action: AuditA
   if (path === "bots/config") {
     if (body.enabled === false) return { action: "tatua.bots_config", entityId: null, summary: "Tắt toàn bộ cư dân tự động (bot)" };
     return { action: "tatua.bots_config", entityId: null, summary: `Bật cư dân tự động, mục tiêu ${Number(body.target ?? 0).toLocaleString("vi-VN")} bot, online ${Number(body.onlineMin ?? 0)}–${Number(body.onlineMax ?? 0)}` };
+  }
+  if (path === "bots/join-clan" || path === "bots/leave-clan") {
+    const clan = body.clanName ? `“${String(body.clanName)}”` : `gia tộc #${String(body.clanId)}`;
+    const n = Number(body.count ?? 0);
+    return path === "bots/join-clan"
+      ? { action: "tatua.bots_join_clan", entityId: String(body.clanId), summary: `Đưa tối đa ${n} bot vào ${clan}` }
+      : { action: "tatua.bots_leave_clan", entityId: String(body.clanId), summary: `Rút tối đa ${n} bot khỏi ${clan}` };
   }
   if (/^arena\/\d+\/cancel$/.test(path)) {
     const fight = body.challenger && body.defender ? ` ${String(body.challenger)} ⚔️ ${String(body.defender)}` : "";

@@ -1,13 +1,13 @@
 "use client";
 
 import { useState } from "react";
-import { Bot, Power } from "lucide-react";
+import { Bot, LogIn, LogOut, Power } from "lucide-react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardBody, CardHeader } from "@/components/ui/card";
 import { ConfirmDialog } from "@/components/ui/confirm";
-import { Field, Input } from "@/components/ui/input";
+import { Field, Input, Select } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/misc";
 import { api } from "@/lib/client";
 import { ADMIN, errorText, Failure, useLoad, when } from "./shared";
@@ -39,7 +39,12 @@ interface BotsAdmin {
   today: { day: string; actions: number; sessions: number; created: number };
   players: { total: number; bots: number; real: number };
   bots: BotRow[];
+  clans: BotClan[];
+  clanMax: number;
 }
+interface BotClan { id: number; name: string; emblem: string; level: number; members: number; bots: number; maxMembers: number }
+type ClanMove = { kind: "join" | "leave"; clan: BotClan; count: number };
+type ClanResult = { clan: string; joined?: string[]; left?: string[]; failed: string[] };
 type Config = { enabled: boolean; target: number; onlineMin: number; onlineMax: number };
 
 const ACTION: Record<string, string> = {
@@ -57,6 +62,9 @@ export function BotsTab({ onOpenPlayer }: { onOpenPlayer: (id: number) => void }
   const { data, error, loading, reload } = useLoad<BotsAdmin>(`${ADMIN}/bots`);
   const [draft, setDraft] = useState<Partial<Record<"target" | "onlineMin" | "onlineMax", string>>>({});
   const [confirm, setConfirm] = useState<Config | null>(null);
+  const [clanId, setClanId] = useState("");
+  const [clanCount, setClanCount] = useState("5");
+  const [move, setMove] = useState<ClanMove | null>(null);
   if (error) return <Failure error={error} onRetry={reload} />;
   if (loading || !data) return <div className="space-y-4">{Array.from({ length: 2 }, (_, i) => <Skeleton key={i} className="h-32" />)}</div>;
   const field = (k: "target" | "onlineMin" | "onlineMax") => draft[k] ?? String(data.config[k]);
@@ -73,6 +81,26 @@ export function BotsTab({ onOpenPlayer }: { onOpenPlayer: (id: number) => void }
       toast.error(errorText(err));
     }
   };
+  const sendMove = async () => {
+    if (!move) return;
+    try {
+      const out = await api<{ result: ClanResult }>(`${ADMIN}/bots/${move.kind === "join" ? "join-clan" : "leave-clan"}`, {
+        method: "POST",
+        body: { clanId: move.clan.id, count: move.count, clanName: move.clan.name },
+      });
+      const r = out.result;
+      const done = (r.joined ?? r.left ?? []).length;
+      const why = r.failed.length ? ` Không được: ${r.failed.join("; ")}.` : "";
+      if (done) toast.success(`${done} bot ${move.kind === "join" ? "đã vào" : "đã rời"} ${r.clan}.${why}`);
+      else toast.error(`Không bot nào ${move.kind === "join" ? "vào được" : "rời được"} ${r.clan}.${why}`);
+      setMove(null);
+      reload();
+    } catch (err) {
+      toast.error(errorText(err));
+    }
+  };
+  const clan = data.clans.find((c) => String(c.id) === clanId) ?? null;
+  const count = Math.max(1, Math.min(data.clanMax, Math.floor(Number(clanCount) || 0)));
   const t = data.lastTick;
   return (
     <div className="space-y-4">
@@ -116,6 +144,36 @@ export function BotsTab({ onOpenPlayer }: { onOpenPlayer: (id: number) => void }
         </CardBody>
       </Card>
       <Card>
+        <CardHeader
+          title="Đưa bot vào gia tộc"
+          description={`Chọn gia tộc và số bot (1–${data.clanMax}). Bot chưa có gia tộc, bé cấp cao trước, lần lượt xin vào qua đúng nút "Gia nhập" của người chơi, nên luật game vẫn áp dụng: bé phải đủ cấp mở Gia tộc và gia tộc phải còn chỗ. "Rút bot" cho bot thường (không phải tộc trưởng) rời gia tộc đó, bot vào sau ra trước.`}
+        />
+        <CardBody className="space-y-3 pt-3">
+          {data.clans.length ? (
+            <div className="flex flex-wrap items-end gap-3">
+              <Field label="Gia tộc" className="w-72">
+                <Select value={clanId} onChange={(e) => setClanId(e.target.value)}>
+                  <option value="">Chọn gia tộc…</option>
+                  {data.clans.map((c) => (
+                    <option key={c.id} value={c.id}>{`${c.emblem} ${c.name} · cấp ${c.level} · ${c.members}/${c.maxMembers} người (${c.bots} bot)`}</option>
+                  ))}
+                </Select>
+              </Field>
+              <Field label="Số bot" className="w-28">
+                <Input type="number" min={1} max={data.clanMax} value={clanCount} onChange={(e) => setClanCount(e.target.value)} />
+              </Field>
+              <Button disabled={!clan || clan.members >= clan.maxMembers} onClick={() => clan && setMove({ kind: "join", clan, count })}>
+                <LogIn className="h-4 w-4" /> Đưa bot vào
+              </Button>
+              <Button variant="outline" disabled={!clan || !clan.bots} onClick={() => clan && setMove({ kind: "leave", clan, count })}>
+                <LogOut className="h-4 w-4" /> Rút bot
+              </Button>
+            </div>
+          ) : <p className="text-sm text-muted-foreground">Chưa có gia tộc nào đang hoạt động.</p>}
+          {clan && clan.members >= clan.maxMembers && <p className="text-xs text-muted-foreground">Gia tộc này đã đủ người theo cấp hiện tại.</p>}
+        </CardBody>
+      </Card>
+      <Card>
         <CardHeader title="Danh sách bot" description="Bot đang online lên đầu, rồi bot vừa làm việc gần nhất (tối đa 300 dòng). Bấm một dòng để xem chi tiết người chơi." />
         <CardBody className="overflow-x-auto pt-3">
           {data.bots.length ? (
@@ -142,6 +200,17 @@ export function BotsTab({ onOpenPlayer }: { onOpenPlayer: (id: number) => void }
           ) : <p className="text-sm text-muted-foreground">Chưa có bot nào. Đặt số mục tiêu rồi bật.</p>}
         </CardBody>
       </Card>
+      <ConfirmDialog
+        open={Boolean(move)}
+        onClose={() => setMove(null)}
+        onConfirm={sendMove}
+        danger={move?.kind === "leave"}
+        title={move?.kind === "join" ? "Đưa bot vào gia tộc" : "Rút bot khỏi gia tộc"}
+        confirmLabel={move?.kind === "join" ? "Đưa vào" : "Rút ra"}
+        message={move ? (move.kind === "join"
+          ? `Cho tối đa ${move.count} bot chưa có gia tộc xin vào ${move.clan.emblem} ${move.clan.name} (còn ${Math.max(0, move.clan.maxMembers - move.clan.members)} chỗ). Thành viên của gia tộc sẽ thấy họ như người chơi mới vào.`
+          : `Cho tối đa ${move.count} bot thường rời ${move.clan.emblem} ${move.clan.name} (đang có ${move.clan.bots} bot).`) : ""}
+      />
       <ConfirmDialog
         open={Boolean(confirm)}
         onClose={() => setConfirm(null)}
