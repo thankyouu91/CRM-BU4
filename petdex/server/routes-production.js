@@ -1,6 +1,7 @@
 // API giai đoạn 2: chăm sóc và phòng khám, trường học, vườn, bếp, khu công nghiệp, hợp đồng, Chợ Phiên, tín dụng.
 import { Router } from './router.js';
 import { buyListing, bazaarView, cancelListing, listForSale } from './bazaar.js';
+import { cancelAuction, listAuction, placeBid } from './auction.js';
 import { attendClass, bath, clinicView, schoolView, setInsurance, visitClinic } from './care.js';
 import { acceptContract, breakContract, contractsView, declineContract, propose } from './contracts.js';
 import { borrow, creditView, repay } from './credit.js';
@@ -143,6 +144,17 @@ productionApi.post('/bazaar/:id/buy', (req, res) => {
   reply(res, uid(req), buyListing(uid(req), intField(req.params.id, 'Tin đăng')));
 });
 productionApi.post('/bazaar/:id/cancel', (req, res) => reply(res, uid(req), cancelListing(uid(req), intField(req.params.id, 'Tin đăng'))));
+
+// Đấu giá trang phục
+productionApi.post('/bazaar/auctions', (req, res) => {
+  requireLevel(uid(req), UNLOCKS.bazaar, 'Chợ Phiên');
+  reply(res, uid(req), listAuction(uid(req), { gearId: intField(req.body?.gearId, 'Trang phục'), startPrice: Number(req.body?.startPrice), hours: Number(req.body?.hours) }));
+});
+productionApi.post('/bazaar/auctions/:id/bid', (req, res) => {
+  requireLevel(uid(req), UNLOCKS.bazaar, 'Chợ Phiên');
+  reply(res, uid(req), placeBid(uid(req), intField(req.params.id, 'Phiên đấu giá'), Number(req.body?.amount)));
+});
+productionApi.post('/bazaar/auctions/:id/cancel', (req, res) => reply(res, uid(req), cancelAuction(uid(req), intField(req.params.id, 'Phiên đấu giá'))));
 
 // ---- Tín dụng & vay ----
 

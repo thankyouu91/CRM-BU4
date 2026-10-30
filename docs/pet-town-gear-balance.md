@@ -110,3 +110,35 @@ Chọn để lấp chỗ thưa (Mặt hành Thổ, Lưng hành Mộc, Bùa mỗi
 - Phân bố tổng % thực nhận theo nhóm cấp (dưới 30, 30+, Huyền thoại).
 - Tỷ lệ món Đỏ rớt từ mini-game theo tuần, để xác nhận vòng lặp May mắn đã hãm.
 - Nếu 25/0,5/60 vẫn quá mạnh, chỉnh `STACKING` (một chỗ, dùng chung máy chủ và trình duyệt).
+
+## 6. Bổ sung: gợi ý dòng chỉ số, hộp kín ở Chợ Phiên, bán nhanh và đấu giá
+
+### 6.1 Biết trước loại chỉ số (không lộ cấp và %)
+
+Mỗi món có một nhóm 2–3 loại chỉ số công khai: hai loại theo hành, một loại theo khe (`affixPool` trong `shared/gear.js`).
+
+| Hành | Loại theo hành | | Khe | Loại theo khe |
+|---|---|---|---|---|
+| Kim | Giao dịch, Thu nhập | | Đầu | Chỉ số |
+| Mộc | Chỉ số, May mắn | | Mặt | May mắn |
+| Thủy | Giao dịch, May mắn | | Cổ | Thu nhập |
+| Hỏa | Thu nhập, Chỉ số | | Lưng | Giao dịch |
+| Thổ | Thu nhập, May mắn | | Bùa | May mắn |
+
+Đồ Xanh lam/Xanh lục (mọi hộp ở Siêu thị) chỉ ra dòng trong nhóm, nên gợi ý luôn đúng. Đồ Vàng cần 3 dòng: đủ nhóm, thiếu thì thêm loại ngoài nhóm; đồ Đỏ có cả 4 loại. Đồ đã có giữ nguyên dòng cũ.
+
+Ảnh hưởng cân bằng: người chơi giờ chọn được hướng (ví dụ bộ Thổ thiên về Thu nhập/May mắn), nên tổng một loại dễ cao hơn quay ngẫu nhiên. Phần cộng dồn giảm dần ở mục 3.1 vẫn giữ trần 60 %.
+
+### 6.2 Hộp chưa mở bán được ở Chợ Phiên
+
+Giá tham chiếu tính như Xanh lam (×1), để giá không lộ cấp bên trong. Người mua thấy nhóm chỉ số có thể ra; mua về vẫn là hộp kín.
+
+### 6.3 Bán nhanh cho Siêu thị
+
+Thu `giá shop × hệ số cấp × tỷ lệ`, trong đó tỷ lệ = 10 % + 30 % × q, với q là mức trung bình các dòng nằm ở đâu trong biên độ của cấp (thấp nhất = 0, cao nhất = 1). Hộp chưa mở: 10 % giá shop.
+
+Kiểm tra chống lời vô hạn: mua hộp giá P rồi mở và bán nhanh, kỳ vọng thu về ≈ 0,68 × 0,25P + 0,32 × 0,5P ≈ **0,33P** (≈ 0,375P khi May mắn cao). Luôn lỗ, nên không thành vòng in tiền. Đồ Vàng/Đỏ rớt từ mini-game bán nhanh là nguồn xu mới, nhưng tỷ lệ rớt chỉ 3 % mỗi ván.
+
+### 6.4 Đấu giá
+
+Bảng `auctions`, module `petdex/server/auction.js`, luật `AUCTION` trong `rules/production.js`: khởi điểm 10–300 % tham chiếu, 6/12/24 giờ, bước giá 5 %, trả giá trong 5 phút cuối thì gia hạn 5 phút, tối đa 5 phiên mỗi người. Xu trả giá được giữ (ký quỹ) và hoàn ngay khi bị vượt; xu đang giữ vẫn tính vào tổng tài sản. Phiên đóng trong bộ lập lịch (mỗi 30 giây), không đợi nửa đêm. Phí như Chợ Phiên (1 % mở phiên, 5 % giá chốt, một nửa vào ngân sách thị trấn).

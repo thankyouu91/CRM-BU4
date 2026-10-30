@@ -76,12 +76,12 @@
 .proposal-icon { font-size: 2rem; }
 
 /* ---------- Bạn bè & Hội ---------- */
-.friend-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 12px; }
+.friend-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(260px, 100%), 1fr)); gap: 12px; }
 .friend-card { display: grid; grid-template-columns: 80px 1fr; gap: 6px 10px; align-items: center; padding: 10px 12px; border-radius: 16px; background: var(--surface-2); }
 .friend-card .row { grid-column: 1 / -1; }
 .friend-pet { height: 80px; display: flex; align-items: flex-end; justify-content: center; overflow: hidden; }
 .friend-pet.big { height: 140px; }
-.visit-pets { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 10px; margin: 10px 0; }
+.visit-pets { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(140px, 100%), 1fr)); gap: 10px; margin: 10px 0; }
 .visit-pet { display: grid; justify-items: center; text-align: center; gap: 2px; padding: 8px; border-radius: 14px; background: var(--surface-2); }
 .emblems { display: flex; flex-wrap: wrap; gap: 6px; }
 .emblem { width: 44px; height: 44px; font-size: 1.4rem; border-radius: 12px; border: 2px solid var(--line); background: #fff; }
@@ -93,13 +93,13 @@
 .guild-hero { grid-column: 1 / -1; grid-template-columns: auto 1fr auto; align-items: center; }
 
 @media (max-width: 960px) {
-  .biz-view, .town-grid, .com-grid { grid-template-columns: 1fr; }
-  .proposal-grid { grid-template-columns: 1fr; }
+  .biz-view, .town-grid, .com-grid { grid-template-columns: minmax(0, 1fr); }
+  .proposal-grid { grid-template-columns: minmax(0, 1fr); }
   .quest-list { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 @media (max-width: 640px) {
-  .loc-grid { grid-template-columns: 1fr; }
-  .quest-list { grid-template-columns: 1fr; }
+  .loc-grid { grid-template-columns: minmax(0, 1fr); }
+  .quest-list { grid-template-columns: minmax(0, 1fr); }
   .menu-row { grid-template-columns: 1fr 70px; }
   .job-row .shift-buttons { min-width: 0; width: 100%; }
 }

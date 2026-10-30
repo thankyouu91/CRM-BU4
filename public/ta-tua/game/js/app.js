@@ -34,7 +34,7 @@ import {
   EGG, EGG_ODDS, ELEMENTS, ELEMENT_RULES, LEVEL_FORMS, LIFE, LIFE_STAGES, RARITIES, RELATIONS, SLOTS, WEAR_RULES, foodBonus, formIndex,
   relation, setOf, wearBonus,
 } from './shared/pets.js';
-import { AFFIXES, AFFIX_ORDER, SHOP_TIERS, STACKING, TIERS, TIER_ORDER, affixText } from './shared/gear.js';
+import { AFFIXES, AFFIX_ORDER, QUICK_SELL, SHOP_TIERS, STACKING, TIERS, TIER_ORDER, affixPool, affixText } from './shared/gear.js';
 import {
   $, MOOD_ICONS, STAT_ICONS, STAT_LABELS, TYPE_LABELS,
   ageText, busyOf, clock, closeModal, countdown, effectText, esc, fmt, formatWait, modalOpen, openModal, toast, viewHead,
@@ -840,8 +840,9 @@ function renderShop(root) {
             <div class="icon">${itemIcon(item)}</div>
             <span class="type-tag">${TYPE_LABELS[item.type]}${item.slot ? ` · ${SLOTS[item.slot].name}` : ''}${item.element ? ` · ${ELEMENTS[item.element].icon} ${ELEMENTS[item.element].name}` : ''}</span>
             <h3>${esc(item.name)}</h3>
-            <p>${esc(item.desc ?? '')}</p>
+            <p title="${esc(item.desc ?? '')}">${esc(item.desc ?? '')}</p>
             <p class="effects">${esc(effectText(item))}</p>
+            ${item.type === 'accessory' ? poolLine(affixPool(item.slot, item.element), 'Mở hộp ra 1–2 dòng trong số') : ''}
             ${item.type === 'accessory' && myGear().some((g) => g.itemId === item.id) ? `<p class="muted small">Đang có ${myGear().filter((g) => g.itemId === item.id).length} món</p>` : ''}
             <div class="foot"><span class="price">${priceOf(item)} 🪙</span>${buyArea(item)}</div>
           </article>`;
@@ -851,10 +852,19 @@ function renderShop(root) {
 
 // ---------------------------------------------------------------- Túi đồ
 
+/** Các loại chỉ số một món có thể ra (biết trước khi mua), không lộ cấp hay %. */
+function poolLine(pool, lead) {
+  const chips = (pool ?? []).map((a) => `<span class="gear-bonus" title="${esc(AFFIXES[a].desc)}">${AFFIXES[a].icon} ${esc(AFFIXES[a].name)}</span>`).join('');
+  return `<p class="gear-pool muted small">${lead}: ${chips}<br>Cấp và % chỉ biết khi mở hộp.</p>`;
+}
+
 /** Tủ trang phục trong Túi đồ: mỗi món một thẻ có cấp, dòng chỉ số và nút đeo/tháo cho bé đang chọn. */
 function gearShelf(pet) {
   const list = [...myGear()].sort((a, b) => Number(b.sealed) - Number(a.sealed) || TIER_ORDER.indexOf(b.tier) - TIER_ORDER.indexOf(a.tier) || b.id - a.id);
   if (!list.length) return '';
+  const quickSellButton = (g) => (g.quickSell
+    ? `<button class="btn small" data-quick-sell="${g.id}" title="Bán ngay cho Siêu thị: thu ${QUICK_SELL.min * 100}–${QUICK_SELL.max * 100}% giá trị tùy dòng chỉ số. Muốn giá cao hơn thì bày ở Chợ Phiên hoặc đấu giá.">💰 Bán nhanh ${fmt(g.quickSell)} 🪙</button>`
+    : '');
   const button = (g) => {
     if (g.sealed) return `<button class="btn small gold" data-open-gear="${g.id}">🎁 Mở hộp</button>`;
     if (!pet) return '';
@@ -872,18 +882,18 @@ function gearShelf(pet) {
             <div class="icon">🎁</div>
             <span class="type-tag">${SLOTS[g.slot].name} · ${ELEMENTS[item.element].icon} ${ELEMENTS[item.element].name}</span>
             <h3>${esc(item.name)} <span class="tier-chip">Hộp chưa mở</span></h3>
-            <p class="muted small">Bên trong có 1–2 dòng +% ngẫu nhiên. Mở ra mới biết là dòng nào.</p>
-            <div class="foot">${button(g)}</div>
+            ${poolLine(g.pool, 'Bên trong có 1–2 dòng trong số')}
+            <div class="foot">${button(g)}${quickSellButton(g)}</div>
           </article>`;
         }
         return `
           <article class="card item-card gear-card tier-${g.tier}">
-            ${g.wornBy ? `<span class="badge star owned">Đang đeo · ${esc(petName(g.wornBy))}</span>` : ''}
+            ${g.wornBy ? `<span class="badge star owned" title="Đang đeo · ${esc(petName(g.wornBy))}">Đang đeo · ${esc(petName(g.wornBy))}</span>` : ''}
             <div class="icon">${itemIcon(item)}</div>
             <span class="type-tag">${SLOTS[g.slot].name} · ${ELEMENTS[item.element].icon} ${ELEMENTS[item.element].name}</span>
             <h3>${esc(item.name)} ${tierChip(g.tier)}</h3>
             <ul class="gear-lines">${AFFIX_ORDER.filter((a) => g.affixes[a]).map((a) => `<li title="${esc(AFFIXES[a].desc)}">${affixText(a, g.affixes[a])}</li>`).join('')}</ul>
-            <div class="foot">${button(g)}</div>
+            <div class="foot">${button(g)}${quickSellButton(g)}</div>
           </article>`;
       }).join('')}
     </div>
@@ -1214,6 +1224,14 @@ $('#view').addEventListener('click', (e) => {
   }
   if (d.buy) return act('/shop/buy', { itemId: d.buy, qty: Number(d.qty) });
   if (d.openGear) return act(`/gear/${d.openGear}/open`, {}, { fx: sparkleFx('jump', 'sparkle') });
+  if (d.quickSell) {
+    const g = myGear().find((x) => x.id === Number(d.quickSell));
+    if (!g) return;
+    const name = items()[g.itemId]?.name ?? 'món này';
+    const worn = g.wornBy ? ` ${petName(g.wornBy)} đang đeo món này, bán sẽ tháo ra.` : '';
+    if (!confirm(`Bán nhanh ${name}${g.sealed ? ' (hộp chưa mở)' : ` (${TIERS[g.tier].name})`} cho Siêu thị lấy ${fmt(g.quickSell)} 🪙? Món sẽ mất hẳn.${worn}`)) return;
+    return act(`/gear/${d.quickSell}/quick-sell`);
+  }
   if (d.species) {
     state.adoptSpecies = d.species;
     for (const card of document.querySelectorAll('.species-card')) card.classList.toggle('selected', card === el);

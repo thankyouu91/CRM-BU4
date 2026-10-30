@@ -547,7 +547,20 @@ export const ARTICLES: WikiArticle[] = [
             "Vào **Túi đồ**, bấm **🎁 Mở hộp** để biết cấp và các dòng.",
             "Mở hộp xong mới đeo hoặc bày bán được.",
           ] },
-          { warn: "Không có chế tạo hay nâng cấp đồ. Muốn đồ Vàng, Đỏ thì chơi mini-game đều đặn, săn mã quà hoặc mua ở Chợ Phiên. Món đang bày bán ở Chợ Phiên bị tháo ra và không đeo được." },
+          { p: "Trước khi mua, mỗi món cho biết **các loại chỉ số có thể ra**: hai loại theo hành và một loại theo khe. Hộp Siêu thị (Xanh lam, Xanh lục) chỉ ra dòng trong nhóm này; đồ Vàng, Đỏ có thêm loại ngoài nhóm. Cấp và % vẫn chỉ biết khi mở hộp." },
+          { warn: "Không có chế tạo hay nâng cấp đồ. Muốn đồ Vàng, Đỏ thì chơi mini-game đều đặn, săn mã quà hoặc mua ở Chợ Phiên. Món đang bày bán hoặc đấu giá ở Chợ Phiên bị tháo ra và không đeo được." },
+        ],
+      },
+      {
+        id: "ban-do",
+        title: "Bán đồ không cần nữa",
+        blocks: [
+          { table: { head: ["Cách bán", "Thu về"], rows: [
+            ["**Bán nhanh** cho Siêu thị (nút 💰 trong Túi đồ)", "10–40% giá trị món (giá shop × hệ số cấp), dòng chỉ số quay càng cao trong biên độ của cấp càng được nhiều; hộp chưa mở 10% giá shop"],
+            ["Bày bán ở [Chợ Phiên](cho-phien)", "Giá tự đặt 50–300% tham chiếu, trừ phí"],
+            ["Đấu giá ở [Chợ Phiên](cho-phien#dau-gia)", "Giá người chơi trả, trừ phí"],
+          ] } },
+          { p: "Bán nhanh là mất món ngay và không có thưởng Thu nhập giao dịch." },
         ],
       },
       {
@@ -980,8 +993,8 @@ export const ARTICLES: WikiArticle[] = [
     title: "Chợ Phiên",
     category: "kinh-te",
     emoji: "🏮",
-    summary: "Bán đồ Siêu thị, trang phục và món tự nấu cho người chơi khác: giá, phí, điều kiện.",
-    keywords: ["chợ", "bán đồ", "mua đồ", "trao đổi", "người chơi", "phiên"],
+    summary: "Bán đồ Siêu thị, trang phục (kể cả hộp chưa mở) và món tự nấu cho người chơi khác, đấu giá trang phục: giá, phí, điều kiện.",
+    keywords: ["chợ", "bán đồ", "mua đồ", "trao đổi", "người chơi", "phiên", "đấu giá", "trả giá", "hộp"],
     related: ["trang-phuc", "bep", "san-nguyen-lieu"],
     sections: [
       {
@@ -990,14 +1003,32 @@ export const ARTICLES: WikiArticle[] = [
         blocks: [
           { p: "Mở ở **cấp 4**. Ở đây người chơi bày bán cho nhau." },
           { table: { head: ["Luật", "Con số"], rows: [
-            ["Bán được", "Đồ Siêu thị trong túi, trang phục đã mở hộp, món tự nấu"],
-            ["Giá", "50–300% giá tham chiếu (trang phục: giá shop × 1, 2, 4 hoặc 8 theo cấp)"],
+            ["Bán được", "Đồ Siêu thị trong túi, trang phục (đã mở hoặc còn nguyên hộp), món tự nấu"],
+            ["Giá", "50–300% giá tham chiếu (trang phục: giá shop × 1, 2, 4 hoặc 8 theo cấp; hộp chưa mở tính ×1)"],
             ["Phí đăng tin", "1%"],
             ["Phí khi bán được", "5% (người bán trả)"],
             ["Thời hạn tin", "48 giờ (món nấu không quá hạn dùng của món)"],
             ["Điều kiện", "Tài khoản từ 3 ngày tuổi, tối đa 10 tin cùng lúc"],
           ] } },
+          { p: "Hộp trang phục chưa mở bán nguyên hộp: người mua chỉ thấy các loại chỉ số món đó có thể ra, cấp và % chỉ lộ khi mở." },
           { p: "Dòng **Thu nhập giao dịch** trên trang phục của bé chính cho thêm xu mỗi lần bán được." },
+        ],
+      },
+      {
+        id: "dau-gia",
+        title: "Đấu giá trang phục",
+        blocks: [
+          { p: "Trang phục không cần nữa có thể đem **đấu giá** ở tab 🔨 Đấu giá: đặt giá khởi điểm và thời hạn, ai trả cao nhất khi hết giờ thì được món." },
+          { table: { head: ["Luật", "Con số"], rows: [
+            ["Giá khởi điểm", "10–300% giá tham chiếu"],
+            ["Thời hạn", "6, 12 hoặc 24 giờ"],
+            ["Bước giá", "Cao hơn giá đang dẫn ít nhất 5% (tối thiểu 1 xu)"],
+            ["Xu khi trả giá", "Bị giữ lại; có người trả cao hơn thì hoàn ngay"],
+            ["Trả giá sát giờ", "Trong 5 phút cuối thì phiên kéo dài thêm 5 phút"],
+            ["Phí", "1% giá khởi điểm khi mở phiên, 5% giá chốt khi bán được"],
+            ["Giới hạn", "Tối đa 5 phiên cùng lúc; chưa ai trả giá thì hủy được"],
+          ] } },
+          { p: "Hết giờ mà không ai trả giá thì món về lại tủ đồ." },
         ],
       },
     ],

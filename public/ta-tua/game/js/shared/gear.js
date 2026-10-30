@@ -115,15 +115,41 @@ export function rollTier(odds, rand, luck = 0) {
   return TIER_ORDER.findLast((t) => (odds[t] ?? 0) > 0) ?? 'blue';
 }
 
-/** Quay các dòng chỉ số cho một món cấp `tier`: số dòng theo cấp, mỗi loại tối đa một dòng. */
-export function rollAffixes(tier, ranges, rand) {
-  const pool = [...AFFIX_ORDER];
-  for (let i = pool.length - 1; i > 0; i--) {
+/**
+ * Mỗi món thiên về vài loại chỉ số, công khai trước khi mua: hai loại theo hành và một loại theo khe.
+ * Món cấp Xanh lam, Xanh lục (mọi hộp ở Siêu thị) chỉ ra dòng trong nhóm này; nhóm thiếu chỗ (cấp Vàng, Đỏ)
+ * thì thêm loại ngoài nhóm. Cấp và % vẫn chỉ biết khi mở hộp.
+ */
+export const ELEMENT_AFFIXES = {
+  kim: ['trade', 'income'],
+  moc: ['stats', 'luck'],
+  thuy: ['trade', 'luck'],
+  hoa: ['income', 'stats'],
+  tho: ['income', 'luck'],
+};
+export const SLOT_AFFIX = { head: 'stats', face: 'luck', neck: 'income', back: 'trade', charm: 'luck' };
+
+/** Các loại chỉ số món ở khe `slot`, hành `element` có thể ra (theo thứ tự AFFIX_ORDER); không rõ món thì đủ 4 loại. */
+export function affixPool(slot, element) {
+  const picks = new Set([...(ELEMENT_AFFIXES[element] ?? []), SLOT_AFFIX[slot]].filter(Boolean));
+  return picks.size ? AFFIX_ORDER.filter((a) => picks.has(a)) : [...AFFIX_ORDER];
+}
+
+const shuffle = (list, rand) => {
+  const out = [...list];
+  for (let i = out.length - 1; i > 0; i--) {
     const j = Math.floor(rand() * (i + 1));
-    [pool[i], pool[j]] = [pool[j], pool[i]];
+    [out[i], out[j]] = [out[j], out[i]];
   }
+  return out;
+};
+
+/** Quay các dòng chỉ số cho một món cấp `tier`: số dòng theo cấp, mỗi loại tối đa một dòng, ưu tiên nhóm `pool` của món. */
+export function rollAffixes(tier, ranges, rand, pool = AFFIX_ORDER) {
+  const inPool = shuffle(pool, rand);
+  const rest = shuffle(AFFIX_ORDER.filter((a) => !pool.includes(a)), rand);
   const affixes = {};
-  for (const a of pool.slice(0, TIERS[tier].lines)) {
+  for (const a of [...inPool, ...rest].slice(0, TIERS[tier].lines)) {
     const [lo, hi] = ranges[tier][a];
     affixes[a] = lo + Math.floor(rand() * (hi - lo + 1));
   }
@@ -131,9 +157,9 @@ export function rollAffixes(tier, ranges, rand) {
 }
 
 /** Một món mới: cấp (đã cho hoặc quay) và các dòng chỉ số. */
-export function rollGear(config, rand, { luck = 0, tier = null } = {}) {
+export function rollGear(config, rand, { luck = 0, tier = null, pool } = {}) {
   const t = tier && TIERS[tier] ? tier : rollTier(config.odds, rand, luck);
-  return { tier: t, affixes: rollAffixes(t, config.ranges, rand) };
+  return { tier: t, affixes: rollAffixes(t, config.ranges, rand, pool) };
 }
 
 /**
@@ -143,10 +169,26 @@ export function rollGear(config, rand, { luck = 0, tier = null } = {}) {
 export const SHOP_TIERS = ['blue', 'green'];
 
 /** Quay một món mua ở Siêu thị: tỷ lệ Xanh lam/Xanh lục theo cấu hình, May mắn giúp ra Xanh lục. */
-export function rollShopGear(config, rand, { luck = 0 } = {}) {
+export function rollShopGear(config, rand, { luck = 0, pool } = {}) {
   const odds = Object.fromEntries(TIER_ORDER.map((t) => [t, SHOP_TIERS.includes(t) ? config.odds[t] ?? 0 : 0]));
   if (!SHOP_TIERS.some((t) => odds[t] > 0)) odds.blue = 1;
-  return rollGear(config, rand, { tier: rollTier(odds, rand, luck) });
+  return rollGear(config, rand, { tier: rollTier(odds, rand, luck), pool });
+}
+
+/**
+ * Bán nhanh cho Siêu thị: thu lại 10–40% giá trị món (giá cửa hàng × hệ số cấp), tùy các dòng chỉ số quay cao hay thấp
+ * trong biên độ của cấp đó. Hộp chưa mở thu mức thấp nhất trên giá cửa hàng.
+ */
+export const QUICK_SELL = { min: 0.1, max: 0.4 };
+
+/** Tỷ lệ thu lại (0,1–0,4) của một món cấp `tier` có các dòng `affixes`, theo biên độ `ranges`. */
+export function quickSellRate(tier, affixes, ranges) {
+  const scores = Object.entries(affixes ?? {}).map(([a, v]) => {
+    const [lo, hi] = ranges?.[tier]?.[a] ?? [0, 0];
+    return hi > lo ? Math.min(1, Math.max(0, (v - lo) / (hi - lo))) : 1;
+  });
+  const q = scores.length ? scores.reduce((s, x) => s + x, 0) / scores.length : 0;
+  return Math.round((QUICK_SELL.min + (QUICK_SELL.max - QUICK_SELL.min) * q) * 1000) / 1000;
 }
 
 /** Cộng các dòng chỉ số của những món đang đeo, rồi áp giảm dần và trần (effectiveBonus) cho từng loại. */

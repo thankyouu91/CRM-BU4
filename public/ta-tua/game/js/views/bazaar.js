@@ -1,15 +1,20 @@
 // Chợ Phiên: người chơi bày bán đồ dư trong túi và món tự nấu cho nhau, giá tự đặt trong khoảng cho phép.
 import { api } from '../api.js';
 import { ago, countdown, esc, fmt, viewHead } from '../ui.js';
-import { TIERS } from '../shared/gear.js';
+import { AFFIXES, TIERS } from '../shared/gear.js';
 
 const tierChip = (tier) => (TIERS[tier] ? `<span class="tier-chip tier-${tier}">${TIERS[tier].name}</span>` : '');
+/** Hộp chưa mở: chỉ cho biết các loại chỉ số có thể ra, không lộ cấp hay %. */
+const poolText = (pool) => (pool ?? []).map((a) => `${AFFIXES[a].icon} ${AFFIXES[a].name}`).join(' · ');
+const sealedNote = (pool) => `<small class="gear-lines-inline"><span class="tier-chip sealed">🎁 Hộp chưa mở</span> có thể ra: ${esc(poolText(pool))}</small>`;
+const gearNote = (g) => (g.sealed ? sealedNote(g.pool) : `<small class="gear-lines-inline">${tierChip(g.tier)} ${(g.lines ?? []).map(esc).join(' · ')}</small>`);
 
 const TYPES = { food: 'Đồ ăn', care: 'Chăm sóc', toy: 'Đồ chơi', accessory: 'Phụ kiện', dish: 'Món nấu' };
 const SORTS = { new: 'Mới nhất', deal: 'Giá hời', ending: 'Sắp hết hạn' };
 
 /** Tab, bộ lọc và giá đang gõ, giữ nguyên qua các lần vẽ lại. */
 const ui = { tab: 'buy', type: 'all', sort: 'new', help: false };
+const HOURS_DEFAULT = 12;
 const drafts = {};
 
 export function renderBazaar(root, ctx) {
@@ -43,6 +48,7 @@ export function renderBazaar(root, ctx) {
     const tab = (id, label) => `<button class="${ui.tab === id ? 'current' : ''}" data-bz-tab="${id}">${label}</button>`;
     return `<div class="seg bazaar-tabs">
       ${tab('buy', `🛍️ Mua <small>(${data.listings.filter((l) => !l.mine).length})</small>`)}
+      ${tab('auction', `🔨 Đấu giá <small>(${data.auctions.length})</small>`)}
       ${tab('sell', `🏷️ Bán <small>(${data.open}/${rules.maxListings})</small>`)}
       ${tab('history', '🧾 Lịch sử')}
     </div>`;
@@ -62,7 +68,7 @@ export function renderBazaar(root, ctx) {
       <div class="bazaar-info">
         <b>${esc(l.name)}</b>${l.quality ? ` <span class="badge">${esc(l.quality)}</span>` : ''}${l.tier ? ` ${tierChip(l.tier)}` : ''}
         <small class="type-tag">${TYPES[l.type] ?? esc(l.type)}</small>
-        ${l.lines?.length ? `<small class="gear-lines-inline">${l.lines.map(esc).join(' · ')}</small>` : ''}
+        ${l.sealed ? sealedNote(l.pool) : l.lines?.length ? `<small class="gear-lines-inline">${l.lines.map(esc).join(' · ')}</small>` : ''}
         <small class="muted">${l.mine ? '<span class="badge star">Tin của bạn</span>' : `Người bán <b>${esc(l.seller)}</b>`}</small>
         <small class="muted">⏳ còn ${until(l.expiresAt)}${l.spoilsAt ? ` · 🦠 hư sau ${until(l.spoilsAt)}` : ''}</small>
       </div>
@@ -95,8 +101,7 @@ export function renderBazaar(root, ctx) {
     const full = data.open >= rules.maxListings;
     let note = '';
     if (kind === 'gear') {
-      note = `<small class="gear-lines-inline">${tierChip(s.tier)} ${(s.lines ?? []).map(esc).join(' · ')}</small>`
-        + (s.wornBy ? '<small class="down">Bé đang đeo món này, bày bán sẽ tháo ra.</small>' : '');
+      note = gearNote(s) + (s.wornBy ? '<small class="down">Bé đang đeo món này, bày bán sẽ tháo ra.</small>' : '');
     } else if (kind === 'item') {
       const item = items[s.ref];
       const worn = item?.type === 'accessory' && s.qty === 1 && ctx.me.pets.some((p) => Object.values(p.wear ?? {}).includes(s.ref));
@@ -123,6 +128,65 @@ export function renderBazaar(root, ctx) {
   function netText(p, lo, hi) {
     if (!Number.isInteger(p) || p < lo || p > hi) return `<span class="down">Giá phải từ ${fmt(lo)} đến ${fmt(hi)} xu.</span>`;
     return `Phí đăng ${fmt(listFee(p))} 🪙 · bán được bạn nhận <b>${fmt(p - saleFee(p))} 🪙</b>`;
+  }
+
+  // ---- đấu giá ----
+  const auctionRules = () => data.auctionRules;
+  const startBandOf = (ref) => auctionRules().startBand.map((k) => Math.max(1, Math.round(ref * k)));
+
+  function auctionCard(a) {
+    const price = a.topBid ? `<b>${fmt(a.topBid)} 🪙</b><small class="muted">${a.bids} lượt trả</small>`
+      : `<b>${fmt(a.startPrice)} 🪙</b><small class="muted">khởi điểm</small>`;
+    let action;
+    if (a.mine) action = a.bids ? '<small class="muted">Phiên của bạn</small>' : `<button class="btn small" data-au-cancel="${a.id}">Hủy phiên</button>`;
+    else if (a.leading) action = '<span class="badge star">Bạn đang dẫn</span>';
+    else {
+      const key = `bid:${a.id}`;
+      const value = drafts[key] ?? String(a.minBid);
+      action = `<form class="bazaar-bid" data-au-bid="${a.id}">
+          <input name="amount" type="number" min="${a.minBid}" step="1" value="${esc(value)}" aria-label="Giá trả" title="Ít nhất ${fmt(a.minBid)} xu" required />
+          <button class="btn small mint" ${ctx.me.user.coins < a.minBid ? 'disabled' : ''}>Trả giá</button>
+        </form>`;
+    }
+    return `<article class="card bazaar-card auction ${a.mine ? 'mine' : ''} ${a.leading ? 'leading' : ''}">
+      <span class="bazaar-icon">${a.icon}</span>
+      <div class="bazaar-info">
+        <b>${esc(a.name)}</b>
+        <small class="type-tag">Trang phục · tham chiếu ${fmt(a.refPrice)} 🪙</small>
+        ${gearNote(a)}
+        <small class="muted">${a.mine ? '<span class="badge star">Phiên của bạn</span>' : `Người bán <b>${esc(a.seller)}</b>`}</small>
+        <small class="muted">🔨 còn ${until(a.endsAt)}</small>
+      </div>
+      <div class="bazaar-price">${price}${action}</div>
+    </article>`;
+  }
+
+  function auctionTab() {
+    const list = data.auctions.slice().sort((a, b) => a.endsAt - b.endsAt);
+    return list.length ? `<div class="bazaar-grid">${list.map(auctionCard).join('')}</div>`
+      : '<section class="card empty"><b>🔨</b><p class="muted">Chưa có phiên đấu giá nào. Mở phiên cho món bạn không cần nữa ở tab Bán.</p></section>';
+  }
+
+  function auctionRow(g) {
+    const ref = g.refPrice;
+    const [lo, hi] = startBandOf(ref);
+    const key = `au:${g.id}`;
+    const price = drafts[key] ?? String(Math.max(lo, Math.round(ref * 0.5)));
+    const full = data.openMine >= auctionRules().maxOpen;
+    return `<form class="bazaar-sell auction" data-au-list="${g.id}" data-refprice="${ref}">
+      <span class="bazaar-icon small">${g.icon}</span>
+      <div class="bazaar-sell-info">
+        <b>${esc(g.name)}</b>
+        <small class="muted">Tham chiếu ${fmt(ref)} 🪙 · khởi điểm ${fmt(lo)}–${fmt(hi)}</small>
+        ${gearNote(g)}
+        ${g.wornBy ? '<small class="down">Bé đang đeo món này, mở phiên sẽ tháo ra.</small>' : ''}
+      </div>
+      <div class="bazaar-sell-action">
+        <input name="startPrice" type="number" min="${lo}" max="${hi}" step="1" value="${esc(price)}" aria-label="Giá khởi điểm" required />
+        <select name="hours" aria-label="Thời hạn">${auctionRules().hours.map((h) => `<option value="${h}" ${h === HOURS_DEFAULT ? 'selected' : ''}>${h} giờ</option>`).join('')}</select>
+        <button class="btn small pink" ${!data.canSell || full ? 'disabled' : ''}>🔨 Mở phiên</button>
+      </div>
+    </form>`;
   }
 
   function sellTab() {
@@ -158,10 +222,22 @@ export function renderBazaar(root, ctx) {
           : '<p class="muted">Chưa có món trang phục nào. Mua ở cửa hàng, nhận từ mini-game hoặc mã quà.</p>'}
       </section>
       <section class="card bazaar-box">
+        <h3>🔨 Đấu giá trang phục <small class="muted">(${data.openMine}/${auctionRules().maxOpen} phiên)</small></h3>
+        <p class="muted small">Đặt giá khởi điểm và thời hạn; ai trả cao nhất khi hết giờ thì được món. Không cần nữa mà muốn có tiền ngay thì bấm <b>Bán nhanh</b> trong Túi đồ (Siêu thị thu 10–40% giá trị).</p>
+        ${gear.length ? `<div class="bazaar-sell-list">${gear.map(auctionRow).join('')}</div>` : '<p class="muted">Chưa có món trang phục nào.</p>'}
+      </section>
+      <section class="card bazaar-box">
         <h3>🍲 Món tự nấu</h3>
         ${dishes.length ? `<div class="bazaar-sell-list">${dishes.map((s) => sellRow('dish', s)).join('')}</div>`
           : '<p class="muted">Chưa có món nào. Vào Bếp nấu vài món rồi mang ra chợ nhé.</p>'}
       </section>`;
+  }
+
+  function auctionStatus(a) {
+    if (a.status === 'sold' && a.mine) return `<span class="up">Bán cho ${esc(a.winner)} · nhận ${fmt(a.topBid - saleFee(a.topBid))} 🪙</span>`;
+    if (a.status === 'sold') return `<span class="up">Bạn thắng phiên của ${esc(a.seller)}</span>`;
+    if (a.status === 'unsold') return 'Không ai trả giá, món đã về tủ đồ';
+    return 'Đã hủy phiên';
   }
 
   function historyTab() {
@@ -178,6 +254,15 @@ export function renderBazaar(root, ctx) {
             <div><b>${esc(l.name)}</b>${l.quality ? ` <span class="badge">${esc(l.quality)}</span>` : ''} · ${fmt(l.price)} 🪙<br>
               <small class="muted">${statusText(l)}${l.soldAt ? ` · ${ago(l.soldAt)}` : ''}</small></div>
           </li>`).join('')}</ul>` : '<p class="muted">Chưa có tin nào đóng.</p>'}
+      </section>
+      <section class="card bazaar-box">
+        <h3>🔨 Phiên đấu giá đã đóng</h3>
+        ${data.closedAuctions.length ? `<ul class="pb-list">${data.closedAuctions.map((a) => `
+          <li class="bazaar-mine">
+            <span class="bazaar-icon small">${a.icon}</span>
+            <div><b>${esc(a.name)}</b>${a.topBid ? ` · ${fmt(a.topBid)} 🪙` : ''}<br>
+              <small class="muted">${auctionStatus(a)}${a.closedAt ? ` · ${ago(a.closedAt)}` : ''}</small></div>
+          </li>`).join('')}</ul>` : '<p class="muted">Chưa có phiên nào đóng.</p>'}
       </section>
       <section class="card bazaar-box">
         <h3>🛍️ Bạn đã mua</h3>
@@ -201,13 +286,16 @@ export function renderBazaar(root, ctx) {
         <li>Mỗi người bày tối đa <b>${rules.maxListings} món</b>; tài khoản cần đủ ${rules.minAccountDays} ngày tuổi mới được bày bán.</li>
         <li>Đồ chơi dùng mãi mãi chỉ mua được nếu bạn chưa có.</li>
         <li>Trang phục bán theo từng món, giữ nguyên cấp và dòng chỉ số; giá tham chiếu theo cấp (Xanh lam ×1, Xanh lục ×2, Vàng ×4, Đỏ ×8 giá cửa hàng).</li>
+        <li>Hộp trang phục chưa mở cũng bày bán được: người mua chỉ biết các loại chỉ số có thể ra, cấp và % chỉ lộ khi mở. Giá tham chiếu tính như Xanh lam.</li>
+        <li><b>Đấu giá</b> trang phục: giá khởi điểm ${pc(auctionRules().startBand[0])}–${pc(auctionRules().startBand[1])} tham chiếu, kéo dài ${auctionRules().hours.join('/')} giờ, mỗi lần trả cao hơn ít nhất ${pc(auctionRules().stepPct)}.
+          Xu trả giá được giữ lại, bị trả cao hơn thì hoàn ngay; trả giá trong ${Math.round(auctionRules().snipeMs / 60000)} phút cuối thì phiên kéo dài thêm. Phí như bán thường; chưa ai trả giá thì hủy được.</li>
         <li>Bán được hàng, bé chính có dòng "Thu nhập giao dịch" thì nhận thêm % đó.</li>
       </ul>
     </details>`;
   }
 
   function draw() {
-    const body = ui.tab === 'sell' ? sellTab() : ui.tab === 'history' ? historyTab() : buyTab();
+    const body = ui.tab === 'sell' ? sellTab() : ui.tab === 'history' ? historyTab() : ui.tab === 'auction' ? auctionTab() : buyTab();
     view.innerHTML = `${tabsHtml()}<div class="bazaar-body">${body}</div>${helpHtml()}`;
   }
 
@@ -242,6 +330,8 @@ export function renderBazaar(root, ctx) {
       const p = pctOf(l);
       if (p > 150 && !confirm(`${l.name} đang bán ${fmt(l.price)} 🪙, bằng ${p}% giá tham chiếu (${fmt(l.refPrice)} 🪙). Vẫn mua?`)) return;
       ctx.act(`/bazaar/${l.id}/buy`);
+    } else if (d.auCancel) {
+      if (confirm('Hủy phiên đấu giá? Món về lại tủ đồ, phí mở phiên không được hoàn.')) ctx.act(`/bazaar/auctions/${d.auCancel}/cancel`);
     } else if (d.bzCancel) {
       const l = data.listings.find((x) => x.id === Number(d.bzCancel));
       const fee = l ? listFee(l.price) : 0;
@@ -250,6 +340,10 @@ export function renderBazaar(root, ctx) {
   });
 
   page.addEventListener('input', (e) => {
+    const bid = e.target.closest('[data-au-bid]');
+    if (bid) drafts[`bid:${bid.dataset.auBid}`] = e.target.value;
+    const au = e.target.closest('[data-au-list]');
+    if (au && e.target.name === 'startPrice') drafts[`au:${au.dataset.auList}`] = e.target.value;
     const f = e.target.closest('[data-bz-sell]');
     if (!f || e.target.name !== 'price') return;
     drafts[`${f.dataset.bzSell}:${f.dataset.ref}`] = e.target.value;
@@ -258,6 +352,26 @@ export function renderBazaar(root, ctx) {
   });
 
   page.addEventListener('submit', (e) => {
+    const bid = e.target.closest('[data-au-bid]');
+    if (bid) {
+      e.preventDefault();
+      const id = bid.dataset.auBid;
+      const a = data.auctions.find((x) => x.id === Number(id));
+      const amount = Number(new FormData(bid).get('amount'));
+      if (a && amount > a.refPrice * 3 && !confirm(`Trả ${fmt(amount)} 🪙, gấp ${Math.round(amount / a.refPrice)} lần giá tham chiếu (${fmt(a.refPrice)} 🪙). Vẫn trả?`)) return;
+      ctx.act(`/bazaar/auctions/${id}/bid`, { amount }, { onResult: () => { delete drafts[`bid:${id}`]; } });
+      return;
+    }
+    const au = e.target.closest('[data-au-list]');
+    if (au) {
+      e.preventDefault();
+      const form = new FormData(au);
+      const id = au.dataset.auList;
+      ctx.act('/bazaar/auctions', { gearId: Number(id), startPrice: Number(form.get('startPrice')), hours: Number(form.get('hours')) }, {
+        onResult: () => { delete drafts[`au:${id}`]; },
+      });
+      return;
+    }
     const f = e.target.closest('[data-bz-sell]');
     if (!f) return;
     e.preventDefault();
@@ -274,7 +388,7 @@ export function renderBazaar(root, ctx) {
       for (const el of view.querySelectorAll('[data-until]')) el.textContent = countdown(Number(el.dataset.until) - Date.now());
     }, 1000);
     poll = setInterval(() => {
-      if (ui.tab === 'buy' && document.visibilityState === 'visible' && !page.contains(document.activeElement?.closest('input, select, textarea'))) {
+      if ((ui.tab === 'buy' || ui.tab === 'auction') && document.visibilityState === 'visible' && !page.contains(document.activeElement?.closest('input, select, textarea'))) {
         load().catch(() => {});
       }
     }, 60_000);
