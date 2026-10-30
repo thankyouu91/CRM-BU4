@@ -152,8 +152,11 @@ export function openClanDeposit(userId, amount, term, now = Date.now()) {
 }
 
 /** Trả một khoản gửi về quỹ: đúng hạn có lãi; trước hạn mất lãi và bị phạt (một nửa tiền phạt vào ngân sách thị trấn). */
-function settleDeposit(dep, now, { emergency = false } = {}) {
-  const pay = clanDepositPayout(dep, now, { emergency });
+function settleDeposit(dep, now, { emergency = false, forced = false } = {}) {
+  // Thu hồi bắt buộc (nộp phạt Đấu trường, truy thu thuế): trả gốc, mất lãi, không phạt rút trước hạn.
+  const pay = forced && now < dep.matures_at
+    ? { principal: dep.amount, interest: 0, penalty: 0, kind: 'forced' }
+    : clanDepositPayout(dep, now, { emergency });
   post({ account: depositAccount(dep.clan_id), delta: -dep.amount, kind: 'clan_deposit_close', memo: `Khoản #${dep.id}`, now });
   post({ account: clanAccount(dep.clan_id), delta: pay.principal, kind: 'clan_deposit_close', memo: `Khoản #${dep.id}`, now });
   if (pay.interest) post({ account: clanAccount(dep.clan_id), delta: pay.interest, kind: 'clan_interest', memo: `Kỳ hạn ${dep.term_days} ngày`, now });
@@ -193,6 +196,22 @@ export function coverFromDeposits(clanId, need, now = Date.now()) {
     q.insertNews.run(`🏦 Quỹ gia tộc ${q.clan.get(clanId)?.name ?? ''} cạn tiền, rút gấp khoản gửi #${dep.id} (phạt ${fmt(pay.penalty)} xu)`, now, now, now + DAY);
   }
   return got;
+}
+
+/** Tiền gia tộc có thể bị thu: quỹ cộng tiền gửi kỳ hạn đang mở. */
+export const clanAssets = (clanId) => Math.max(0, q.account.get(clanAccount(clanId))?.balance ?? 0) + clanDeposited(clanId);
+
+/**
+ * Trước khi thu `need` xu từ quỹ (phạt Đấu trường, Thuế vụ hay quản trị viên truy thu): quỹ thiếu thì phá các khoản gửi kỳ
+ * hạn, chỉ trả gốc và mất lãi, cho tới khi đủ. Tiền gửi vì vậy không làm "lá chắn" né phạt. Trả về số xu quỹ đang có.
+ */
+export function breakDepositsFor(clanId, need, reason, now = Date.now()) {
+  for (const dep of q.deposits.all(clanId)) {
+    if ((q.account.get(clanAccount(clanId))?.balance ?? 0) >= need) break;
+    settleDeposit(dep, now, { forced: true });
+    q.insertNews.run(`🏦 Gia tộc ${q.clan.get(clanId)?.name ?? ''} bị thu hồi khoản gửi #${dep.id} (mất lãi) để ${reason}`, now, now, now + DAY);
+  }
+  return Math.max(0, q.account.get(clanAccount(clanId))?.balance ?? 0);
 }
 
 /** Cuối ngày: khoản đáo hạn tự về quỹ kèm lãi; phiếu hết giờ thì khép. */

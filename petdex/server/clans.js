@@ -8,7 +8,7 @@ import { DAY, GameError } from './game.js';
 import { post, treasuryBalance } from './ledger.js';
 import { macroFor, rollNextDay } from './macro.js';
 import { weekKey } from './town.js';
-import { clanDeposited, clanGovView, coverFromDeposits, isDeposed } from './clan-gov.js';
+import { breakDepositsFor, clanAssets, clanDeposited, clanGovView, coverFromDeposits, isDeposed } from './clan-gov.js';
 import { IRRIGATED, clearShopBook, expireListings, plotDeposits, productionPreview, runProduction, setPlotVariant, tradeIncome } from './industry.js';
 import { STRATEGIC_INDUSTRIES, STRATEGIC_RULES, strategicPlaceOk, variantsFor } from '../../public/ta-tua/game/js/shared/industry.js';
 import { buffFor, chargeInfraFee, operatingOwners, strategicOf } from './strategic.js';
@@ -131,6 +131,9 @@ const q = {
   memberCount: db.prepare('SELECT COUNT(*) AS n FROM clan_members WHERE clan_id = ?'),
   addMember: db.prepare('INSERT INTO clan_members (user_id, clan_id, role, joined_at) VALUES (?, ?, ?, ?)'),
   removeMember: db.prepare('DELETE FROM clan_members WHERE user_id = ?'),
+  dropMembers: db.prepare('DELETE FROM clan_members WHERE clan_id = ?'),
+  cancelWars: db.prepare("UPDATE clan_wars SET status = 'cancelled', resolved_at = ?, note = 'Gia tộc đã giải tán' WHERE status IN ('proposed', 'scheduled') AND (challenger_id = ? OR defender_id = ?)"),
+  dropAsks: db.prepare('DELETE FROM essentials_asks WHERE clan_id = ?'),
   setRole: db.prepare('UPDATE clan_members SET role = ? WHERE user_id = ?'),
   addDonated: db.prepare('UPDATE clan_members SET donated = donated + ? WHERE user_id = ?'),
   addWeekDonation: db.prepare(`
@@ -325,6 +328,10 @@ function dissolveClan(clan, now) {
     post({ account: clanAccount(clan.id), delta: -left, kind: 'clan_upkeep', memo: 'Giải tán: quỹ còn lại về ngân sách', now });
     toTreasury(left, 'clan_upkeep', `Quỹ gia tộc ${clan.name} giải tán`, now);
   }
+  // Mọi thành viên còn lại (kể cả người bị phế truất) được thả ra, để vào hay lập gia tộc khác được.
+  q.dropMembers.run(clan.id);
+  q.cancelWars.run(now, clan.id, clan.id);
+  q.dropAsks.run(clan.id);
   q.dissolve.run(now, clan.id);
 }
 
@@ -335,8 +342,11 @@ export function leaveClan(userId, now = Date.now()) {
     if (member.role === 'leader') {
       const next = q.successor.get(clan.id, userId);
       if (!next) {
+        const others = q.memberCount.get(clan.id).n;
         dissolveClan(clan, now);
-        return { message: `Bạn là người cuối cùng: gia tộc ${clan.name} đã giải tán, đất trả về Sở Nhà Đất.` };
+        return { message: others
+          ? `Không còn ai đủ quyền làm tộc trưởng: gia tộc ${clan.name} đã giải tán, ${others} thành viên còn lại được tự do, đất trả về Sở Nhà Đất.`
+          : `Bạn là người cuối cùng: gia tộc ${clan.name} đã giải tán, đất trả về Sở Nhà Đất.` };
       }
       q.setRole.run('leader', next.user_id);
       q.setLeader.run(next.user_id, clan.id);
@@ -853,7 +863,8 @@ export function collectAsTaxOffice(userId, id, now = Date.now()) {
     if (row.clan_id === office.clanId) throw new GameError('Không tự truy thu chính gia tộc mình.');
     const clan = q.clan.get(office.clanId);
     const due = Math.round(row.evaded * (1 + STRATEGIC_RULES.collectPenalty));
-    const collected = Math.min(due, Math.max(0, clanBalance(row.clan_id)));
+    // Thu từ quỹ trước, thiếu thì phá tiền gửi kỳ hạn (chỉ gốc, mất lãi).
+    const collected = Math.min(due, clanAssets(row.clan_id), breakDepositsFor(row.clan_id, due, 'nộp Thuế vụ truy thu', now));
     const commission = Math.round(collected * office.rate);
     if (collected > 0) {
       post({ account: clanAccount(row.clan_id), delta: -collected, kind: 'corp_tax_collect', memo: `Thuế vụ truy thu ngày ${row.day}`, now });
@@ -876,7 +887,7 @@ export function resolveEvasion(id, action, { penalty = 0.5, actor = 'Quản tr�
       return { collected: 0 };
     }
     const due = Math.round(row.evaded * (1 + Math.min(5, Math.max(0, Number(penalty) || 0))));
-    const collected = Math.min(due, Math.max(0, clanBalance(row.clan_id)));
+    const collected = Math.min(due, clanAssets(row.clan_id), breakDepositsFor(row.clan_id, due, 'nộp truy thu thuế', now));
     if (collected > 0) {
       post({ account: clanAccount(row.clan_id), delta: -collected, kind: 'corp_tax_collect', memo: `Truy thu thuế ngày ${row.day}`, now });
       post({ account: 'treasury', delta: collected, kind: 'corp_tax_collect', memo: `Truy thu gia tộc #${row.clan_id} ngày ${row.day}`, now });
