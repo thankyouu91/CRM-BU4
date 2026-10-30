@@ -77,7 +77,7 @@ function vectorLayer(fillFor) {
 const esc = (v) => String(v ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 
 /** Vùng bấm, màu gia tộc, huy hiệu, mã lô; `infos` theo id: { owner, mine }. */
-export function plotLayer(infos, { selected = null, showClimate = false } = {}) {
+export function plotLayer(infos, { selected = null, showClimate = false, resources = null } = {}) {
   return PLOTS.map((p) => {
     const g = GEOMETRY.get(p.id);
     const info = infos.get(p.id) ?? {};
@@ -86,15 +86,16 @@ export function plotLayer(infos, { selected = null, showClimate = false } = {}) 
     const tint = owner ? `<polygon points="${shape}" fill="${esc(owner.color)}" fill-opacity=".38" stroke="${esc(owner.color)}" stroke-width="2"${info.mine ? ' stroke-dasharray="5 2"' : ''} pointer-events="none"/>` : '';
     const badge = owner ? `<g pointer-events="none"><circle cx="${f1(g.cx)}" cy="${f1(g.cy)}" r="8.5" fill="#fff" stroke="${esc(owner.color)}" stroke-width="2"/><text x="${f1(g.cx)}" y="${f1(g.cy + 4)}" text-anchor="middle" font-size="10">${esc(owner.emblem)}</text></g>` : '';
     const climate = showClimate ? `<text x="${f1(g.cx + 12)}" y="${f1(g.cy + 16)}" text-anchor="middle" font-size="10" pointer-events="none">${CLIMATES[p.climate].icon}</text>` : '';
+    const res = resources?.get(p.id) ? `<text x="${f1(g.cx)}" y="${f1(g.cy + (owner ? 20 : 6))}" text-anchor="middle" font-size="${owner ? 9 : 13}" pointer-events="none">${resources.get(p.id)}</text>` : '';
     return `<g class="plot${owner ? ' taken' : ' free'}${info.mine ? ' mine' : ''}${selected === p.id ? ' sel' : ''}" data-plot="${p.id}">
-      ${tint}<polygon class="hit" points="${shape}"/>${badge}${climate}
+      ${tint}<polygon class="hit" points="${shape}"/>${badge}${climate}${res}
       <text class="code" x="${f1(g.cx)}" y="${f1(g.cy - HEX_R + 12)}" text-anchor="middle">${p.code}</text></g>`;
   }).join('');
 }
 
-export function landMapSvg({ key, fillFor, infos, selected, showClimate }) {
+export function landMapSvg({ key, fillFor, infos, selected, showClimate, resources }) {
   return `<svg class="land-svg" viewBox="0 0 ${MAP_W} ${MAP_H}" role="img" aria-label="Bản đồ 200 lô đất">
     <g class="lm-static">${staticLayer(key, fillFor)}</g>
-    <g class="lm-plots">${plotLayer(infos, { selected, showClimate })}</g>
+    <g class="lm-plots">${plotLayer(infos, { selected, showClimate, resources })}</g>
   </svg>`;
 }
