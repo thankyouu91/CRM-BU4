@@ -5,7 +5,7 @@
 
 /** Level of the best pet needed to open each place (petdex/server/routes-economy.js UNLOCKS). */
 export const UNLOCKS = {
-  market: 2, school: 2, garden: 2, bank: 3, townhall: 3, guild: 3, kitchen: 3, business: 4, bazaar: 4, factory: 6, contracts: 6, advanced: 8,
+  market: 2, school: 1, garden: 2, bank: 3, townhall: 3, guild: 3, kitchen: 3, business: 4, bazaar: 4, factory: 6, contracts: 6, advanced: 8,
 } as const;
 
 /** Clan defaults (petdex/server/clans.js DEFAULT_CLAN_CONFIG); administrators can change them in the game. */
