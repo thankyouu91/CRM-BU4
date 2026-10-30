@@ -5,6 +5,7 @@ import { DAY, GameError, HOUR, ITEMS } from './game.js';
 import { chargeFee, post } from './ledger.js';
 import { describeGear, gearValue, getGear, setGearListed, tradeBonus, transferGear } from './gear.js';
 import { AUCTION, BAZAAR } from './rules/production.js';
+import { windTradeBonus } from './strategic.js';
 
 const q = {
   insert: db.prepare(`
@@ -144,6 +145,7 @@ export function settleAuctions(now = Date.now()) {
       post({ userId: a.top_bidder, delta: -a.top_bid, kind: 'auction_buy', memo: `${lot.name} của ${seller.username}`, now });
       post({ userId: a.seller_id, delta: a.top_bid - fee, kind: 'auction_sale', memo: `${lot.name} cho ${winner.username} (đã trừ phí ${fee})`, now });
       tradeBonus(a.seller_id, a.top_bid - fee, `Đấu giá: ${lot.name}`, now);
+      windTradeBonus(a.seller_id, a.top_bid - fee, `Đấu giá: ${lot.name}`, now);
       if (Math.floor(fee / 2) > 0) post({ account: 'treasury', delta: Math.floor(fee / 2), kind: 'fee', memo: 'Phí đấu giá', now });
       transferGear(g.id, a.top_bidder);
       q.close.run('sold', now, a.id);
