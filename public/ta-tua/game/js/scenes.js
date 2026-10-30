@@ -300,10 +300,12 @@ function pixelLine(p, x0, y0, x1, y1, color) {
 // ---------------------------------------------------------------- công viên
 
 export const PARK_PX = 3;
-const PW = 334;
+/** Một đoạn cảnh gốc rộng 334 điểm ảnh (1000 đơn vị thế giới); công viên rộng hơn ghép nhiều đoạn liền nhau. */
+const SEG = 334;
 const PH = 200;
 const HORIZON = 70;
 
+/** Bố cục trong một đoạn (tọa độ trong đoạn). */
 const PARK = {
   fountain: { x: 167, y: 104 },
   pond: { x: 46, y: 95, rx: 30, ry: 7 },
@@ -313,13 +315,18 @@ const PARK = {
   blossom: { x: 72, y: 86 },
 };
 
-function drawParkContent(time) {
-  const [c, g] = makeCanvas(PW, PH);
+/** Đổi tọa độ trong đoạn thứ `s` ra tọa độ cả cảnh; đoạn lẻ lật ngang bố cục để hai đoạn liền nhau không lặp y hệt. */
+const segX = (s) => (x) => s * SEG + (s % 2 ? SEG - x : x);
+const segCount = (pw) => Math.ceil(pw / SEG);
+
+function drawParkContent(time, pw) {
+  const [c, g] = makeCanvas(pw, PH);
   const p = new Pen(g);
   const rand = seeded(7);
+  const segs = segCount(pw);
 
   // đồi xa
-  for (let x = 0; x < PW; x++) {
+  for (let x = 0; x < pw; x++) {
     const far = HORIZON - Math.round(10 + 4 * Math.sin(x / 37 + 0.5) + 3 * Math.sin(x / 13));
     p.rect(x, far, 1, HORIZON - far + 2, '#b5dca3');
     p.px(x, far, '#cbeabd');
@@ -328,94 +335,100 @@ function drawParkContent(time) {
   }
 
   // bãi cỏ có vân
-  p.vGradient(0, HORIZON, PW, PH - HORIZON, ['#a6d98b', '#92cf76', '#84c76a']);
+  p.vGradient(0, HORIZON, pw, PH - HORIZON, ['#a6d98b', '#92cf76', '#84c76a']);
   for (let y = HORIZON + 1; y < PH; y++) {
-    for (let x = 0; x < PW; x++) {
+    for (let x = 0; x < pw; x++) {
       const r = rand();
       if (r < 0.03) p.px(x, y, '#74b85c');
       else if (r < 0.05) p.px(x, y, '#b2e195');
     }
   }
-  for (let k = 0; k < 160; k++) {
-    const x = Math.round(rand() * PW);
+  for (let k = 0; k < 160 * segs; k++) {
+    const x = Math.round(rand() * pw);
     const y = Math.round(HORIZON + 6 + rand() * (PH - HORIZON - 6));
     p.px(x, y, '#66a94f');
     p.px(x - 1, y - 1, '#66a94f');
     p.px(x + 1, y - 1, '#66a94f');
   }
 
-  // lối đi hai bên và quảng trường
-  const { plaza } = PARK;
-  for (let x = 0; x < PW; x++) {
+  // lối đi chạy suốt chiều ngang
+  const { plaza, pond } = PARK;
+  for (let x = 0; x < pw; x++) {
     const y = plaza.y + 6 + Math.round(Math.sin(x / 19) * 2);
     p.rect(x, y - 6, 1, 13, '#d2ae74');
     p.rect(x, y - 5, 1, 11, '#ebd29d');
   }
-  p.ellipse(plaza.x, plaza.y, plaza.rx + 1, plaza.ry + 1, '#d2ae74');
-  p.ellipse(plaza.x, plaza.y, plaza.rx, plaza.ry, '#ebd29d');
-  p.ellipse(plaza.x, plaza.y - 1, plaza.rx - 6, plaza.ry - 4, '#f0dbad');
   const onPath = (x, y) =>
     ((x - plaza.x) / plaza.rx) ** 2 + ((y - plaza.y) / plaza.ry) ** 2 < 0.92 || Math.abs(y - plaza.y - 6) < 4;
-  for (let k = 0; k < 420; k++) {
-    const x = Math.round(rand() * PW);
-    const y = Math.round(plaza.y - plaza.ry + rand() * plaza.ry * 2);
-    if (onPath(x, y)) p.px(x, y, rand() < 0.6 ? '#dcc089' : '#f8ead0');
-  }
-
-  // ao sen
-  const { pond } = PARK;
-  p.ellipse(pond.x, pond.y, pond.rx + 3, pond.ry + 2, '#c9bda7');
-  p.ellipse(pond.x, pond.y + 1, pond.rx + 2, pond.ry + 1, '#a99c84');
-  p.ellipse(pond.x, pond.y, pond.rx, pond.ry, '#4aa2cf');
-  p.ellipse(pond.x, pond.y + 1, pond.rx - 1, pond.ry - 1, '#68c3e6');
-  p.ellipse(pond.x - 8, pond.y - 1, 8, 1, '#9fdff4');
-  for (const [dx, dy] of [[-16, 1], [9, 2], [18, -1]]) {
-    p.ellipse(pond.x + dx, pond.y + dy, 3, 1, '#5fae4f');
-    p.px(pond.x + dx + 2, pond.y + dy, '#68c3e6');
-  }
-  p.rect(pond.x + 9, pond.y + 1, 2, 1, '#ffb7cf');
-
-  // hàng cây chân trời
-  const trees = [
-    [-6, 80, roundTree(14, 1)],
-    [16, 77, pineTree(34)],
-    [40, 82, roundTree(11, 2)],
-    [102, 74, roundTree(8, 3)],
-    [232, 74, roundTree(8, 4)],
-    [262, 81, roundTree(13, 5)],
-    [292, 78, pineTree(32)],
-    [320, 83, roundTree(15, 6)],
-  ];
-  for (const [x, y, img] of trees) g.drawImage(img, Math.round(x - img.width / 2), y - img.height);
-  const blossom = roundTree(13, 9, BLOSSOM);
-  g.drawImage(blossom, PARK.blossom.x - Math.round(blossom.width / 2), PARK.blossom.y - blossom.height);
-
-  for (const [x0, len] of [[92, 44], [218, 50]]) g.drawImage(fenceSegment(len), x0, HORIZON + 4);
-
-  // luống hoa phía sau bên phải
-  p.ellipse(290, 101, 20, 4, '#7b5236');
-  p.ellipse(290, 100, 19, 3, '#9a6b45');
-
-  for (const [x, y] of PARK.benches) {
-    const img = bench();
-    g.drawImage(img, x - Math.round(img.width / 2), y - img.height);
-  }
   const lit = time === 'night' || time === 'dusk';
-  for (const [x, y] of PARK.lamps) {
-    const img = lampPost(lit);
-    g.drawImage(img, x - Math.round(img.width / 2), y - img.height);
-  }
-  const fountainImg = fountain();
-  g.drawImage(fountainImg, PARK.fountain.x - Math.round(fountainImg.width / 2), PARK.fountain.y - fountainImg.height);
 
-  for (const [x, y, r, berries] of [[6, 202, 9, '#ff8fb1'], [26, 205, 7], [330, 202, 10, '#fff1a8'], [306, 206, 7]]) {
-    const img = bush(r, x + y, berries);
-    g.drawImage(img, x - Math.round(img.width / 2), y - img.height);
+  for (let s = 0; s < segs; s++) {
+    const X = segX(s);
+    // quảng trường
+    p.ellipse(X(plaza.x), plaza.y, plaza.rx + 1, plaza.ry + 1, '#d2ae74');
+    p.ellipse(X(plaza.x), plaza.y, plaza.rx, plaza.ry, '#ebd29d');
+    p.ellipse(X(plaza.x), plaza.y - 1, plaza.rx - 6, plaza.ry - 4, '#f0dbad');
+    for (let k = 0; k < 420; k++) {
+      const x = Math.round(rand() * SEG);
+      const y = Math.round(plaza.y - plaza.ry + rand() * plaza.ry * 2);
+      if (onPath(x, y)) p.px(X(x), y, rand() < 0.6 ? '#dcc089' : '#f8ead0');
+    }
+
+    // ao sen
+    const px = X(pond.x);
+    p.ellipse(px, pond.y, pond.rx + 3, pond.ry + 2, '#c9bda7');
+    p.ellipse(px, pond.y + 1, pond.rx + 2, pond.ry + 1, '#a99c84');
+    p.ellipse(px, pond.y, pond.rx, pond.ry, '#4aa2cf');
+    p.ellipse(px, pond.y + 1, pond.rx - 1, pond.ry - 1, '#68c3e6');
+    p.ellipse(X(pond.x - 8), pond.y - 1, 8, 1, '#9fdff4');
+    for (const [dx, dy] of [[-16, 1], [9, 2], [18, -1]]) {
+      p.ellipse(X(pond.x + dx), pond.y + dy, 3, 1, '#5fae4f');
+      p.px(X(pond.x + dx + 2), pond.y + dy, '#68c3e6');
+    }
+    p.rect(X(pond.x + 9), pond.y + 1, 2, 1, '#ffb7cf');
+
+    // hàng cây chân trời (mỗi đoạn một bộ dáng cây khác)
+    const k = s * 10;
+    const trees = [
+      [-6, 80, roundTree(14, 1 + k)],
+      [16, 77, pineTree(34 - (s % 2) * 3)],
+      [40, 82, roundTree(11, 2 + k)],
+      [102, 74, roundTree(8, 3 + k)],
+      [232, 74, roundTree(8, 4 + k)],
+      [262, 81, roundTree(13, 5 + k)],
+      [292, 78, pineTree(32 + (s % 2) * 3)],
+      [320, 83, roundTree(15, 6 + k)],
+    ];
+    for (const [x, y, img] of trees) g.drawImage(img, Math.round(X(x) - img.width / 2), y - img.height);
+    const blossom = roundTree(13, 9 + k, BLOSSOM);
+    g.drawImage(blossom, X(PARK.blossom.x) - Math.round(blossom.width / 2), PARK.blossom.y - blossom.height);
+
+    for (const [x0, len] of [[92, 44], [218, 50]]) g.drawImage(fenceSegment(len), s % 2 ? X(x0 + len) : X(x0), HORIZON + 4);
+
+    // luống hoa phía sau
+    p.ellipse(X(290), 101, 20, 4, '#7b5236');
+    p.ellipse(X(290), 100, 19, 3, '#9a6b45');
+
+    for (const [x, y] of PARK.benches) {
+      const img = bench();
+      g.drawImage(img, X(x) - Math.round(img.width / 2), y - img.height);
+    }
+    for (const [x, y] of PARK.lamps) {
+      const img = lampPost(lit);
+      g.drawImage(img, X(x) - Math.round(img.width / 2), y - img.height);
+    }
+    const fountainImg = fountain();
+    g.drawImage(fountainImg, X(PARK.fountain.x) - Math.round(fountainImg.width / 2), PARK.fountain.y - fountainImg.height);
+
+    for (const [x, y, r, berries] of [[6, 202, 9, '#ff8fb1'], [26, 205, 7], [330, 202, 10, '#fff1a8'], [306, 206, 7]]) {
+      const img = bush(r, x + y + k, berries);
+      g.drawImage(img, X(x) - Math.round(img.width / 2), y - img.height);
+    }
   }
   return c;
 }
 
-function makeFlowers() {
+function makeFlowers(pw) {
   const rand = seeded(42);
   const colors = [['#ff7a9c', '#ffc2d1'], ['#ffd75e', '#fff1b0'], ['#ffffff', '#e8eefc'], ['#b48cf2', '#dcc8ff']];
   const spots = [
@@ -425,15 +438,24 @@ function makeFlowers() {
     [96, 134, 84, 90, 4],
     [222, 266, 84, 90, 4],
   ];
-  return spots.flatMap(([x0, x1, y0, y1, n]) =>
-    Array.from({ length: n }, () => {
-      const [color, light] = colors[Math.floor(rand() * colors.length)];
-      return { x: Math.round(x0 + rand() * (x1 - x0)), y: Math.round(y0 + rand() * (y1 - y0)), color, light, phase: rand() * 6 };
-    }));
+  return Array.from({ length: segCount(pw) }, (_, s) => {
+    const X = segX(s);
+    return spots.flatMap(([x0, x1, y0, y1, n]) =>
+      Array.from({ length: n }, () => {
+        const [color, light] = colors[Math.floor(rand() * colors.length)];
+        return { x: X(Math.round(x0 + rand() * (x1 - x0))), y: Math.round(y0 + rand() * (y1 - y0)), color, light, phase: rand() * 6 };
+      }));
+  }).flat();
 }
 
-/** Gắn cảnh công viên vào `world` (kích thước 1000×600). Trả về hàm dọn dẹp. */
-export function mountParkScene(world) {
+/**
+ * Gắn cảnh công viên vào `world` (cao 600, rộng `width` đơn vị thế giới, mặc định 1000). Công viên rộng hơn ghép
+ * nhiều đoạn cảnh liền nhau ở cùng cỡ điểm ảnh, không kéo giãn. Trả về hàm dọn dẹp.
+ */
+export function mountParkScene(world, width = 1000) {
+  const PW = Math.ceil(width / PARK_PX);
+  const segs = segCount(PW);
+  const spots = Array.from({ length: segs }, (_, s) => segX(s));
   const bg = makeLayer(world, 'scene-bg', PW, PH, PARK_PX);
   const amb = makeLayer(world, 'scene-amb', PW, PH, PARK_PX);
   const glow = makeLayer(world, 'scene-glow', PW, PH, PARK_PX);
@@ -443,11 +465,12 @@ export function mountParkScene(world) {
   let clouds = [];
   let stars = [];
   let wings = [];
-  const flowers = makeFlowers();
+  const flowers = makeFlowers(PW);
   const rand = seeded(99);
-  const flies = Array.from({ length: 16 }, () => ({ x: 20 + rand() * 300, y: 90 + rand() * 100, phase: rand() * 6 }));
-  const petals = Array.from({ length: 8 }, () => ({ phase: rand(), wobble: rand() * 6 }));
-  const bugs = [['#ffd166', 120, 120], ['#ff9ec4', 250, 150], ['#a0d8ff', 60, 140]];
+  const flies = Array.from({ length: 16 * segs }, () => ({ x: 20 + rand() * (PW - 34), y: 90 + rand() * 100, phase: rand() * 6 }));
+  const petals = spots.flatMap((X) => Array.from({ length: 8 }, () => ({ x: X(PARK.blossom.x), phase: rand(), wobble: rand() * 6 })));
+  const bugs = spots.flatMap((X) => [['#ffd166', X(120), 120], ['#ff9ec4', X(250), 150], ['#a0d8ff', X(60), 140]]);
+  const lamps = spots.flatMap((X) => PARK.lamps.map(([x, y]) => [X(x), y]));
 
   function build() {
     time = timeOfDay();
@@ -456,11 +479,11 @@ export function mountParkScene(world) {
     bg.g.clearRect(0, 0, PW, PH);
     drawSky(bg.p, 0, 0, PW, HORIZON + 2, time, r);
     drawSunOrMoon(bg.p, time === 'night' ? 60 : time === 'dusk' ? 250 : time === 'dawn' ? 70 : 262, time === 'dusk' ? 50 : 24, time);
-    bg.g.drawImage(tinted(drawParkContent(time), TINTS[time]), 0, 0);
-    clouds = [[34, 8, 1.6], [24, 26, 2.4], [42, 14, 1.1], [20, 36, 2.9]].map(([w, y, speed], i) => ({
-      img: cloud(w, i + 1, CLOUD[time]), y, speed, x0: i * 97,
-    }));
-    stars = time === 'night' ? Array.from({ length: 10 }, () => ({ x: Math.round(rand() * PW), y: Math.round(rand() * 55), phase: rand() * 6 })) : [];
+    bg.g.drawImage(tinted(drawParkContent(time, PW), TINTS[time]), 0, 0);
+    clouds = spots.flatMap((_, s) => [[34, 8, 1.6], [24, 26, 2.4], [42, 14, 1.1], [20, 36, 2.9]].map(([w, y, speed], i) => ({
+      img: cloud(w, i + 1 + s * 4, CLOUD[time]), y, speed, x0: i * 97 + s * (SEG + 40),
+    })));
+    stars = time === 'night' ? Array.from({ length: 10 * segs }, () => ({ x: Math.round(rand() * PW), y: Math.round(rand() * 55), phase: rand() * 6 })) : [];
     wings = bugs.map(([color, x, y]) => ({ frames: butterflies(color), x, y, phase: rand() * 6 }));
   }
 
@@ -475,29 +498,32 @@ export function mountParkScene(world) {
       g.drawImage(cl.img, Math.round(((cl.x0 + t * cl.speed) % span) - cl.img.width), cl.y);
     }
 
-    // vòi phun nước
-    const fx = PARK.fountain.x;
-    const top = PARK.fountain.y - 29;
-    for (let k = 0; k < 6; k++) p.px(fx, top - 1 - ((k + Math.floor(t * 8)) % 6), k % 2 ? '#ffffff' : '#c9f1ff');
-    for (const side of [-1, 1]) {
-      for (let k = 0; k < 9; k++) {
-        const ph = (t * 0.9 + k / 9) % 1;
-        const x = fx + side * (1 + ph * 15);
-        const y = top - 2 + ph * ph * 22 - Math.sin(Math.PI * ph) * 4;
-        p.px(x, y, ph > 0.85 ? '#ffffff' : '#bfefff');
+    for (const X of spots) {
+      // vòi phun nước
+      const fx = X(PARK.fountain.x);
+      const top = PARK.fountain.y - 29;
+      for (let k = 0; k < 6; k++) p.px(fx, top - 1 - ((k + Math.floor(t * 8)) % 6), k % 2 ? '#ffffff' : '#c9f1ff');
+      for (const side of [-1, 1]) {
+        for (let k = 0; k < 9; k++) {
+          const ph = (t * 0.9 + k / 9) % 1;
+          const x = fx + side * (1 + ph * 15);
+          const y = top - 2 + ph * ph * 22 - Math.sin(Math.PI * ph) * 4;
+          p.px(x, y, ph > 0.85 ? '#ffffff' : '#bfefff');
+        }
       }
-    }
-    for (let k = 0; k < 4; k++) {
-      const a = t * 1.7 + k * 1.6;
-      p.px(fx + Math.round(Math.cos(a) * 15), PARK.fountain.y - 11 + Math.round(Math.sin(a * 1.3)), '#e8fbff');
-    }
+      for (let k = 0; k < 4; k++) {
+        const a = t * 1.7 + k * 1.6;
+        p.px(fx + Math.round(Math.cos(a) * 15), PARK.fountain.y - 11 + Math.round(Math.sin(a * 1.3)), '#e8fbff');
+      }
 
-    // mặt ao lấp lánh
-    const { pond } = PARK;
-    for (let k = 0; k < 4; k++) {
-      const x = pond.x - pond.rx + 4 + ((t * 3 + k * 14) % (pond.rx * 2 - 10));
-      const y = pond.y - 2 + (k % 3) * 2;
-      if (Math.sin(t * 3 + k) > -0.3) p.rect(x, y, 3, 1, '#d6f4ff');
+      // mặt ao lấp lánh
+      const { pond } = PARK;
+      const cx = X(pond.x);
+      for (let k = 0; k < 4; k++) {
+        const x = cx - pond.rx + 4 + ((t * 3 + k * 14) % (pond.rx * 2 - 10));
+        const y = pond.y - 2 + (k % 3) * 2;
+        if (Math.sin(t * 3 + k) > -0.3) p.rect(x, y, 3, 1, '#d6f4ff');
+      }
     }
 
     g.globalAlpha = { night: 0.5, dusk: 0.85 }[time] ?? 1; // lớp này không qua bộ phủ màu nên tự làm tối
@@ -520,11 +546,10 @@ export function mountParkScene(world) {
         g.drawImage(b.frames[Math.floor(t * 7 + b.phase) % 2], Math.round(x), Math.round(y));
       }
       // cánh hoa anh đào bay
-      const { blossom } = PARK;
       for (const pe of petals) {
         const u = (t / 9 + pe.phase) % 1;
-        const x = blossom.x - 12 + u * 70 + Math.sin(u * 14 + pe.wobble) * 3;
-        const y = blossom.y - 26 + u * 46;
+        const x = pe.x - 12 + u * 70 + Math.sin(u * 14 + pe.wobble) * 3;
+        const y = PARK.blossom.y - 26 + u * 46;
         p.rect(x, y, 2, 1, '#ffc4d6');
         p.px(x + (Math.sin(t * 4 + pe.wobble) > 0 ? 1 : 0), y + 1, '#ff9fbd');
       }
@@ -534,7 +559,7 @@ export function mountParkScene(world) {
     glow.g.clearRect(0, 0, PW, PH);
     if (time === 'night' || time === 'dusk') {
       const flicker = Math.sin(t * 9) * 0.02;
-      for (const [x, y] of PARK.lamps) {
+      for (const [x, y] of lamps) {
         for (const [r, a] of [[22, 0.08], [14, 0.12], [8, 0.2]]) glow.p.disc(x, y - 30, r, `rgba(255, 214, 140, ${a + flicker})`);
       }
       for (const f of flies) {
