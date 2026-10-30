@@ -259,3 +259,24 @@ test('vòng đời: hết tuổi thọ thì về với sao trời, lập bia, kh
   assert.equal(egg.element, 'thuy');
   assert.ok(egg.hatchAt - egg.startedAt === LIFE.memorialEggDays * DAY);
 });
+
+test('bé tự lớn mỗi đêm: cộng XP theo cấp, đủ thì lên cấp và nhận xu; bé yếu được một nửa', async () => {
+  const { DAILY_XP, dailyXp } = await import('../../public/ta-tua/game/js/shared/pets.js');
+  const { xpToNext, levelReward } = await import('../server/game.js');
+  assert.equal(dailyXp(80), DAILY_XP.min);
+  assert.equal(dailyXp(xpToNext(20)), Math.round(xpToNext(20) * DAILY_XP.share));
+  assert.equal(dailyXp(xpToNext(20), 30), Math.round(xpToNext(20) * DAILY_XP.share * DAILY_XP.weakFactor));
+
+  const userId = store.createUser('ngu_dong', 'x', T0 - 30 * DAY);
+  const petId = eggs.createPet(userId, 'Lười', 'tho_la', T0 - 20 * DAY).petId;
+  // Sắp lên cấp 5: chỉ thiếu 1 XP.
+  // Bé được chăm tới tối nên vẫn khỏe (chỉ số tính tới lúc quyết toán từ updated_at).
+  store.db.prepare('UPDATE pets SET level = 5, xp = ?, health = 95, fullness = 95, hygiene = 95, energy = 95, updated_at = ? WHERE id = ?')
+    .run(xpToNext(5) - 1, Date.parse('2026-11-03T15:00:00Z'), petId);
+  const before = store.getUser(userId).coins;
+  life.settleLifeDay('2026-11-03');
+  const pet = store.getPet(petId);
+  assert.equal(pet.level, 6, 'chủ không vào game bé vẫn lên cấp');
+  assert.equal(pet.xp, dailyXp(xpToNext(5)) - 1);
+  assert.equal(store.getUser(userId).coins, before + levelReward(6));
+});

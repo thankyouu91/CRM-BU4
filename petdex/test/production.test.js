@@ -319,6 +319,8 @@ test('vay: trả góp đúng hạn thì lên điểm; không trả được thì
   post({ userId: carol.id, delta: 700, kind: 'salary', memo: 'lương giả lập', now: t - HOUR });
   credit.borrow(carol.id, 200, 3, t);
   post({ userId: carol.id, delta: -coins(carol.id), kind: 'shop', memo: 'tiêu hết', now: t });
+  // Bé tự lớn mỗi đêm; cho bé của carol vừa lên cấp để trong 8 ngày tới không lên cấp nữa (xu thưởng sẽ trả bớt nợ).
+  store.db.prepare('UPDATE pets SET level = 10, xp = 0 WHERE owner_id = ?').run(carol.id);
   const carolScore = store.getUser(carol.id).credit;
   runDue(t + DAY);
   assert.equal(credit.creditView(carol.id, t + DAY).loans[0].status, 'late');

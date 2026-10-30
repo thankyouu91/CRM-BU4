@@ -15,30 +15,22 @@ export function mountPark(root, ctx) {
     <div class="park">
       <div class="park-wrap" id="park-wrap">
         <div class="park-world" id="park-world"></div>
+        <div class="park-hud">
+          <span class="park-count" title="Bấm lên bãi cỏ để đi tới đó. Bấm vào bé khác để vuốt ve 💖 hoặc tặng quà 🎁.">🌳 <span id="online-count">0</span> bé</span>
+          <div class="emotes">
+            <button class="btn small" data-emote="wave" title="Vẫy">👋</button>
+            <button class="btn small" data-emote="jump" title="Nhảy">🦘</button>
+            <button class="btn small" data-emote="spin" title="Xoay">🌀</button>
+          </div>
+        </div>
         <div class="park-status" id="park-status">Đang vào công viên…</div>
       </div>
-      <aside class="card park-side">
-        <h3>🌳 Công viên · <span id="online-count">0</span> bạn</h3>
-        <div class="emotes">
-          <button class="btn small" data-emote="wave">👋 Vẫy</button>
-          <button class="btn small" data-emote="jump">🦘 Nhảy</button>
-          <button class="btn small" data-emote="spin">🌀 Xoay</button>
-        </div>
-        <ul class="online" id="online-list"></ul>
-        <div class="chat-log" id="chat-log"></div>
-        <form class="chat-form" id="chat-form">
-          <input name="text" maxlength="120" autocomplete="off" placeholder="Nói gì đó…" />
-          <button class="btn primary small">Gửi</button>
-        </form>
-        <p class="hint">Bấm lên bãi cỏ để đi tới đó. Bấm vào bé khác để vuốt ve 💖 hoặc tặng quà 🎁.</p>
-      </aside>
+      <p class="hint">Bấm lên bãi cỏ để đi tới đó. Bấm vào bé khác để vuốt ve 💖 hoặc tặng quà 🎁. Trò chuyện ở tab 💬 Chat.</p>
     </div>`;
 
   const wrap = $('#park-wrap', root);
   const worldEl = $('#park-world', root);
   const statusEl = $('#park-status', root);
-  const logEl = $('#chat-log', root);
-  const listEl = $('#online-list', root);
   const unmountScene = mountParkScene(worldEl);
 
   let world = { width: 1000, height: 600, minX: 50, maxX: 950, minY: 318, maxY: 585 };
@@ -62,15 +54,6 @@ export function mountPark(root, ctx) {
   function setStatus(text) {
     statusEl.hidden = !text;
     statusEl.textContent = text ?? '';
-  }
-
-  function log(html, cls = '') {
-    const line = document.createElement('p');
-    line.className = cls;
-    line.innerHTML = html;
-    logEl.append(line);
-    while (logEl.children.length > 80) logEl.firstChild.remove();
-    logEl.scrollTop = logEl.scrollHeight;
   }
 
   // ---- thú cưng trên sân ----
@@ -131,12 +114,6 @@ export function mountPark(root, ctx) {
 
   function renderOnline() {
     $('#online-count', root).textContent = entities.size;
-    const all = [...entities.values()].sort((a, b) => (a.id === selfId ? -1 : b.id === selfId ? 1 : Number(Boolean(a.data.offline)) - Number(Boolean(b.data.offline))));
-    listEl.innerHTML = all.map((e) => `
-      <li class="${e.id === selfId ? 'me' : ''}${e.data.offline ? ' away' : ''}" data-id="${esc(e.id)}">
-        <span>🐾 ${esc(e.data.pet.name)} <small class="muted">Lv ${e.data.pet.level}</small></span>
-        <span class="muted">${esc(e.data.username)}${e.id === selfId ? ' (bạn)' : e.data.offline ? ' · vắng' : ''}</span>
-      </li>`).join('');
   }
 
   function say(id, text) {
@@ -284,24 +261,11 @@ export function mountPark(root, ctx) {
     moveSelf(((ev.clientX - rect.left) / rect.width) * world.width, ((ev.clientY - rect.top) / rect.height) * world.height);
   });
 
-  listEl.addEventListener('click', (ev) => {
-    const row = ev.target.closest('li[data-id]');
-    if (row) openMenu(row.dataset.id);
-  });
-
   root.querySelector('.emotes').addEventListener('click', (ev) => {
     const btn = ev.target.closest('[data-emote]');
     if (btn) socket.emit('pg:emote', { kind: btn.dataset.emote });
   });
 
-  $('#chat-form', root).addEventListener('submit', (ev) => {
-    ev.preventDefault();
-    const input = ev.currentTarget.elements.text;
-    const text = input.value.trim();
-    if (!text) return;
-    socket.emit('pg:chat', { text });
-    input.value = '';
-  });
 
   const onKey = (ev) => ev.key === 'Escape' && closeMenu();
   document.addEventListener('keydown', onKey);
@@ -309,8 +273,6 @@ export function mountPark(root, ctx) {
   // ---- socket ----
 
   const socket = window.io({ auth: { token: ctx.token } });
-  const nameOf = (id) => esc(entities.get(id)?.data.username ?? 'Ai đó');
-  const petOf = (id) => esc(entities.get(id)?.data.pet.name ?? 'một bé');
 
   socket.on('connect', () => {
     setStatus('Đang vào công viên…');
@@ -327,7 +289,6 @@ export function mountPark(root, ctx) {
     for (const key of [...entities.keys()]) removePlayer(key);
     players.forEach(addPlayer);
     setStatus(null);
-    log('Bạn đã vào công viên. Chào mọi người đi! 👋', 'sys');
     particles(selfId, 0.5, { icon: 'sparkle', count: 5, spread: 90, rise: 60 });
   });
 
@@ -339,11 +300,9 @@ export function mountPark(root, ctx) {
     dropResident(player.userId);
     addPlayer(player);
     particles(player.id, 0.5, { icon: 'sparkle', count: 5, spread: 90, rise: 60 });
-    log(`${esc(player.username)} dắt ${esc(player.pet.name)} vào công viên`, 'sys');
   });
 
-  socket.on('pg:left', ({ id, quiet }) => {
-    if (entities.has(id) && !quiet) log(`${nameOf(id)} đã về nhà, bé vẫn ở lại chơi`, 'sys');
+  socket.on('pg:left', ({ id }) => {
     removePlayer(id);
   });
 
@@ -362,9 +321,8 @@ export function mountPark(root, ctx) {
     renderOnline();
   });
 
-  socket.on('pg:chat', ({ id, username, text }) => {
+  socket.on('pg:chat', ({ id, text }) => {
     say(id, text);
-    log(`<b>${esc(username)}</b>: ${esc(text)}`);
   });
 
   socket.on('pg:emote', ({ id, kind }) => {
@@ -382,7 +340,6 @@ export function mountPark(root, ctx) {
       entities.get(from)?.figure.sprite.play('wave', { once: true });
       particles(to, 0.75, { icon: 'heart', count: 6, spread: 80, rise: 70 });
       particles(from, 0.75, { icon: 'heart', count: 2, spread: 40, rise: 50 });
-      log(`💖 ${nameOf(from)} vuốt ve ${petOf(to)}`, 'sys');
     } else if (kind === 'gift') {
       const giver = entities.get(from);
       const receiver = entities.get(to);
@@ -392,7 +349,6 @@ export function mountPark(root, ctx) {
           particles(to, 0.7, { icon: 'sparkle', count: 6, spread: 90, rise: 50 });
         });
       }
-      log(`🎁 ${nameOf(from)} tặng ${nameOf(to)} ${esc(icon)}`, 'sys');
     }
   });
 

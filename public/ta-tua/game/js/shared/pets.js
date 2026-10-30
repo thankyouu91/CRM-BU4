@@ -117,6 +117,14 @@ export const LIFE_STAGES = [
 
 export const stageAt = (weeks) => LIFE_STAGES.findLast((s) => weeks >= s.fromWeek);
 
+/**
+ * Bé tự lớn mỗi ngày (quyết toán nửa đêm), kể cả khi chủ không vào game: cộng `share` phần XP cần để lên cấp hiện tại
+ * (tối thiểu `min`); bé yếu (sức khỏe dưới `weakBelow`) chỉ được một nửa. Lên cấp vẫn nhận xu thưởng như thường.
+ */
+export const DAILY_XP = { share: 0.12, min: 20, weakBelow: 40, weakFactor: 0.5 };
+export const dailyXp = (xpNext, health = 100) =>
+  Math.round(Math.max(DAILY_XP.min, xpNext * DAILY_XP.share) * (health < DAILY_XP.weakBelow ? DAILY_XP.weakFactor : 1));
+
 /** Hằng số vòng đời: báo trước khi bé già yếu, phí mở lại ô tưởng niệm, trứng tưởng niệm, kỷ vật, thâm niên. */
 export const LIFE = {
   warnWeeks: 7, // còn chừng này tuần thì báo trước
