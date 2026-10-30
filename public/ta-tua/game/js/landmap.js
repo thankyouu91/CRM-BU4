@@ -7,7 +7,7 @@ import { drawPixelBase } from './landpixel.js';
 
 export const TW = 48;
 export const TH = 40;
-const PAD = 8;
+const PAD = 30; // biển bao quanh đảo
 export const MAP_W = LAND.cols * TW + PAD * 2;
 export const MAP_H = LAND.rows * TH + PAD * 2;
 const GAP = 3.2; // nửa bề rộng phố
@@ -153,9 +153,12 @@ const cache = new Map();
  * Lớp tĩnh của bản đồ cho một chế độ tô màu. `fillFor(plot)` trả màu khu (null = màu địa hình kèm trang trí).
  * `key` đổi khi màu đổi (ví dụ chế độ + ngành), để dùng lại bộ nhớ đệm.
  */
+/** Trình duyệt vẽ nền pixel (khu không có phố, lô liền nhau); Node dùng nền vector có phố. */
+const pixelBase = typeof document !== 'undefined';
+
 export function staticLayer(key, fillFor) {
   if (cache.has(key)) return cache.get(key);
-  const svg = typeof document === 'undefined' ? vectorLayer(fillFor) : pixelLayer(fillFor);
+  const svg = pixelBase ? pixelLayer(fillFor) : vectorLayer(fillFor);
   cache.set(key, svg);
   return svg;
 }
@@ -210,11 +213,12 @@ export function plotLayer(infos, { selected = null, showClimate = false } = {}) 
     const g = GEOMETRY.get(p.id);
     const info = infos.get(p.id) ?? {};
     const owner = info.owner;
-    const tint = owner ? `<polygon points="${pts(g.block)}" fill="${esc(owner.color)}" fill-opacity=".38" stroke="${esc(owner.color)}" stroke-width="2"${info.mine ? ' stroke-dasharray="5 2"' : ''} pointer-events="none"/>` : '';
+    const shape = pixelBase ? g.quad : g.block;
+    const tint = owner ? `<polygon points="${pts(shape)}" fill="${esc(owner.color)}" fill-opacity=".38" stroke="${esc(owner.color)}" stroke-width="2"${info.mine ? ' stroke-dasharray="5 2"' : ''} pointer-events="none"/>` : '';
     const badge = owner ? `<g pointer-events="none"><circle cx="${f1(g.cx)}" cy="${f1(g.cy)}" r="8.5" fill="#fff" stroke="${esc(owner.color)}" stroke-width="2"/><text x="${f1(g.cx)}" y="${f1(g.cy + 4)}" text-anchor="middle" font-size="10">${esc(owner.emblem)}</text></g>` : '';
     const climate = showClimate ? `<text x="${f1(g.cx + 14)}" y="${f1(g.cy + 15)}" text-anchor="middle" font-size="10" pointer-events="none">${CLIMATES[p.climate].icon}</text>` : '';
     return `<g class="plot${owner ? ' taken' : ' free'}${info.mine ? ' mine' : ''}${selected === p.id ? ' sel' : ''}" data-plot="${p.id}">
-      ${tint}<polygon class="hit" points="${pts(g.block)}"/>${badge}${climate}
+      ${tint}<polygon class="hit" points="${pts(shape)}"/>${badge}${climate}
       <text class="code" x="${f1(g.quad[0][0] + 5)}" y="${f1(g.quad[0][1] + 11)}">${p.code}</text></g>`;
   }).join('');
 }
