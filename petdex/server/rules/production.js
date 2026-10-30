@@ -175,7 +175,8 @@ export const shortfallPenalty = (missingLots, price, marketPrice) =>
 
 // ---------------------------------------------------------------- Chợ Phiên
 
-export const BAZAAR = { listFee: 0.01, saleFee: 0.05, band: [0.5, 3], hours: 48, minAccountDays: 3, maxListings: 10 };
+// minAccountDays: tài khoản mới chờ 1 ngày (24 giờ) mới bày bán được, chặn tạo tài khoản ảo để đẩy đồ.
+export const BAZAAR = { listFee: 0.01, saleFee: 0.05, band: [0.5, 3], hours: 48, minAccountDays: 1, maxListings: 10 };
 
 /**
  * Đấu giá trang phục: giá khởi điểm 10–300% giá tham chiếu, mỗi lần trả giá cao hơn ít nhất 5% (tối thiểu 1 xu),
