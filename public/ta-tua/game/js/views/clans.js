@@ -913,12 +913,21 @@ export function renderClans(root, ctx) {
           </section>
           <section class="card clan-box wide">
             <h3>📦 Cầu từng ngành hôm nay</h3>
-            <div class="demand-list">${INDUSTRY_ORDER.map((id) => {
-              const d = today.demand[id] ?? 1;
-              return `<div class="demand"><span>${INDUSTRIES[id].icon} ${esc(INDUSTRIES[id].name)}</span>
-                <div class="bar"><i style="width:${Math.round(((d - 0.7) / 0.65) * 100)}%;background:${d >= 1 ? 'var(--mint-deep)' : 'var(--pink-deep)'}"></i></div>
-                <b class="${d > 1 ? 'up' : d < 1 ? 'down' : ''}">${signed(d - 1)}</b></div>`;
-            }).join('')}</div>
+            ${Object.entries(SECTORS).map(([sector, sec]) => {
+              const ids = INDUSTRY_ORDER.filter((id) => INDUSTRIES[id].sector === sector);
+              if (!ids.length) return '';
+              const held = ids.filter((id) => data.config.industryClans?.[id]).length;
+              // Khối dịch vụ (gần Sàn Nguyên Liệu nhất) mở sẵn; các khối khác gập lại cho gọn.
+              return `<details class="demand-sector" ${sector === 'service' ? 'open' : ''}>
+                <summary>${sec.icon} ${esc(sec.name)} <small class="muted">${ids.length} ngành${held ? ` · ${held} ngành có gia tộc nắm` : ''}</small></summary>
+                <div class="demand-list">${ids.map((id) => {
+                  const d = today.demand[id] ?? 1;
+                  const clans = data.config.industryClans?.[id] ?? 0;
+                  return `<div class="demand"><span>${INDUSTRIES[id].icon} ${esc(INDUSTRIES[id].name)}${clans ? ` <small class="badge" title="${clans} gia tộc đang nắm">🏯${clans}</small>` : ''}</span>
+                    <div class="bar"><i style="width:${Math.round(((d - 0.7) / 0.65) * 100)}%;background:${d >= 1 ? 'var(--mint-deep)' : 'var(--pink-deep)'}"></i></div>
+                    <b class="${d > 1 ? 'up' : d < 1 ? 'down' : ''}">${signed(d - 1)}</b></div>`;
+                }).join('')}</div></details>`;
+            }).join('')}
             <p class="muted small">Cú sốc cầu và thời tiết cũng đăng lên Báo và đẩy giá hàng trên Sàn Nguyên Liệu.</p>
           </section>
         </div>`;

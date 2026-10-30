@@ -151,3 +151,17 @@ test('ngành gia tộc tác động lên Sàn; ngành chưa ai nắm thì hàng 
   assert.ok(tea.industry && tea.industry.mean < 1);
   assert.equal(view.commodities.find((x) => x.id === 'cane').industry, null);
 });
+
+test('vĩ mô: ngày ghi từ trước khi có ngành mới được bổ sung cầu cho các ngành thiếu (không còn hiện 0%)', async () => {
+  const macro = await import('../server/macro.js');
+  const { INDUSTRY_ORDER } = await import('../../public/ta-tua/game/js/shared/clan.js');
+  const day = '2027-03-01';
+  store.db.prepare(`INSERT OR REPLACE INTO macro_days (day, phase, weather, land_index, gdp, demand, created_at)
+    VALUES (?, 'recovery', 'calm', 1, 0.02, ?, 0)`).run(day, JSON.stringify({ tea: 1.05, dairy: 0.97 }));
+  const state = macro.macroFor(day, { rand });
+  assert.equal(state.demand.tea, 1.05, 'giữ nguyên cầu đã có');
+  assert.deepEqual(INDUSTRY_ORDER.filter((id) => state.demand[id] == null), []);
+  for (const id of INDUSTRY_ORDER) assert.ok(state.demand[id] >= 0.7 && state.demand[id] <= 1.35);
+  const saved = JSON.parse(store.db.prepare('SELECT demand FROM macro_days WHERE day = ?').get(day).demand);
+  assert.equal(Object.keys(saved).length, INDUSTRY_ORDER.length, 'đã lưu lại');
+});
