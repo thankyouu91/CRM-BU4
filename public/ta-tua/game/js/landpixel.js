@@ -1,7 +1,7 @@
-// Nền pixel art của bản đồ đất theo kiểu bản đồ thế giới RPG: một hòn đảo giữa biển sâu, viền nước nông sáng,
-// vách đá nâu và bãi cát quanh bờ, cỏ có lưới ô mờ trùng ranh giới lô, rừng tán dày, dãy núi đá (đỉnh tuyết ở
-// phía bắc), một núi lửa, sông có cầu gỗ, đường đất, làng mái đỏ, thành trì tường đá ở trung tâm, cây dừa ven
-// biển, nhà nổi và thuyền trên biển. Vẽ trên canvas nhỏ rồi phóng to sắc nét (image-rendering: pixelated).
+// Nền pixel art của bản đồ đất theo kiểu tileset lục giác: mỗi lô là một ô lục giác có viền mảnh, mỗi loại đất
+// một kiểu vân (nước gợn, tuyết, đất nứt, cát gợn sóng, cỏ, rừng, đá lát), sông thẳng qua các ô ven sông, rồi
+// núi đá (đỉnh tuyết phía bắc), núi lửa, hang, rừng cây, làng mái đỏ, lâu đài, ruộng, ao, cây dừa, nhà nổi và
+// thuyền. Vẽ trên canvas nhỏ rồi phóng to sắc nét (image-rendering: pixelated).
 import { Pen, bayer, hexToRgb, makeCanvas, outline, seeded, shadeBlob } from './pixel.js';
 import { PLOTS } from './shared/clan.js';
 
@@ -54,18 +54,6 @@ function sample(points, step = 0.6) {
   }
   if (points.length) out.push(points.at(-1));
   return out;
-}
-
-/** Nhiễu mượt (tổng sóng sin) trong khoảng 0–1, đủ để bờ biển gồ ghề tự nhiên. */
-const noise = (x, y) => (Math.sin(x * 0.19 + Math.sin(y * 0.11) * 2.2) + Math.sin(y * 0.23 + x * 0.07) + Math.sin((x + y) * 0.09 + 1.3) + 3) / 6;
-
-/** Nhiễu thô hơn cho đường bờ biển ngoài: các vịnh và mũi đất lớn. */
-const broad = (x, y) => (Math.sin(x * 0.045 + 1) + Math.sin(y * 0.07 + x * 0.02) + Math.sin((x - y) * 0.031 + 0.4) + 3) / 6;
-/** Độ sâu đất bị biển gặm ở mép ngoài (điểm ảnh): chỗ gần như không gặm, chỗ ăn sâu thành vịnh. */
-function bite(x, y) {
-  const v = broad(x, y) * 0.7 + noise(x * 1.6, y * 1.6) * 0.3;
-  const t = Math.min(1, Math.max(0, (v - 0.32) / 0.4));
-  return 1 + 24 * t * t * (3 - 2 * t);
 }
 
 /** Khoảng cách (bước 4 hướng) từ mỗi điểm tới tập nguồn, tối đa `cap`. */
@@ -270,11 +258,27 @@ function darken(hex, f = 0.88) {
 
 // ---------------------------------------------------------------- vẽ nền
 
+/** Vân từng loại đất (theo kiểu tileset lục giác): màu nền và cách điểm xuyết theo vị trí điểm ảnh. */
+const TERRAIN = {
+  water: { line: '#7fb8ee', paint: (x, y, t) => ((y % 4 === 0 && (x + (y >> 2) * 5) % 9 < 3) ? '#6fb3ec' : t < 0.1 ? '#3584cf' : '#3f8fd8') },
+  snow: { line: '#b9c8dc', paint: (x, y, t) => (t < 0.08 ? '#c9d6e6' : (y % 5 === 0 && (x + y) % 7 < 2) ? '#d6e2ef' : '#eef4fa') },
+  dirt: { line: '#7a4519', paint: (x, y, t) => (((x + y * 2) % 11 === 0 || (x * 2 - y) % 13 === 0) ? '#86491d' : t < 0.15 ? '#b0702f' : '#9c5d26') },
+  sand: { line: '#d49a22', paint: (x, y, t) => ((y + Math.round(Math.sin(x * 0.45) * 1.5)) % 5 === 0 ? '#e3a92e' : t < 0.1 ? '#f7d26a' : '#f2c24a') },
+  grass: { line: '#3f8e26', paint: (x, y, t) => (t > 0.94 ? '#7fd651' : t < 0.12 ? '#4ea52f' : '#5fbf3a') },
+  forest: { line: '#2a6a1e', paint: (x, y, t) => (t < 0.25 ? '#357f27' : '#3f952d') },
+  stone: { line: '#9a917c', paint: (x, y, t) => ((x % 5 === 0 || (y % 4 === 0)) ? '#b3ab95' : t < 0.1 ? '#d4cdbb' : '#c7c0ac') },
+};
+const terrainOf = (p) => {
+  if (p.zone === 'sea') return 'water';
+  if (p.zone === 'hill') return p.row <= 1 ? 'snow' : 'dirt';
+  return { coast: 'sand', forest: 'forest', urban: 'stone' }[p.zone] ?? 'grass';
+};
+
 /**
- * Vẽ nền pixel. `geometry`: Map id → { quad, cx, cy } theo đơn vị SVG. `heat(plot)`: màu tô theo chế độ
- * (null = theo địa hình). `river`, `roads`, `roundabouts`: điểm theo đơn vị SVG. Trả về canvas.
+ * Vẽ nền pixel. `geometry`: Map id → { hex, cx, cy } theo đơn vị SVG. `heat(plot)`: màu tô theo chế độ
+ * (null = theo địa hình). `river`: điểm theo đơn vị SVG. Trả về canvas.
  */
-export function drawPixelBase({ width, height, geometry, heat, river, roads, roundabouts }) {
+export function drawPixelBase({ width, height, geometry, heat, river }) {
   const S = PIXEL_SCALE;
   const W = Math.round(width * S);
   const H = Math.round(height * S);
@@ -282,50 +286,22 @@ export function drawPixelBase({ width, height, geometry, heat, river, roads, rou
   const N = W * H;
   const heatMode = PLOTS.some((p) => heat(p));
   const blocks = PLOTS.map((p) => {
-    const quad = geometry.get(p.id).quad.map(([x, y]) => [x * S, y * S]);
-    const xs = quad.map((q) => q[0]);
-    const ys = quad.map((q) => q[1]);
-    return { plot: p, quad, heat: heat(p), box: [Math.floor(Math.min(...xs)), Math.floor(Math.min(...ys)), Math.ceil(Math.max(...xs)), Math.ceil(Math.max(...ys))] };
+    const hex = geometry.get(p.id).hex.map(([x, y]) => [x * S, y * S]);
+    const xs = hex.map((q) => q[0]);
+    const ys = hex.map((q) => q[1]);
+    return { plot: p, hex, heat: heat(p), terrain: terrainOf(p), box: [Math.floor(Math.min(...xs)), Math.floor(Math.min(...ys)), Math.ceil(Math.max(...xs)), Math.ceil(Math.max(...ys))] };
   });
 
-  // 1. Mỗi điểm thuộc lô nào (−1: biển ngoài khơi).
   const owner = new Int16Array(N).fill(-1);
   blocks.forEach((b, k) => {
     const [x0, y0, x1, y1] = b.box;
     for (let y = Math.max(0, y0); y <= Math.min(H - 1, y1); y++) {
-      for (let x = Math.max(0, x0); x <= Math.min(W - 1, x1); x++) if (inside(b.quad, x + 0.5, y + 0.5)) owner[y * W + x] = k;
+      for (let x = Math.max(0, x0); x <= Math.min(W - 1, x1); x++) if (inside(b.hex, x + 0.5, y + 0.5)) owner[y * W + x] = k;
     }
   });
-  const isSea = (i) => owner[i] < 0 || blocks[owner[i]].plot.zone === 'sea';
+  const isWaterAt = (i) => owner[i] < 0 || blocks[owner[i]].terrain === 'water';
+  const toLand = distanceField(W, H, (i) => !isWaterAt(i), 6);
 
-  // 2. Bờ biển gồ ghề: gặm bớt đất gần nước theo nhiễu.
-  const d0 = distanceField(W, H, isSea, 12);
-  const dOuter = distanceField(W, H, (i) => owner[i] < 0, 30);
-  const water = new Uint8Array(N);
-  for (let i = 0; i < N; i++) {
-    const x = i % W;
-    const y = (i - x) / W;
-    water[i] = isSea(i) || d0[i] < 1 + noise(x, y) * 7 || dOuter[i] < bite(x, y) ? 1 : 0;
-  }
-  // vài đảo nhỏ ngoài khơi (chỉ để ngắm, không phải lô đất)
-  const islets = seeded(4242);
-  for (let k = 0; k < 6; k++) {
-    const ix = Math.round(islets() * W);
-    const iy = islets() < 0.5 ? Math.round(4 + islets() * 10) : Math.round(H - 6 - islets() * 10);
-    const r = 3 + Math.floor(islets() * 4);
-    for (let y = iy - r; y <= iy + r; y++) {
-      for (let x = ix - r - 2; x <= ix + r + 2; x++) {
-        if (x < 0 || y < 0 || x >= W || y >= H || owner[y * W + x] >= 0) continue;
-        if (((x - ix) / (r + 2)) ** 2 + ((y - iy) / r) ** 2 <= 1 + (noise(x * 3, y * 3) - 0.5) * 0.6) water[y * W + x] = 0;
-      }
-    }
-  }
-  const toLand = distanceField(W, H, (i) => !water[i], 40);
-  const toWater = distanceField(W, H, (i) => water[i] === 1, 8);
-  const isWater = (x, y) => x < 0 || y < 0 || x >= W || y >= H || water[y * W + x] === 1;
-  const onLand = (x, y) => !isWater(Math.round(x), Math.round(y));
-
-  // 3. Tô từng điểm: biển nhiều tầng sâu, vách đá ở bờ có nước phía dưới, bãi cát, cỏ theo địa hình.
   const img = g.createImageData(W, H);
   const d = img.data;
   const rgbCache = new Map();
@@ -337,35 +313,21 @@ export function drawPixelBase({ width, height, geometry, heat, river, roads, rou
     for (let x = 0; x < W; x++) {
       const i = y * W + x;
       const t = bayer(x, y);
+      const k = owner[i];
       let color;
-      if (water[i]) {
-        const dl = toLand[i] + (noise(x * 1.7, y * 1.7) - 0.5) * 4;
-        const o = P.ocean;
-        if (dl < 2) color = o[5];
-        else if (dl < 4) color = t < 0.5 ? o[5] : o[4];
-        else if (dl < 7) color = o[3];
-        else if (dl < 10) color = t < (10 - dl) / 3 ? o[3] : o[2];
-        else if (dl < 18) color = o[2];
-        else if (dl < 24) color = t < (24 - dl) / 6 ? o[2] : o[1];
-        else color = t < 0.15 ? o[0] : o[1];
-        if (dl > 8 && (x * 7 + y * 13) % 97 === 0) color = o[4];
-        // lô trên biển ở chế độ tô màu: phủ màu đan xen lên mặt nước
-        const sea = owner[i] >= 0 ? blocks[owner[i]] : null;
-        if (sea?.heat && t < 0.55) color = sea.heat;
+      if (k < 0) {
+        // biển ngoài lưới: sâu hơn, sóng thưa, bọt sáng sát bờ
+        color = toLand[i] <= 1 ? '#a9d8f5' : toLand[i] <= 3 && t < 0.5 ? '#6fb3ec' : (y % 6 === 0 && (x + (y >> 1) * 7) % 13 < 3) ? '#4f9be0' : t < 0.2 ? '#2a6fbe' : '#3079c8';
       } else {
-        let below = 0;
-        while (below < 6 && !isWater(x, y + below + 1)) below++;
-        const b = blocks[owner[i]] ?? { plot: { zone: 'plain' }, heat: null };
-        if (below < 6 && !isWater(x, y - 1)) {
-          if (below === 5) color = P.cliffTop;
-          else if (below === 0) color = P.sand[0];
-          else color = x % 3 === 0 ? P.cliff[2] : below > 2 ? P.cliff[0] : P.cliff[1];
-        } else if (toWater[i] <= 2) color = t < 0.3 ? P.sand[1] : P.sand[0];
-        else if (b.heat) color = t < 0.12 ? darken(b.heat) : b.heat;
-        else {
-          const pal = { forest: P.forestFloor, hill: P.hillGrass, urban: P.urbanGrass, coast: P.sand }[b.plot.zone] ?? P.grass;
-          color = t < 0.22 ? pal[1] : pal[0];
-          if (pal === P.grass && t > 0.96) color = P.grass[2];
+        const b = blocks[k];
+        const right = x + 1 < W ? owner[i + 1] : -1;
+        const down = y + 1 < H ? owner[i + W] : -1;
+        const edge = right !== k || down !== k;
+        if (b.heat) {
+          color = edge ? darken(b.heat, 0.7) : b.terrain === 'water' && t < 0.45 ? TERRAIN.water.paint(x, y, t) : t < 0.12 ? darken(b.heat) : b.heat;
+        } else {
+          color = edge ? TERRAIN[b.terrain].line : TERRAIN[b.terrain].paint(x, y, t);
+          if (b.terrain === 'water' && toLand[i] <= 1) color = '#a9d8f5';
         }
       }
       const [r, gg, bb] = rgb(color);
@@ -377,25 +339,36 @@ export function drawPixelBase({ width, height, geometry, heat, river, roads, rou
   }
   g.putImageData(img, 0, 0);
   const pen = new Pen(g);
+  const onLand = (x, y) => {
+    const xx = Math.round(x);
+    const yy = Math.round(y);
+    return xx >= 0 && yy >= 0 && xx < W && yy < H && !isWaterAt(yy * W + xx);
+  };
 
-  // 4. Lưới ô mờ trùng ranh giới lô (chấm cách quãng), chỉ trên đất.
-  for (const b of blocks) {
-    if (b.plot.zone === 'sea' || b.plot.zone === 'coast') continue;
-    const line = b.heat ? darken(b.heat, 0.75) : P.grid;
-    for (let e = 0; e < 4; e++) {
-      const [ax, ay] = b.quad[e];
-      const [bx, by] = b.quad[(e + 1) % 4];
-      const n = Math.ceil(Math.hypot(bx - ax, by - ay));
-      for (let s = 0; s < n; s += 2) {
-        const x = Math.round(ax + ((bx - ax) * s) / n);
-        const y = Math.round(ay + ((by - ay) * s) / n);
-        if (onLand(x, y) && toWater[y * W + x] > 6) pen.px(x, y, line);
+  // sông chảy thẳng qua tâm các ô ven sông
+  const riverLine = sample(river.map(([x, y]) => [x * S, y * S]));
+  const riverMask = new Uint8Array(N);
+  for (const [x, y] of riverLine) {
+    if (!onLand(x, y) && !onLand(x, y - 4) && !onLand(x, y + 4)) continue;
+    pen.disc(x, y, 4, '#2f7ec8');
+    pen.disc(x, y, 3, '#3f8fd8');
+    for (let dy = -6; dy <= 6; dy++) {
+      for (let dx = -6; dx <= 6; dx++) {
+        const xx = Math.round(x + dx);
+        const yy = Math.round(y + dy);
+        if (xx >= 0 && yy >= 0 && xx < W && yy < H) riverMask[yy * W + xx] = 1;
       }
     }
   }
+  riverLine.forEach(([x, y], k) => {
+    if (k % 9 === 0 && onLand(x, y)) pen.rect(x - 1, y, 3, 1, '#7fc2f0');
+  });
 
+  if (!heatMode) decorate();
+  return canvas;
 
   function decorate() {
+    const free = (x, y) => onLand(x, y) && !riverMask[Math.round(y) * W + Math.round(x)];
     const fits = (sprite, x, y) => free(x, y) && free(x - sprite.width / 2, y) && free(x + sprite.width / 2, y) && free(x, y - sprite.height / 2);
     const put = (sprite, x, y, shadow = true) => {
       if (shadow) pen.ellipse(x + 2, y, Math.max(2, Math.floor(sprite.width / 2) - 1), 1, P.shadow);
@@ -403,37 +376,11 @@ export function drawPixelBase({ width, height, geometry, heat, river, roads, rou
     };
     const urban = blocks.filter((b) => b.plot.zone === 'urban');
     const keep = urban.reduce((a, b) => (b.plot.desirability > a.plot.desirability ? b : a), urban[0]);
-    const hills = blocks.filter((b) => b.plot.zone === 'hill' && b.plot.row >= 2);
-    const fire = hills.filter((b) => b.plot.row >= 3).reduce((a, b) => (b.plot.col + b.plot.row > a.plot.col + a.plot.row ? b : a), hills[0]);
+    const hills = blocks.filter((b) => b.plot.zone === 'hill' && b.plot.row >= 3);
+    const fire = hills.reduce((a, b) => (b.plot.col + b.plot.row > a.plot.col + a.plot.row ? b : a), hills[0]);
     const caveAt = hills.find((b) => b.plot.row === 3 && b !== fire) ?? null;
 
-    // tường thành đá quanh khu trung tâm, chừa cổng ở bốn hướng
-    if (urban.length) {
-      const ring = urban.flatMap((b) => b.quad);
-      const cx = ring.reduce((s, q) => s + q[0], 0) / ring.length;
-      const cy = ring.reduce((s, q) => s + q[1], 0) / ring.length;
-      const rx = (Math.max(...ring.map((q) => q[0])) - Math.min(...ring.map((q) => q[0]))) / 2;
-      const ry = (Math.max(...ring.map((q) => q[1])) - Math.min(...ring.map((q) => q[1]))) / 2;
-      for (let a = 0; a < Math.PI * 2; a += 0.012) {
-        if (Math.abs(Math.sin(a)) > 0.99 || Math.abs(Math.cos(a)) > 0.997) continue;
-        const x = Math.round(cx + Math.cos(a) * rx);
-        const y = Math.round(cy + Math.sin(a) * ry);
-        if (!free(x, y)) continue;
-        pen.rect(x - 1, y - 1, 3, 3, P.stone[1]);
-        pen.px(x, y - 1, P.stone[0]);
-      }
-      for (let k = 0; k < 8; k++) {
-        const a = (Math.PI / 4) * k + 0.39;
-        const x = cx + Math.cos(a) * rx;
-        const y = cy + Math.sin(a) * ry;
-        if (!onLand(x, y)) continue;
-        pen.rect(x - 2, y - 3, 5, 5, P.stone[2]);
-        pen.rect(x - 1, y - 3, 3, 2, P.stone[0]);
-      }
-    }
-
-    const ordered = [...blocks].sort((a, b) => a.plot.row - b.plot.row || a.plot.col - b.plot.col);
-    for (const b of ordered) {
+    for (const b of [...blocks].sort((a, c) => a.plot.row - c.plot.row || a.plot.col - c.plot.col)) {
       const geo = geometry.get(b.plot.id);
       const cx = geo.cx * S;
       const cy = geo.cy * S;
@@ -446,47 +393,48 @@ export function drawPixelBase({ width, height, geometry, heat, river, roads, rou
         return true;
       };
       const tryAny = (sprite, spots, shadow) => spots.some(([dx, dy]) => tryPut(sprite, dx, dy, shadow));
-      if (b.plot.zone === 'plain' || b.plot.zone === 'urban' || b.plot.zone === 'river') {
-        for (let k = 0; k < 5; k++) {
-          const x = cx - 14 + rand() * 28;
-          const y = cy - 10 + rand() * 20;
+      if (b.terrain === 'grass') {
+        for (let k = 0; k < 4; k++) {
+          const x = cx - 10 + rand() * 20;
+          const y = cy - 8 + rand() * 16;
           if (free(x, y)) pen.px(x, y, rand() < 0.2 ? P.mushroom : P.flower[Math.floor(rand() * 3)]);
         }
       }
       switch (b.plot.zone) {
         case 'urban':
-          if (b === keep) tryAny(castle(), [[0, 10], [0, 4], [-8, 8], [8, 8], [0, 14]]);
-          else for (let k = 0; k < 3; k++) tryPut(house(rand), -8 + (k % 2) * 13 + rand() * 3, 1 + Math.floor(k / 2) * 10 + rand() * 2);
+          if (b === keep) tryAny(castle(), [[0, 10], [0, 4], [-6, 8], [6, 8]]);
+          else {
+            tryAny(house(rand), [[-6, 2], [-6, 6], [-2, 0]]);
+            tryAny(house(rand), [[7, 4], [7, 9], [3, 10]]);
+            tryAny(house(rand), [[0, 13], [-4, 12]]);
+          }
           break;
         case 'river':
-          tryPut(tree(rand), -9 + rand() * 4, 10);
-          if (rand() < 0.6) tryPut(house(rand), 7, 9);
+          tryAny(tree(rand), [[-9, 2], [-9, 12], [9, 12]]);
+          tryAny(house(rand), [[8, 0], [6, 12], [-6, 12]]);
           break;
         case 'coast':
-          for (let k = 0; k < 3; k++) tryPut(palm(rand), -10 + k * 9 + rand() * 3, 6 + rand() * 6);
+          tryAny(palm(rand), [[-7, 6], [-7, 2]]);
+          tryAny(palm(rand), [[7, 9], [6, 4]]);
           break;
         case 'plain': {
           const r = rand();
-          if (r < 0.25) tryPut(field(rand), -2, 6, false);
-          else if (r < 0.37) tryPut(pond(rand), 0, 6, false);
-          else if (r < 0.55) {
-            tryPut(house(rand), -5, 4);
-            tryPut(house(rand), 7, 10);
-          }
-          for (let k = 0; k < 2; k++) tryPut(tree(rand), -12 + rand() * 24, -2 + rand() * 14);
+          if (r < 0.25) tryPut(field(rand), 0, 8, false);
+          else if (r < 0.37) tryPut(pond(rand), 0, 7, false);
+          else if (r < 0.55) tryAny(house(rand), [[-4, 6], [4, 8]]);
+          tryAny(tree(rand), [[8, 0], [-8, 2], [6, 12]]);
           break;
         }
         case 'hill':
-          if (b === fire) put(volcano(), cx, cy + 12, false);
+          if (b === fire) put(volcano(), cx, cy + 11, false);
           else {
-            tryPut(mountain(rand, { snowy: b.plot.row <= 1 }), -6, 8, false);
-            tryPut(mountain(rand, { snowy: b.plot.row <= 1, size: -2 }), 9, 13, false);
-            if (b === caveAt) tryPut(cave(), 4, 13, false);
-            else if (rand() < 0.5) tryPut(pine(rand), -12, 14);
+            tryAny(mountain(rand, { snowy: b.plot.row <= 1 }), [[-3, 9], [0, 6]], false);
+            if (b === caveAt) tryAny(cave(), [[7, 12], [-7, 12]], false);
+            else tryAny(mountain(rand, { snowy: b.plot.row <= 1, size: -3 }), [[8, 13], [-8, 13]], false);
           }
           break;
         case 'forest':
-          for (let k = 0; k < 9; k++) tryPut(rand() < 0.3 ? pine(rand) : tree(rand, rand() < 0.4), -14 + (k % 3) * 13 + rand() * 4, -6 + Math.floor(k / 3) * 9 + rand() * 3);
+          for (let k = 0; k < 7; k++) tryPut(rand() < 0.35 ? pine(rand) : tree(rand, rand() < 0.3), -11 + (k % 3) * 11 + rand() * 3, -4 + Math.floor(k / 3) * 8 + rand() * 2);
           break;
         case 'sea':
           if (rand() < 0.18) put(hut(), cx, cy + 4, false);
@@ -496,66 +444,4 @@ export function drawPixelBase({ width, height, geometry, heat, river, roads, rou
       }
     }
   }
-
-  // 6. Sông có bờ đất, rồi đường đất; chỗ đường qua sông là cầu gỗ.
-  const scaled = (pts) => pts.map(([x, y]) => [x * S, y * S]);
-  const riverLine = sample(scaled(river));
-  const riverMask = new Uint8Array(N);
-  for (const [x, y] of riverLine) pen.disc(x, y, 6, P.bank);
-  for (const [x, y] of riverLine) {
-    pen.disc(x, y, 5, P.river[0]);
-    for (let dy = -5; dy <= 5; dy++) {
-      for (let dx = -5; dx <= 5; dx++) {
-        const xx = Math.round(x + dx);
-        const yy = Math.round(y + dy);
-        if (dx * dx + dy * dy <= 30 && xx >= 0 && yy >= 0 && xx < W && yy < H) riverMask[yy * W + xx] = 1;
-      }
-    }
-  }
-  riverLine.forEach(([x, y], k) => {
-    if (k % 11 === 0) pen.rect(x - 2, y - 1, 3, 1, P.river[1]);
-    if (k % 23 === 5) pen.px(x + 1, y + 2, P.river[2]);
-  });
-
-  const onRiver = (x, y) => riverMask[Math.round(y) * W + Math.round(x)] === 1;
-  const roadLines = roads.map((r) => sample(scaled(r)).filter(([x, y]) => onLand(x, y) || onRiver(x, y)));
-  for (const line of roadLines) for (const [x, y] of line) if (!onRiver(x, y)) pen.disc(x, y, 3, P.road[1]);
-  for (const line of roadLines) for (const [x, y] of line) if (!onRiver(x, y)) pen.disc(x, y, 2, P.road[0]);
-  for (const line of roadLines) {
-    for (let k = 0; k < line.length; k++) {
-      const [x, y] = line[k];
-      if (!onRiver(x, y)) continue;
-      const [nx, ny] = line[Math.min(line.length - 1, k + 1)];
-      const vertical = Math.abs(ny - y) > Math.abs(nx - x);
-      pen.rect(x - (vertical ? 3 : 1), y - (vertical ? 1 : 3), vertical ? 7 : 3, vertical ? 3 : 7, P.plank[0]);
-      if (k % 3 === 0) pen.rect(x - (vertical ? 3 : 0), y - (vertical ? 0 : 3), vertical ? 7 : 1, vertical ? 1 : 7, P.plank[1]);
-      pen.px(x + (vertical ? -4 : 0), y + (vertical ? 0 : -4), P.plank[2]);
-      pen.px(x + (vertical ? 4 : 0), y + (vertical ? 0 : 4), P.plank[2]);
-    }
-  }
-  const roadMask = new Uint8Array(N);
-  for (const line of roadLines) {
-    for (const [x, y] of line) {
-      for (let dy = -3; dy <= 3; dy++) for (let dx = -3; dx <= 3; dx++) {
-        const xx = Math.round(x + dx);
-        const yy = Math.round(y + dy);
-        if (xx >= 0 && yy >= 0 && xx < W && yy < H) roadMask[yy * W + xx] = 1;
-      }
-    }
-  }
-  for (const [x, y] of scaled(roundabouts)) {
-    if (!onLand(x, y)) continue;
-    pen.disc(x, y, 5, P.road[1]);
-    pen.disc(x, y, 4, P.road[0]);
-    pen.rect(x - 1, y - 4, 3, 5, P.stone[1]);
-    pen.rect(x - 1, y - 5, 3, 1, '#e8463a');
-  }
-
-  // 7. Trang trí sau cùng, tránh sông và đường (bỏ qua ở các chế độ tô màu theo số liệu).
-  const free = (x, y) => {
-    const i = Math.round(y) * W + Math.round(x);
-    return onLand(x, y) && !riverMask[i] && !roadMask[i];
-  };
-  if (!heatMode) decorate();
-  return canvas;
 }
