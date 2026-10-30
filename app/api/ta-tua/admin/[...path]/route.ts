@@ -9,7 +9,7 @@ import { isAdmin } from "@/lib/rbac";
 // internal admin API (petdex/server/internal.js); every change is also written to WorkHub's
 // audit log with the administrator as actor.
 
-const ALLOWED = /^(overview|log|announcements(\/\d+\/delete)?|gear-config|gear\/\d+(\/delete)?|gift-codes(\/\d+(\/revoke)?)?|industries\/(status|unmerge|merge)|commerce|arena(\/\d+\/cancel)?|chat(\/\d+\/delete)?|mail|clans(\/(config|macro|plots\/\d+|evasion\/\d+\/(collect|dismiss)))?|invites(\/\d+\/revoke)?|players(\/\d+(\/(coins|status|name|password-link|gear|mute|pets(\/\d+)?))?)?)$/;
+const ALLOWED = /^(overview|log|announcements(\/\d+\/delete)?|gear-config|gear\/\d+(\/delete)?|gift-codes(\/\d+(\/revoke)?)?|industries\/(status|unmerge|merge)|commerce|arena(\/\d+\/cancel)?|bots(\/config)?|chat(\/\d+\/delete)?|mail|clans(\/(config|macro|plots\/\d+|evasion\/\d+\/(collect|dismiss)))?|invites(\/\d+\/revoke)?|players(\/\d+(\/(coins|status|name|password-link|gear|mute|pets(\/\d+)?))?)?)$/;
 
 /** Body fields that only label the audit entry; the game never sees them. */
 const LABEL_FIELDS = ["challenger", "defender", "targetName", "announcementTitle", "playerName", "petName", "speciesName", "itemName", "tierName", "clanName", "plotCode", "author"];
@@ -52,6 +52,10 @@ function describe(path: string, body: Record<string, unknown>): { action: AuditA
   if (path === "clans/macro") return { action: "tatua.macro", entityId: null, summary: `Chỉnh kinh tế vĩ mô: pha ${String(body.phase ?? "tự động")}, thời tiết ${String(body.weather ?? "tự động")}${body.today ? " (áp dụng ngay)" : ""}` };
   if (/^clans\/evasion\/\d+\/collect$/.test(path)) return { action: "tatua.tax_collect", entityId: path.split("/")[2], summary: `Truy thu thuế trốn của gia tộc${body.clanName ? ` “${String(body.clanName)}”` : ""} (hồ sơ #${path.split("/")[2]})` };
   if (/^clans\/evasion\/\d+\/dismiss$/.test(path)) return { action: "tatua.tax_dismiss", entityId: path.split("/")[2], summary: `Bỏ qua hồ sơ thuế #${path.split("/")[2]}${body.clanName ? ` của “${String(body.clanName)}”` : ""}` };
+  if (path === "bots/config") {
+    if (body.enabled === false) return { action: "tatua.bots_config", entityId: null, summary: "Tắt toàn bộ cư dân tự động (bot)" };
+    return { action: "tatua.bots_config", entityId: null, summary: `Bật cư dân tự động, mục tiêu ${Number(body.target ?? 0).toLocaleString("vi-VN")} bot` };
+  }
   if (/^arena\/\d+\/cancel$/.test(path)) {
     const fight = body.challenger && body.defender ? ` ${String(body.challenger)} ⚔️ ${String(body.defender)}` : "";
     return { action: "tatua.arena_cancel", entityId: id, summary: `Hủy trận Đấu trường #${id}${fight}${body.targetName ? ` (${String(body.targetName)})` : ""}${body.reason ? `: ${String(body.reason)}` : ""}` };

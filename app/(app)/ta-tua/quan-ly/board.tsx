@@ -19,6 +19,7 @@ import { ChatTab } from "./chat";
 import { ClansTab } from "./clans";
 import { CommerceTab } from "./commerce";
 import { ArenaTab } from "./arena";
+import { BotsTab } from "./bots";
 import { GearConfigTab, GiftCodesTab, PlayerGear, type GearView, type Wearable } from "./gear";
 import { ADMIN, errorText, Failure, useLoad, when } from "./shared";
 
@@ -38,6 +39,7 @@ const TABS = [
   { key: "clans", label: "Gia tộc & Đất" },
   { key: "commerce", label: "Sở Công Thương" },
   { key: "arena", label: "Đấu trường" },
+  { key: "bots", label: "Bot" },
   { key: "invites", label: "Link mời khách" },
   { key: "log", label: "Nhật ký" },
 ] as const;
@@ -47,6 +49,7 @@ const coins = (n: number) => `${Math.round(n).toLocaleString("vi-VN")} 🪙`;
 
 interface Player {
   id: number;
+  isBot?: boolean;
   username: string;
   displayName: string;
   kind: string;
@@ -99,6 +102,8 @@ interface Overview {
   byKind: { kind: string; n: number; coins: number; banned: number }[];
   activeToday: number;
   activeWeek: number;
+  bots?: number;
+  realPlayers?: { total: number; coins: number; activeToday: number; activeWeek: number };
   savings: number;
   pets: number;
   ledger7d: { kind: string; inflow: number; outflow: number; n: number }[];
@@ -134,6 +139,7 @@ interface LogRow {
 
 export function Board() {
   const [tab, setTab] = useState<Tab>("overview");
+  const [botPlayer, setBotPlayer] = useState<number | null>(null);
   return (
     <div>
       <PageHeader
@@ -167,6 +173,8 @@ export function Board() {
       {tab === "clans" && <ClansTab />}
       {tab === "commerce" && <CommerceTab />}
       {tab === "arena" && <ArenaTab />}
+      {tab === "bots" && <BotsTab onOpenPlayer={setBotPlayer} />}
+      <PlayerDrawer id={botPlayer} onClose={() => setBotPlayer(null)} onChanged={() => undefined} />
       {tab === "invites" && <InvitesTab />}
       {tab === "log" && <LogTab />}
     </div>
@@ -195,8 +203,8 @@ function OverviewTab() {
   return (
     <div className="space-y-6">
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <Stat label="Nhân viên đã tham gia" value={count("member")} hint={`${count("guest")} khách mời${count("player") ? `, ${count("player")} tự đăng ký` : ""}`} />
-        <Stat label="Hoạt động" value={data.activeToday} hint={`hôm nay · ${data.activeWeek} trong 7 ngày · ${data.online} đang ở công viên`} />
+        <Stat label="Nhân viên đã tham gia" value={count("member")} hint={`${count("guest")} khách mời${count("player") - (data.bots ?? 0) ? `, ${count("player") - (data.bots ?? 0)} tự đăng ký` : ""}${data.bots ? ` · ${data.bots} bot` : ""}`} />
+        <Stat label="Người thật hoạt động" value={data.realPlayers?.activeToday ?? data.activeToday} hint={`hôm nay · ${data.realPlayers?.activeWeek ?? data.activeWeek} trong 7 ngày · ${data.online} đang ở công viên${data.bots ? ` · tính cả bot: ${data.activeToday}` : ""}`} />
         <Stat label="Xu trong ví" value={coins(wallets)} hint={`tiết kiệm ${coins(data.savings)}`} />
         <Stat label="Ngân sách thị trấn" value={coins(data.treasury)} hint={`chỉ số giá ${data.economy.priceIndex.toFixed(2)} · lãi ${(data.economy.baseRate * 100).toFixed(1)}%/ngày`} />
         <Stat label="Thú cưng" value={data.pets} />
@@ -306,7 +314,7 @@ function PlayersTab() {
                         <p className="font-medium">{p.displayName}</p>
                         <p className="text-xs text-muted-foreground">@{p.username}</p>
                       </td>
-                      <td className="px-3 py-2.5"><Badge>{KIND_LABEL[p.kind] ?? p.kind}</Badge></td>
+                      <td className="px-3 py-2.5"><Badge>{KIND_LABEL[p.kind] ?? p.kind}</Badge>{p.isBot && <Badge className="ml-1 border bg-card">Bot</Badge>}</td>
                       <td className="px-3 py-2.5 text-right tabular-nums">{p.coins.toLocaleString("vi-VN")}</td>
                       <td className="px-3 py-2.5 text-right tabular-nums">{p.savings.toLocaleString("vi-VN")}</td>
                       <td className="px-3 py-2.5 text-right tabular-nums">{p.netWorth.toLocaleString("vi-VN")}</td>

@@ -21,6 +21,7 @@ import { dayKey } from './clock.js';
 import { macroToday, overrideMacro } from './macro.js';
 import { commerceView } from './commerce.js';
 import { adminArenaView, adminCancelWar } from './arena.js';
+import { adminBotsView, setBotConfig } from './bots.js';
 import { refPrice } from './industry.js';
 import { slotsOf } from './lifecycle.js';
 import { bus, snapshot } from './service.js';
@@ -58,6 +59,11 @@ function cleanName(raw, { clip = false } = {}) {
 
 const actorOf = (req) => String(req.body?.actor ?? req.get('x-actor') ?? 'WorkHub').slice(0, 80);
 
+/** Không tặng xu, thú cưng hay trang phục cho cư dân tự động: bot chỉ có những gì tự chơi được. */
+function noGrantToBot(user) {
+  if (user.is_bot) throw new GameError('Không tặng cho cư dân tự động.');
+}
+
 function userOf(req) {
   const id = Number(req.params.id);
   const user = Number.isInteger(id) ? store.getUser(id) : null;
@@ -90,6 +96,8 @@ function playerRow(u, now = Date.now()) {
     inviteId: u.invite_id,
     hasPassword: Boolean(u.pass_hash),
     crmUserId: u.crm_user_id,
+    // Chỉ bảng quản trị thấy cờ này.
+    isBot: Boolean(u.is_bot),
   };
 }
 
@@ -280,6 +288,7 @@ internalApi.post('/admin/gear-config', (req, res) => {
 /** Tặng một món trang phục: món (hoặc ngẫu nhiên), cấp (hoặc quay), dòng chỉ số tự nhập (hoặc quay). */
 internalApi.post('/admin/players/:id/gear', (req, res) => {
   const user = userOf(req);
+  noGrantToBot(user);
   const itemId = req.body?.itemId && req.body.itemId !== 'random' ? String(req.body.itemId) : null;
   const tier = req.body?.tier && req.body.tier !== 'random' ? String(req.body.tier) : null;
   const affixes = req.body?.affixes && Object.keys(req.body.affixes).length ? req.body.affixes : null;
@@ -434,6 +443,7 @@ internalApi.get('/admin/players/:id', (req, res) => {
 
 internalApi.post('/admin/players/:id/pets', (req, res) => {
   const user = userOf(req);
+  noGrantToBot(user);
   const species = getSpecies(String(req.body?.species ?? ''));
   if (!species) throw new GameError('Không có loài này.');
   const name = String(req.body?.name ?? '').replace(/\s+/g, ' ').trim() || species.name;
@@ -458,6 +468,7 @@ const vnd = (n) => n.toLocaleString('vi-VN');
  */
 internalApi.post('/admin/players/:id/coins', (req, res) => {
   const user = userOf(req);
+  noGrantToBot(user);
   const delta = Number(req.body?.delta);
   if (!Number.isInteger(delta) || delta === 0 || Math.abs(delta) > 1_000_000_000) throw new GameError('Số xu phải là số nguyên khác 0.');
   const memo = String(req.body?.memo ?? '').trim().slice(0, 120) || (delta > 0 ? 'Quản trị viên cộng xu' : 'Quản trị viên trừ xu');
@@ -604,6 +615,13 @@ internalApi.get('/admin/log', (req, res) => {
 // ---- Gia tộc, Sở Nhà Đất, vĩ mô và Sở thuế ----
 
 internalApi.get('/admin/clans', (_req, res) => res.json(adminClanView()));
+
+// ---- Cư dân tự động: số bot mục tiêu, bật/tắt toàn bộ (tắt thì nhịp sau dừng hết) ----
+internalApi.get('/admin/bots', (_req, res) => res.json(adminBotsView()));
+internalApi.post('/admin/bots/config', (req, res) => {
+  setBotConfig({ enabled: req.body?.enabled, target: req.body?.target }, actorOf(req));
+  res.json(adminBotsView());
+});
 
 // ---- Đấu trường gia tộc: xem và hủy trận chưa đánh ----
 internalApi.get('/admin/arena', (_req, res) => res.json(adminArenaView()));

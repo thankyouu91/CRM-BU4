@@ -17,6 +17,7 @@ import { attachPlayground } from './playground.js';
 import { handleFetch } from './router.js';
 import { api } from './routes.js';
 import { startScheduler } from './scheduler.js';
+import { runBots } from './bots.js';
 import { configure } from './settings.js';
 
 const PORT = Number(process.env.PORT) || 3200;
@@ -44,6 +45,8 @@ configure({
 });
 migrate();
 startScheduler();
+// Cư dân tự động: mỗi phút một nhóm nhỏ bot (tắt mặc định, bật ở bảng quản trị).
+setInterval(() => runBots(api).catch((err) => console.error('Lỗi nhịp bot:', err)), 60_000);
 
 const hub = createHub();
 attachPlayground(hub);
