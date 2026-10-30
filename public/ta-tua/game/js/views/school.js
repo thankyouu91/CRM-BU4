@@ -44,19 +44,18 @@ export function renderSchool(root, ctx) {
   function petChips() {
     const activeId = ctx.me.user.activePetId;
     return `<nav class="switcher school-switcher">${pets.map((p) => {
-      const state = p.sick ? esc(p.sick.icon) : p.busyUntil ? '⏳' : p.age.stage === 'baby' ? '🍼' : '';
+      const state = p.sick ? esc(p.sick.icon) : p.busyUntil ? '⏳' : '';
       return `<button class="btn small ${p.id === pet.id ? 'current' : ''}" data-school-pet="${Number(p.id)}">
         ${p.id === activeId ? '⭐ ' : ''}${esc(p.name)} · Lv ${p.level}${state ? ` ${state}` : ''}</button>`;
     }).join('')}</nav>`;
   }
 
-  /** Lý do cả trường không nhận bé lúc này (ốm, còn bé, đang bận, thiếu năng lượng). */
+  /** Lý do cả trường không nhận bé lúc này (ốm, đang bận, thiếu năng lượng). */
   function blockAll(rules) {
     if (pet.sick) {
       return `${esc(pet.sick.icon)} ${esc(pet.name)} đang ${esc(pet.sick.name.toLowerCase())}, khỏi bệnh mới đi học được.
         <button class="link-btn" data-go="clinic">Tới phòng khám</button>`;
     }
-    if (pet.age.stage === 'baby') return `🍼 ${esc(pet.name)} còn bé quá, tròn 2 tuần tuổi mới đi học được.`;
     const busyLeft = pet.busyUntil ? pet.busyUntil - Date.now() : 0;
     if (busyLeft > 0) {
       return `⏳ ${esc(pet.name)} đang bận, rảnh sau <span class="school-busy" data-until="${Number(pet.busyUntil)}">${countdown(busyLeft)}</span>.`;

@@ -141,10 +141,10 @@ D = công suất người chơi cung cấp vật phẩm thiết yếu ÷ nhu c�
 | Giai đoạn | D | NPC (Siêu thị) | Người chơi |
 |---|---|---|---|
 | **1. Khai hoang** | < 20% | Bán đủ đồ ăn cơ bản (trà sữa, cá, cơm nắm). Đồ NPC hồi no và vui, **XP thấp** (bằng 50% XP hiện tại). | Mới bắt đầu sản xuất; thực phẩm chế biến của người chơi cho XP gấp 2 lần đồ NPC. |
-| **2. Phát triển** | 20–80% | Chỉ cung cấp **phần còn thiếu**: lượng NPC bán = (1 − D) × nhu cầu, tối thiểu 20%. XP đồ NPC giảm dần về 25%. Giá NPC tăng nhẹ theo D (tối đa +30%). | Siêu thị **mua hàng của người chơi trước** để bán lại: giá thu mua = giá tham chiếu. Hàng người chơi xếp trên kệ, gắn nhãn gia tộc. |
-| **3. Tự chủ** | ≥ 80% | Giữ đúng **20% sàn** (M7) ở giá trần, là nguồn cung cuối cùng. Đồ NPC chỉ hồi chỉ số, gần như không có XP. | Chợ do người chơi chi phối. Món cao cấp (chất lượng Ngon / Tuyệt hảo) cho XP và hiệu ứng tốt hơn hẳn. |
+| **2. Phát triển** | 20–80% | Chỉ cung cấp **phần còn thiếu**: lượng NPC bán = (1 − D) × nhu cầu, tối thiểu 10%. XP đồ NPC giảm dần về 25%. Giá NPC tăng nhẹ theo D (tối đa +30%). | Siêu thị **mua hàng của người chơi trước** để bán lại: giá thu mua = giá tham chiếu. Hàng người chơi xếp trên kệ, gắn nhãn gia tộc. |
+| **3. Tự chủ** | ≥ 80% | Giữ đúng **10% sàn** (M7) ở giá trần, là nguồn cung cuối cùng. Đồ NPC chỉ hồi chỉ số, gần như không có XP. | Chợ do người chơi chi phối. Món cao cấp (chất lượng Ngon / Tuyệt hảo) cho XP và hiệu ứng tốt hơn hẳn. |
 
-Đúng với yêu cầu: phần thị trường **do người chơi tự sản xuất bằng D%**, phần còn lại (100% − D) **vẫn là NPC tự sản xuất**. Phần NPC không bao giờ dưới 20%.
+Đúng với yêu cầu: phần thị trường **do người chơi tự sản xuất bằng D%**, phần còn lại (100% − D) **vẫn là NPC tự sản xuất**. Phần NPC không bao giờ dưới 10% (chủ game chốt).
 
 ### 4.2 Dòng chảy
 
@@ -228,7 +228,19 @@ Mở rộng `scripts/simulate-economy.js` với bot gia tộc (8 gia tộc, 60 n
 
 ---
 
-## 9. Câu hỏi cần chủ game chốt
+## 9. Quyết định của chủ game (30/10/2026) và trạng thái
+
+| # | Quyết định | Trạng thái |
+|---|---|---|
+| 1 | Buff áp cho **toàn bộ thị trấn** (không theo vùng). Người chơi/gia tộc hưởng buff thì bị thu phí; hết tiền thì dừng buff. | Đã làm (`server/strategic.js`): `buffFor`, `chargeInfraFee`. Gia tộc chủ không tự trả phí. |
+| 2 | Phí hạ tầng 20% phần tăng thêm; gia tộc chủ xây và nâng cấp hạ tầng để buff +10% → +40%. | Đã làm: 4 cấp (miễn phí, 150.000, 400.000, 900.000). Nhiều gia tộc cùng ngành: lấy mức cao nhất + 25% phần còn lại, trần 60%. |
+| 3 | Phần NPC giữ cho vật phẩm thiết yếu được xuống **10%**. | Chưa làm (đợt 4: vòng đời thiết yếu). Đã sửa mặc định ở mục 4 thành 10%. |
+| 4 | Năng lượng gió buff cả thu nhập mua bán **cá nhân**; thành viên gia tộc chủ **+10%**; **pet huyền thoại đứng máy** thêm 10–30% theo hành. | Đã làm: Sàn Nguyên Liệu, Chợ Phiên; số mẻ nhà máy và xu bán hàng của gia tộc. Pet đứng máy: Kim 30%, Hỏa 25%, Mộc 20%, Thủy 15%, Thổ 10%. |
+| 5 | Thêm ngành nhà nước: **Ngân hàng**, **Thuế** (đi truy thu). | Đã làm: Ngân hàng nhà nước (buff lãi tiết kiệm, kỳ hạn) và Thuế vụ (xem hồ sơ khai thiếu của gia tộc khác, truy thu thuế trốn + 50% phạt, hưởng hoa hồng 10–40%). Mỗi ngành chỉ 1 gia tộc nắm. |
+
+Phần đã làm ở trên tương ứng đợt 1–2 (bản theo toàn server thay cho theo vùng). Vùng phủ, khoảng cách công trình (M3) không còn cần vì buff áp cho toàn thị trấn.
+
+## 10. Câu hỏi ban đầu (đã trả lời ở mục 9)
 
 1. Buff +10–40% áp cho **vùng phủ** (đề xuất) hay cho **toàn bộ lô** của gia tộc chủ, bất kể vị trí?
 2. Phí hạ tầng 20% phần tăng thêm có phù hợp không? Hay muốn hạ tầng hoàn toàn miễn phí, chủ chỉ hưởng buff ở lô của mình?

@@ -7,6 +7,7 @@ import { chargeFee, post } from './ledger.js';
 import { giveDish, takeDish } from './farm.js';
 import { getGear, describeGear, gearValue, listGear, setGearListed, tradeBonus, transferGear } from './gear.js';
 import { auctionsView } from './auction.js';
+import { windTradeBonus } from './strategic.js';
 import { BAZAAR, DISHES, KITCHEN, QUALITY, dishValue } from './rules/production.js';
 
 const q = {
@@ -74,7 +75,7 @@ function giveBack(l, now) {
  */
 export function listForSale(userId, { kind, ref, price }, now = Date.now()) {
   const user = getUser(userId);
-  if (now - user.created_at < BAZAAR.minAccountDays * DAY) throw new GameError(`Tài khoản cần đủ ${BAZAAR.minAccountDays} ngày tuổi mới bày bán được.`);
+  if (now - user.created_at < BAZAAR.minAccountDays * DAY) throw new GameError(`Tài khoản mới cần đủ ${BAZAAR.minAccountDays * 24} giờ mới bày bán được.`);
   if (!Number.isInteger(price) || price < 1) throw new GameError('Giá bán không hợp lệ.');
   return transaction(() => {
     if (q.myOpen.get(userId).n >= BAZAAR.maxListings) throw new GameError(`Mỗi người bày tối đa ${BAZAAR.maxListings} món.`);
@@ -131,6 +132,7 @@ export function buyListing(userId, listingId, now = Date.now()) {
     post({ userId, delta: -l.price, kind: 'bazaar_buy', memo: `${what.name} của ${seller.username}`, now });
     post({ userId: l.seller_id, delta: l.price - fee, kind: 'bazaar_sale', memo: `${what.name} cho ${getUser(userId).username} (đã trừ phí ${fee})`, now });
     tradeBonus(l.seller_id, l.price - fee, `Chợ Phiên: ${what.name}`, now);
+    windTradeBonus(l.seller_id, l.price - fee, `Chợ Phiên: ${what.name}`, now);
     // Phí bán: một nửa vào ngân sách thị trấn, một nửa bị hủy.
     if (Math.floor(fee / 2) > 0) post({ account: 'treasury', delta: Math.floor(fee / 2), kind: 'fee', memo: 'Phí Chợ Phiên', now });
     if (q.sell.run(userId, now, l.id).changes === 0) throw new GameError('Món này vừa có người mua mất rồi.');

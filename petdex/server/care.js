@@ -2,7 +2,7 @@
 import { allPets, db, getUser, savePet, transaction } from './db.js';
 import { indexedPrice } from './bank.js';
 import { dayKey } from './clock.js';
-import { GameError, ageInfo, applyEffect, bathe, isBusy, requireHealthy, stageRules, tick } from './game.js';
+import { GameError, applyEffect, bathe, isBusy, requireHealthy, stageRules, tick } from './game.js';
 import { post } from './ledger.js';
 import { CLASSES, CLINIC, HEALTH, ILLNESSES, INSURANCE, SCHOOL, has } from './rules/production.js';
 import { track } from './quests.js';
@@ -121,7 +121,6 @@ export function attendClass(userId, petId, skill, now = Date.now(), rand = Math.
   return transaction(() => {
     const pet = tick(ownedPet(userId, petId), now);
     requireHealthy(pet, 'đi học');
-    if (ageInfo(pet.born_at, now).stage === 'baby') throw new GameError(`${pet.name} còn bé quá, 2 tuần tuổi mới đi học được.`);
     if (isBusy(pet, now)) throw new GameError(`${pet.name} đang bận.`);
     if (pet.energy < SCHOOL.energy) throw new GameError(`${pet.name} cần ${SCHOOL.energy} năng lượng để học.`);
     const day = dayKey(now);
@@ -131,7 +130,7 @@ export function attendClass(userId, petId, skill, now = Date.now(), rand = Math.
     q.addClass.run(pet.id, day, skill);
     track(userId, 'school', 1, now);
     const [lo, hi] = SCHOOL.gain;
-    // Nhí nhố học nhanh nhất, lão làng chậm.
+    // Sơ sinh và nhí nhố học nhanh nhất, lão làng chậm.
     const raw = (lo + rand() * (hi - lo)) * (has(pet, 'bookworm') ? 1.25 : 1) * (stageRules(pet.born_at, now).school ?? 1);
     const { before, after } = growSkill(pet.id, skill, raw);
     const end = now + SCHOOL.minutes * 60_000;

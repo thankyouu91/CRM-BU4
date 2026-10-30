@@ -5,6 +5,7 @@ import { dayKey, startOfDay } from './clock.js';
 import { DAY, GameError, HOUR } from './game.js';
 import { chargeFee, post } from './ledger.js';
 import { tradeBonus } from './gear.js';
+import { windTradeBonus } from './strategic.js';
 import {
   COMMODITIES, LOT, MARKET, RAW_FIRST, REGIMES, amountFor, blendPrice, decayPressure, depthOf, fillPrice, freshnessOf, gaussian, inBand,
   jumpHeadline, meanPrice, profitOf, pushPressure, quote, rollJump, rollNews, shelfLife, stepDrift, stepPrice, stepRegime, tradeFee,
@@ -177,7 +178,7 @@ function settleResting(order, qty, price, now, goodsExpiry = null) {
   const memo = memoFor(order.commodity, qty, price);
   if (order.side === 'sell') {
     post({ userId: order.user_id, delta: amount, kind: 'market_sell', memo, now });
-    const bonus = tradeBonus(order.user_id, amount, `Bán trên Sàn: ${memo}`, now);
+    const bonus = tradeBonus(order.user_id, amount, `Bán trên Sàn: ${memo}`, now) + windTradeBonus(order.user_id, amount, `Bán trên Sàn: ${memo}`, now);
     chargeFee(order.user_id, Math.min(fee, amount), 'Phí bán trên Sàn', now);
     recordGain(order.user_id, amount - Math.min(fee, amount) - qty * order.goods_cost, now);
     logTrade(order.user_id, order.commodity, 'sell', qty, price, amount, Math.min(fee, amount), qty * order.goods_cost, bonus, now);
@@ -274,7 +275,7 @@ export function placeOrder(userId, order, now = Date.now()) {
       logTrade(userId, commodity, 'buy', filled, amount / (filled / LOT), amount, fee, amount + fee, 0, now);
     } else if (filled) {
       post({ userId, delta: amount, kind: 'market_sell', memo, now });
-      const bonus = tradeBonus(userId, amount, `Bán trên Sàn: ${memo}`, now);
+      const bonus = tradeBonus(userId, amount, `Bán trên Sàn: ${memo}`, now) + windTradeBonus(userId, amount, `Bán trên Sàn: ${memo}`, now);
       chargeFee(userId, Math.min(fee, amount), 'Phí bán trên Sàn', now);
       recordGain(userId, amount - Math.min(fee, amount) - filled * goodsCost, now);
       profit = logTrade(userId, commodity, 'sell', filled, amount / (filled / LOT), amount, Math.min(fee, amount), filled * goodsCost, bonus, now);

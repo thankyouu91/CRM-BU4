@@ -59,6 +59,7 @@ export const SECTORS = {
   energy: { name: 'Năng lượng', icon: '⚡' },
   light: { name: 'Công nghiệp nhẹ', icon: '🧵' },
   heavy: { name: 'Công nghiệp nặng', icon: '🏭' },
+  strategic: { name: 'Hạ tầng chiến lược & nhà nước', icon: '🏛️' },
 };
 
 // Bảng hợp đất dùng chung cho các ngành mới (cộng vào hệ số môi trường như các ngành cũ).
@@ -317,3 +318,69 @@ export const MARKET_RULES = {
   maxListings: 10,
   listingDays: 3,
 };
+
+// ---------------------------------------------------------------- hạ tầng chiến lược & ngành nhà nước
+
+/**
+ * Ngành chiến lược không làm ra hàng: gia tộc nắm ngành xây hạ tầng (cấp 1–4) tạo buff +10–40% cho TOÀN server.
+ * Ai hưởng buff thì trả phí hạ tầng = 20% phần tăng thêm cho gia tộc chủ; hết tiền trả phí thì không được buff.
+ * Mỗi gia tộc nắm tối đa 1 ngành chiến lược; mỗi ngành có số gia tộc chủ tối đa `maxClans`.
+ *   irrigation  Trị thủy: sản lượng trồng trọt, chăn nuôi, lâm nghiệp của gia tộc và vụ thu hoạch vườn của người chơi.
+ *   wind_farm   Năng lượng gió: số mẻ nhà máy, xu gia tộc thu từ bán hàng, thu nhập mua bán cá nhân (Sàn, Chợ Phiên).
+ *               Thành viên gia tộc chủ được thêm +10%; pet huyền thoại đứng máy thêm 10–30% theo hành.
+ *   state_bank  Ngân hàng nhà nước: lãi tiết kiệm và lãi kỳ hạn của người chơi.
+ *   tax_office  Thuế vụ: được xem hồ sơ khai thiếu của gia tộc khác và đi truy thu, hưởng hoa hồng 10–40%.
+ */
+const NOWHERE_SEA = { sea: -0.5 };
+export const STRATEGIC_INDUSTRIES = {
+  irrigation: {
+    name: 'Trị thủy', icon: '🌊', sector: 'strategic', comp: 50_000, maxClans: 3, commodities: [],
+    zones: { river: 0.15, plain: 0.05, hill: 0.05, forest: 0, coast: 0, urban: -0.2, ...NOWHERE_SEA }, climates: MILD,
+    places: ['river', 'plain', 'hill'], effect: 'Sản lượng trồng trọt, chăn nuôi, lâm nghiệp và thu hoạch vườn',
+  },
+  wind_farm: {
+    name: 'Năng lượng gió', icon: '🌬️', sector: 'strategic', comp: 50_000, maxClans: 3, commodities: [],
+    zones: { coast: 0.15, sea: 0.1, hill: 0.05, plain: 0, river: 0, forest: -0.1, urban: -0.2 }, climates: { windy: 0.15, sunny: 0, temperate: 0, rainy: -0.05 },
+    places: ['coast', 'sea', 'hill', 'plain'], climatesOk: ['windy'], effect: 'Số mẻ nhà máy, xu từ bán hàng và thu nhập mua bán cá nhân',
+  },
+  state_bank: {
+    name: 'Ngân hàng nhà nước', icon: '🏦', sector: 'strategic', comp: 50_000, maxClans: 1, commodities: [],
+    zones: { urban: 0.2, river: 0, plain: -0.1, coast: 0, hill: -0.3, forest: -0.3, sea: -0.5 }, climates: MILD,
+    places: ['urban'], effect: 'Lãi tiết kiệm và lãi gửi kỳ hạn của người chơi',
+  },
+  tax_office: {
+    name: 'Thuế vụ', icon: '🧾', sector: 'strategic', comp: 50_000, maxClans: 1, commodities: [],
+    zones: { urban: 0.2, river: 0, plain: -0.1, coast: 0, hill: -0.3, forest: -0.3, sea: -0.5 }, climates: MILD,
+    places: ['urban'], effect: 'Truy thu thuế các gia tộc khai thiếu, hưởng hoa hồng',
+  },
+};
+
+export const STRATEGIC_RULES = {
+  /** Cấp hạ tầng: buff (hoặc hoa hồng truy thu) và chi phí nâng lên cấp đó. */
+  levels: [{ buff: 0.1, cost: 0 }, { buff: 0.2, cost: 150_000 }, { buff: 0.3, cost: 400_000 }, { buff: 0.4, cost: 900_000 }],
+  /** Phí hạ tầng: phần trăm của phần tăng thêm nhờ buff. */
+  fee: 0.2,
+  /** Trần khi nhiều gia tộc cùng nắm một ngành (xem combinedBuff). */
+  softCap: 0.6,
+  /** Thành viên gia tộc chủ Năng lượng gió được thêm. */
+  ownerMemberBonus: 0.1,
+  /** Pet huyền thoại đứng máy ở trang trại gió: thêm theo hành của pet. */
+  operatorBonus: { kim: 0.3, hoa: 0.25, moc: 0.2, thuy: 0.15, tho: 0.1 },
+  /** Tiền phạt khi Thuế vụ truy thu (cộng vào phần thuế trốn). */
+  collectPenalty: 0.5,
+};
+
+/** Lô nào dựng được hạ tầng của ngành chiến lược này. */
+export function strategicPlaceOk(industry, plot) {
+  const def = STRATEGIC_INDUSTRIES[industry];
+  if (!def) return false;
+  return def.places.includes(plot.zone) || (def.climatesOk ?? []).includes(plot.climate);
+}
+
+/** Gộp buff của nhiều gia tộc chủ: lấy mức cao nhất, cộng 25% phần của các gia tộc còn lại, trần `softCap`. */
+export function combinedBuff(buffs, cap = STRATEGIC_RULES.softCap) {
+  if (!buffs.length) return 0;
+  const top = Math.max(...buffs);
+  const rest = buffs.reduce((s, b) => s + b, 0) - top;
+  return Math.min(cap, top + 0.25 * rest);
+}

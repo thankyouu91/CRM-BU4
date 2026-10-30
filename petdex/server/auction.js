@@ -5,6 +5,7 @@ import { DAY, GameError, HOUR, ITEMS } from './game.js';
 import { chargeFee, post } from './ledger.js';
 import { describeGear, gearValue, getGear, setGearListed, tradeBonus, transferGear } from './gear.js';
 import { AUCTION, BAZAAR } from './rules/production.js';
+import { windTradeBonus } from './strategic.js';
 
 const q = {
   insert: db.prepare(`
@@ -68,7 +69,7 @@ const auctionView = (a, userId) => ({
 /** Mở phiên đấu giá cho món `gearId` (đã mở hộp hoặc còn nguyên hộp), giá khởi điểm `startPrice`, kéo dài `hours` giờ. */
 export function listAuction(userId, { gearId, startPrice, hours }, now = Date.now()) {
   const user = getUser(userId);
-  if (now - user.created_at < BAZAAR.minAccountDays * DAY) throw new GameError(`Tài khoản cần đủ ${BAZAAR.minAccountDays} ngày tuổi mới bày bán được.`);
+  if (now - user.created_at < BAZAAR.minAccountDays * DAY) throw new GameError(`Tài khoản mới cần đủ ${BAZAAR.minAccountDays * 24} giờ mới bày bán được.`);
   if (!AUCTION.hours.includes(hours)) throw new GameError(`Thời hạn đấu giá chỉ chọn ${AUCTION.hours.join(', ')} giờ.`);
   if (!Number.isInteger(startPrice) || startPrice < 1) throw new GameError('Giá khởi điểm không hợp lệ.');
   return transaction(() => {
@@ -144,6 +145,7 @@ export function settleAuctions(now = Date.now()) {
       post({ userId: a.top_bidder, delta: -a.top_bid, kind: 'auction_buy', memo: `${lot.name} của ${seller.username}`, now });
       post({ userId: a.seller_id, delta: a.top_bid - fee, kind: 'auction_sale', memo: `${lot.name} cho ${winner.username} (đã trừ phí ${fee})`, now });
       tradeBonus(a.seller_id, a.top_bid - fee, `Đấu giá: ${lot.name}`, now);
+      windTradeBonus(a.seller_id, a.top_bid - fee, `Đấu giá: ${lot.name}`, now);
       if (Math.floor(fee / 2) > 0) post({ account: 'treasury', delta: Math.floor(fee / 2), kind: 'fee', memo: 'Phí đấu giá', now });
       transferGear(g.id, a.top_bidder);
       q.close.run('sold', now, a.id);
