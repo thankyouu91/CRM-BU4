@@ -47,6 +47,11 @@ export const INDUSTRY_MARKET = {
   steel: { demand: ['pork', 'fish', 'cassava'], weight: 0.3 },
   aluminium: { demand: ['pork', 'fish'], weight: 0.3 },
   semiconductors: { demand: ['milk', 'pearl', 'tea_leaf'], weight: 0.3 },
+  // ---- ngành chiến lược ----
+  irrigation: { supply: ['tea_leaf', 'cane', 'cassava', 'strawberry', 'mango'], weight: 0.5, stabilize: ['tea_leaf', 'cane', 'cassava', 'strawberry', 'mango'] },
+  wind_farm: { cost: PROCESSED, weight: 0.6 },
+  state_bank: { stabilize: [...RAW, ...PROCESSED], weight: 0.4 },
+  tax_office: {}, // thu thuế, không đụng tới hàng trên Sàn
 };
 
 /** Mức tác động tối đa khi một ngành chạy hết công suất (độ mạnh 1, trọng số 1). */

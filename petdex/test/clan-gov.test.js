@@ -128,6 +128,12 @@ test('phiếu thất bại thì phải chờ mới mở lại; phiếu hết gi�
   assert.equal(clans.clanView(b, t + 7 * DAY).clan.role, 'leader');
 });
 
+test('mọi ngành gia tộc đều có dòng trong bảng tác động lên Sàn (kể cả ngành không tác động)', async () => {
+  const { INDUSTRY_ORDER } = await import('../../public/ta-tua/game/js/shared/clan.js');
+  const { INDUSTRY_MARKET } = await import('../../public/ta-tua/game/js/shared/industry-market.js');
+  assert.deepEqual(INDUSTRY_ORDER.filter((id) => !INDUSTRY_MARKET[id]), []);
+});
+
 test('ngành gia tộc tác động lên Sàn; ngành chưa ai nắm thì hàng chạy bình thường', () => {
   assert.equal(industryStrength({}), 0);
   assert.equal(industryStrength({ clans: 1, plots: 8 }), 1);

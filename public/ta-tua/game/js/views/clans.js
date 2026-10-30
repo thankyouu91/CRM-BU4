@@ -936,12 +936,11 @@ export function renderClans(root, ctx) {
     else if ((el = on('[data-op-remove]'))) act('/clans/strategic/operator/remove', { plotId: Number(el.dataset.opRemove) });
     else if ((el = on('[data-tax-collect]'))) {
       if (confirm('Truy thu hồ sơ này? Tiền lấy từ quỹ gia tộc trốn thuế.')) act(`/clans/tax-office/${el.dataset.taxCollect}/collect`);
-    else if ((el = on('[data-ballot]'))) act(`/clans/votes/${el.dataset.ballot}`, { yes: el.dataset.yes === '1' });
+    } else if ((el = on('[data-ballot]'))) act(`/clans/votes/${el.dataset.ballot}`, { yes: el.dataset.yes === '1' });
     else if ((el = on('[data-withdraw]'))) {
       const penalty = Number(el.dataset.penalty);
       if (!penalty || confirm(`Rút gấp trước hạn: mất lãi và bị phạt ${fmt(penalty)} xu. Tiếp tục?`)) act(`/clans/deposits/${el.dataset.withdraw}/withdraw`);
-    }
-    else if ((el = on('[data-emblem]'))) {
+    } else if ((el = on('[data-emblem]'))) {
       ui.emblem = el.dataset.emblem;
       body.querySelectorAll('[data-emblem]').forEach((b) => b.classList.toggle('current', b === el));
     } else if ((el = on('[data-join]'))) act(`/clans/${el.dataset.join}/join`);
