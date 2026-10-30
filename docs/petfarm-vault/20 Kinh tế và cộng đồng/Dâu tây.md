@@ -40,7 +40,7 @@ aliases: [🍓 Dâu tây, strawberry]
 
 ## Tác động vĩ mô
 - Cú sốc cầu của [[Ngành Dâu tây & trái cây]], [[Ngành Ẩm thực & nhà hàng]] đăng tin đẩy giá mặt hàng này một nửa độ lớn cú sốc trong ngày (`petdex/server/macro.js:84-89`). Xem [[Kinh tế vĩ mô]].
-- Thời tiết: [[Thời tiết Thời tiết thuận lợi]] (-6% giá trong ngày), [[Thời tiết Mưa lớn nhiều ngày]] (+12% giá trong ngày), [[Thời tiết Rét đậm]] (+10% giá trong ngày) (`public/ta-tua/game/js/shared/clan.js:556-563`, `petdex/server/macro.js:81-83`).
+- Thời tiết: [[Thời tiết thuận lợi]] (-6% giá trong ngày), [[Thời tiết Mưa lớn nhiều ngày]] (+12% giá trong ngày), [[Thời tiết Rét đậm]] (+10% giá trong ngày) (`public/ta-tua/game/js/shared/clan.js:556-563`, `petdex/server/macro.js:81-83`).
 
 ## Liên quan
 - [[Mặt hàng nguyên liệu]] · [[Sàn Nguyên Liệu]] · [[Kho Sàn]] · [[Tin tức thị trường]] · [[MOC Kinh tế và cộng đồng]]

@@ -37,7 +37,7 @@ aliases: [Vĩ mô, Macro economy, 📊 Vĩ mô]
 | Giá Sàn | tin thời tiết theo `WEATHER.news`; tin sốc cầu = cú sốc / 2 cho mặt hàng của ngành | `petdex/server/macro.js:80-89` |
 | Khách quầy trà sữa | hiệu ứng `traffic` trong ngày: Tăng trưởng nóng +10%, Đỉnh +5%, Suy thoái −10% | `public/ta-tua/game/js/shared/clan.js:538-543`, `petdex/server/macro.js:90-91` |
 
-Ghi chú riêng cho từng pha: [[Pha Phục hồi]], [[Pha Tăng trưởng nóng]], [[Pha Đỉnh chu kỳ]], [[Pha Suy thoái]]. Từng kiểu thời tiết: [[Thời tiết Trời yên biển lặng]], [[Thời tiết Thời tiết thuận lợi]], [[Thời tiết Nắng nóng kéo dài]], [[Thời tiết Mưa lớn nhiều ngày]], [[Thời tiết Bão biển]], [[Thời tiết Rét đậm]].
+Ghi chú riêng cho từng pha: [[Pha Phục hồi]], [[Pha Tăng trưởng nóng]], [[Pha Đỉnh chu kỳ]], [[Pha Suy thoái]]. Từng kiểu thời tiết: [[Thời tiết Trời yên biển lặng]], [[Thời tiết thuận lợi]], [[Thời tiết Nắng nóng kéo dài]], [[Thời tiết Mưa lớn nhiều ngày]], [[Thời tiết Bão biển]], [[Thời tiết Rét đậm]].
 
 ## Quản trị
 - Cấu hình `clan_config.macro = { phase, weather }` ép pha hoặc thời tiết cho **các ngày sẽ sinh tới**; `null` là tự chạy (`petdex/server/clans.js:47-48,82-85`).

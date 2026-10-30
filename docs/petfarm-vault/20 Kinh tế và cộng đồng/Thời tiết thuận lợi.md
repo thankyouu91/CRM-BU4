@@ -7,7 +7,7 @@ cap-nhat: 2026-10-30
 commit: e03a0db
 aliases: [🌈 Thời tiết thuận lợi, thời tiết perfect]
 ---
-# Thời tiết Thời tiết thuận lợi
+# Thời tiết thuận lợi
 
 > [!summary]
 > 🌈 Kiểu thời tiết `perfect` của [[Kinh tế vĩ mô]], bốc ngẫu nhiên mỗi ngày với trọng số 1,2 (khoảng 13% số ngày). Nhân doanh thu các lô đất theo địa hình và khí hậu, và đăng tin đẩy giá một số hàng trên Sàn trong cả ngày.
