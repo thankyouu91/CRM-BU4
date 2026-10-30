@@ -34,6 +34,9 @@ import { getSpecies, listSpecies } from './species.js';
 import { richList } from './wallet.js';
 import { createGear, equipGear, gearConfig, openGear, quickSellGear, userBonus } from './gear.js';
 import { redeemGiftCode } from './gifts.js';
+import { chargeFood, foodXpFactor } from './essentials.js';
+import { refPrice } from './industry.js';
+import { macroToday } from './macro.js';
 import { TIERS as GEAR_TIERS, gradeLuck } from '../../public/ta-tua/game/js/shared/gear.js';
 import { SLOTS } from '../../public/ta-tua/game/js/shared/pets.js';
 
@@ -215,7 +218,7 @@ api.post('/pets/:id/use', auth, (req, res) => {
     store.takeItem(req.user.id, item.id, 1);
     return mutatePet(req.user.id, req.params.id, (pet) => {
       petName = pet.name;
-      return useItem(pet, item);
+      return useItem(pet, item, { xpFactor: foodXpFactor(req.user.id, item) });
     });
   });
   if (item.type === 'food') track(req.user.id, 'feed');
@@ -313,7 +316,9 @@ api.post('/shop/buy', auth, (req, res) => {
     if (!isConsumable(item) && (owned > 0 || qty > 1)) throw new GameError(`Bạn đã có ${item.name} rồi, món này dùng mãi mãi.`);
     const bestLevel = Math.max(0, ...store.listPets(req.user.id).map((p) => p.level));
     if (item.minLevel && bestLevel < item.minLevel) throw new GameError(`Cần một bé đạt cấp ${item.minLevel} để mua món này.`);
-    post({ userId: req.user.id, delta: -indexedPrice(item.price) * qty, kind: 'shop', memo: `${qty} × ${item.name}` });
+    // Đồ ăn: giá, hạn mức NPC và suất ăn gia tộc theo vòng đời vật phẩm thiết yếu (essentials.js).
+    const unit = chargeFood(req.user.id, item, qty, indexedPrice(item.price), refPrice('processed_food', macroToday())) ?? indexedPrice(item.price);
+    post({ userId: req.user.id, delta: -unit * qty, kind: 'shop', memo: `${qty} × ${item.name}` });
     store.addItem(req.user.id, item.id, qty);
   });
   reply(res, req.user.id, { message: `Đã mua ${qty > 1 ? `${qty} × ` : ''}${item.icon} ${item.name}` });

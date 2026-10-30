@@ -41,6 +41,8 @@ const CATALOG = {
   boba: { name: 'Trà sữa trân châu', icon: '🧋', type: 'food', element: 'moc', price: 12, effect: { fullness: 20, happiness: 6 }, xp: 6, desc: 'Món khoái khẩu của mọi bé rái cá.' },
   fish: { name: 'Cá tươi', icon: '🐟', type: 'food', element: 'thuy', price: 18, effect: { fullness: 32 }, xp: 8, desc: 'Vừa vớt dưới suối lên.' },
   onigiri: { name: 'Cơm nắm', icon: '🍙', type: 'food', element: 'tho', price: 25, effect: { fullness: 45, energy: 5 }, xp: 10, desc: 'Chắc bụng, ăn là có sức.' },
+  // Do gia tộc chế biến (Siêu thị mua Thực phẩm chế biến của gia tộc); giá và số lượng theo essentials.js.
+  clan_meal: { name: 'Suất ăn gia tộc', icon: '🍱', type: 'food', element: 'tho', price: 24, effect: { fullness: 50, happiness: 12 }, xp: 22, clanMade: true, desc: 'Nấu từ nông sản các gia tộc tự trồng, nhiều XP hơn đồ NPC.' },
   sushi: { name: 'Khay sushi', icon: '🍣', type: 'food', element: 'thuy', price: 45, effect: { fullness: 60, happiness: 12 }, xp: 18, minLevel: 3, desc: 'Bữa sang chảnh cuối tuần.' },
   cake: { name: 'Bánh kem dâu', icon: '🍰', type: 'food', element: 'hoa', price: 70, effect: { fullness: 30, happiness: 35 }, xp: 30, minLevel: 5, desc: 'Ăn một miếng, vui cả ngày.' },
 
@@ -257,11 +259,12 @@ export function boostEffect(pet, effect = {}) {
   return Object.fromEntries(Object.entries(effect).map(([k, v]) => [k, v > 0 ? Math.round(v * (1 + pct / 100)) : v]));
 }
 
-export function useItem(pet, item) {
+/** `xpFactor`: hệ số XP của đồ ăn NPC theo giai đoạn tự chủ thực phẩm (essentials.js). */
+export function useItem(pet, item, { xpFactor = 1 } = {}) {
   if (!item || !isConsumable(item)) throw new GameError('Món này không dùng trực tiếp được.');
   if (item.type === 'food' && pet.fullness >= 97) throw new GameError(`${pet.name} no căng bụng rồi!`);
   // Món hợp mệnh (cùng hành hoặc hành nuôi dưỡng bé) cho thêm 20% XP.
-  const xp = Math.round((item.xp ?? 0) * (item.type === 'food' && has(pet, 'glutton') ? 1.3 : 1) * (1 + foodBonus(item.element, elementOfSpecies(pet.species))));
+  const xp = Math.round((item.xp ?? 0) * xpFactor * (item.type === 'food' && has(pet, 'glutton') ? 1.3 : 1) * (1 + foodBonus(item.element, elementOfSpecies(pet.species))));
   return { pet: applyEffect(pet, boostEffect(pet, item.effect)), xp, coins: 0 };
 }
 

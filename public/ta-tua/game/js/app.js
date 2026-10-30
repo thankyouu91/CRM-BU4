@@ -116,8 +116,16 @@ const gearLines = (g) => AFFIX_ORDER.filter((a) => g.affixes?.[a]).map((a) => af
 const petName = (id) => state.me.pets.find((p) => p.id === id)?.name ?? 'bé khác';
 const bestLevel = () => Math.max(0, ...state.me.pets.map((p) => p.level));
 const idleAnim = (pet) => IDLE_BY_MOOD[pet?.mood.key] ?? 'idle';
-/** Giá siêu thị hiện tại = giá gốc × chỉ số giá của Ngân hàng Trung ương. */
-const priceOf = (item) => Math.max(1, Math.round(item.price * (state.me?.economy.priceIndex ?? 1)));
+/**
+ * Giá siêu thị hiện tại = giá gốc × chỉ số giá của Ngân hàng Trung ương; đồ ăn NPC nhân thêm hệ số theo mức tự chủ
+ * thực phẩm, Suất ăn gia tộc theo giá Thực phẩm chế biến hôm nay.
+ */
+function priceOf(item) {
+  const ess = state.me?.essentials;
+  if (item.clanMade && ess) return ess.meal.price;
+  const base = item.price * (state.me?.economy.priceIndex ?? 1);
+  return Math.max(1, Math.round(item.type === 'food' && ess ? Math.round(base) * ess.npcPriceFactor : base));
+}
 const activePet = () => state.me.pets.find((p) => p.id === state.me.user.activePetId) ?? state.me.pets[0] ?? null;
 
 function currentPet() {
@@ -809,6 +817,13 @@ function renderShop(root) {
     .filter((i) => filter === 'all' || i.type === filter)
     .sort((a, b) => TYPE_ORDER.indexOf(a.type) - TYPE_ORDER.indexOf(b.type) || a.price - b.price);
 
+  const ess = state.me.essentials;
+  // Suất ăn gia tộc giới hạn theo kho Siêu thị; đồ ăn NPC theo hạn mức hôm nay (null = tài khoản mới, không giới hạn).
+  const foodCan = (item, n) => {
+    if (item.type !== 'food' || !ess) return true;
+    if (item.clanMade) return ess.meal.stock >= n;
+    return ess.npcLeft == null || ess.npcLeft >= n;
+  };
   const buyArea = (item) => {
     const owned = qtyOf(item.id);
     if (item.minLevel && level < item.minLevel) return `<span class="badge">🔒 Cần Lv ${item.minLevel}</span>`;
@@ -816,18 +831,30 @@ function renderShop(root) {
       return `<div class="row"><button class="btn small primary" data-buy="${item.id}" data-qty="1" ${coins < priceOf(item) ? 'disabled' : ''}>🎁 Mua hộp</button></div>`;
     }
     if (!isConsumable(item) && owned) return '<span class="badge star">✓ Đã có</span>';
+    const can = (n) => coins >= priceOf(item) * n && foodCan(item, n);
     const bulk = isConsumable(item)
-      ? `<button class="btn small" data-buy="${item.id}" data-qty="5" ${coins < priceOf(item) * 5 ? 'disabled' : ''}>×5</button>`
+      ? `<button class="btn small" data-buy="${item.id}" data-qty="5" ${can(5) ? '' : 'disabled'}>×5</button>`
       : '';
-    return `<div class="row">${bulk}<button class="btn small primary" data-buy="${item.id}" data-qty="1" ${coins < priceOf(item) ? 'disabled' : ''}>Mua</button></div>`;
+    return `<div class="row">${bulk}<button class="btn small primary" data-buy="${item.id}" data-qty="1" ${can(1) ? '' : 'disabled'}>Mua</button></div>`;
   };
 
   const index = state.me.economy.priceIndex;
   const indexNote = Math.abs(index - 1) > 0.001
     ? ` Giá đang ${index > 1 ? 'cao' : 'thấp'} hơn gốc ${Math.abs(Math.round((index - 1) * 100))}% theo chỉ số giá của Ngân hàng Trung ương.`
     : '';
+  const essBanner = ess ? `
+    <div class="card essentials-banner">
+      <strong>${ess.stage.icon} Tự chủ thực phẩm ${Math.round(ess.d * 100)}% · ${esc(ess.stage.name)}</strong>
+      <span class="muted small">
+        ${ess.newbie
+          ? 'Tài khoản mới: đồ ăn NPC chưa giới hạn, đủ XP, giá gốc.'
+          : `Đồ ăn NPC hôm nay còn mua được ${ess.npcLeft} món · XP ${Math.round(ess.npcXpFactor * 100)}% · giá ×${ess.npcPriceFactor.toFixed(2)}.`}
+        🍱 Suất ăn gia tộc (đủ XP) còn ${fmt(ess.meal.stock)} suất, giá ${fmt(ess.meal.price)} 🪙: do các gia tộc chế biến thực phẩm bán cho Siêu thị.
+      </span>
+    </div>` : '';
   root.innerHTML = `
     ${viewHead('🏪 Siêu thị', `Đồ ăn và đồ chăm sóc dùng là hết. Đồ chơi mua một lần, dùng mãi. Phụ kiện mỗi lần mua là một hộp kín có 1–2 dòng +% ngẫu nhiên (${tierOdds()}), mở trong Túi đồ mới biết là dòng nào; May mắn của bé chính giúp ra 2 dòng.${indexNote}`)}
+    ${essBanner}
     <div class="filters">
       ${['all', ...TYPE_ORDER].map((t) => `
         <button class="btn small ${t === filter ? 'current' : ''}" data-filter="${t}">${t === 'all' ? 'Tất cả' : TYPE_LABELS[t]}</button>`).join('')}
@@ -846,6 +873,7 @@ function renderShop(root) {
             <p class="effects">${esc(effectText(item))}</p>
             ${item.type === 'accessory' ? poolLine(affixPool(item.slot, item.element), 'Mở hộp ra 1–2 dòng trong số') : ''}
             ${item.type === 'accessory' && myGear().some((g) => g.itemId === item.id) ? `<p class="muted small">Đang có ${myGear().filter((g) => g.itemId === item.id).length} món</p>` : ''}
+            ${item.clanMade ? `<p class="muted small">Kho Siêu thị: ${fmt(ess?.meal.stock ?? 0)} suất</p>` : ''}
             <div class="foot"><span class="price">${priceOf(item)} 🪙</span>${buyArea(item)}</div>
           </article>`;
       }).join('')}
