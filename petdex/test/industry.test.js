@@ -34,6 +34,10 @@ runDue(T0, rand);
 const a = newPlayer('thepmay', 6_000_000);
 const b = newPlayer('muahang', 6_000_000);
 const day = dayKey(T0);
+// The day's economy (phase, weather) is rolled the first time anything reads it, with Math.random
+// when plotPreview reads it. Bad weather (cold: hill -15%) then left no ore over and the test failed
+// about 1 run in 4, so pin a neutral day: recovery phase, calm weather.
+macro.overrideMacro(day, { phase: 'recovery', weather: 'calm' }, T0);
 const BUILT = [
   { piece: 'base-3', x: 2, y: 19, color: '#8b5e3c' },
   { piece: 'wall_brick-8', x: 2, y: 15, color: '#e85d5d' },
