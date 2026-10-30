@@ -229,7 +229,7 @@ td { padding: 7px 8px; border-bottom: 1px dashed var(--line); vertical-align: to
 
 /* Ví, Ngân hàng, Sàn trên màn hẹp: thẻ không giãn theo nội dung dài nhất */
 .bank-grid > *, .wallet-grid > *, .market-grid > * { min-width: 0; }
-.term-options > * { min-width: 0; overflow-wrap: anywhere; }
+.term-options > * { min-width: 0; overflow-wrap: break-word; }
 .wallet-box select, .bank-box select { max-width: 100%; min-width: 0; }
 
 /* ---------- Sàn: vị thế, sổ lời lãi, độ tươi ---------- */
@@ -247,3 +247,7 @@ td { padding: 7px 8px; border-bottom: 1px dashed var(--line); vertical-align: to
 .fresh-fresh { background: #e3f6e3; color: #24692f; }
 .fresh-stale { background: #fff1d6; color: #8a5a0b; }
 .fresh-old { background: #fde2dd; color: #9b2c1f; }
+@media (max-width: 380px) {
+  .term { padding-left: 4px; padding-right: 4px; }
+  .term b { font-size: 1rem; white-space: nowrap; }
+}

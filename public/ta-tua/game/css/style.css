@@ -512,15 +512,15 @@ input:focus { border-color: var(--tea); box-shadow: 0 0 0 4px #c8915f33; }
 /* ---------- Chống vỡ khung thẻ món (Siêu thị, Túi đồ, trang phục) ----------
  * Tên cân dòng, mô tả tối đa 2 dòng (đủ chữ trong title), dòng chỉ số và nút tự xuống hàng thay vì bị bóp. */
 .item-card { min-width: 0; }
-.item-card h3 { text-wrap: balance; overflow-wrap: anywhere; line-height: 1.2; }
-.item-card p { text-wrap: pretty; overflow-wrap: anywhere; }
+.item-card h3 { text-wrap: balance; overflow-wrap: break-word; line-height: 1.2; }
+.item-card p { text-wrap: pretty; overflow-wrap: break-word; }
 .item-card > p:not(.effects):not(.gear-pool):not(.muted) {
   display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; overflow: hidden;
 }
-.item-card .type-tag { overflow-wrap: anywhere; }
+.item-card .type-tag { overflow-wrap: break-word; }
 .item-card .foot { flex-wrap: wrap; row-gap: 8px; }
 .item-card .foot .btn { white-space: nowrap; }
-.gear-lines li, .gear-lines-inline { overflow-wrap: anywhere; }
+.gear-lines li, .gear-lines-inline { overflow-wrap: break-word; }
 .gear-pool { line-height: 1.5; }
 .tier-chip { white-space: nowrap; }
 /* nhãn góc thẻ (Đang đeo · tên bé, Có N) không đè lên hình món */
