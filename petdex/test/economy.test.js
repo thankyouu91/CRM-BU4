@@ -104,6 +104,39 @@ test('Sàn: mua bán với NPC, phí, tác động giá, hàng tươi bị hư',
   assert.deepEqual(later.spoiled.map((s) => s.commodity), ['milk']);
 });
 
+test('Sàn: hạn mức NPC chung của thị trấn chặn việc dùng nhiều tài khoản để gom hàng', async () => {
+  const { MARKET, townNpcLots } = await import('../server/rules/market.js');
+  assert.equal(townNpcLots('cassava', 3), MARKET.townBaseLots);
+  assert.equal(townNpcLots('cassava', 40), 40 * MARKET.townLotsPerTrader);
+  assert.equal(townNpcLots('pearl', 3), MARKET.townBaseLots * MARKET.processedDepth);
+  assert.ok(MARKET.townLotsPerTrader < MARKET.npcDailyLots, 'tài khoản phụ nới hạn mức chung ít hơn phần riêng của nó');
+
+  const t = T0 + 2 * DAY + 5 * HOUR; // một ngày chưa ai mua sắn
+  const alts = Array.from({ length: 9 }, (_, i) => newPlayer(`gom_san_${i}`, 5000));
+  const view = market.marketView(alts[0].id, t).commodities.find((c) => c.id === 'cassava');
+  assert.equal(view.town.buy.total, MARKET.townBaseLots * 10);
+  const bought = [];
+  for (const alt of alts) {
+    try {
+      bought.push(market.placeOrder(alt.id, { commodity: 'cassava', side: 'buy', qty: MARKET.npcDailyLots * 10, type: 'market' }, t).filled);
+    } catch (err) {
+      assert.match(err.message, /hạn mức chung của cả thị trấn/);
+      bought.push(0);
+    }
+  }
+  assert.equal(bought.reduce((a, b) => a + b, 0), MARKET.townBaseLots * 10, 'cả thị trấn không mua quá hạn mức chung');
+  assert.deepEqual(bought.slice(0, 7), Array(7).fill(400));
+  assert.equal(bought[7], 200);
+  assert.equal(bought[8], 0);
+  const after = market.marketView(alts[8].id, t).commodities.find((c) => c.id === 'cassava');
+  assert.equal(after.town.buy.left, 0);
+  assert.equal(after.ownLeft.buy, 400);
+  assert.equal(after.npcLeft.buy, 0);
+  // Chiều bán và ngày hôm sau không bị ảnh hưởng.
+  assert.ok(after.town.sell.left > 0);
+  assert.equal(market.marketView(alts[8].id, t + DAY).commodities.find((c) => c.id === 'cassava').town.buy.left, view.town.buy.total);
+});
+
 test('Sàn: lệnh giới hạn ký quỹ, hủy thì hoàn; lệnh của người chơi khớp với nhau', () => {
   const t = T0 + 4 * HOUR;
   const price = market.currentPrices().sugar;

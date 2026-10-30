@@ -29,6 +29,10 @@ export const MARKET = {
   band: 0.15, // giá lệnh giới hạn phải nằm trong ±15% giá hiện tại
   matchBand: 0.2, // lệnh nằm ngoài ±20% giá hiện tại thì tạm không khớp
   npcDailyLots: 40, // mỗi người, mỗi loại hàng, mỗi chiều
+  // Hạn mức chung của cả thị trấn (mỗi loại hàng, mỗi chiều, mỗi ngày): tối thiểu townBaseLots, cộng townLotsPerTrader
+  // cho mỗi người đã giao dịch với NPC trong 7 ngày qua. Tài khoản phụ thêm 40 lô riêng nhưng chỉ nới hạn mức chung 15 lô.
+  townBaseLots: 300,
+  townLotsPerTrader: 15,
   newsPerDay: 0.8,
   newsLeadMs: 30 * 60_000,
   maxOrderLots: 100,
@@ -175,6 +179,10 @@ export const fillPrice = (quotePrice, lots, side, depth = MARKET.liquidity) =>
 
 /** Lãi/lỗ khi bán: `proceeds` tiền thu về (đã trừ phí), `basis` giá vốn; % so với vốn (vốn 0 thì null). */
 export const profitOf = (proceeds, basis) => ({ pnl: proceeds - basis, pct: basis > 0 ? (proceeds - basis) / basis : null });
+
+/** Hạn mức chung của thị trấn (lô) cho mặt hàng `id` khi có `traders` người giao dịch trong 7 ngày; hàng chế biến sâu hơn. */
+export const townNpcLots = (id, traders) =>
+  Math.max(MARKET.townBaseLots, traders * MARKET.townLotsPerTrader) * (COMMODITIES[id]?.kind === 'processed' ? MARKET.processedDepth : 1);
 
 /** Số lô làm giá mặt hàng dịch 100%. */
 export const depthOf = (id) => MARKET.liquidity * (COMMODITIES[id]?.kind === 'processed' ? MARKET.processedDepth : 1);
