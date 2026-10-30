@@ -192,7 +192,7 @@ export function renderBazaar(root, ctx) {
   function sellTab() {
     const mine = data.listings.filter((l) => l.mine);
     const notice = data.canSell ? ''
-      : `<p class="locked-note">⏳ Tài khoản cần đủ ${rules.minAccountDays} ngày tuổi mới bày bán được — mở lúc
+      : `<p class="locked-note">⏳ Tài khoản mới cần đủ ${rules.minAccountDays * 24} giờ mới bày bán được — mở lúc
           ${esc(new Date(data.sellFrom).toLocaleString('vi-VN', { hour: '2-digit', minute: '2-digit', day: '2-digit', month: '2-digit' }))}
           (còn ${until(data.sellFrom)}). Trong lúc chờ bạn vẫn mua được.</p>`;
     const full = data.open >= rules.maxListings
@@ -283,7 +283,7 @@ export function renderBazaar(root, ctx) {
         <li>Giá tự đặt trong khoảng <b>${pc(rules.band[0])}–${pc(rules.band[1])} giá tham chiếu</b> (giá cửa hàng, hoặc giá trị món nấu theo chất lượng).</li>
         <li>Phí đăng tin <b>${pc(rules.listFee)}</b> trả ngay và không hoàn; bán được thì trừ thêm <b>${pc(rules.saleFee)}</b> vào tiền bạn nhận.</li>
         <li>Tin còn <b>${rules.hours} giờ</b>. Hết hạn hoặc gỡ tin thì món về lại túi (món nấu đã hư thì mất).</li>
-        <li>Mỗi người bày tối đa <b>${rules.maxListings} món</b>; tài khoản cần đủ ${rules.minAccountDays} ngày tuổi mới được bày bán.</li>
+        <li>Mỗi người bày tối đa <b>${rules.maxListings} món</b>; tài khoản mới cần đủ ${rules.minAccountDays * 24} giờ mới được bày bán.</li>
         <li>Đồ chơi dùng mãi mãi chỉ mua được nếu bạn chưa có.</li>
         <li>Trang phục bán theo từng món, giữ nguyên cấp và dòng chỉ số; giá tham chiếu theo cấp (Xanh lam ×1, Xanh lục ×2, Vàng ×4, Đỏ ×8 giá cửa hàng).</li>
         <li>Hộp trang phục chưa mở cũng bày bán được: người mua chỉ biết các loại chỉ số có thể ra, cấp và % chỉ lộ khi mở. Giá tham chiếu tính như Xanh lam.</li>

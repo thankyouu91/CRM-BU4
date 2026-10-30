@@ -8,7 +8,7 @@ const ui = { selected: 'milk', range: 'day', side: 'buy', type: 'market', qty: '
 
 export function renderMarket(root, ctx) {
   root.innerHTML = `<div class="market-page">
-    ${viewHead('📈 Sàn Nguyên Liệu', 'Giá đổi mỗi 10 phút theo cung cầu và tin tức. 1 lô = 10 phần.', '<div class="wh-slot"></div>')}
+    ${viewHead('📈 Sàn Nguyên Liệu', 'Giá đổi mỗi 10 phút: 55% theo luật thị trường (tin tức, những pha tăng nóng, lao dốc, hỗn loạn không báo trước, cú sốt/sập giá bất ngờ), 45% theo lực mua bán của người chơi. 1 lô = 10 phần.', '<div class="wh-slot"></div>')}
     <div class="market-view"><div class="empty muted">Đang tải…</div></div></div>`;
   const page = root.querySelector('.market-page');
   const view = page.querySelector('.market-view');
@@ -24,16 +24,20 @@ export function renderMarket(root, ctx) {
     const c = priceOf(ui.selected);
     const lots = Number(ui.qty) || 0;
     if (!c || lots <= 0) return '';
-    const ref = ui.side === 'buy' ? c.ask : c.bid;
+    // Bán hàng không còn tươi thì NPC ép giá theo độ tươi bình quân của hàng trong kho.
+    const ref = ui.side === 'buy' ? c.ask : c.bid * (data.holdings[c.id]?.quality ?? 1);
     const depth = rules.liquidity * (commodities[c.id].kind === 'processed' ? rules.processedDepth : 1);
     const unit = ui.type === 'limit' && Number(ui.limit) > 0
       ? Number(ui.limit)
-      : ref * (1 + (ui.side === 'buy' ? 1 : -1) * (lots / depth / 2));
+      : ref * (1 + (ui.side === 'buy' ? 1 : -1) * rules.playerWeight * (lots / depth / 2));
     const amount = Math.round(lots * unit);
     const fee = Math.max(1, Math.round(amount * rules.fee));
-    return ui.side === 'buy'
-      ? `≈ ${fmt(amount)} + phí ${fmt(fee)} = <b>${fmt(amount + fee)} 🪙</b>`
-      : `≈ ${fmt(amount)} − phí ${fmt(fee)} = <b>${fmt(amount - fee)} 🪙</b>`;
+    if (ui.side === 'buy') return `≈ ${fmt(amount)} + phí ${fmt(fee)} = <b>${fmt(amount + fee)} 🪙</b>`;
+    // Bán: so với giá vốn bình quân của hàng trong kho.
+    const h = data.holdings[c.id];
+    const basis = h && h.avgCost ? Math.min(lots, h.qty / 10) * h.avgCost : 0;
+    const vs = h && lots <= h.qty / 10 + 1e-9 ? ` · ${profitHtml(amount - fee - basis, basis ? (amount - fee - basis) / basis : null)}` : '';
+    return `≈ ${fmt(amount)} − phí ${fmt(fee)} = <b>${fmt(amount - fee)} 🪙</b>${vs}`;
   }
 
   function boardRow(c) {
@@ -45,6 +49,7 @@ export function renderMarket(root, ctx) {
         <td class="num ${c.change >= 0 ? 'up' : 'down'}">${pct(c.change)}</td>
         <td class="spark-cell"><div class="spark" data-spark="${c.id}"></div></td>
         <td class="num muted">${c.held ? fmtLots(c.held) : '–'}</td>
+        <td class="num">${data.holdings[c.id] ? pnlCell(data.holdings[c.id]) : '<span class="muted">–</span>'}</td>
       </tr>`;
   }
 
@@ -62,13 +67,14 @@ export function renderMarket(root, ctx) {
         <div>
           <h3>${def.name}</h3>
           <small class="muted">${def.kind === 'processed' ? `Chế biến từ ${Object.entries(def.inputs).map(([i, n]) => `${n} lô ${commodities[i].name.toLowerCase()}`).join(', ')}` : 'Hàng thô'}
-            · ${def.shelfDays ? `hư sau ${def.shelfDays} ngày` : 'không hư'}</small>
+            · ${def.shelfDays ? `tươi ${def.shelfDays / 2} ngày đầu, kém tươi rồi sắp hư (NPC ép giá), hư sau ${def.shelfDays} ngày` : 'không hư'}</small>
         </div>
         <div class="mk-price">
           <b>${fmtPrice(c.price)}</b><span class="${c.change >= 0 ? 'up' : 'down'}">${pct(c.change)}</span>
           <small class="muted">mua ${fmtPrice(c.ask)} · bán ${fmtPrice(c.bid)}</small>
         </div>
       </header>
+      ${positionHtml(c)}
       <div class="seg range">
         <button class="${ui.range === 'day' ? 'current' : ''}" data-range="day">24 giờ</button>
         <button class="${ui.range === 'week' ? 'current' : ''}" data-range="week">7 ngày (nến giờ)</button>
@@ -102,16 +108,66 @@ export function renderMarket(root, ctx) {
       </form>` : `<p class="locked-note">🔒 Mở giao dịch khi có một bé đạt cấp ${ctx.catalog.unlocks.market}. Hàng câu được vẫn nằm an toàn trong kho.</p>`}`;
   }
 
+  /** "+12 🪙 (+8,5%)" tô xanh/đỏ; % null (hàng tự kiếm, vốn 0) thì chỉ ghi số xu. */
+  function profitHtml(pnl, pctValue) {
+    const cls = pnl > 0 ? 'up' : pnl < 0 ? 'down' : 'muted';
+    return `<span class="${cls}">${pnl >= 0 ? 'Lãi' : 'Lỗ'} ${pnl > 0 ? '+' : pnl < 0 ? '−' : ''}${fmt(Math.abs(pnl))} 🪙${pctValue === null ? '' : ` (${pct(pctValue)})`}</span>`;
+  }
+
+  const pnlCell = (h) => `<small>${profitHtml(h.pnl, h.pct)}</small>`;
+
+  /** Vị thế của mặt hàng đang xem: giá vốn bình quân, giá bán ngay, lãi/lỗ tạm tính nếu bán hết bây giờ. */
+  function positionHtml(c) {
+    const h = data.holdings[c.id];
+    if (!h) return '';
+    return `<div class="mk-position">
+      <span>Đang giữ <b>${fmtLots(h.qty)} lô</b></span>
+      <span>Giá vốn TB <b>${h.avgCost ? fmtPrice(h.avgCost) : '0'}</b>/lô</span>
+      <span>Bán ngay <b>${fmtPrice(c.bid * h.quality)}</b>/lô${h.quality < 0.999 ? ` <small class="down">(hàng kém tươi, NPC trả ${Math.round(h.quality * 100)}%)</small>` : ''}</span>
+      <span>Nếu bán hết: ${profitHtml(h.pnl, h.pct)}</span>
+    </div>`;
+  }
+
+  /** Tổng vốn đang nằm trong kho, lãi/lỗ tạm tính, lãi/lỗ đã chốt hôm nay và 7 ngày, các lần khớp gần đây. */
+  function bookHtml() {
+    const b = data.book;
+    const rate = (r) => (r.sells ? ` · ${r.wins}/${r.sells} lần bán có lãi` : '');
+    const rows = b.trades.map((t) => `
+      <tr>
+        <td class="muted">${ago(t.at)}</td>
+        <td><span class="badge ${t.side === 'buy' ? 'star' : ''}">${t.side === 'buy' ? 'Mua' : 'Bán'}</span> ${commodities[t.commodity].icon} ${fmtLots(t.qty)} lô</td>
+        <td class="num">${fmtPrice(t.price)}</td>
+        <td class="num">${t.side === 'sell' ? profitHtml(t.pnl, t.pct) : `<span class="muted">vốn ${fmt(t.cost)} 🪙</span>`}</td>
+      </tr>`).join('');
+    return `
+      <div class="mk-book-sum">
+        <div><small class="muted">Vốn trong kho</small><b>${fmt(b.cost)} 🪙</b></div>
+        <div><small class="muted">Bán ngay được</small><b>${fmt(b.value)} 🪙</b></div>
+        <div><small class="muted">Lãi/lỗ tạm tính</small><b>${profitHtml(Math.round(b.pnl), b.pct)}</b></div>
+        <div><small class="muted">Đã chốt hôm nay</small><b>${profitHtml(b.today.pnl, null)}</b><small class="muted">${rate(b.today)}</small></div>
+        <div><small class="muted">Đã chốt 7 ngày</small><b>${profitHtml(b.week.pnl, null)}</b><small class="muted">${rate(b.week)}</small></div>
+      </div>
+      ${rows ? `<div class="table-wrap"><table class="mk-trades">
+        <thead><tr><th>Lúc</th><th>Lệnh</th><th class="num">Giá/lô</th><th class="num">Lãi/lỗ</th></tr></thead>
+        <tbody>${rows}</tbody></table></div>` : '<p class="muted">Chưa có giao dịch nào.</p>'}
+      <p class="muted small">Giá vốn gồm cả phí mua; lãi/lỗ khi bán đã trừ phí bán và cộng thưởng trang phục. Hàng câu được, thu hoạch được tính vốn 0.</p>`;
+  }
+
   function holdingsHtml() {
     const entries = Object.entries(data.holdings);
     if (!entries.length) return '<p class="muted">Kho trống. Mua trên Sàn hoặc câu cá, hứng trân châu ở Khu vui chơi.</p>';
     return `<ul class="holdings">${entries.map(([id, h]) => {
       const def = commodities[id];
       const soonest = h.lots.map((l) => l.expiresAt).filter(Boolean).sort((a, b) => a - b)[0];
-      const value = (h.qty / 10) * priceOf(id).bid;
+      // Gộp các lô theo độ tươi: "8 lô Tươi · 2 lô Kém tươi".
+      const byFresh = {};
+      for (const l of h.lots) if (l.expiresAt) byFresh[l.freshness] = { name: l.freshnessName, qty: (byFresh[l.freshness]?.qty ?? 0) + l.qty };
+      const freshLine = Object.entries(byFresh).map(([k, f]) => `<span class="fresh fresh-${k}">${fmtLots(f.qty)} lô ${f.name}</span>`).join(' ');
       return `<li>
         <span class="mk-icon">${def.icon}</span>
-        <div><b>${def.name}</b> · ${fmtLots(h.qty)} lô <small class="muted">≈ ${fmt(value)} 🪙</small>
+        <div><b>${def.name}</b> · ${fmtLots(h.qty)} lô <small class="muted">≈ ${fmt(h.value)} 🪙</small>
+          <br><small class="muted">Vốn ${h.avgCost ? `${fmtPrice(h.avgCost)}/lô` : '0 (tự kiếm)'} · bán ngay ${fmtPrice(priceOf(id).bid * h.quality)}/lô</small> ${pnlCell(h)}
+          ${freshLine ? `<br><small>${freshLine}</small>` : ''}
           ${soonest ? `<br><small class="${soonest - Date.now() < 12 * 3600_000 ? 'down' : 'muted'}">Lô sớm nhất hư sau ${countdown(soonest - Date.now())}</small>` : ''}</div>
         ${canTrade ? `<button class="btn small" data-sell-all="${id}">Bán</button>` : ''}
       </li>`;
@@ -133,7 +189,7 @@ export function renderMarket(root, ctx) {
   function newsHtml() {
     if (!data.news.length) return '<p class="muted">Chưa có tin mới.</p>';
     return `<ul class="mk-news">${data.news.map((n) => `
-      <li><span>${commodities[n.commodity].icon}</span>
+      <li class="${n.flash ? 'flash' : ''}"><span>${commodities[n.commodity].icon}</span>
         <div>${esc(n.headline)} <span class="${n.up ? 'up' : 'down'}">${n.up ? '▲' : '▼'}</span>
           <br><small class="muted">${n.early ? '🧠 Tin sớm · ' : ''}${ago(n.at)}</small></div></li>`).join('')}</ul>
       ${data.smart ? '' : '<p class="muted small">Bé có Thông minh từ 60 sẽ đọc được tin sớm 30 phút.</p>'}`;
@@ -162,12 +218,13 @@ export function renderMarket(root, ctx) {
       <div class="market-grid">
         <section class="card mk-board">
           <div class="table-wrap"><table>
-            <thead><tr><th>Mặt hàng</th><th class="num">Giá/lô</th><th class="num">24 giờ</th><th></th><th class="num">Kho</th></tr></thead>
+            <thead><tr><th>Mặt hàng</th><th class="num">Giá/lô</th><th class="num">24 giờ</th><th></th><th class="num">Kho</th><th class="num">Lãi/lỗ</th></tr></thead>
             <tbody>${data.commodities.map(boardRow).join('')}</tbody>
           </table></div>
         </section>
         <section class="card mk-detail">${detail()}</section>
         <section class="card mk-side"><h3>🏚️ Kho hàng</h3>${holdingsHtml()}</section>
+        <section class="card mk-side mk-book"><h3>📒 Sổ lời lãi</h3>${bookHtml()}</section>
         <section class="card mk-side"><h3>⏳ Lệnh chờ</h3>${ordersHtml()}</section>
         <section class="card mk-side"><h3>📰 Tin thị trường</h3>${newsHtml()}</section>
       </div>`;

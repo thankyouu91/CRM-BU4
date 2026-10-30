@@ -1,27 +1,33 @@
 // Sàn Nguyên Liệu: giá chạy theo thời gian thực, kho theo lô, lệnh thị trường/giới hạn, NPC đứng giữa.
 import { db, getUser, listPets, setWarehouse, skillsOf, transaction } from './db.js';
 import { economy } from './bank.js';
-import { dayKey } from './clock.js';
+import { dayKey, startOfDay } from './clock.js';
 import { DAY, GameError, HOUR } from './game.js';
 import { chargeFee, post } from './ledger.js';
 import { tradeBonus } from './gear.js';
 import { windTradeBonus } from './strategic.js';
 import {
-  COMMODITIES, LOT, MARKET, RAW_FIRST, amountFor, depthOf, fillPrice, gaussian, impact, inBand, meanPrice,
-  quote, rollNews, shelfLife, stepDrift, stepPrice, tradeFee,
+  COMMODITIES, LOT, MARKET, RAW_FIRST, REGIMES, amountFor, blendPrice, decayPressure, depthOf, fillPrice, freshnessOf, gaussian, inBand,
+  jumpHeadline, meanPrice, profitOf, pushPressure, quote, rollJump, rollNews, shelfLife, stepDrift, stepPrice, stepRegime, tradeFee,
 } from './rules/market.js';
 
 const q = {
   states: db.prepare('SELECT * FROM commodity_state'),
   state: db.prepare('SELECT * FROM commodity_state WHERE commodity = ?'),
-  initState: db.prepare('INSERT OR IGNORE INTO commodity_state (commodity, price, drift, updated_at) VALUES (?, ?, 1, ?)'),
-  setState: db.prepare('UPDATE commodity_state SET price = ?, drift = ?, updated_at = ? WHERE commodity = ?'),
-  setPrice: db.prepare('UPDATE commodity_state SET price = ? WHERE commodity = ?'),
+  initState: db.prepare('INSERT OR IGNORE INTO commodity_state (commodity, price, drift, updated_at, rule_price) VALUES (?, ?, 1, ?, ?)'),
+  setState: db.prepare('UPDATE commodity_state SET price = ?, drift = ?, updated_at = ?, rule_price = ?, pressure = ?, regime = ? WHERE commodity = ?'),
+  setTrade: db.prepare('UPDATE commodity_state SET price = ?, pressure = ? WHERE commodity = ?'),
   addHistory: db.prepare('INSERT OR REPLACE INTO commodity_prices (commodity, at, price) VALUES (?, ?, ?)'),
   history: db.prepare('SELECT at, price FROM commodity_prices WHERE commodity = ? AND at >= ? ORDER BY at'),
   priceAt: db.prepare('SELECT price FROM commodity_prices WHERE commodity = ? AND at <= ? ORDER BY at DESC LIMIT 1'),
   pruneHistory: db.prepare('DELETE FROM commodity_prices WHERE at < ?'),
-  activeNews: db.prepare('SELECT effect FROM news WHERE commodity = ? AND starts_at <= ? AND ends_at > ?'),
+  activeNews: db.prepare('SELECT effect FROM news WHERE commodity = ? AND starts_at <= ? AND ends_at > ? AND flash = 0'),
+  insertFlash: db.prepare('INSERT INTO news (commodity, headline, effect, created_at, starts_at, ends_at, flash) VALUES (?, ?, ?, ?, ?, ?, 1)'),
+  insertTrade: db.prepare(`
+    INSERT INTO market_trades (user_id, commodity, side, qty, price, amount, fee, cost, pnl, at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`),
+  recentTrades: db.prepare('SELECT * FROM market_trades WHERE user_id = ? ORDER BY at DESC, id DESC LIMIT 15'),
+  realized: db.prepare("SELECT COALESCE(SUM(pnl), 0) AS pnl, COUNT(*) AS n, COALESCE(SUM(CASE WHEN pnl > 0 THEN 1 ELSE 0 END), 0) AS wins FROM market_trades WHERE user_id = ? AND side = 'sell' AND at >= ?"),
+  pruneTrades: db.prepare('DELETE FROM market_trades WHERE at < ?'),
   insertNews: db.prepare('INSERT INTO news (commodity, headline, effect, created_at, starts_at, ends_at) VALUES (?, ?, ?, ?, ?, ?)'),
   recentNews: db.prepare('SELECT * FROM news WHERE created_at >= ? ORDER BY created_at DESC LIMIT 60'),
 
@@ -61,7 +67,7 @@ const memoFor = (id, qty, price) => `${lotsText(qty)} lô ${COMMODITIES[id].name
 
 export function initMarket(now = Date.now()) {
   for (const [id, c] of Object.entries(COMMODITIES)) {
-    q.initState.run(id, c.base, now);
+    q.initState.run(id, c.base, now, c.base);
     q.addHistory.run(id, now, q.state.get(id).price);
   }
 }
@@ -99,7 +105,10 @@ export function addGoods(userId, commodity, qty, now = Date.now(), { expiresAt =
   return take;
 }
 
-/** Lấy hàng ra theo thứ tự sắp hư trước; trả về hạn dùng sớm nhất và giá vốn bình quân mỗi phần của phần lấy ra. */
+/**
+ * Lấy hàng ra theo thứ tự sắp hư trước; trả về hạn dùng sớm nhất, giá vốn bình quân mỗi phần
+ * và hệ số độ tươi bình quân (1 = tươi; kém tươi, sắp hư thì thấp hơn) của phần lấy ra.
+ */
 function takeGoods(userId, commodity, qty, now) {
   purge(userId, now);
   const lots = q.lotsOf.all(userId, commodity);
@@ -108,16 +117,18 @@ function takeGoods(userId, commodity, qty, now) {
   let left = qty;
   let earliest = null;
   let basis = 0;
+  let quality = 0;
   for (const lot of lots) {
     if (!left) break;
     const take = Math.min(lot.qty, left);
     left -= take;
     basis += take * lot.cost;
+    quality += take * freshnessOf(commodity, lot.expires_at, now).factor;
     if (lot.expires_at && (earliest === null || lot.expires_at < earliest)) earliest = lot.expires_at;
     if (take === lot.qty) q.deleteLot.run(lot.id);
     else q.setLotQty.run(lot.qty - take, lot.id);
   }
-  return { expiresAt: earliest, cost: qty ? basis / qty : 0 };
+  return { expiresAt: earliest, cost: qty ? basis / qty : 0, quality: qty ? quality / qty : 1 };
 }
 
 /** Ghi lãi (hoặc lỗ) đã chốt khi bán hàng, để quyết toán thuế cuối ngày. */
@@ -152,7 +163,7 @@ export function upgradeWarehouse(userId, now = Date.now()) {
 /** Số phần tối đa khớp với NPC mà giá bình quân vẫn không vượt giới hạn. */
 function npcQtyWithin(commodity, ref, limit, side) {
   const room = side === 'buy' ? limit / ref - 1 : 1 - limit / ref;
-  return room <= 0 ? 0 : Math.floor(room * 2 * depthOf(commodity) * LOT);
+  return room <= 0 ? 0 : Math.floor((room * 2 * depthOf(commodity) * LOT) / MARKET.playerWeight);
 }
 
 function npcLeft(userId, day, commodity, side) {
@@ -167,16 +178,17 @@ function settleResting(order, qty, price, now, goodsExpiry = null) {
   const memo = memoFor(order.commodity, qty, price);
   if (order.side === 'sell') {
     post({ userId: order.user_id, delta: amount, kind: 'market_sell', memo, now });
-    tradeBonus(order.user_id, amount, `Bán trên Sàn: ${memo}`, now);
-    windTradeBonus(order.user_id, amount, `Bán trên Sàn: ${memo}`, now);
+    const bonus = tradeBonus(order.user_id, amount, `Bán trên Sàn: ${memo}`, now) + windTradeBonus(order.user_id, amount, `Bán trên Sàn: ${memo}`, now);
     chargeFee(order.user_id, Math.min(fee, amount), 'Phí bán trên Sàn', now);
     recordGain(order.user_id, amount - Math.min(fee, amount) - qty * order.goods_cost, now);
+    logTrade(order.user_id, order.commodity, 'sell', qty, price, amount, Math.min(fee, amount), qty * order.goods_cost, bonus, now);
   } else {
     const charge = Math.min(amount + fee, order.locked);
     const spent = Math.min(amount, charge);
     post({ userId: order.user_id, delta: charge, kind: 'escrow_release', memo, now });
     post({ userId: order.user_id, delta: -spent, kind: 'market_buy', memo, now });
     chargeFee(order.user_id, charge - spent, 'Phí mua trên Sàn', now);
+    logTrade(order.user_id, order.commodity, 'buy', qty, price, spent, charge - spent, charge, 0, now);
     order.locked -= charge;
     q.addLot.run(order.user_id, order.commodity, qty, now, goodsExpiry ?? shelfLife(order.commodity, now), price / LOT);
   }
@@ -219,7 +231,8 @@ export function placeOrder(userId, order, now = Date.now()) {
     }
     let goodsExpiry = null;
     let goodsCost = 0;
-    if (side === 'sell') ({ expiresAt: goodsExpiry, cost: goodsCost } = takeGoods(userId, commodity, qty, now));
+    let quality = 1;
+    if (side === 'sell') ({ expiresAt: goodsExpiry, cost: goodsCost, quality } = takeGoods(userId, commodity, qty, now));
     else if (qty > freeSpace(userId)) throw new GameError('Kho không đủ chỗ cho lượng hàng này.');
 
     const fills = [];
@@ -238,14 +251,14 @@ export function placeOrder(userId, order, now = Date.now()) {
     }
 
     if (remaining) {
-      const ref = side === 'buy' ? ask : bid;
+      // NPC ép giá hàng kém tươi / sắp hư theo độ tươi bình quân của phần đem bán.
+      const ref = side === 'buy' ? ask : bid * quality;
       let npcQty = Math.min(remaining, npcLeft(userId, day, commodity, side));
       if (limit !== null) npcQty = Math.min(npcQty, npcQtyWithin(commodity, ref, limit, side));
       if (npcQty > 0) {
         fills.push({ qty: npcQty, price: fillPrice(ref, npcQty / LOT, side, depthOf(commodity)), expiresAt: side === 'buy' ? shelfLife(commodity, now) : null });
         q.addFlow.run(userId, day, commodity, side === 'buy' ? npcQty : 0, side === 'sell' ? npcQty : 0);
-        price = impact(price, npcQty / LOT, side, depthOf(commodity));
-        q.setPrice.run(price, commodity);
+        price = applyNpcTrade(commodity, npcQty / LOT, side);
         remaining -= npcQty;
       }
     }
@@ -254,16 +267,18 @@ export function placeOrder(userId, order, now = Date.now()) {
     const amount = fills.reduce((sum, f) => sum + amountFor(f.qty, f.price), 0);
     const fee = tradeFee(amount);
     const memo = filled ? memoFor(commodity, filled, amount / (filled / LOT)) : '';
+    let profit = null;
     if (filled && side === 'buy') {
       post({ userId, delta: -amount, kind: 'market_buy', memo, now });
       chargeFee(userId, fee, 'Phí mua trên Sàn', now);
       for (const f of fills) q.addLot.run(userId, commodity, f.qty, now, f.expiresAt, (f.price * (1 + MARKET.fee)) / LOT);
+      logTrade(userId, commodity, 'buy', filled, amount / (filled / LOT), amount, fee, amount + fee, 0, now);
     } else if (filled) {
       post({ userId, delta: amount, kind: 'market_sell', memo, now });
-      tradeBonus(userId, amount, `Bán trên Sàn: ${memo}`, now);
-      windTradeBonus(userId, amount, `Bán trên Sàn: ${memo}`, now);
+      const bonus = tradeBonus(userId, amount, `Bán trên Sàn: ${memo}`, now) + windTradeBonus(userId, amount, `Bán trên Sàn: ${memo}`, now);
       chargeFee(userId, Math.min(fee, amount), 'Phí bán trên Sàn', now);
       recordGain(userId, amount - Math.min(fee, amount) - filled * goodsCost, now);
+      profit = logTrade(userId, commodity, 'sell', filled, amount / (filled / LOT), amount, Math.min(fee, amount), filled * goodsCost, bonus, now);
     }
 
     let orderId = null;
@@ -279,9 +294,11 @@ export function placeOrder(userId, order, now = Date.now()) {
     const verb = side === 'buy' ? 'Mua' : 'Bán';
     const parts = [];
     if (filled) parts.push(`${verb} ${lotsText(filled)} lô ${COMMODITIES[commodity].name}, ${side === 'buy' ? 'trả' : 'nhận'} ${amount} 🪙 (phí ${fee})`);
+    if (side === 'sell' && quality < 0.999 && filled) parts.push(`Hàng không còn tươi nên NPC chỉ trả ${Math.round(quality * 100)}% giá`);
+    if (profit) parts.push(profitText(profit));
     if (orderId) parts.push(`${lotsText(remaining)} lô đang chờ khớp ở giá ${limit.toFixed(1)}`);
     else if (remaining) parts.push(`${lotsText(remaining)} lô chưa khớp, đã trả lại kho`);
-    return { message: parts.join('. '), filled, amount, fee, orderId };
+    return { message: parts.join('. '), filled, amount, fee, orderId, profit };
   });
 }
 
@@ -317,41 +334,82 @@ function matchRestingWithNpc(now) {
   for (const order of q.openOrders.all()) {
     const price = q.state.get(order.commodity).price;
     const { bid, ask } = quote(price);
-    const ref = order.side === 'buy' ? ask : bid;
+    const ref = order.side === 'buy' ? ask : bid * freshnessOf(order.commodity, order.goods_expires_at, now).factor;
     let qty = Math.min(order.qty - order.filled, npcLeft(order.user_id, day, order.commodity, order.side));
     qty = Math.min(qty, npcQtyWithin(order.commodity, ref, order.limit_price, order.side));
     if (qty <= 0) continue;
     settleResting(order, qty, fillPrice(ref, qty / LOT, order.side, depthOf(order.commodity)), now);
     q.addFlow.run(order.user_id, day, order.commodity, order.side === 'buy' ? qty : 0, order.side === 'sell' ? qty : 0);
-    q.setPrice.run(impact(price, qty / LOT, order.side, depthOf(order.commodity)), order.commodity);
+    applyNpcTrade(order.commodity, qty / LOT, order.side);
   }
 }
 
 // ---------------------------------------------------------------- nhịp giá
 
-/** Một nhịp 10 phút: tin tức mới, giá trung bình, bước giá, rồi khớp lệnh chờ. */
+/**
+ * Một nhịp 10 phút. Phần luật game (55%): tin tức, pha thị trường ẩn, độ trôi, bước giá, cú sốt/sập giá.
+ * Phần người chơi (45%): áp lực mua bán phai dần. Giá niêm yết ghép hai phần, rồi khớp lệnh chờ.
+ */
 export function marketTick(now, rand = Math.random) {
   transaction(() => {
     const states = Object.fromEntries(q.states.all().map((s) => [s.commodity, s]));
     const prices = Object.fromEntries(Object.entries(states).map(([id, s]) => [id, s.price]));
     const { priceIndex } = economy();
     for (const id of RAW_FIRST) {
+      const st = states[id];
+      const raw = COMMODITIES[id].kind === 'raw';
       if (rand() < (MARKET.newsPerDay * MARKET.tickMs) / DAY) {
         const n = rollNews(id, now, rand);
         q.insertNews.run(n.commodity, n.headline, n.effect, n.created_at, n.starts_at, n.ends_at);
       }
       const news = q.activeNews.all(id, now, now).reduce((m, n) => m * (1 + n.effect), 1);
-      const drift = COMMODITIES[id].kind === 'raw' ? stepDrift(states[id].drift, MARKET.tickMs, gaussian(rand)) : 1;
+      const regime = raw ? stepRegime(st.regime, MARKET.tickMs, rand) : 'calm';
+      const drift = raw ? stepDrift(st.drift, MARKET.tickMs, gaussian(rand), REGIMES[regime].trend) : 1;
       const mean = meanPrice(id, { prices, drift, index: priceIndex, news });
-      prices[id] = stepPrice(id, prices[id], mean, MARKET.tickMs, gaussian(rand));
-      q.setState.run(prices[id], drift, now, id);
+      let rule = stepPrice(id, st.rule_price ?? st.price, mean, MARKET.tickMs, gaussian(rand), REGIMES[regime].vol);
+      const jump = raw ? rollJump(MARKET.tickMs, rand) : null;
+      if (jump) {
+        rule = blendPrice(id, rule * (1 + jump.size), 0); // nhảy tức thì, vẫn trong khoảng sàn–trần
+        q.insertFlash.run(id, jumpHeadline(id, jump.up), jump.size, now, now, now + 3 * HOUR);
+      }
+      const pressure = decayPressure(st.pressure ?? 0, MARKET.tickMs);
+      prices[id] = blendPrice(id, rule, pressure);
+      q.setState.run(prices[id], drift, now, rule, pressure, regime, id);
       q.addHistory.run(id, now, prices[id]);
     }
     matchRestingWithNpc(now);
   });
 }
 
-export const pruneHistory = (before) => q.pruneHistory.run(before);
+/** Khớp `lots` lô với NPC: dồn áp lực mua bán, giá niêm yết đổi theo phần 45% của người chơi. Trả về giá mới. */
+function applyNpcTrade(commodity, lots, side) {
+  const s = q.state.get(commodity);
+  const pressure = pushPressure(s.pressure ?? 0, lots, side, depthOf(commodity));
+  const price = blendPrice(commodity, s.rule_price ?? s.price, pressure);
+  q.setTrade.run(price, pressure, commodity);
+  return price;
+}
+
+/** Ghi một lần khớp vào sổ giao dịch; bán thì tính lãi/lỗ (tiền về sau phí, cộng thưởng trang phục, trừ giá vốn). */
+function logTrade(userId, commodity, side, qty, pricePerLot, amount, fee, cost, bonus, now) {
+  if (side === 'buy') {
+    q.insertTrade.run(userId, commodity, 'buy', qty, pricePerLot, amount, fee, cost, null, now);
+    return null;
+  }
+  const profit = profitOf(amount - fee + (bonus ?? 0), cost);
+  q.insertTrade.run(userId, commodity, 'sell', qty, pricePerLot, amount, fee, cost, profit.pnl, now);
+  return profit;
+}
+
+const signed = (n) => `${n >= 0 ? '+' : '−'}${Math.abs(Math.round(n)).toLocaleString('vi-VN')}`;
+const profitText = ({ pnl, pct }) => (pct === null
+  ? `Hàng không tốn vốn: lãi ${signed(pnl)} 🪙`
+  : `${pnl >= 0 ? 'Lãi' : 'Lỗ'} ${signed(pnl)} 🪙 (${signed(pct * 100)}% so với giá vốn)`);
+
+export function pruneHistory(before) {
+  q.pruneHistory.run(before);
+  q.pruneTrades.run(before - 16 * DAY); // sổ giao dịch giữ 30 ngày
+}
 
 // ---------------------------------------------------------------- đọc
 
@@ -364,9 +422,28 @@ export function marketView(userId, now = Date.now()) {
   const day = dayKey(now);
   const holdings = {};
   for (const lot of q.lots.all(userId)) {
-    const h = (holdings[lot.commodity] ??= { qty: 0, lots: [] });
+    const h = (holdings[lot.commodity] ??= { qty: 0, lots: [], basis: 0 });
+    const fresh = freshnessOf(lot.commodity, lot.expires_at, now);
     h.qty += lot.qty;
-    h.lots.push({ qty: lot.qty, expiresAt: lot.expires_at });
+    h.basis += lot.qty * lot.cost;
+    h.quality = (h.quality ?? 0) + lot.qty * fresh.factor;
+    h.lots.push({ qty: lot.qty, expiresAt: lot.expires_at, freshness: fresh.key, freshnessName: fresh.name, factor: fresh.factor });
+  }
+  for (const h of Object.values(holdings)) h.quality = h.qty ? h.quality / h.qty : 1;
+  const statesNow = Object.fromEntries(q.states.all().map((s) => [s.commodity, s]));
+  let bookCost = 0;
+  let bookValue = 0;
+  for (const [id, h] of Object.entries(holdings)) {
+    // Giá vốn bình quân mỗi lô, giá trị nếu bán ngay cho NPC (giá mua vào, trừ phí), lãi/lỗ tạm tính.
+    const value = (h.qty / LOT) * quote(statesNow[id].price).bid * h.quality;
+    const net = value - tradeFee(Math.round(value));
+    h.avgCost = h.qty ? (h.basis / h.qty) * LOT : 0;
+    h.pct = profitOf(net, h.basis).pct;
+    h.value = Math.round(net);
+    h.basis = Math.round(h.basis);
+    h.pnl = h.value - h.basis; // khớp đúng với hai số đang hiện
+    bookCost += h.basis;
+    bookValue += h.value;
   }
   const commodities = q.states.all().map((s) => {
     const { bid, ask } = quote(s.price);
@@ -387,11 +464,24 @@ export function marketView(userId, now = Date.now()) {
   const news = q.recentNews.all(now - 2 * DAY)
     .filter((n) => n.commodity && (n.starts_at <= now || (smart && n.created_at <= now)))
     .slice(0, 12)
-    .map((n) => ({ id: n.id, commodity: n.commodity, headline: n.headline, up: n.effect > 0, at: n.created_at, early: n.starts_at > now }));
+    .map((n) => ({ id: n.id, commodity: n.commodity, headline: n.headline, up: n.effect > 0, at: n.created_at, early: n.starts_at > now, flash: Boolean(n.flash) }));
   const user = getUser(userId);
+  const today = q.realized.get(userId, startOfDay(day));
+  const week = q.realized.get(userId, now - 7 * DAY);
   return {
     commodities,
     holdings,
+    book: {
+      cost: bookCost,
+      value: bookValue,
+      ...profitOf(bookValue, bookCost),
+      today: { pnl: Math.round(today.pnl), sells: today.n, wins: today.wins },
+      week: { pnl: Math.round(week.pnl), sells: week.n, wins: week.wins },
+      trades: q.recentTrades.all(userId).map((t) => ({
+        id: t.id, commodity: t.commodity, side: t.side, qty: t.qty, price: t.price, amount: t.amount, fee: t.fee,
+        cost: Math.round(t.cost), pnl: t.pnl === null ? null : Math.round(t.pnl), pct: t.side === 'sell' && t.cost > 0 ? t.pnl / t.cost : null, at: t.at,
+      })),
+    },
     news,
     smart,
     orders: q.myOrders.all(userId).map((o) => ({
@@ -422,13 +512,15 @@ export function priceHistory(commodity, range, now = Date.now()) {
   return [...candles.values()];
 }
 
-/** Giá trị hàng trong kho và trong lệnh bán đang chờ, tính theo giá NPC mua vào. */
-export function goodsValue(userId) {
+/** Giá trị hàng trong kho và trong lệnh bán đang chờ, tính theo giá NPC mua vào (đã trừ phần ép giá hàng kém tươi). */
+export function goodsValue(userId, now = Date.now()) {
   const prices = currentPrices();
   let value = 0;
-  for (const lot of q.lots.all(userId)) value += (lot.qty / LOT) * quote(prices[lot.commodity]).bid;
+  for (const lot of q.lots.all(userId)) {
+    value += (lot.qty / LOT) * quote(prices[lot.commodity]).bid * freshnessOf(lot.commodity, lot.expires_at, now).factor;
+  }
   for (const o of q.myOrders.all(userId)) {
-    if (o.side === 'sell') value += ((o.qty - o.filled) / LOT) * quote(prices[o.commodity]).bid;
+    if (o.side === 'sell') value += ((o.qty - o.filled) / LOT) * quote(prices[o.commodity]).bid * freshnessOf(o.commodity, o.goods_expires_at, now).factor;
   }
   return Math.round(value);
 }
