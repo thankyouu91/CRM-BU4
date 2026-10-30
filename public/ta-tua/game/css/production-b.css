@@ -135,7 +135,7 @@
 }
 .bazaar-icon.small { font-size: 1.4rem; width: 40px; height: 40px; border-radius: 12px; }
 .bazaar-info { display: grid; gap: 2px; min-width: 0; }
-.bazaar-info b { font-size: 1.02rem; text-wrap: balance; overflow-wrap: anywhere; }
+.bazaar-info b { font-size: 1.02rem; text-wrap: balance; overflow-wrap: break-word; }
 .bazaar-info small { font-size: .78rem; }
 .bazaar-price { display: grid; justify-items: end; gap: 4px; text-align: right; }
 .bazaar-price > b { font-family: var(--font-display); font-size: 1.3rem; line-height: 1; }

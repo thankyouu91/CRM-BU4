@@ -42,7 +42,7 @@ export function renderBank(root, ctx) {
           <div class="term-options">
             ${b.terms.map((t) => `
               <button class="term ${t.days === term ? 'current' : ''}" data-term="${t.days}">
-                <b>${t.days} ngày</b><span>${pct(t.rate, 2, false)}/ngày</span><small>cả kỳ ${pct(t.rate * t.days, 1, false)}</small>
+                <b>${t.days} ngày</b><span>${pct(t.rate, 2, false)}<wbr>/ngày</span><small>cả kỳ ${pct(t.rate * t.days, 1, false)}</small>
               </button>`).join('')}
           </div>
           <form class="money-form" data-form="deposit">
