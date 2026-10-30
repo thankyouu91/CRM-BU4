@@ -557,6 +557,99 @@ addColumn('users', 'locked_slots', 'INTEGER NOT NULL DEFAULT 0');
   `);
   // Sau khi đã có bảng gear: hộp mua ở Siêu thị chưa mở thì chưa lộ dòng chỉ số.
   addColumn('gear', 'sealed', 'INTEGER NOT NULL DEFAULT 0');
+
+  // ---- Gia tộc & Sở Nhà Đất (clans.js, macro.js) ----
+  db.exec(`
+  CREATE TABLE IF NOT EXISTS clans (
+    id            INTEGER PRIMARY KEY AUTOINCREMENT,
+    name          TEXT NOT NULL UNIQUE COLLATE NOCASE,
+    emblem        TEXT NOT NULL,
+    color         TEXT NOT NULL,
+    leader_id     INTEGER NOT NULL,
+    xp            INTEGER NOT NULL DEFAULT 0,
+    declare_ratio REAL NOT NULL DEFAULT 1, -- phần doanh thu gia tộc tự khai báo để tính thuế
+    created_at    INTEGER NOT NULL,
+    dissolved_at  INTEGER
+  );
+  CREATE TABLE IF NOT EXISTS clan_members (
+    user_id   INTEGER PRIMARY KEY,
+    clan_id   INTEGER NOT NULL,
+    role      TEXT NOT NULL DEFAULT 'member', -- 'leader' | 'elder' | 'member'
+    donated   INTEGER NOT NULL DEFAULT 0,
+    joined_at INTEGER NOT NULL
+  );
+  CREATE INDEX IF NOT EXISTS clan_members_clan ON clan_members(clan_id);
+  CREATE TABLE IF NOT EXISTS clan_donations (
+    clan_id INTEGER NOT NULL,
+    user_id INTEGER NOT NULL,
+    week    TEXT NOT NULL,
+    amount  INTEGER NOT NULL DEFAULT 0,
+    PRIMARY KEY (clan_id, user_id, week)
+  );
+  CREATE TABLE IF NOT EXISTS clan_industries (
+    clan_id    INTEGER NOT NULL,
+    industry   TEXT NOT NULL,
+    fee        INTEGER NOT NULL,
+    entered_at INTEGER NOT NULL,
+    PRIMARY KEY (clan_id, industry)
+  );
+  -- 200 lô đất cố định (bản đồ sinh theo hạt giống trong js/shared/clan.js); clan_id trống = còn trong quỹ đất.
+  CREATE TABLE IF NOT EXISTS land_plots (
+    id             INTEGER PRIMARY KEY,
+    clan_id        INTEGER,
+    industry       TEXT,
+    bought_at      INTEGER,
+    bought_price   INTEGER,
+    index_at_buy   REAL,
+    design         TEXT NOT NULL DEFAULT '[]',
+    design_spent   INTEGER NOT NULL DEFAULT 0,
+    price_override INTEGER
+  );
+  CREATE INDEX IF NOT EXISTS land_plots_clan ON land_plots(clan_id);
+  CREATE TABLE IF NOT EXISTS clan_days (
+    clan_id  INTEGER NOT NULL,
+    day      TEXT NOT NULL,
+    revenue  INTEGER NOT NULL DEFAULT 0,
+    declared INTEGER NOT NULL DEFAULT 0,
+    rate     REAL NOT NULL DEFAULT 0,
+    tax      INTEGER NOT NULL DEFAULT 0,
+    upkeep   INTEGER NOT NULL DEFAULT 0,
+    PRIMARY KEY (clan_id, day)
+  );
+  CREATE TABLE IF NOT EXISTS clan_tax_refunds (
+    clan_id    INTEGER NOT NULL,
+    month      TEXT NOT NULL,
+    taxed      INTEGER NOT NULL,
+    refund     INTEGER NOT NULL,
+    created_at INTEGER NOT NULL,
+    PRIMARY KEY (clan_id, month)
+  );
+  -- Hồ sơ trốn thuế: chỉ Sở thuế (bảng quản trị) thấy, gia tộc không được báo.
+  CREATE TABLE IF NOT EXISTS tax_evasion (
+    id          INTEGER PRIMARY KEY AUTOINCREMENT,
+    clan_id     INTEGER NOT NULL,
+    day         TEXT NOT NULL,
+    revenue     INTEGER NOT NULL,
+    declared    INTEGER NOT NULL,
+    rate        REAL NOT NULL,
+    evaded      INTEGER NOT NULL,
+    status      TEXT NOT NULL DEFAULT 'open', -- 'open' | 'collected' | 'dismissed'
+    collected   INTEGER NOT NULL DEFAULT 0,
+    resolved_by TEXT,
+    resolved_at INTEGER,
+    created_at  INTEGER NOT NULL,
+    UNIQUE (clan_id, day)
+  );
+  CREATE TABLE IF NOT EXISTS macro_days (
+    day        TEXT PRIMARY KEY,
+    phase      TEXT NOT NULL,
+    weather    TEXT NOT NULL,
+    land_index REAL NOT NULL,
+    gdp        REAL NOT NULL,
+    demand     TEXT NOT NULL,
+    created_at INTEGER NOT NULL
+  );
+  `);
 }
 
 const q = {

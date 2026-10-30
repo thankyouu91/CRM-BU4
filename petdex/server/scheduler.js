@@ -2,6 +2,7 @@
 // Lưu mốc lần chạy cuối, nên server tắt một thời gian thì bật lên vẫn chạy bù.
 import { centralBankWeek, settleBankDay } from './bank.js';
 import { settleBusinessDay } from './business.js';
+import { settleClansDay } from './clans.js';
 import { expireListings } from './bazaar.js';
 import { settleCareDay } from './care.js';
 import { settleContractsDay } from './contracts.js';
@@ -19,7 +20,8 @@ import { snapshotNetWorth } from './wallet.js';
 const MAX_CATCH_UP = 3 * DAY;
 
 /**
- * Đóng sổ một ngày theo thứ tự cố định: quầy (bán bù + tiền thuê), xưởng (chạy bù + thuê đất), sức khỏe và bảo hiểm, vòng đời (bé hết tuổi thọ),
+ * Đóng sổ một ngày theo thứ tự cố định: quầy (bán bù + tiền thuê), xưởng (chạy bù + thuê đất), gia tộc (doanh thu đất, thuế
+ * doanh nghiệp, hoàn thuế cuối tháng, vĩ mô ngày mai), sức khỏe và bảo hiểm, vòng đời (bé hết tuổi thọ),
  * giao hàng hợp đồng, lãi ngân hàng, trả góp khoản vay, thuế thu nhập, hết hạn lệnh và tin Chợ Phiên, chụp tài sản.
  * Chủ nhật thì thêm Ngân hàng Trung ương và kết quả bỏ phiếu của Tòa thị chính.
  */
@@ -27,6 +29,7 @@ export function closeDay(day, rand = Math.random) {
   const end = startOfDay(nextDay(day));
   settleBusinessDay(day, rand);
   settleFactoryDay(day, rand);
+  settleClansDay(day, rand);
   settleCareDay(day, end, rand);
   settleLifeDay(day);
   settleContractsDay(day);

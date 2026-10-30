@@ -14,6 +14,7 @@ import { Drawer } from "@/components/ui/modal";
 import { api } from "@/lib/client";
 import { cn } from "@/lib/utils";
 import { inviteUrl, passwordUrl, playUrl } from "@/lib/petdex-public";
+import { ClansTab } from "./clans";
 import { GearConfigTab, GiftCodesTab, PlayerGear, type GearView, type Wearable } from "./gear";
 import { ADMIN, errorText, Failure, useLoad, when } from "./shared";
 
@@ -28,6 +29,7 @@ const TABS = [
   { key: "players", label: "Người chơi" },
   { key: "gear", label: "Trang phục & rớt đồ" },
   { key: "gifts", label: "Mã quà" },
+  { key: "clans", label: "Gia tộc & Đất" },
   { key: "invites", label: "Link mời khách" },
   { key: "log", label: "Nhật ký" },
 ] as const;
@@ -128,7 +130,7 @@ export function Board() {
     <div>
       <PageHeader
         title="Quản lý Pet Town"
-        description="Người chơi, xu, chỉ số thú cưng, trang phục, mã quà, link mời khách và nhật ký. Mọi thay đổi đều ghi vào nhật ký hệ thống."
+        description="Người chơi, xu, chỉ số thú cưng, trang phục, mã quà, gia tộc và đất, link mời khách và nhật ký. Mọi thay đổi đều ghi vào nhật ký hệ thống."
         actions={
           <Link href="/ta-tua" className="inline-flex h-8 items-center gap-1.5 rounded-md border bg-card px-2.5 text-xs font-medium hover:bg-muted">
             <Gamepad2 className="h-4 w-4" /> Vào chơi
@@ -152,6 +154,7 @@ export function Board() {
       {tab === "players" && <PlayersTab />}
       {tab === "gear" && <GearConfigTab />}
       {tab === "gifts" && <GiftCodesTab />}
+      {tab === "clans" && <ClansTab />}
       {tab === "invites" && <InvitesTab />}
       {tab === "log" && <LogTab />}
     </div>
@@ -765,7 +768,7 @@ function InvitesTab() {
   );
 }
 
-const LOG_LABEL: Record<string, string> = { coins: "Cộng/trừ xu", pet: "Sửa chỉ số bé", pet_grant: "Tặng thú cưng", ban: "Khoá", unban: "Mở khoá", rename: "Đổi tên", invite: "Tạo link mời", invite_revoke: "Thu hồi link", password_link: "Tạo link đặt mật khẩu", password_set: "Đặt mật khẩu qua link", gear_config: "Chỉnh tỷ lệ trang phục", gear_grant: "Tặng trang phục", gear_edit: "Sửa trang phục", gear_delete: "Xoá trang phục", gift_code: "Tạo mã quà", gift_code_revoke: "Thu hồi mã quà" };
+const LOG_LABEL: Record<string, string> = { coins: "Cộng/trừ xu", pet: "Sửa chỉ số bé", pet_grant: "Tặng thú cưng", ban: "Khoá", unban: "Mở khoá", rename: "Đổi tên", invite: "Tạo link mời", invite_revoke: "Thu hồi link", password_link: "Tạo link đặt mật khẩu", password_set: "Đặt mật khẩu qua link", gear_config: "Chỉnh tỷ lệ trang phục", gear_grant: "Tặng trang phục", gear_edit: "Sửa trang phục", gear_delete: "Xoá trang phục", gift_code: "Tạo mã quà", gift_code_revoke: "Thu hồi mã quà", clan_config: "Chỉnh luật gia tộc & giá đất", land_price: "Đặt giá lô đất", macro: "Chỉnh kinh tế vĩ mô", tax_evasion: "Sở thuế: phát hiện khai thiếu", tax_collect: "Truy thu thuế", tax_dismiss: "Bỏ qua hồ sơ thuế" };
 const TIER_LABEL: Record<string, string> = { blue: "Xanh lam", green: "Xanh lục", gold: "Vàng", red: "Đỏ" };
 const AFFIX_LABEL: Record<string, string> = { income: "thu nhập", stats: "chỉ số", trade: "giao dịch", luck: "may mắn" };
 const affixList = (a: unknown) => Object.entries((a as Record<string, number>) ?? {}).map(([k, v]) => `+${v}% ${AFFIX_LABEL[k] ?? k}`).join(", ");
@@ -787,6 +790,11 @@ function LogTab() {
       const to = (d.to ?? {}) as { tier?: string; affixes?: unknown };
       return `#${String(d.gearId ?? "")} ${TIER_LABEL[String(from.tier)] ?? ""} (${affixList(from.affixes)}) → ${TIER_LABEL[String(to.tier)] ?? ""} (${affixList(to.affixes)})`;
     }
+    if (row.action === "tax_evasion") return `${String(d.clan ?? "")} ngày ${String(d.day ?? "")}: doanh thu ${Number(d.revenue).toLocaleString("vi-VN")}, khai ${Number(d.declared).toLocaleString("vi-VN")}, trốn ${Number(d.evaded).toLocaleString("vi-VN")} xu thuế`;
+    if (row.action === "tax_collect") return `Hồ sơ #${String(d.evasionId ?? "")}: thu ${Number(d.collected ?? 0).toLocaleString("vi-VN")} xu`;
+    if (row.action === "tax_dismiss") return `Hồ sơ #${String(d.evasionId ?? "")}`;
+    if (row.action === "land_price") return `Lô #${String(d.plotId ?? "")}: ${d.price ? `${Number(d.price).toLocaleString("vi-VN")} xu` : "về giá tự tính"}`;
+    if (row.action === "macro") return `${String(d.phase ?? "pha tự động")} · ${String(d.weather ?? "thời tiết tự động")}${d.today ? " · áp dụng ngay" : ""}`;
     if (row.action === "gear_delete") return `#${String(d.gearId ?? "")} ${String(d.item ?? "")} (${TIER_LABEL[String(d.tier)] ?? ""})`;
     if (row.action === "gift_code") {
       const codes = Array.isArray(d.codes) ? (d.codes as string[]) : [];
