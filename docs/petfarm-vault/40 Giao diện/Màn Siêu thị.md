@@ -25,7 +25,7 @@ commit: e03a0db
 | Huy hiệu "Có n" | món tiêu hao đang có | `app.js:839` |
 | Ảnh | `itemIcon(item)` (pixel art, xem [[Hình vật phẩm]]) | `app.js:840` |
 | Nhãn loại | "Loại · Khe · Hành" | `app.js:841` |
-| Hiệu quả | `effectText(item)`: "🍙 +n ❤️ +n ⭐ +n XP", "Khi chơi: 💖 +n ⭐ +n XP", "Ấp 24 giờ thì nở", hoặc vị trí đeo | `public/ta-tua/game/js/ui.js:132-141` |
+| Hiệu quả | `effectText(item)`: "🍙 +n ❤️ +n ⭐ +n XP", "Khi chơi: 💖 +n ⭐ +n XP", "Ấp 24 giờ thì nở", hoặc vị trí đeo | `public/ta-tua/game/js/ui.js:11-20` |
 | "Đang có n món" | với phụ kiện đã có bản trang phục | `app.js:845` |
 | Giá | `priceOf(item) = max(1, round(price × economy.priceIndex))` | `app.js:119` |
 

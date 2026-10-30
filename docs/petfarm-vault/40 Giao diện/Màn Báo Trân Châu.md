@@ -22,7 +22,7 @@ commit: e03a0db
 | Tin mặt hàng | icon mặt hàng, tiêu đề đậm, "{tên} · dự báo tăng giá ▲ / giảm giá ▼ · {n phút trước}", nút "Xem Sàn" → [[Màn Sàn]] | `news.js:18-27` |
 | Tin chính thức | không có `commodity`: icon 🏛️, lớp `official` (nền khác), không có nút | `news.js:19-22` |
 
-API: `GET /news` một lần khi mở màn (`news.js:12`). Thời gian tương đối dùng `ago()` ("vừa xong", "n phút trước", "n giờ trước", "n ngày trước": `public/ta-tua/game/js/ui.js:213-219`). Không có làm mới định kỳ.
+API: `GET /news` một lần khi mở màn (`news.js:12`). Thời gian tương đối dùng `ago()` ("vừa xong", "n phút trước", "n giờ trước", "n ngày trước": `public/ta-tua/game/js/ui.js:92-98`). Không có làm mới định kỳ.
 
 > [!tip]
 > Khác với khung "📰 Tin thị trường" trong [[Màn Sàn]], tờ báo không hiện tin sớm cho bé Thông minh; tin sớm chỉ có ở `GET /market` (`petdex/server/market.js:383-393`).

@@ -48,7 +48,7 @@ growth[k] = hệ số hành[k] + (k là sở trường ? 0,1 : 0)
 Kỹ năng khởi đầu: theo loài ([[Danh mục loài]]); loài khách mời bốc ngẫu nhiên 5–15 mỗi kỹ năng (`initialSkills`, `petdex/server/rules/careers.js:37-39`).
 
 ## Trường hợp đặc biệt
-- Kỹ năng lưu số thực, màn Nhà hiện phần nguyên (`Math.floor`, `public/ta-tua/game/js/app.js:528`).
+- Kỹ năng lưu số thực, màn Nhà hiện phần nguyên (`Math.floor`, `public/ta-tua/game/js/app.js:529`).
 - Lương ca nghề dùng kỹ năng **lúc bắt đầu ca**; điểm cộng thêm chỉ có tác dụng từ ca sau.
 - Thăng bậc nghề xét kỹ năng **sau** khi cộng điểm của ca vừa nhận ([[Việc làm]]).
 - Giới hạn 3 buổi/môn/ngày ở [[Trường học]] là cách tăng nhanh nhất (tối đa 15 buổi/ngày cho 5 môn nếu đủ năng lượng và xu).

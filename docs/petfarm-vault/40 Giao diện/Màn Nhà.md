@@ -29,8 +29,8 @@ flowchart TB
 | Thanh đổi bé | Mỗi bé một nút `⭐ Tên · Lv n` (⭐ nếu là [[Thú chính]]); thêm nút "➕ Nhận nuôi thêm · {adoptCost} 🪙" khi còn ô trống, "🕯️ Ô tưởng niệm · mở lại {reopenCost} 🪙" khi có ô khóa, "🐣 n trứng nở rồi!" / "🥚 n trứng đang ấp" | `public/ta-tua/game/js/app.js:464-483` |
 | Thẻ tưởng niệm | "🌠 {tên} đã về với sao trời sau n tuần, lên tới cấp L", kỷ vật +{LIFE.heirloom} kỹ năng cho bé kế tiếp, nút "Thăm Đồi Sao" (mở [[Màn Bảng vàng]] tab Đồi Sao qua `data-ranks-go="stars"`) | `app.js:416-423` |
 | Căn phòng | `mountRoomScene` vẽ phòng theo giờ thật, gọi `onLayout({x,y})` để đặt chân bé; bé là `createPetFigure(..., 1.25)` | `app.js:548-573`, xem [[Cảnh nhà và thời gian trong ngày]] |
-| Bé vắng nhà | Khi bận việc có `away: true` (đi làm, đi học) thì ẩn bé và hiện hộp `away-note pixel-box` "💼 Tên đang đi làm / về lúc HH:MM · còn …"; tắm thì bé vẫn ở nhà, chỉ đổi bong bóng | `app.js:504-508`, `app.js:553`, `public/ta-tua/game/js/ui.js:188-193` |
-| Bong bóng tâm trạng | `MOOD_ICONS[mood.key]` + nhãn tâm trạng | `app.js:508`, `ui.js:130` |
+| Bé vắng nhà | Khi bận việc có `away: true` (đi làm, đi học) thì ẩn bé và hiện hộp `away-note pixel-box` "💼 Tên đang đi làm / về lúc HH:MM · còn …"; tắm thì bé vẫn ở nhà, chỉ đổi bong bóng | `app.js:504-508`, `app.js:553`, `public/ta-tua/game/js/ui.js:67-72` |
+| Bong bóng tâm trạng | `MOOD_ICONS[mood.key]` + nhãn tâm trạng | `app.js:508`, `ui.js:9` |
 | Huy hiệu | `Lv n`, huy hiệu dáng `✨ {LEVEL_FORMS[i].name}` (tooltip gợi ý dáng kế), `⭐ Thú chính` | `app.js:100-105`, `app.js:513-517` |
 | Dòng hành | chip hành (tooltip tính khí + lợi thế), sao độ hiếm theo màu, tên loài, "· linh vật" / "· khách mời", huy hiệu "🌟 Hôm nay hành X vượng: +{fortune×100}% XP và lương" nếu trùng `me.fortune` | `app.js:426-438` |
 | Tuổi | "🎂 {ageText} · {nhãn giai đoạn} · còn n ngày nữa thành …" (lưu ý: tính `ceil((minDays - days)/7)` nhưng ghi "ngày") | `app.js:492-493`, `app.js:519` |
