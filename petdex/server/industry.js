@@ -48,7 +48,19 @@ const q = {
   clan: db.prepare('SELECT * FROM clans WHERE id = ?'),
   account: db.prepare('SELECT balance FROM accounts WHERE id = ?'),
   setVariant: db.prepare('UPDATE land_plots SET variant = ? WHERE id = ?'),
+  asks: db.prepare(`
+    SELECT a.*, c.xp FROM essentials_asks a JOIN clans c ON c.id = a.clan_id
+    WHERE a.cat = ? AND a.qty > 0 AND c.dissolved_at IS NULL ORDER BY a.ratio, a.created_at`),
+  ask: db.prepare('SELECT * FROM essentials_asks WHERE clan_id = ? AND cat = ?'),
+  setAsk: db.prepare(`
+    INSERT INTO essentials_asks (clan_id, cat, qty, ratio, created_at) VALUES (?, ?, ?, ?, ?)
+    ON CONFLICT (clan_id, cat) DO UPDATE SET qty = excluded.qty, ratio = excluded.ratio, created_at = excluded.created_at`),
+  setAskQty: db.prepare('UPDATE essentials_asks SET qty = ? WHERE clan_id = ? AND cat = ?'),
+  dropAsk: db.prepare('DELETE FROM essentials_asks WHERE clan_id = ? AND cat = ?'),
+  clanPlots: db.prepare('SELECT * FROM land_plots WHERE clan_id = ?'),
 };
+/** Người mua 0 trong clan_trades: Siêu thị (sổ chào giá). NULL vẫn là NPC. */
+const SHOP_BUYER = 0;
 
 const PLOT_BY_ID = new Map(PLOTS.map((p) => [p.id, p]));
 const DEPOSITS = new Map(PLOTS.map((p) => [p.id, depositsOf(p)]));
@@ -263,6 +275,91 @@ export function runProduction(clan, plots, { day, macro, at, rand = Math.random,
 export const tradeIncome = (clanId, day) => q.tradeIncome.get(clanId, day).total;
 
 /** Trả hàng của các tin đăng đã hết hạn về kho người bán. */
+// ---------------------------------------------------------------- Sổ chào giá cho Siêu thị (hàng thiết yếu)
+
+/** Sổ chào của mỗi nhóm thiết yếu: lệnh của gia tộc mình và các mức giá đang chờ (gộp theo giá, không lộ tên). */
+function shopBookView(clanId, macro) {
+  return Object.fromEntries(ESSENTIAL_CATS.map((cat) => {
+    const { good } = ESSENTIALS.cats[cat];
+    const mine = q.ask.get(clanId, cat);
+    const levels = new Map();
+    for (const a of q.asks.all(cat)) {
+      const key = Math.round(a.ratio * 100);
+      const e = levels.get(key) ?? { pct: key, qty: 0, orders: 0, mine: false };
+      e.qty += a.qty;
+      e.orders += 1;
+      e.mine ||= a.clan_id === clanId;
+      levels.set(key, e);
+    }
+    return [cat, {
+      good,
+      ref: refPrice(good, macro),
+      have: q.good.get(clanId, good)?.qty ?? 0,
+      ask: mine && mine.qty > 0 ? { qty: mine.qty, pct: Math.round(mine.ratio * 100) } : null,
+      book: [...levels.values()],
+    }];
+  }));
+}
+
+/**
+ * Đặt (hoặc sửa, hủy khi qty = 0) lệnh chào bán hàng thiết yếu cho Siêu thị. Hàng nằm trong kho tới khi khớp, nên
+ * mặt hàng được chuyển sang "Giữ trong kho". Đổi giá thì mất thứ tự thời gian.
+ */
+export function setShopAsk(userId, { cat, qty, pct }, now = Date.now()) {
+  return transaction(() => {
+    const clan = mustManage(userId);
+    const meta = ESSENTIALS.cats[cat];
+    if (!meta) throw new GameError('Không có nhóm hàng này.');
+    const n = Number(qty);
+    if (n === 0) {
+      if (!q.ask.get(clan.id, cat)) throw new GameError('Gia tộc chưa có lệnh chào bán nào để hủy.');
+      q.dropAsk.run(clan.id, cat);
+      return { message: `Đã hủy lệnh chào bán ${GOODS[meta.good].name} cho Siêu thị.` };
+    }
+    const amount = intQty(n);
+    const ratio = Math.round(Number(pct)) / 100;
+    if (!(ratio >= ESSENTIALS.askMin && ratio <= ESSENTIALS.askMax)) {
+      throw new GameError(`Giá chào phải từ ${ESSENTIALS.askMin * 100}% đến ${ESSENTIALS.askMax * 100}% giá tham chiếu.`);
+    }
+    const old = q.ask.get(clan.id, cat);
+    q.setAsk.run(clan.id, cat, amount, ratio, old && old.ratio === ratio ? old.created_at : now);
+    q.setKeep.run(clan.id, meta.good, 1);
+    return { message: `Chào bán tối đa ${fmt(amount)} ${GOODS[meta.good].name} cho Siêu thị ở ${Math.round(ratio * 100)}% giá tham chiếu. Siêu thị khớp lúc nửa đêm, giá thấp trước.` };
+  });
+}
+
+/**
+ * Khớp sổ chào lúc nửa đêm (sau openShopBuying, trước khi các gia tộc chạy sản xuất): mỗi nhóm, lệnh giá thấp trước,
+ * cùng giá thì hàng điểm chất lượng cao trước, rồi lệnh đặt trước. Hàng lấy từ kho; tiền vào quỹ và tính thuế đêm đó
+ * như giao dịch trên sàn. Trả về số đơn vị khớp theo nhóm.
+ */
+export function clearShopBook(day, macro, at, rand = Math.random) {
+  const out = {};
+  for (const cat of ESSENTIAL_CATS) {
+    const { good } = ESSENTIALS.cats[cat];
+    const ref = refPrice(good, macro);
+    const asks = q.asks.all(cat).map((a) => {
+      const rows = q.clanPlots.all(a.clan_id).filter((r) => PRODUCTION_INDUSTRIES[r.industry] && designComplete(JSON.parse(r.design)));
+      return { ...a, score: clanQuality(cat, rows, clanLevelOf(a.xp)) };
+    }).sort((x, y) => x.ratio - y.ratio || y.score - x.score || x.created_at - y.created_at);
+    out[cat] = 0;
+    for (const a of asks) {
+      const units = Math.min(a.qty, q.good.get(a.clan_id, good)?.qty ?? 0);
+      if (units <= 0) continue;
+      const byQ = offerToShop(a.clan_id, cat, units, a.score, rand);
+      const n = byQ.reduce((s, x) => s + x, 0);
+      if (!n) continue;
+      const income = Math.round(byQ.reduce((s, x, i) => s + x * ESSENTIALS.qualities[i].mult, 0) * ref * a.ratio);
+      takeGoods(a.clan_id, good, n);
+      q.setAskQty.run(a.qty - n, a.clan_id, cat);
+      post({ account: clanAccount(a.clan_id), delta: income, kind: 'goods_trade', memo: `Siêu thị mua ${n} ${GOODS[good].name} ${day}`, now: at });
+      q.insertTrade.run(a.clan_id, SHOP_BUYER, good, n, Math.round(ref * a.ratio), income, day, at);
+      out[cat] += n;
+    }
+  }
+  return out;
+}
+
 export function expireListings(now) {
   for (const l of q.expired.all(now)) {
     q.closeListing.run(now, l.id);
@@ -321,11 +418,13 @@ export function industryView(userId, macro, now = Date.now()) {
     production: last ? { day: last, rows: q.production.all(clan.id, last) } : null,
     trades: q.recentTrades.all(clan.id, clan.id).map((t) => ({
       id: t.id, good: t.good, qty: t.qty, price: t.price, income: t.income, day: t.day, at: t.created_at,
-      side: t.seller_id === clan.id ? 'sell' : 'buy', other: t.seller_id === clan.id ? t.buyer_name ?? 'NPC' : t.seller_name,
+      side: t.seller_id === clan.id ? 'sell' : 'buy',
+      other: t.seller_id === clan.id ? t.buyer_name ?? (t.buyer_id === SHOP_BUYER ? 'Siêu thị' : 'NPC') : t.seller_name,
     })),
     prices,
     listings,
     rules: MARKET_RULES,
+    shopBook: shopBookView(clan.id, macro),
   };
 }
 

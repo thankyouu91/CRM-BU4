@@ -8,7 +8,7 @@ import {
   designBonus, designComplete, designCost, designSvg, envFactor, pieceById, pieceSvg,
 } from '../shared/clan.js';
 import {
-  GOODS, GOOD_ORDER, PRODUCTION_INDUSTRIES, SECTORS, STRATEGIC_INDUSTRIES, STRATEGIC_RULES, extractKindOf, lineOf, variantInfo, variantsFor,
+  ESSENTIALS, ESSENTIAL_CATS, GOODS, GOOD_ORDER, PRODUCTION_INDUSTRIES, SECTORS, STRATEGIC_INDUSTRIES, STRATEGIC_RULES, extractKindOf, lineOf, variantInfo, variantsFor,
 } from '../shared/industry.js';
 import { industryMarketText } from '../shared/industry-market.js';
 
@@ -777,6 +777,41 @@ export function renderClans(root, ctx) {
     </div>`;
   }
 
+  /** Sổ chào giá cho Siêu thị: lệnh của gia tộc và các mức giá đang chờ khớp (giá thấp khớp trước). */
+  function shopBookBox(manage) {
+    if (!ind.shopBook) return '';
+    const lo = Math.round(ESSENTIALS.askMin * 100);
+    const hi = Math.round(ESSENTIALS.askMax * 100);
+    const cat = (c) => {
+      const b = ind.shopBook[c];
+      const meta = ESSENTIALS.cats[c];
+      const g = GOODS[b.good];
+      const book = b.book.length
+        ? `<table class="clan-table"><thead><tr><th class="num">Giá chào</th><th class="num">Xu/đv</th><th class="num">Số lượng</th><th class="num">Lệnh</th></tr></thead><tbody>
+          ${b.book.map((l) => `<tr class="${l.mine ? 'held' : ''}"><td class="num">${l.pct}%</td><td class="num">${fmt(Math.round((b.ref * l.pct) / 100))}</td><td class="num">${fmt(l.qty)}</td><td class="num">${l.orders}${l.mine ? ' · của mình' : ''}</td></tr>`).join('')}
+        </tbody></table>`
+        : '<p class="muted small">Chưa có lệnh nào.</p>';
+      return `
+        <div class="shop-book">
+          <h4>${g.icon} ${esc(g.name)} → ${meta.icon} ${esc(meta.name)} <small class="muted">giá tham chiếu ${fmt(b.ref)} · trong kho ${fmt(b.have)}</small></h4>
+          ${b.ask ? `<p>Lệnh của gia tộc: <b>${fmt(b.ask.qty)}</b> đv ở <b>${b.ask.pct}%</b> (${fmt(Math.round((b.ref * b.ask.pct) / 100))} xu/đv).</p>` : ''}
+          ${manage ? `<form class="row trade-form" data-form="shop-ask" data-cat="${c}">
+            <label>Số lượng <input name="qty" type="number" min="0" value="${b.ask?.qty ?? (b.have || 10)}" title="Số đơn vị chào bán tối đa (0 = hủy lệnh)" /></label>
+            <label>Giá <input name="pct" type="number" min="${lo}" max="${hi}" step="1" value="${b.ask?.pct ?? hi}" title="Giá chào, % giá tham chiếu" />%</label>
+            <button class="btn small mint">${b.ask ? 'Sửa lệnh' : 'Chào bán'}</button>
+            ${b.ask ? '<button class="btn small" name="do" value="cancel">Hủy</button>' : ''}
+          </form>` : ''}
+          ${book}
+        </div>`;
+    };
+    return `
+      <section class="card clan-box wide">
+        <h3>🏪 Sổ chào giá cho Siêu thị</h3>
+        <p class="muted small">Chào bán hàng trong kho cho Siêu thị ở ${lo}–${hi}% giá tham chiếu. Lúc nửa đêm Siêu thị khớp từ giá thấp lên; cùng giá thì hàng chất lượng cao hơn, rồi lệnh đặt trước được mua trước. Sau sổ chào Siêu thị mới mua hàng vừa làm ra theo giá 100%. Mỗi gia tộc vẫn bán tối đa ${pctInt(ESSENTIALS.perClanShare)} lượng thu mua của một đêm. Đặt lệnh thì mặt hàng được giữ trong kho; tiền bán tính thuế như giao dịch trên sàn.</p>
+        <div class="shop-books">${ESSENTIAL_CATS.map(cat).join('')}</div>
+      </section>`;
+  }
+
   function drawProduction() {
     if (!ind) return loadIndustry(drawProduction);
     const manage = ind.clan && (ind.clan.role === 'leader' || ind.clan.role === 'elder');
@@ -800,6 +835,7 @@ export function renderClans(root, ctx) {
             </tr>`).join('')}</tbody></table>` : '<p class="muted">Kho trống. Lô làm ngành khai thác hoặc nhà máy sẽ đưa hàng vào đây mỗi đêm.</p>'}
           <p class="muted small">Mặc định gia tộc giữ những hàng là nguyên liệu cho nhà máy của mình; hàng khác và điện thừa tự bán cho NPC lúc nửa đêm theo giá vĩ mô. Tiền bán hàng tính vào doanh thu chịu thuế.</p>
         </section>
+        ${shopBookBox(manage)}
         <section class="card clan-box">
           <h3>🚢 Nhập khẩu nguyên liệu</h3>
           <p class="muted small">Mua từ NPC với giá gấp ${pctInt(ind.rules.importMarkup)} giá tham chiếu, khi gia tộc không tự khai thác được hoặc sàn không có.</p>
@@ -1088,6 +1124,7 @@ export function renderClans(root, ctx) {
         return act('/clans/depose', { candidateId: Number(fd.candidate) });
       case 'declare': return act('/clans/declare', { ratio: Number(fd.ratio) / 100 });
       case 'import': return act('/industry/import', { good: fd.good, qty: Number(fd.qty) });
+      case 'shop-ask': return act('/industry/shop-ask', { cat: form.dataset.cat, qty: e.submitter?.value === 'cancel' ? 0 : Number(fd.qty), pct: Number(fd.pct) });
       case 'operator': return act('/clans/strategic/operator', { plotId: Number(fd.plotId), petId: Number(fd.petId) });
       case 'buy': return act(`/industry/listings/${form.dataset.listing}/buy`, { qty: Number(fd.qty) });
       case 'goods': {

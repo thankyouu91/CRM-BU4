@@ -166,3 +166,12 @@
 .vote-box .row { flex-wrap: wrap; gap: 6px; }
 .demand-sector { margin: 4px 0; } .demand-sector summary { cursor: pointer; font-weight: 800; padding: 6px 0; }
 .demand .badge { display: inline; padding: 0 4px; font-size: .68rem; margin-left: 2px; white-space: nowrap; }
+
+/* Sổ chào giá cho Siêu thị */
+.shop-books { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; }
+.shop-book h4 { margin: 0 0 6px; }
+.shop-book .trade-form { align-items: center; flex-wrap: wrap; gap: 8px; }
+.shop-book .trade-form label { display: inline-flex; align-items: center; gap: 4px; }
+.shop-book .trade-form input { width: 84px; flex: 0 0 auto; }
+.shop-book .trade-form input[name="pct"] { width: 64px; }
+.clan-table tr.held td { background: #eef9f5; font-weight: 700; }

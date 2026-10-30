@@ -449,6 +449,12 @@ export const ESSENTIALS = {
   perClanShare: 0.4,
   /** Giá bán lẻ một suất/bộ = giá tham chiếu một đơn vị ÷ số suất × hệ số này × hệ số chất lượng. */
   markup: 1.15,
+  /**
+   * Sổ chào giá: gia tộc chào bán hàng trong kho cho Siêu thị ở 70–100% giá tham chiếu. Mỗi đêm Siêu thị khớp từ giá
+   * thấp lên (cùng giá: điểm chất lượng cao trước, rồi lệnh đặt trước), sau đó mới mua hàng vừa làm ra theo 100%.
+   */
+  askMin: 0.7,
+  askMax: 1,
   /** Mỗi người còn được mua thêm chừng này món NPC mỗi nhóm mỗi ngày, ngoài phần theo số bé. */
   npcSpare: 2,
   newbieDays: 7,

@@ -180,3 +180,48 @@ test('D dịch tối đa 10 điểm mỗi ngày dù cung tăng đột biến', (
   assert.ok(next.food <= 0.1 + 1e-9);
   assert.equal(essentials.currentD('food', Date.parse(`${nextDay(d1)}T05:00:00Z`)), next.food);
 });
+
+test('sổ chào giá: Siêu thị khớp giá thấp trước, cùng giá thì lệnh đặt trước; tiền vào quỹ và tính như giao dịch', () => {
+  const at = T0 + 40 * DAY;
+  const d = dayKey(at);
+  macro.overrideMacro(d, { phase: 'recovery', weather: 'calm' }, at);
+  const m = macro.macroFor(d);
+  const ref = industry.refPrice('processed_food', m);
+  const sellers = [['giaCao', 90], ['reNhat', 75], ['reSau', 75]].map(([name, pct], i) => {
+    const id = newPlayer(name, 3_000_000);
+    clans.createClan(id, { name: `Chợ ${name}`, emblem: '🌾', color: '#336699' }, at);
+    clans.donateClan(id, 2_000_000, at);
+    industry.importGoods(id, 'processed_food', 20, m, at);
+    industry.setShopAsk(id, { cat: 'food', qty: 15, pct }, at + i);
+    return { id, clanId: clans.clanView(id, at).clan.id, pct };
+  });
+  assert.throws(() => industry.setShopAsk(sellers[0].id, { cat: 'food', qty: 5, pct: 60 }, at), /70% đến 100%/);
+  assert.throws(() => industry.setShopAsk(owner, { cat: 'care', qty: 0, pct: 90 }, at), /chưa có lệnh/);
+  const view = industry.industryView(sellers[1].id, m, at).shopBook.food;
+  assert.deepEqual(view.ask, { qty: 15, pct: 75 });
+  assert.deepEqual(view.book.map((l) => [l.pct, l.qty, l.orders, l.mine]), [[75, 30, 2, true], [90, 15, 1, false]]);
+  assert.ok(industry.industryView(sellers[1].id, m, at).goods.find((g) => g.good === 'processed_food').keep, 'đặt lệnh thì hàng được giữ trong kho');
+
+  // Nhu cầu 40 suất/ngày → Siêu thị cần 54 suất, mỗi gia tộc tối đa 22 suất = 4 đơn vị.
+  store.setMeta('essentials_stock', JSON.stringify([0, 0, 0]));
+  store.db.prepare('INSERT OR REPLACE INTO essentials_days (day, d, demand, supplied, npc_sold, meal_sold) VALUES (?, 0, 40, 0, 40, 0)').run(d);
+  assert.equal(essentials.openShopBuying(d).food, 54);
+  const before = sellers.map((s) => clans.clanView(s.id, at).clan.treasury);
+  const filled = industry.clearShopBook(d, m, at, () => 0.5);
+  assert.equal(filled.food, 10);
+  const sold = sellers.map((s) => industry.tradeIncome(s.clanId, d));
+  const got = sellers.map((s) => 20 - industry.industryView(s.id, m, at).goods.find((g) => g.good === 'processed_food').qty);
+  assert.deepEqual(got, [2, 4, 4], 'giá 75% khớp đủ trước, giá 90% chỉ nhận phần còn lại');
+  // Gia tộc mới (điểm chất lượng 0) bán toàn hạng Thường/Ngon: tiền ≥ số đơn vị × giá chào.
+  sellers.forEach((s, i) => {
+    assert.ok(sold[i] >= Math.round(got[i] * ref * s.pct / 100) - 1, `tiền bán của ${i}`);
+    assert.equal(clans.clanView(s.id, at).clan.treasury, before[i] + sold[i]);
+  });
+  const trade = industry.industryView(sellers[1].id, m, at).trades[0];
+  assert.equal(trade.other, 'Siêu thị');
+  assert.equal(trade.price, Math.round(ref * 0.75));
+  assert.equal(industry.industryView(sellers[1].id, m, at).shopBook.food.ask.qty, 11, 'lệnh còn lại sau khi khớp');
+  industry.setShopAsk(sellers[1].id, { cat: 'food', qty: 0 }, at);
+  assert.equal(industry.industryView(sellers[1].id, m, at).shopBook.food.ask, null);
+  essentials.settleEssentialsDay(d);
+});
