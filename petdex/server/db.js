@@ -450,6 +450,29 @@ addColumn('pets', 'busy_from', 'INTEGER');
 addColumn('pets', 'busy_until', 'INTEGER');
 addColumn('pets', 'busy_kind', 'TEXT'); // bé bận việc gì: 'work' | 'school' | 'bath' (trống = ca làm cũ)
 addColumn('pet_wear', 'gear_id', 'INTEGER'); // bản trang phục đang đeo (bảng gear)
+// Sàn: giá theo luật game (chưa tính lực mua bán của người chơi), áp lực mua bán, pha thị trường ẩn.
+addColumn('commodity_state', 'rule_price', 'REAL');
+addColumn('commodity_state', 'pressure', 'REAL NOT NULL DEFAULT 0');
+addColumn('commodity_state', 'regime', "TEXT NOT NULL DEFAULT 'calm'");
+db.exec('UPDATE commodity_state SET rule_price = price WHERE rule_price IS NULL');
+addColumn('news', 'flash', 'INTEGER NOT NULL DEFAULT 0'); // 1 = tin sốt/sập giá: giá đã nhảy, không tính vào giá trung bình
+db.exec(`
+  -- Sổ giao dịch trên Sàn: mỗi lần khớp (mua hoặc bán) một dòng; bán thì có giá vốn và lãi/lỗ đã chốt.
+  CREATE TABLE IF NOT EXISTS market_trades (
+    id         INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id    INTEGER NOT NULL,
+    commodity  TEXT NOT NULL,
+    side       TEXT NOT NULL,
+    qty        INTEGER NOT NULL,
+    price      REAL NOT NULL,
+    amount     INTEGER NOT NULL,
+    fee        INTEGER NOT NULL DEFAULT 0,
+    cost       REAL NOT NULL DEFAULT 0,
+    pnl        REAL,
+    at         INTEGER NOT NULL
+  );
+  CREATE INDEX IF NOT EXISTS market_trades_user ON market_trades(user_id, at DESC);
+`);
 addColumn('users', 'warehouse', 'INTEGER NOT NULL DEFAULT 0');
 addColumn('users', 'advanced', 'INTEGER NOT NULL DEFAULT 0');
 addColumn('users', 'streak', 'INTEGER NOT NULL DEFAULT 0');

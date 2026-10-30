@@ -4,7 +4,10 @@ import { fishSequence, judge, memoryDeck, pearlSchedule } from '../../public/ta-
 import { DAY, GameError } from '../server/game.js';
 import { BANK, accrue, depositPayout, policy } from '../server/rules/bank.js';
 import { canPromote, checkShift, gainSkill, shiftPay } from '../server/rules/careers.js';
-import { COMMODITIES, MARKET, amountFor, fillPrice, impact, inBand, meanPrice, quote, stepPrice, tradeFee } from '../server/rules/market.js';
+import {
+  COMMODITIES, MARKET, REGIMES, amountFor, blendPrice, decayPressure, fillPrice, impact, inBand, meanPrice, profitOf, pushPressure, quote,
+  FRESHNESS, freshnessOf, rollJump, stepDrift, stepPrice, stepRegime, tradeFee,
+} from '../server/rules/market.js';
 
 test('nghề: lương theo bậc, kỹ năng và số giờ', () => {
   assert.equal(shiftPay('porter', 1, 0, 1), Math.round(16 * 0.8));
@@ -50,10 +53,77 @@ test('Sàn: báo giá, phí, thành tiền, biên giá', () => {
 
 const near = (actual, expected) => assert.ok(Math.abs(actual - expected) < 1e-9, `${actual} ≠ ${expected}`);
 
-test('Sàn: mua đẩy giá lên, bán kéo xuống; giá khớp bình quân bằng nửa tác động', () => {
-  near(impact(100, MARKET.liquidity / 10, 'buy'), 110);
-  near(impact(100, MARKET.liquidity / 10, 'sell'), 90);
-  near(fillPrice(100, MARKET.liquidity / 10, 'buy'), 105);
+test('Sàn: mua đẩy giá lên, bán kéo xuống, chỉ 45% tác động; giá khớp bình quân bằng nửa tác động', () => {
+  assert.equal(MARKET.playerWeight, 0.45);
+  near(impact(100, MARKET.liquidity / 10, 'buy'), 104.5);
+  near(impact(100, MARKET.liquidity / 10, 'sell'), 95.5);
+  near(fillPrice(100, MARKET.liquidity / 10, 'buy'), 102.25);
+});
+
+test('Sàn: giá = luật game × (1 + 45% áp lực người chơi); áp lực phai dần, có giới hạn', () => {
+  const p = pushPressure(0, MARKET.liquidity / 10, 'buy');
+  near(p, 0.1);
+  near(blendPrice('milk', 30, p), 30 * 1.045);
+  near(blendPrice('milk', 30, pushPressure(0, MARKET.liquidity / 10, 'sell')), 30 * 0.955);
+  near(decayPressure(1, MARKET.pressureHalfLifeMs), 0.5);
+  assert.equal(pushPressure(1.95, MARKET.liquidity, 'buy'), MARKET.maxPressure);
+  // sàn 0,25 lần và trần 5 lần giá gốc
+  assert.equal(blendPrice('milk', 1, 0), 30 * 0.25);
+  assert.equal(blendPrice('milk', 1000, 0), 30 * MARKET.ceiling);
+});
+
+test('Sàn: pha thị trường đổi bất chợt, sốt/sập giá đột ngột, độ trôi rộng hơn', () => {
+  let seed = 3;
+  const rand = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
+  // Mỗi nhịp 10 phút hiếm khi đổi pha; một ngày có vài lần.
+  let regime = 'calm';
+  let switches = 0;
+  const seen = new Set();
+  for (let i = 0; i < 144 * 30; i++) {
+    const next = stepRegime(regime, MARKET.tickMs, rand);
+    if (next !== regime) switches++;
+    regime = next;
+    seen.add(regime);
+  }
+  assert.deepEqual([...seen].sort(), Object.keys(REGIMES).sort());
+  assert.ok(switches > 30 && switches < 120, `đổi pha ${switches} lần / 30 ngày`);
+  // Sốt/sập giá: khoảng 0,4 lần mỗi ngày, cỡ 12–30%.
+  let jumps = 0;
+  for (let i = 0; i < 144 * 100; i++) {
+    const j = rollJump(MARKET.tickMs, rand);
+    if (!j) continue;
+    jumps++;
+    assert.ok(Math.abs(j.size) >= MARKET.jumpMin && Math.abs(j.size) <= MARKET.jumpMax);
+    assert.equal(j.up, j.size > 0);
+  }
+  assert.ok(jumps > 25 && jumps < 60, `${jumps} cú nhảy / 100 ngày`);
+  // Pha Tăng nóng kéo độ trôi lên, Lao dốc kéo xuống; luôn trong biên.
+  let up = 1;
+  let down = 1;
+  for (let i = 0; i < 144 * 3; i++) {
+    up = stepDrift(up, MARKET.tickMs, 0, REGIMES.boom.trend);
+    down = stepDrift(down, MARKET.tickMs, 0, REGIMES.slump.trend);
+  }
+  assert.ok(up > 1.4 && up <= MARKET.driftMax, `tăng nóng ${up}`);
+  assert.ok(down < 0.75 && down >= MARKET.driftMin, `lao dốc ${down}`);
+});
+
+test('Sàn: hàng tươi giảm chất lượng theo hạn dùng; hàng khô luôn tươi', () => {
+  const t = 1_000_000_000_000;
+  const life = COMMODITIES.fish.shelfDays * DAY; // cá: 2 ngày
+  const at = (used) => freshnessOf('fish', t + life, t + used * life);
+  assert.equal(at(0.1).key, 'fresh');
+  assert.equal(at(0.6).key, 'stale');
+  assert.equal(at(0.9).key, 'old');
+  assert.deepEqual(FRESHNESS.map((f) => f.factor), [1, 0.8, 0.55]);
+  assert.equal(freshnessOf('sugar', null, t).key, 'fresh');
+  for (const id of ['strawberry', 'fish', 'pork', 'mango', 'milk']) assert.ok(COMMODITIES[id].shelfDays, id);
+});
+
+test('Sàn: lãi/lỗ so với giá vốn', () => {
+  assert.deepEqual(profitOf(120, 100), { pnl: 20, pct: 0.2 });
+  assert.deepEqual(profitOf(80, 100), { pnl: -20, pct: -0.2 });
+  assert.deepEqual(profitOf(50, 0), { pnl: 50, pct: null });
 });
 
 test('Sàn: giá hàng chế biến đi theo chi phí đầu vào', () => {
