@@ -3,6 +3,7 @@ import { db, transaction } from './db.js';
 import { DAY, GameError } from './game.js';
 import { post } from './ledger.js';
 import { BANK, accrue, depositPayout, policy } from './rules/bank.js';
+import { floorCoins } from './rules/production.js';
 import { bankInterestBonus } from './strategic.js';
 
 const q = {
@@ -72,7 +73,7 @@ export function openDeposit(userId, amount, term, now = Date.now()) {
   return transaction(() => {
     post({ userId, delta: -amount, kind: 'deposit_open', memo: `Kỳ hạn ${term} ngày`, now });
     q.insertDeposit.run(userId, amount, rate, term, now, now + term * DAY);
-    const interest = Math.floor(amount * rate * term);
+    const interest = floorCoins(amount * rate * term);
     return { message: `Đã gửi ${amount} 🪙 kỳ hạn ${term} ngày, đáo hạn nhận thêm ${interest} 🪙.` };
   });
 }
@@ -119,7 +120,7 @@ export function bankView(userId, now = Date.now()) {
       termDays: d.term_days,
       openedAt: d.opened_at,
       maturesAt: d.matures_at,
-      interest: Math.floor(d.amount * d.rate * d.term_days),
+      interest: floorCoins(d.amount * d.rate * d.term_days),
     })),
     history: q.history.all(12).reverse().map((w) => ({
       week: w.week, growth: w.growth, priceIndex: w.price_index, baseRate: w.base_rate, moneyPerPlayer: Math.round(w.money_per_player), players: w.players,
@@ -130,7 +131,7 @@ export function bankView(userId, now = Date.now()) {
 /** Phần tiền gửi để tính tài sản ròng (không ghi gì vào DB). */
 export function bankHoldings(userId, now = Date.now()) {
   const acc = q.account.get(userId);
-  const savings = acc ? acc.savings + Math.floor(acc.accrued + accrue(acc.savings, economy().baseRate, acc.updated_at, now)) : 0;
+  const savings = acc ? acc.savings + floorCoins(acc.accrued + accrue(acc.savings, economy().baseRate, acc.updated_at, now)) : 0;
   const deposits = q.deposits.all(userId).reduce((sum, d) => sum + d.amount, 0);
   return { savings, deposits };
 }
@@ -140,7 +141,7 @@ export function settleBankDay(endTs) {
   transaction(() => {
     for (const { user_id: userId } of q.allAccounts.all()) {
       const acc = touch(userId, endTs);
-      const whole = Math.floor(acc.accrued);
+      const whole = floorCoins(acc.accrued);
       if (whole > 0) {
         post({ userId, account: 'savings', delta: whole, kind: 'interest', memo: 'Lãi tiết kiệm', now: endTs });
         bankInterestBonus(userId, whole, { account: 'savings', memo: 'lãi tiết kiệm', now: endTs });

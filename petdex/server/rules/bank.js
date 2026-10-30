@@ -19,7 +19,8 @@ export function accrue(savings, rate, from, to) {
 
 /** Tiền nhận khi tất toán: đủ hạn thì có lãi đơn theo lãi suất đã chốt, rút sớm chỉ nhận gốc. */
 export function depositPayout({ amount, rate, term_days, matures_at }, now) {
-  const interest = now >= matures_at ? Math.floor(amount * rate * term_days) : 0;
+  // Làm tròn 6 chữ số trước khi lấy phần nguyên, để 0,1 + 0,2 kiểu số thực không bớt mất 1 xu.
+  const interest = now >= matures_at ? Math.floor(Math.round(amount * rate * term_days * 1e6) / 1e6) : 0;
   return { principal: amount, interest };
 }
 
@@ -33,6 +34,7 @@ export function policy({ growth, priceIndex }) {
   return {
     // Phản ứng 0,6 × độ lệch, tối đa +15%/tuần khi xu tăng quá nóng (trước đây 0,3 và +4,5%: không đuổi kịp lượng xu).
     priceIndex: priceIndex * (1 + 0.6 * clamp(gap, -0.05, 0.25)),
-    baseRate: clamp(0.003 - gap / 20, 0.0005, 0.005),
+    // Làm tròn 9 chữ số: 0,003 − 0,04/20 phải ra đúng 0,001 (không 0,000999…), nếu không 10.000 xu chỉ ra 9 xu lãi.
+    baseRate: Math.round(clamp(0.003 - gap / 20, 0.0005, 0.005) * 1e9) / 1e9,
   };
 }

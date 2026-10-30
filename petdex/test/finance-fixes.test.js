@@ -165,3 +165,12 @@ test('dự án Hội: ngân sách thị trấn chỉ đủ cho một người th
   assert.match(res.message, /1\/2 thành viên/);
   assert.doesNotMatch(res.message, /mỗi thành viên/);
 });
+
+test('lãi tiết kiệm: tăng 14%/tuần cho lãi cơ bản đúng 0,1%/ngày, 10.000 xu ra 10 xu một đêm', async () => {
+  const { policy, depositPayout } = await import('../server/rules/bank.js');
+  const { baseRate } = policy({ growth: 0.14, priceIndex: 1 });
+  assert.equal(baseRate, 0.001);
+  assert.equal(Math.floor(10_000 * baseRate), 10);
+  // 0,1 + 0,2 kiểu số thực: 1.000 xu × 0,3%/ngày × 1 ngày vẫn là 3 xu, không bớt.
+  assert.equal(depositPayout({ amount: 1_000, rate: 0.1 + 0.2, term_days: 0.01, matures_at: 0 }, 1).interest, 3);
+});
