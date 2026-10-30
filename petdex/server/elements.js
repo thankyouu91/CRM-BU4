@@ -1,4 +1,4 @@
-// Ngũ hành trong luật chơi: hệ số lên kỹ năng, XP và lương theo loài, bộ đồ đang mặc và vận khí ngày.
+// Ngũ hành trong luật chơi: hệ số lên kỹ năng, XP và lương theo loài, bộ đồ đang mặc (đồ hỏng không tính) và vận khí ngày.
 import { getPet, setSkill, skillsOf } from './db.js';
 import { dayKey } from './clock.js';
 import { gainSkill } from './rules/careers.js';
@@ -10,7 +10,7 @@ export const isFortunate = (pet, now = Date.now()) => elementOfSpecies(pet.speci
 /** Hệ số lên kỹ năng `skill`: sở trường của loài × bộ đồ hợp mệnh (kỵ mệnh nặng nhất cũng không dưới 50%). */
 export function skillFactor(pet, skill) {
   const gear = 1 + (pet.bonus?.stats ?? 0) / 100; // trang phục: % "Chỉ số"
-  return statsOfSpecies(pet.species).growth[skill] * Math.max(0.5, 1 + wearBonus(pet.wear, elementOfSpecies(pet.species))) * gear;
+  return statsOfSpecies(pet.species).growth[skill] * Math.max(0.5, 1 + wearBonus(pet.activeWear ?? pet.wear, elementOfSpecies(pet.species))) * gear;
 }
 
 /** Cộng `raw` điểm kỹ năng cho bé `petId` theo hệ số ngũ hành; trả về điểm trước và sau. */
@@ -29,7 +29,7 @@ export const xpFactor = (pet, now = Date.now()) => (isFortunate(pet, now) ? 1 + 
 export function elementPay(pet, now = Date.now(), careerSkill = null) {
   let k = 1;
   if (isFortunate(pet, now)) k += ELEMENT_RULES.fortune;
-  k += setOf(pet.wear)?.pay ?? 0;
+  k += setOf(pet.activeWear ?? pet.wear)?.pay ?? 0;
   k += (pet.bonus?.income ?? 0) / 100; // trang phục: % "Thu nhập ca làm"
   if (careerSkill === 'strength' && elementOfSpecies(pet.species) === 'hoa') k += ELEMENT_RULES.perks.hoa.strengthPay;
   return k;

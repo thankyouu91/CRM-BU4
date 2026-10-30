@@ -64,7 +64,34 @@ export const DEFAULT_GEAR_CONFIG = {
   materialQty: [1, 3],
   /** % một ván mini-game rớt một món trang phục. */
   gearDropChance: 3,
+  /** Lò rèn: sửa đồ hỏng sau đấu trường và nâng cấp. Vật liệu tính bằng lô hàng thô bất kỳ trong kho (1 lô = 10 phần). */
+  forge: {
+    /** % sửa thành công; hỏng thì mất vật liệu và xu, đồ vẫn hỏng. */
+    repairChance: 70,
+    /** Sửa xong phải để ở lò bấy nhiêu giờ mới dùng lại được. */
+    repairHours: 24,
+    repair: {
+      blue: { coins: 120, lots: 3 },
+      green: { coins: 350, lots: 5 },
+      gold: { coins: 900, lots: 8 },
+      red: { coins: 2200, lots: 12 },
+    },
+    /** % nâng lên cấp kế tiếp (không quá UPGRADE_MAX_CHANCE); hỏng thì mất vật liệu và xu, món giữ nguyên. */
+    upgradeChance: { blue: 30, green: 18, gold: 8 },
+    upgrade: {
+      blue: { coins: 2500, lots: 15 },
+      green: { coins: 8000, lots: 30 },
+      gold: { coins: 25000, lots: 60 },
+    },
+    /** Tiệm vật liệu bán hàng thô gấp bấy nhiêu lần giá Sàn. */
+    shopMarkup: 2.5,
+  },
 };
+
+/** Tỉ lệ nâng cấp không bao giờ vượt mức này. */
+export const UPGRADE_MAX_CHANCE = 30;
+/** Cấp kế tiếp khi nâng cấp (Đỏ là cao nhất). */
+export const nextTier = (tier) => TIER_ORDER[TIER_ORDER.indexOf(tier) + 1] ?? null;
 
 const clampInt = (v, lo, hi) => Math.min(hi, Math.max(lo, Math.round(Number(v))));
 
@@ -99,7 +126,57 @@ export function normalizeGearConfig(input = {}) {
   const [qLo, qHi] = input.materialQty ?? base.materialQty;
   const materialQty = [clampInt(qLo, 1, 20), clampInt(qHi, 1, 20)];
   if (materialQty[0] > materialQty[1]) throw new Error('Số phần vật liệu: ít nhất phải ≤ nhiều nhất.');
-  return { odds, ranges, materialChance: pct('materialChance'), materialQty, gearDropChance: pct('gearDropChance') };
+  return { odds, ranges, materialChance: pct('materialChance'), materialQty, gearDropChance: pct('gearDropChance'), forge: normalizeForge(input.forge) };
+}
+
+function normalizeForge(input = {}) {
+  const base = DEFAULT_GEAR_CONFIG.forge;
+  const num = (v, lo, hi, msg) => {
+    const n = Number(v);
+    if (!Number.isFinite(n) || n < lo || n > hi) throw new Error(msg);
+    return n;
+  };
+  const cost = (src, fallback, t, what) => ({
+    coins: Math.round(num(src?.coins ?? fallback.coins, 0, 10_000_000, `Xu ${what} cấp ${TIERS[t].name} phải từ 0 đến 10.000.000.`)),
+    lots: Math.round(num(src?.lots ?? fallback.lots, 0, 1000, `Vật liệu ${what} cấp ${TIERS[t].name} phải từ 0 đến 1.000 lô.`)),
+  });
+  const repair = {};
+  for (const t of TIER_ORDER) repair[t] = cost(input.repair?.[t], base.repair[t], t, 'sửa');
+  const upgrade = {};
+  const upgradeChance = {};
+  for (const t of TIER_ORDER.slice(0, -1)) {
+    upgrade[t] = cost(input.upgrade?.[t], base.upgrade[t], t, 'nâng cấp');
+    const c = num(input.upgradeChance?.[t] ?? base.upgradeChance[t], 0, UPGRADE_MAX_CHANCE, `Tỉ lệ nâng cấp từ ${TIERS[t].name} phải từ 0 đến ${UPGRADE_MAX_CHANCE}%.`);
+    upgradeChance[t] = Math.round(c * 10) / 10;
+  }
+  return {
+    repairChance: Math.round(num(input.repairChance ?? base.repairChance, 1, 100, 'Tỉ lệ sửa thành công phải từ 1 đến 100%.') * 10) / 10,
+    repairHours: Math.round(num(input.repairHours ?? base.repairHours, 0, 168, 'Thời gian sửa phải từ 0 đến 168 giờ.')),
+    repair,
+    upgradeChance,
+    upgrade,
+    shopMarkup: Math.round(num(input.shopMarkup ?? base.shopMarkup, 1, 20, 'Hệ số giá Tiệm vật liệu phải từ 1 đến 20.') * 100) / 100,
+  };
+}
+
+/**
+ * Dòng chỉ số sau khi nâng từ cấp `from` lên `to`: giữ các loại cũ, mỗi dòng giữ vị trí tương đối trong biên độ
+ * (dòng cao vẫn cao), thêm đúng một dòng mới (ưu tiên nhóm `pool` của món) quay trong biên độ cấp mới.
+ */
+export function upgradeAffixes(from, to, affixes, ranges, rand, pool = AFFIX_ORDER) {
+  const out = {};
+  for (const [a, v] of Object.entries(affixes)) {
+    const [lo, hi] = ranges[from][a];
+    const [nlo, nhi] = ranges[to][a];
+    const u = hi > lo ? (v - lo) / (hi - lo) : 0.5;
+    out[a] = Math.min(nhi, Math.max(nlo, Math.round(nlo + Math.min(1, Math.max(0, u)) * (nhi - nlo))));
+  }
+  const fresh = [...shuffle(pool.filter((a) => !(a in out)), rand), ...shuffle(AFFIX_ORDER.filter((a) => !pool.includes(a) && !(a in out)), rand)];
+  for (const a of fresh.slice(0, Math.max(0, TIERS[to].lines - Object.keys(out).length))) {
+    const [lo, hi] = ranges[to][a];
+    out[a] = lo + Math.floor(rand() * (hi - lo + 1));
+  }
+  return out;
 }
 
 /** Quay cấp theo trọng số; May mắn `luck` (%) làm cấp cao dễ ra hơn (mỗi bậc nhân thêm một lần). */

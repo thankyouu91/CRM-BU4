@@ -608,6 +608,10 @@ addColumn('users', 'locked_slots', 'INTEGER NOT NULL DEFAULT 0');
   `);
   // Sau khi đã có bảng gear: hộp mua ở Siêu thị chưa mở thì chưa lộ dòng chỉ số.
   addColumn('gear', 'sealed', 'INTEGER NOT NULL DEFAULT 0');
+  // Độ bền (gear.js): broken = 1 là đồ hỏng sau trận đấu trường; repair_until > bây giờ là đang ở Lò rèn.
+  // Cả hai trường hợp đồ vẫn đeo trên bé nhưng không cộng chỉ số nào.
+  addColumn('gear', 'broken', 'INTEGER NOT NULL DEFAULT 0');
+  addColumn('gear', 'repair_until', 'INTEGER NOT NULL DEFAULT 0');
 
   // ---- Gia tộc & Sở Nhà Đất (clans.js, macro.js) ----
   db.exec(`
@@ -1024,7 +1028,11 @@ const q = {
   setWear: db.prepare(`
     INSERT INTO pet_wear (pet_id, slot, item_id, gear_id) VALUES (?, ?, ?, ?)
     ON CONFLICT (pet_id, slot) DO UPDATE SET item_id = excluded.item_id, gear_id = excluded.gear_id`),
-  petGear: db.prepare('SELECT g.affixes FROM pet_wear w JOIN gear g ON g.id = w.gear_id WHERE w.pet_id = ?'),
+  petGear: db.prepare('SELECT g.affixes FROM pet_wear w JOIN gear g ON g.id = w.gear_id WHERE w.pet_id = ? AND g.broken = 0 AND g.repair_until <= ?'),
+  // Đồ còn dùng được (tính bộ ngũ hành); món cũ không có bản gear thì coi như lành.
+  activeWearOf: db.prepare(`
+    SELECT w.slot, w.item_id FROM pet_wear w LEFT JOIN gear g ON g.id = w.gear_id
+    WHERE w.pet_id = ? AND (g.id IS NULL OR (g.broken = 0 AND g.repair_until <= ?))`),
   clearWear: db.prepare('DELETE FROM pet_wear WHERE pet_id = ? AND slot = ?'),
   clearAllWear: db.prepare('DELETE FROM pet_wear WHERE pet_id = ?'),
   unequipItem: db.prepare('DELETE FROM pet_wear WHERE item_id = ? AND pet_id IN (SELECT id FROM pets WHERE owner_id = ?)'),
@@ -1067,8 +1075,11 @@ export const deleteSession = (token) => q.deleteSession.run(token);
 /** Đồ bé đang đeo: { head, face, neck, back } → mã món. */
 export const wearOf = (petId) => Object.fromEntries(q.wearOf.all(petId).map((r) => [r.slot, r.item_id]));
 /** Tổng % các dòng chỉ số của trang phục bé đang đeo: { income, stats, trade, luck }. */
-export const gearBonusOf = (petId) => sumBonus(q.petGear.all(petId).map((r) => JSON.parse(r.affixes)));
-const withTraits = (row) => row && { ...row, traits: JSON.parse(row.traits ?? '[]'), wear: wearOf(row.id), bonus: gearBonusOf(row.id) };
+/** Đồ hỏng hoặc đang sửa không tính. */
+export const gearBonusOf = (petId, now = Date.now()) => sumBonus(q.petGear.all(petId, now).map((r) => JSON.parse(r.affixes)));
+/** Như wearOf nhưng bỏ đồ hỏng và đồ đang sửa: dùng cho bộ cùng hành và hợp mệnh. */
+export const activeWearOf = (petId, now = Date.now()) => Object.fromEntries(q.activeWearOf.all(petId, now).map((r) => [r.slot, r.item_id]));
+const withTraits = (row) => row && { ...row, traits: JSON.parse(row.traits ?? '[]'), wear: wearOf(row.id), activeWear: activeWearOf(row.id), bonus: gearBonusOf(row.id) };
 /** Đeo `itemId` (bản trang phục `gearId`) vào `slot` (null là tháo); không có `slot` thì tháo hết. */
 export function setWear(petId, slot, itemId, gearId = null) {
   if (!slot) q.clearAllWear.run(petId);

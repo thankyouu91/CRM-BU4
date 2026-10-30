@@ -142,3 +142,12 @@ Kiểm tra chống lời vô hạn: mua hộp giá P rồi mở và bán nhanh, 
 ### 6.4 Đấu giá
 
 Bảng `auctions`, module `petdex/server/auction.js`, luật `AUCTION` trong `rules/production.js`: khởi điểm 10–300 % tham chiếu, 6/12/24 giờ, bước giá 5 %, trả giá trong 5 phút cuối thì gia hạn 5 phút, tối đa 5 phiên mỗi người. Xu trả giá được giữ (ký quỹ) và hoàn ngay khi bị vượt; xu đang giữ vẫn tính vào tổng tài sản. Phiên đóng trong bộ lập lịch (mỗi 30 giây), không đợi nửa đêm. Phí như Chợ Phiên (1 % mở phiên, 5 % giá chốt, một nửa vào ngân sách thị trấn).
+
+## 7. Bổ sung: độ bền, Lò rèn và Tiệm vật liệu
+
+- **Hỏng sau đấu trường.** Sau mỗi trận đấu trường gia tộc, phần gia tộc gọi `breakWornGear(userIds)` (petdex/server/gear.js): mọi món người tham gia đang đeo chuyển sang `broken = 1`. Món vẫn đeo trên bé nhưng không cộng chỉ số và không tính vào bộ cùng hành. Món hỏng hay đang sửa không bày bán được; bán nhanh thì nhận mức thấp nhất (10%).
+- **Sửa** (petdex/server/forge.js): trả xu và vật liệu theo cấp, thành công 70%. Thành công thì món ở lò 24 giờ (`repair_until`) rồi mới cộng chỉ số lại; thất bại thì mất xu và vật liệu, món vẫn hỏng.
+- **Nâng cấp**: lên cấp kế tiếp, tỉ lệ không bao giờ quá 30% (mặc định Xanh lam 30%, Xanh lục 18%, Vàng 8%). Thành công thì giữ các dòng cũ (giữ vị trí tương đối trong biên độ cấp mới) và thêm một dòng; thất bại thì mất xu và vật liệu, món giữ nguyên, không bị phá.
+- **Vật liệu** là hàng thô bất kỳ trong kho, tính bằng lô (10 phần), lấy hàng rẻ nhất trên Sàn trước. Tiệm vật liệu bán hàng thô gấp 2,5 lần giá Sàn.
+- Giá mặc định (xu + lô): sửa Xanh lam 120 + 3, Xanh lục 350 + 5, Vàng 900 + 8, Đỏ 2.200 + 12; nâng Xanh lam 2.500 + 15, Xanh lục 8.000 + 30, Vàng 25.000 + 60. Chỉnh ở tab cấu hình trang phục của trang quản lý. Kỳ vọng chi phí cho một lần lên Đỏ từ Vàng là khoảng 25.000 / 8% ≈ 312.000 xu.
+- Sổ cái: `gear_repair`, `gear_upgrade`, `forge_materials`.

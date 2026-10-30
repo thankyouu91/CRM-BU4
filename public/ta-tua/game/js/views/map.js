@@ -24,6 +24,10 @@ const PLACES = [
   { id: 'factory', name: 'Khu công nghiệp', icon: '🏭', row: 1, slot: 6, kind: 'factory', view: 'factory', level: 'market' },
   { id: 'realestate', name: 'Gia tộc & Nhà Đất', icon: '🏘️', row: 1, slot: 7, kind: 'realestate', view: 'clans', level: 'clan' },
   { id: 'arena', name: 'Bảng vàng', icon: '🏆', row: 1, slot: 8, kind: 'arena', view: 'ranks' },
+  // Cuối phố: sửa và nâng cấp trang phục, vật liệu rèn, đấu trường gia tộc (màn #arena do phần gia tộc vẽ).
+  { id: 'forge', name: 'Lò rèn', icon: '⚒️', row: 0, slot: 9, kind: 'forge', view: 'forge' },
+  { id: 'matshop', name: 'Tiệm vật liệu', icon: '🧺', row: 0, slot: 10, kind: 'matshop', view: 'materials' },
+  { id: 'colosseum', name: 'Đấu trường', icon: '⚔️', row: 1, slot: 9, kind: 'colosseum', view: 'arena', level: 'clan' },
 ];
 
 /** Vận khí hôm nay: một hành vượng, bé hành đó được thêm XP và lương. */
