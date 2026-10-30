@@ -9,7 +9,7 @@
 }
 .nav-dot { position: absolute; top: -4px; right: -4px; }
 
-.chat-room { display: flex; flex-direction: column; min-height: 0; height: min(68vh, 640px); padding: 0; overflow: hidden; }
+.chat-room { display: flex; flex-direction: column; min-height: 0; height: min(calc(68 * var(--vh)), 640px); padding: 0; overflow: hidden; }
 .chat-head { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 10px 14px; border-bottom: 2px solid var(--line); }
 .chat-head .row { margin-left: auto; }
 .chat-log-list { flex: 1; min-height: 0; overflow-y: auto; list-style: none; margin: 0; padding: 10px 14px; display: flex; flex-direction: column; gap: 8px; }
@@ -24,7 +24,7 @@
 .chat-send input { flex: 1; min-width: 0; }
 
 .chat-pm { display: grid; grid-template-columns: minmax(220px, 300px) 1fr; gap: 14px; }
-.chat-threads { padding: 10px; display: flex; flex-direction: column; gap: 8px; max-height: min(68vh, 640px); overflow-y: auto; }
+.chat-threads { padding: 10px; display: flex; flex-direction: column; gap: 8px; max-height: min(calc(68 * var(--vh)), 640px); overflow-y: auto; }
 .chat-threads ul { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 4px; }
 .chat-find { display: flex; gap: 6px; }
 .chat-find input { flex: 1; min-width: 0; }
@@ -59,8 +59,8 @@
 
 @media (max-width: 720px) {
   .chat-pm, .mail-grid { grid-template-columns: 1fr; }
-  .chat-threads { max-height: 40vh; }
-  .chat-room { height: 62vh; }
+  .chat-threads { max-height: calc(40 * var(--vh)); }
+  .chat-room { height: calc(62 * var(--vh)); }
   .chat-line { max-width: 92%; }
   .mail-open { grid-template-columns: 1fr auto; }
   .mail-open .mail-subject { grid-column: 1 / -1; }

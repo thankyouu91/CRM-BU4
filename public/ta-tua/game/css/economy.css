@@ -204,7 +204,7 @@ td { padding: 7px 8px; border-bottom: 1px dashed var(--line); vertical-align: to
   position: fixed; inset: 0; z-index: 150; display: grid; place-items: center; padding: 12px;
   background: #4a332680; animation: fade-in .15s ease-out;
 }
-.mg-frame { width: min(760px, 100%); max-height: 96vh; overflow: auto; padding: 14px; display: grid; gap: 10px; }
+.mg-frame { width: min(760px, 100%); max-height: calc(96 * var(--vh)); overflow: auto; padding: 14px; display: grid; gap: 10px; }
 .mg-frame h3 { font-size: 1.3rem; }
 .mg-frame .close { border: 0; background: none; font-size: 1.4rem; }
 .mg-host { position: relative; width: 100%; }
@@ -302,5 +302,5 @@ td { padding: 7px 8px; border-bottom: 1px dashed var(--line); vertical-align: to
 .announcement-body hr { border: 0; border-top: 2px dashed var(--line); margin: 6px 0; width: 100%; }
 .announcement-body table { width: 100%; border-collapse: collapse; font-size: .86rem; }
 .announcement-body th, .announcement-body td { text-align: left; padding: 5px 8px; border-bottom: 1px solid var(--line); vertical-align: top; }
-.modal-scroll { max-height: min(62vh, 560px); overflow-y: auto; padding-right: 4px; }
+.modal-scroll { max-height: min(calc(62 * var(--vh)), 560px); overflow-y: auto; padding-right: 4px; }
 .row.end { justify-content: flex-end; margin-top: 12px; }

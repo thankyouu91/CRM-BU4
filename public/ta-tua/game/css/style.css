@@ -1,4 +1,7 @@
 :root {
+  /* Thu nhỏ cả game 10% (chủ game yêu cầu). Phần tử cao theo màn hình dùng --vh, đã bù lại zoom, thay cho vh. */
+  --zoom: 0.9;
+  --vh: calc(1vh / var(--zoom));
   --bg: #fbf1e3;
   --surface: #fffaf3;
   --surface-2: #fff3e3;
@@ -30,8 +33,9 @@
 [hidden] { display: none !important; }
 
 html, body { margin: 0; }
+html { zoom: var(--zoom); }
 body {
-  min-height: 100vh;
+  min-height: calc(100 * var(--vh));
   font-family: var(--font-body);
   font-weight: 600;
   color: var(--ink);
@@ -92,7 +96,7 @@ input {
 input:focus { border-color: var(--tea); box-shadow: 0 0 0 4px #c8915f33; }
 
 /* ---------- Đăng nhập ---------- */
-.auth { min-height: 100vh; display: grid; place-items: center; padding: 16px; }
+.auth { min-height: calc(100 * var(--vh)); display: grid; place-items: center; padding: 16px; }
 .auth-card { width: min(420px, 100%); padding: 28px 28px 22px; text-align: center; }
 .auth-card p { margin: 6px 0 18px; }
 .auth-pet { height: 150px; display: grid; place-items: end center; }
@@ -285,7 +289,7 @@ input:focus { border-color: var(--tea); box-shadow: 0 0 0 4px #c8915f33; }
 /* Công viên chiếm cả khung: rộng hết màn, nhưng không cao quá màn hình (giữ tỉ lệ 1000:600). */
 .park-wrap {
   position: relative; overflow: hidden; aspect-ratio: 1000 / 600;
-  width: min(100%, calc((100vh - 170px) * 1000 / 600)); min-width: min(100%, 320px);
+  width: min(100%, calc((100 * var(--vh) - 170px) * 1000 / 600)); min-width: min(100%, 320px);
   border-radius: var(--radius); border: 2px solid var(--line-strong); box-shadow: var(--shadow);
   background: #84c76a; user-select: none;
 }
@@ -346,7 +350,7 @@ input:focus { border-color: var(--tea); box-shadow: 0 0 0 4px #c8915f33; }
   position: fixed; inset: 0; z-index: 100; display: grid; place-items: center; padding: 16px;
   background: #4a332666; animation: fade-in .15s ease-out;
 }
-.modal { width: min(460px, 100%); max-height: 86vh; overflow: auto; padding: 22px; animation: pop-in .2s ease-out; }
+.modal { width: min(460px, 100%); max-height: calc(86 * var(--vh)); overflow: auto; padding: 22px; animation: pop-in .2s ease-out; }
 .modal header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; }
 .modal header h3 { font-size: 1.5rem; }
 .modal .close { border: 0; background: none; font-size: 1.4rem; }
