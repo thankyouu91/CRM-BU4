@@ -2,6 +2,7 @@
 // Everything here is computed from the game's pure rules, so the text follows a rule change.
 import { BANK, policy } from "@/petdex/server/rules/bank.js";
 import { BRACKETS, incomeTax } from "@/petdex/server/rules/town.js";
+import { MONEY } from "../rules-money";
 
 /** 3000 → "3.000". */
 export const num = (n: number, digits = 0) => n.toLocaleString("vi-VN", { maximumFractionDigits: digits });
@@ -42,7 +43,7 @@ export const CB = (() => {
 
 /** Rows "growth this week → base rate next week, price index change" for a few growth figures. */
 export const policyRows = () =>
-  [0, 0.05, 0.08, CB.target, 0.12, 0.15, 0.2, 0.3].map((g) => {
+  [...new Set([0, 0.05, 0.08, CB.target, 0.12, 0.15, 0.2, 0.3, CB.indexUpAt])].sort((a, b) => a - b).map((g) => {
     const p = at(g);
     const change = round(p.priceIndex - 1);
     return [
@@ -77,3 +78,46 @@ export const taxRows = (incomes: number[]) =>
     const t = incomeTax(n);
     return [xu(n), xu(t), n ? pct(t / n, 1) : "0%"];
   });
+
+/** "a, b, c và d". */
+export const andList = (items: string[]) => (items.length < 2 ? items.join("") : `${items.slice(0, -1).join(", ")} và ${items[items.length - 1]}`);
+
+/** Player words for each ledger kind in MONEY.taxableKinds (a new taxable kind fails type-checking until it is named here). */
+const TAXABLE_WORDS: Record<(typeof MONEY.taxableKinds)[number], string> = {
+  salary: "lương",
+  interest: "lãi ngân hàng",
+  toll_income: "phí gia công",
+  minigame: "tiền thưởng mini-game",
+};
+/** Every taxable income in player words: the taxable ledger kinds, then business profit and trading gains (town.js settleTaxes). */
+export const TAXABLE = [...MONEY.taxableKinds.map((k) => TAXABLE_WORDS[k]), "lợi nhuận quầy", "lãi bán hàng (so với giá vốn)"];
+export const isTaxed = (kind: string) => (MONEY.taxableKinds as readonly string[]).includes(kind);
+
+/** The lowest bracket's cap: daily taxable income at or below it pays nothing. */
+export const TAX_FREE = (BRACKETS as [number, number][])[0][0];
+/** Lowest and highest bracket rates, "0% đến 18%". */
+export const taxRange = () => `${pct((BRACKETS as [number, number][])[0][1], 0)} đến ${pct((BRACKETS as [number, number][])[BRACKETS.length - 1][1], 0)}`;
+
+/** incomeTax(n) before it is rounded down to whole coins. */
+export const bracketSum = (n: number) => {
+  let sum = 0;
+  let prev = 0;
+  for (const [cap, rate] of BRACKETS as [number, number][]) {
+    if (n > prev) sum += (Math.min(n, cap) - prev) * rate;
+    prev = cap;
+  }
+  return Math.round(sum * 1e6) / 1e6;
+};
+
+/** The bracket-by-bracket sum behind incomeTax(n): "0 trên 150 xu đầu + 8% của 850 xu + 12% của 1.380 xu". */
+export const taxSteps = (n: number) => {
+  const parts: string[] = [];
+  let prev = 0;
+  for (const [cap, rate] of BRACKETS as [number, number][]) {
+    if (n <= prev) break;
+    const part = Math.min(n, cap) - prev;
+    parts.push(rate ? `${pct(rate, 1)} của ${xu(part)}` : `0 trên ${xu(part)} đầu`);
+    prev = cap;
+  }
+  return parts.join(" + ");
+};

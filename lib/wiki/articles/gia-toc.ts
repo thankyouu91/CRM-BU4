@@ -4,7 +4,7 @@ import { CLAN_XP, clanItemPrice } from "../rules-macro";
 import { INDUSTRY_COUNT, clanLevelRows, sectorRows } from "../game-data";
 import { INDUSTRIES, INDUSTRY_ORDER } from "@/public/ta-tua/game/js/shared/clan.js";
 import { ESSENTIALS, GOODS, PRODUCTION_INDUSTRIES, STRATEGIC_INDUSTRIES, qualityScore, qualitySplit } from "@/public/ta-tua/game/js/shared/industry.js";
-import { IMPACT, INDUSTRY_MARKET, industryMarketText, industryStrength } from "@/public/ta-tua/game/js/shared/industry-market.js";
+import { IMPACT, INDUSTRY_MARKET, industryInfluence, industryMarketText, industryStrength } from "@/public/ta-tua/game/js/shared/industry-market.js";
 import { CLAN_BANK, CLAN_GOV, HUI, clanDepositPayout, clanDepositRate } from "@/petdex/server/rules/finance.js";
 import { BANK } from "@/petdex/server/rules/bank.js";
 import { COMMODITIES } from "@/petdex/server/rules/market.js";
@@ -31,6 +31,13 @@ const impactRows = () =>
   });
 const exStrength = industryStrength({ clans: 1, plots: 4 });
 const fullPlots = Math.ceil((1 - IMPACT.perClan) / IMPACT.perPlot);
+// Every industry held and running at full strength: how far each good's mean price ends up.
+const allFull = Object.values(
+  industryInfluence(Object.fromEntries(Object.keys(INDUSTRY_MARKET).map((id) => [id, { clans: 1, plots: fullPlots }]))) as Record<string, { mean: number }>,
+);
+const allMeanLow = Math.min(...allFull.map((c) => c.mean)) - 1;
+const allMeanHigh = Math.max(...allFull.map((c) => c.mean)) - 1;
+const signedPct = (x: number) => `${x < 0 ? "−" : "+"}${pct(Math.abs(x))}`;
 
 // ---- tiền gửi kỳ hạn: ví dụ 100.000 xu, 7 ngày, lãi cơ bản mặc định
 const DEP = { amount: 100_000, term: 7 };
@@ -125,8 +132,9 @@ export const article: WikiArticle = {
         { p: "Ngành có gia tộc nắm và có lô đang chạy sẽ đẩy giá trung bình của một số hàng trên [Sàn Nguyên Liệu](san-nguyen-lieu): ngành làm ra hàng thì cung tăng, giá giảm; ngành dùng hàng thì cầu tăng, giá lên; ngành điện, nhiên liệu làm hàng chế biến rẻ đi; ngành giao vận, máy móc làm giá bớt nhảy. Ngành chưa ai nắm thì hàng chạy theo thị trường bình thường." },
         { list: [
           `**Độ mạnh** của một ngành (0 đến 1) = ${num(IMPACT.perClan * 100)}% cho mỗi gia tộc đang nắm + 1/${num(1 / IMPACT.perPlot)} cho mỗi lô có công trình hoàn chỉnh đang làm ngành đó. Một gia tộc cần khoảng ${fullPlots} lô để ngành chạy hết sức.`,
-          `Hết sức (và trọng số đầy đủ): cung tăng làm giá trung bình **−${pct(IMPACT.supply, 0)}**, cầu tăng **+${pct(IMPACT.demand, 0)}**, chi phí chế biến giảm **−${pct(IMPACT.cost, 0)}**, biến động giảm **${pct(IMPACT.stabilize, 0)}**. Gộp lại, giá trung bình một hàng không xuống dưới ${pct(IMPACT.meanRange[0], 0)} hay lên quá ${pct(IMPACT.meanRange[1], 0)}.`,
+          `Hết sức (và trọng số đầy đủ): cung tăng làm giá trung bình **−${pct(IMPACT.supply, 0)}**, cầu tăng **+${pct(IMPACT.demand, 0)}**, chi phí chế biến giảm **−${pct(IMPACT.cost, 0)}**, biến động giảm **${pct(IMPACT.stabilize, 0)}**. Gộp lại, giá trung bình một hàng không xuống dưới ${pct(IMPACT.meanRange[0], 0)} hay lên quá ${pct(IMPACT.meanRange[1], 0)}, và biến động không giảm quá ${pct(1 - IMPACT.minVol, 0)} dù nhiều ngành cùng làm giá bớt nhảy.`,
           `Ví dụ: một gia tộc nắm ${ind("tea")} với 4 lô đang chạy có độ mạnh ${num(exStrength * 100)}%, nên giá trung bình Lá trà tươi và Trà khô bị kéo xuống ${pct(IMPACT.supply * exStrength)}.`,
+          `Nếu mọi ngành đều có gia tộc chạy hết sức, lực kéo lên và kéo xuống gần bù nhau: giá trung bình mỗi hàng chỉ lệch trong khoảng ${signedPct(allMeanLow)} đến ${signedPct(allMeanHigh)}.`,
         ] },
         { table: { head: ["Ngành", "Tác động lên Sàn Nguyên Liệu", "Trọng số"], rows: impactRows() } },
         { tip: "Tab 👑 Quản trị liệt kê tác động của các ngành gia tộc đang nắm. Người chơi trên Sàn xem được hàng nào đang bị ngành gia tộc kéo giá ở trang chi tiết mặt hàng." },

@@ -18,6 +18,7 @@ import { article as A_vat_pham_thiet_yeu } from "./articles/vat-pham-thiet-yeu";
 import { article as A_lo_ren } from "./articles/lo-ren";
 import { article as A_dau_truong } from "./articles/dau-truong";
 import { CLAN, UNLOCKS } from "./rules";
+import { isTaxed, pct as pctVi } from "./articles/money";
 import { BAZAAR, SCHOOL } from "@/petdex/server/rules/production.js";
 import { MARKET } from "@/petdex/server/rules/market.js";
 import { DAILY_XP, EGG, LIFE_STAGES, UPKEEP } from "@/public/ta-tua/game/js/shared/pets.js";
@@ -265,7 +266,7 @@ export const ARTICLES: WikiArticle[] = [
             ["Nấu ăn", 4],
             ["Một ván mini-game", 3],
             ["Tắm, khám bệnh", 2],
-            ["Tự lớn mỗi đêm, kể cả khi bạn không vào game", `${DAILY_XP_TEXT}. Xem [Việc làm](viec-lam#tu-lon)`],
+            ["Tự lớn mỗi đêm, kể cả khi bạn không vào game", `${DAILY_XP_TEXT}. Xem [Tính cách, tuổi và vòng đời](tinh-cach-tuoi#tu-lon)`],
           ] } },
           { p: "XP được nhân thêm: **+10%** vào ngày hành của bé vượng (xem [Ngũ hành](ngu-hanh)), và theo tuổi: Sơ sinh ×1,5, Nhí nhố ×1,25, Thiếu niên ×1,1, Lão làng ×0,7. Đồ ăn hợp mệnh cho thêm 20% XP." },
         ],
@@ -838,6 +839,7 @@ export const ARTICLES: WikiArticle[] = [
         title: "Giới hạn mỗi ngày",
         blocks: [
           { p: "Mỗi ngày tính thưởng tối đa **100 xu**, **10 phần cá** (1 lô) và **20 phần trân châu** (2 lô). Vượt mức vẫn chơi được, lấy XP và kỹ năng, nhưng không nhận thêm xu và nguyên liệu." },
+          ...(isTaxed("minigame") ? [{ p: "Xu thưởng mini-game là **thu nhập chịu thuế**, cộng với lương và các khoản khác trong ngày. Xem [Thuế và Tòa thị chính](thue-toa-thi-chinh)." }] : []),
         ],
       },
       {
@@ -937,7 +939,7 @@ export const ARTICLES: WikiArticle[] = [
     title: "Sàn Nguyên Liệu",
     category: "kinh-te",
     emoji: "📈",
-    summary: `${COMMODITY_COUNT} mặt hàng, giá chạy mỗi ${MARKET.tickMs / 60_000} phút, tin tức, phí ${MARKET.fee * 100}%, lệnh giới hạn, kho, độ tươi và sổ lãi lỗ.`,
+    summary: `${COMMODITY_COUNT} mặt hàng, giá chạy mỗi ${MARKET.tickMs / 60_000} phút, tin tức, phí ${pctVi(MARKET.fee)}, lệnh giới hạn, kho, độ tươi và sổ lãi lỗ.`,
     keywords: ["sàn", "chợ", "giá", "mua bán", "lô", "lệnh", "kho", "đầu cơ", "nguyên liệu"],
     related: ["vuon", "khu-cong-nghiep", "quay-tra-sua"],
     sections: [
@@ -961,7 +963,7 @@ export const ARTICLES: WikiArticle[] = [
             "Mỗi mặt hàng thô có một **pha thị trường ẩn** (ổn định, tăng nóng, lao dốc, hỗn loạn), đổi bất chợt. Bạn chỉ đoán được qua biểu đồ.",
             `Thỉnh thoảng có **sốt giá hoặc sập giá** đột ngột ${MARKET.jumpMin * 100}–${MARKET.jumpMax * 100}%, kèm tin ⚡ trên Báo.`,
             `**Tin tức** (khoảng ${String(MARKET.newsPerDay).replace(".", ",")} tin mỗi ngày cho một mặt hàng) được báo trước ${MARKET.newsLeadMs / 60_000} phút rồi làm giá dịch chuyển trong vài giờ.`,
-            `Giá không vượt quá ${MARKET.ceiling} lần giá gốc.`,
+            `Giá không xuống dưới ${MARKET.floor.toLocaleString("vi-VN")} lần và không vượt quá ${MARKET.ceiling} lần giá gốc. Hàng có hạn dùng không giữ lâu chờ giá lên được, nên có giá sàn cao hơn: không dưới ${MARKET.freshFloor.toLocaleString("vi-VN")} lần giá gốc.`,
           ] },
         ],
       },
@@ -990,7 +992,7 @@ export const ARTICLES: WikiArticle[] = [
         blocks: [
           { table: { head: ["Luật", "Con số"], rows: [
             ["Chênh mua, bán với hệ thống", `±${MARKET.spread * 100}%`],
-            ["Phí giao dịch", "1% (tối thiểu 1 xu)"],
+            ["Phí giao dịch", `${pctVi(MARKET.fee)} (tối thiểu 1 xu)`],
             ["Hạn mức với hệ thống (của bạn)", `${MARKET.npcDailyLots} lô mỗi mặt hàng, mỗi chiều, mỗi ngày`],
             ["Hạn mức với hệ thống (cả thị trấn)", `Mỗi mặt hàng, mỗi chiều, mỗi ngày: lớn hơn giữa ${MARKET.townBaseLots} lô và ${MARKET.townLotsPerTrader} lô × số người đã giao dịch với hệ thống trong 7 ngày (hàng chế biến ×${MARKET.processedDepth})`],
             ["Một lệnh", "0,1 đến 100 lô"],

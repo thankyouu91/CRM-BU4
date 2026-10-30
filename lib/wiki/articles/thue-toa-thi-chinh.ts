@@ -2,13 +2,14 @@ import type { WikiArticle } from "../types";
 import { CLAN, UNLOCKS } from "../rules";
 import { MONEY } from "../rules-money";
 import { proposalRows } from "../game-data";
-import { bracketRows, num, pct, taxRows, xu } from "./money";
+import { TAX_FREE, bracketRows, bracketSum, isTaxed, num, pct, taxRange, taxRows, taxSteps, xu } from "./money";
 import { GUILD_PROJECTS, PROPOSALS, STIPEND, TREASURY_SEED, incomeTax } from "@/petdex/server/rules/town.js";
 import { BUSINESS } from "@/petdex/server/rules/business.js";
 import { MARKET } from "@/petdex/server/rules/market.js";
 import { BAZAAR, LOANS } from "@/petdex/server/rules/production.js";
 import { P2P } from "@/petdex/server/rules/finance.js";
 import { MARKET_RULES, STRATEGIC_RULES } from "@/public/ta-tua/game/js/shared/industry.js";
+import { UPKEEP } from "@/public/ta-tua/game/js/shared/pets.js";
 
 // Taxes (town.js, ledger.js chargeTax, business.js, clans.js, commerce.js), fees and the town budget.
 
@@ -21,8 +22,9 @@ const levels = STRATEGIC_RULES.levels as { buff: number }[];
 
 // A day of income for the worked example.
 const day = { salary: 1_200, interest: 30, business: 600, trading: 400, daily: 60, minigame: 150 };
-const taxable = day.salary + day.interest + day.business + day.trading;
+const taxable = day.salary + day.interest + day.business + day.trading + (isTaxed("minigame") ? day.minigame : 0);
 const dayTax = incomeTax(taxable);
+const dayTaxRounded = bracketSum(taxable) !== dayTax; // incomeTax() rounds the bracket sum down
 
 // A clan with two industries for the corporate tax example.
 const clanRate = CLAN.baseTax + CLAN.extraTaxPerIndustry;
@@ -48,7 +50,7 @@ export const article: WikiArticle = {
       blocks: [
         { p: `Thuế và phí là cách thị trấn hút bớt xu: **${half}** số thu vào **ngân sách thị trấn**, phần còn lại **bị hủy** khỏi nền kinh tế (trừ vài khoản ghi rõ bên dưới). Xem bức tranh chung ở [Hệ thống tài chính](tai-chinh).` },
         { table: { head: ["Thuế", "Ai nộp", "Mức", "Vào ngân sách"], rows: [
-          ["Thuế thu nhập", "Mọi người chơi, mỗi nửa đêm", "0% đến 15% theo bậc, tính trên thu nhập trong ngày", half],
+          ["Thuế thu nhập", "Mọi người chơi, mỗi nửa đêm", `${taxRange()} theo bậc, tính trên thu nhập trong ngày`, half],
           ["Thuế doanh thu quầy", "Chủ quầy trà sữa", `${pct(BUSINESS.revenueTax)} doanh thu`, half],
           ["Thuế doanh nghiệp", "Quỹ gia tộc, mỗi nửa đêm", `${pct(CLAN.baseTax)} + ${pct(CLAN.extraTaxPerIndustry)} cho mỗi ngành thêm, trên doanh thu khai báo`, half],
           ["Truy thu thuế", "Gia tộc khai thiếu", `Phần thuế trốn + phạt ${pct(STRATEGIC_RULES.collectPenalty, 0)}`, "Tất cả (trừ hoa hồng Thuế vụ)"],
@@ -65,19 +67,20 @@ export const article: WikiArticle = {
         { p: "**Tính vào thu nhập chịu thuế:**" },
         { list: [
           "**Lương** mọi ca làm, kể cả làm thuê ở quầy hay xưởng của người khác.",
+          "**Tiền thưởng mini-game** (câu cá, hứng trân châu, ghép hình).",
           "**Lãi ngân hàng**: lãi tiết kiệm và lãi kỳ hạn (phần thưởng thêm của Ngân hàng nhà nước không tính).",
           "**Phí gia công** xưởng của bạn thu được.",
           "**Lợi nhuận quầy**: doanh thu trừ nguyên liệu, tiền thuê, lương nhân viên và thuế doanh thu. Ngày lỗ tính là 0.",
           "**Lãi bán hàng** trên [Sàn](san-nguyen-lieu) và theo hợp đồng cung ứng: tiền bán (sau phí) trừ giá vốn. Lãi và lỗ trong cùng ngày bù trừ cho nhau, tổng âm tính là 0.",
         ] },
-        { p: "**Không chịu thuế:** mọi khoản thu khác, ví dụ quà ngày, nhiệm vụ, mini-game, thưởng lên cấp, bán món Bếp, bán ở Chợ Phiên, cổ tức gia tộc, trợ cấp tân thủ." },
-        { table: { head: ["Thu nhập chịu thuế trong ngày", "Thuế", "Thuế suất thực"], rows: taxRows([250, 800, 1_000, 2_500, 5_000]) } },
-        { p: `**Ví dụ một ngày:** lương ${xu(day.salary)}, lãi tiết kiệm ${xu(day.interest)}, lợi nhuận quầy ${xu(day.business)}, lãi bán trên Sàn ${xu(day.trading)}, cộng thêm quà ngày ${xu(day.daily)} và mini-game ${xu(day.minigame)} (hai khoản này miễn thuế). Thu nhập chịu thuế = **${xu(taxable)}**. Thuế = 0 trên ${xu(300)} đầu + 5% của ${xu(700)} + 10% của ${xu(taxable - 1_000)} = **${xu(dayTax)}**. Ngân sách nhận ${xu(Math.floor(dayTax * MONEY.treasuryShare))}, phần còn lại bị hủy.` },
+        { p: "**Không chịu thuế:** mọi khoản thu khác, ví dụ quà ngày, nhiệm vụ, thưởng lên cấp, bán món Bếp, bán ở Chợ Phiên, cổ tức gia tộc, trợ cấp tân thủ." },
+        { table: { head: ["Thu nhập chịu thuế trong ngày", "Thuế", "Thuế suất thực"], rows: taxRows([100, 250, 800, 1_000, 2_500, 5_000]) } },
+        { p: `**Ví dụ một ngày:** lương ${xu(day.salary)}, lãi tiết kiệm ${xu(day.interest)}, lợi nhuận quầy ${xu(day.business)}, lãi bán trên Sàn ${xu(day.trading)}, tiền thưởng mini-game ${xu(day.minigame)}, cộng thêm quà ngày ${xu(day.daily)} (khoản này miễn thuế). Thu nhập chịu thuế = **${xu(taxable)}**. Thuế = ${taxSteps(taxable)} = **${xu(dayTax)}**${dayTaxRounded ? " (làm tròn xuống)" : ""}. Ngân sách nhận ${xu(Math.floor(dayTax * MONEY.treasuryShare))}, phần còn lại bị hủy.` },
         { list: [
           "Thuế trừ thẳng vào **ví** (không đụng tiết kiệm). Ví không đủ thì phần thiếu thành **nợ thuế**, cộng vào hóa đơn đêm sau. Màn Tòa thị chính hiện thuế 7 ngày gần nhất và nợ thuế.",
           `Khi đề xuất **Giảm thuế** đang chạy, mọi bậc giảm ${num(cut * 100)} điểm % (không xuống dưới 0%). Với ${xu(2_500)} thu nhập, thuế còn ${xu(incomeTax(2_500, cut))} thay vì ${xu(incomeTax(2_500))}.`,
         ] },
-        { tip: `Thuế tính riêng từng ngày: kiếm ${xu(3_000)} trong một ngày chịu ${xu(incomeTax(3_000))} thuế, còn ${xu(1_000)} mỗi ngày trong 3 ngày chỉ chịu ${xu(3 * incomeTax(1_000))}. Ai kiếm dưới ${xu(300)} một ngày không phải nộp gì.` },
+        { tip: `Thuế tính riêng từng ngày: kiếm ${xu(3_000)} trong một ngày chịu ${xu(incomeTax(3_000))} thuế, còn ${xu(1_000)} mỗi ngày trong 3 ngày chỉ chịu ${xu(3 * incomeTax(1_000))}. Ai có thu nhập chịu thuế không quá ${xu(TAX_FREE)} một ngày không phải nộp gì.` },
       ],
     },
     {
@@ -106,6 +109,7 @@ export const article: WikiArticle = {
           ["Phí duy trì gia tộc mỗi ngày", `${xu(CLAN.upkeepPerLevel)} × cấp + ${xu(CLAN.upkeepPerPlot)} × số lô`, half],
           ["Bồi thường thị trường khi gia tộc thâu tóm ngành", "Theo ngành", half],
           ["Gia tộc mua đất", "Giá lô", pct(CLAN.land.treasuryShare, 0)],
+          ["Phí chăm nuôi bé mỗi ngày", `(${UPKEEP.base} + ${UPKEEP.perLevel} × cấp) xu mỗi bé × chỉ số giá, không quá ${pct(UPKEEP.incomeShare, 0)} thu nhập trong ngày. Xem [Tính cách, tuổi và vòng đời](tinh-cach-tuoi)`, "Không, bị hủy hẳn"],
           ["Thua Đấu trường", "Một phần quỹ gia tộc", "Phần không chia cho bên thắng (khoảng một nửa)"],
         ] } },
         { p: "Tiền mua đồ của NPC (Siêu thị, học phí, phòng khám, hạt giống, giấy phép, tiền thuê...) **không** vào ngân sách: số xu đó bị hủy hẳn." },
@@ -137,7 +141,7 @@ export const article: WikiArticle = {
           "Đề xuất thắng chỉ được làm khi **ngân sách đủ tiền** lúc đóng phiên. Đủ thì ngân sách trả tiền và hiệu ứng bắt đầu ngay; thiếu thì tin tức báo đề xuất thắng nhưng chưa đủ ngân sách.",
         ] },
         { table: { head: ["Đề xuất", "Chi phí (xu)", "Tác dụng"], rows: proposalRows() } },
-        { tip: `Giảm thuế có lợi nhất cho người có thu nhập chịu thuế trên ${xu(300)} mỗi ngày; người chủ quầy hưởng nhiều nhất từ các đề xuất thêm khách; người mới chơi thì Quỹ chào tân thủ.` },
+        { tip: `Giảm thuế có lợi nhất cho người có thu nhập chịu thuế trên ${xu(TAX_FREE)} mỗi ngày; người chủ quầy hưởng nhiều nhất từ các đề xuất thêm khách; người mới chơi thì Quỹ chào tân thủ.` },
       ],
     },
   ],

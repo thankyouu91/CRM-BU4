@@ -1,5 +1,6 @@
 import { beforeAll, describe, expect, it } from "vitest";
-import { KIND_LABELS, MONEY } from "@/lib/wiki/rules-money";
+import { KIND_LABELS, MONEY, upkeepCharge } from "@/lib/wiki/rules-money";
+import { SPECIES, UPKEEP } from "@/public/ta-tua/game/js/shared/pets.js";
 
 // The money articles (ngan-hang, thue-toa-thi-chinh, tai-chinh) copy a few rules that live in modules
 // which open the game database. This test runs those modules on an in-memory database and fails as
@@ -12,7 +13,7 @@ const DAY = 86_400_000;
 const HOUR = 3_600_000;
 
 /* eslint-disable @typescript-eslint/no-explicit-any -- plain JS modules, loosely typed */
-let store: any, ledger: any, town: any, bank: any, clock: any, townRules: any, bankRules: any, macro: any;
+let store: any, ledger: any, town: any, bank: any, clock: any, townRules: any, bankRules: any, macro: any, lifecycle: any;
 /* eslint-enable @typescript-eslint/no-explicit-any */
 
 let n = 0;
@@ -32,6 +33,7 @@ beforeAll(async () => {
   townRules = await import("@/petdex/server/rules/town.js");
   bankRules = await import("@/petdex/server/rules/bank.js");
   macro = await import("@/petdex/server/macro.js");
+  lifecycle = await import("@/petdex/server/lifecycle.js");
   const { migrate } = await import("@/petdex/server/migrate.js");
   migrate(T0);
 });
@@ -99,6 +101,42 @@ describe("Petfarm wiki money rules stay in step with the game", () => {
     };
     const r = bankRules.BANK.defaultRate;
     expect(roll(r) - roll(r + 0.002)).toBeCloseTo(MONEY.landRateDrag * 0.002, 4);
+  });
+
+  it("charges pet upkeep the way upkeepCharge() says", () => {
+    const day = clock.dayKey(T0 + 20 * DAY);
+    const end = clock.startOfDay(day) + DAY;
+    const { priceIndex } = bank.economy();
+    const species = (SPECIES as { id: string }[])[0].id;
+    const keeper = (opts: { levels: number[]; income: number; wallet: number; seenAgo: number }) => {
+      const id = player(opts.wallet, end - 2 * HOUR);
+      for (const lv of opts.levels) {
+        const petId = store.insertPet(id, `be${n}`, species, end - 2 * HOUR);
+        store.db.prepare("UPDATE pets SET level = ? WHERE id = ?").run(lv, petId);
+      }
+      if (opts.income) ledger.post({ userId: id, delta: opts.income, kind: "minigame", now: end - HOUR });
+      store.db.prepare("UPDATE users SET last_seen_at = ? WHERE id = ?").run(end - opts.seenAgo, id);
+      return { id, ...opts, before: store.getUser(id).coins };
+    };
+    const cases = [
+      keeper({ levels: [10, 20], income: 2_000, wallet: 5_000, seenAgo: HOUR }), // full fee
+      keeper({ levels: [10, 20], income: 300, wallet: 5_000, seenAgo: HOUR }), // capped by income
+      keeper({ levels: [30], income: 0, wallet: 5_000, seenAgo: HOUR }), // no income: base per pet
+      keeper({ levels: [30, 30], income: 0, wallet: 7, seenAgo: HOUR }), // wallet runs dry, no debt
+      keeper({ levels: [30], income: 2_000, wallet: 5_000, seenAgo: (UPKEEP.activeDays + 1) * DAY }), // away: nothing
+    ];
+    lifecycle.settleUpkeepDay(day);
+    for (const c of cases) {
+      const active = c.seenAgo <= UPKEEP.activeDays * DAY;
+      const want = active ? upkeepCharge({ levels: c.levels, priceIndex, income: c.income, wallet: c.before }).paid : 0;
+      expect(c.before - store.getUser(c.id).coins, JSON.stringify(c)).toBe(want);
+      expect(store.getUser(c.id).coins).toBeGreaterThanOrEqual(0);
+    }
+    const [full, capped, idle, dry] = cases.map((c) => upkeepCharge({ levels: c.levels, priceIndex, income: c.income, wallet: c.before }));
+    expect(full.paid).toBe(full.full);
+    expect(capped.paid).toBeLessThan(capped.full);
+    expect(idle.paid).toBe(UPKEEP.base);
+    expect(dry.paid).toBe(7);
   });
 
   it("names ledger lines the way the game does (KIND_LABELS)", () => {

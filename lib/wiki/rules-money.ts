@@ -1,6 +1,8 @@
 // Money rules the wiki has to copy because they live inside modules that open the game database
-// (ledger.js, town.js, bank.js). tests/petfarm-wiki-sync-money.test.ts runs those modules on an
+// (ledger.js, town.js, bank.js, lifecycle.js). tests/petfarm-wiki-sync-money.test.ts runs those modules on an
 // in-memory database and fails when one of these no longer matches what the game does.
+
+import { UPKEEP, upkeepOf } from "@/public/ta-tua/game/js/shared/pets.js";
 
 export const MONEY = {
   /** Share of every tax and fee that goes to the town budget; the rest is destroyed (ledger.js chargeTax, chargeFee). */
@@ -9,7 +11,7 @@ export const MONEY = {
    * Ledger kinds counted as taxable income each day (town.js settleTaxes). Business profit and realised trading
    * gains are added on top; every other income is tax free.
    */
-  taxableKinds: ["salary", "interest", "toll_income"],
+  taxableKinds: ["salary", "interest", "toll_income", "minigame"],
   /** The Central Bank divides the coins by the players active in this many days (bank.js centralBankWeek). */
   activeWindowDays: 7,
   /**
@@ -18,6 +20,18 @@ export const MONEY = {
    */
   landRateDrag: 2,
 } as const;
+
+/**
+ * Pet upkeep charged at midnight for one player (lifecycle.js settleUpkeepDay): the full fee of every living pet
+ * (shared/pets.js upkeepOf, scaled by the price index), capped at UPKEEP.incomeShare of the coins that entered the
+ * wallet that day (every ledger kind in the "income" group) but never below UPKEEP.base per pet, and never more than
+ * the wallet holds. Only players seen in the last UPKEEP.activeDays days pay; the coins are destroyed.
+ */
+export function upkeepCharge({ levels, priceIndex = 1, income, wallet = Infinity }: { levels: number[]; priceIndex?: number; income: number; wallet?: number }) {
+  const full = levels.reduce((sum, lv) => sum + upkeepOf(lv, priceIndex), 0);
+  const due = Math.min(full, Math.max(UPKEEP.base * levels.length, Math.floor(income * UPKEEP.incomeShare)));
+  return { full, due, paid: Math.min(due, Math.max(0, wallet)) };
+}
 
 /** Names of ledger lines as the Ví screen shows them (ledger.js KINDS), for the lines the money articles mention. */
 export const KIND_LABELS = {
@@ -44,6 +58,7 @@ export const KIND_LABELS = {
   clan_revenue: "Doanh thu gia tộc",
   clan_land: "Mua bán đất",
   shop: "Siêu thị",
+  upkeep: "Phí chăm nuôi",
   adopt: "Nhận nuôi",
   school: "Học phí",
   clinic: "Phòng khám",

@@ -92,7 +92,7 @@ export const article: WikiArticle = {
           "**Chia cho số người chơi có hoạt động** (có ít nhất một giao dịch xu) trong 7 ngày qua, ra **số xu bình quân**.",
           `**So với tuần trước** để ra mức tăng trưởng. Mục tiêu là **tăng ${pct(CB.target, 1)}/tuần**. Buổi họp đầu tiên chưa có gì để so nên coi như đúng mục tiêu.`,
           `**Chênh lệch** = mức tăng tuần này trừ ${pct(CB.target, 1)}. Mỗi **1 điểm %** vượt mục tiêu làm **lãi cơ bản giảm ${pts(CB.ratePerPoint)}/ngày** (tính từ mức ${pct(CB.neutral)}) và **chỉ số giá tăng ${pct(CB.indexPerPoint)}**. Thấp hơn mục tiêu thì ngược lại.`,
-          `Giới hạn: lãi cơ bản kẹt ở **${pct(CB.rateMin)}** khi xu tăng từ ${pct(CB.rateFloorAt, 1)}/tuần trở lên và ở **${pct(CB.rateMax)}** khi xu tăng từ ${pct(CB.rateCeilAt, 1)}/tuần trở xuống. Chỉ số giá một tuần tăng tối đa **${pct(CB.indexUpMax, 1)}** và giảm tối đa **${pct(CB.indexDownMax, 1)}**.`,
+          `Giới hạn: lãi cơ bản kẹt ở **${pct(CB.rateMin)}** khi xu tăng từ ${pct(CB.rateFloorAt, 1)}/tuần trở lên và ở **${pct(CB.rateMax)}** khi xu tăng từ ${pct(CB.rateCeilAt, 1)}/tuần trở xuống. Chỉ số giá một tuần tăng tối đa **${pct(CB.indexUpMax, 1)}** (khi xu tăng từ ${pct(CB.indexUpAt, 1)}/tuần trở lên) và giảm tối đa **${pct(CB.indexDownMax, 1)}** (khi xu tăng từ ${pct(CB.indexDownAt, 1)}/tuần trở xuống).`,
         ] },
         { p: "Chỉ số giá **nhân dồn** qua các tuần (tuần này nhân lên chỉ số của tuần trước), còn lãi cơ bản thì **tính lại từ đầu** mỗi tuần chỉ theo mức tăng của tuần đó." },
         { table: { head: ["Xu bình quân tăng trong tuần", "Lãi cơ bản tuần sau", "Chỉ số giá thay đổi"], rows: policyRows().map((r) => r.map((c) => c.replace("-", "−"))) } },
@@ -106,7 +106,7 @@ export const article: WikiArticle = {
         { p: "**Chỉ số giá** nhân vào giá gốc của hầu hết những gì bạn trả cho NPC, và cả giá tham chiếu của hàng hóa:" },
         { list: [
           "[Siêu thị](sieu-thi) (đồ ăn, đồ chăm sóc, đồ chơi, trang phục), học phí [Trường học](truong-hoc), phòng khám và bảo hiểm.",
-          "Hạt giống và mở rộng [vườn](vuon), mở lại ô tưởng niệm.",
+          "Hạt giống và mở rộng [vườn](vuon), mở lại ô tưởng niệm, [phí chăm nuôi bé](tinh-cach-tuoi) mỗi ngày.",
           "[Quầy trà sữa](quay-tra-sua): giấy phép, tiền thuê mặt bằng, nâng cấp, quảng cáo, và cả giá tham chiếu từng món lẫn chi phí nguyên liệu.",
           "[Xưởng](khu-cong-nghiep): xây, nâng cấp, thuê đất.",
           "Giá trung bình mà nguyên liệu thô trên [Sàn](san-nguyen-lieu) dần quay về, giá trị món [Bếp](bep) bán cho NPC, giá tham chiếu ở [Chợ Phiên](cho-phien).",
