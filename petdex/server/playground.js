@@ -282,7 +282,8 @@ export function attachPlayground(io) {
         if (live.room !== me.room) throw new GameError('Bé này đang ở kênh khác.');
         return live;
       }
-      const resident = userId && userId !== socket.data.userId && residentOf(userId);
+      // Bé vắng mặt chỉ tương tác được khi đang là cư dân của đúng kênh này.
+      const resident = userId && userId !== socket.data.userId && residentRoom.get(userId) === me.room && residentOf(userId);
       if (!resident) throw new GameError('Bé này vừa rời công viên.');
       return resident;
     };

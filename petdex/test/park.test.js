@@ -175,6 +175,13 @@ test('cư dân theo kênh: mỗi kênh tối đa RESIDENTS_PER_ROOM, không trù
   for (const room of pg.residentRooms().values()) perRoom.set(room, (perRoom.get(room) ?? 0) + 1);
   assert.deepEqual([...perRoom].sort(), [[1, RESIDENTS_PER_ROOM], [2, RESIDENTS_PER_ROOM]]);
 
+  // Không vuốt ve được cư dân của kênh khác (gửi thẳng id cư dân kênh 2 từ kênh 1).
+  a.clear();
+  a.send('pg:cuddle', { targetId: rb[0].id });
+  assert.equal(a.last('pg:error')?.message, 'Bé này vừa rời công viên.');
+  a.send('pg:cuddle', { targetId: ra[0].id });
+  assert.equal(a.all('pg:error').length, 1, 'cư dân cùng kênh thì vuốt ve được');
+
   // Một người cư dân ở kênh 2 vào công viên (kênh 1): kênh 2 bỏ thẻ cư dân của họ.
   const someone = rb[0];
   b.clear();
