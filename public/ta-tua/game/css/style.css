@@ -482,6 +482,7 @@ input:focus { border-color: var(--tea); box-shadow: 0 0 0 4px #c8915f33; }
 .badge.form-badge.form-5 { background: #fff4d6; border-color: #e0a21c; color: #7a4c0e; }
 .gear-lines { margin: 4px 0 0; padding: 0; list-style: none; font-size: .82rem; display: grid; gap: 2px; }
 .gear-bonus-line { display: flex; flex-wrap: wrap; gap: 6px; margin: 6px 0 0; }
+.gear-pool .gear-bonus { display: inline-block; margin: 2px 4px 0 0; }
 .gear-bonus { font-size: .78rem; padding: 2px 8px; border-radius: 999px; background: var(--surface-2); border: 1px solid var(--line, #e7d9c8); }
 .section-title { margin: 18px 0 8px; font-size: 1rem; }
 .section-title small { font-weight: 400; }

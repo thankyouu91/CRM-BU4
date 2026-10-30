@@ -525,6 +525,22 @@ addColumn('users', 'locked_slots', 'INTEGER NOT NULL DEFAULT 0');
     created_at INTEGER NOT NULL
   );
   CREATE INDEX IF NOT EXISTS gear_owner ON gear(owner_id);
+  -- Đấu giá trang phục ở Chợ Phiên: món nằm ở gear (listed = 1) tới khi phiên đóng; giá đang dẫn bị giữ khỏi ví người trả.
+  CREATE TABLE IF NOT EXISTS auctions (
+    id          INTEGER PRIMARY KEY AUTOINCREMENT,
+    seller_id   INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    gear_id     INTEGER NOT NULL,
+    start_price INTEGER NOT NULL,
+    ref_price   INTEGER NOT NULL,
+    top_bid     INTEGER,
+    top_bidder  INTEGER,
+    bids        INTEGER NOT NULL DEFAULT 0,
+    created_at  INTEGER NOT NULL,
+    ends_at     INTEGER NOT NULL,
+    closed_at   INTEGER,
+    status      TEXT NOT NULL
+  );
+  CREATE INDEX IF NOT EXISTS auctions_open ON auctions(status, ends_at);
   -- Mã quà: quản trị viên tạo, người chơi nhập trong game. rewards = JSON { coins, items: { mã món: số lượng }, gear: [{ itemId, tier }] }.
   CREATE TABLE IF NOT EXISTS gift_codes (
     id         INTEGER PRIMARY KEY AUTOINCREMENT,

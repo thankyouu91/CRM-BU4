@@ -3,6 +3,7 @@
 import { centralBankWeek, settleBankDay } from './bank.js';
 import { settleBusinessDay } from './business.js';
 import { expireListings } from './bazaar.js';
+import { settleAuctions } from './auction.js';
 import { settleCareDay } from './care.js';
 import { settleContractsDay } from './contracts.js';
 import { settleLoansDay } from './credit.js';
@@ -59,6 +60,9 @@ export function runDue(now = Date.now(), rand = Math.random) {
     setMeta('market_tick', t);
     ticks += 1;
   }
+
+  // Phiên đấu giá đóng đúng giờ, không đợi nửa đêm.
+  settleAuctions(now);
 
   const today = dayKey(now);
   let settled = getMeta('settled_day');

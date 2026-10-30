@@ -475,3 +475,136 @@ describe("Pet Town gift codes", () => {
     expect((await game("POST", "/gifts/redeem", p.token, { code: "SAI-9999" })).data.error).toMatch(/nhiều quá/);
   });
 });
+
+describe("Pet Town gear hints, quick sell, sealed boxes and auctions", () => {
+  const coins = async (token: string) => (((await game("GET", "/me", token)).data.user as Json).coins as number);
+  const veteran = async (name: string) => {
+    const p = await player(name);
+    store.db.prepare("UPDATE users SET created_at = ? WHERE id = ?").run(Date.now() - 30 * 86_400_000, p.userId);
+    store.db.prepare("UPDATE pets SET level = 10 WHERE owner_id = ?").run(p.userId);
+    return p;
+  };
+
+  it("each item shows its possible bonus types up front, and blue/green rolls stay inside them", () => {
+    const config = shared.normalizeGearConfig(shared.DEFAULT_GEAR_CONFIG);
+    let seed = 9;
+    const rand = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
+    const pool = shared.affixPool("neck", "tho"); // Thổ: income + luck, neck: income
+    expect(pool).toEqual(["income", "luck"]);
+    expect(shared.affixPool("head", "kim")).toEqual(["income", "stats", "trade"]);
+    expect(shared.affixPool(undefined, undefined)).toEqual(shared.AFFIX_ORDER);
+    for (let i = 0; i < 500; i++) {
+      const g = shared.rollShopGear(config, rand, { pool });
+      for (const a of Object.keys(g.affixes)) expect(pool).toContain(a);
+    }
+    // gold needs 3 lines: the pool's 2 plus one from outside; red has all 4
+    const gold = shared.rollGear(config, rand, { tier: "gold", pool });
+    expect(Object.keys(gold.affixes)).toEqual(expect.arrayContaining(pool));
+    expect(Object.keys(shared.rollGear(config, rand, { tier: "red", pool }).affixes)).toHaveLength(4);
+  });
+
+  it("quick sell pays 10–40% of the value depending on how high the lines rolled, and the piece is gone", async () => {
+    const ranges = shared.normalizeGearConfig(shared.DEFAULT_GEAR_CONFIG).ranges;
+    expect(shared.quickSellRate("gold", { income: 7, luck: 7, stats: 7 }, ranges)).toBe(0.1);
+    expect(shared.quickSellRate("gold", { income: 12, luck: 12, stats: 12 }, ranges)).toBe(0.4);
+    expect(shared.quickSellRate("red", { income: 15, luck: 15, stats: 15, trade: 15 }, ranges)).toBe(0.25);
+
+    const p = await player("Ban_Nhanh");
+    const g = (await internal("POST", `/admin/players/${p.userId}/gear`, { itemId: "crown", tier: "red", affixes: { income: 20, stats: 20, trade: 20, luck: 20 }, actor: "Admin" })).data.gear as Json;
+    await game("POST", `/pets/${p.petId}/equip`, p.token, { gearId: g.id });
+    const card = ((await game("GET", "/me", p.token)).data.gear as Json[]).find((x) => x.id === g.id) as Json;
+    expect(card.pool).toEqual(["income", "stats", "trade"]);
+    expect(card.quickSell).toBe(Math.floor(500 * 8 * 0.4)); // crown 500, red ×8, perfect lines 40% (price index 1 in tests)
+    const before = await coins(p.token);
+    const sold = await game("POST", `/gear/${g.id}/quick-sell`, p.token);
+    expect(sold.status).toBe(200);
+    expect(await coins(p.token)).toBe(before + (card.quickSell as number));
+    expect(((await game("GET", "/me", p.token)).data.gear as Json[]).some((x) => x.id === g.id)).toBe(false);
+    expect(store.getPet(p.petId).wear).toEqual({});
+    expect((await game("POST", `/gear/${g.id}/quick-sell`, p.token)).data.error).toMatch(/không có món/);
+  });
+
+  it("a sealed box can be listed at the bazaar: buyers see its possible bonuses, not its tier or lines", async () => {
+    const seller = await veteran("Ban_Hop");
+    const buyer = await veteran("Mua_Hop");
+    const bought = await game("POST", "/shop/buy", seller.token, { itemId: "bowtie" });
+    const box = ((await game("GET", "/me", seller.token)).data.gear as Json[]).find((x) => x.id === (bought.data.result as Json).gear) as Json;
+    expect(box).toMatchObject({ sealed: true, tier: null, lines: [] });
+    expect(box.quickSell).toBe(Math.floor(60 * 0.1));
+    const sellable = (((await game("GET", "/bazaar", seller.token)).data.sellable as Json).gear as Json[]).find((x) => x.id === box.id) as Json;
+    expect(sellable.refPrice).toBe(60); // valued as blue, whatever is inside
+    expect((await game("POST", "/bazaar/list", seller.token, { kind: "gear", ref: String(box.id), price: 60 })).status).toBe(200);
+    const listing = (((await game("GET", "/bazaar", buyer.token)).data.listings as Json[]).find((l) => l.kind === "gear" && l.ref === String(box.id))) as Json;
+    expect(listing).toMatchObject({ sealed: true, tier: null, lines: [], pool: ["income", "luck"] });
+    expect((await game("POST", `/bazaar/${listing.id}/buy`, buyer.token)).status).toBe(200);
+    const got = ((await game("GET", "/me", buyer.token)).data.gear as Json[]).find((x) => x.id === box.id) as Json;
+    expect(got.sealed).toBe(true);
+    expect((await game("POST", `/gear/${box.id}/open`, buyer.token)).status).toBe(200);
+  });
+
+  it("auctions: bids hold coins, the outbid player is refunded, the top bid wins when time runs out", async () => {
+    const auction = await import("@/petdex/server/auction.js");
+    const seller = await veteran("Dau_Gia_Ban");
+    const a = await veteran("Dau_Gia_A");
+    const b = await veteran("Dau_Gia_B");
+    const g = (await internal("POST", `/admin/players/${seller.userId}/gear`, { itemId: "cape", tier: "gold", affixes: { income: 10, stats: 9, trade: 8 }, actor: "Admin" })).data.gear as Json;
+    // start price must sit in 10–300% of the reference (cape 380 × gold 4)
+    expect((await game("POST", "/bazaar/auctions", seller.token, { gearId: g.id, startPrice: 100, hours: 7 })).data.error).toMatch(/Thời hạn/);
+    expect((await game("POST", "/bazaar/auctions", seller.token, { gearId: g.id, startPrice: 100, hours: 6 })).data.error).toMatch(/khởi điểm/);
+    const sellerBefore = await coins(seller.token);
+    expect((await game("POST", "/bazaar/auctions", seller.token, { gearId: g.id, startPrice: 200, hours: 6 })).status).toBe(200);
+    expect(await coins(seller.token)).toBe(sellerBefore - 2); // 1% listing fee
+    expect(((await game("GET", "/me", seller.token)).data.gear as Json[]).some((x) => x.id === g.id)).toBe(false);
+
+    const lot = ((await game("GET", "/bazaar", a.token)).data.auctions as Json[]).find((x) => x.gearId === g.id) as Json;
+    expect(lot).toMatchObject({ tier: "gold", minBid: 200, topBid: null, bids: 0 });
+    expect((await game("POST", `/bazaar/auctions/${lot.id}/bid`, seller.token, { amount: 300 })).data.error).toMatch(/phiên của bạn/);
+    expect((await game("POST", `/bazaar/auctions/${lot.id}/bid`, a.token, { amount: 150 })).data.error).toMatch(/ít nhất 200/);
+
+    const aBefore = await coins(a.token);
+    expect((await game("POST", `/bazaar/auctions/${lot.id}/bid`, a.token, { amount: 200 })).status).toBe(200);
+    expect(await coins(a.token)).toBe(aBefore - 200);
+    expect((await game("POST", `/bazaar/auctions/${lot.id}/bid`, a.token, { amount: 300 })).data.error).toMatch(/cao nhất rồi/);
+    // the next bid must beat 200 by at least 5%
+    expect((await game("POST", `/bazaar/auctions/${lot.id}/bid`, b.token, { amount: 205 })).data.error).toMatch(/ít nhất 210/);
+    expect((await game("POST", `/bazaar/auctions/${lot.id}/bid`, b.token, { amount: 250 })).status).toBe(200);
+    expect(await coins(a.token)).toBe(aBefore); // refunded at once
+    expect((await game("POST", `/bazaar/auctions/${lot.id}/cancel`, seller.token)).data.error).toMatch(/Đã có người trả giá/);
+
+    // a bid in the last 5 minutes pushes the end back
+    const row = () => store.db.prepare("SELECT * FROM auctions WHERE id = ?").get(lot.id) as { ends_at: number; status: string };
+    store.db.prepare("UPDATE auctions SET ends_at = ? WHERE id = ?").run(Date.now() + 60_000, lot.id);
+    expect((await game("POST", `/bazaar/auctions/${lot.id}/bid`, a.token, { amount: 300 })).status).toBe(200);
+    expect(row().ends_at).toBeGreaterThan(Date.now() + 4 * 60_000);
+
+    const sellerMid = await coins(seller.token);
+    const bBefore = await coins(b.token);
+    expect(bBefore).toBeGreaterThan(0);
+    auction.settleAuctions(row().ends_at + 1);
+    expect(row().status).toBe("sold");
+    expect(await coins(seller.token)).toBe(sellerMid + 300 - 15); // 5% sale fee
+    const won = ((await game("GET", "/me", a.token)).data.gear as Json[]).find((x) => x.id === g.id) as Json;
+    expect(won).toMatchObject({ tier: "gold", affixes: { income: 10, stats: 9, trade: 8 } });
+    const ledger = JSON.stringify((await internal("GET", `/admin/players/${a.userId}`)).data.ledger);
+    expect(ledger).toContain("auction_buy");
+  });
+
+  it("an auction nobody bids on returns the piece; with no bids the seller can cancel", async () => {
+    const auction = await import("@/petdex/server/auction.js");
+    const seller = await veteran("Dau_Gia_E");
+    const g1 = (await internal("POST", `/admin/players/${seller.userId}/gear`, { itemId: "bell", tier: "blue", affixes: { income: 3 }, actor: "Admin" })).data.gear as Json;
+    const g2 = (await internal("POST", `/admin/players/${seller.userId}/gear`, { itemId: "scarf", tier: "blue", affixes: { stats: 3 }, actor: "Admin" })).data.gear as Json;
+    await game("POST", "/bazaar/auctions", seller.token, { gearId: g1.id, startPrice: 50, hours: 6 });
+    await game("POST", "/bazaar/auctions", seller.token, { gearId: g2.id, startPrice: 50, hours: 6 });
+    const mine = ((await game("GET", "/bazaar", seller.token)).data.auctions as Json[]).filter((x) => x.mine);
+    const first = mine.find((x) => x.gearId === g1.id) as Json;
+    expect((await game("POST", `/bazaar/auctions/${first.id}/cancel`, seller.token)).status).toBe(200);
+    const second = mine.find((x) => x.gearId === g2.id) as Json;
+    auction.settleAuctions(Date.now() + 7 * 3_600_000);
+    const gear = (await game("GET", "/me", seller.token)).data.gear as Json[];
+    expect(gear.map((x) => x.id)).toEqual(expect.arrayContaining([g1.id, g2.id]));
+    const closed = (await game("GET", "/bazaar", seller.token)).data.closedAuctions as Json[];
+    expect(closed.find((x) => x.id === second.id)).toMatchObject({ status: "unsold" });
+    expect(closed.find((x) => x.id === first.id)).toMatchObject({ status: "cancelled" });
+  });
+});

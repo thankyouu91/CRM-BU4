@@ -3,7 +3,10 @@
 import { db, getMeta, getUser, gearBonusOf, setMeta, setWear } from './db.js';
 import { GameError, ITEMS } from './game.js';
 import { post } from './ledger.js';
-import { AFFIX_ORDER, DEFAULT_GEAR_CONFIG, TIERS, affixText, cleanAffixes, normalizeGearConfig, rollGear, rollShopGear, sumBonus } from '../../public/ta-tua/game/js/shared/gear.js';
+import { indexedPrice } from './bank.js';
+import {
+  AFFIX_ORDER, DEFAULT_GEAR_CONFIG, QUICK_SELL, TIERS, TIER_VALUE, affixPool, affixText, cleanAffixes, normalizeGearConfig, quickSellRate, rollGear, rollShopGear, sumBonus,
+} from '../../public/ta-tua/game/js/shared/gear.js';
 import { SLOTS, speciesOrGuest, wearLimit } from '../../public/ta-tua/game/js/shared/pets.js';
 
 const q = {
@@ -53,6 +56,8 @@ export function setGearConfig(input) {
 
 // ---- bản trang phục ----
 export const isWearable = (itemId) => ITEMS[itemId]?.type === 'accessory';
+/** Các loại chỉ số món `itemId` có thể ra (công khai trước khi mua). */
+export const poolOf = (itemId) => affixPool(ITEMS[itemId]?.slot, ITEMS[itemId]?.element);
 const wearables = () => Object.values(ITEMS).filter((i) => i.type === 'accessory');
 
 /**
@@ -70,9 +75,9 @@ export function createGear(ownerId, itemId, { tier = null, affixes = null, sourc
       throw new GameError(err.message);
     }
   } else if (shop) {
-    rolled = rollShopGear(gearConfig(), rand, { luck });
+    rolled = rollShopGear(gearConfig(), rand, { luck, pool: poolOf(itemId) });
   } else {
-    rolled = rollGear(gearConfig(), rand, { luck, tier });
+    rolled = rollGear(gearConfig(), rand, { luck, tier, pool: poolOf(itemId) });
   }
   const id = Number(q.insert.run(ownerId, itemId, rolled.tier, JSON.stringify(rolled.affixes), source, now, shop ? 1 : 0).lastInsertRowid);
   return getGear(id);
@@ -88,7 +93,8 @@ export const getGear = (id) => parse(q.byId.get(Number(id)));
 
 /** Tủ đồ của người chơi, kèm món nào đang đeo trên bé nào (đồ đang bày bán thì bỏ ra). `reveal`: quản trị viên xem cả hộp kín. */
 export function listGear(ownerId, { includeListed = false, reveal = false } = {}) {
-  return q.ofOwner.all(ownerId).map(parse).filter((g) => includeListed || !g.listed).map((g) => describeGear(g, { reveal }));
+  return q.ofOwner.all(ownerId).map(parse).filter((g) => includeListed || !g.listed)
+    .map((g) => ({ ...describeGear(g, { reveal }), quickSell: quickSellPrice(g) }));
 }
 
 /** Thẻ một món; hộp kín (chưa mở) thì giấu cấp và dòng chỉ số, trừ khi `reveal`. */
@@ -103,6 +109,7 @@ export function describeGear(g, { reveal = false } = {}) {
       slot: item?.slot ?? null,
       element: item?.element ?? null,
       sealed: true,
+      pool: poolOf(g.item_id),
       tier: null,
       tierName: 'Hộp chưa mở',
       affixes: {},
@@ -123,6 +130,7 @@ export function describeGear(g, { reveal = false } = {}) {
     tierName: TIERS[g.tier]?.name ?? g.tier,
     affixes: g.affixes,
     lines: AFFIX_ORDER.filter((a) => g.affixes[a]).map((a) => affixText(a, g.affixes[a])),
+    pool: poolOf(g.item_id),
     sealed,
     wornBy: g.worn_by ?? null,
     listed: Boolean(g.listed),
@@ -184,6 +192,28 @@ export function updateGear(id, { tier, affixes }) {
   }
   q.update.run(tier, JSON.stringify(clean), g.id);
   return getGear(g.id);
+}
+
+/** Giá trị tham chiếu của một bản: giá cửa hàng × hệ số cấp; hộp chưa mở tính như Xanh lam để không lộ cấp. */
+export const gearValue = (g) => indexedPrice(ITEMS[g.item_id].price) * (g.sealed ? 1 : TIER_VALUE[g.tier] ?? 1);
+
+/** Số xu Siêu thị trả khi bán nhanh: 10–40% giá trị tùy các dòng chỉ số; hộp chưa mở trả mức thấp nhất. */
+export function quickSellPrice(g) {
+  const rate = g.sealed ? QUICK_SELL.min : quickSellRate(g.tier, g.affixes, gearConfig().ranges);
+  return Math.max(1, Math.floor(gearValue(g) * rate));
+}
+
+/** Bán nhanh một món cho Siêu thị: món mất hẳn, tiền về ngay (không có thưởng giao dịch). */
+export function quickSellGear(userId, gearId, now = Date.now()) {
+  const g = getGear(gearId);
+  if (!g || g.owner_id !== userId) throw new GameError('Bạn không có món này.');
+  if (g.listed) throw new GameError('Món này đang bày bán hoặc đấu giá ở Chợ Phiên.');
+  const item = ITEMS[g.item_id];
+  const coins = quickSellPrice(g);
+  deleteGear(g.id);
+  const label = g.sealed ? 'hộp chưa mở' : TIERS[g.tier]?.name;
+  post({ userId, delta: coins, kind: 'gear_quicksell', memo: `${item.name} (${label})`, now });
+  return { coins, message: `Đã bán ${item.icon} ${item.name} (${label}) cho Siêu thị, nhận ${coins} 🪙.` };
 }
 
 /** Xóa một bản (gỡ khỏi bé đang đeo). */

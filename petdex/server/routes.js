@@ -30,7 +30,7 @@ import { payStipend } from './town.js';
 import { bus, mutatePet, ownedPet, snapshot } from './service.js';
 import { getSpecies, listSpecies } from './species.js';
 import { richList } from './wallet.js';
-import { createGear, equipGear, gearConfig, openGear, userBonus } from './gear.js';
+import { createGear, equipGear, gearConfig, openGear, quickSellGear, userBonus } from './gear.js';
 import { redeemGiftCode } from './gifts.js';
 import { TIERS as GEAR_TIERS, gradeLuck } from '../../public/ta-tua/game/js/shared/gear.js';
 import { SLOTS } from '../../public/ta-tua/game/js/shared/pets.js';
@@ -261,6 +261,13 @@ api.post('/pets/:id/equip', auth, (req, res) => {
   store.setWear(pet.id, slot, null);
   bus.emit('pet:changed', req.user.id);
   reply(res, req.user.id, { petName: pet.name, message: slot ? `${pet.name} đã tháo đồ.` : `${pet.name} đã tháo hết đồ.` });
+});
+
+/** Bán nhanh một món trang phục cho Siêu thị: thu 10–40% giá trị tùy dòng chỉ số, món mất hẳn. */
+api.post('/gear/:id/quick-sell', auth, (req, res) => {
+  const result = store.transaction(() => quickSellGear(req.user.id, Number(req.params.id)));
+  bus.emit('pet:changed', req.user.id);
+  reply(res, req.user.id, result);
 });
 
 /** Mở hộp trang phục mua ở Siêu thị: lộ 1–2 dòng chỉ số. */

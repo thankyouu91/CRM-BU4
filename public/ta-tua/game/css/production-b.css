@@ -153,6 +153,16 @@
 .bazaar-sell-info small { font-size: .76rem; }
 .bazaar-sell-action { display: flex; gap: 6px; align-items: center; }
 .bazaar-sell-action input { width: 84px; padding: 6px 8px; border-radius: 10px; }
+.bazaar-sell-action select { padding: 6px 4px; border-radius: 10px; }
+/* đấu giá: hàng mở phiên có ô giá + thời hạn + nút, nên dồn xuống một dòng riêng */
+.bazaar-sell.auction { grid-template-columns: auto minmax(0, 1fr); }
+.bazaar-sell.auction .bazaar-sell-action { grid-column: 1 / -1; }
+.bazaar-sell.auction .bazaar-sell-action input { flex: 1; width: auto; }
+.bazaar-sell.auction .btn { white-space: nowrap; }
+.tier-chip.sealed { background: #a55fd0; }
+.bazaar-bid { display: flex; gap: 6px; align-items: center; }
+.bazaar-bid input { width: 84px; padding: 6px 8px; border-radius: 10px; }
+.bazaar-card.leading { outline: 2px solid var(--mint, #3fa860); }
 .bazaar-net { grid-column: 2 / -1; font-size: .78rem; color: var(--muted); }
 .bazaar-net b { color: var(--mint-deep); }
 

@@ -6,6 +6,7 @@ import { DAY, ITEMS } from './game.js';
 import { KINDS } from './ledger.js';
 import { goodsValue, lockedInOrders } from './market.js';
 import { escrowOf } from './contracts.js';
+import { heldInAuctions } from './auction.js';
 import { debtOf } from './credit.js';
 
 const q = {
@@ -31,7 +32,7 @@ export function netWorth(userId, now = Date.now()) {
     locked: lockedInOrders(userId),
     goods: goodsValue(userId),
     items,
-    escrow: escrowOf(userId),
+    escrow: escrowOf(userId) + heldInAuctions(userId),
     debt: -debtOf(userId),
   };
   return { total: Object.values(parts).reduce((a, b) => a + b, 0), parts };

@@ -1,11 +1,12 @@
-// Chợ Phiên: người chơi bày bán đồ siêu thị và món tự nấu cho nhau, giá tự đặt trong khoảng cho phép.
+// Chợ Phiên: người chơi bày bán đồ siêu thị, trang phục (kể cả hộp chưa mở) và món tự nấu cho nhau, giá tự đặt trong khoảng cho phép.
+// Trang phục còn bán được kiểu đấu giá (auction.js).
 import { addItem, db, getUser, inventory, takeItem, transaction, unequipItem } from './db.js';
 import { economy, indexedPrice } from './bank.js';
 import { DAY, GameError, HOUR, ITEMS, isConsumable } from './game.js';
 import { chargeFee, post } from './ledger.js';
 import { giveDish, takeDish } from './farm.js';
-import { getGear, describeGear, listGear, setGearListed, tradeBonus, transferGear } from './gear.js';
-import { TIER_VALUE } from '../../public/ta-tua/game/js/shared/gear.js';
+import { getGear, describeGear, gearValue, listGear, setGearListed, tradeBonus, transferGear } from './gear.js';
+import { auctionsView } from './auction.js';
 import { BAZAAR, DISHES, KITCHEN, QUALITY, dishValue } from './rules/production.js';
 
 const q = {
@@ -41,7 +42,7 @@ function describe(l) {
     const item = ITEMS[g?.item_id];
     if (!g || !item) return { name: 'Trang phục', icon: '🎀', type: 'accessory' };
     const view = describeGear(g);
-    return { name: `${item.name} · ${view.tierName}`, icon: item.icon, type: 'accessory', itemId: item.id, tier: g.tier, lines: view.lines };
+    return { name: `${item.name} · ${view.tierName}`, icon: item.icon, type: 'accessory', itemId: item.id, tier: view.tier, lines: view.lines, sealed: view.sealed, pool: view.pool };
   }
   const dish = DISHES[l.ref];
   return { name: dish.name, icon: dish.icon, type: 'dish', quality: QUALITY[l.quality].name, spoilsAt: dishExpiry(l.made_at) };
@@ -88,8 +89,8 @@ export function listForSale(userId, { kind, ref, price }, now = Date.now()) {
     } else if (kind === 'gear') {
       const g = getGear(ref);
       if (!g || g.owner_id !== userId || g.listed) throw new GameError('Không tìm thấy món trang phục này.');
-      if (g.sealed) throw new GameError('Mở hộp trước rồi hẵng bày bán nhé.');
-      refPrice = indexedPrice(ITEMS[g.item_id].price) * (TIER_VALUE[g.tier] ?? 1);
+      // Hộp chưa mở bán nguyên hộp: người mua chỉ biết các loại chỉ số có thể ra, giá tham chiếu tính như Xanh lam.
+      refPrice = gearValue(g);
       row = { ref: String(g.id), quality: 0, madeAt: null, expiresAt: now + BAZAAR.hours * HOUR };
     } else if (kind === 'dish') {
       const owned = q.dishes.all(userId, now).find((d) => d.id === Number(ref));
@@ -169,7 +170,7 @@ export function bazaarView(userId, now = Date.now()) {
     sold: q.recent.all(userId).map((l) => ({ ...listingView(l, userId), status: l.status, buyer: l.buyer, soldAt: l.sold_at })),
     bought: q.bought.all(userId).map((l) => ({ ...listingView(l, userId), soldAt: l.sold_at })),
     sellable: {
-      gear: listGear(userId).map((g) => ({ ...g, refPrice: indexedPrice(ITEMS[g.itemId].price) * (TIER_VALUE[g.tier] ?? 1) })),
+      gear: listGear(userId).map((g) => ({ ...g, refPrice: gearValue(getGear(g.id)) })),
       items: Object.entries(inv).filter(([id, n]) => n > 0 && ITEMS[id] && ITEMS[id].type !== 'accessory').map(([id, n]) => ({
         ref: id, name: ITEMS[id].name, icon: ITEMS[id].icon, qty: n, refPrice: indexedPrice(ITEMS[id].price),
       })),
@@ -182,5 +183,6 @@ export function bazaarView(userId, now = Date.now()) {
     sellFrom: user.created_at + BAZAAR.minAccountDays * DAY,
     open: q.myOpen.get(userId).n,
     rules: BAZAAR,
+    ...auctionsView(userId, now),
   };
 }

@@ -177,6 +177,12 @@ export const shortfallPenalty = (missingLots, price, marketPrice) =>
 
 export const BAZAAR = { listFee: 0.01, saleFee: 0.05, band: [0.5, 3], hours: 48, minAccountDays: 3, maxListings: 10 };
 
+/**
+ * Đấu giá trang phục: giá khởi điểm 10–300% giá tham chiếu, mỗi lần trả giá cao hơn ít nhất 5% (tối thiểu 1 xu),
+ * trả giá trong 5 phút cuối thì phiên kéo dài thêm 5 phút. Phí như Chợ Phiên; mỗi người mở tối đa 5 phiên.
+ */
+export const AUCTION = { hours: [6, 12, 24], startBand: [0.1, 3], stepPct: 0.05, minStep: 1, snipeMs: 5 * 60_000, maxOpen: 5 };
+
 // ---------------------------------------------------------------- tín dụng & vay
 
 export const CREDIT = { start: 500, min: 300, max: 850, onTime: 5, repaid: 30, late: -20, defaulted: -100, contractDay: 3, contractBroken: -30, evicted: -40 };
