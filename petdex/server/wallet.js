@@ -30,7 +30,7 @@ export function netWorth(userId, now = Date.now()) {
     savings: bank.savings,
     deposits: bank.deposits,
     locked: lockedInOrders(userId),
-    goods: goodsValue(userId),
+    goods: goodsValue(userId, now),
     items,
     escrow: escrowOf(userId) + heldInAuctions(userId),
     debt: -debtOf(userId),

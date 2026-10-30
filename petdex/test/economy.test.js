@@ -57,10 +57,47 @@ test('Sàn: mua bán với NPC, phí, tác động giá, hàng tươi bị hư',
   assert.ok(market.currentPrices().milk > price0);
   assert.equal(market.marketView(alice.id, t).holdings.milk.qty, 25);
 
+  // Giá vốn bình quân = tiền mua + phí, tính theo lô; lãi/lỗ tạm tính theo giá bán ngay cho NPC.
+  const held = market.marketView(alice.id, t).holdings.milk;
+  assert.ok(Math.abs(held.avgCost * 2.5 - (buy.amount + buy.fee)) <= 1, `vốn ${held.avgCost}`); // phí làm tròn tới xu
+  assert.ok(held.pnl < 0, 'vừa mua xong bán ngay thì lỗ chênh lệch mua/bán và phí');
+  assert.equal(held.pnl, held.value - held.basis);
+
   const sell = market.placeOrder(alice.id, { commodity: 'milk', side: 'sell', qty: 10, type: 'market' }, t);
   assert.equal(sell.filled, 10);
-  assert.equal(market.marketView(alice.id, t).holdings.milk.qty, 15);
+  assert.ok(sell.profit && sell.profit.pnl < 0 && sell.profit.pct < 0);
+  assert.match(sell.message, /Lỗ −\d+ 🪙 \(−[\d,]+% so với giá vốn\)/);
+  const view = market.marketView(alice.id, t);
+  assert.equal(view.holdings.milk.qty, 15);
+  assert.deepEqual(view.book.trades.map((x) => x.side), ['sell', 'buy']);
+  assert.equal(view.book.today.sells, 1);
+  assert.equal(view.book.today.pnl, view.book.trades[0].pnl);
   assert.throws(() => market.placeOrder(alice.id, { commodity: 'milk', side: 'sell', qty: 50, type: 'market' }, t), GameError);
+
+  // Bán hết thì kho về 0 (mặt hàng biến khỏi kho), không còn gì để bán thêm.
+  const pork = market.placeOrder(alice.id, { commodity: 'pork', side: 'buy', qty: 20, type: 'market' }, t);
+  assert.equal(pork.filled, 20);
+  market.placeOrder(alice.id, { commodity: 'pork', side: 'sell', qty: 20, type: 'market' }, t);
+  assert.equal(market.marketView(alice.id, t).holdings.pork, undefined);
+  assert.equal(market.stock(alice.id, t).pork, undefined);
+  assert.throws(() => market.placeOrder(alice.id, { commodity: 'pork', side: 'sell', qty: 10, type: 'market' }, t), GameError);
+  // Lệnh bán chờ giữ hàng khỏi kho; hủy lệnh thì hàng về lại.
+  market.placeOrder(alice.id, { commodity: 'pork', side: 'buy', qty: 10, type: 'market' }, t);
+  const ask = market.currentPrices().pork;
+  const wait = market.placeOrder(alice.id, { commodity: 'pork', side: 'sell', qty: 10, type: 'limit', limit: ask * 1.14 }, t);
+  assert.ok(wait.orderId);
+  assert.equal(market.stock(alice.id, t).pork, undefined);
+  market.cancelOrder(alice.id, wait.orderId, t);
+  assert.equal(market.stock(alice.id, t).pork, 10);
+
+  // Thịt để 1,2 ngày (60% hạn dùng) thành Kém tươi: NPC chỉ trả 80% giá; quá hạn thì hư.
+  const stale = market.marketView(alice.id, t + 1.2 * DAY).holdings.pork;
+  assert.equal(stale.lots[0].freshness, 'stale');
+  assert.ok(Math.abs(stale.quality - 0.8) < 1e-9);
+  const bid = market.marketView(alice.id, t + 1.2 * DAY).commodities.find((c) => c.id === 'pork').bid;
+  const old = market.placeOrder(alice.id, { commodity: 'pork', side: 'sell', qty: 10, type: 'market' }, t + 1.2 * DAY);
+  assert.match(old.message, /NPC chỉ trả 80% giá/);
+  assert.ok(old.amount < bid * 0.81, `bán ${old.amount} với giá NPC ${bid}`);
 
   const later = market.marketView(alice.id, t + 4 * DAY);
   assert.equal(later.holdings.milk, undefined);

@@ -77,7 +77,7 @@ api.get('/catalog', (_req, res) => {
     commodities: COMMODITIES,
     market: {
       lot: LOT, fee: MARKET.fee, spread: MARKET.spread, band: MARKET.band, npcDailyLots: MARKET.npcDailyLots, warehouse: MARKET.warehouse,
-      liquidity: MARKET.liquidity, processedDepth: MARKET.processedDepth,
+      liquidity: MARKET.liquidity, processedDepth: MARKET.processedDepth, playerWeight: MARKET.playerWeight,
     },
     games: GAMES,
     gameCaps: DAILY_CAPS,

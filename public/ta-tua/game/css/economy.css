@@ -231,3 +231,19 @@ td { padding: 7px 8px; border-bottom: 1px dashed var(--line); vertical-align: to
 .bank-grid > *, .wallet-grid > *, .market-grid > * { min-width: 0; }
 .term-options > * { min-width: 0; overflow-wrap: anywhere; }
 .wallet-box select, .bank-box select { max-width: 100%; min-width: 0; }
+
+/* ---------- Sàn: vị thế, sổ lời lãi, độ tươi ---------- */
+.mk-position {
+  display: flex; flex-wrap: wrap; gap: 6px 14px; padding: 8px 12px; border-radius: 12px;
+  background: var(--surface-2); border: 2px solid var(--line); font-size: .88rem;
+}
+.mk-book-sum { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 8px; }
+.mk-book-sum > div { display: grid; gap: 2px; padding: 8px 10px; border-radius: 12px; background: var(--surface-2); }
+.mk-book-sum b { font-size: .95rem; }
+.mk-trades { width: 100%; font-size: .85rem; }
+.mk-trades td, .mk-trades th { padding: 4px 6px; }
+.mk-news li.flash { background: #fff1d6; border: 1px solid #f0c674; }
+.fresh { display: inline-block; padding: 0 6px; border-radius: 999px; font-weight: 700; font-size: .75rem; margin-right: 4px; }
+.fresh-fresh { background: #e3f6e3; color: #24692f; }
+.fresh-stale { background: #fff1d6; color: #8a5a0b; }
+.fresh-old { background: #fde2dd; color: #9b2c1f; }
