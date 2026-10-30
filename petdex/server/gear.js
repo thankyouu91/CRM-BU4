@@ -1,6 +1,6 @@
 // Trang phục có cấp: mỗi món người chơi sở hữu là một bản trong bảng `gear` (cấp + dòng chỉ số).
 // Luật chung (cấp, loại chỉ số, cách quay) ở public/ta-tua/game/js/shared/gear.js.
-import { db, getMeta, getUser, gearBonusOf, setMeta, setWear } from './db.js';
+import { db, getMeta, getUser, gearBonusOf, setMeta, setWear, transaction } from './db.js';
 import { GameError, ITEMS } from './game.js';
 import { post } from './ledger.js';
 import { indexedPrice } from './bank.js';
@@ -23,8 +23,11 @@ const q = {
   unwear: db.prepare('DELETE FROM pet_wear WHERE gear_id = ?'),
   wornIn: db.prepare('SELECT pet_id, slot FROM pet_wear WHERE gear_id = ?'),
   petWear: db.prepare(`
-    SELECT w.slot, w.item_id, g.id AS gear_id, g.tier, g.affixes FROM pet_wear w LEFT JOIN gear g ON g.id = w.gear_id
+    SELECT w.slot, w.item_id, g.id AS gear_id, g.tier, g.affixes, g.broken, g.repair_until FROM pet_wear w LEFT JOIN gear g ON g.id = w.gear_id
     WHERE w.pet_id = ?`),
+  breakWorn: db.prepare(`
+    UPDATE gear SET broken = 1, repair_until = 0
+    WHERE broken = 0 AND id IN (SELECT w.gear_id FROM pet_wear w JOIN pets p ON p.id = w.pet_id WHERE p.owner_id = ?)`),
 };
 
 const parse = (row) => row && { ...row, affixes: JSON.parse(row.affixes || '{}') };
@@ -116,6 +119,7 @@ export function describeGear(g, { reveal = false } = {}) {
       lines: [],
       wornBy: null,
       listed: Boolean(g.listed),
+      ...durabilityOf(g),
       source: g.source,
       createdAt: g.created_at,
     };
@@ -134,9 +138,17 @@ export function describeGear(g, { reveal = false } = {}) {
     sealed,
     wornBy: g.worn_by ?? null,
     listed: Boolean(g.listed),
+    ...durabilityOf(g),
     source: g.source,
     createdAt: g.created_at,
   };
+}
+
+/** Độ bền: `broken` (hỏng sau trận đấu trường), `repairUntil` (đang ở Lò rèn tới lúc này), `usable` (đang cộng chỉ số). */
+export function durabilityOf(g, now = Date.now()) {
+  const broken = Boolean(g.broken);
+  const repairUntil = !broken && g.repair_until > now ? g.repair_until : null;
+  return { broken, repairUntil, usable: !broken && !repairUntil };
 }
 
 /** Trang phục bé đang đeo theo khe, kèm cấp và dòng chỉ số. */
@@ -146,7 +158,20 @@ export function wornGear(petId) {
     gearId: r.gear_id,
     tier: r.tier ?? null,
     affixes: r.affixes ? JSON.parse(r.affixes) : {},
+    ...durabilityOf(r),
   }]));
+}
+
+/**
+ * Sau một trận đấu trường: mọi trang phục đang đeo trên các bé của `userIds` hỏng hẳn (không cộng chỉ số tới khi sửa ở Lò rèn).
+ * Đồ đang sửa cũng hỏng lại. Trả về số món vừa hỏng. (Tham số giờ trận nếu có thì bỏ qua: hỏng là hỏng ngay.)
+ */
+export function breakWornGear(userIds) {
+  return transaction(() => {
+    let n = 0;
+    for (const id of new Set(userIds)) n += Number(q.breakWorn.run(Number(id)).changes);
+    return n;
+  });
 }
 
 /** Mở hộp mua ở Siêu thị: lộ cấp và dòng chỉ số. */
