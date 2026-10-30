@@ -865,6 +865,9 @@ addColumn('users', 'locked_slots', 'INTEGER NOT NULL DEFAULT 0');
   );
   `);
   addColumn('land_plots', 'variant', 'TEXT'); // loại nhà máy điện của lô (ngành Năng lượng)
+  // Phiên online của cư dân tự động (bots.js): online tới lúc này, trống là offline.
+  addColumn('bots', 'session_end', 'INTEGER');
+  db.exec('CREATE INDEX IF NOT EXISTS bots_session ON bots(session_end)');
   // Lượng đồ chăm sóc NPC / bộ chăm sóc gia tộc mỗi người mua trong ngày (essentials.js).
   addColumn('essentials_buys', 'care_npc', 'INTEGER NOT NULL DEFAULT 0');
   addColumn('essentials_buys', 'care_clan', 'INTEGER NOT NULL DEFAULT 0');

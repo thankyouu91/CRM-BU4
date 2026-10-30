@@ -54,7 +54,7 @@ function describe(path: string, body: Record<string, unknown>): { action: AuditA
   if (/^clans\/evasion\/\d+\/dismiss$/.test(path)) return { action: "tatua.tax_dismiss", entityId: path.split("/")[2], summary: `Bỏ qua hồ sơ thuế #${path.split("/")[2]}${body.clanName ? ` của “${String(body.clanName)}”` : ""}` };
   if (path === "bots/config") {
     if (body.enabled === false) return { action: "tatua.bots_config", entityId: null, summary: "Tắt toàn bộ cư dân tự động (bot)" };
-    return { action: "tatua.bots_config", entityId: null, summary: `Bật cư dân tự động, mục tiêu ${Number(body.target ?? 0).toLocaleString("vi-VN")} bot` };
+    return { action: "tatua.bots_config", entityId: null, summary: `Bật cư dân tự động, mục tiêu ${Number(body.target ?? 0).toLocaleString("vi-VN")} bot, online ${Number(body.onlineMin ?? 0)}–${Number(body.onlineMax ?? 0)}` };
   }
   if (/^arena\/\d+\/cancel$/.test(path)) {
     const fight = body.challenger && body.defender ? ` ${String(body.challenger)} ⚔️ ${String(body.defender)}` : "";
