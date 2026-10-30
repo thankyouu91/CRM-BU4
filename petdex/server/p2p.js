@@ -1,13 +1,13 @@
 // Vay ngang hàng (P2P) qua Ngân hàng Trân Châu làm trung gian: người vay đăng yêu cầu (số tiền, kỳ hạn, lãi/ngày),
 // người cho vay rót đủ vốn, đáo hạn người vay trả gốc + lãi một lần. Ngân hàng giữ 10–20% tiền lãi tùy hạng tín dụng
-// của người vay; người cho vay chịu rủi ro: người vay trễ thì bị phí trễ và trừ điểm, vỡ nợ thì bị giữ dần tiền trong ví.
+// của người vay; người cho vay chịu rủi ro: người vay trễ thì bị phí trễ và trừ điểm, vỡ nợ thì bị giữ dần một phần thu nhập mỗi ngày.
 import { db, getUser, transaction } from './db.js';
-import { addCredit } from './credit.js';
+import { addCredit, incomeBetween } from './credit.js';
 import { dayKey, startOfDay } from './clock.js';
 import { DAY, GameError } from './game.js';
 import { post } from './ledger.js';
-import { CREDIT, TIERS, tierOf } from './rules/production.js';
-import { P2P, p2pCut, p2pInterest, splitRepayment } from './rules/finance.js';
+import { CREDIT, LOANS, TIERS, ceilCoins, tierOf } from './rules/production.js';
+import { P2P, p2pCut, p2pInterest, p2pLimit, splitRepayment } from './rules/finance.js';
 
 const fmt = (n) => Math.round(n).toLocaleString('vi-VN');
 const OPEN_DEBT = "('funded', 'late', 'defaulted')";
@@ -31,7 +31,6 @@ const q = {
 };
 
 const left = (loan) => loan.owed - loan.paid;
-const bankLimit = (score) => tierOf(score).limit;
 
 /** Người vay đăng một yêu cầu vay. */
 export function requestP2P(userId, { amount, termDays, rate }, now = Date.now()) {
@@ -43,7 +42,7 @@ export function requestP2P(userId, { amount, termDays, rate }, now = Date.now())
     if (!P2P.terms.includes(termDays)) throw new GameError(`Kỳ hạn chỉ có ${P2P.terms.join(', ')} ngày.`);
     const [lo, hi] = P2P.rateRange;
     if (!Number.isFinite(rate) || rate < lo || rate > hi) throw new GameError(`Lãi đặt từ ${(lo * 100).toFixed(1)}% đến ${(hi * 100).toFixed(1)}% mỗi ngày.`);
-    const limit = bankLimit(user.credit) * P2P.limitMultiplier;
+    const limit = p2pLimit(user.credit);
     if (!Number.isInteger(amount) || amount < P2P.minAmount || amount > limit) {
       throw new GameError(`Số tiền vay từ ${fmt(P2P.minAmount)} đến ${fmt(limit)} xu (gấp ${P2P.limitMultiplier} hạn mức hạng ${tierOf(user.credit).name}).`);
     }
@@ -135,7 +134,7 @@ function finish(loan, now) {
 
 /**
  * Cuối ngày: yêu cầu quá hạn đăng thì hết hạn; khoản đến hạn thì thu (ví rồi tiết kiệm). Thiếu thì trễ hạn: cộng phí trễ,
- * trừ điểm; trễ đủ `defaultAfter` ngày là vỡ nợ (trừ nặng, cấm vay), từ đó mỗi đêm ngân hàng giữ `garnish` số dư ví trả dần.
+ * trừ điểm; trễ đủ `defaultAfter` ngày là vỡ nợ (trừ nặng, cấm vay), từ đó mỗi đêm ngân hàng giữ `garnish` thu nhập trong ngày trả dần.
  */
 export function settleP2PDay(day) {
   const end = startOfDay(day) + DAY;
@@ -144,20 +143,21 @@ export function settleP2PDay(day) {
     for (const loan of q.expired.all(end)) q.setStatus.run('expired', at, loan.id);
     for (const loan of q.due.all(end)) {
       if (loan.status === 'defaulted') {
-        collect(loan, getUser(loan.borrower_id).coins * P2P.garnish, at);
+        // Như vay ngân hàng: giữ `garnish` thu nhập trong ngày, lấy từ ví rồi tới tiết kiệm.
+        collect(loan, incomeBetween(loan.borrower_id, startOfDay(day), end) * P2P.garnish, at, { useSavings: true });
         finish(loan, at);
         continue;
       }
       collect(loan, left(loan), at, { useSavings: true });
       if (finish(loan, at)) continue;
-      loan.owed += Math.ceil(left(loan) * P2P.lateFee);
+      loan.owed += ceilCoins(left(loan) * P2P.lateFee);
       loan.late_days += 1;
       loan.status = 'late';
       addCredit(loan.borrower_id, CREDIT.late, `Trễ hạn khoản vay ngang hàng #${loan.id}`, at);
       if (loan.late_days >= P2P.defaultAfter) {
         loan.status = 'defaulted';
         addCredit(loan.borrower_id, CREDIT.defaulted, `Vỡ nợ khoản vay ngang hàng #${loan.id}`, at);
-        db.prepare('UPDATE users SET loan_ban_until = ? WHERE id = ?').run(at + 14 * DAY, loan.borrower_id);
+        db.prepare('UPDATE users SET loan_ban_until = ? WHERE id = ?').run(at + LOANS.banDays * DAY, loan.borrower_id);
       }
       q.save.run(loan.status, loan.owed, loan.paid, loan.late_days, null, loan.id);
     }
@@ -200,8 +200,8 @@ export function p2pView(userId, now = Date.now()) {
   const since = now - 3 * DAY;
   const week = q.stats.get(now - 7 * DAY);
   return {
-    rules: { ...P2P, tiers: TIERS.map((t) => ({ key: t.key, name: t.name, icon: t.icon, cut: P2P.cut[t.key] })) },
-    me: { credit: user.credit, tier: tierOf(user.credit).name, cut: p2pCut(user.credit), limit: bankLimit(user.credit) * P2P.limitMultiplier, banned: user.loan_ban_until > now },
+    rules: { ...P2P, banDays: LOANS.banDays, tiers: TIERS.map((t) => ({ key: t.key, name: t.name, icon: t.icon, cut: P2P.cut[t.key] })) },
+    me: { credit: user.credit, tier: tierOf(user.credit).name, cut: p2pCut(user.credit), limit: p2pLimit(user.credit), banned: user.loan_ban_until > now },
     market: q.openList.all(now).map((l) => ({ ...view(l, now), mine: l.borrower_id === userId, credit: l.credit, tierIcon: tierOf(l.credit).icon })),
     borrowing: q.asBorrower.all(userId, since).map((l) => view(l, now)),
     lending: q.asLender.all(userId, since).map((l) => view(l, now)),

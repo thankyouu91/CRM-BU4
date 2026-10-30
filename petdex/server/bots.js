@@ -1,6 +1,7 @@
 // Cư dân tự động (bot): tài khoản do server tạo, chơi như người chơi bình thường qua đúng các route của game
 // (router chạy trong tiến trình, không WebSocket, không gọi HTTP), nên mọi luật đều áp dụng: hạn mức, phí, thuế, Đấu trường.
-// Mỗi nhịp bộ lập lịch chỉ xử lý một nhóm nhỏ bot đã tới lượt (`budget` hành động), theo giờ thức/ngủ và nhịp nghỉ như người.
+// Mỗi bot có lịch phiên chơi riêng (1–3 phiên/ngày, 20–90 phút, tối nhiều hơn); cùng lúc chỉ 50–100 bot online, bot offline
+// không làm gì. Mỗi nhịp chỉ xử lý một nhóm nhỏ bot online đã tới lượt, dừng khi hết ngân sách hành động hoặc thời gian.
 // Cờ users.is_bot chỉ dùng nội bộ và ở bảng quản trị; không bao giờ nằm trong API của người chơi.
 import { randomBytes } from 'node:crypto';
 import { adminLog, createSession, createUser, db, getMeta, setMeta, transaction } from './db.js';
@@ -10,14 +11,22 @@ import { post } from './ledger.js';
 import { buildResponse } from './router.js';
 
 export const BOT_RULES = {
-  /** Trần số bot; quản trị viên đặt mục tiêu trong khoảng này. */
-  max: 500,
+  /** Trần số tài khoản bot; quản trị viên đặt mục tiêu trong khoảng này (tăng dần 50 → 200 → 500 → 1000). */
+  max: 1000,
   /** Mỗi nhịp tạo thêm tối đa chừng này bot, để số bot tăng dần tới mục tiêu. */
   rampPerTick: 5,
-  /** Mỗi nhịp tối đa chừng này hành động của bot. */
+  /** Mỗi nhịp tối đa chừng này hành động và chừng này mili giây; hết thì dừng, nhịp sau làm tiếp. */
   budget: 25,
-  /** Khoảng nghỉ giữa hai lần bot "mở game" (phút), nhân hệ số siêng năng của từng bot. */
-  gapMinutes: [25, 110],
+  timeBudgetMs: 120,
+  /** Mặc định số bot online cùng lúc (quản trị viên chỉnh được). */
+  onlineMin: 50,
+  onlineMax: 100,
+  /** Lịch của mỗi bot: số phiên mỗi ngày, độ dài phiên (phút), khoảng giữa hai việc trong một phiên (phút). */
+  sessionsPerDay: [1, 3],
+  sessionMinutes: [20, 90],
+  actionGapMinutes: [4, 12],
+  /** Giờ tối (19–22h) dễ online hơn chừng này lần. */
+  eveningWeight: 2.5,
   /** Gia tộc của bot không quá tỉ lệ này trên tổng số gia tộc. */
   clanShare: 0.4,
   /** Một gia tộc bot thách đấu gia tộc người thật tối đa 1 lần mỗi 7 ngày. */
@@ -27,15 +36,21 @@ export const BOT_RULES = {
   chatChance: 0.08,
 };
 
-const DEFAULT_CONFIG = { enabled: false, target: 0 };
+const DEFAULT_CONFIG = { enabled: false, target: 0, onlineMin: BOT_RULES.onlineMin, onlineMax: BOT_RULES.onlineMax };
 const MINUTE_MS = 60_000;
 
 const q = {
-  bots: db.prepare('SELECT b.*, u.username, u.display_name, u.coins, u.created_at AS joined FROM bots b JOIN users u ON u.id = b.user_id ORDER BY b.user_id'),
+  bots: db.prepare(`
+    SELECT b.*, u.username, u.display_name, u.coins, u.created_at AS joined, (SELECT MAX(level) FROM pets p WHERE p.owner_id = b.user_id) AS level
+    FROM bots b JOIN users u ON u.id = b.user_id ORDER BY (b.session_end > ?) DESC, COALESCE(b.last_at, 0) DESC LIMIT ?`),
   count: db.prepare('SELECT COUNT(*) AS n FROM bots'),
   due: db.prepare('SELECT * FROM bots WHERE next_at <= ? ORDER BY next_at LIMIT ?'),
+  online: db.prepare('SELECT COUNT(*) AS n FROM bots WHERE session_end > ?'),
+  // Bot offline, đang giờ thức, phiên tới gần nhất: dùng khi cần thêm người online cho đủ mức tối thiểu.
+  offlineSoon: db.prepare('SELECT * FROM bots WHERE (session_end IS NULL OR session_end <= ?) ORDER BY next_at LIMIT ?'),
+  setSession: db.prepare('UPDATE bots SET session_end = ?, next_at = ? WHERE user_id = ?'),
   insert: db.prepare('INSERT INTO bots (user_id, token, persona, next_at, created_at) VALUES (?, ?, ?, ?, ?)'),
-  update: db.prepare('UPDATE bots SET next_at = ?, state = ?, last_action = ?, last_at = ?, actions = actions + 1 WHERE user_id = ?'),
+  update: db.prepare('UPDATE bots SET next_at = ?, session_end = ?, state = ?, last_action = ?, last_at = ?, actions = actions + 1 WHERE user_id = ?'),
   markBot: db.prepare('UPDATE users SET is_bot = 1, display_name = ? WHERE id = ?'),
   nameTaken: db.prepare('SELECT 1 FROM users WHERE login_key = ?'),
   clanCounts: db.prepare(`
@@ -57,13 +72,17 @@ export function botConfig() {
   }
 }
 
-/** Quản trị viên bật/tắt và đặt số bot mục tiêu (0–500). Tắt thì nhịp sau mọi bot dừng. */
-export function setBotConfig({ enabled, target }, actor = 'Quản trị viên') {
+/** Quản trị viên bật/tắt, đặt số bot mục tiêu (0–1000) và số bot online cùng lúc. Tắt thì nhịp sau mọi bot dừng. */
+export function setBotConfig({ enabled, target, onlineMin, onlineMax }, actor = 'Quản trị viên') {
   const cur = botConfig();
+  const clampInt = (v, lo, hi, fallback) => (v == null || v === '' ? fallback : Math.max(lo, Math.min(hi, Math.round(Number(v) || 0))));
   const next = {
     enabled: enabled == null ? cur.enabled : Boolean(enabled),
-    target: target == null ? cur.target : Math.max(0, Math.min(BOT_RULES.max, Math.round(Number(target) || 0))),
+    target: clampInt(target, 0, BOT_RULES.max, cur.target),
+    onlineMin: clampInt(onlineMin, 0, BOT_RULES.max, cur.onlineMin),
+    onlineMax: clampInt(onlineMax, 1, BOT_RULES.max, cur.onlineMax),
   };
+  if (next.onlineMin > next.onlineMax) next.onlineMin = next.onlineMax;
   setMeta('bots_config', JSON.stringify(next));
   adminLog(actor, 'bots_config', null, next);
   return next;
@@ -118,9 +137,10 @@ export function createBot(now = Date.now(), rand = Math.random) {
       social: rand(),
       trader: rand(),
       fighter: rand(),
+      sessions: BOT_RULES.sessionsPerDay[0] + Math.floor(rand() * (BOT_RULES.sessionsPerDay[1] - BOT_RULES.sessionsPerDay[0] + 1)),
     };
-    // Lần đầu vào game sau vài phút đến vài giờ, như người mới tải game.
-    q.insert.run(id, token, JSON.stringify(persona), now + Math.floor(rand() * 3 * HOUR) + 5 * MINUTE_MS, now);
+    // Phiên đầu tiên theo lịch riêng của bot, như người mới tải game rồi vào chơi lúc rảnh.
+    q.insert.run(id, token, JSON.stringify(persona), nextSessionStart(persona, now, rand, { first: true }), now);
     return id;
   });
 }
@@ -165,19 +185,27 @@ function awake(persona, now) {
   const h = vnHour(now);
   return h >= persona.wake && h < persona.sleep;
 }
+const between = ([lo, hi], rand) => lo + rand() * (hi - lo);
 
-/** Lần "mở game" tiếp theo: khoảng nghỉ ngẫu nhiên, hoặc sáng hôm sau nếu đã tới giờ ngủ. */
-function nextVisit(persona, now, rand) {
-  const [lo, hi] = BOT_RULES.gapMinutes;
-  let at = now + Math.round((lo + rand() * (hi - lo)) * MINUTE_MS / persona.zeal);
-  if (!awake(persona, at)) {
-    const vnNow = new Date(at + 7 * HOUR);
-    const wakeDay = vnHour(at) >= persona.sleep ? new Date(vnNow.getTime() + 24 * HOUR) : vnNow;
-    const d = wakeDay.toISOString().slice(0, 10);
-    at = Date.parse(`${d}T00:00:00Z`) - 7 * HOUR + persona.wake * HOUR + Math.floor(rand() * 90) * MINUTE_MS;
+/**
+ * Lúc bắt đầu phiên chơi tiếp theo: cách phiên trước khoảng (24 giờ ÷ số phiên mỗi ngày) ± 40%, rơi vào giờ thức của bot,
+ * giờ tối dễ được chọn hơn. `first`: phiên đầu tiên sau khi tạo tài khoản, trong vài giờ tới.
+ */
+export function nextSessionStart(persona, from, rand = Math.random, { first = false } = {}) {
+  const sessions = persona.sessions ?? 2;
+  let at = from + (first ? rand() * 3 * HOUR : Math.max(2 * HOUR, (24 * HOUR / sessions) * (0.6 + rand() * 0.8)));
+  // Dò tới giờ thức; giờ tối nhận ngay, giờ khác nhận với xác suất 1/eveningWeight để tối đông hơn.
+  for (let i = 0; i < 96; i += 1) {
+    const h = vnHour(at);
+    const evening = h >= 19 && h < 22;
+    if (awake(persona, at) && (evening || rand() < 1 / BOT_RULES.eveningWeight)) break;
+    at += 30 * MINUTE_MS;
   }
-  return at;
+  return Math.round(at + rand() * 20 * MINUTE_MS);
 }
+
+const sessionLength = (rand) => Math.round(between(BOT_RULES.sessionMinutes, rand) * MINUTE_MS);
+const actionGap = (persona, rand) => Math.round((between(BOT_RULES.actionGapMinutes, rand) * MINUTE_MS) / (persona.zeal ?? 1));
 
 /**
  * Một lượt "mở game" của bot: xem trạng thái rồi làm 1 việc như người chơi trung bình. Lỗi luật chơi (GameError)
@@ -380,55 +408,149 @@ async function catalogOf(api) {
 
 // ---------------------------------------------------------------- nhịp
 
+/** Nhịp gần nhất và bộ đếm trong ngày, giữ trong bộ nhớ (chỉ ghi gộp vào meta, không ghi theo từng việc). */
+let lastTick = null;
+let today = { day: null, actions: 0, sessions: 0, created: 0 };
+let flushedAt = 0;
+const clock = () => (globalThis.performance?.now ? globalThis.performance.now() : Date.now());
+
+function countDay(now, { actions = 0, sessions = 0, created = 0 }) {
+  const day = dayKey(now);
+  if (today.day !== day) {
+    if (today.day) setMeta('bots_day', JSON.stringify(today));
+    today = { day, actions: 0, sessions: 0, created: 0 };
+    flushedAt = now;
+  }
+  today.actions += actions;
+  today.sessions += sessions;
+  today.created += created;
+  // Ghi gộp tối đa 30 phút một lần.
+  if (now - flushedAt >= 30 * MINUTE_MS && (actions || sessions || created)) {
+    setMeta('bots_day', JSON.stringify(today));
+    flushedAt = now;
+  }
+}
+
 /**
- * Một nhịp của bot (gọi từ bộ lập lịch mỗi phút). Tắt thì không làm gì. Tạo thêm bot từ từ tới mục tiêu, rồi cho
- * tối đa `budget` bot đã tới lượt "mở game" một lần. Trả về { created, actions }.
+ * Một nhịp của bot (gọi từ bộ lập lịch mỗi phút). Tắt thì không làm gì. Tạo thêm bot từ từ tới mục tiêu; mở phiên cho bot
+ * tới giờ (không quá `onlineMax` bot online), thêm phiên khi dưới `onlineMin`; cho bot online đã tới lượt làm một việc.
+ * Dừng khi đủ `budget` việc hoặc quá `timeBudgetMs`, nhịp sau làm tiếp. Trả về thống kê nhịp.
  */
-export async function runBots(api, now = Date.now(), rand = Math.random, { budget = BOT_RULES.budget } = {}) {
+export async function runBots(api, now = Date.now(), rand = Math.random, { budget = BOT_RULES.budget, timeBudgetMs = BOT_RULES.timeBudgetMs } = {}) {
+  const t0 = clock();
   const cfg = botConfig();
-  if (!cfg.enabled) return { created: 0, actions: 0, skipped: 0 };
+  if (!cfg.enabled) {
+    lastTick = { at: now, ms: 0, actions: 0, created: 0, online: 0, stopped: 'off' };
+    return { created: 0, actions: 0, skipped: 0, online: 0, stopped: 'off' };
+  }
+  const overTime = () => clock() - t0 >= timeBudgetMs;
   let created = 0;
   const have = q.count.get().n;
   const want = Math.min(cfg.target, BOT_RULES.max);
-  for (let i = have; i < want && created < BOT_RULES.rampPerTick; i += 1) {
+  for (let i = have; i < want && created < BOT_RULES.rampPerTick && !overTime(); i += 1) {
     createBot(now, rand);
     created += 1;
   }
+  let online = q.online.get(now).n;
   let actions = 0;
   let skipped = 0;
-  for (const bot of q.due.all(now, budget)) {
-    const persona = JSON.parse(bot.persona);
-    const state = bot.state ? JSON.parse(bot.state) : {};
+  let sessions = 0;
+  let stopped = null;
+  const act = async (bot, persona, state) => {
     let action = null;
-    if (awake(persona, now)) {
-      try {
-        action = await visit(api, bot, persona, state, now, rand);
-      } catch (err) {
-        // Không bao giờ để một bot làm hỏng cả nhịp.
-        if (!(err instanceof GameError)) console.error('Bot lỗi:', bot.user_id, err?.message);
-        skipped += 1;
-      }
-      actions += 1;
+    try {
+      action = await visit(api, bot, persona, state, now, rand);
+    } catch (err) {
+      // Không bao giờ để một bot làm hỏng cả nhịp.
+      if (!(err instanceof GameError)) console.error('Bot lỗi:', bot.user_id, err?.message);
+      skipped += 1;
     }
-    q.update.run(nextVisit(persona, now, rand), JSON.stringify(state), action, now, bot.user_id);
+    actions += 1;
+    return action;
+  };
+
+  // Thêm phiên cho đủ số online tối thiểu: trước hết bot đang giờ thức có phiên tới gần nhất; khuya không đủ thì thêm
+  // vài "cú đêm" (người thật cũng có người chơi khuya). Mỗi nhịp mở thêm tối đa 10 phiên để số online lên từ từ.
+  if (online < cfg.onlineMin) {
+    const pool = q.offlineSoon.all(now, Math.max(30, (cfg.onlineMin - online) * 3));
+    const open = (bot) => {
+      q.setSession.run(now + sessionLength(rand), now, bot.user_id);
+      online += 1;
+      sessions += 1;
+    };
+    let added = 0;
+    for (const bot of pool) {
+      if (online >= cfg.onlineMin || added >= 10) break;
+      if (!awake(JSON.parse(bot.persona), now)) continue;
+      open(bot);
+      added += 1;
+      bot.opened = true;
+    }
+    for (const bot of pool) {
+      if (online >= cfg.onlineMin || added >= 10) break;
+      if (bot.opened) continue;
+      open(bot);
+      added += 1;
+    }
   }
-  return { created, actions, skipped };
+
+  for (const bot of q.due.all(now, budget * 4)) {
+    if (actions >= budget) {
+      stopped = 'budget';
+      break;
+    }
+    if (overTime()) {
+      stopped = 'time';
+      break;
+    }
+    const persona = JSON.parse(bot.persona);
+    const inSession = bot.session_end && bot.session_end > now;
+    if (!inSession && bot.session_end) {
+      // Phiên đã hết: offline tới phiên sau.
+      q.setSession.run(null, nextSessionStart(persona, now, rand), bot.user_id);
+      continue;
+    }
+    if (!inSession) {
+      // Tới giờ mở phiên mới: đủ người online thì lùi lại một chút như người đang bận.
+      if (online >= cfg.onlineMax || !awake(persona, now)) {
+        q.setSession.run(null, awake(persona, now) ? now + Math.round(between([10, 30], rand) * MINUTE_MS) : nextSessionStart(persona, now, rand), bot.user_id);
+        continue;
+      }
+      bot.session_end = now + sessionLength(rand);
+      online += 1;
+      sessions += 1;
+    }
+    const state = bot.state ? JSON.parse(bot.state) : {};
+    const action = await act(bot, persona, state);
+    const next = now + actionGap(persona, rand);
+    const ending = next >= bot.session_end;
+    q.update.run(ending ? nextSessionStart(persona, bot.session_end, rand) : next, ending ? null : bot.session_end, JSON.stringify(state), action, now, bot.user_id);
+    if (ending) online -= 1;
+  }
+  const ms = Math.round((clock() - t0) * 10) / 10;
+  online = q.online.get(now).n;
+  lastTick = { at: now, ms, actions, created, online, stopped };
+  countDay(now, { actions, sessions, created });
+  return { created, actions, skipped, online, stopped, ms };
 }
 
 // ---------------------------------------------------------------- quản trị
 
-export function adminBotsView() {
-  const rows = q.bots.all();
+export function adminBotsView(now = Date.now(), limit = 300) {
+  const rows = q.bots.all(now, limit);
   const stats = db.prepare('SELECT COUNT(*) AS total, COALESCE(SUM(is_bot), 0) AS bots FROM users').get();
   return {
     config: botConfig(),
     rules: BOT_RULES,
-    count: rows.length,
+    count: q.count.get().n,
+    online: q.online.get(now).n,
+    lastTick,
+    today: today.day === dayKey(now) ? today : { day: dayKey(now), actions: 0, sessions: 0, created: 0 },
     players: { total: stats.total, bots: stats.bots, real: stats.total - stats.bots },
     bots: rows.map((b) => ({
       userId: b.user_id, username: b.username, displayName: b.display_name, coins: b.coins, joinedAt: b.joined,
-      lastAction: b.last_action, lastAt: b.last_at, nextAt: b.next_at, actions: b.actions,
-      level: db.prepare('SELECT MAX(level) AS l FROM pets WHERE owner_id = ?').get(b.user_id).l ?? 0,
+      lastAction: b.last_action, lastAt: b.last_at, nextAt: b.next_at, actions: b.actions, level: b.level ?? 0,
+      online: Boolean(b.session_end && b.session_end > now), sessionEnd: b.session_end,
     })),
   };
 }

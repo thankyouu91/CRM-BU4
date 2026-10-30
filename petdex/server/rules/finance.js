@@ -1,7 +1,7 @@
 // Luật tài chính (hàm thuần): quản trị gia tộc (bỏ phiếu phế truất), tiền gửi kỳ hạn của gia tộc,
 // vay ngang hàng qua ngân hàng trung gian, và hụi (người chơi hoặc gia tộc).
 import { DAY } from '../game.js';
-import { tierOf } from './production.js';
+import { ceilCoins, floorCoins, tierOf } from './production.js';
 
 // ---------------------------------------------------------------- quản trị gia tộc
 
@@ -29,12 +29,12 @@ export function voteOutcome({ yes, no, eligible, expired }) {
  */
 export const CLAN_BANK = { termPremium: { 3: 0.001, 7: 0.002, 14: 0.003 }, clanBonus: 0.0005, minDeposit: 1000, earlyPenalty: 0.05, emergencyPenalty: 0.03 };
 
-export const clanDepositRate = (baseRate, term) => baseRate + CLAN_BANK.termPremium[term] + CLAN_BANK.clanBonus;
+export const clanDepositRate = (baseRate, term) => Math.round((baseRate + CLAN_BANK.termPremium[term] + CLAN_BANK.clanBonus) * 1e6) / 1e6;
 
 /** Tất toán một khoản: đúng hạn thì gốc + lãi; trước hạn thì gốc trừ phạt, không lãi. */
 export function clanDepositPayout(dep, now, { emergency = false } = {}) {
-  if (now >= dep.matures_at) return { principal: dep.amount, interest: Math.floor(dep.amount * dep.rate * dep.term_days), penalty: 0, kind: 'matured' };
-  const penalty = Math.ceil(dep.amount * (emergency ? CLAN_BANK.emergencyPenalty : CLAN_BANK.earlyPenalty));
+  if (now >= dep.matures_at) return { principal: dep.amount, interest: floorCoins(dep.amount * dep.rate * dep.term_days), penalty: 0, kind: 'matured' };
+  const penalty = ceilCoins(dep.amount * (emergency ? CLAN_BANK.emergencyPenalty : CLAN_BANK.earlyPenalty));
   return { principal: dep.amount - penalty, interest: 0, penalty, kind: emergency ? 'emergency' : 'early' };
 }
 
@@ -61,8 +61,9 @@ export const P2P = {
 };
 
 export const p2pCut = (creditScore) => P2P.cut[tierOf(creditScore).key] ?? P2P.cut.bronze;
-export const p2pLimit = (creditScore, bankLimit) => bankLimit * P2P.limitMultiplier;
-export const p2pInterest = (amount, rate, term) => Math.round(amount * rate * term);
+/** Hạn mức vay ngang hàng: gấp `limitMultiplier` hạn mức vay ngân hàng của hạng tín dụng. */
+export const p2pLimit = (creditScore) => tierOf(creditScore).limit * P2P.limitMultiplier;
+export const p2pInterest = (amount, rate, term) => Math.round(Math.round(amount * rate * term * 1e6) / 1e6);
 
 /** Chia một khoản người vay vừa trả: trả gốc cho người cho vay trước, rồi lãi (ngân hàng giữ `cut`). */
 export function splitRepayment(paid, { principalLeft, interestLeft, cut }) {

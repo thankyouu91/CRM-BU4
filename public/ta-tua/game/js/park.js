@@ -116,15 +116,6 @@ export function mountPark(root, ctx) {
     $('#online-count', root).textContent = entities.size;
   }
 
-  function say(id, text) {
-    const e = entities.get(id);
-    if (!e) return;
-    e.bubbleEl.textContent = text;
-    e.bubbleEl.classList.add('show');
-    clearTimeout(e.bubbleTimer);
-    e.bubbleTimer = setTimeout(() => e.bubbleEl.classList.remove('show'), 4500);
-  }
-
   function particles(id, frac, options) {
     const e = entities.get(id);
     if (!e) return;
@@ -319,10 +310,6 @@ export function mountPark(root, ctx) {
     }
     setPet(e, player);
     renderOnline();
-  });
-
-  socket.on('pg:chat', ({ id, text }) => {
-    say(id, text);
   });
 
   socket.on('pg:emote', ({ id, kind }) => {

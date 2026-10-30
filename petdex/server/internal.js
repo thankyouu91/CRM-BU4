@@ -619,7 +619,8 @@ internalApi.get('/admin/clans', (_req, res) => res.json(adminClanView()));
 // ---- Cư dân tự động: số bot mục tiêu, bật/tắt toàn bộ (tắt thì nhịp sau dừng hết) ----
 internalApi.get('/admin/bots', (_req, res) => res.json(adminBotsView()));
 internalApi.post('/admin/bots/config', (req, res) => {
-  setBotConfig({ enabled: req.body?.enabled, target: req.body?.target }, actorOf(req));
+  const b = req.body ?? {};
+  setBotConfig({ enabled: b.enabled, target: b.target, onlineMin: b.onlineMin, onlineMax: b.onlineMax }, actorOf(req));
   res.json(adminBotsView());
 });
 

@@ -2,6 +2,7 @@
 // Mỗi kỳ (1 ngày, chốt lúc quyết toán đêm) mọi thành viên góp một khoản bằng nhau vào quỹ hụi; một người chưa hốt
 // sẽ hốt cả quỹ: người bỏ thăm cao nhất (nhận quỹ trừ tiền thăm, tiền thăm chia cho người cùng góp), không ai bỏ thăm
 // thì kỳ đầu chủ hụi hốt, các kỳ sau theo thứ tự vào nhóm. Tới kỳ mà không đủ tiền góp thì bị loại, không hoàn tiền.
+import { sendMail } from './chat.js';
 import { addCredit } from './credit.js';
 import { db, getUser, transaction } from './db.js';
 import { dayKey, startOfDay } from './clock.js';
@@ -27,6 +28,7 @@ const q = {
     WHERE g.scope = ? AND m.member_id = ? AND (g.status IN ('open', 'running') OR g.closed_at >= ?) ORDER BY g.id DESC LIMIT 20`),
 
   members: db.prepare('SELECT * FROM hui_members WHERE group_id = ? ORDER BY joined_at, member_id'),
+  clanLeader: db.prepare("SELECT user_id FROM clan_members WHERE clan_id = ? AND role = 'leader'"),
   member: db.prepare('SELECT * FROM hui_members WHERE group_id = ? AND member_id = ?'),
   count: db.prepare("SELECT COUNT(*) AS n FROM hui_members WHERE group_id = ? AND status = 'active'"),
   join: db.prepare('INSERT INTO hui_members (group_id, member_id, joined_at) VALUES (?, ?, ?)'),
@@ -144,10 +146,27 @@ export function startHuiNow(userId, groupId, now = Date.now()) {
   });
 }
 
-function startGroup(g, now) {
+/**
+ * Cho dây chạy và báo cho từng thành viên qua hộp thư. Kỳ đầu chốt ở lần quyết toán nửa đêm hôm nay (giờ Việt Nam);
+ * dây được cho chạy ngay trong một lần quyết toán (`atSettlement`) thì kỳ đầu chốt ở lần quyết toán sau,
+ * để thành viên kịp biết và chuẩn bị tiền góp.
+ */
+function startGroup(g, now, { atSettlement = false } = {}) {
   const n = q.count.get(g.id).n;
-  // Kỳ đầu chốt ở lần quyết toán nửa đêm hôm nay (giờ Việt Nam).
-  q.start.run(n, startOfDay(dayKey(now)) + DAY - 1, g.id);
+  const firstRound = atSettlement ? now + DAY : startOfDay(dayKey(now)) + DAY - 1;
+  q.start.run(n, firstRound, g.id);
+  for (const m of q.members.all(g.id)) {
+    if (m.status !== 'active') continue;
+    const to = g.scope === 'player' ? m.member_id : q.clanLeader.get(m.member_id)?.user_id;
+    if (!to) continue;
+    sendMail({
+      to,
+      fromName: 'Ngân hàng Trân Châu',
+      subject: `Dây hụi "${g.name}" bắt đầu chạy`,
+      body: `Dây hụi "${g.name}" đã đủ ${n} thành viên và bắt đầu chạy. Mỗi kỳ góp ${fmt(g.amount)} xu${g.scope === 'clan' ? ' từ quỹ gia tộc' : ''}; kỳ 1 chốt lúc nửa đêm ${dayKey(firstRound)}.\nKhông đủ tiền góp đúng kỳ là bị loại và mất số đã góp.`,
+      now,
+    });
+  }
 }
 
 /** Bỏ thăm cho kỳ đang tới (chỉ người chưa hốt). Tiền thăm tối đa maxBidRatio quỹ kỳ đó. */
@@ -216,7 +235,10 @@ function runRound(g, at) {
   }
   const pot = payers.length * g.amount;
   const eligible = payers.filter((m) => !m.received).map((m) => m.member_id);
-  const pick = pickWinner(eligible, q.bids.all(g.id, round), round, g.owner_id);
+  // Trần tiền thăm tính lại theo quỹ thực tế (đã trừ người bị loại kỳ này): thăm vượt trần thì kéo về trần.
+  const cap = Math.floor(pot * HUI.maxBidRatio);
+  const bids = q.bids.all(g.id, round).map((b) => ({ ...b, bid: Math.min(b.bid, cap) }));
+  const pick = pickWinner(eligible, bids, round, g.owner_id);
   let winnerId = null;
   let bid = 0;
   if (pick && pot > 0) {
@@ -248,7 +270,7 @@ export function settleHuiDay(day) {
   const at = end - 1;
   transaction(() => {
     for (const g of q.staleOpen.all(end - HUI.openDays * DAY)) {
-      if (q.count.get(g.id).n >= HUI[g.scope].minSize) startGroup(g, at);
+      if (q.count.get(g.id).n >= HUI[g.scope].minSize) startGroup(g, at, { atSettlement: true });
       else q.cancel.run(at, g.id);
     }
     for (const g of q.dueRounds.all(end)) runRound(q.group.get(g.id), at);

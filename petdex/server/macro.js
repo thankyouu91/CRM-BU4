@@ -3,7 +3,7 @@
 // và lên lượng khách của quầy trà sữa (hiệu ứng thị trấn). Quản trị viên có thể ép pha và thời tiết.
 import { economy } from './bank.js';
 import { dayKey, nextDay, startOfDay } from './clock.js';
-import { db } from './db.js';
+import { db, getMeta } from './db.js';
 import { DAY } from './game.js';
 import { gaussian } from './rules/market.js';
 import { INDUSTRIES, INDUSTRY_ORDER, PHASES, PHASE_NEXT, WEATHER } from '../../public/ta-tua/game/js/shared/clan.js';
@@ -17,7 +17,22 @@ const q = {
     INSERT OR REPLACE INTO macro_days (day, phase, weather, land_index, gdp, demand, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)`),
   insertNews: db.prepare('INSERT INTO news (commodity, headline, effect, created_at, starts_at, ends_at) VALUES (?, ?, ?, ?, ?, ?)'),
   insertEffect: db.prepare('INSERT INTO town_effects (kind, target, value, label, starts_at, ends_at) VALUES (?, ?, ?, ?, ?, ?)'),
+  dropWeatherNews: db.prepare("DELETE FROM news WHERE commodity IS NOT NULL AND starts_at = ? AND ends_at = ? AND headline LIKE '%: thị trường %'"),
+  dropPhaseEffect: db.prepare("DELETE FROM town_effects WHERE kind = 'traffic' AND target IS NULL AND starts_at = ? AND ends_at = ? AND label LIKE '% Kinh tế %'"),
 };
+
+/**
+ * Pha và thời tiết quản trị viên đang ép (bảng quản lý → Gia tộc → Kinh tế vĩ mô, lưu trong clan_config).
+ * Mọi nơi tạo bản ghi ngày đều đi qua đây, để route nào tạo trước cũng không bỏ qua lệnh ép.
+ */
+export function forcedMacro() {
+  try {
+    const m = JSON.parse(getMeta('clan_config') ?? '{}').macro ?? {};
+    return { phase: m.phase ?? null, weather: m.weather ?? null };
+  } catch {
+    return {};
+  }
+}
 
 const clamp = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
 const GDP = { recovery: 0.025, boom: 0.07, peak: 0.04, recession: -0.03 };
@@ -73,23 +88,30 @@ export function rollMacro(prev, { rand = Math.random, baseRate = 0.003, force = 
 
 const INITIAL = { phase: 'recovery', weather: 'calm', landIndex: 1, gdp: GDP.recovery, demand: Object.fromEntries(INDUSTRY_ORDER.map((id) => [id, 1])) };
 
-/** Ghi trạng thái của `day` và đăng tin/hiệu ứng cho ngày đó. */
-function write(day, state, now) {
-  q.insert.run(day, state.phase, state.weather, state.landIndex, state.gdp, JSON.stringify(state.demand), now);
+/** Tin thời tiết (có hiệu lực giá) và hiệu ứng lượng khách theo pha kinh tế của ngày `day`. */
+function writeWeatherAndPhase(day, state) {
   const from = startOfDay(day);
   const to = from + DAY;
   const w = WEATHER[state.weather];
   for (const [commodity, effect] of Object.entries(w.news ?? {})) {
     q.insertNews.run(commodity, `${w.icon} ${w.name}: thị trường ${effect > 0 ? 'lo thiếu hàng' : 'dư hàng'}`, effect, from, from, to);
   }
+  const traffic = PHASES[state.phase].traffic;
+  if (traffic) q.insertEffect.run('traffic', null, traffic, `${PHASES[state.phase].icon} Kinh tế ${PHASES[state.phase].name}`, from, to);
+}
+
+/** Ghi trạng thái của `day` và đăng tin/hiệu ứng cho ngày đó. */
+function write(day, state, now) {
+  q.insert.run(day, state.phase, state.weather, state.landIndex, state.gdp, JSON.stringify(state.demand), now);
+  const from = startOfDay(day);
+  const to = from + DAY;
+  writeWeatherAndPhase(day, state);
   for (const { industry, shock } of state.shocks ?? []) {
     const ind = INDUSTRIES[industry];
     const headline = `${ind.icon} Cầu ngành ${ind.name} ${shock > 0 ? 'tăng vọt' : 'sụt giảm'} ${Math.round(Math.abs(shock) * 100)}%`;
     if (ind.commodities.length) for (const c of ind.commodities) q.insertNews.run(c, headline, shock / 2, from, from, to);
     else q.insertNews.run(null, headline, 0, from, from, to);
   }
-  const traffic = PHASES[state.phase].traffic;
-  if (traffic) q.insertEffect.run('traffic', null, traffic, `${PHASES[state.phase].icon} Kinh tế ${PHASES[state.phase].name}`, from, to);
 }
 
 /**
@@ -112,7 +134,7 @@ function fillMissingDemand(state, rand) {
 }
 
 /** Trạng thái vĩ mô của `day`; chưa có thì tạo từ ngày gần nhất trước đó. */
-export function macroFor(day, { rand = Math.random, force = {}, now = Date.now() } = {}) {
+export function macroFor(day, { rand = Math.random, force = forcedMacro(), now = Date.now() } = {}) {
   const found = parse(q.day.get(day));
   if (found) return fillMissingDemand(found, rand);
   const prev = parse(q.before.get(day)) ?? INITIAL;
@@ -132,6 +154,13 @@ export function overrideMacro(day, patch, now = Date.now()) {
     demand: cur.demand,
   };
   q.insert.run(day, next.phase, next.weather, next.landIndex, next.gdp, JSON.stringify(next.demand), now);
+  // Đổi pha / thời tiết thì thay luôn tin thời tiết và hiệu ứng lượng khách đã đăng cho ngày đó.
+  if (next.phase !== cur.phase || next.weather !== cur.weather) {
+    const from = startOfDay(day);
+    q.dropWeatherNews.run(from, from + DAY);
+    q.dropPhaseEffect.run(from, from + DAY);
+    writeWeatherAndPhase(day, next);
+  }
   return { day, ...next };
 }
 
@@ -141,7 +170,7 @@ export const macroToday = (now = Date.now()) => macroFor(dayKey(now), { now });
 export const macroHistory = (day, n = 14) => q.recent.all(day, n).map(parse).reverse();
 
 /** Đóng ngày `day`: tạo sẵn trạng thái của ngày hôm sau. */
-export function rollNextDay(day, { rand = Math.random, force = {} } = {}) {
+export function rollNextDay(day, { rand = Math.random, force = forcedMacro() } = {}) {
   const next = nextDay(day);
   return macroFor(next, { rand, force, now: startOfDay(next) });
 }

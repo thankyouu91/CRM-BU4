@@ -128,8 +128,9 @@ export function bankInterestBonus(userId, interest, { account = 'wallet', memo =
   const b = buffFor('state_bank', { userId });
   const bonus = Math.floor(interest * b.total);
   if (bonus <= 0) return 0;
+  // Thu phí trước: không đủ tiền trả phí thì không có phần lãi thêm (trước đây cộng lãi rồi mới thu, thu hụt vẫn giữ lãi).
+  if (b.paid > 0 && chargeInfraFee('state_bank', interest * b.paid, { userId, account, now, memo }) === null) return 0;
   post({ userId, account, delta: bonus, kind: 'infra_bonus', memo: `Ngân hàng nhà nước +${Math.round(b.total * 100)}%: ${memo}`, now });
-  if (b.paid > 0) chargeInfraFee('state_bank', interest * b.paid, { userId, account, now, memo });
   return bonus;
 }
 

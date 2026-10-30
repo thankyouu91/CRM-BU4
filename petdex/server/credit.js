@@ -4,7 +4,8 @@ import { economy } from './bank.js';
 import { startOfDay } from './clock.js';
 import { DAY, GameError } from './game.js';
 import { KINDS, post } from './ledger.js';
-import { CREDIT, LOANS, TIERS, clampCredit, installment, loanLimit, loanRate, tierOf } from './rules/production.js';
+import { UNLOCKS } from './routes-economy.js';
+import { CREDIT, LOANS, TIERS, ceilCoins, clampCredit, installment, loanLimit, loanRate, tierOf } from './rules/production.js';
 
 const MIN_LOAN = 50;
 const MAX_LOANS = 2;
@@ -39,7 +40,7 @@ export function addCredit(userId, delta, reason, now = Date.now()) {
 }
 
 /** Thu nhập (các khoản thuộc nhóm thu) vào ví trong khoảng [from, to). */
-function incomeBetween(userId, from, to) {
+export function incomeBetween(userId, from, to) {
   return q.income.all(userId, from, to).filter((r) => KINDS[r.kind]?.group === 'income').reduce((s, r) => s + r.total, 0);
 }
 
@@ -47,7 +48,7 @@ const outstanding = (loans) => loans.reduce((s, l) => s + l.remaining + l.fees, 
 
 /** Lý do chưa được vay (null nếu được). */
 function blockedReason(user, loans, now) {
-  if (!user.advanced) return 'Bật chế độ tài chính nâng cao (cấp 8) để vay.';
+  if (!user.advanced) return `Bật chế độ tài chính nâng cao (cấp ${UNLOCKS.advanced}) để vay.`;
   if (now - user.created_at < LOANS.minAccountDays * DAY) return `Tài khoản cần đủ ${LOANS.minAccountDays} ngày tuổi mới được vay.`;
   if (user.loan_ban_until > now) return 'Bạn đang bị cấm vay vì từng vỡ nợ.';
   if (loans.some((l) => l.status !== 'active')) return 'Trả hết khoản đang trễ hạn đã.';
@@ -111,7 +112,7 @@ export function borrow(userId, amount, termDays, now = Date.now()) {
     if (amount > t.limit) throw new GameError(`Hạn mức hiện tại của bạn là ${t.limit} xu.`);
     // Ngân hàng giải ngân là tạo ra xu mới; trả gốc thì số xu đó bị hủy.
     post({ userId, delta: amount, kind: 'loan_in', memo: `Vay ${termDays} ngày`, now });
-    chargeLoanCost(userId, Math.ceil(amount * LOANS.originationFee), 'loan_fee', 'Phí giải ngân', now);
+    chargeLoanCost(userId, ceilCoins(amount * LOANS.originationFee), 'loan_fee', 'Phí giải ngân', now);
     q.insertLoan.run(userId, amount, amount, t.rate, termDays, now, now + termDays * DAY);
     return { message: `💳 Đã giải ngân ${amount} 🪙. Mỗi tối ngân hàng tự trừ một kỳ trả góp từ ví (thiếu thì lấy sang tiết kiệm).` };
   });
@@ -196,10 +197,15 @@ export function settleLoansDay(day) {
   transaction(() => {
     for (const loan of q.openAll.all(end)) {
       if (loan.status === 'defaulted') {
+        // Vỡ nợ vẫn chịu lãi và phí trễ như khoản trễ hạn; ngân hàng giữ `garnish` thu nhập trong ngày,
+        // lấy từ ví rồi tới tiết kiệm (không giấu xu trong tiết kiệm để né thu nợ được).
+        const interest = ceilCoins(loan.remaining * loan.rate);
         const garnish = Math.floor(incomeBetween(loan.user_id, from, end) * LOANS.garnish);
-        const { paid, budget, take } = pay(loan, garnish, at);
+        const { paid, budget, take } = pay(loan, garnish, at, { useSavings: true, interest });
         paid.principal = take(Math.min(budget, loan.remaining), 'loan_repay', `Thu nợ khoản vay #${loan.id}`, false);
-        finish({ ...loan, fees: loan.fees - paid.costs, remaining: loan.remaining - paid.principal }, at, { lateCleared: false });
+        const next = { ...loan, fees: loan.fees + interest - paid.costs, remaining: loan.remaining - paid.principal };
+        if (next.remaining + next.fees > 0) next.fees += ceilCoins((next.remaining + next.fees) * LOANS.lateFee);
+        finish(next, at, { lateCleared: false });
         continue;
       }
       const due = installment(loan, at >= loan.due_at);
@@ -213,7 +219,7 @@ export function settleLoansDay(day) {
         finish(next, at, { lateCleared: true });
         continue;
       }
-      next.fees += Math.ceil((next.remaining + next.fees) * LOANS.lateFee);
+      next.fees += ceilCoins((next.remaining + next.fees) * LOANS.lateFee);
       next.late_days = loan.late_days + 1;
       next.status = 'late';
       addCredit(loan.user_id, CREDIT.late, `Trễ kỳ trả góp khoản #${loan.id}`, at);

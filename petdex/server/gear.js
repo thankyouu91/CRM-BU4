@@ -28,6 +28,7 @@ const q = {
   breakWorn: db.prepare(`
     UPDATE gear SET broken = 1, repair_until = 0
     WHERE broken = 0 AND id IN (SELECT w.gear_id FROM pet_wear w JOIN pets p ON p.id = w.pet_id WHERE p.owner_id = ?)`),
+  breakPet: db.prepare('UPDATE gear SET broken = 1, repair_until = 0 WHERE broken = 0 AND id IN (SELECT gear_id FROM pet_wear WHERE pet_id = ?)'),
 };
 
 const parse = (row) => row && { ...row, affixes: JSON.parse(row.affixes || '{}') };
@@ -170,6 +171,15 @@ export function breakWornGear(userIds) {
   return transaction(() => {
     let n = 0;
     for (const id of new Set(userIds)) n += Number(q.breakWorn.run(Number(id)).changes);
+    return n;
+  });
+}
+
+/** Như breakWornGear nhưng chỉ đồ đang đeo trên các bé `petIds` (bé đã ra sân ở Đấu trường). Trả về số món vừa hỏng. */
+export function breakPetGear(petIds) {
+  return transaction(() => {
+    let n = 0;
+    for (const id of new Set(petIds)) n += Number(q.breakPet.run(Number(id)).changes);
     return n;
   });
 }

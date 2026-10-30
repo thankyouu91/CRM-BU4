@@ -1,13 +1,14 @@
 // Đấu trường gia tộc: thách đấu giành một lô đất hoặc một ghế ngành chiến lược của gia tộc khác.
 // Bên thách đấu đề xuất 1–2 khung 19h/20h (giờ Việt Nam) vào ngày sau; bên bị thách chọn một khung trong 48 giờ, không
 // thì bị xử thua (mất lô/ghế, phạt 15% quỹ). Đến giờ, server đánh theo lượt (có seed) giữa 15 thành viên chiến lực cao
-// nhất mỗi bên, lưu nhật ký từng lượt để xem lại. Bên thua mất lô/ghế và 30% quỹ (nửa cho bên thắng, nửa vào ngân sách);
-// trang phục đang đeo của mọi người tham chiến hai bên hỏng hẳn. Luật ở shared/arena.js.
+// nhất mỗi bên, lưu nhật ký từng lượt để xem lại. Bên thua mất lô/ghế và 30% tài sản gia tộc (quỹ + tiền gửi kỳ hạn; nửa cho
+// bên thắng, nửa vào ngân sách); trang phục đang đeo trên các bé ra sân hỏng hẳn. Luật ở shared/arena.js.
 import { adminLog, db, listPets, transaction } from './db.js';
 import { dayKey } from './clock.js';
 import { DAY, GameError, HOUR, ageInfo } from './game.js';
 import { post } from './ledger.js';
-import { breakWornGear, wornGear } from './gear.js';
+import { breakPetGear, wornGear } from './gear.js';
+import { breakDepositsFor, clanAssets } from './clan-gov.js';
 import { createAnnouncement } from './announcements.js';
 import { ARENA, combatPower, simulateBattle, slotTime, warSeed } from '../../public/ta-tua/game/js/shared/arena.js';
 import { INDUSTRIES, PLOTS } from '../../public/ta-tua/game/js/shared/clan.js';
@@ -215,7 +216,7 @@ function announceFight(war, now) {
   const days = Math.min(30, Math.max(1, Math.ceil((war.scheduled_at - now) / DAY) + 1));
   createAnnouncement({
     title: `⚔️ Đấu trường: ${a} thách đấu ${b}`,
-    body: `## ${a} ⚔️ ${b}\n\n- Giành: **${targetName(war.target_kind, war.target_ref)}**\n- Giờ đấu: **${when}** (giờ Việt Nam)\n- Mỗi bên ${ARENA.teamSize} thành viên chiến lực cao nhất. Bên thua mất ${targetName(war.target_kind, war.target_ref)} và ${Math.round(ARENA.penalty * 100)}% quỹ gia tộc.\n\nXem trực tiếp kết quả ở Đấu trường.`,
+    body: `## ${a} ⚔️ ${b}\n\n- Giành: **${targetName(war.target_kind, war.target_ref)}**\n- Giờ đấu: **${when}** (giờ Việt Nam)\n- Mỗi bên ${ARENA.teamSize} thành viên chiến lực cao nhất. Bên thua mất ${targetName(war.target_kind, war.target_ref)} và ${Math.round(ARENA.penalty * 100)}% tài sản gia tộc.\n\nXem trực tiếp kết quả ở Đấu trường.`,
     days,
     popup: true,
     createdBy: 'Đấu trường',
@@ -224,14 +225,19 @@ function announceFight(war, now) {
 
 // ---------------------------------------------------------------- đến giờ: xử thua, đánh, chuyển giao
 
-/** Trang phục đang đeo của mọi người tham chiến hỏng hẳn sau trận (luật độ bền ở gear.js). */
-export function breakParticipantsGear(userIds, now = Date.now()) {
-  return breakWornGear(userIds, now);
+/** Trang phục đang đeo trên các bé đã ra sân hỏng hẳn sau trận (luật độ bền ở gear.js); bé khác ở nhà không sao. */
+export function breakParticipantsGear(petIds) {
+  return breakPetGear(petIds);
 }
 
-/** Bên thua nộp `rate` quỹ: một nửa cho bên thắng, phần còn lại vào ngân sách thị trấn. Trả về tổng tiền phạt. */
+/**
+ * Bên thua nộp `rate` × (quỹ + tiền gửi kỳ hạn): quỹ thiếu thì phá khoản gửi (chỉ gốc, mất lãi). Một nửa cho bên thắng,
+ * phần còn lại vào ngân sách thị trấn. Trả về tổng tiền phạt.
+ */
 function payPenalty(loserId, winnerId, rate, memo, now) {
-  const total = Math.floor(clanBalance(loserId) * rate);
+  const due = Math.floor(clanAssets(loserId) * rate);
+  if (due <= 0) return 0;
+  const total = Math.min(due, breakDepositsFor(loserId, due, 'nộp phạt Đấu trường', now));
   if (total <= 0) return 0;
   const toWinner = Math.floor(total / 2);
   post({ account: clanAccount(loserId), delta: -total, kind: 'arena_penalty', memo, now });
@@ -240,10 +246,19 @@ function payPenalty(loserId, winnerId, rate, memo, now) {
   return total;
 }
 
+/** Bên bị thách đấu còn giữ mục tiêu không (lô còn là của họ, ghế còn trong tay họ). */
+const defenderStillHolds = (war) => holderOf(war.target_kind, war.target_ref, war.defender_id) === war.defender_id;
+
+/** Bên thách đấu thắng còn nhận được ghế không (chưa có ghế chiến lược khác, chưa đủ 3 ngành). */
+function canTakeSeat(clanId) {
+  const owned = q.industries.all(clanId);
+  return !owned.some((i) => isStrategic(i.industry)) && owned.length < 3;
+}
+
 /**
  * Chuyển lô (kèm nhà máy, công trình) hoặc ghế sang bên thắng. Ghế đi kèm cấp hạ tầng; lô của bên thua đang làm ngành đó
- * thôi chạy (giữ công trình), nên bên thua mất luôn buff tài chính. Bên thắng không nhận được ghế (đã có ghế chiến lược
- * khác hoặc đủ 3 ngành) thì ghế được trả lại cho thị trấn. Trả về mô tả ngắn.
+ * thôi chạy (giữ công trình), nên bên thua mất luôn buff tài chính. Bên thắng không còn chỗ nhận ghế thì ghế ở lại với bên
+ * giữ ghế (tiền phạt vẫn tính). Trả về mô tả ngắn.
  */
 function transferTarget(war, loserId, winnerId, now) {
   if (war.target_kind === 'plot') {
@@ -254,6 +269,7 @@ function transferTarget(war, loserId, winnerId, now) {
   }
   const industry = war.target_ref;
   if (!q.hasSeat.get(loserId, industry)) return { moved: false, note: 'Ghế đã không còn thuộc bên thua.' };
+  if (!canTakeSeat(winnerId)) return { moved: false, kept: true, note: 'Bên thắng không còn chỗ nhận ghế; ghế ở lại với bên giữ ghế.' };
   const infra = q.infra.get(loserId, industry);
   q.dropSeat.run(loserId, industry);
   q.dropInfra.run(loserId, industry);
@@ -261,8 +277,6 @@ function transferTarget(war, loserId, winnerId, now) {
     q.clearPlotIndustry.run(p.id);
     q.dropOperatorsOfPlot.run(p.id);
   }
-  const owned = q.industries.all(winnerId);
-  if (owned.some((i) => isStrategic(i.industry)) || owned.length >= 3) return { moved: false, note: 'Bên thắng không còn chỗ nhận ghế; ghế trả về thị trấn.' };
   q.addSeat.run(winnerId, industry, now);
   if (infra) q.setInfra.run(winnerId, industry, infra.level, now);
   return { moved: true };
@@ -271,13 +285,35 @@ function transferTarget(war, loserId, winnerId, now) {
 /** Ảnh chụp đội hình cho nhật ký và màn xem lại. */
 const snapshot = (team) => team.map((m) => ({ userId: m.userId, name: m.name, power: m.power, pet: m.pet }));
 
-/** Đánh một trận đã đến giờ. */
+/** Hủy trận lúc tới hạn (không ai mất gì). */
+function voidWar(war, now, note) {
+  q.resolve.run('cancelled', now, null, 0, null, note, war.id);
+  adminLog('Đấu trường', 'arena_void', null, { warId: war.id, note });
+  return { cancelled: true, note };
+}
+
+/**
+ * Đánh một trận đã đến giờ. Mục tiêu đã đổi chủ thì hủy. Một bên không có ai ra sân: bên thách đấu trống thì bên thách
+ * đấu bỏ trận (nộp 15%, mục tiêu giữ nguyên); bên giữ trống thì như bỏ trận (nộp 15%, mục tiêu chuyển); cả hai trống thì hủy.
+ */
 export function fight(war, now = Date.now()) {
+  if (!defenderStillHolds(war)) return voidWar(war, now, 'Mục tiêu đã đổi chủ');
   const a = topFighters(war.challenger_id, now);
   const b = topFighters(war.defender_id, now);
+  if (!a.length && !b.length) return voidWar(war, now, 'Cả hai bên không ai ra sân');
+  if (!a.length || !b.length) {
+    const winnerId = a.length ? war.challenger_id : war.defender_id;
+    const loserId = a.length ? war.defender_id : war.challenger_id;
+    const memo = `Đấu trường #${war.id}: ${clanName(loserId)} không ai ra sân`;
+    const penalty = payPenalty(loserId, winnerId, ARENA.forfeitPenalty, memo, now);
+    const transfer = winnerId === war.challenger_id ? transferTarget(war, loserId, winnerId, now) : { moved: false, kept: true };
+    const note = `${clanName(loserId)} không ai ra sân${transfer.note ? `; ${transfer.note}` : ''}`;
+    q.resolve.run('forfeit', now, winnerId, penalty, JSON.stringify({ transfer }), note, war.id);
+    adminLog('Đấu trường', 'arena_forfeit', null, { warId: war.id, winner: clanName(winnerId), loser: clanName(loserId), penalty, transfer, empty: true });
+    return { winnerId, loserId, penalty, broken: 0, transfer };
+  }
   const fighters = (team) => team.map((m) => ({ power: m.power, rarity: m.pet.rarity, element: m.pet.element }));
   const battle = simulateBattle(fighters(a), fighters(b), warSeed(war.id, war.scheduled_at));
-  // Không ai ra sân cả hai bên: bên giữ đất/ghế giữ nguyên.
   const winnerId = battle.winner === 'a' ? war.challenger_id : war.defender_id;
   const loserId = winnerId === war.challenger_id ? war.defender_id : war.challenger_id;
   battle.rounds.forEach((hits, i) => q.insertRound.run(war.id, i + 1, JSON.stringify(hits)));
@@ -285,7 +321,8 @@ export function fight(war, now = Date.now()) {
   const penalty = payPenalty(loserId, winnerId, ARENA.penalty, memo, now);
   // Bên thách đấu thắng thì giành mục tiêu; bên giữ thắng thì giữ nguyên.
   const transfer = winnerId === war.challenger_id ? transferTarget(war, loserId, winnerId, now) : { moved: false, kept: true };
-  const broken = breakParticipantsGear([...a, ...b].map((m) => m.userId), now);
+  // Chỉ bé đã ra sân bị hỏng đồ.
+  const broken = breakParticipantsGear([...a, ...b].map((m) => m.pet.id));
   const result = {
     teams: [snapshot(a), snapshot(b)], hp: battle.hp, maxHp: battle.maxHp, rounds: battle.rounds.length, transfer, broken,
   };
@@ -294,8 +331,9 @@ export function fight(war, now = Date.now()) {
   return { winnerId, loserId, penalty, broken, transfer };
 }
 
-/** Bên bị thách đấu không chọn giờ kịp: thua, mất mục tiêu, phạt 15%. */
+/** Bên bị thách đấu không chọn giờ kịp: thua, mất mục tiêu, phạt 15%. Mục tiêu đã đổi chủ thì hủy. */
 export function forfeit(war, now = Date.now()) {
+  if (!defenderStillHolds(war)) return voidWar(war, now, 'Mục tiêu đã đổi chủ');
   const memo = `Đấu trường #${war.id}: ${clanName(war.defender_id)} bỏ trận`;
   const penalty = payPenalty(war.defender_id, war.challenger_id, ARENA.forfeitPenalty, memo, now);
   const transfer = transferTarget(war, war.defender_id, war.challenger_id, now);

@@ -9,8 +9,8 @@ const q = {
   latest: db.prepare('SELECT * FROM central_bank ORDER BY week DESC LIMIT 1'),
   history: db.prepare('SELECT * FROM central_bank ORDER BY week DESC LIMIT ?'),
   insertWeek: db.prepare(`
-    INSERT OR REPLACE INTO central_bank (week, money_per_player, growth, price_index, base_rate, players, at)
-    VALUES (?, ?, ?, ?, ?, ?, ?)`),
+    INSERT OR REPLACE INTO central_bank (week, money_per_player, growth, price_index, base_rate, players, at, money_total)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?)`),
   ensure: db.prepare('INSERT OR IGNORE INTO bank_accounts (user_id, savings, accrued, updated_at) VALUES (?, 0, 0, ?)'),
   account: db.prepare('SELECT * FROM bank_accounts WHERE user_id = ?'),
   allAccounts: db.prepare('SELECT * FROM bank_accounts'),
@@ -155,17 +155,17 @@ export function settleBankDay(endTs) {
 export function centralBankWeek(week, now = Date.now()) {
   transaction(() => {
     const players = Math.max(1, q.activePlayers.get(now - 7 * DAY).n);
-    const moneyPerPlayer = q.moneySupply.get().total / players;
+    const total = q.moneySupply.get().total;
+    const moneyPerPlayer = total / players;
     const prev = q.latest.get();
-    // Phiên họp đầu chưa có số liệu để so, coi như đúng mục tiêu (giữ nguyên chính sách).
-    const growth = prev && prev.money_per_player > 0
-      ? (moneyPerPlayer - prev.money_per_player) / prev.money_per_player
-      : BANK.targetGrowth;
+    // Tốc độ tăng của TỔNG lượng xu (cùng một tập cho tử và mẫu): người chơi nghỉ không làm "tăng trưởng" ảo.
+    // Phiên họp đầu (hoặc phiên trước chưa ghi tổng) chưa có số liệu để so, coi như đúng mục tiêu (giữ nguyên chính sách).
+    const growth = prev?.money_total > 0 ? (total - prev.money_total) / prev.money_total : BANK.targetGrowth;
     const next = policy({ growth, priceIndex: prev?.price_index ?? 1 });
-    q.insertWeek.run(week, moneyPerPlayer, growth, next.priceIndex, next.baseRate, players, now);
-    const pct = (v) => `${(v * 100).toFixed(1).replace('.', ',')}%`;
+    q.insertWeek.run(week, moneyPerPlayer, growth, next.priceIndex, next.baseRate, players, now, total);
+    const pct = (v, digits) => `${(v * 100).toLocaleString('vi-VN', { minimumFractionDigits: digits, maximumFractionDigits: digits })}%`;
     q.insertNews.run(
-      `Ngân hàng Trung ương: lượng xu tăng ${pct(growth)}/tuần, lãi suất cơ bản ${pct(next.baseRate)}/ngày, chỉ số giá ${next.priceIndex.toFixed(3).replace('.', ',')}`,
+      `Ngân hàng Trung ương: lượng xu tăng ${pct(growth, 1)}/tuần, lãi suất cơ bản ${pct(next.baseRate, 2)}/ngày, chỉ số giá ${next.priceIndex.toLocaleString('vi-VN', { minimumFractionDigits: 3, maximumFractionDigits: 3 })}`,
       now, now, now + 7 * DAY,
     );
   });

@@ -211,7 +211,7 @@ export function renderCredit(root, ctx) {
       </div>
       ${l.today ? `<p class="${ctx.me.user.coins >= l.today.total ? 'pb-note' : 'pb-warn'}">🌙 Kỳ tối nay: <b>${fmt(l.today.total)} 🪙</b>
         <small>(${l.today.arrears ? `nợ cũ ${fmt(l.today.arrears)} + ` : ''}lãi ${fmt(l.today.interest)} + gốc ${fmt(l.today.principal)})</small>
-        ${ctx.me.user.coins >= l.today.total ? '' : `<br><small>Ví đang có ${fmt(ctx.me.user.coins)} 🪙 — thiếu thì ngân hàng lấy sang tiết kiệm, vẫn thiếu là trễ kỳ.</small>`}</p>` : ''}
+        ${ctx.me.user.coins >= l.today.total ? '' : `<br><small>Ví đang có ${fmt(ctx.me.user.coins)} 🪙. Thiếu thì ngân hàng lấy sang tiết kiệm, vẫn thiếu là trễ kỳ.</small>`}</p>` : ''}
       ${l.status === 'late' ? `<p class="pb-warn">⚠️ Đã trễ ${l.lateDays} kỳ: mỗi kỳ trễ cộng ${pct(loans.lateFee, 0, false)} phí và ${rules.late} điểm. Trễ ${loans.defaultAfter} kỳ là vỡ nợ.</p>` : ''}
       ${l.status === 'defaulted' ? `<p class="pb-warn">⛔ Vỡ nợ: mỗi tối ngân hàng giữ ${pct(loans.garnish, 0, false)} thu nhập trong ngày để thu nợ. Trả hết sớm để thoát.</p>` : ''}
       <form class="credit-repay" data-cr-repay="${l.id}">

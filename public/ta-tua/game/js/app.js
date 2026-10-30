@@ -914,7 +914,7 @@ function renderShop(root) {
     const meta = ESSENTIALS.cats[cat];
     const npc = ess.newbie
       ? 'Tài khoản mới: đồ NPC chưa giới hạn, đủ XP, giá gốc'
-      : `NPC còn ${c.npcLeft} món hôm nay${c.stage.key === 'pioneer' ? ' (Khai hoang: hạn mức nới gấp đôi)' : ''} · XP ${Math.round(c.npcXpFactor * 100)}% · giá ×${c.npcPriceFactor.toFixed(2)}`;
+      : `NPC còn ${c.npcLeft} món hôm nay${c.stage.key === 'pioneer' ? ' (Khai hoang: hạn mức nới gấp đôi)' : ''} · XP ${Math.round(c.npcXpFactor * 100)}% · giá ×${c.npcPriceFactor.toLocaleString('vi-VN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
     const stock = ESSENTIALS.qualities.map((q, i) => `${q.name} ${fmt(c.stock[i])}`).join(' · ');
     return `
       <div class="essentials-line">
