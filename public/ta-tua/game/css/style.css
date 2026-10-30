@@ -547,3 +547,4 @@ input:focus { border-color: var(--tea); box-shadow: 0 0 0 4px #c8915f33; }
 
 /* Siêu thị: mức tự chủ thực phẩm và hạn mức đồ ăn NPC */
 .essentials-banner { display: flex; flex-direction: column; gap: 4px; padding: 10px 14px; margin-bottom: 12px; }
+.essentials-line { display: flex; flex-direction: column; gap: 2px; }

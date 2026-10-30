@@ -47,7 +47,8 @@ export function randomGiftCode() {
   return `${pick()}-${pick()}`;
 }
 
-const itemsOf = (category) => Object.values(ITEMS).filter((i) => i.type !== 'accessory' && (category === 'any' || i.type === category));
+// Hàng gia tộc chỉ có khi Siêu thị còn kho, không tặng kèm.
+const itemsOf = (category) => Object.values(ITEMS).filter((i) => i.type !== 'accessory' && !i.clanMade && (category === 'any' || i.type === category));
 const wearables = () => Object.values(ITEMS).filter((i) => i.type === 'accessory');
 /** Hợp mệnh: cùng hành hoặc hành của món sinh ra hành của bé. */
 const fits = (item, element) => ['same', 'feeds'].includes(relation(item.element, element));

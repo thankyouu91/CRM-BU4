@@ -9,7 +9,7 @@ import { recentMemorials, slotsOf } from './lifecycle.js';
 import { fortuneOf } from '../../public/ta-tua/game/js/shared/pets.js';
 import { listGear, wearLimitOf, wornGear } from './gear.js';
 import { essentialsView } from './essentials.js';
-import { refPrice } from './industry.js';
+import { essentialRefs } from './industry.js';
 import { macroToday } from './macro.js';
 
 /** Phát 'pet:changed' (userId) để sân chơi cập nhật thẻ thú cưng khi chủ thay đổi ở nơi khác. */
@@ -43,7 +43,7 @@ export function snapshot(userId, now = Date.now()) {
     inventory: store.inventory(userId),
     gear: listGear(userId),
     economy: { priceIndex, baseRate },
-    essentials: essentialsView(userId, refPrice('processed_food', macroToday(now)), now),
+    essentials: essentialsView(userId, essentialRefs(macroToday(now)), now),
     eggs: eggsView(userId, now),
     slots: slotsOf(userId),
     memorials: recentMemorials(userId, now),

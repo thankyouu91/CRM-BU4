@@ -7,7 +7,8 @@ import { DAY, GameError } from './game.js';
 import { offerToShop } from './essentials.js';
 import { post } from './ledger.js';
 import {
-  GOODS, GOOD_INDUSTRY, GOOD_ORDER, MARKET_RULES, PRODUCTION_INDUSTRIES, RUN_ORDER, depositsOf, extractable, plantsFor, recipeOf,
+  ESSENTIALS, ESSENTIAL_CATS, GOODS, GOOD_INDUSTRY, GOOD_ORDER, MARKET_RULES, PRODUCTION_INDUSTRIES, RUN_ORDER, depositsOf,
+  extractable, plantsFor, qualityScore, recipeOf,
 } from '../../public/ta-tua/game/js/shared/industry.js';
 import { PHASES, PLOTS, clanLevelOf, clanPerks, designBonus, designComplete, envFactor, weatherFactor } from '../../public/ta-tua/game/js/shared/clan.js';
 
@@ -61,6 +62,9 @@ export function refPrice(good, macro) {
   const demand = macro?.demand?.[GOOD_INDUSTRY[good]] ?? 1;
   return Math.max(1, Math.round(GOODS[good].base * demand * (PHASES[macro?.phase]?.factor ?? 1)));
 }
+/** Giá tham chiếu hôm nay của hàng mỗi nhóm thiết yếu, { food, care } (giá hàng gia tộc ở Siêu thị). */
+export const essentialRefs = (m) => Object.fromEntries(ESSENTIAL_CATS.map((c) => [c, refPrice(ESSENTIALS.cats[c].good, m)]));
+
 export const npcBuyPrice = (good, macro) => Math.max(1, Math.round(refPrice(good, macro) * MARKET_RULES.npcBuy));
 export const importPrice = (good, macro) => Math.round(refPrice(good, macro) * MARKET_RULES.importMarkup);
 
@@ -124,6 +128,17 @@ export function productionPreview(plot, { industry, variant, design = [], level 
  * điện thừa và hàng không giữ (hoặc tràn kho). Ghi tiền bán vào quỹ, trả về doanh thu để tính thuế.
  * Lô chỉ chạy khi công trình đã hoàn chỉnh.
  */
+/**
+ * Điểm chất lượng hàng thiết yếu của gia tộc: cấp gia tộc, nhà xưởng đẹp nhất của ngành chế biến (số mảnh),
+ * và gia tộc có tự chạy một ngành đầu vào không (Nông nghiệp/Chăn nuôi cho thực phẩm, Hóa chất/Nông nghiệp cho thuốc).
+ */
+export function clanQuality(cat, rows, level) {
+  const meta = ESSENTIALS.cats[cat];
+  const pieces = Math.max(0, ...rows.filter((r) => r.industry === meta.industry).map((r) => JSON.parse(r.design).length));
+  const upstream = meta.upstream.some((ind) => rows.some((r) => r.industry === ind)) ? 1 : 0;
+  return qualityScore({ level, pieces, upstream });
+}
+
 export function runProduction(clan, plots, { day, macro, at, rand = Math.random, buffs = {} }) {
   const irr = buffs.irrigation ?? 0;
   const wind = buffs.wind ?? 0;
@@ -197,17 +212,20 @@ export function runProduction(clan, plots, { day, macro, at, rand = Math.random,
     space += n;
   }
   let revenue = 0;
-  // Thực phẩm chế biến: Siêu thị mua trước (giá tham chiếu) để bán lại thành Suất ăn gia tộc, phần thừa mới bán NPC.
-  if (sell.processed_food > 0) {
-    const toShop = offerToShop(clan.id, sell.processed_food);
-    if (toShop > 0) {
-      const income = toShop * refPrice('processed_food', macro);
-      goods.processed_food -= toShop;
-      sell.processed_food -= toShop;
-      note('processed_food', 'sold', toShop);
-      log.get('processed_food').revenue += income;
-      revenue += income;
-    }
+  // Hàng thiết yếu (Thực phẩm chế biến, Thuốc): Siêu thị mua trước theo giá tham chiếu × hệ số hạng chất lượng để bán
+  // lại thành hàng gia tộc, phần thừa mới bán NPC.
+  for (const cat of ESSENTIAL_CATS) {
+    const { good } = ESSENTIALS.cats[cat];
+    if (!(sell[good] > 0)) continue;
+    const byQ = offerToShop(clan.id, cat, sell[good], clanQuality(cat, rows, level), rand);
+    const units = byQ.reduce((a, n) => a + n, 0);
+    if (!units) continue;
+    const income = Math.round(byQ.reduce((a, n, i) => a + n * ESSENTIALS.qualities[i].mult, 0) * refPrice(good, macro));
+    goods[good] -= units;
+    sell[good] -= units;
+    note(good, 'sold', units);
+    log.get(good).revenue += income;
+    revenue += income;
   }
   for (const [g, n] of Object.entries(sell)) {
     if (n <= 0) continue;

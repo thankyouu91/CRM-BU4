@@ -3,6 +3,7 @@ import { HEALTH, ILLNESSES, TRAITS, has, healthDelta, sickChance } from './rules
 import {
   EGG, ELEMENTS, LIFE, WEARABLES, elementOfSpecies, foodBonus, lifespanWeeks, speciesOrGuest, stageAt, statsOfSpecies,
 } from '../../public/ta-tua/game/js/shared/pets.js';
+import { ESSENTIALS, clanItemId } from '../../public/ta-tua/game/js/shared/industry.js';
 
 export const HOUR = 3_600_000;
 export const DAY = 24 * HOUR;
@@ -41,8 +42,6 @@ const CATALOG = {
   boba: { name: 'Trà sữa trân châu', icon: '🧋', type: 'food', element: 'moc', price: 12, effect: { fullness: 20, happiness: 6 }, xp: 6, desc: 'Món khoái khẩu của mọi bé rái cá.' },
   fish: { name: 'Cá tươi', icon: '🐟', type: 'food', element: 'thuy', price: 18, effect: { fullness: 32 }, xp: 8, desc: 'Vừa vớt dưới suối lên.' },
   onigiri: { name: 'Cơm nắm', icon: '🍙', type: 'food', element: 'tho', price: 25, effect: { fullness: 45, energy: 5 }, xp: 10, desc: 'Chắc bụng, ăn là có sức.' },
-  // Do gia tộc chế biến (Siêu thị mua Thực phẩm chế biến của gia tộc); giá và số lượng theo essentials.js.
-  clan_meal: { name: 'Suất ăn gia tộc', icon: '🍱', type: 'food', element: 'tho', price: 24, effect: { fullness: 50, happiness: 12 }, xp: 22, clanMade: true, desc: 'Nấu từ nông sản các gia tộc tự trồng, nhiều XP hơn đồ NPC.' },
   sushi: { name: 'Khay sushi', icon: '🍣', type: 'food', element: 'thuy', price: 45, effect: { fullness: 60, happiness: 12 }, xp: 18, minLevel: 3, desc: 'Bữa sang chảnh cuối tuần.' },
   cake: { name: 'Bánh kem dâu', icon: '🍰', type: 'food', element: 'hoa', price: 70, effect: { fullness: 30, happiness: 35 }, xp: 30, minLevel: 5, desc: 'Ăn một miếng, vui cả ngày.' },
 
@@ -131,7 +130,34 @@ function wearables(shop) {
   }));
 }
 
-export const ITEMS = Object.fromEntries(Object.entries(CATALOG).map(([id, item]) => [id, { id, ...item }]));
+/**
+ * Hàng gia tộc ở Siêu thị (essentials.js): Suất ăn gia tộc từ Thực phẩm chế biến, Bộ chăm sóc gia tộc từ Thuốc,
+ * mỗi loại 3 hạng Thường / Ngon / Tuyệt hảo. Hiệu ứng và XP nhân hệ số hạng; giá và số lượng theo kho Siêu thị.
+ */
+const CLAN_GOODS = {
+  food: { name: 'Suất ăn gia tộc', icon: '🍱', element: 'tho', price: 24, effect: { fullness: 50, happiness: 12 }, xp: 22, desc: 'Nấu từ nông sản các gia tộc tự trồng, nhiều XP hơn đồ NPC.' },
+  care: { name: 'Bộ chăm sóc gia tộc', icon: '🧴', element: 'kim', price: 52, effect: { happiness: 15, energy: 25, health: 15, hygiene: 30 }, xp: 14, desc: 'Dược phẩm các gia tộc bào chế: tắm, bổ, khỏe trong một hộp.' },
+};
+function clanGoods() {
+  const out = {};
+  for (const [cat, base] of Object.entries(CLAN_GOODS)) {
+    ESSENTIALS.qualities.forEach((q, i) => {
+      out[clanItemId(cat, i)] = {
+        ...base,
+        name: i ? `${base.name} (${q.name})` : base.name,
+        type: cat,
+        price: Math.round(base.price * q.mult),
+        effect: Object.fromEntries(Object.entries(base.effect).map(([k, v]) => [k, Math.round(v * q.mult)])),
+        xp: Math.round(base.xp * q.mult),
+        clanMade: true,
+        quality: i,
+      };
+    });
+  }
+  return out;
+}
+
+export const ITEMS = Object.fromEntries(Object.entries({ ...CATALOG, ...clanGoods() }).map(([id, item]) => [id, { id, ...item }]));
 
 /** Đồ ăn và đồ chăm sóc dùng là hết; đồ chơi và phụ kiện mua một lần dùng mãi. */
 export const isConsumable = (item) => item.type === 'food' || item.type === 'care';
@@ -259,7 +285,7 @@ export function boostEffect(pet, effect = {}) {
   return Object.fromEntries(Object.entries(effect).map(([k, v]) => [k, v > 0 ? Math.round(v * (1 + pct / 100)) : v]));
 }
 
-/** `xpFactor`: hệ số XP của đồ ăn NPC theo giai đoạn tự chủ thực phẩm (essentials.js). */
+/** `xpFactor`: hệ số XP của đồ NPC theo giai đoạn tự chủ của nhóm (essentials.js). */
 export function useItem(pet, item, { xpFactor = 1 } = {}) {
   if (!item || !isConsumable(item)) throw new GameError('Món này không dùng trực tiếp được.');
   if (item.type === 'food' && pet.fullness >= 97) throw new GameError(`${pet.name} no căng bụng rồi!`);

@@ -234,7 +234,15 @@ Mở rộng `scripts/simulate-economy.js` với bot gia tộc (8 gia tộc, 60 n
 - **Đồ ăn NPC** (người chơi cũ hơn 7 ngày): hạn mức mỗi ngày = ⌈số bé × 3 × max(10%, 1 − D)⌉ + 2 món; XP còn 50% (D < 20%) → 25% (D = 80%) → 10%; giá × (1 + 30% theo D từ 20% đến 80%).
 - **Tài khoản mới 7 ngày**: đồ ăn NPC không giới hạn, đủ XP, giá gốc.
 - Giao diện: Siêu thị hiện thanh "Tự chủ thực phẩm D%", hạn mức NPC còn lại, kho và giá suất ăn gia tộc.
-- Chưa làm: đồ chăm sóc (chỉ đồ ăn trong đợt này), món "Ngon / Tuyệt hảo", sổ chào giá thấp trước.
+- Chưa làm: sổ chào giá thấp trước (Siêu thị đang mua theo thứ tự gia tộc chạy sản xuất trong đêm).
+
+### 4.5 Đồ chăm sóc và hạng chất lượng (đợt 5)
+
+- **Đồ chăm sóc** có vòng đời riêng, D riêng (bảng `essentials_care_days`): gia tộc **Dược phẩm** làm Thuốc, Siêu thị mua trước theo giá tham chiếu, 1 Thuốc = 10 **Bộ chăm sóc gia tộc 🧴** (+15 vui, +25 năng lượng, +15 sức khỏe, +30 sạch sẽ, 14 XP). Hạn mức đồ chăm sóc NPC = ⌈số bé × 2 × max(10%, 1 − D)⌉ + 2 món/ngày, tách khỏi hạn mức đồ ăn. XP và giá đồ chăm sóc NPC theo cùng đường cong với đồ ăn.
+- **Hạng chất lượng** Thường / Ngon / Tuyệt hảo cho cả Suất ăn và Bộ chăm sóc: hiệu ứng, XP, giá Siêu thị trả gia tộc và giá bán lẻ nhân 1 / 1,2 / 1,5.
+- **Điểm chất lượng** của gia tộc (0–1) = 40% cấp gia tộc + 30% nhà xưởng (số mảnh công trình của ngành chế biến ÷ 20) + 30% nếu gia tộc tự chạy một ngành đầu vào (Nông nghiệp hoặc Chăn nuôi cho thực phẩm; Hóa chất hoặc Nông nghiệp cho thuốc).
+- **Tỉ lệ hạng** mỗi đêm: Tuyệt hảo = 35% × điểm, Ngon = 20% + 40% × điểm, còn lại Thường. Gia tộc mới (điểm 0) ra 80% Thường, 20% Ngon; gia tộc tối đa ra 5% / 60% / 35%.
+- Siêu thị chỉ hiện thẻ hạng Ngon / Tuyệt hảo khi còn hàng; thanh tự chủ hiện kho từng hạng.
 
 ---
 
