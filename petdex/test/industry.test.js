@@ -92,6 +92,8 @@ test('gia tộc khai khoáng + luyện thép + điện: quặng và than vào kh
   assert.equal(log.iron_ore.used, log.steel.produced * 2);
   // Quặng và than là nguyên liệu của gia tộc nên được giữ; thép và điện thừa bán cho NPC.
   const goods = Object.fromEntries(view.goods.map((g) => [g.good, g]));
+  // Nguyên liệu của gia tộc luôn có dòng trong kho, kể cả khi đã dùng hết.
+  for (const g of ['iron_ore', 'coal']) assert.ok(goods[g], `${g} phải có dòng trong kho`);
   assert.ok(goods.iron_ore.keep && goods.iron_ore.input);
   assert.ok(log.steel.sold === log.steel.produced);
   assert.ok(log.steel.revenue > 0);

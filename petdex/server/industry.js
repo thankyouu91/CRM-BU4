@@ -265,9 +265,14 @@ export function industryView(userId, macro, now = Date.now()) {
   const last = q.lastDay.get(clan.id).day;
   return {
     clan: { id: clan.id, role: m.role, treasury: balance(clan.id) },
-    goods: q.goods.all(clan.id).filter((r) => r.qty > 0 || r.keep != null).map((r) => ({
-      good: r.good, qty: r.qty, keep: r.keep == null ? needed.has(r.good) : Boolean(r.keep), input: needed.has(r.good),
-    })),
+    // Nguyên liệu của gia tộc luôn hiện (kể cả khi hết hàng) để vẫn chỉnh được "Giữ trong kho".
+    goods: (() => {
+      const rows = new Map(q.goods.all(clan.id).map((r) => [r.good, r]));
+      for (const g of needed) if (!rows.has(g)) rows.set(g, { good: g, qty: 0, keep: null });
+      return [...rows.values()].filter((r) => r.qty > 0 || r.keep != null || needed.has(r.good)).map((r) => ({
+        good: r.good, qty: r.qty, keep: r.keep == null ? needed.has(r.good) : Boolean(r.keep), input: needed.has(r.good),
+      }));
+    })(),
     capacity: warehouseCap(level),
     used: used(clan.id),
     production: last ? { day: last, rows: q.production.all(clan.id, last) } : null,
