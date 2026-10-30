@@ -1,8 +1,8 @@
 import { playUrl } from "@/lib/petdex-public";
 import {
   GEAR, HIDDEN_DISHES, MASCOT, RANKS, SLOT_ORDER, SPECIES_COUNT, WEARABLE_COUNT,
-  careerRows, classRows, commodityRows, cropRows, dishRows, elementRows, factoryRows, fishRows, foodRows, formRows, guildProjectRows,
-  locationRows, promotionRows, questRows, rarityRows, recipeRows, relationRows, setRows, slotName, speciesRows, stageRows, tierRows, toyRows, wearRows,
+  careerRows, classRows, cropRows, dishRows, elementRows, fishRows, foodRows, formRows, guildProjectRows,
+  promotionRows, questRows, rarityRows, relationRows, setRows, slotName, speciesRows, stageRows, tierRows, toyRows, wearRows,
 } from "./game-data";
 import type { WikiArticle } from "./types";
 import { article as A_tai_chinh } from "./articles/tai-chinh";
@@ -23,16 +23,18 @@ import { article as A_so_cong_thuong } from "./articles/so-cong-thuong";
 import { article as A_vat_pham_thiet_yeu } from "./articles/vat-pham-thiet-yeu";
 import { article as A_lo_ren } from "./articles/lo-ren";
 import { article as A_dau_truong } from "./articles/dau-truong";
+import { article as A_san_nguyen_lieu } from "./articles/san-nguyen-lieu";
+import { article as A_quay_tra_sua } from "./articles/quay-tra-sua";
+import { article as A_cho_phien } from "./articles/cho-phien";
+import { article as A_khu_cong_nghiep } from "./articles/khu-cong-nghiep";
+import { article as A_so_nha_dat } from "./articles/so-nha-dat";
 import { CLAN, UNLOCKS } from "./rules";
-import { isTaxed, pct as pctVi } from "./articles/money";
-import { BAZAAR, SCHOOL } from "@/petdex/server/rules/production.js";
-import { MARKET } from "@/petdex/server/rules/market.js";
+import { PARK } from "./rules-business";
+import { isTaxed } from "./articles/money";
+import { SCHOOL } from "@/petdex/server/rules/production.js";
 import { DAILY_XP, EGG, LIFE_STAGES, UPKEEP } from "@/public/ta-tua/game/js/shared/pets.js";
 import { DEFAULT_GEAR_CONFIG, TIERS, nextTier } from "@/public/ta-tua/game/js/shared/gear.js";
-import {
-  COMMODITY_COUNT, DESIGN_RULES, GOODS_COUNT, INDUSTRIAL_MARKET, LAND_RULES, LEGEND_ID, MASCOT_ID, SERVICE_COUNT,
-  climateNames, elementPets, formPets, freshnessRows, industryRows, legendaryPets, stagePets, unlockRows, zoneRows,
-} from "./game-data";
+import { LEGEND_ID, MASCOT_ID, elementPets, formPets, legendaryPets, stagePets, unlockRows } from "./game-data";
 
 // The wiki's articles, in reading order (the order of the side menu and of "previous / next").
 // Numbers in prose were checked against petdex/server and the game's shared modules; tables come
@@ -671,7 +673,7 @@ export const ARTICLES: WikiArticle[] = [
           { table: { head: ["Cách bán", "Thu về"], rows: [
             ["**Bán nhanh** cho Siêu thị (nút 💰 trong Túi đồ)", "10–40% giá trị món (giá shop × hệ số cấp), dòng chỉ số quay càng cao trong biên độ của cấp càng được nhiều; hộp chưa mở 10% giá shop; **đồ hỏng** cũng chỉ được mức thấp nhất (10% giá trị món)"],
             ["Bày bán ở [Chợ Phiên](cho-phien)", "Giá tự đặt 50–300% tham chiếu, trừ phí"],
-            ["Đấu giá ở [Chợ Phiên](cho-phien#dau-gia)", "Giá người chơi trả, trừ phí"],
+            ["Đấu giá ở [Chợ Phiên](cho-phien#chuc-nang)", "Giá người chơi trả, trừ phí"],
           ] } },
           { p: "Bán nhanh là mất món ngay và không có thưởng Thu nhập giao dịch." },
         ],
@@ -940,316 +942,26 @@ export const ARTICLES: WikiArticle[] = [
   },
 
   // ------------------------------------------------------------------ Làm ăn
-  {
-    slug: "san-nguyen-lieu",
-    title: "Sàn Nguyên Liệu",
-    category: "kinh-te",
-    emoji: "📈",
-    summary: `${COMMODITY_COUNT} mặt hàng, giá chạy mỗi ${MARKET.tickMs / 60_000} phút, tin tức, phí ${pctVi(MARKET.fee)}, lệnh giới hạn, kho, độ tươi và sổ lãi lỗ.`,
-    keywords: ["sàn", "chợ", "giá", "mua bán", "lô", "lệnh", "kho", "đầu cơ", "nguyên liệu"],
-    related: ["vuon", "khu-cong-nghiep", "quay-tra-sua"],
-    sections: [
-      {
-        id: "mat-hang",
-        title: "Mặt hàng",
-        blocks: [
-          { p: `Mở ở **cấp ${UNLOCKS.market}**. Giá niêm yết theo **lô** (1 lô = 10 phần).` },
-          { img: { src: "/petfarm/market.webp", alt: "Sàn Nguyên Liệu: bảng giá các mặt hàng và biểu đồ giá sữa tươi trong 24 giờ", width: 1600, height: 1075 } },
-          { table: { head: ["Mặt hàng", "Loại", "Giá gốc/lô", "Hạn dùng", "Làm từ"], rows: commodityRows() } },
-          { warn: "Lô quá hạn dùng tự mất. Đừng ôm nhiều lá trà, cá hay sữa tươi nếu chưa định dùng." },
-        ],
-      },
-      {
-        id: "gia",
-        title: "Giá và tin tức",
-        blocks: [
-          { list: [
-            `Giá chạy mỗi **${MARKET.tickMs / 60_000} phút** và luôn bị kéo dần về mức trung bình của mặt hàng.`,
-            `Giá niêm yết gồm **${100 - MARKET.playerWeight * 100}% luật thị trường** và **${MARKET.playerWeight * 100}% lực mua bán của người chơi**: mỗi lệnh mua bán với hệ thống dồn thêm "áp lực" lên giá, áp lực tự phai dần (giảm một nửa sau ${MARKET.pressureHalfLifeMs / 3_600_000} giờ).`,
-            "Mỗi mặt hàng thô có một **pha thị trường ẩn** (ổn định, tăng nóng, lao dốc, hỗn loạn), đổi bất chợt. Bạn chỉ đoán được qua biểu đồ.",
-            `Thỉnh thoảng có **sốt giá hoặc sập giá** đột ngột ${MARKET.jumpMin * 100}–${MARKET.jumpMax * 100}%, kèm tin ⚡ trên Báo.`,
-            `**Tin tức** (khoảng ${String(MARKET.newsPerDay).replace(".", ",")} tin mỗi ngày cho một mặt hàng) được báo trước ${MARKET.newsLeadMs / 60_000} phút rồi làm giá dịch chuyển trong vài giờ.`,
-            `Giá không xuống dưới ${MARKET.floor.toLocaleString("vi-VN")} lần và không vượt quá ${MARKET.ceiling} lần giá gốc. Hàng có hạn dùng không giữ lâu chờ giá lên được, nên có giá sàn cao hơn: không dưới ${MARKET.freshFloor.toLocaleString("vi-VN")} lần giá gốc.`,
-          ] },
-        ],
-      },
-      {
-        id: "do-tuoi",
-        title: "Độ tươi của hàng",
-        blocks: [
-          { p: "Hàng có hạn dùng (lá trà, sữa, dâu, cá, thịt, xoài, trân châu, sữa đặc) mất dần độ tươi. Hệ thống mua hàng kém tươi rẻ hơn:" },
-          { table: { head: ["Độ tươi", "Khi đã dùng", "Hệ thống trả"], rows: freshnessRows() } },
-          { warn: "Hết hạn dùng thì lô hàng hư và tự mất." },
-        ],
-      },
-      {
-        id: "lai-lo",
-        title: "Sổ lãi lỗ",
-        blocks: [
-          { list: [
-            "Mỗi mặt hàng trong kho ghi **giá vốn trung bình** mỗi lô (đã tính phí), số tiền nếu bán ngay và **lãi lỗ chưa chốt**.",
-            "Mỗi lần bán báo lãi hoặc lỗ so với giá vốn. **Sổ lãi lỗ** tổng hợp vốn đang nằm trong kho, lãi lỗ đã chốt hôm nay và 7 ngày, tỉ lệ lần bán có lãi và các lệnh khớp gần nhất.",
-          ] },
-        ],
-      },
-      {
-        id: "giao-dich",
-        title: "Mua bán",
-        blocks: [
-          { table: { head: ["Luật", "Con số"], rows: [
-            ["Chênh mua, bán với hệ thống", `±${MARKET.spread * 100}%`],
-            ["Phí giao dịch", `${pctVi(MARKET.fee)} (tối thiểu 1 xu)`],
-            ["Hạn mức với hệ thống (của bạn)", `${MARKET.npcDailyLots} lô mỗi mặt hàng, mỗi chiều, mỗi ngày`],
-            ["Hạn mức với hệ thống (cả thị trấn)", `Mỗi mặt hàng, mỗi chiều, mỗi ngày: lớn hơn giữa ${MARKET.townBaseLots} lô và ${MARKET.townLotsPerTrader} lô × số người đã giao dịch với hệ thống trong 7 ngày (hàng chế biến ×${MARKET.processedDepth})`],
-            ["Một lệnh", "0,1 đến 100 lô"],
-            ["Lệnh giới hạn", "Giá trong khoảng ±15% giá hiện tại; khớp với lệnh của người chơi khác trước; chưa khớp thì chờ tới hết ngày"],
-            ["Kho", "200 lô miễn phí → 500 lô (1.500 xu) → 2.000 lô (6.000 xu)"],
-          ] } },
-          { p: "Mỗi lệnh khớp với hệ thống lấy phần nhỏ hơn giữa hạn mức của bạn và phần thị trấn còn lại. Hết hạn mức chung thì chỉ còn khớp được với lệnh của người chơi khác. Bảng giao dịch hiện cả hai hạn mức." },
-          { p: "Lãi khi bán (so với giá vốn từng lô) là thu nhập chịu thuế. Dòng **Thu nhập giao dịch** trên trang phục cho thêm xu mỗi lần bán." },
-        ],
-      },
-    ],
-  },
+  A_san_nguyen_lieu,
   A_tai_chinh,
   A_ngan_hang,
   A_tin_dung,
   A_vay_ngang_hang,
   A_hui,
+  A_quay_tra_sua,
+  A_cho_phien,
+  A_khu_cong_nghiep,
   A_ngan_hang_gia_toc,
   A_vay_the_chap,
   A_co_phan_gia_toc,
   A_thau_tom_gia_toc,
   A_trai_phieu,
   A_lai_suat_co_ban,
-  {
-    slug: "quay-tra-sua",
-    title: "Quầy trà sữa",
-    category: "kinh-te",
-    emoji: "🧋",
-    summary: "Ba vị trí, giấy phép và tiền thuê, sáu món, cách tính khách, bé trực, nâng cấp và uy tín.",
-    keywords: ["kinh doanh", "quầy", "trà sữa", "bán hàng", "khách", "uy tín", "thuê", "quảng cáo"],
-    related: ["san-nguyen-lieu", "khu-cong-nghiep", "hoi"],
-    sections: [
-      {
-        id: "vi-tri",
-        title: "Vị trí",
-        blocks: [
-          { p: `Mở ở **cấp ${UNLOCKS.business}**, mỗi người **một quầy**.` },
-          { table: { head: ["Vị trí", "Giấy phép", "Thuê mỗi đêm", "Lượng khách gốc", "Quảng cáo 6 giờ"], rows: locationRows() } },
-          { warn: "Tiền thuê trừ mỗi đêm. Nợ **3 đêm liền** thì quầy bị đóng và mất 40 điểm tín dụng." },
-        ],
-      },
-      {
-        id: "thuc-don",
-        title: "Thực đơn",
-        blocks: [
-          { p: "Mỗi ly dùng nguyên liệu (tính theo phần) trong kho Sàn của chủ quầy. Giá bán đặt được từ 1 xu tới 3 lần giá tham chiếu." },
-          { table: { head: ["Món", "Nguyên liệu mỗi ly", "Giá tham chiếu"], rows: recipeRows() } },
-          { table: { head: ["Nâng cấp", "Tác dụng", "Giá các cấp"], rows: [
-            ["Thêm món", "Thực đơn bắt đầu 2 món, mỗi cấp +1 (tối đa 6)", "500 / 1.000 / 2.000 / 4.000"],
-            ["Quầy pha rộng hơn", "+4 ly mỗi giờ", "800 / 2.000"],
-            ["Trang trí quầy", "+10% khách", "1.000 / 3.000"],
-          ] } },
-        ],
-      },
-      {
-        id: "khach",
-        title: "Khách và bé trực",
-        blocks: [
-          { list: [
-            "Quầy **chỉ bán khi có bé trực**: bé nhà mình (không lương) hoặc thuê bé người khác (8–80 xu/giờ, trả trước, tối đa 3 người).",
-            "Mỗi bé trực pha được 7 + Khéo tay ÷ 10 ly/giờ, cộng 4 ly mỗi cấp *Quầy pha rộng hơn*.",
-            "Khách đông hơn vào **giờ cao điểm** 11–13 giờ và 17–21 giờ (×1,5), vắng từ 23 giờ tới 6 giờ.",
-            "Khách tăng nhờ uy tín, trang trí, quảng cáo (+50%), đề xuất của Tòa thị chính, Biển hiệu Hội, bé **Có duyên** (+10%) và bé **Thủy** (+5%).",
-            "Giá càng rẻ so với giá tham chiếu thì càng hút khách.",
-          ] },
-          { p: "**Uy tín** giảm khi hết hàng hoặc bán đắt hơn 1,3 lần giá tham chiếu, tăng dần khi bán từ 1,1 lần trở xuống. Doanh thu chịu thuế 3%, lợi nhuận tính vào thu nhập chịu thuế." },
-          { tip: "Nhập nguyên liệu đủ cho giờ cao điểm. Hết hàng giữa giờ đông khách vừa mất doanh thu vừa mất uy tín." },
-        ],
-      },
-    ],
-  },
-  {
-    slug: "cho-phien",
-    title: "Chợ Phiên",
-    category: "kinh-te",
-    emoji: "🏮",
-    summary: "Bán đồ Siêu thị, trang phục (kể cả hộp chưa mở) và món tự nấu cho người chơi khác, đấu giá trang phục: giá, phí, điều kiện.",
-    keywords: ["chợ", "bán đồ", "mua đồ", "trao đổi", "người chơi", "phiên", "đấu giá", "trả giá", "hộp"],
-    related: ["trang-phuc", "bep", "san-nguyen-lieu"],
-    sections: [
-      {
-        id: "luat",
-        title: "Luật Chợ Phiên",
-        blocks: [
-          { p: `Mở ở **cấp ${UNLOCKS.bazaar}**. Ở đây người chơi bày bán cho nhau.` },
-          { table: { head: ["Luật", "Con số"], rows: [
-            ["Bán được", "Đồ Siêu thị trong túi, trang phục (đã mở hoặc còn nguyên hộp), món tự nấu"],
-            ["Giá", "50–300% giá tham chiếu (trang phục: giá shop × 1, 2, 4 hoặc 8 theo cấp; hộp chưa mở tính ×1)"],
-            ["Phí đăng tin", "1%"],
-            ["Phí khi bán được", "5% (người bán trả)"],
-            ["Thời hạn tin", "48 giờ (món nấu không quá hạn dùng của món)"],
-            ["Điều kiện bày bán", `Tài khoản từ ${BAZAAR.minAccountDays === 1 ? "24 giờ" : `${BAZAAR.minAccountDays} ngày`} tuổi, tối đa ${BAZAAR.maxListings} tin cùng lúc; mua thì được ngay từ đầu`],
-          ] } },
-          { p: "Hộp trang phục chưa mở bán nguyên hộp: người mua chỉ thấy các loại chỉ số món đó có thể ra, cấp và % chỉ lộ khi mở." },
-          { p: "Dòng **Thu nhập giao dịch** trên trang phục của bé chính cho thêm xu mỗi lần bán được." },
-        ],
-      },
-      {
-        id: "dau-gia",
-        title: "Đấu giá trang phục",
-        blocks: [
-          { p: "Trang phục không cần nữa có thể đem **đấu giá** ở tab 🔨 Đấu giá: đặt giá khởi điểm và thời hạn, ai trả cao nhất khi hết giờ thì được món." },
-          { table: { head: ["Luật", "Con số"], rows: [
-            ["Giá khởi điểm", "10–300% giá tham chiếu"],
-            ["Thời hạn", "6, 12 hoặc 24 giờ"],
-            ["Bước giá", "Cao hơn giá đang dẫn ít nhất 5% (tối thiểu 1 xu)"],
-            ["Xu khi trả giá", "Bị giữ lại; có người trả cao hơn thì hoàn ngay"],
-            ["Trả giá sát giờ", "Trong 5 phút cuối thì phiên kéo dài thêm 5 phút"],
-            ["Phí", "1% giá khởi điểm khi mở phiên, 5% giá chốt khi bán được"],
-            ["Giới hạn", "Tối đa 5 phiên cùng lúc; chưa ai trả giá thì hủy được"],
-          ] } },
-          { p: "Hết giờ mà không ai trả giá thì món về lại tủ đồ." },
-        ],
-      },
-    ],
-  },
-  {
-    slug: "khu-cong-nghiep",
-    title: "Khu công nghiệp và hợp đồng",
-    category: "kinh-te",
-    emoji: "🏭",
-    summary: "Bốn loại xưởng biến hàng thô thành hàng chế biến, gia công thuê, công nhân và hợp đồng cung ứng.",
-    keywords: ["xưởng", "nhà máy", "gia công", "sản xuất", "hợp đồng", "cung ứng", "công nhân", "chạy liên tục", "ca đêm"],
-    related: ["san-nguyen-lieu", "tin-dung", "quay-tra-sua"],
-    sections: [
-      {
-        id: "xuong",
-        title: "Xưởng",
-        blocks: [
-          { p: `Xây xưởng từ **cấp ${UNLOCKS.factory}**, tối đa **2 xưởng** mỗi người.` },
-          { table: { head: ["Xưởng", "Mỗi mẻ", "Mẻ/giờ ở cấp 1", "Giá xây"], rows: factoryRows() } },
-          { list: [
-            "Nâng cấp 2.000, 4.000, 8.000 xu; mỗi cấp thêm 3 mẻ/giờ.",
-            "Xưởng **chỉ chạy khi có bé đứng máy**: bé nhà mình hoặc công nhân thuê (8–80 xu/giờ, 1–3 người). Bé càng giỏi Sức mạnh và Khéo tay, xưởng càng nhanh (tới +30%); bé **Kim** thêm 10%.",
-            "Thuê đất **50 xu mỗi đêm**. Nợ 3 đêm liền thì xưởng bị đóng, mất 40 điểm tín dụng.",
-          ] },
-        ],
-      },
-      {
-        id: "chay-lien-tuc",
-        title: "Chạy liên tục và ca đêm",
-        blocks: [
-          { list: [
-            "Bật **Chạy liên tục** ở thẻ xưởng: ca đứng máy của bé nhà mình xong là bé tự vào ca kế cùng độ dài, kể cả lúc bạn tắt app.",
-            "Chuỗi ca dừng khi **hết nguyên liệu** (kho không đủ một mẻ), bé **hết giờ làm** trong ngày (qua nửa đêm thì giờ làm tính lại), hoặc bé **mệt/ốm/đói**. Thẻ xưởng ghi rõ lý do dừng.",
-            "**Ca đêm** 8 giờ, nhận từ 20:00 tới trước 02:00, chỉ cho bé nhà mình ở xưởng của mình. Không tính vào giờ làm trong ngày, nhưng mỗi bé chỉ một ca đêm mỗi đêm.",
-            "Ca đêm hao sức gấp rưỡi (bé phải đầy 100 năng lượng mới vào ca), xưởng chạy 85% tốc độ, không lương. Ca đêm không tự nối.",
-            "Ca vắt qua nửa đêm: mẻ trước 00:00 tính cho ngày cũ, phần sau tính cho ngày mới; tiền thuê đất vẫn thu mỗi đêm như thường.",
-          ] },
-        ],
-      },
-      {
-        id: "gia-cong",
-        title: "Gia công thuê",
-        blocks: [
-          { p: "Chủ xưởng đặt phí 0–100 xu mỗi mẻ. Người khác từ **cấp 2** gửi hàng thô tới gia công (1–100 mẻ một đơn). Đơn thuê được làm trước hàng của chủ. Phí gia công là thu nhập chịu thuế của chủ xưởng." },
-          { tip: `Chưa đủ cấp ${UNLOCKS.factory} để xây xưởng? Mua hàng thô rẻ trên Sàn hoặc thu từ vườn, gửi gia công ở xưởng người khác rồi bán hàng chế biến.` },
-        ],
-      },
-      {
-        id: "hop-dong",
-        title: "Hợp đồng cung ứng",
-        blocks: [
-          { p: `Mở ở **cấp ${UNLOCKS.contracts}**: hai người chơi thỏa thuận giao một mặt hàng đều đặn mỗi đêm với giá cố định.` },
-          { list: [
-            "Giao **1–20 lô mỗi đêm**, trong **3–14 ngày**, giá chốt **50–200%** giá Sàn hiện tại. Tối đa 5 hợp đồng đang mở; đề xuất hết hạn sau 48 giờ.",
-            "Ký quỹ: bên mua giữ tiền một ngày, bên bán giữ 20% tổng giá trị.",
-            "Giao thiếu: bồi thường phần chênh giá thị trường (nếu giá đã lên) cộng 10% giá trị phần thiếu.",
-            "Phá hợp đồng: bên kia nhận 10% giá trị phần còn lại, bên phá mất 30 điểm tín dụng. Mỗi đêm giao đủ, cả hai được +3 điểm.",
-          ] },
-        ],
-      },
-    ],
-  },
   A_thue_toa_thi_chinh,
 
   // ------------------------------------------------------------------ Cộng đồng
   A_gia_toc,
-  {
-    slug: "so-nha-dat",
-    title: "Sở Nhà Đất và sản xuất",
-    category: "kinh-te",
-    emoji: "🗺️",
-    summary: `${LAND_RULES.count} lô đất có địa hình và khí hậu riêng, công trình lắp ghép, chuỗi sản xuất từ mỏ tới nhà máy, kho gia tộc và sàn công nghiệp.`,
-    keywords: ["đất", "lô đất", "bản đồ", "sở nhà đất", "công trình", "khai thác", "nhà máy", "điện", "kho", "sàn công nghiệp", "nhập khẩu"],
-    related: ["gia-toc", "kinh-te-vi-mo", "dau-truong", "vat-pham-thiet-yeu"],
-    sections: [
-      {
-        id: "dat",
-        title: "Mua đất",
-        blocks: [
-          { list: [
-            `Bản đồ có **${LAND_RULES.count} lô**. Giá một lô từ khoảng ${LAND_RULES.minPrice.toLocaleString("vi-VN")} tới ${LAND_RULES.maxPrice.toLocaleString("vi-VN")} xu tùy vị trí, trung tâm đắt nhất.`,
-            "Tộc trưởng hoặc trưởng lão mua bằng **quỹ gia tộc**, tối đa theo cấp gia tộc. Đất càng ít lô trống càng đắt; giá đất còn chạy theo kinh tế vĩ mô.",
-            `${CLAN.land.treasuryShare * 100}% tiền mua đất vào ngân sách thị trấn, phần còn lại biến mất khỏi nền kinh tế.`,
-            "Giá trị lô tăng dần theo thời gian (mỗi lô có % tăng giá riêng) và theo chỉ số giá đất.",
-            `Bán lại cho Sở Nhà Đất được **${CLAN.land.resaleRate * 100}%** giá trị hiện tại; công trình trên lô bị dỡ.`,
-          ] },
-          { table: { head: ["Địa hình", "Đặc điểm"], rows: zoneRows() } },
-          { p: `Mỗi lô còn có một kiểu khí hậu: ${climateNames()}. Ngành nào hợp địa hình và khí hậu của lô thì thu nhiều hơn.` },
-        ],
-      },
-      {
-        id: "cong-trinh",
-        title: "Công trình",
-        blocks: [
-          { p: `Mỗi lô lắp được một công trình từ các mảnh ghép (tối đa ${DESIGN_RULES.maxPieces} mảnh). Công trình hoàn chỉnh cần ít nhất ${DESIGN_RULES.minPieces} mảnh và có móng nền; công trình hoàn chỉnh cho thêm tới 10% doanh thu của lô. Đổi ngành của lô không mất công trình.` },
-        ],
-      },
-      {
-        id: "dich-vu",
-        title: `Ngành dịch vụ (${SERVICE_COUNT} ngành)`,
-        blocks: [
-          { p: "Ngành dịch vụ thu **xu** mỗi đêm theo giá trị lô, độ hợp địa hình và khí hậu, thời tiết, pha kinh tế, nhu cầu của ngành và số gia tộc cùng ngành." },
-          { table: { head: ["Ngành", "Bồi thường thị trường", "Hợp đất nào nhất"], rows: industryRows("service") } },
-        ],
-      },
-      {
-        id: "san-xuat",
-        title: "Chuỗi sản xuất",
-        blocks: [
-          { p: `Các ngành sản xuất làm ra **hàng hóa** (${GOODS_COUNT} loại) thay vì xu. Mỗi đêm các lô của gia tộc chạy lần lượt từ đầu chuỗi tới cuối chuỗi: khai thác, phát điện, rồi nhà máy, giới hạn bởi hàng trong kho và điện.` },
-          { steps: [
-            "**Khai thác**: mỗi lô có mỏ cố định theo địa hình và khí hậu (khoáng sản ở đồi núi, gỗ và cao su ở rừng, nông sản và gia súc ở đồng bằng, ven sông; muối, silic, dầu ven biển; dầu khí trên biển).",
-            "**Năng lượng**: chọn loại nhà máy điện cho từng lô (than, khí, thủy điện, mặt trời, gió, hạt nhân); điện chạy nhà máy của gia tộc.",
-            "**Công nghiệp nhẹ, nặng**: mỗi ngành một công thức biến nguyên liệu thành hàng giá trị cao hơn.",
-            "Nguyên liệu gia tộc cần dùng được giữ trong **kho gia tộc**; điện thừa và hàng khác bán cho hệ thống theo giá vĩ mô của ngày.",
-          ] },
-          { table: { head: ["Khai thác", "Bồi thường", "Làm gì"], rows: industryRows("raw") } },
-          { table: { head: ["Năng lượng", "Bồi thường", "Nhà máy chọn được"], rows: industryRows("energy") } },
-          { table: { head: ["Công nghiệp nhẹ", "Bồi thường", "Công thức mỗi mẻ"], rows: industryRows("light") } },
-          { table: { head: ["Công nghiệp nặng", "Bồi thường", "Công thức mỗi mẻ"], rows: industryRows("heavy") } },
-        ],
-      },
-      {
-        id: "kho-san",
-        title: "Kho gia tộc và sàn công nghiệp",
-        blocks: [
-          { table: { head: ["Luật", "Con số"], rows: [
-            ["Sức chứa kho", `${INDUSTRIAL_MARKET.warehouseBase.toLocaleString("vi-VN")} + ${INDUSTRIAL_MARKET.warehousePerLevel} × cấp gia tộc (đơn vị hàng, không tính điện)`],
-            ["Bán ngay cho hệ thống", `${INDUSTRIAL_MARKET.npcBuy * 100}% giá tham chiếu của ngày`],
-            ["Nhập khẩu từ hệ thống", `${INDUSTRIAL_MARKET.importMarkup * 100}% giá tham chiếu`],
-            ["Đăng bán trên sàn chung", `${INDUSTRIAL_MARKET.band[0] * 100}–${INDUSTRIAL_MARKET.band[1] * 100}% giá tham chiếu, phí ${INDUSTRIAL_MARKET.fee * 100}%, tin còn ${INDUSTRIAL_MARKET.listingDays} ngày, tối đa ${INDUSTRIAL_MARKET.maxListings} tin`],
-          ] } },
-          { p: "Thực phẩm chế biến và Thuốc bán cho **Siêu thị** trước (qua ô **Sổ chào giá** ở tab *Sản xuất & Kho*, hoặc hàng vừa làm ra), phần dư mới bán cho hệ thống. Xem [Vật phẩm thiết yếu](vat-pham-thiet-yeu)." },
-          { p: "Tiền bán hàng tính vào doanh thu chịu [thuế doanh nghiệp](gia-toc) cùng đêm." },
-          { warn: "Lô đất và ghế ngành chiến lược có thể bị gia tộc khác giành qua [Đấu trường](dau-truong)." },
-        ],
-      },
-    ],
-  },
+  A_so_nha_dat,
   A_kinh_te_vi_mo,
   A_so_cong_thuong,
   A_vat_pham_thiet_yeu,
@@ -1349,9 +1061,9 @@ export const ARTICLES: WikiArticle[] = [
     title: "Công viên",
     category: "cong-dong",
     emoji: "🌳",
-    summary: "Dắt bé chính đi dạo, biểu cảm, vuốt ve và tặng đồ ăn cho bé người khác.",
-    keywords: ["công viên", "biểu cảm", "vuốt ve", "gặp gỡ", "online", "vẫy tay"],
-    related: ["ban-be", "hoi"],
+    summary: `Dắt bé chính đi dạo trong các kênh tối đa ${PARK.channelCap} người, biểu cảm, vuốt ve và tặng đồ ăn cho bé người khác, kể cả bé của người đang vắng.`,
+    keywords: ["công viên", "biểu cảm", "vuốt ve", "gặp gỡ", "online", "vẫy tay", "kênh", "đổi kênh", "cư dân", "tặng quà"],
+    related: ["ban-be", "hoi", "gia-toc"],
     sections: [
       {
         id: "o-cong-vien",
@@ -1359,12 +1071,26 @@ export const ARTICLES: WikiArticle[] = [
         blocks: [
           { img: { src: "/petfarm/park.webp", alt: "Công viên với nhiều bé của người chơi quanh đài phun nước", width: 1400, height: 841 } },
           { list: [
-            "Bạn dắt **bé chính** ra công viên; chọn bé chính ở Nhà bằng nút **⭐ Chọn thú chính**.",
-            "Góc màn hình ghi số bé đang ở công viên. Bấm nút biểu cảm vẫy tay, nhảy, xoay. Muốn trò chuyện thì mở tab **💬 Chat**, xem [Bạn bè](ban-be#tro-chuyen).",
-            "**Vuốt ve** bé khác: cả hai bé +6 Vui vẻ và +5 XP, người vuốt thêm 3 xu. Mỗi cặp chờ 30 giây giữa hai lần.",
-            "Tặng đồ ăn, đồ chăm sóc ngay tại chỗ cho bé người khác.",
+            "Bạn dắt **bé chính** ra công viên; chọn bé chính ở Nhà bằng nút **⭐ Chọn thú chính**. Mỗi người chỉ dắt một bé: mở công viên ở thẻ khác thì thẻ cũ bị thoát ra.",
+            "Công viên rộng hơn màn hình; khung nhìn đi theo bé của bạn. Nút **?** dưới công viên nhắc cách chơi.",
+            "Bấm nút biểu cảm vẫy tay, nhảy, xoay. Muốn trò chuyện thì mở tab **💬 Chat**, xem [Bạn bè](ban-be#tro-chuyen).",
+            `**Vuốt ve** bé khác: cả hai bé +${PARK.cuddleHappiness} Vui vẻ và +${PARK.cuddleXp} XP, người vuốt thêm ${PARK.cuddleCoins} xu. Mỗi cặp bé chờ ${PARK.cuddleCooldownSec} giây giữa hai lần.`,
+            "**Tặng** đồ ăn hoặc đồ chăm sóc trong túi của bạn cho người khác ngay tại chỗ: món đó chuyển vào Túi đồ của họ.",
           ] },
-          { tip: "Nhiệm vụ *Vuốt ve một bé ở công viên* xuất hiện thường xuyên. Ghé công viên lúc đông người là xong trong một phút." },
+        ],
+      },
+      {
+        id: "kenh",
+        title: "Kênh",
+        blocks: [
+          { list: [
+            `Công viên chia thành nhiều **kênh** (Kênh 1, Kênh 2, ...), mỗi kênh tối đa **${PARK.channelCap} người đang online**, nhiều nhất ${PARK.maxChannels} kênh.`,
+            "Khi vào, bạn được xếp vào kênh còn chỗ có nhiều bạn bè và người cùng [gia tộc](gia-toc) nhất; không có ai quen thì vào kênh số nhỏ nhất còn chỗ. Rớt mạng rồi vào lại thì về kênh cũ nếu kênh đó còn chỗ.",
+            "Bảng chọn kênh ở góc công viên ghi số người mỗi kênh; đổi sang kênh khác nếu kênh đó chưa đầy.",
+            "Bạn chỉ thấy, vuốt ve và tặng quà cho bé trong cùng kênh.",
+            `Mỗi kênh còn có tới **${PARK.residentsPerChannel} cư dân**: bé chính của những người đang vắng, đứng ở một chỗ cố định. Vuốt ve và tặng quà cho cư dân được như với bé đang online. Bạn rời công viên thì bé của bạn ở lại kênh vừa chơi làm cư dân.`,
+          ] },
+          { tip: "Nhiệm vụ *Vuốt ve một bé ở công viên* xuất hiện thường xuyên, và cư dân lúc nào cũng có sẵn trong kênh." },
         ],
       },
     ],

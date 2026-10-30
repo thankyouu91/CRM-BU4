@@ -153,4 +153,13 @@ describe("Petfarm wiki credit articles stay in step with the game", () => {
     for (let i = 0; i < HUI_EXTRA.maxGroups; i++) hui.createHui(id, { scope: "player", name: `Dây wiki ${i}`, amount: 100, size: 3 }, T0);
     expect(() => hui.createHui(id, { scope: "player", name: "Dây wiki thừa", amount: 100, size: 3 }, T0)).toThrow(new RegExp(`tối đa ${HUI_EXTRA.maxGroups} dây`));
   });
+
+  it("accepts hụi names of HUI_EXTRA.name.min to HUI_EXTRA.name.max characters", () => {
+    const id = newPlayer("wiki_hui_ten", 0);
+    const make = (name: string) => () => hui.createHui(id, { scope: "player", name, amount: 100, size: 3 }, T0);
+    expect(make("ạ".repeat(HUI_EXTRA.name.min - 1)), "HUI_EXTRA.name.min").toThrow();
+    expect(make("ạ".repeat(HUI_EXTRA.name.max + 1)), "HUI_EXTRA.name.max").toThrow();
+    expect(make("ạ".repeat(HUI_EXTRA.name.min))).not.toThrow();
+    expect(make("ạ".repeat(HUI_EXTRA.name.max))).not.toThrow();
+  });
 });

@@ -60,6 +60,10 @@ describe("Petfarm wiki content", () => {
       for (const [, slug] of JSON.stringify(a.sections).matchAll(/\]\(([a-z0-9-]*)\)/g)) {
         if (slug) expect(getArticle(slug), `${a.slug} → ${slug}`).toBeDefined();
       }
+      // A link to a section must name a section that exists.
+      for (const [, slug, id] of JSON.stringify(a.sections).matchAll(/\]\(([a-z0-9-]+)#([a-z0-9-]+)\)/g)) {
+        expect(getArticle(slug)?.sections.map((s) => s.id), `${a.slug} → ${slug}#${id}`).toContain(id);
+      }
     }
   });
 

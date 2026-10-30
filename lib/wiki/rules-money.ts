@@ -17,6 +17,8 @@ export const MONEY = {
    * base rate pulls land prices down and a low one pushes them up (macro.js rollMacro).
    */
   landRateDrag: 2,
+  /** Central Bank meetings drawn on the Ngân hàng screen (bank.js bankView history). */
+  bankHistoryWeeks: 12,
 } as const;
 
 /**

@@ -10,6 +10,8 @@ import { CLAN } from "./rules";
 export const MACRO = {
   /** GDP growth shown on the Vĩ mô tab, by phase (display only). */
   gdp: { recovery: 0.025, boom: 0.07, peak: 0.04, recession: -0.03 } as Record<string, number>,
+  /** Standard deviation of the daily random step added to the GDP shown. */
+  gdpNoise: 0.005,
   demand: {
     /** Each day the gap to 100% shrinks to this share... */
     keep: 0.85,
@@ -28,6 +30,8 @@ export const MACRO = {
     /** The land index drifts by phase minus (base rate − neutralRate) × rateWeight each day. */
     neutralRate: 0.003,
     rateWeight: 2,
+    /** Standard deviation of the random step added to the daily drift. */
+    noise: 0.003,
     min: 0.6,
     max: 1.8,
   },
@@ -47,6 +51,15 @@ export const CLAN_XP = {
   maxIndustries: 3,
   /** Strategic industries always cost their base compensation (no ×expandMultiplier). */
   strategicMultiplied: false,
+} as const;
+
+/** petdex/server/heavy-industry.js: heavy industry is closed until an admin reopens it (meta heavy_industry_open). */
+export const HEAVY = {
+  closedByDefault: true,
+  /** Closing hands back this share of the acquisition fee the clan paid. */
+  refundShare: 1,
+  /** Closing keeps the building on the industry's plots (only the industry and line are cleared). */
+  keepsBuilding: true,
 } as const;
 
 type Plot = { zone: string; climate?: string; basePrice: number; prod: number };
