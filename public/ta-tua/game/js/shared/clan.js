@@ -70,14 +70,22 @@ export const INDUSTRY_ORDER = Object.keys(INDUSTRIES);
 
 // ---------------------------------------------------------------- địa hình & khí hậu
 
+/** Bảng màu bản đồ đất (phong cách bản đồ thành phố phẳng); chú thích và bảng quản trị dùng chung. */
+export const MAP_PALETTE = {
+  ground: '#e8e8e8', street: '#ffffff', arterial: '#f2b255', arterialEdge: '#ffffff', building: '#bdbdbd',
+  park: '#8cc63f', field: '#cfe8b0', fieldHatch: '#9fd36a', river: '#8ecbef', riverEdge: '#c9e7f8', sea: '#8ecbef',
+  wave: '#c9e7f8', mountain: '#9c8b6e', mountainLow: '#7a9a5a', contour: '#c8bca4', peak: '#f4f1ea', forest: '#5f9e4a',
+  tree: '#477f37', sand: '#f1e3b6', urban: '#dedede',
+};
+
 export const ZONES = {
-  urban: { name: 'Trung tâm', icon: '🏙️', color: '#c9b8a6', desc: 'Đông người qua lại, hợp buôn bán và dịch vụ.' },
-  river: { name: 'Ven sông', icon: '🏞️', color: '#9fd3a8', desc: 'Đất phù sa, giao thông đường thủy thuận tiện.' },
-  coast: { name: 'Ven biển', icon: '🏖️', color: '#f1dfa4', desc: 'Gió biển, cảng cá, khách du lịch.' },
-  sea: { name: 'Trên biển', icon: '🌊', color: '#7cc3e8', desc: 'Nhà nổi giữa biển: hải sản dồi dào nhưng sợ bão.' },
-  hill: { name: 'Đồi cao', icon: '⛰️', color: '#b5c98a', desc: 'Mát, nhiều sương, hợp chè và dâu.' },
-  forest: { name: 'Rừng', icon: '🌲', color: '#7fae7a', desc: 'Ẩm, xa phố, chi phí vận chuyển cao.' },
-  plain: { name: 'Đồng bằng', icon: '🌾', color: '#d5e59a', desc: 'Bằng phẳng, hợp chăn nuôi và cây công nghiệp.' },
+  urban: { name: 'Trung tâm', icon: '🏙️', color: MAP_PALETTE.urban, desc: 'Đông người qua lại, hợp buôn bán và dịch vụ.' },
+  river: { name: 'Ven sông', icon: '🏞️', color: MAP_PALETTE.river, desc: 'Đất phù sa, giao thông đường thủy thuận tiện.' },
+  coast: { name: 'Ven biển', icon: '🏖️', color: MAP_PALETTE.sand, desc: 'Gió biển, cảng cá, khách du lịch.' },
+  sea: { name: 'Trên biển', icon: '🌊', color: '#6fb6e3', desc: 'Nhà nổi giữa biển: hải sản dồi dào nhưng sợ bão.' },
+  hill: { name: 'Đồi núi', icon: '⛰️', color: MAP_PALETTE.mountain, desc: 'Mát, nhiều sương, hợp chè và dâu; đường đi quanh co.' },
+  forest: { name: 'Rừng', icon: '🌲', color: MAP_PALETTE.forest, desc: 'Ẩm, xa phố, chi phí vận chuyển cao.' },
+  plain: { name: 'Đồng bằng', icon: '🌾', color: MAP_PALETTE.field, desc: 'Bằng phẳng, ruộng đồng, hợp chăn nuôi và cây công nghiệp.' },
 };
 export const CLIMATES = {
   sunny: { name: 'Nhiều nắng', icon: '☀️' },
