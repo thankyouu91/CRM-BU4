@@ -12,5 +12,8 @@ export const BANK_LOAN = { min: 50, maxOpen: 2 } as const;
  */
 export const P2P_EXTRA = { repaidCredit: 10 } as const;
 
-/** Hụi (petdex/server/hui.js MAX_GROUPS): groups a player, or a clan, may be in at once. */
-export const HUI_EXTRA = { maxGroups: 3 } as const;
+/**
+ * Hụi (petdex/server/hui.js): groups a player, or a clan, may be in at once (MAX_GROUPS), and the length of a
+ * group's name in characters (createHui).
+ */
+export const HUI_EXTRA = { maxGroups: 3, name: { min: 3, max: 30 } } as const;

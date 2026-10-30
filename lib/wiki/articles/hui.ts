@@ -110,7 +110,7 @@ export const article: WikiArticle = {
           ["Số dây cùng lúc", `tối đa ${HUI_EXTRA.maxGroups} dây mỗi người`, `tối đa ${HUI_EXTRA.maxGroups} dây mỗi gia tộc`],
         ] } },
         { steps: [
-          "Ở **➕ Lập dây hụi**, đặt tên (3 tới 30 ký tự), số tiền góp mỗi kỳ và số thành viên, bấm **Lập dây**. Người lập là **chủ hụi** và là thành viên đầu tiên.",
+          `Ở **➕ Lập dây hụi**, đặt tên (${HUI_EXTRA.name.min} tới ${HUI_EXTRA.name.max} ký tự), số tiền góp mỗi kỳ và số thành viên, bấm **Lập dây**. Người lập là **chủ hụi** và là thành viên đầu tiên.`,
           "Người khác tìm dây ở **📣 Dây đang gom người** và bấm **Vào dây hụi**.",
           "Đủ số người đã định thì dây **tự chạy**. Chủ hụi cũng có thể bấm **Cho chạy ngay** khi đã có ít nhất số tối thiểu.",
           "Dây chạy thì **kỳ 1 chốt ngay nửa đêm hôm đó**, rồi mỗi đêm một kỳ. Mỗi thành viên nhận **thư báo** trong hộp thư: dây đã chạy, tiền góp mỗi kỳ và ngày chốt kỳ 1 (hụi gia tộc: thư gửi tộc trưởng).",
@@ -129,7 +129,7 @@ export const article: WikiArticle = {
       blocks: [
         { list: [
           `Chỉ người **chưa hốt** mới được bỏ thăm, cho kỳ sắp chốt. Tiền thăm từ 0 tới **${pct(HUI.maxBidRatio)} quỹ kỳ** (quỹ kỳ = tiền góp × số thành viên còn lại).`,
-          "Bấm **Đổi thăm** để sửa trước nửa đêm; đặt về 0 là rút thăm.",
+          "Bấm **Đổi thăm** để sửa trước nửa đêm; đặt về 0 là rút thăm. Đổi thăm thì thời điểm bỏ thăm tính lại từ lúc đổi.",
           "Nửa đêm: **thăm cao nhất hốt**. Bằng nhau thì ai bỏ thăm trước thắng.",
           `Nếu có người bị loại vì không đóng nổi thì quỹ kỳ nhỏ lại; thăm nào vượt ${pct(HUI.maxBidRatio)} quỹ thực tế bị **kéo về đúng mức đó** trước khi so.`,
           "**Không ai bỏ thăm**: kỳ 1 chủ hụi hốt, các kỳ sau người vào dây sớm nhất trong số chưa hốt hốt.",
@@ -152,7 +152,6 @@ export const article: WikiArticle = {
           `**${an.name}** không bỏ thăm, hốt kỳ cuối, cộng thêm phần chia tiền thăm của mọi kỳ trước: lời ${xu(an.got - an.paid)}. Đó là **tiền lãi** cho việc chịu đợi.`,
           "Tổng lời lỗ của cả dây luôn bằng 0: hụi không sinh ra xu, chỉ chuyển tiền giữa người hốt sớm và người hốt muộn.",
         ] },
-        { tip: "Không cần tiền gấp thì đừng bỏ thăm, cứ góp đều và hốt muộn để ăn tiền thăm. Cần vốn ngay thì so tiền thăm với lãi [vay ngân hàng](tin-dung) hay [vay ngang hàng](vay-ngang-hang) trước khi bỏ thăm." },
       ],
     },
     {
@@ -167,7 +166,7 @@ export const article: WikiArticle = {
           "Gia tộc bị loại thì mất số đã góp; trừ điểm và cấm chơi chỉ áp dụng cho hụi người chơi.",
           "Các thành viên còn lại góp tiếp, quỹ mỗi kỳ nhỏ đi vì bớt người góp.",
         ] },
-        { warn: "Tiền góp chỉ lấy từ **ví**, không lấy từ tiết kiệm. Trước nửa đêm nhớ để đủ xu trong ví cho mọi dây đang chơi, nhất là khi vừa tiêu nhiều trong ngày." },
+        { warn: "Tiền góp chỉ lấy từ **ví** (hụi gia tộc: quỹ gia tộc), **không lấy từ tiết kiệm**, và mỗi dây thu riêng. Thiếu một xu cũng bị loại." },
       ],
     },
     {
@@ -178,7 +177,18 @@ export const article: WikiArticle = {
         { table: { head: ROUND_HEAD, rows: runaway.rounds } },
         { table: { head: TOTAL_HEAD, rows: runaway.totals.map((r, i) => (runaway.people[i].out ? [r[0], `${r[1]}, bỏ dây kỳ ${runaway.people[i].out}`, ...r.slice(2)] : r)) } },
         { p: `${runner.name} bỏ túi ${xu(runner.got - runner.paid)} và chỉ mất ${-HUI.creditPenalty} điểm tín dụng cùng ${HUI.banDays} ngày cấm chơi hụi. Ba người còn lại **chia nhau gánh khoản đó**: game không đền bù cho ai.` },
-        { warn: "Chỉ chơi hụi với người bạn tin được. Người đã hốt sớm mà ít xu là rủi ro lớn nhất cho những người hốt sau. Dây càng dài, người hốt muộn càng phải chờ lâu." },
+        { warn: "Game không bảo lãnh dây hụi nào. Người đã hốt rồi bỏ dây chỉ bị trừ điểm và cấm chơi hụi; phần tiền thiếu rơi vào những người hốt sau. Dây càng dài, người hốt muộn càng chờ lâu." },
+      ],
+    },
+    {
+      id: "meo",
+      title: "Mẹo",
+      blocks: [
+        { list: [
+          "Hốt sớm và hốt muộn là hai phía của cùng một khoản tiền thăm: một bên trả, bên kia nhận.",
+          "Tiền thăm có trần theo quỹ kỳ, và mọi thăm đều bị so ở nửa đêm, không phải lúc bỏ.",
+          "Thẻ dây và **Lịch sử** cho thấy ai đã hốt, ai còn phải góp: thông tin đó có ích cho cả lúc vào dây lẫn lúc bỏ thăm.",
+        ] },
       ],
     },
   ],
