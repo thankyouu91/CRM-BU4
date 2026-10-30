@@ -296,6 +296,89 @@ describe("Pet Town gift codes", () => {
     expect((listing.data.wearables as Json[]).some((i) => i.id === "crown")).toBe(true);
   });
 
+  it("gives random or pet-matched rewards, so a gift fits each player's element", async () => {
+    const { elementOfSpecies, relation } = await import("@/public/ta-tua/game/js/shared/pets.js");
+    const ITEMS = (await import("@/petdex/server/game.js")).ITEMS as Record<string, { type: string; element?: string }>;
+    const created = await internal("POST", "/admin/gift-codes", {
+      label: "Quà hợp mệnh",
+      rewards: {
+        entries: [
+          { kind: "item", pick: "match", category: "egg", qty: 1 },
+          { kind: "gear", pick: "match", tier: "gold" },
+          { kind: "item", pick: "random", category: "food", qty: 2 },
+        ],
+      },
+      actor: "Admin",
+    });
+    expect(created.status).toBe(200);
+    expect((created.data.code as Json).rewardsText).toBe("1 × Trứng ngũ hành hợp mệnh bé chính, Trang phục hợp mệnh bé chính (cấp Vàng), 2 × Đồ ăn ngẫu nhiên");
+    const code = (created.data.code as Json).code as string;
+    const p = await player("Hop_Menh", 0);
+    const element = elementOfSpecies(store.getPet(p.petId).species as string);
+    const fits = (itemElement: string) => ["same", "feeds"].includes(relation(itemElement, element));
+    const got = await game("POST", "/gifts/redeem", p.token, { code });
+    expect(got.status).toBe(200);
+    const me = (await game("GET", "/me", p.token)).data;
+    const inventory = me.inventory as Record<string, number>;
+    const eggs = Object.keys(inventory).filter((id) => id.startsWith("egg_"));
+    expect(eggs).toHaveLength(1);
+    expect(fits(ITEMS[eggs[0]].element as string)).toBe(true);
+    const gear = (me.gear as Json[])[0];
+    expect(gear.tier).toBe("gold");
+    expect(fits(gear.element as string)).toBe(true);
+    const foods = Object.entries(inventory).filter(([id]) => ITEMS[id]?.type === "food");
+    expect(foods.reduce((n, [, qty]) => n + qty, 0)).toBe(2);
+    expect((got.data.result as Json).received as string[]).toHaveLength(3);
+  });
+
+  it("lets the player choose one of several rewards, consuming nothing until they pick", async () => {
+    const created = await internal("POST", "/admin/gift-codes", {
+      label: "Chọn quà",
+      maxUses: 1,
+      rewards: {
+        coins: 50,
+        choice: [
+          { kind: "coins", amount: 300 },
+          { kind: "item", pick: "fixed", itemId: "cake", qty: 1 },
+          { kind: "gear", pick: "random", tier: "red" },
+        ],
+      },
+      actor: "Admin",
+    });
+    expect(created.status).toBe(200);
+    const { code, id } = created.data.code as { code: string; id: number };
+    expect((created.data.code as Json).rewardsText).toBe("50 🪙, tự chọn 1 trong: 300 🪙 / 1 × 🍰 Bánh kem dâu / Trang phục ngẫu nhiên (cấp Đỏ)");
+    const p = await player("Chon_Qua", 0);
+    const before = ((await game("GET", "/me", p.token)).data.user as Json).coins as number;
+
+    const ask = await game("POST", "/gifts/redeem", p.token, { code });
+    expect(ask.status).toBe(200);
+    expect(ask.data.result).toMatchObject({ needsChoice: true, always: "50 🪙", options: [{ index: 0, text: "300 🪙" }, { index: 1, text: "1 × 🍰 Bánh kem dâu" }, { index: 2, text: "Trang phục ngẫu nhiên (cấp Đỏ)" }] });
+    expect(((await internal("GET", `/admin/gift-codes/${id}`)).data.code as Json).uses).toBe(0);
+    expect((await game("POST", "/gifts/redeem", p.token, { code, choice: 7 })).data.error).toMatch(/không hợp lệ/);
+    expect(((await internal("GET", `/admin/gift-codes/${id}`)).data.code as Json).uses).toBe(0);
+
+    const got = await game("POST", "/gifts/redeem", p.token, { code, choice: 1 });
+    expect(got.status).toBe(200);
+    expect((got.data.result as Json).message).toBe("🎁 Chọn quà: đã nhận 50 🪙, 1 × 🍰 Bánh kem dâu.");
+    const me = (await game("GET", "/me", p.token)).data;
+    expect((me.user as Json).coins).toBe(before + 50);
+    expect((me.inventory as Json).cake).toBe(1);
+    expect(me.gear).toEqual([]);
+    expect((await game("POST", "/gifts/redeem", p.token, { code, choice: 0 })).data.error).toMatch(/nhận quà của mã này rồi/);
+    const q = await player("Chon_Qua_B", 0);
+    expect((await game("POST", "/gifts/redeem", q.token, { code })).data.error).toMatch(/hết lượt/);
+  });
+
+  it("checks the reward setup", async () => {
+    const make = (rewards: Json) => internal("POST", "/admin/gift-codes", { rewards, actor: "Admin" });
+    expect((await make({ choice: [{ kind: "coins", amount: 10 }] })).data.error).toMatch(/từ 2 đến 6/);
+    expect((await make({ entries: [{ kind: "item", pick: "match", category: "toy" }] })).data.error).toMatch(/không có hành/);
+    expect((await make({ entries: [{ kind: "item", pick: "random" }] })).data.error).toMatch(/nhóm vật phẩm/);
+    expect((await make({ entries: [{ kind: "coins", amount: 10 }] })).data.error).toMatch(/ô Xu/);
+    expect((await make({ entries: [{ kind: "gear", pick: "fixed", itemId: "cake", tier: "red" }] })).data.error).toMatch(/Trang phục không hợp lệ/);
+  });
+
   it("limits guessing: at most 10 tries a minute per player", async () => {
     const p = await player("Do_Ma", 0);
     for (let i = 0; i < 10; i++) await game("POST", "/gifts/redeem", p.token, { code: `SAI-${1000 + i}` });

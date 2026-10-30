@@ -485,3 +485,8 @@ input:focus { border-color: var(--tea); box-shadow: 0 0 0 4px #c8915f33; }
 .account-menu .msg.ok { color: var(--mint-deep, #2f8f6b); }
 .account-menu .account-fields { display: grid; gap: 8px; }
 .gear-lines-inline { display: block; font-size: .78rem; color: var(--ink); }
+
+/* Mã quà cho tự chọn: các món để chọn 1 */
+.account-menu .gift-choice { margin-top: 8px; }
+.account-menu .gift-options { display: grid; gap: 8px; margin-top: 6px; }
+.account-menu .gift-options .btn { justify-content: flex-start; text-align: left; white-space: normal; }

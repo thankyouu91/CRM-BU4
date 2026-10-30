@@ -264,7 +264,7 @@ api.post('/pets/:id/equip', auth, (req, res) => {
 
 /** Nhập mã quà (ô trong menu tên người chơi). */
 api.post('/gifts/redeem', auth, (req, res) => {
-  const result = redeemGiftCode(req.user.id, req.body?.code);
+  const result = redeemGiftCode(req.user.id, req.body?.code, req.body?.choice ?? null);
   bus.emit('pet:changed', req.user.id);
   reply(res, req.user.id, result);
 });

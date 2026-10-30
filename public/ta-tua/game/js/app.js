@@ -1036,6 +1036,7 @@ function openAccountMenu() {
           <button class="btn primary" type="submit">Nhận quà</button>
         </form>
         <p class="msg" data-msg="gift" role="status"></p>
+        <div class="gift-choice" data-gift-choice hidden></div>
       </section>
       <section>
         <h4>🔑 ${u.hasPassword ? 'Đổi mật khẩu' : 'Đặt mật khẩu'}</h4>
@@ -1063,23 +1064,44 @@ function openAccountMenu() {
     el.textContent = text;
     el.className = `msg ${ok ? 'ok' : 'error'}`;
   };
-  box.querySelector('[data-form="gift"]').addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const input = e.currentTarget.elements.code;
-    const btn = e.currentTarget.querySelector('button');
-    btn.disabled = true;
+  const giftForm = box.querySelector('[data-form="gift"]');
+  const choiceBox = box.querySelector('[data-gift-choice]');
+  /** Nhập mã (và món đã chọn, với mã cho tự chọn quà). Mã có lượt chọn trả về các món để chọn trước. */
+  const redeem = async (code, choice = null) => {
+    const buttons = [giftForm.querySelector('button'), ...choiceBox.querySelectorAll('button')];
+    for (const b of buttons) b.disabled = true;
     try {
-      const { result, ...me } = await api('/gifts/redeem', { code: input.value.trim() });
+      const { result, ...me } = await api('/gifts/redeem', choice === null ? { code } : { code, choice });
       state.me = me;
+      if (result?.needsChoice) {
+        say('gift', result.message, true);
+        choiceBox.innerHTML = `
+          ${result.always ? `<p class="note">Luôn nhận: ${esc(result.always)}. Chọn thêm 1 món:</p>` : '<p class="note">Chọn 1 món:</p>'}
+          <div class="gift-options">${result.options.map((o) => `<button class="btn" type="button" data-gift-option="${o.index}">${esc(o.text)}</button>`).join('')}</div>`;
+        choiceBox.hidden = false;
+        choiceBox.dataset.code = code;
+        return;
+      }
+      choiceBox.hidden = true;
+      choiceBox.innerHTML = '';
       say('gift', result?.message ?? 'Đã nhận quà!', true);
       toast(result?.message ?? 'Đã nhận quà!');
-      input.value = '';
+      giftForm.elements.code.value = '';
       renderWallet();
     } catch (err) {
       say('gift', err.message, false);
     } finally {
-      btn.disabled = false;
+      for (const b of buttons) b.disabled = false;
     }
+  };
+  giftForm.addEventListener('submit', (e) => {
+    e.preventDefault();
+    choiceBox.hidden = true;
+    redeem(giftForm.elements.code.value.trim());
+  });
+  choiceBox.addEventListener('click', (e) => {
+    const option = e.target.closest('[data-gift-option]');
+    if (option) redeem(choiceBox.dataset.code, Number(option.dataset.giftOption));
   });
   box.querySelector('[data-form="password"]').addEventListener('submit', async (e) => {
     e.preventDefault();
