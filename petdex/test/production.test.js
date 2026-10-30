@@ -170,6 +170,11 @@ test('xưởng: chủ đứng máy chế biến kho của mình, thuê công nh�
   assert.equal(stockAt(alice.id, 'tea_leaf', t), 0, 'hết nguyên liệu: 10 mẻ × 2 lô');
   assert.equal(stockAt(alice.id, 'dried_tea', t), dryHad + 100);
   assert.equal(view.factories[0].days.at(-1).batches, 10);
+  // Tồn kho cho cột phải của màn Khu công nghiệp: đang có = tổng hàng trong kho, sức chứa là kho Sàn.
+  const held = Object.values(view.goods).reduce((sum, n) => sum + n, 0);
+  assert.equal(view.warehouse.used, held);
+  assert.ok(view.warehouse.capacity >= held);
+  assert.equal(view.warehouse.reserved, 0);
   const lot = store.db.prepare("SELECT cost FROM lots WHERE user_id = ? AND commodity = 'dried_tea' ORDER BY id DESC").get(alice.id);
   assert.ok(Math.abs(lot.cost - 2) < 1e-9, 'giá vốn = 200 xu lá trà / 100 phần trà khô');
 

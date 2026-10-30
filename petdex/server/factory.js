@@ -4,7 +4,7 @@ import { indexedPrice } from './bank.js';
 import { dayKey, startOfDay } from './clock.js';
 import { DAY, GameError, HOUR } from './game.js';
 import { post } from './ledger.js';
-import { addGoods, freeSpace, removeGoods, stock } from './market.js';
+import { addGoods, capacityOf, freeSpace, removeGoods, stock } from './market.js';
 import { LOT } from './rules/market.js';
 import { CREDIT, FACTORIES, FACTORY, batchesPerHour } from './rules/production.js';
 import { BUSINESS } from './rules/business.js';
@@ -288,6 +288,12 @@ export function factoryView(userId, now = Date.now()) {
     myTolls: q.myTolls.all(userId).map((o) => ({ id: o.id, kind: o.kind, name: FACTORIES[o.kind].name, owner: o.username, batches: o.batches, done: o.done, fee: o.fee })),
     kinds: Object.fromEntries(Object.entries(FACTORIES).map(([k, d]) => [k, { ...d, build: indexedPrice(d.build) }])),
     goods,
+    // Kho hàng hóa (chung với Sàn): sức chứa, đang có và phần giữ chỗ cho lệnh mua đang chờ, cùng đơn vị với `goods`.
+    warehouse: (() => {
+      const capacity = capacityOf(getUser(userId));
+      const used = Object.values(goods).reduce((sum, n) => sum + n, 0);
+      return { capacity, used, reserved: Math.max(0, capacity - freeSpace(userId) - used) };
+    })(),
     max: MAX_FACTORIES,
   };
 }

@@ -262,10 +262,67 @@ export function renderFactory(root, ctx) {
     </section>`;
   }
 
+  /** Ô thống kê nhỏ góc trên bên phải: tổng quan các xưởng của mình. */
+  function statsHtml() {
+    const now = Date.now();
+    const mine = data.factories;
+    const running = mine.filter((f) => f.duty.some((d) => d.startsAt <= now && d.endsAt > now)).length;
+    const today = mine.reduce((sum, f) => {
+      const d = f.days.find((x) => x.day === todayKey());
+      return sum + (d ? d.batches + d.toll_batches : 0);
+    }, 0);
+    const rent = mine.reduce((sum, f) => sum + f.rent, 0);
+    const queued = mine.reduce((sum, f) => sum + f.queue.reduce((n, o) => n + o.batches - o.done, 0), 0);
+    return `<section class="card factory-stats">
+      <h4>📊 Tổng quan</h4>
+      <dl>
+        <div><dt>Xưởng</dt><dd>${fmt(mine.length)}/${fmt(data.max)}</dd></div>
+        <div><dt>Đang chạy</dt><dd class="${running ? 'up' : ''}">${fmt(running)}</dd></div>
+        <div><dt>Mẻ hôm nay</dt><dd>${fmt(today)}</dd></div>
+        <div><dt>Đơn thuê chờ</dt><dd>${fmt(queued)} mẻ</dd></div>
+        <div><dt>Thuê đất/đêm</dt><dd>${fmt(rent)} 🪙</dd></div>
+      </dl>
+    </section>`;
+  }
+
+  /** Tồn kho: nguyên liệu và thành phẩm của các xưởng mình lên đầu, kèm số mẻ đủ chạy; sức chứa kho chung với Sàn. */
+  function stockHtml() {
+    const wh = data.warehouse;
+    const used = wh.used + wh.reserved;
+    const inputs = new Map();
+    const outputs = new Set();
+    for (const f of data.factories) {
+      const def = data.kinds[f.kind];
+      for (const [c, n] of Object.entries(def.input)) inputs.set(c, Math.max(inputs.get(c) ?? 0, n * lot));
+      for (const c of Object.keys(def.output)) outputs.add(c);
+    }
+    const role = (c) => (inputs.has(c) ? 0 : outputs.has(c) ? 1 : 2);
+    const held = Object.entries(data.goods).filter(([, q]) => q > 0);
+    for (const c of [...inputs.keys(), ...outputs]) if (!held.some(([x]) => x === c)) held.push([c, 0]);
+    held.sort((a, b) => role(a[0]) - role(b[0]) || b[1] - a[1]);
+    const tag = (c) => (inputs.has(c) ? '<span class="badge">nguyên liệu</span>' : outputs.has(c) ? '<span class="badge star">thành phẩm</span>' : '');
+    const enough = (c, q) => (inputs.has(c) ? `<small class="${q >= inputs.get(c) ? 'muted' : 'down'}">đủ ${fmt(Math.floor(q / inputs.get(c)))} mẻ</small>` : '');
+    return `<section class="card factory-stock">
+      <div class="row-between"><h4>📦 Tồn kho</h4><button class="btn small" data-go="market">Sàn</button></div>
+      <div class="factory-wh">
+        <span>Kho ${fmtLots(used)}/${fmtLots(wh.capacity)} lô${wh.reserved ? ` <small class="muted">(giữ chỗ ${fmtLots(wh.reserved)})</small>` : ''}</span>
+        <div class="bar energy"><i style="width:${Math.min(100, (used / Math.max(1, wh.capacity)) * 100)}%"></i></div>
+      </div>
+      ${held.length ? `<ul class="factory-stock-list">${held.map(([c, q]) => `
+        <li class="${q ? '' : 'empty-row'}">
+          <span class="factory-stock-name">${com(c).icon} ${esc(com(c).name)} ${tag(c)}</span>
+          <span class="factory-stock-qty"><b>${fmtLots(q)} lô</b>${enough(c, q)}</span>
+        </li>`).join('')}</ul>` : '<p class="muted small">Kho đang trống. Mua nguyên liệu ở Sàn hoặc ký hợp đồng cung ứng.</p>'}
+    </section>`;
+  }
+
   function draw() {
     view.innerHTML = `
       ${helpHtml()}
-      ${data.factories.map(factoryCard).join('')}
+      <div class="factory-layout">
+        <div class="factory-main">${data.factories.map(factoryCard).join('') || (canBuild ? '<section class="card empty muted">Chưa có xưởng nào. Xây xưởng đầu tiên ở bên dưới.</section>' : '')}</div>
+        <aside class="factory-side">${statsHtml()}${stockHtml()}</aside>
+      </div>
       ${buildHtml()}
       ${tollHtml()}`;
     for (const f of data.factories) {

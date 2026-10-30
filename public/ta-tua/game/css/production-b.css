@@ -33,8 +33,30 @@
 .pb-help ul { margin: 10px 0 2px; padding-left: 20px; display: grid; gap: 6px; font-size: .9rem; font-weight: 600; }
 
 /* ---------- Khu công nghiệp ---------- */
-.factory-view { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; align-items: start; }
-.factory-view > .pb-help, .factory-build, .factory-toll { grid-column: 1 / -1; }
+.factory-view { display: grid; grid-template-columns: minmax(0, 1fr); gap: 16px; align-items: start; }
+/* Xưởng bên trái, cột phải có ô Tổng quan (trên cùng) và Tồn kho, bám theo khi cuộn. */
+.factory-layout { display: grid; grid-template-columns: minmax(0, 1fr) minmax(260px, 340px); gap: 16px; align-items: start; }
+.factory-main { display: grid; gap: 16px; min-width: 0; }
+.factory-side { display: grid; gap: 12px; position: sticky; top: 12px; min-width: 0; }
+.factory-stats, .factory-stock { padding: 14px 16px; display: grid; gap: 10px; }
+.factory-stats h4, .factory-stock h4 { margin: 0; }
+.factory-stats dl { margin: 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; }
+.factory-stats dl div { padding: 6px 10px; border-radius: 12px; background: var(--surface-2); border: 2px solid var(--line); min-width: 0; }
+.factory-stats dt { font-size: .75rem; color: var(--muted); }
+.factory-stats dd { margin: 0; font-family: var(--font-display); font-weight: 800; font-size: 1.1rem; }
+.factory-wh { display: grid; gap: 4px; font-size: .85rem; }
+.factory-wh .bar { height: 8px; }
+.factory-stock-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; max-height: calc(60 * var(--vh, 1vh)); overflow-y: auto; }
+.factory-stock-list li { display: flex; justify-content: space-between; gap: 8px; align-items: center; padding: 6px 8px; border-radius: 10px; background: #fff; border: 2px solid var(--line); font-size: .88rem; }
+.factory-stock-list li.empty-row { opacity: .7; }
+.factory-stock-name { min-width: 0; overflow-wrap: anywhere; }
+.factory-stock-name .badge { font-size: .68rem; padding: 1px 6px; margin-left: 2px; }
+.factory-stock-qty { display: grid; justify-items: end; text-align: right; flex: none; }
+.factory-stock-qty small { font-size: .72rem; }
+@media (max-width: 960px) {
+  .factory-layout { grid-template-columns: minmax(0, 1fr); }
+  .factory-side { position: static; }
+}
 .factory-card, .factory-build, .factory-toll { padding: 18px; display: grid; gap: 12px; align-content: start; min-width: 0; }
 .factory-card h3, .factory-build h3, .factory-toll h3 { font-size: 1.3rem; }
 .factory-card p, .factory-toll p { margin: 0; }
