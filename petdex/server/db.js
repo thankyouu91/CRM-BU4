@@ -918,6 +918,22 @@ addColumn('users', 'locked_slots', 'INTEGER NOT NULL DEFAULT 0');
   );
   `);
   addColumn('users', 'hui_ban_until', 'INTEGER NOT NULL DEFAULT 0');
+  db.exec(`
+  -- Nhật ký gộp ngành (industry-merge.js): đủ để gỡ gộp về đúng như cũ.
+  -- kind: 'plot' (lô đổi ngành), 'industry_renamed' (ngành đã thâu tóm đổi id), 'industry_dropped' (dòng trùng bị xoá, fee đã hoàn).
+  -- at: lúc ghi với 'plot'; với dòng ngành là entered_at gốc của dòng đó.
+  CREATE TABLE IF NOT EXISTS industry_merge_log (
+    id           INTEGER PRIMARY KEY AUTOINCREMENT,
+    kind         TEXT NOT NULL,
+    clan_id      INTEGER,
+    plot_id      INTEGER,
+    old_industry TEXT NOT NULL,
+    new_industry TEXT NOT NULL,
+    line         TEXT,
+    fee          INTEGER NOT NULL DEFAULT 0,
+    at           INTEGER NOT NULL
+  );
+  `);
 }
 
 const q = {

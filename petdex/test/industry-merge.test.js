@@ -90,3 +90,66 @@ test('cầu vĩ mô của ngành gộp là trung bình các ngành cũ', () => {
   assert.equal(state.demand.metallurgy, 1);
   assert.equal(state.demand.vehicles, 1.1);
 });
+
+test('gỡ gộp (quay lại bản cũ): lô và ngành về id cũ theo dây chuyền đang chạy, khôi phục ngành bị xoá, thu lại tiền hoàn', async () => {
+  const gate = await import('../server/industry-merge.js');
+  const [p1, p2, p3] = [shared.PLOTS.find((p) => p.zone === 'urban'), shared.PLOTS.find((p) => p.zone === 'plain'), shared.PLOTS.find((p) => p.zone === 'coast')];
+  const plan = gate.unmergePlan();
+  assert.equal(plan.done, true);
+  // Lô p1 đã đổi sang dây chuyền luyện thép ở test trước: gỡ về Luyện thép, không phải Luyện nhôm như lúc gộp.
+  assert.equal(plan.plots.find((p) => p.id === p1.id).to, 'steel');
+  assert.deepEqual(plan.clawback.map((c) => [c.industry, c.refunded]), [['aluminium', 400_000]]);
+
+  const before = fund();
+  const res = gate.unmergeIndustries('Kiểm thử', T0 + 3 * DAY);
+  assert.equal(res.clawback[0].take, 400_000);
+  assert.equal(fund(), before - 400_000);
+  const plot = (p) => store.db.prepare('SELECT industry, variant FROM land_plots WHERE id = ?').get(p.id);
+  assert.deepEqual({ ...plot(p1) }, { industry: 'steel', variant: null });
+  assert.deepEqual({ ...plot(p2) }, { industry: 'electronics', variant: null });
+  assert.deepEqual({ ...plot(p3) }, { industry: 'shipbuilding', variant: null });
+  const held = store.db.prepare('SELECT industry, fee FROM clan_industries WHERE clan_id = ? ORDER BY industry').all(clanId).map((r) => `${r.industry}:${r.fee}`);
+  assert.deepEqual(held, ['aluminium:400000', 'oil_gas:450000', 'steel:40000']);
+
+  // Bản mới vẫn đang chạy: khởi động lại không được tự gộp lại (cờ giữ).
+  migrate(T0 + 4 * DAY);
+  assert.equal(plot(p1).industry, 'steel');
+  assert.equal(gate.mergeHeld(), true);
+
+  // Gộp lại (deploy bản mới lần nữa): trở về trạng thái gộp, hoàn tiền lần nữa (vì đã thu lại), không mất gì.
+  gate.remergeIndustries('Kiểm thử', T0 + 5 * DAY);
+  assert.deepEqual({ ...plot(p1) }, { industry: 'metallurgy', variant: 'steel' });
+  assert.equal(fund(), before);
+  assert.equal(gate.mergeHeld(), false);
+  assert.equal(gate.mergeDone(), true);
+  migrate(T0 + 6 * DAY);
+  assert.equal(fund(), before, 'không hoàn hai lần');
+});
+
+test('gộp từ bản chưa ghi nhật ký (656b1e2): dựng lại ngành bị xoá từ bút toán hoàn tiền của lần gộp gần nhất', async () => {
+  const gate = await import('../server/industry-merge.js');
+  store.db.prepare('DELETE FROM industry_merge_log').run();
+  // Ngành "mining" của gia tộc thật ra là Dầu khí cũ: đọc ra từ bút toán trả phí thâu tóm lúc đó.
+  post({ account: `clan:${clanId}`, delta: 450_000, kind: 'clan_comp', memo: 'nạp thử', now: T0 + 2 });
+  post({ account: `clan:${clanId}`, delta: -450_000, kind: 'clan_comp', memo: 'Thâu tóm ngành Dầu khí', now: T0 + 2 });
+  const plan = gate.unmergePlan();
+  assert.equal(plan.fromLedger, true);
+  // Chỉ lần gộp lại ở T0+5 ngày, không lấy bút toán hoàn của lần gộp đầu (đã bị thu lại).
+  assert.deepEqual(plan.restore.map((r) => [r.clanId, r.industry, r.fee]), [[clanId, 'aluminium', 400_000]]);
+  assert.deepEqual(plan.industries.map((r) => [r.from, r.rename]), [['metallurgy', 'steel'], ['mining', 'oil_gas']]);
+  const before = fund();
+  gate.unmergeIndustries('Kiểm thử', T0 + 7 * DAY);
+  assert.equal(fund(), before - 400_000);
+  const held = store.db.prepare('SELECT industry FROM clan_industries WHERE clan_id = ? ORDER BY industry').all(clanId).map((r) => r.industry);
+  assert.deepEqual(held, ['aluminium', 'oil_gas', 'steel']);
+});
+
+test('số kiểm tra sau khi gộp', async () => {
+  const gate = await import('../server/industry-merge.js');
+  gate.remergeIndustries('Kiểm thử', T0 + 8 * DAY);
+  const { checks } = gate.unmergePlan();
+  assert.equal(checks.oldIdPlots, 0);
+  assert.equal(checks.oldIdIndustries, 0);
+  assert.equal(checks.nullLinePlots, 0);
+  assert.ok(checks.flagAt && checks.refunds.count >= 1);
+});
