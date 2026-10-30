@@ -276,3 +276,20 @@ td { padding: 7px 8px; border-bottom: 1px dashed var(--line); vertical-align: to
 .hui-members li { display: grid; padding: 4px 8px; border-radius: 10px; background: var(--surface-2); font-size: .85rem; }
 .hui-members li.out { opacity: .55; text-decoration: line-through; }
 @media (max-width: 760px) { .finance-grid { grid-template-columns: minmax(0, 1fr); } }
+
+/* ---------- Thông báo của ban quản lý (ghim đầu Báo Trân Châu, bật lên một lần) ---------- */
+.announcements { display: grid; gap: 10px; margin-bottom: 14px; }
+.announcement { border: 2px solid var(--gold); border-radius: 16px; background: #fff8e1; padding: 10px 14px; }
+.announcement summary { display: flex; gap: 12px; align-items: center; cursor: pointer; list-style: none; }
+.announcement summary::-webkit-details-marker { display: none; }
+.announcement summary > span:last-child { display: grid; min-width: 0; }
+.announcement summary b { text-wrap: balance; overflow-wrap: break-word; }
+.announcement-body { display: grid; gap: 8px; padding-top: 10px; font-size: .92rem; line-height: 1.55; overflow-wrap: break-word; }
+.announcement-body h4 { margin: 8px 0 0; font-size: 1.05rem; }
+.announcement-body p, .announcement-body ul { margin: 0; }
+.announcement-body ul { padding-left: 1.2em; display: grid; gap: 3px; }
+.announcement-body hr { border: 0; border-top: 2px dashed var(--line); margin: 6px 0; width: 100%; }
+.announcement-body table { width: 100%; border-collapse: collapse; font-size: .86rem; }
+.announcement-body th, .announcement-body td { text-align: left; padding: 5px 8px; border-bottom: 1px solid var(--line); vertical-align: top; }
+.modal-scroll { max-height: min(62vh, 560px); overflow-y: auto; padding-right: 4px; }
+.row.end { justify-content: flex-end; margin-top: 12px; }

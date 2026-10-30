@@ -9,10 +9,10 @@ import { isAdmin } from "@/lib/rbac";
 // internal admin API (petdex/server/internal.js); every change is also written to WorkHub's
 // audit log with the administrator as actor.
 
-const ALLOWED = /^(overview|log|gear-config|gear\/\d+(\/delete)?|gift-codes(\/\d+(\/revoke)?)?|clans(\/(config|macro|plots\/\d+|evasion\/\d+\/(collect|dismiss)))?|invites(\/\d+\/revoke)?|players(\/\d+(\/(coins|status|name|password-link|gear|pets(\/\d+)?))?)?)$/;
+const ALLOWED = /^(overview|log|announcements(\/\d+\/delete)?|gear-config|gear\/\d+(\/delete)?|gift-codes(\/\d+(\/revoke)?)?|clans(\/(config|macro|plots\/\d+|evasion\/\d+\/(collect|dismiss)))?|invites(\/\d+\/revoke)?|players(\/\d+(\/(coins|status|name|password-link|gear|pets(\/\d+)?))?)?)$/;
 
 /** Body fields that only label the audit entry; the game never sees them. */
-const LABEL_FIELDS = ["playerName", "petName", "speciesName", "itemName", "tierName", "clanName", "plotCode"];
+const LABEL_FIELDS = ["announcementTitle", "playerName", "petName", "speciesName", "itemName", "tierName", "clanName", "plotCode"];
 
 type Params = { params: Promise<{ path: string[] }> };
 
@@ -52,6 +52,8 @@ function describe(path: string, body: Record<string, unknown>): { action: AuditA
   if (path === "clans/macro") return { action: "tatua.macro", entityId: null, summary: `Chỉnh kinh tế vĩ mô: pha ${String(body.phase ?? "tự động")}, thời tiết ${String(body.weather ?? "tự động")}${body.today ? " (áp dụng ngay)" : ""}` };
   if (/^clans\/evasion\/\d+\/collect$/.test(path)) return { action: "tatua.tax_collect", entityId: path.split("/")[2], summary: `Truy thu thuế trốn của gia tộc${body.clanName ? ` “${String(body.clanName)}”` : ""} (hồ sơ #${path.split("/")[2]})` };
   if (/^clans\/evasion\/\d+\/dismiss$/.test(path)) return { action: "tatua.tax_dismiss", entityId: path.split("/")[2], summary: `Bỏ qua hồ sơ thuế #${path.split("/")[2]}${body.clanName ? ` của “${String(body.clanName)}”` : ""}` };
+  if (path === "announcements") return { action: "tatua.announcement", entityId: null, summary: `Đăng thông báo “${String(body.title ?? "")}” (${Number(body.days) || 7} ngày${body.popup === false ? ", không bật lên" : ""})` };
+  if (/^announcements\/\d+\/delete$/.test(path)) return { action: "tatua.announcement_delete", entityId: id, summary: `Gỡ thông báo #${id}${body.announcementTitle ? ` “${String(body.announcementTitle)}”` : ""}` };
   if (path === "invites") return { action: "tatua.invite", entityId: null, summary: `Tạo link mời khách “${String(body.label ?? "Khách mời")}”` };
   if (/^invites\/\d+\/revoke$/.test(path)) return { action: "tatua.invite_revoke", entityId: path.split("/")[1], summary: `Thu hồi link mời #${path.split("/")[1]}` };
   return null;
