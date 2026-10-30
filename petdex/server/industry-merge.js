@@ -15,6 +15,14 @@ const HOLD = 'industries_merge_hold';
 const PLOT_BY_ID = new Map(PLOTS.map((p) => [p.id, p]));
 const MERGED_IDS = [...new Set(Object.values(MERGED_INTO).map((m) => m.industry))];
 const clanAccount = (id) => `clan:${id}`;
+// Tên các ngành cũ (trước khi gộp) để đọc bút toán "Thâu tóm ngành <tên>" khi nhật ký trống.
+const OLD_BY_NAME = {
+  'Khai khoáng': 'mining', 'Dầu khí': 'oil_gas', 'Nông nghiệp': 'agriculture', 'Chăn nuôi': 'livestock',
+  'Chế biến thực phẩm': 'food_processing', 'Dệt may': 'textiles', 'Đồ gỗ nội thất': 'furniture',
+  'Điện tử, máy tính': 'electronics', 'Vi mạch': 'semiconductors', 'Luyện thép': 'steel', 'Luyện nhôm': 'aluminium',
+  'Lọc dầu': 'refinery', 'Hóa chất': 'chemicals', 'Ô tô': 'autos', 'Tàu hỏa': 'trains', 'Đóng tàu': 'shipbuilding', 'Hàng không': 'aerospace',
+};
+const REFUND_MEMO = /^Hoàn tiền thâu tóm (\S+) \(gộp ngành\)$/;
 
 const q = {
   log: db.prepare('INSERT INTO industry_merge_log (kind, clan_id, plot_id, old_industry, new_industry, line, fee, at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)'),
@@ -27,6 +35,8 @@ const q = {
   rename: db.prepare('UPDATE clan_industries SET industry = ? WHERE clan_id = ? AND industry = ?'),
   insert: db.prepare('INSERT OR IGNORE INTO clan_industries (clan_id, industry, fee, entered_at) VALUES (?, ?, ?, ?)'),
   balance: db.prepare('SELECT balance FROM accounts WHERE id = ?'),
+  refunds: db.prepare("SELECT account, delta, memo, created_at FROM ledger WHERE kind = 'clan_comp' AND account LIKE 'clan:%' AND delta > 0 AND memo LIKE 'Hoàn tiền thâu tóm % (gộp ngành)' AND created_at >= ? ORDER BY id"),
+  bought: db.prepare("SELECT memo FROM ledger WHERE account = ? AND kind = 'clan_comp' AND delta = ? AND created_at = ? AND memo LIKE 'Thâu tóm ngành %' ORDER BY id DESC LIMIT 1"),
   news: db.prepare('INSERT INTO news (commodity, headline, effect, created_at, starts_at, ends_at) VALUES (NULL, ?, 0, ?, ?, ?)'),
 };
 
@@ -80,8 +90,30 @@ function oldIdForPlot(plotId, industry, variant) {
   return industry;
 }
 
+/** Ngành cũ mà gia tộc đã thâu tóm, đọc từ bút toán trả phí thâu tóm (cùng số tiền, cùng thời điểm). */
+function boughtAs(r) {
+  const memo = r.fee > 0 ? q.bought.get(clanAccount(r.clan_id), -r.fee, r.entered_at)?.memo : null;
+  const old = memo && OLD_BY_NAME[memo.slice('Thâu tóm ngành '.length)];
+  return old && (MERGED_INTO[old]?.industry ?? old) === r.industry ? old : undefined;
+}
+
 /** Ngành cũ mặc định khi gia tộc nắm ngành gộp mà không lô nào và nhật ký không cho biết. */
 const defaultOldId = (industry) => (PRODUCTION_INDUSTRIES[industry]?.lines ? Object.keys(PRODUCTION_INDUSTRIES[industry].lines)[0] : industry);
+
+/** Số kiểm tra sau khi gộp: còn lô/ngành mang id cũ không, lô nhà máy gộp nào chưa có dây chuyền, đã hoàn bao nhiêu. */
+function mergeChecks() {
+  const old = Object.keys(MERGED_INTO);
+  const marks = old.map(() => '?').join(',');
+  const lined = Object.keys(PRODUCTION_INDUSTRIES).filter((id) => PRODUCTION_INDUSTRIES[id].lines);
+  const refunds = db.prepare("SELECT COUNT(*) n, COALESCE(SUM(delta), 0) total FROM ledger WHERE kind = 'clan_comp' AND delta > 0 AND memo LIKE 'Hoàn tiền thâu tóm % (gộp ngành)'").get();
+  return {
+    flagAt: Number(getMeta(FLAG)) || null,
+    oldIdPlots: db.prepare(`SELECT COUNT(*) n FROM land_plots WHERE industry IN (${marks})`).get(...old).n,
+    oldIdIndustries: db.prepare(`SELECT COUNT(*) n FROM clan_industries WHERE industry IN (${marks})`).get(...old).n,
+    nullLinePlots: db.prepare(`SELECT COUNT(*) n FROM land_plots WHERE variant IS NULL AND industry IN (${lined.map(() => '?').join(',')})`).get(...lined).n,
+    refunds: { count: refunds.n, total: refunds.total },
+  };
+}
 
 /**
  * Kế hoạch gỡ gộp (chỉ đọc): lô nào về ngành nào, ngành đã thâu tóm đổi/khôi phục ra sao, thu lại bao nhiêu tiền hoàn.
@@ -103,19 +135,24 @@ export function unmergePlan() {
   for (const r of q.industries.all()) {
     if (!MERGED_IDS.includes(r.industry) && r.industry !== 'electronics') continue;
     const fromPlots = plots.filter((p) => p.clanId === r.clan_id && p.from === r.industry).map((p) => p.to);
-    const logged = renamedLog.get(`${r.clan_id}:${r.industry}`)?.old_industry;
+    const logged = renamedLog.get(`${r.clan_id}:${r.industry}`)?.old_industry ?? (logs.length ? undefined : boughtAs(r));
     const needs = [...new Set([logged ?? null, ...fromPlots].filter(Boolean))];
     if (!needs.length) needs.push(defaultOldId(r.industry));
     // Lô cũ thuộc ngành giữ id (mining, agriculture, electronics) nhưng dòng vẫn mang id đó thì không cần đổi tên.
     const [first, ...rest] = needs.includes(r.industry) ? [r.industry, ...needs.filter((x) => x !== r.industry)] : needs;
     industries.push({ clanId: r.clan_id, from: r.industry, rename: first, add: rest, fee: r.fee, enteredAt: r.entered_at });
   }
-  const restore = logs.filter((l) => l.kind === 'industry_dropped').map((l) => ({ clanId: l.clan_id, industry: l.old_industry, fee: l.fee, enteredAt: l.at }));
+  // Bản 656b1e2 gộp mà chưa ghi nhật ký: dựng lại các ngành bị xoá từ bút toán hoàn tiền của lần gộp đó
+  // (ngành trùng thâu tóm miễn phí không có bút toán nên không khôi phục được).
+  const restore = logs.length || !mergeDone()
+    ? logs.filter((l) => l.kind === 'industry_dropped').map((l) => ({ clanId: l.clan_id, industry: l.old_industry, fee: l.fee, enteredAt: l.at }))
+    : q.refunds.all(Number(getMeta(FLAG)) || 0).map((r) => ({ clanId: Number(r.account.slice(5)), industry: r.memo.match(REFUND_MEMO)?.[1], fee: r.delta, enteredAt: r.created_at }))
+      .filter((r) => MERGED_INTO[r.industry]);
   const clawback = restore.filter((r) => r.fee > 0).map((r) => {
     const fund = q.balance.get(clanAccount(r.clanId))?.balance ?? 0;
     return { clanId: r.clanId, industry: r.industry, refunded: r.fee, take: Math.min(r.fee, Math.max(0, fund)) };
   });
-  return { done: mergeDone(), held: mergeHeld(), logged: logs.length, plots, industries, restore, clawback };
+  return { done: mergeDone(), held: mergeHeld(), logged: logs.length, fromLedger: !logs.length && mergeDone(), checks: mergeChecks(), plots, industries, restore, clawback };
 }
 
 /**
