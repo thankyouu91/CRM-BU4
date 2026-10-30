@@ -7,6 +7,10 @@ import { PROPOSALS, QUESTS, GUILD_PROJECTS } from "@/petdex/server/rules/town.js
 import { ELEMENTS, LEVEL_FORMS, LIFE_STAGES, RARITIES, SLOTS, SPECIES, MASCOTS, WEARABLES } from "@/public/ta-tua/game/js/shared/pets.js";
 import { DEFAULT_GEAR_CONFIG, TIERS, TIER_ORDER, TIER_VALUE } from "@/public/ta-tua/game/js/shared/gear.js";
 import { FISH } from "@/public/ta-tua/game/js/shared/minigames.js";
+import { CLAN_LEVELS, CLIMATES, INDUSTRIES, PHASES, WEATHER, ZONES, clanPerks, DESIGN, LAND } from "@/public/ta-tua/game/js/shared/clan.js";
+import { GOODS, MARKET_RULES, SECTORS } from "@/public/ta-tua/game/js/shared/industry.js";
+import { FRESHNESS } from "@/petdex/server/rules/market.js";
+import { UNLOCKS } from "./rules";
 
 // Tables of the wiki read straight from the game's own rules (petdex/server/rules, the game's
 // shared modules), so prices, odds and names stay in step with the game. Prices are base prices:
@@ -118,3 +122,86 @@ export const creditTierRows = (): Row[] =>
 export const proposalRows = (): Row[] => Object.values(PROPOSALS as Record<string, Named & { desc: string; cost: number }>).map((p) => [`${p.icon} ${p.name}`, p.cost, p.desc]);
 export const guildProjectRows = (): Row[] =>
   Object.values(GUILD_PROJECTS as Record<string, Named & { needs: Record<string, number>; prestige: number; reward: number }>).map((p) => [`${p.icon} ${p.name}`, inputs(p.needs, " lô"), p.prestige, `${p.reward} xu`]);
+
+// ---------------------------------------------------------------- gia tộc, đất, vĩ mô
+
+
+type Industry = Named & { sector: string; comp: number; recipe?: { in: Record<string, number>; out: Record<string, number> }; extracts?: string; plants?: Record<string, Named & { in: Record<string, number>; out: Record<string, number> }> };
+const industries = INDUSTRIES as unknown as Record<string, Industry>;
+const sectors = SECTORS as Record<string, Named>;
+const goodsInd = GOODS as Record<string, Named>;
+const goodList = (m: Record<string, number>) => Object.entries(m).map(([id, n]) => `${goodsInd[id]?.icon ?? ""} ${goodsInd[id]?.name ?? id} ×${n}`).join(", ");
+const EXTRACTS: Record<string, string> = { mineral: "khoáng sản trong mỏ của lô", oilgas: "dầu, khí trong mỏ của lô", forest: "gỗ, cao su của lô", crop: "nông sản của lô", livestock: "gia súc của lô" };
+const pct = (x: number) => `${x > 0 ? "+" : ""}${String(Math.round(x * 1000) / 10).replace(".", ",")}%`;
+
+export const INDUSTRY_COUNT = Object.keys(industries).length;
+export const SERVICE_COUNT = Object.values(industries).filter((i) => i.sector === "service").length;
+export const sectorRows = (): Row[] =>
+  Object.entries(sectors).map(([k, s]) => [`${s.icon} ${s.name}`, Object.values(industries).filter((i) => i.sector === k).map((i) => `${i.icon} ${i.name}`).join(", ")]);
+export const industryRows = (sector: string): Row[] =>
+  Object.values(industries).filter((i) => i.sector === sector).map((i) => [
+    `${i.icon} ${i.name}`,
+    i.comp,
+    i.extracts ? `Khai thác ${EXTRACTS[i.extracts] ?? i.extracts}` : i.plants ? Object.values(i.plants).map((p) => `${p.icon} ${p.name}`).join(", ") : i.recipe ? `${goodList(i.recipe.in)} → ${goodList(i.recipe.out)}` : "Doanh thu bằng xu mỗi đêm",
+  ]);
+export const clanLevelRows = (): Row[] =>
+  (CLAN_LEVELS as number[]).map((xp, i) => {
+    const p = clanPerks(i + 1) as { maxMembers: number; maxPlots: number; maxIndustries: number; prodBonus: number };
+    return [i + 1, xp, p.maxMembers, p.maxPlots, p.maxIndustries, pct(p.prodBonus)];
+  });
+export const phaseRows = (): Row[] =>
+  Object.values(PHASES as Record<string, Named & { factor: number; land: number; traffic: number }>).map((p) => [`${p.icon} ${p.name}`, `×${String(p.factor).replace(".", ",")}`, `${pct(p.land)}/ngày`, pct(p.traffic)]);
+export const weatherRows = (): Row[] =>
+  Object.values(WEATHER as Record<string, Named & { zones: Record<string, number>; climates: Record<string, number>; news: Record<string, number> }>).map((w) => [
+    `${w.icon} ${w.name}`,
+    [...Object.entries(w.zones).map(([z, v]) => `${(ZONES as Record<string, Named>)[z].name} ${pct(v)}`), ...Object.entries(w.climates).map(([c, v]) => `${(CLIMATES as Record<string, Named>)[c].name} ${pct(v)}`)].join(", ") || "Không ảnh hưởng",
+    Object.entries(w.news).map(([g, v]) => `${good(g)} ${pct(v)}`).join(", ") || "",
+  ]);
+export const zoneRows = (): Row[] => Object.values(ZONES as Record<string, Named & { desc: string }>).map((z) => [`${z.icon} ${z.name}`, z.desc]);
+export const climateNames = () => Object.values(CLIMATES as Record<string, Named>).map((c) => `${c.icon} ${c.name}`).join(", ");
+export const LAND_RULES = LAND as { count: number; cols: number; rows: number; minPrice: number; maxPrice: number };
+export const DESIGN_RULES = DESIGN as { maxPieces: number; minPieces: number };
+export const INDUSTRIAL_MARKET = MARKET_RULES as { npcBuy: number; importMarkup: number; band: number[]; fee: number; warehouseBase: number; warehousePerLevel: number; maxListings: number; listingDays: number };
+export const GOODS_COUNT = Object.keys(goodsInd).length;
+
+export const freshnessRows = (): Row[] =>
+  (FRESHNESS as { name: string; upTo: number; factor: number }[]).map((f, i, all) => [f.name, `${Math.round((all[i - 1]?.upTo ?? 0) * 100)}–${Math.round(f.upTo * 100)}% hạn dùng`, `${Math.round(f.factor * 100)}%`]);
+export const COMMODITY_COUNT = Object.keys(goods).length;
+
+const PLACE: Record<string, string> = {
+  market: "[Sàn Nguyên Liệu](san-nguyen-lieu)", school: "[Trường học](truong-hoc)", garden: "[Vườn](vuon)", bank: "[Ngân hàng](ngan-hang)",
+  townhall: "[Tòa thị chính](thue-toa-thi-chinh)", guild: "lập [Hội](hoi)", kitchen: "[Bếp](bep)", business: "[Quầy trà sữa](quay-tra-sua)",
+  bazaar: "[Chợ Phiên](cho-phien)", factory: "xây xưởng ở [Khu công nghiệp](khu-cong-nghiep)", contracts: "hợp đồng cung ứng",
+  advanced: "Tài chính nâng cao: [vay trả góp](tin-dung)",
+};
+/** The unlock table, from the game's levels (lib/wiki/rules.ts, checked against the game by a test). */
+export const unlockRows = (extra: Record<number, string[]>): Row[] => {
+  const by = new Map<number, string[]>([[1, ["Nhà, Siêu thị, Việc làm, Khu vui chơi, Phòng khám, Công viên, Bạn bè, vào Hội có sẵn"]]]);
+  for (const [k, lv] of Object.entries(UNLOCKS)) by.set(lv, [...(by.get(lv) ?? []), PLACE[k] ?? k]);
+  for (const [lv, list] of Object.entries(extra)) by.set(Number(lv), [...(by.get(Number(lv)) ?? []), ...list]);
+  return [...by.entries()].sort((a, b) => a[0] - b[0]).map(([lv, list]) => [lv, list.join(", ")]);
+};
+
+// ---------------------------------------------------------------- hình các bé (vẽ trong trình duyệt)
+
+type PetItem = { id: string; stage?: string; level?: number; label: string; sub?: string };
+const allSpecies = [...(MASCOTS as Species[]), ...(SPECIES as Species[])];
+const byId = (id: string) => allSpecies.find((s) => s.id === id)!;
+/** Every legendary species, in the element order of the game. */
+export const legendaryPets = (level = 1): PetItem[] =>
+  (SPECIES as Species[]).filter((s) => s.rarity === "huyenthoai").map((s) => ({ id: s.id, level, label: s.name, sub: el(s.element) }));
+/** One species at every age stage. */
+export const stagePets = (id: string): PetItem[] =>
+  (LIFE_STAGES as { key: string; name: string; fromWeek: number }[]).map((s) => ({ id, stage: s.key, label: s.name, sub: `từ tuần ${s.fromWeek}` }));
+/** One species at every level form. */
+export const formPets = (id: string): PetItem[] =>
+  (LEVEL_FORMS as { from: number; name: string }[]).map((f) => ({ id, level: f.from, label: f.name, sub: `từ cấp ${f.from}` }));
+/** The first common species of each element (what a new player can adopt). */
+export const elementPets = (): PetItem[] =>
+  Object.keys(ELEMENTS).map((e) => (SPECIES as Species[]).find((s) => s.element === e && s.rarity === "thuong")!).map((s) => ({ id: s.id, label: s.name, sub: el(s.element) }));
+/** The species of one rarity, one per element. */
+export const rarityPets = (rarity: string): PetItem[] =>
+  Object.keys(ELEMENTS).flatMap((e) => (SPECIES as Species[]).filter((s) => s.element === e && s.rarity === rarity).slice(0, 1)).map((s) => ({ id: s.id, label: s.name, sub: el(s.element) }));
+export const MASCOT_ID = (MASCOTS as Species[])[0].id;
+export const LEGEND_ID = legendaryPets()[0].id;
+export const speciesName = (id: string) => byId(id).name;

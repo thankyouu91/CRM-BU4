@@ -5,6 +5,13 @@ import {
   locationRows, promotionRows, proposalRows, questRows, rarityRows, recipeRows, relationRows, setRows, slotName, speciesRows, stageRows, tierRows, toyRows, wearRows,
 } from "./game-data";
 import type { WikiArticle } from "./types";
+import { CLAN } from "./rules";
+import { MARKET } from "@/petdex/server/rules/market.js";
+import { EGG } from "@/public/ta-tua/game/js/shared/pets.js";
+import {
+  COMMODITY_COUNT, DESIGN_RULES, GOODS_COUNT, INDUSTRIAL_MARKET, INDUSTRY_COUNT, LAND_RULES, LEGEND_ID, MASCOT_ID, SERVICE_COUNT,
+  clanLevelRows, climateNames, elementPets, formPets, freshnessRows, industryRows, legendaryPets, phaseRows, sectorRows, stagePets, unlockRows, weatherRows, zoneRows,
+} from "./game-data";
 
 // The wiki's articles, in reading order (the order of the side menu and of "previous / next").
 // Numbers in prose were checked against petdex/server and the game's shared modules; tables come
@@ -44,6 +51,7 @@ export const ARTICLES: WikiArticle[] = [
         id: "nhan-nuoi",
         title: "Nhận nuôi bé đầu tiên",
         blocks: [
+          { pets: [{ id: MASCOT_ID, label: "Boba", sub: "linh vật" }, ...elementPets()] },
           { p: "Bé đầu tiên **miễn phí**. Ở màn nhận nuôi bạn chọn một loài độ hiếm Thường hoặc linh vật **Boba** (bé rái cá ôm cốc trà sữa), rồi đặt tên cho bé (1–16 ký tự)." },
           { list: [
             "Mỗi loài thuộc một hành trong **ngũ hành** (Kim, Mộc, Thủy, Hỏa, Thổ). Hành quyết định bé giỏi gì, hợp đồ ăn và trang phục nào. Xem [Ngũ hành](ngu-hanh).",
@@ -230,14 +238,7 @@ export const ARTICLES: WikiArticle[] = [
         title: "Bảng mở khóa",
         blocks: [
           { p: "Các khu mở theo **cấp của bé cao nhất** trong nhà:" },
-          { table: { head: ["Cấp", "Mở thêm"], rows: [
-            [1, "Nhà, Siêu thị, Việc làm, Khu vui chơi, Phòng khám, Công viên, Bạn bè, vào Hội có sẵn"],
-            [2, "[Sàn Nguyên Liệu](san-nguyen-lieu), [Trường học](truong-hoc), [Vườn](vuon), gửi đơn gia công thuê ở Khu công nghiệp"],
-            [3, "[Ngân hàng](ngan-hang), [Tòa thị chính](thue-toa-thi-chinh), lập [Hội](hoi), [Bếp](bep), mua trứng ngũ hành"],
-            [4, "[Quầy trà sữa](quay-tra-sua), [Chợ Phiên](cho-phien)"],
-            [6, "Xây xưởng ở [Khu công nghiệp](khu-cong-nghiep), hợp đồng cung ứng"],
-            [8, "Tài chính nâng cao: [vay trả góp](tin-dung)"],
-          ] } },
+          { table: { head: ["Cấp", "Mở thêm"], rows: unlockRows({ [EGG.minLevel]: ["mua trứng ngũ hành"], [CLAN.unlockLevel]: ["[Gia tộc và Sở Nhà Đất](gia-toc)"] }) } },
           { p: "Một số món trong Siêu thị cũng cần cấp tối thiểu, xem [Siêu thị](sieu-thi)." },
         ],
       },
@@ -247,6 +248,7 @@ export const ARTICLES: WikiArticle[] = [
         blocks: [
           { p: "Cứ 10 cấp bé đổi dáng một lần, cộng thêm với dáng theo tuổi. Dáng chỉ để ngắm, không đổi chỉ số." },
           { table: { head: ["Từ cấp", "Dáng", "Trông thế nào"], rows: formRows() } },
+          { pets: formPets(LEGEND_ID) },
           { p: "Từ **cấp 30** bé đeo được thêm một món trang phục, xem [Trang phục](trang-phuc)." },
         ],
       },
@@ -418,6 +420,8 @@ export const ARTICLES: WikiArticle[] = [
         blocks: [
           { table: { head: ["Độ hiếm", "Tổng kỹ năng khởi đầu", "Tuổi thọ thêm"], rows: rarityRows() } },
           { p: "Bé Huyền thoại còn **đeo thêm 1 món** trang phục (tối đa 5, đủ cả khe Bùa)." },
+          { pets: legendaryPets() },
+          { p: "Xem từng loài, mọi giai đoạn và mọi dáng ở [Thư viện các bé](thu-vien-be)." },
         ],
       },
       {
@@ -440,6 +444,49 @@ export const ARTICLES: WikiArticle[] = [
             "Loài được bốc ngay lúc bắt đầu ấp, không đổi được.",
           ] },
           { tip: "Muốn bé Huyền thoại thì phải kiên nhẫn: mỗi quả chỉ 1%. Cứ nuôi tốt các bé Thường trong lúc chờ." },
+        ],
+      },
+    ],
+  },
+  {
+    slug: "thu-vien-be",
+    title: "Thư viện các bé",
+    category: "nuoi-be",
+    emoji: "🖼️",
+    summary: "Hình mọi loài vẽ bằng chính bộ vẽ của game: lọc theo hành và độ hiếm, xem từng bé qua sáu giai đoạn tuổi và sáu dáng theo cấp.",
+    keywords: ["hình", "ảnh", "pet", "loài", "huyền thoại", "giai đoạn", "dáng", "tiến hóa", "bộ sưu tập"],
+    related: ["cac-loai", "tinh-cach-tuoi", "cap-do", "ngu-hanh"],
+    sections: [
+      {
+        id: "huyen-thoai",
+        title: "Năm bé huyền thoại",
+        blocks: [
+          { p: "Mỗi hành có một bé Huyền thoại, chỉ nở từ trứng ngũ hành với tỉ lệ 1%. Bé Huyền thoại có hào quang vàng, kỹ năng khởi đầu cao nhất, sống lâu hơn và đeo thêm một món trang phục. Dưới đây là các bé ở dáng **Thần thái** (cấp 50):" },
+          { pets: legendaryPets(50) },
+        ],
+      },
+      {
+        id: "lon-len",
+        title: "Lớn lên theo tuổi",
+        blocks: [
+          { p: "Mỗi ngày thật bé lớn thêm một tuần tuổi. Qua mỗi giai đoạn, dáng người đổi theo: sơ sinh đầu to mắt to, lão làng chống gậy. Xem luật của từng giai đoạn ở [Tính cách, tuổi và vòng đời](tinh-cach-tuoi)." },
+          { pets: stagePets(LEGEND_ID) },
+        ],
+      },
+      {
+        id: "dang",
+        title: "Dáng theo cấp",
+        blocks: [
+          { p: "Cứ 10 cấp bé đổi dáng một lần: lớn người hơn, có vạch màu hành ở thái dương, vằn hông, vòng linh khí dưới chân, đốm sáng bay quanh, và tới cấp 50 thì ánh vàng. Xem [Cấp độ và mở khóa](cap-do)." },
+          { pets: formPets(MASCOT_ID) },
+        ],
+      },
+      {
+        id: "tat-ca",
+        title: "Tất cả các loài",
+        blocks: [
+          { tip: "Hình được vẽ ngay trong trình duyệt bằng đúng bộ vẽ của game, nên luôn giống hệt trong game và tự cập nhật khi game thêm loài hay đổi hình." },
+          { petGallery: true },
         ],
       },
     ],
@@ -473,6 +520,7 @@ export const ARTICLES: WikiArticle[] = [
         title: "Sáu giai đoạn tuổi",
         blocks: [
           { p: "**1 ngày thật = 1 tuần tuổi.** Mỗi giai đoạn có dáng vẽ riêng và luật riêng." },
+          { pets: stagePets(MASCOT_ID) },
           { table: { head: ["Giai đoạn", "Từ tuần", "Giờ làm tối đa/ngày", "Lương", "XP", "Đặc điểm"], rows: stageRows() } },
           { p: "Từ **Trưởng thành**, bé có **lương thâm niên**: +1% cho mỗi 10 giờ đã làm ở nghề đó, tối đa +30%." },
         ],
@@ -829,7 +877,7 @@ export const ARTICLES: WikiArticle[] = [
     title: "Sàn Nguyên Liệu",
     category: "kinh-te",
     emoji: "📈",
-    summary: "Mười mặt hàng, giá chạy mỗi 10 phút, tin tức, phí 1%, lệnh giới hạn, kho và hàng hư.",
+    summary: `${COMMODITY_COUNT} mặt hàng, giá chạy mỗi ${MARKET.tickMs / 60_000} phút, tin tức, phí ${MARKET.fee * 100}%, lệnh giới hạn, kho, độ tươi và sổ lãi lỗ.`,
     keywords: ["sàn", "chợ", "giá", "mua bán", "lô", "lệnh", "kho", "đầu cơ", "nguyên liệu"],
     related: ["vuon", "khu-cong-nghiep", "quay-tra-sua"],
     sections: [
@@ -838,7 +886,7 @@ export const ARTICLES: WikiArticle[] = [
         title: "Mặt hàng",
         blocks: [
           { p: "Mở ở **cấp 2**. Giá niêm yết theo **lô** (1 lô = 10 phần)." },
-          { img: { src: "/petfarm/market.webp", alt: "Sàn Nguyên Liệu: bảng giá 10 mặt hàng và biểu đồ giá sữa tươi trong 24 giờ", width: 1600, height: 1075 } },
+          { img: { src: "/petfarm/market.webp", alt: "Sàn Nguyên Liệu: bảng giá các mặt hàng và biểu đồ giá sữa tươi trong 24 giờ", width: 1600, height: 1075 } },
           { table: { head: ["Mặt hàng", "Loại", "Giá gốc/lô", "Hạn dùng", "Làm từ"], rows: commodityRows() } },
           { warn: "Lô quá hạn dùng tự mất. Đừng ôm nhiều lá trà, cá hay sữa tươi nếu chưa định dùng." },
         ],
@@ -848,9 +896,31 @@ export const ARTICLES: WikiArticle[] = [
         title: "Giá và tin tức",
         blocks: [
           { list: [
-            "Giá chạy mỗi **10 phút**.",
-            "Thỉnh thoảng có **tin tức** làm giá một mặt hàng lên hoặc xuống 20–40% trong 6–24 giờ. Tin được báo trước khoảng 30 phút.",
-            "Mua bán khối lượng lớn với hệ thống tự đẩy giá: mua làm giá lên, bán làm giá xuống.",
+            `Giá chạy mỗi **${MARKET.tickMs / 60_000} phút** và luôn bị kéo dần về mức trung bình của mặt hàng.`,
+            `Giá niêm yết gồm **${100 - MARKET.playerWeight * 100}% luật thị trường** và **${MARKET.playerWeight * 100}% lực mua bán của người chơi**: mỗi lệnh mua bán với hệ thống dồn thêm "áp lực" lên giá, áp lực tự phai dần (giảm một nửa sau ${MARKET.pressureHalfLifeMs / 3_600_000} giờ).`,
+            "Mỗi mặt hàng thô có một **pha thị trường ẩn** (ổn định, tăng nóng, lao dốc, hỗn loạn), đổi bất chợt. Bạn chỉ đoán được qua biểu đồ.",
+            `Thỉnh thoảng có **sốt giá hoặc sập giá** đột ngột ${MARKET.jumpMin * 100}–${MARKET.jumpMax * 100}%, kèm tin ⚡ trên Báo.`,
+            `**Tin tức** (khoảng ${String(MARKET.newsPerDay).replace(".", ",")} tin mỗi ngày cho một mặt hàng) được báo trước ${MARKET.newsLeadMs / 60_000} phút rồi làm giá dịch chuyển trong vài giờ.`,
+            `Giá không vượt quá ${MARKET.ceiling} lần giá gốc.`,
+          ] },
+        ],
+      },
+      {
+        id: "do-tuoi",
+        title: "Độ tươi của hàng",
+        blocks: [
+          { p: "Hàng có hạn dùng (lá trà, sữa, dâu, cá, thịt, xoài, trân châu, sữa đặc) mất dần độ tươi. Hệ thống mua hàng kém tươi rẻ hơn:" },
+          { table: { head: ["Độ tươi", "Khi đã dùng", "Hệ thống trả"], rows: freshnessRows() } },
+          { warn: "Hết hạn dùng thì lô hàng hư và tự mất." },
+        ],
+      },
+      {
+        id: "lai-lo",
+        title: "Sổ lãi lỗ",
+        blocks: [
+          { list: [
+            "Mỗi mặt hàng trong kho ghi **giá vốn trung bình** mỗi lô (đã tính phí), số tiền nếu bán ngay và **lãi lỗ chưa chốt**.",
+            "Mỗi lần bán báo lãi hoặc lỗ so với giá vốn. **Sổ lãi lỗ** tổng hợp vốn đang nằm trong kho, lãi lỗ đã chốt hôm nay và 7 ngày, tỉ lệ lần bán có lãi và các lệnh khớp gần nhất.",
           ] },
         ],
       },
@@ -859,9 +929,9 @@ export const ARTICLES: WikiArticle[] = [
         title: "Mua bán",
         blocks: [
           { table: { head: ["Luật", "Con số"], rows: [
-            ["Chênh mua, bán với hệ thống", "±1%"],
+            ["Chênh mua, bán với hệ thống", `±${MARKET.spread * 100}%`],
             ["Phí giao dịch", "1% (tối thiểu 1 xu)"],
-            ["Hạn mức với hệ thống", "40 lô mỗi mặt hàng, mỗi chiều, mỗi ngày"],
+            ["Hạn mức với hệ thống", `${MARKET.npcDailyLots} lô mỗi mặt hàng, mỗi chiều, mỗi ngày`],
             ["Một lệnh", "0,1 đến 100 lô"],
             ["Lệnh giới hạn", "Giá trong khoảng ±15% giá hiện tại; khớp với lệnh của người chơi khác trước; chưa khớp thì chờ tới hết ngày"],
             ["Kho", "200 lô miễn phí → 500 lô (1.500 xu) → 2.000 lô (6.000 xu)"],
@@ -1113,6 +1183,176 @@ export const ARTICLES: WikiArticle[] = [
   },
 
   // ------------------------------------------------------------------ Cộng đồng
+  {
+    slug: "gia-toc",
+    title: "Gia tộc",
+    category: "kinh-te",
+    emoji: "🏯",
+    summary: `Lập hoặc vào gia tộc từ cấp ${CLAN.unlockLevel}: góp quỹ, lên cấp gia tộc, thâu tóm tới 3 ngành, chia cổ tức và nộp thuế doanh nghiệp.`,
+    keywords: ["clan", "gia tộc", "tộc trưởng", "trưởng lão", "quỹ", "cổ tức", "ngành", "thâu tóm", "thuế doanh nghiệp"],
+    related: ["so-nha-dat", "kinh-te-vi-mo", "hoi", "thue-toa-thi-chinh"],
+    sections: [
+      {
+        id: "lap",
+        title: "Lập và gia nhập",
+        blocks: [
+          { list: [
+            `Mở khi có một bé đạt **cấp ${CLAN.unlockLevel}**. Vào màn **🏯 Gia tộc & Sở Nhà Đất** trên bản đồ phố.`,
+            `**Lập gia tộc** tốn **${CLAN.createCost.toLocaleString("vi-VN")} xu**: đặt tên, chọn huy hiệu và màu. Một nửa số tiền vào ngân sách thị trấn.`,
+            "Mỗi người chỉ ở **một gia tộc**. Gia nhập tự do tới khi gia tộc đủ người.",
+            "Vai trò: 👑 **Tộc trưởng** làm mọi việc; 🎖️ **Trưởng lão** mua đất, chọn ngành cho lô, lắp công trình; thành viên góp quỹ.",
+            "Tộc trưởng rời thì trưởng lão (rồi người góp nhiều nhất) lên thay. Người cuối cùng rời thì gia tộc giải tán và đất trả về Sở Nhà Đất.",
+          ] },
+        ],
+      },
+      {
+        id: "quy",
+        title: "Quỹ và cấp gia tộc",
+        blocks: [
+          { list: [
+            "Thành viên **góp quỹ** từ 10 xu; cứ 10 xu góp được 1 XP cho gia tộc.",
+            `Mỗi tuần mỗi thành viên nên góp **${CLAN.donationQuotaPerLevel} × cấp gia tộc** xu. Phần góp thiếu làm gia tộc mất XP vào đêm Chủ nhật.`,
+            `Mỗi đêm gia tộc trả **phí duy trì** ${CLAN.upkeepPerLevel} × cấp + ${CLAN.upkeepPerPlot} × số lô đất. Quỹ không đủ thì không trừ tiền mà mất XP.`,
+            "Doanh thu sau thuế mỗi đêm cũng cộng XP (1 XP cho mỗi 100 xu).",
+            "Tộc trưởng **chia cổ tức** từ quỹ, chia đều cho mọi thành viên.",
+          ] },
+          { table: { head: ["Cấp", "XP cần", "Thành viên tối đa", "Lô đất tối đa", "Số ngành", "Sản lượng thêm"], rows: clanLevelRows() } },
+        ],
+      },
+      {
+        id: "nganh",
+        title: "Thâu tóm ngành",
+        blocks: [
+          { p: `Gia tộc chỉ làm ăn trên đất bằng những **ngành** đã thâu tóm. Có ${INDUSTRY_COUNT} ngành chia năm khối:` },
+          { table: { head: ["Khối", "Các ngành"], rows: sectorRows() } },
+          { list: [
+            `Ngành thứ 1, 2, 3 cần gia tộc đạt cấp ${CLAN.industryLevels.join(", ")}.`,
+            `Thâu tóm phải trả **bồi thường thị trường** của ngành (xem bảng ở [Sở Nhà Đất và sản xuất](so-nha-dat)); từ ngành thứ hai trả gấp **${CLAN.expandMultiplier} lần**.`,
+            "Nhiều gia tộc cùng một ngành thì ai cũng thu ít hơn vì phải chia khách.",
+          ] },
+        ],
+      },
+      {
+        id: "thue",
+        title: "Thuế doanh nghiệp",
+        blocks: [
+          { table: { head: ["Số ngành", "Thuế suất trên doanh thu"], rows: [1, 2, 3].map((n) => [n, `${Math.round((CLAN.baseTax + CLAN.extraTaxPerIndustry * (n - 1)) * 100)}%`]) } },
+          { list: [
+            "Thuế tính trên doanh thu mỗi đêm, trừ thẳng vào quỹ; một nửa vào ngân sách thị trấn.",
+            `Cuối mỗi tháng gia tộc được **hoàn ${CLAN.refundRate * 100}%** số thuế đã nộp trong tháng (nếu ngân sách còn tiền).`,
+            "Gia tộc tự khai phần doanh thu chịu thuế, mặc định 100%.",
+          ] },
+          { warn: "Khai thiếu doanh thu là trốn thuế. Sở thuế ghi lại phần khai thiếu và có thể truy thu kèm phạt. Phần hoàn thuế cuối tháng cũng tính trên số thuế thật sự đã nộp." },
+        ],
+      },
+    ],
+  },
+  {
+    slug: "so-nha-dat",
+    title: "Sở Nhà Đất và sản xuất",
+    category: "kinh-te",
+    emoji: "🗺️",
+    summary: `${LAND_RULES.count} lô đất có địa hình và khí hậu riêng, công trình lắp ghép, chuỗi sản xuất từ mỏ tới nhà máy, kho gia tộc và sàn công nghiệp.`,
+    keywords: ["đất", "lô đất", "bản đồ", "sở nhà đất", "công trình", "khai thác", "nhà máy", "điện", "kho", "sàn công nghiệp", "nhập khẩu"],
+    related: ["gia-toc", "kinh-te-vi-mo"],
+    sections: [
+      {
+        id: "dat",
+        title: "Mua đất",
+        blocks: [
+          { list: [
+            `Bản đồ có **${LAND_RULES.count} lô**. Giá một lô từ khoảng ${LAND_RULES.minPrice.toLocaleString("vi-VN")} tới ${LAND_RULES.maxPrice.toLocaleString("vi-VN")} xu tùy vị trí, trung tâm đắt nhất.`,
+            "Tộc trưởng hoặc trưởng lão mua bằng **quỹ gia tộc**, tối đa theo cấp gia tộc. Đất càng ít lô trống càng đắt; giá đất còn chạy theo kinh tế vĩ mô.",
+            `${CLAN.land.treasuryShare * 100}% tiền mua đất vào ngân sách thị trấn, phần còn lại biến mất khỏi nền kinh tế.`,
+            "Giá trị lô tăng dần theo thời gian (mỗi lô có % tăng giá riêng) và theo chỉ số giá đất.",
+            `Bán lại cho Sở Nhà Đất được **${CLAN.land.resaleRate * 100}%** giá trị hiện tại; công trình trên lô bị dỡ.`,
+          ] },
+          { table: { head: ["Địa hình", "Đặc điểm"], rows: zoneRows() } },
+          { p: `Mỗi lô còn có một kiểu khí hậu: ${climateNames()}. Ngành nào hợp địa hình và khí hậu của lô thì thu nhiều hơn.` },
+        ],
+      },
+      {
+        id: "cong-trinh",
+        title: "Công trình",
+        blocks: [
+          { p: `Mỗi lô lắp được một công trình từ các mảnh ghép (tối đa ${DESIGN_RULES.maxPieces} mảnh). Công trình hoàn chỉnh cần ít nhất ${DESIGN_RULES.minPieces} mảnh và có móng nền; công trình hoàn chỉnh cho thêm tới 10% doanh thu của lô. Đổi ngành của lô không mất công trình.` },
+        ],
+      },
+      {
+        id: "dich-vu",
+        title: `Ngành dịch vụ (${SERVICE_COUNT} ngành)`,
+        blocks: [
+          { p: "Ngành dịch vụ thu **xu** mỗi đêm theo giá trị lô, độ hợp địa hình và khí hậu, thời tiết, pha kinh tế, nhu cầu của ngành và số gia tộc cùng ngành." },
+          { table: { head: ["Ngành", "Bồi thường thị trường", "Làm gì"], rows: industryRows("service") } },
+        ],
+      },
+      {
+        id: "san-xuat",
+        title: "Chuỗi sản xuất",
+        blocks: [
+          { p: `Các ngành sản xuất làm ra **hàng hóa** (${GOODS_COUNT} loại) thay vì xu. Mỗi đêm các lô của gia tộc chạy lần lượt từ đầu chuỗi tới cuối chuỗi: khai thác, phát điện, rồi nhà máy, giới hạn bởi hàng trong kho và điện.` },
+          { steps: [
+            "**Khai thác**: mỗi lô có mỏ cố định theo địa hình và khí hậu (khoáng sản ở đồi núi, gỗ và cao su ở rừng, nông sản và gia súc ở đồng bằng, ven sông; muối, silic, dầu ven biển; dầu khí trên biển).",
+            "**Năng lượng**: chọn loại nhà máy điện cho từng lô (than, khí, thủy điện, mặt trời, gió, hạt nhân); điện chạy nhà máy của gia tộc.",
+            "**Công nghiệp nhẹ, nặng**: mỗi ngành một công thức biến nguyên liệu thành hàng giá trị cao hơn.",
+            "Nguyên liệu gia tộc cần dùng được giữ trong **kho gia tộc**; điện thừa và hàng khác bán cho hệ thống theo giá vĩ mô của ngày.",
+          ] },
+          { table: { head: ["Khai thác", "Bồi thường", "Làm gì"], rows: industryRows("raw") } },
+          { table: { head: ["Năng lượng", "Bồi thường", "Nhà máy chọn được"], rows: industryRows("energy") } },
+          { table: { head: ["Công nghiệp nhẹ", "Bồi thường", "Công thức mỗi mẻ"], rows: industryRows("light") } },
+          { table: { head: ["Công nghiệp nặng", "Bồi thường", "Công thức mỗi mẻ"], rows: industryRows("heavy") } },
+        ],
+      },
+      {
+        id: "kho-san",
+        title: "Kho gia tộc và sàn công nghiệp",
+        blocks: [
+          { table: { head: ["Luật", "Con số"], rows: [
+            ["Sức chứa kho", `${INDUSTRIAL_MARKET.warehouseBase.toLocaleString("vi-VN")} + ${INDUSTRIAL_MARKET.warehousePerLevel} × cấp gia tộc (đơn vị hàng, không tính điện)`],
+            ["Bán ngay cho hệ thống", `${INDUSTRIAL_MARKET.npcBuy * 100}% giá tham chiếu của ngày`],
+            ["Nhập khẩu từ hệ thống", `${INDUSTRIAL_MARKET.importMarkup * 100}% giá tham chiếu`],
+            ["Đăng bán trên sàn chung", `${INDUSTRIAL_MARKET.band[0] * 100}–${INDUSTRIAL_MARKET.band[1] * 100}% giá tham chiếu, phí ${INDUSTRIAL_MARKET.fee * 100}%, tin còn ${INDUSTRIAL_MARKET.listingDays} ngày, tối đa ${INDUSTRIAL_MARKET.maxListings} tin`],
+          ] } },
+          { p: "Tiền bán hàng tính vào doanh thu chịu [thuế doanh nghiệp](gia-toc) cùng đêm." },
+        ],
+      },
+    ],
+  },
+  {
+    slug: "kinh-te-vi-mo",
+    title: "Kinh tế vĩ mô",
+    category: "kinh-te",
+    emoji: "🌦️",
+    summary: "Pha kinh tế và thời tiết đổi mỗi ngày, làm doanh thu gia tộc, giá đất và giá một số hàng trên Sàn lên xuống.",
+    keywords: ["vĩ mô", "pha", "suy thoái", "tăng trưởng", "thời tiết", "bão", "giá đất", "chu kỳ"],
+    related: ["gia-toc", "so-nha-dat", "san-nguyen-lieu", "ngan-hang"],
+    sections: [
+      {
+        id: "pha",
+        title: "Pha kinh tế",
+        blocks: [
+          { p: "Nền kinh tế của phố đi theo chu kỳ: Phục hồi → Tăng trưởng nóng → Đỉnh chu kỳ → Suy thoái → Phục hồi. Mỗi đêm có một xác suất nhỏ chuyển sang pha kế tiếp." },
+          { table: { head: ["Pha", "Doanh thu gia tộc", "Giá đất mỗi ngày", "Khách"], rows: phaseRows() } },
+        ],
+      },
+      {
+        id: "thoi-tiet",
+        title: "Thời tiết",
+        blocks: [
+          { p: "Mỗi ngày có một kiểu thời tiết. Thời tiết làm sản lượng các lô tăng hoặc giảm theo địa hình và khí hậu, và đẩy giá một số nguyên liệu trên [Sàn](san-nguyen-lieu)." },
+          { table: { head: ["Thời tiết", "Sản lượng lô", "Giá trên Sàn"], rows: weatherRows() } },
+          { tip: "Ngày Bão biển, các lô trên biển và ven biển thu ít hẳn đi, còn giá cá tươi trên Sàn tăng: đó là lúc người có cá trong kho nên bán." },
+        ],
+      },
+      {
+        id: "nhu-cau",
+        title: "Nhu cầu từng ngành",
+        blocks: [
+          { p: "Mỗi ngành có một mức **nhu cầu** trôi dần theo ngày. Nhu cầu cao thì doanh thu của ngành dịch vụ và giá thu mua hàng của ngành sản xuất đều cao hơn. Màn Gia tộc hiện pha, thời tiết và nhu cầu hôm nay." },
+        ],
+      },
+    ],
+  },
   {
     slug: "ban-be",
     title: "Bạn bè",

@@ -2,6 +2,7 @@ import Image from "next/image";
 import { Lightbulb, TriangleAlert } from "lucide-react";
 import type { WikiBlock, WikiSection } from "@/lib/wiki/types";
 import { Inline } from "./inline";
+import { PetGallery, PetRow } from "./pet-gallery";
 
 function Block({ block, base }: { block: WikiBlock; base: string }) {
   if ("p" in block) return <p className="leading-relaxed"><Inline text={block.p} base={base} /></p>;
@@ -49,6 +50,8 @@ function Block({ block, base }: { block: WikiBlock; base: string }) {
       </div>
     );
   }
+  if ("pets" in block) return <PetRow items={block.pets} />;
+  if ("petGallery" in block) return <PetGallery />;
   return (
     <Image src={block.img.src} alt={block.img.alt} width={block.img.width} height={block.img.height} unoptimized className="h-auto w-full rounded-[18px] border-2 border-[var(--pf-line)]" />
   );
