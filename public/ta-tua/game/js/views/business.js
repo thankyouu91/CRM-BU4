@@ -9,14 +9,16 @@ let setupLocation = 'alley';
 export function renderBusiness(root, ctx) {
   root.innerHTML = `<div class="biz-page">
     ${viewHead('🧋 Quầy trà sữa', 'Nhập nguyên liệu vào kho, đặt giá, cho bé trực quầy. Doanh thu được tính cả khi bạn offline.')}
-    <div class="biz-view"><div class="empty muted">Đang tải…</div></div></div>`;
+    <div class="biz-view"><div class="empty muted">Đang tải…</div></div>
+    <section class="card biz-stalls"><div class="empty muted">Đang tìm quầy đang mở…</div></section></div>`;
   const page = root.querySelector('.biz-page');
   const view = page.querySelector('.biz-view');
   const { business: rules, commodities } = ctx.catalog;
   const need = ctx.catalog.unlocks.business;
+  loadStalls(page.querySelector('.biz-stalls'), ctx);
   if (ctx.bestLevel() < need) {
     view.innerHTML = `<section class="card empty"><b>🔒</b><h2>Chưa đủ cấp mở quầy</h2>
-      <p class="muted">Có một bé đạt cấp ${need} là xin được giấy phép kinh doanh.</p></section>`;
+      <p class="muted">Có một bé đạt cấp ${need} là xin được giấy phép kinh doanh. Trong lúc chờ, ghé các quầy bên dưới mua đồ uống cho bé nhé.</p></section>`;
     return;
   }
   let data = null;
@@ -158,7 +160,7 @@ export function renderBusiness(root, ctx) {
 
   page.addEventListener('click', (e) => {
     const btn = e.target.closest('button');
-    if (!btn || btn.disabled) return;
+    if (!btn || btn.disabled || btn.closest('.biz-stalls')) return;
     const d = btn.dataset;
     const menu = () => (draftMenu ??= data.business.menu.map((m) => ({ recipe: m.recipe, price: m.price })));
     if (d.loc) {
@@ -228,4 +230,48 @@ export function renderBusiness(root, ctx) {
     }, 1000);
   }).catch(ctx.fail);
   return () => clearInterval(timer);
+}
+
+/** Ghé quầy: các quầy đang có bé trực, mua đồ uống cho bé (no, vui, XP gấp đôi trà sữa Siêu thị). */
+function loadStalls(box, ctx) {
+  const items = ctx.catalog.items;
+  const { locations } = ctx.catalog.business;
+  const stats = (it) => [
+    it.effect.fullness && `+${it.effect.fullness} no`, it.effect.happiness && `+${it.effect.happiness} vui`, `+${it.xp} XP`,
+  ].filter(Boolean).join(' · ');
+  const draw = ({ stalls, left, rules }) => {
+    const coins = ctx.me.user.coins;
+    const base = items.boba;
+    box.innerHTML = `
+      <div class="stalls-head">
+        <h3>🛍️ Ghé quầy mua đồ uống cho bé</h3>
+        <span class="badge ${left ? '' : 'down'}">Hôm nay còn mua được ${left}/${rules.dailyCups} ly</span>
+      </div>
+      <p class="muted small">Đồ uống pha tại quầy cho bé no, vui và XP gấp ${rules.statMult} lần ${base.icon} ${base.name} ở Siêu thị (${stats(base)}).
+        Tiền trả thẳng cho chủ quầy; mua ở quầy nhà mình thì chỉ tốn nguyên liệu.</p>
+      ${stalls.length ? `<div class="stall-grid">${stalls.map((st) => `
+        <article class="stall">
+          <header><b>${esc(st.name)}</b><small class="muted">${locations[st.location]?.icon ?? ''} ${locations[st.location]?.name ?? ''} · ${st.own ? 'quầy nhà mình' : `của ${esc(st.owner)}`} · ${'★'.repeat(Math.round(st.reputation * 2 + 0.01))}</small></header>
+          <ul class="stall-menu">${st.menu.map((m) => {
+            const it = items[m.itemId];
+            const can = (n) => m.stock >= n && left >= n && coins >= m.price * n;
+            return `<li>
+              <span class="stall-drink"><span class="stall-icon">${it.icon}</span><span><b>${esc(it.name)}</b><small class="muted">${stats(it)}</small></span></span>
+              <span class="stall-price">${m.price ? `${fmt(m.price)} 🪙` : 'nguyên liệu nhà'}<small class="${m.stock < 5 ? 'down' : 'muted'}">còn ${m.stock} ly</small></span>
+              <span class="stall-buy">${[1, rules.maxPerOrder].map((n) => `
+                <button class="btn small ${n === 1 ? 'primary' : ''}" data-tea="${st.id}:${m.recipe}:${n}" ${can(n) ? '' : 'disabled'}>Mua ${n}</button>`).join('')}</span>
+            </li>`;
+          }).join('')}</ul>
+        </article>`).join('')}</div>`
+        : '<p class="empty muted">Lúc này chưa quầy nào có bé trực. Quầy chỉ bán khi có bé đứng quầy, ghé lại sau nhé.</p>'}`;
+  };
+  box.addEventListener('click', (e) => {
+    const btn = e.target.closest('button[data-tea]');
+    if (!btn || btn.disabled) return;
+    const [id, recipe, qty] = btn.dataset.tea.split(':');
+    ctx.act(`/business/${id}/buy`, { recipe, qty: Number(qty) });
+  });
+  api('/business/stalls').then((d) => {
+    if (box.isConnected) draw(d);
+  }).catch(ctx.fail);
 }

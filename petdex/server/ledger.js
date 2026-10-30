@@ -29,6 +29,7 @@ export const KINDS = {
   escrow_lock: { group: 'transfer', label: 'Ký quỹ lệnh' },
   escrow_release: { group: 'transfer', label: 'Hoàn ký quỹ' },
   business_income: { group: 'income', label: 'Doanh thu quầy' },
+  tea_buy: { group: 'expense', label: 'Mua ở quầy trà sữa' },
   license: { group: 'expense', label: 'Giấy phép quầy' },
   rent: { group: 'expense', label: 'Thuê mặt bằng' },
   wage: { group: 'expense', label: 'Trả lương nhân viên' },

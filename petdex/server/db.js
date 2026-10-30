@@ -261,6 +261,13 @@ export function ensureSchema() {
     slots       INTEGER NOT NULL,
     open        INTEGER NOT NULL DEFAULT 1
   );
+  -- Số ly đồ uống mỗi người đã mua ở các quầy trà sữa trong ngày (hạn mức TEA_SHOP.dailyCups).
+  CREATE TABLE IF NOT EXISTS tea_buys (
+    user_id INTEGER NOT NULL,
+    day     TEXT NOT NULL,
+    cups    INTEGER NOT NULL DEFAULT 0,
+    PRIMARY KEY (user_id, day)
+  );
 
   -- Thị trấn: hiệu ứng đang chạy, đề xuất và phiếu bầu theo tuần.
   CREATE TABLE IF NOT EXISTS town_effects (

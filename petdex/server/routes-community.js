@@ -1,7 +1,7 @@
 // API quầy trà sữa, Tòa thị chính, bạn bè, Hội và nhiệm vụ ngày.
 import { Router } from './router.js';
 import {
-  buyUpgrade, businessView, closeBusiness, openBusiness, promote, setJobPost, setMenu,
+  buyDrink, buyUpgrade, businessView, closeBusiness, openBusiness, promote, setJobPost, setMenu, teaStalls,
 } from './business.js';
 import { GameError } from './game.js';
 import { auth, intField, reply } from './http.js';
@@ -37,6 +37,11 @@ communityApi.post('/business/jobs', (req, res) => {
   }));
 });
 communityApi.post('/business/close', (req, res) => reply(res, uid(req), closeBusiness(uid(req))));
+// Khách ghé quầy: xem các quầy đang có bé trực và mua đồ uống cho bé (chỉ số gấp đôi trà sữa Siêu thị).
+communityApi.get('/business/stalls', (req, res) => res.json(teaStalls(uid(req))));
+communityApi.post('/business/:id/buy', (req, res) => {
+  reply(res, uid(req), buyDrink(uid(req), intField(req.params.id, 'Quầy'), String(req.body?.recipe ?? ''), Number(req.body?.qty ?? 1)));
+});
 
 // ---- Tòa thị chính ----
 

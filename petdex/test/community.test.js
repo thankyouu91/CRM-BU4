@@ -4,7 +4,8 @@ import test from 'node:test';
 
 process.env.PETDEX_DB = ':memory:';
 const store = await import('../server/db.js');
-const { DAY, GameError, HOUR } = await import('../server/game.js');
+const game = await import('../server/game.js');
+const { DAY, GameError, HOUR } = game;
 const { post, treasuryBalance } = await import('../server/ledger.js');
 const { migrate } = await import('../server/migrate.js');
 const { runDue } = await import('../server/scheduler.js');
@@ -76,6 +77,58 @@ test('quầy: thực đơn kiểm tra số món và giá', () => {
   assert.throws(() => business.setMenu(owner.id, [{ recipe: 'boba_milk_tea', price: 999 }], T0 + 7 * HOUR), GameError);
   business.setMenu(owner.id, [{ recipe: 'boba_milk_tea', price: 24 }, { recipe: 'brown_sugar_milk', price: 14 }], T0 + 7 * HOUR);
   assert.equal(business.businessOf(owner.id).menu.length, 2);
+});
+
+test('quầy: khách ghé mua đồ uống cho bé, chỉ số gấp đôi trà sữa Siêu thị, hạn mức 10 ly/ngày', () => {
+  const { ITEMS, useItem } = game;
+  const drink = ITEMS.tea_boba_milk_tea;
+  assert.equal(drink.type, 'food');
+  assert.ok(drink.teaShop);
+  assert.deepEqual(drink.effect, { fullness: ITEMS.boba.effect.fullness * 2, happiness: ITEMS.boba.effect.happiness * 2 });
+  assert.equal(drink.xp, ITEMS.boba.xp * 2);
+  const pet = { ...store.getPet(friend.petId), fullness: 20, happiness: 20 };
+  const fromShop = useItem({ ...pet }, ITEMS.boba);
+  const fromStall = useItem({ ...pet }, drink);
+  assert.equal(fromStall.xp, fromShop.xp * 2);
+
+  const guest = newPlayer('khachghe', 1_000);
+  const t = T0 + 8 * HOUR;
+  const biz = business.businessOf(owner.id);
+  assert.equal(business.teaStalls(guest.id, t).stalls.length, 0, 'chưa có bé trực thì không hiện quầy');
+  assert.throws(() => business.buyDrink(guest.id, biz.id, 'boba_milk_tea', 1, t), GameError);
+  for (const c of ['dried_tea', 'milk', 'pearl', 'sugar']) market.placeOrder(owner.id, { commodity: c, side: 'buy', qty: 30, type: 'market' }, t);
+  jobs.startShift(owner.id, { petId: owner.petId, hours: 2, businessId: biz.id }, t);
+
+  const now = t + HOUR / 2;
+  business.businessView(owner.id, now); // tính bù tới `now` để đo đúng phần nguyên liệu khách mua
+  const milkBefore = market.stock(owner.id, now).milk;
+  const view = business.teaStalls(guest.id, now);
+  assert.equal(view.left, 10);
+  const [stall] = view.stalls;
+  assert.equal(stall.id, biz.id);
+  assert.equal(stall.menu.find((m) => m.recipe === 'boba_milk_tea').price, 24);
+
+  const guestBefore = coins(guest.id);
+  const ownerBefore = coins(owner.id);
+  business.buyDrink(guest.id, biz.id, 'boba_milk_tea', 2, now);
+  assert.equal(coins(guest.id), guestBefore - 48);
+  assert.equal(coins(owner.id), ownerBefore + 48 - Math.round(48 * 0.03));
+  assert.equal(store.inventory(guest.id).tea_boba_milk_tea, 2);
+  assert.equal(market.stock(owner.id, now).milk, milkBefore - 2);
+  assert.throws(() => business.buyDrink(guest.id, biz.id, 'strawberry_tea', 1, now), GameError, 'món ngoài thực đơn');
+  assert.throws(() => business.buyDrink(guest.id, biz.id, 'boba_milk_tea', 6, now), GameError, 'quá 5 ly một lần');
+
+  business.buyDrink(guest.id, biz.id, 'boba_milk_tea', 5, now);
+  business.buyDrink(guest.id, biz.id, 'brown_sugar_milk', 3, now);
+  assert.equal(business.teaCupsLeft(guest.id, now), 0);
+  assert.throws(() => business.buyDrink(guest.id, biz.id, 'boba_milk_tea', 1, now), GameError);
+  assert.equal(business.teaCupsLeft(guest.id, now + 24 * HOUR), 10, 'sang ngày mới thì có lại hạn mức');
+
+  const ownerCoins = coins(owner.id);
+  business.buyDrink(owner.id, biz.id, 'boba_milk_tea', 1, now);
+  assert.equal(coins(owner.id), ownerCoins, 'mua ở quầy nhà mình chỉ tốn nguyên liệu');
+  assert.equal(store.inventory(owner.id).tea_boba_milk_tea, 1);
+  assert.throws(() => business.buyDrink(guest.id, biz.id, 'boba_milk_tea', 1, t + 3 * HOUR), GameError, 'hết ca thì quầy không bán');
 });
 
 test('bạn bè: kết bạn, thả tim một lần mỗi ngày, tặng quà có giới hạn', () => {

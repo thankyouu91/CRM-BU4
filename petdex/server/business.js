@@ -1,13 +1,13 @@
 // Quầy trà sữa: mở quầy, thực đơn, bán hàng tính bù theo giờ, tiền thuê, tuyển nhân viên, báo cáo.
-import { db, getUser, skillsOf, transaction } from './db.js';
+import { addItem, db, getUser, skillsOf, transaction } from './db.js';
 import { economy, indexedPrice } from './bank.js';
 import { dayKey, startOfDay } from './clock.js';
-import { DAY, GameError, HOUR } from './game.js';
+import { DAY, GameError, HOUR, ITEMS } from './game.js';
 import { chargeTax, post } from './ledger.js';
 import { removeGoods, stock } from './market.js';
 import {
-  BUSINESS, LOCATIONS, RECIPES, UPGRADES, appeal, customersPerHour, menuSlots, nextReputation, refPrice,
-  staffCapacity, unitCost, upgradeCost,
+  BUSINESS, LOCATIONS, RECIPES, TEA_SHOP, UPGRADES, appeal, customersPerHour, menuSlots, nextReputation, refPrice,
+  staffCapacity, teaItemId, unitCost, upgradeCost,
 } from './rules/business.js';
 import { GUILD_UPGRADES } from './rules/town.js';
 import { CREDIT } from './rules/production.js';
@@ -48,6 +48,15 @@ const q = {
     WHERE j.open = 1 AND b.closed_at IS NULL AND b.owner_id != ? ORDER BY j.wage DESC`),
   guildUpgrades: db.prepare('SELECT g.upgrades FROM guild_members m JOIN guilds g ON g.id = m.guild_id WHERE m.user_id = ?'),
   insertNews: db.prepare('INSERT INTO news (commodity, headline, effect, created_at, starts_at, ends_at) VALUES (NULL, ?, 0, ?, ?, ?)'),
+  // Quầy đang có bé trực lúc này (chủ quầy là ai cũng được), để khách ghé mua đồ uống cho bé.
+  staffedNow: db.prepare(`
+    SELECT b.*, u.username FROM businesses b JOIN users u ON u.id = b.owner_id
+    WHERE b.closed_at IS NULL AND EXISTS (SELECT 1 FROM shifts s WHERE s.business_id = b.id AND s.starts_at <= ? AND s.ends_at > ?)
+    ORDER BY b.reputation DESC, b.id`),
+  teaBought: db.prepare('SELECT cups FROM tea_buys WHERE user_id = ? AND day = ?'),
+  addTeaBought: db.prepare(`
+    INSERT INTO tea_buys (user_id, day, cups) VALUES (?, ?, ?)
+    ON CONFLICT (user_id, day) DO UPDATE SET cups = cups + excluded.cups`),
 };
 
 const parse = (row) => row && { ...row, menu: JSON.parse(row.menu), upgrades: JSON.parse(row.upgrades) };
@@ -316,6 +325,73 @@ export function businessView(userId, now = Date.now()) {
     goods,
     locations: LOCATIONS,
   };
+}
+
+/** Số ly đồ uống quầy người chơi còn được mua hôm nay. */
+export const teaCupsLeft = (userId, now = Date.now()) => Math.max(0, TEA_SHOP.dailyCups - (q.teaBought.get(userId, dayKey(now))?.cups ?? 0));
+
+const cupsInStock = (inputs, goods) => Math.min(...Object.entries(inputs).map(([c, n]) => Math.floor((goods[c] ?? 0) / n)));
+
+/** Các quầy đang có bé trực: thực đơn, giá, số ly còn pha được. Khách mua đồ uống cho bé ở đây. */
+export function teaStalls(userId, now = Date.now()) {
+  const stalls = q.staffedNow.all(now, now).map((row) => {
+    const biz = parse(row);
+    const goods = stock(biz.owner_id, now);
+    return {
+      id: biz.id,
+      name: biz.name,
+      owner: row.username,
+      own: biz.owner_id === userId,
+      location: biz.location,
+      reputation: biz.reputation,
+      menu: biz.menu.map((m) => ({
+        recipe: m.recipe, itemId: teaItemId(m.recipe), price: biz.owner_id === userId ? 0 : m.price,
+        stock: cupsInStock(RECIPES[m.recipe].inputs, goods),
+      })),
+    };
+  });
+  return { stalls, left: teaCupsLeft(userId, now), rules: TEA_SHOP };
+}
+
+/**
+ * Mua đồ uống ở một quầy đang có bé trực: tính bù quầy tới hiện tại, trừ nguyên liệu trong kho chủ quầy,
+ * người mua trả giá thực đơn cho chủ quầy (doanh thu và thuế như bán cho khách); mua ở quầy nhà mình thì chỉ tốn nguyên liệu.
+ * Ly đồ uống vào túi đồ, bé uống được no, vui và XP gấp đôi trà sữa Siêu thị. Tối đa TEA_SHOP.dailyCups ly mỗi ngày.
+ */
+export function buyDrink(userId, businessId, recipe, qty, now = Date.now()) {
+  if (!Number.isInteger(qty) || qty < 1 || qty > TEA_SHOP.maxPerOrder) throw new GameError(`Mỗi lần mua 1–${TEA_SHOP.maxPerOrder} ly.`);
+  if (!RECIPES[recipe]) throw new GameError('Không có món này.');
+  return transaction(() => {
+    const biz = parse(q.byId.get(businessId));
+    if (!biz || biz.closed_at) throw new GameError('Quầy này đã đóng cửa.');
+    if (!q.duty.all(biz.id, now + 1, now).length) throw new GameError(`"${biz.name}" chưa có bé trực quầy, ghé lại sau nhé.`);
+    const item = biz.menu.find((m) => m.recipe === recipe);
+    if (!item) throw new GameError(`"${biz.name}" không bán món này.`);
+    const left = teaCupsLeft(userId, now);
+    if (left < qty) throw new GameError(left ? `Hôm nay bạn chỉ mua thêm được ${left} ly ở quầy trà sữa.` : `Hôm nay bạn đã mua đủ ${TEA_SHOP.dailyCups} ly ở quầy trà sữa.`);
+    simulate(biz, now);
+    const inputs = RECIPES[recipe].inputs;
+    const canMake = cupsInStock(inputs, stock(biz.owner_id, now));
+    if (canMake < qty) throw new GameError(canMake ? `"${biz.name}" chỉ còn đủ nguyên liệu cho ${canMake} ly.` : `"${biz.name}" đã hết nguyên liệu món này.`);
+    const own = biz.owner_id === userId;
+    const revenue = own ? 0 : item.price * qty;
+    const drink = ITEMS[teaItemId(recipe)];
+    if (revenue) {
+      const owner = getUser(biz.owner_id);
+      post({ userId, delta: -revenue, kind: 'tea_buy', memo: `${qty} × ${drink.name} ở ${biz.name} (${owner.username})`, now });
+      post({ userId: biz.owner_id, delta: revenue, kind: 'business_income', memo: `${biz.name}: ${qty} ly khách ghé mua`, now });
+    }
+    for (const [c, n] of Object.entries(inputs)) removeGoods(biz.owner_id, c, n * qty, now);
+    const tax = Math.min(revenue, Math.round(revenue * BUSINESS.revenueTax));
+    q.addDay.run(biz.id, dayKey(now), qty, 0, 0, revenue, Math.round(unitCost(recipe, economy().priceIndex) * qty), 0, 0, tax);
+    chargeTax(biz.owner_id, tax, `Thuế doanh thu ${biz.name}`, now);
+    q.addTeaBought.run(userId, dayKey(now), qty);
+    addItem(userId, drink.id, qty);
+    if (!own) track(biz.owner_id, 'serve', qty, now);
+    return {
+      message: `Đã mua ${qty} × ${drink.icon} ${drink.name}${revenue ? ` giá ${revenue} 🪙` : ' ở quầy nhà mình'}. Cho bé uống trong Túi đồ.`,
+    };
+  });
 }
 
 /** Quyết toán cuối ngày: tính bù tới nửa đêm, thu tiền thuê; nợ 3 đêm liền thì đóng cửa. */

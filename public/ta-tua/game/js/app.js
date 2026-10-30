@@ -877,6 +877,8 @@ function renderShop(root) {
   const level = bestLevel();
   const list = Object.values(items())
     .filter((i) => filter === 'all' || i.type === filter)
+    // Đồ uống quầy trà sữa chỉ bán ở quầy của người chơi.
+    .filter((i) => !i.teaShop)
     // Hàng gia tộc hạng Ngon / Tuyệt hảo chỉ hiện khi Siêu thị còn hàng.
     .filter((i) => !i.clanMade || !i.quality || (state.me.essentials?.[i.type]?.stock[i.quality] ?? 0) > 0)
     .sort((a, b) => TYPE_ORDER.indexOf(a.type) - TYPE_ORDER.indexOf(b.type) || a.price - b.price);

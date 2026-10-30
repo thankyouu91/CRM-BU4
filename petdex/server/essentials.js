@@ -192,10 +192,10 @@ export function chargeEssential(userId, item, qty, basePrice, refs, now = Date.n
   return Math.max(1, Math.round(basePrice * (isNewbie(getUser(userId), now) ? 1 : npcPriceFactor(currentD(cat, now)))));
 }
 
-/** Hệ số XP khi bé dùng một món: đồ NPC theo giai đoạn của nhóm; hàng gia tộc và tài khoản mới giữ nguyên. */
+/** Hệ số XP khi bé dùng một món: đồ NPC theo giai đoạn của nhóm; hàng gia tộc, đồ uống quầy và tài khoản mới giữ nguyên. */
 export function essentialXpFactor(userId, item, now = Date.now()) {
   const cat = essentialCat(item);
-  if (!cat || item.clanMade) return 1;
+  if (!cat || item.clanMade || item.teaShop) return 1;
   if (isNewbie(getUser(userId), now)) return 1;
   return npcXpFactor(currentD(cat, now));
 }

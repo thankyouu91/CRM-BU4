@@ -321,6 +321,7 @@ api.post('/shop/buy', auth, (req, res) => {
   const item = findItem(req.body?.itemId);
   const qty = Number(req.body?.qty ?? 1);
   if (!Number.isInteger(qty) || qty < 1 || qty > 20) throw new GameError('Số lượng không hợp lệ.');
+  if (item.teaShop) throw new GameError(`${item.icon} ${item.name} chỉ bán ở quầy trà sữa của người chơi.`);
   // Trang phục: mỗi lần mua là một hộp kín, trong có 1–2 dòng chỉ số ngẫu nhiên (May mắn của bé chính, và món yêu cầu cấp cao, giúp ra 2 dòng).
   if (item.type === 'accessory') {
     if (qty !== 1) throw new GameError('Trang phục mua từng món một.');

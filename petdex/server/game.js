@@ -4,6 +4,7 @@ import {
   EGG, ELEMENTS, LIFE, WEARABLES, elementOfSpecies, foodBonus, lifespanWeeks, speciesOrGuest, stageAt, statsOfSpecies,
 } from '../../public/ta-tua/game/js/shared/pets.js';
 import { ESSENTIALS, clanItemId } from '../../public/ta-tua/game/js/shared/industry.js';
+import { RECIPES, TEA_SHOP, teaItemId } from './rules/recipes.js';
 
 export const HOUR = 3_600_000;
 export const DAY = 24 * HOUR;
@@ -157,7 +158,22 @@ function clanGoods() {
   return out;
 }
 
-export const ITEMS = Object.fromEntries(Object.entries({ ...CATALOG, ...clanGoods() }).map(([id, item]) => [id, { id, ...item }]));
+/**
+ * Đồ uống quầy trà sữa: chỉ mua được ở quầy của người chơi (business.js buyDrink), không bán ở Siêu thị.
+ * Mỗi ly no, vui và XP gấp TEA_SHOP.statMult lần Trà sữa trân châu của Siêu thị; giá ở đây chỉ làm giá tham chiếu (Chợ phiên).
+ */
+function teaDrinks() {
+  const base = CATALOG.boba;
+  const m = TEA_SHOP.statMult;
+  return Object.fromEntries(Object.entries(RECIPES).map(([recipe, r]) => [teaItemId(recipe), {
+    name: r.name, icon: r.icon, type: 'food', element: base.element, price: base.price * m,
+    effect: Object.fromEntries(Object.entries(base.effect).map(([k, v]) => [k, v * m])),
+    xp: base.xp * m, teaShop: true, recipe,
+    desc: `Pha tại quầy trà sữa, no và vui gấp ${m} lần trà sữa Siêu thị.`,
+  }]));
+}
+
+export const ITEMS = Object.fromEntries(Object.entries({ ...CATALOG, ...clanGoods(), ...teaDrinks() }).map(([id, item]) => [id, { id, ...item }]));
 
 /** Đồ ăn và đồ chăm sóc dùng là hết; đồ chơi và phụ kiện mua một lần dùng mãi. */
 export const isConsumable = (item) => item.type === 'food' || item.type === 'care';

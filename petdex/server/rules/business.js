@@ -1,6 +1,7 @@
 // Luật quầy trà sữa (hàm thuần): vị trí, công thức, giá tham chiếu, lượng khách, công suất, uy tín.
 import { clamp } from '../game.js';
 import { COMMODITIES, LOT } from './market.js';
+import { RECIPES, TEA_SHOP, teaItemId } from './recipes.js';
 
 export const LOCATIONS = {
   alley: { name: 'Hẻm nhỏ', icon: '🏮', license: 1500, rent: 40, traffic: 8, promo: 100 },
@@ -8,15 +9,7 @@ export const LOCATIONS = {
   center: { name: 'Trung tâm', icon: '🌆', license: 15000, rent: 300, traffic: 45, promo: 600 },
 };
 
-/** Mỗi ly dùng bao nhiêu phần nguyên liệu (1 lô = 10 phần). */
-export const RECIPES = {
-  boba_milk_tea: { name: 'Trà sữa trân châu', icon: '🧋', inputs: { dried_tea: 1, milk: 1, pearl: 1, sugar: 1 } },
-  milk_tea: { name: 'Trà sữa truyền thống', icon: '🥤', inputs: { dried_tea: 1, milk: 1, sugar: 1 } },
-  brown_sugar_milk: { name: 'Sữa tươi trân châu đường đen', icon: '🥛', inputs: { milk: 1, pearl: 1, sugar: 1 } },
-  strawberry_tea: { name: 'Trà dâu', icon: '🍓', inputs: { dried_tea: 1, strawberry: 1, sugar: 1 } },
-  strawberry_smoothie: { name: 'Sinh tố dâu sữa', icon: '🍹', inputs: { strawberry: 2, milk: 1 } },
-  condensed_tea: { name: 'Trà sữa sữa đặc', icon: '🍼', inputs: { dried_tea: 1, condensed: 1, pearl: 1, sugar: 1 } },
-};
+export { RECIPES, TEA_SHOP, teaItemId };
 
 export const UPGRADES = {
   counter: { name: 'Quầy pha rộng hơn', desc: '+4 ly mỗi giờ', costs: [800, 2000] },
