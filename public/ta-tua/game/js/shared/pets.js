@@ -125,6 +125,15 @@ export const DAILY_XP = { share: 0.12, min: 20, weakBelow: 40, weakFactor: 0.5 }
 export const dailyXp = (xpNext, health = 100) =>
   Math.round(Math.max(DAILY_XP.min, xpNext * DAILY_XP.share) * (health < DAILY_XP.weakBelow ? DAILY_XP.weakFactor : 1));
 
+/**
+ * Phí chăm nuôi mỗi ngày của một bé (quyết toán nửa đêm, chỉ tính với người chơi có vào game trong `activeDays` ngày qua):
+ * (base + perLevel × cấp) × chỉ số giá của Ngân hàng Trung ương, nhưng cả ngày không quá `incomeShare` thu nhập hôm đó
+ * của người chơi (tối thiểu `base` mỗi bé), để người chơi ít vẫn tiến lên được. Ví không đủ thì trừ phần đang có, không ghi nợ.
+ * Đây là nguồn hút xu chính, để lượng xu không phình nhanh hơn hàng hóa (lương và mini-game vẫn in xu mỗi ngày).
+ */
+export const UPKEEP = { base: 6, perLevel: 4, activeDays: 3, incomeShare: 0.25 };
+export const upkeepOf = (level, priceIndex = 1) => Math.round((UPKEEP.base + UPKEEP.perLevel * level) * priceIndex);
+
 /** Hằng số vòng đời: báo trước khi bé già yếu, phí mở lại ô tưởng niệm, trứng tưởng niệm, kỷ vật, thâm niên. */
 export const LIFE = {
   warnWeeks: 7, // còn chừng này tuần thì báo trước

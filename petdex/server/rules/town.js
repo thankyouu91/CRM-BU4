@@ -1,7 +1,8 @@
 // Luật thị trấn (hàm thuần): thuế thu nhập lũy tiến, các đề xuất chi ngân sách, trợ cấp, nhiệm vụ, Hội.
 
 /** [trần của bậc, thuế suất] theo thu nhập chịu thuế mỗi ngày. */
-export const BRACKETS = [[300, 0], [1000, 0.05], [3000, 0.1], [Infinity, 0.15]];
+// Mức miễn thuế 150 xu/ngày; mini-game cũng là thu nhập chịu thuế (xem settleTaxes).
+export const BRACKETS = [[150, 0], [1000, 0.08], [3000, 0.12], [Infinity, 0.18]];
 
 /** Thuế lũy tiến; `cut` là số điểm % được giảm (từ đề xuất "Giảm thuế"). */
 export function incomeTax(taxable, cut = 0) {

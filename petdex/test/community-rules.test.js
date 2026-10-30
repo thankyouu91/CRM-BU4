@@ -4,11 +4,12 @@ import { appeal, customersPerHour, nextReputation, peakFactor, refPrice, unitCos
 import { PROPOSALS, dailyReward, incomeTax, pickQuests, winner } from '../server/rules/town.js';
 
 test('thuế thu nhập lũy tiến theo bậc, có giảm thuế', () => {
-  assert.equal(incomeTax(250), 0);
-  assert.equal(incomeTax(670), 18);
-  assert.equal(incomeTax(1870), 35 + 87);
-  assert.equal(incomeTax(5000), 35 + 200 + 300);
-  assert.equal(incomeTax(670, 0.02), Math.floor(370 * 0.03));
+  assert.equal(incomeTax(140), 0);
+  assert.equal(incomeTax(250), 8);
+  assert.equal(incomeTax(670), 41);
+  assert.equal(incomeTax(1870), 68 + 104);
+  assert.equal(incomeTax(5000), 68 + 240 + 360);
+  assert.equal(incomeTax(670, 0.02), Math.floor(520 * 0.06));
 });
 
 test('quà ngày tăng theo chuỗi, tối đa ngày thứ 7', () => {

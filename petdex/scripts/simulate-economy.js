@@ -88,7 +88,7 @@ function run({ bots = 60, days = 30, seed = 1, elements = true } = {}) {
   }
   runDue(START, rand);
 
-  const totals = { salary: 0, minigame: 0, food: 0, fees: 0 };
+  const totals = { salary: 0, minigame: 0, food: 0, fees: 0, upkeep: 0 };
   const sumKind = store.db.prepare('SELECT COALESCE(SUM(delta), 0) AS s FROM ledger WHERE kind = ? AND created_at >= ? AND created_at < ?');
 
   function feed(p, now) {
@@ -223,6 +223,7 @@ function run({ bots = 60, days = 30, seed = 1, elements = true } = {}) {
       runDue(now, rand);
       for (const p of players) {
         if (p.kind === 'casual' && idx !== 0) continue;
+        store.touchSeen(p.id, now); // bot vào game: tính là người chơi đang hoạt động (phí chăm nuôi)
         session(p, now, { daily: idx === 0, idx });
       }
     });
@@ -233,6 +234,7 @@ function run({ bots = 60, days = 30, seed = 1, elements = true } = {}) {
     totals.minigame += sumKind.get('minigame', ...dayRange).s;
     totals.food -= sumKind.get('shop', ...dayRange).s;
     totals.fees -= sumKind.get('fee', ...dayRange).s;
+    totals.upkeep -= sumKind.get('upkeep', ...dayRange).s;
     const worth = players.map((p) => ({ kind: p.kind, total: wallet.netWorth(p.id, end).total }));
     const avg = (kind) => {
       const list = worth.filter((w) => !kind || w.kind === kind);
@@ -282,7 +284,7 @@ function run({ bots = 60, days = 30, seed = 1, elements = true } = {}) {
   return {
     daily,
     weeks: store.db.prepare('SELECT * FROM central_bank ORDER BY week').all(),
-    perBotDay: { salary: perBotDay(totals.salary), minigame: perBotDay(totals.minigame), food: perBotDay(totals.food), fees: perBotDay(totals.fees), tax: perBotDay(taxPaid) },
+    perBotDay: { salary: perBotDay(totals.salary), minigame: perBotDay(totals.minigame), food: perBotDay(totals.food), fees: perBotDay(totals.fees), upkeep: perBotDay(totals.upkeep), tax: perBotDay(taxPaid) },
     shops: shopStats,
     factories: factoryStats,
     clinicVisits,

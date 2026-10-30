@@ -12,6 +12,8 @@ const RAW = ['tea_leaf', 'milk', 'cassava', 'cane', 'strawberry', 'fish', 'pork'
 const PROCESSED = ['dried_tea', 'pearl', 'sugar', 'condensed'];
 
 export const INDUSTRY_MARKET = {
+  // Cân bằng: với mọi ngành chạy hết công suất, mỗi mặt hàng có lực tăng (cầu) và lực giảm (cung, chi phí) gần bằng nhau,
+  // lệch ròng không quá ±10% (kiểm thử trong clan-gov.test.js). Thị trấn càng phát triển thì giá càng sôi động, không rẻ dần một chiều.
   // ---- khối dịch vụ & tiêu dùng ----
   tea: { supply: ['tea_leaf', 'dried_tea'] },
   dairy: { supply: ['milk', 'condensed'] },
@@ -19,25 +21,25 @@ export const INDUSTRY_MARKET = {
   pearl: { supply: ['cassava', 'pearl'] },
   fruit: { supply: ['strawberry', 'mango'] },
   fishery: { supply: ['fish'] },
-  beverage: { demand: ['pearl', 'milk', 'tea_leaf', 'sugar'] },
-  food: { demand: ['fish', 'pork', 'strawberry', 'mango'] },
+  beverage: { demand: ['pearl', 'milk', 'tea_leaf', 'sugar', 'dried_tea', 'condensed', 'cane'] }, // nước mía cũng là đồ uống
+  food: { demand: ['fish', 'pork', 'strawberry', 'mango', 'condensed', 'sugar'] },
   logistics: { stabilize: [...RAW, ...PROCESSED] },
   education: { stabilize: [...RAW, ...PROCESSED], weight: 0.5 },
-  entertainment: { demand: ['strawberry', 'mango', 'pearl'], weight: 0.6 },
+  entertainment: { demand: ['strawberry', 'mango', 'pearl', 'dried_tea'], weight: 0.6 },
   // ---- khối sản xuất (đã gộp các ngành na ná nhau) ----
   mining: { demand: ['pork', 'fish', 'cassava'], cost: PROCESSED, weight: 0.4 }, // thợ mỏ ăn nhiều; khí đốt hạ chi phí chế biến
-  forestry: { demand: ['pork', 'cassava'], weight: 0.3 },
-  agriculture: { supply: ['cane', 'cassava', 'tea_leaf', 'mango', 'milk', 'pork'] },
+  forestry: { demand: ['cassava', 'cane'], weight: 0.3 },
+  agriculture: { supply: ['cane', 'cassava', 'tea_leaf', 'mango', 'milk', 'pork'], weight: 0.8 },
   power: { cost: PROCESSED },
-  consumer_goods: { demand: ['cane', 'cassava', 'milk', 'tea_leaf'], supply: PROCESSED, weight: 0.8 },
-  pharma: { demand: ['strawberry', 'tea_leaf'], weight: 0.4 },
+  consumer_goods: { demand: ['cane', 'cassava', 'milk', 'tea_leaf', 'mango'], supply: ['sugar'], weight: 0.8 }, // đồ hộp, xoài sấy
+  pharma: { demand: ['strawberry', 'tea_leaf', 'dried_tea', 'sugar'], weight: 0.4 },
   electronics: { demand: ['milk', 'pearl', 'sugar'], weight: 0.3 },
   metallurgy: { demand: ['pork', 'fish', 'cassava'], weight: 0.3 },
-  petrochem: { cost: PROCESSED, supply: ['tea_leaf', 'cane', 'cassava', 'strawberry'], weight: 0.6 }, // nhiên liệu và phân bón
-  machinery: { supply: ['cane', 'cassava', 'tea_leaf'], weight: 0.4, stabilize: RAW },
+  petrochem: { cost: PROCESSED, demand: ['cane', 'cassava'], weight: 0.6 }, // nhiên liệu sinh học ăn mía, sắn
+  machinery: { weight: 0.4, stabilize: RAW }, // máy móc làm mùa vụ đều tay hơn
   vehicles: { stabilize: [...RAW, ...PROCESSED], supply: ['fish'], weight: 0.5 }, // đội xe chở hàng, tàu đánh cá
   // ---- ngành chiến lược ----
-  irrigation: { supply: ['tea_leaf', 'cane', 'cassava', 'strawberry', 'mango'], weight: 0.5, stabilize: ['tea_leaf', 'cane', 'cassava', 'strawberry', 'mango'] },
+  irrigation: { supply: ['tea_leaf', 'cane', 'cassava', 'strawberry', 'mango'], weight: 0.4, stabilize: ['tea_leaf', 'cane', 'cassava', 'strawberry', 'mango'] },
   wind_farm: { cost: PROCESSED, weight: 0.6 },
   state_bank: { stabilize: [...RAW, ...PROCESSED], weight: 0.4 },
   tax_office: {}, // thu thuế, không đụng tới hàng trên Sàn
@@ -47,12 +49,12 @@ export const INDUSTRY_MARKET = {
 export const IMPACT = {
   supply: 0.15, // cung tăng: giá trung bình −15%
   demand: 0.12, // cầu tăng: +12%
-  cost: 0.1, // chi phí chế biến giảm: −10%
+  cost: 0.04, // chi phí chế biến giảm: −4% (nhiều ngành cùng hạ chi phí nên mỗi ngành nhẹ tay)
   stabilize: 0.3, // biến động −30%
   perClan: 0.15, // mỗi gia tộc nắm ngành góp 0,15 độ mạnh
   perPlot: 1 / 8, // mỗi lô đất đang chạy góp 1/8
-  meanRange: [0.7, 1.35],
-  minVol: 0.5,
+  meanRange: [0.85, 1.2],
+  minVol: 0.7, // các ngành cùng lắm làm giá bớt biến động 30%, Sàn vẫn sôi động
 };
 
 /** Độ mạnh 0–1 của một ngành từ số gia tộc đang nắm và số lô đất đang chạy. */

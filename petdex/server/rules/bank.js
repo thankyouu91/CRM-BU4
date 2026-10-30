@@ -31,7 +31,8 @@ export function depositPayout({ amount, rate, term_days, matures_at }, now) {
 export function policy({ growth, priceIndex }) {
   const gap = growth - BANK.targetGrowth;
   return {
-    priceIndex: priceIndex * (1 + 0.3 * clamp(gap, -0.05, 0.15)),
+    // Phản ứng 0,6 × độ lệch, tối đa +15%/tuần khi xu tăng quá nóng (trước đây 0,3 và +4,5%: không đuổi kịp lượng xu).
+    priceIndex: priceIndex * (1 + 0.6 * clamp(gap, -0.05, 0.25)),
     baseRate: clamp(0.003 - gap / 20, 0.0005, 0.005),
   };
 }
