@@ -101,6 +101,8 @@ export const AUDIT_ACTIONS = {
   "tatua.heavy_close": { label: "Tạm đóng công nghiệp nặng", group: "tatua" },
   "tatua.arena_cancel": { label: "Hủy trận Đấu trường", group: "tatua" },
   "tatua.bots_config": { label: "Bật/tắt và đặt số cư dân tự động", group: "tatua" },
+  "tatua.bots_join_clan": { label: "Đưa cư dân tự động vào gia tộc", group: "tatua" },
+  "tatua.bots_leave_clan": { label: "Rút cư dân tự động khỏi gia tộc", group: "tatua" },
   "tatua.cbank_freeze": { label: "Phong tỏa / gỡ phong tỏa ngân hàng gia tộc", group: "tatua" },
   "tatua.bond_issue": { label: "Phát hành trái phiếu kho bạc", group: "tatua" },
   "tatua.mail": { label: "Gửi thư trong game", group: "tatua" },

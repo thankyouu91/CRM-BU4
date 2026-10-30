@@ -22,7 +22,8 @@ import { dayKey } from './clock.js';
 import { macroToday, overrideMacro } from './macro.js';
 import { commerceView } from './commerce.js';
 import { adminArenaView, adminCancelWar } from './arena.js';
-import { adminBotsView, setBotConfig } from './bots.js';
+import { adminBotsView, recallBotsFromClan, sendBotsToClan, setBotConfig } from './bots.js';
+import { api as gameApi } from './routes.js';
 import { adminClanBankView, setClanBankFrozen } from './clan-bank.js';
 import { adminSharesView } from './clan-shares.js';
 import { adminBondsView, issueTreasuryBonds } from './clan-bonds.js';
@@ -626,6 +627,17 @@ internalApi.post('/admin/bots/config', (req, res) => {
   const b = req.body ?? {};
   setBotConfig({ enabled: b.enabled, target: b.target, onlineMin: b.onlineMin, onlineMax: b.onlineMax }, actorOf(req));
   res.json(adminBotsView());
+});
+// Đưa bot chưa có gia tộc vào một gia tộc, hoặc rút bot thường ra: mỗi bot đi qua đúng route của người chơi.
+internalApi.post('/admin/bots/join-clan', async (req, res) => {
+  const b = req.body ?? {};
+  const result = await sendBotsToClan(gameApi, Number(b.clanId), b.count, actorOf(req));
+  res.json({ ...adminBotsView(), result });
+});
+internalApi.post('/admin/bots/leave-clan', async (req, res) => {
+  const b = req.body ?? {};
+  const result = await recallBotsFromClan(gameApi, Number(b.clanId), b.count, actorOf(req));
+  res.json({ ...adminBotsView(), result });
 });
 
 // ---- Ngân hàng gia tộc: vốn, tiền gửi, khoản vay, vỡ nợ; phong tỏa khẩn cấp một ngân hàng hoặc toàn bộ ----
