@@ -68,6 +68,23 @@ export function siteHostRoute(pathname: string): { rewrite: string } | { redirec
   return { redirect: "/" };
 }
 
+/** The Petfarm wiki (wiki.petfarm.online): the players' guide, served by this app under WIKI_PATH. */
+export const WIKI_ORIGIN = (process.env.NEXT_PUBLIC_PETFARM_WIKI_ORIGIN || "https://wiki.petfarm.online").replace(/\/+$/, "");
+export const WIKI_HOST = new URL(WIKI_ORIGIN).host;
+export const WIKI_PATH = "/wiki";
+
+/**
+ * On the wiki's domain: "/" is the wiki home and "/<article>" an article (both rewritten under
+ * WIKI_PATH); "/wiki/..." moves to the short address; the game's own pages move to the game
+ * domain; WorkHub's API answers 404.
+ */
+export function wikiHostRoute(pathname: string): { rewrite: string } | { redirect: string } | { notFound: true } {
+  if (pathname.startsWith("/api/")) return { notFound: true };
+  if ([PLAY_PATH, INVITE_PATH, PASSWORD_PATH].some((p) => pathname === p || pathname.startsWith(`${p}/`))) return { redirect: `${PLAY_ORIGIN}${pathname}` };
+  if (pathname === WIKI_PATH || pathname.startsWith(`${WIKI_PATH}/`)) return { redirect: pathname.slice(WIKI_PATH.length) || "/" };
+  return { rewrite: pathname === "/" ? WIKI_PATH : `${WIKI_PATH}${pathname}` };
+}
+
 /** Game pages and what they need; on the game domain everything else of WorkHub is out of reach. */
 const PLAY_HOST_PATHS = [PLAY_PATH, INVITE_PATH, PASSWORD_PATH, "/ta-tua/game", "/ta-tua/api", "/ta-tua/ws", "/ta-tua/khach", "/api/ta-tua/guest", "/api/ta-tua/account", "/login", "/api/auth", "/change-password"];
 
