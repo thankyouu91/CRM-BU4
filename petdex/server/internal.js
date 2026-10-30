@@ -294,7 +294,7 @@ internalApi.post('/admin/gear/:gearId', (req, res) => {
   const gear = store.transaction(() => {
     const after = updateGear(before.id, { tier: String(req.body?.tier ?? ''), affixes: req.body?.affixes });
     store.adminLog(actor, 'gear_edit', before.owner_id, { gearId: before.id, item: before.item_id, from: { tier: before.tier, affixes: before.affixes }, to: { tier: after.tier, affixes: after.affixes } });
-    return describeGear(after);
+    return describeGear(after, { reveal: true });
   });
   bus.emit('pet:changed', before.owner_id);
   res.json({ ok: true, gear });
@@ -394,7 +394,7 @@ internalApi.get('/admin/players/:id', (req, res) => {
     spendable: { wallet: user.coins, savings: savingsOf(user.id) },
     // Mọi loài, kể cả loài hiếm chỉ nở từ trứng: quản trị viên tặng được bất kỳ loài nào.
     species: listSpecies().map((s) => ({ id: s.id, name: s.name, element: s.element, rarity: s.rarity })),
-    gear: listGear(user.id, { includeListed: true }),
+    gear: listGear(user.id, { includeListed: true, reveal: true }),
     wearables: Object.values(ITEMS).filter((i) => i.type === 'accessory').map((i) => ({ id: i.id, name: i.name, slot: i.slot, element: i.element })),
   });
 });

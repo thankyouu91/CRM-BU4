@@ -115,6 +115,19 @@ export function rollGear(config, rand, { luck = 0, tier = null } = {}) {
   return { tier: t, affixes: rollAffixes(t, config.ranges, rand) };
 }
 
+/**
+ * Đồ mua ở Siêu thị về là hộp kín: chỉ ra cấp Xanh lam (1 dòng) hoặc Xanh lục (2 dòng), mở hộp mới biết dòng nào.
+ * Cấp Vàng và Đỏ chỉ có từ mini-game, mã quà hoặc Chợ Phiên.
+ */
+export const SHOP_TIERS = ['blue', 'green'];
+
+/** Quay một món mua ở Siêu thị: tỷ lệ Xanh lam/Xanh lục theo cấu hình, May mắn giúp ra Xanh lục. */
+export function rollShopGear(config, rand, { luck = 0 } = {}) {
+  const odds = Object.fromEntries(TIER_ORDER.map((t) => [t, SHOP_TIERS.includes(t) ? config.odds[t] ?? 0 : 0]));
+  if (!SHOP_TIERS.some((t) => odds[t] > 0)) odds.blue = 1;
+  return rollGear(config, rand, { tier: rollTier(odds, rand, luck) });
+}
+
 /** Cộng các dòng chỉ số của những món đang đeo; mỗi loại không vượt BONUS_CAP. */
 export function sumBonus(list) {
   const total = Object.fromEntries(AFFIX_ORDER.map((a) => [a, 0]));

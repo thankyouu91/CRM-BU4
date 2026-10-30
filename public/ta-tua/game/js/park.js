@@ -84,7 +84,7 @@ export function mountPark(root, ctx) {
   function setPet(e, player) {
     e.data = player;
     e.figure?.destroy();
-    e.figure = createPetFigure(speciesOf(player.pet.species), BASE_SCALE, player.pet.wear, { stage: player.pet.stage, ageScale: player.pet.scale });
+    e.figure = createPetFigure(speciesOf(player.pet.species), BASE_SCALE, player.pet.wear, { stage: player.pet.stage, ageScale: player.pet.scale, level: player.pet.level });
     e.el.insertBefore(e.figure.el, e.nameEl);
     e.nameEl.innerHTML = `${esc(player.pet.name)} <b>Lv ${player.pet.level}</b><small>${player.offline ? '💤 ' : ''}${esc(player.username)}</small>`;
     e.el.classList.toggle('away', Boolean(player.offline));
