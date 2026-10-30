@@ -3,6 +3,7 @@ import { db, transaction } from './db.js';
 import { DAY, GameError } from './game.js';
 import { post } from './ledger.js';
 import { BANK, accrue, depositPayout, policy } from './rules/bank.js';
+import { bankInterestBonus } from './strategic.js';
 
 const q = {
   latest: db.prepare('SELECT * FROM central_bank ORDER BY week DESC LIMIT 1'),
@@ -79,7 +80,10 @@ export function openDeposit(userId, amount, term, now = Date.now()) {
 function payDeposit(dep, now) {
   const { principal, interest } = depositPayout(dep, now);
   post({ userId: dep.user_id, delta: principal, kind: 'deposit_close', memo: `Kỳ hạn ${dep.term_days} ngày`, now });
-  if (interest) post({ userId: dep.user_id, delta: interest, kind: 'interest', memo: `Lãi kỳ hạn ${dep.term_days} ngày`, now });
+  if (interest) {
+    post({ userId: dep.user_id, delta: interest, kind: 'interest', memo: `Lãi kỳ hạn ${dep.term_days} ngày`, now });
+    bankInterestBonus(dep.user_id, interest, { memo: `lãi kỳ hạn ${dep.term_days} ngày`, now });
+  }
   q.closeDeposit.run(now, principal + interest, dep.id);
   return { principal, interest };
 }
@@ -139,6 +143,7 @@ export function settleBankDay(endTs) {
       const whole = Math.floor(acc.accrued);
       if (whole > 0) {
         post({ userId, account: 'savings', delta: whole, kind: 'interest', memo: 'Lãi tiết kiệm', now: endTs });
+        bankInterestBonus(userId, whole, { account: 'savings', memo: 'lãi tiết kiệm', now: endTs });
         q.setAccrued.run(acc.accrued - whole, endTs, userId);
       }
     }

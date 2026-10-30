@@ -720,6 +720,32 @@ addColumn('users', 'locked_slots', 'INTEGER NOT NULL DEFAULT 0');
     revenue  INTEGER NOT NULL DEFAULT 0,
     PRIMARY KEY (clan_id, day, good)
   );
+  -- Hạ tầng chiến lược (strategic.js): cấp hạ tầng của gia tộc chủ, pet đứng máy, phí hạ tầng thu được.
+  CREATE TABLE IF NOT EXISTS clan_infra (
+    clan_id  INTEGER NOT NULL,
+    industry TEXT NOT NULL,
+    level    INTEGER NOT NULL DEFAULT 1,
+    since    INTEGER NOT NULL,
+    PRIMARY KEY (clan_id, industry)
+  );
+  CREATE TABLE IF NOT EXISTS clan_operators (
+    plot_id INTEGER PRIMARY KEY,
+    clan_id INTEGER NOT NULL,
+    user_id INTEGER NOT NULL,
+    pet_id  INTEGER NOT NULL UNIQUE,
+    since   INTEGER NOT NULL
+  );
+  CREATE TABLE IF NOT EXISTS infra_fees (
+    id            INTEGER PRIMARY KEY AUTOINCREMENT,
+    owner_clan_id INTEGER NOT NULL,
+    industry      TEXT NOT NULL,
+    payer_user_id INTEGER,
+    payer_clan_id INTEGER,
+    amount        INTEGER NOT NULL,
+    day           TEXT NOT NULL,
+    created_at    INTEGER NOT NULL
+  );
+  CREATE INDEX IF NOT EXISTS infra_fees_owner ON infra_fees(owner_clan_id, day);
   CREATE TABLE IF NOT EXISTS macro_days (
     day        TEXT PRIMARY KEY,
     phase      TEXT NOT NULL,
