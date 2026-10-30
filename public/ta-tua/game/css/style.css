@@ -548,3 +548,12 @@ input:focus { border-color: var(--tea); box-shadow: 0 0 0 4px #c8915f33; }
 /* Siêu thị: mức tự chủ thực phẩm và hạn mức đồ ăn NPC */
 .essentials-banner { display: flex; flex-direction: column; gap: 4px; padding: 10px 14px; margin-bottom: 12px; }
 .essentials-line { display: flex; flex-direction: column; gap: 2px; }
+
+/* ---------- Phụ kiện chia nhóm theo khe (Siêu thị, Túi đồ) ---------- */
+.gear-jump { display: flex; flex-wrap: wrap; gap: 6px; margin: 4px 0 14px; }
+.gear-jump .chip { font-size: .85rem; padding: 5px 11px; cursor: pointer; }
+.gear-jump .chip small { color: var(--muted); font-weight: 700; }
+.gear-group { margin-bottom: 20px; scroll-margin-top: 130px; }
+.gear-group-title { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 10px; margin: 0 0 10px; font-family: var(--font-display); font-size: 1.15rem; }
+.gear-group-title small { font-family: var(--font-body, inherit); font-size: .8rem; font-weight: 600; }
+@media (max-width: 720px) { .gear-group { scroll-margin-top: 190px; } }

@@ -234,17 +234,21 @@ export function renderMarket(root, ctx) {
       </div>`;
     view.innerHTML = `
       <div class="market-grid">
-        <section class="card mk-board">
-          <div class="table-wrap"><table>
-            <thead><tr><th>Mặt hàng</th><th class="num">Giá/lô</th><th class="num">24 giờ</th><th></th><th class="num">Kho</th><th class="num">Lãi/lỗ</th></tr></thead>
-            <tbody>${data.commodities.map(boardRow).join('')}</tbody>
-          </table></div>
-        </section>
-        <section class="card mk-detail">${detail()}</section>
-        <section class="card mk-side"><h3>🏚️ Kho hàng</h3>${holdingsHtml()}</section>
-        <section class="card mk-side mk-book"><h3>📒 Sổ lời lãi</h3>${bookHtml()}</section>
-        <section class="card mk-side"><h3>⏳ Lệnh chờ</h3>${ordersHtml()}</section>
-        <section class="card mk-side"><h3>📰 Tin thị trường</h3>${newsHtml()}</section>
+        <div class="mk-col">
+          <section class="card mk-board">
+            <div class="table-wrap"><table>
+              <thead><tr><th>Mặt hàng</th><th class="num">Giá/lô</th><th class="num">24 giờ</th><th></th><th class="num">Kho</th><th class="num">Lãi/lỗ</th></tr></thead>
+              <tbody>${data.commodities.map(boardRow).join('')}</tbody>
+            </table></div>
+          </section>
+          <section class="card mk-side mk-book"><h3>📒 Sổ lời lãi</h3>${bookHtml()}</section>
+          <section class="card mk-side mk-news-box"><h3>📰 Tin thị trường</h3>${newsHtml()}</section>
+        </div>
+        <div class="mk-col">
+          <section class="card mk-detail">${detail()}</section>
+          <section class="card mk-side mk-holdings-box"><h3>🏚️ Kho hàng</h3>${holdingsHtml()}</section>
+          <section class="card mk-side mk-orders-box"><h3>⏳ Lệnh chờ</h3>${ordersHtml()}</section>
+        </div>
       </div>`;
     for (const el of view.querySelectorAll('[data-spark]')) sparkline(el, priceOf(el.dataset.spark).spark, { height: 26 });
     drawChart().catch(() => {});
