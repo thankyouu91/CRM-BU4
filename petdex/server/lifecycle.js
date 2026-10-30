@@ -4,13 +4,14 @@ import { db, getUser, listPets, setActivePet, transaction } from './db.js';
 import { bus } from './events.js';
 import { indexedPrice } from './bank.js';
 import { startOfDay } from './clock.js';
-import { DAY, GameError, RULES, ageInfo, isBusy, lifeOf, tick } from './game.js';
+import { DAY, GameError, RULES, ageInfo, isBusy, lifeOf, settle, tick, xpToNext } from './game.js';
 import { post } from './ledger.js';
-import { LIFE, SPECIES, speciesOrGuest } from '../../public/ta-tua/game/js/shared/pets.js';
+import { LIFE, SPECIES, dailyXp, speciesOrGuest } from '../../public/ta-tua/game/js/shared/pets.js';
 
 const q = {
   allPets: db.prepare('SELECT * FROM pets'),
   setHealthAvg: db.prepare('UPDATE pets SET health_avg = ?, health_days = ? WHERE id = ?'),
+  setLevel: db.prepare('UPDATE pets SET level = ?, xp = ? WHERE id = ?'),
   openShifts: db.prepare('SELECT * FROM shifts WHERE pet_id = ? AND claimed_at IS NULL'),
   claim: db.prepare('UPDATE shifts SET claimed_at = ? WHERE id = ?'),
   skills: db.prepare('SELECT skill, value FROM pet_skills WHERE pet_id = ?'),
@@ -106,7 +107,14 @@ export function settleLifeDay(day) {
       const avg = ((row.health_avg ?? 80) * n + pet.health) / (n + 1);
       q.setHealthAvg.run(avg, n + 1, row.id);
       const life = lifeOf({ ...row, health_avg: avg }, end);
-      if (life.left <= 0 && !isBusy(row, end)) passAway(row, end - 1);
+      if (life.left <= 0 && !isBusy(row, end)) {
+        passAway(row, end - 1);
+        continue;
+      }
+      // Bé tự lớn mỗi ngày, kể cả khi chủ vắng (xem DAILY_XP).
+      const grown = settle({ pet: row, xp: dailyXp(xpToNext(row.level), pet.health) });
+      q.setLevel.run(grown.pet.level, grown.pet.xp, row.id);
+      if (grown.coins) post({ userId: row.owner_id, delta: grown.coins, kind: 'level', memo: `${row.name} tự lớn lên cấp ${grown.pet.level}`, now: end - 1 });
     }
   });
 }
