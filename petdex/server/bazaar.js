@@ -88,6 +88,7 @@ export function listForSale(userId, { kind, ref, price }, now = Date.now()) {
     } else if (kind === 'gear') {
       const g = getGear(ref);
       if (!g || g.owner_id !== userId || g.listed) throw new GameError('Không tìm thấy món trang phục này.');
+      if (g.sealed) throw new GameError('Mở hộp trước rồi hẵng bày bán nhé.');
       refPrice = indexedPrice(ITEMS[g.item_id].price) * (TIER_VALUE[g.tier] ?? 1);
       row = { ref: String(g.id), quality: 0, madeAt: null, expiresAt: now + BAZAAR.hours * HOUR };
     } else if (kind === 'dish') {

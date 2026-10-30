@@ -50,11 +50,11 @@ export interface GuestSession {
   hasPassword?: boolean;
 }
 
-/** The Petfarm website (www.petfarm.online): one landing page about the game, served by this app at SITE_PATH. */
-export const SITE_ORIGIN = (process.env.NEXT_PUBLIC_PETFARM_SITE_ORIGIN || "https://www.petfarm.online").replace(/\/+$/, "");
+/** The Petfarm website (petfarm.online): one landing page about the game, served by this app at SITE_PATH. */
+export const SITE_ORIGIN = (process.env.NEXT_PUBLIC_PETFARM_SITE_ORIGIN || "https://petfarm.online").replace(/\/+$/, "");
 export const SITE_HOST = new URL(SITE_ORIGIN).host;
-/** The bare domain (petfarm.online) moves to SITE_HOST. */
-export const SITE_APEX = SITE_HOST.replace(/^www\./, "");
+/** The other spelling of the website's name (www.petfarm.online), which moves to SITE_HOST. */
+export const SITE_ALIAS = SITE_HOST.startsWith("www.") ? SITE_HOST.slice(4) : `www.${SITE_HOST}`;
 export const SITE_PATH = "/petfarm";
 
 /**
@@ -66,6 +66,23 @@ export function siteHostRoute(pathname: string): { rewrite: string } | { redirec
   if (pathname.startsWith("/api/")) return { notFound: true };
   if ([PLAY_PATH, INVITE_PATH, PASSWORD_PATH].some((p) => pathname === p || pathname.startsWith(`${p}/`))) return { redirect: `${PLAY_ORIGIN}${pathname}` };
   return { redirect: "/" };
+}
+
+/** The Petfarm wiki (wiki.petfarm.online): the players' guide, served by this app under WIKI_PATH. */
+export const WIKI_ORIGIN = (process.env.NEXT_PUBLIC_PETFARM_WIKI_ORIGIN || "https://wiki.petfarm.online").replace(/\/+$/, "");
+export const WIKI_HOST = new URL(WIKI_ORIGIN).host;
+export const WIKI_PATH = "/wiki";
+
+/**
+ * On the wiki's domain: "/" is the wiki home and "/<article>" an article (both rewritten under
+ * WIKI_PATH); "/wiki/..." moves to the short address; the game's own pages move to the game
+ * domain; WorkHub's API answers 404.
+ */
+export function wikiHostRoute(pathname: string): { rewrite: string } | { redirect: string } | { notFound: true } {
+  if (pathname.startsWith("/api/")) return { notFound: true };
+  if ([PLAY_PATH, INVITE_PATH, PASSWORD_PATH].some((p) => pathname === p || pathname.startsWith(`${p}/`))) return { redirect: `${PLAY_ORIGIN}${pathname}` };
+  if (pathname === WIKI_PATH || pathname.startsWith(`${WIKI_PATH}/`)) return { redirect: pathname.slice(WIKI_PATH.length) || "/" };
+  return { rewrite: pathname === "/" ? WIKI_PATH : `${WIKI_PATH}${pathname}` };
 }
 
 /** Game pages and what they need; on the game domain everything else of WorkHub is out of reach. */

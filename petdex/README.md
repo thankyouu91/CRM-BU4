@@ -32,7 +32,7 @@ Phòng, công viên và bản đồ phố được vẽ bằng code theo phong c
 - Có lớp chuyển động riêng: mây, nước, bướm, xe chạy trên phố, đèn đêm…
 - Cảnh đổi theo giờ máy người chơi. Xem thử bằng cách thêm `?time=night` (hoặc `dawn`, `day`, `dusk`) vào URL.
 - Hiệu ứng hạt pixel (`public/js/fx.js`) cho mọi hành động.
-- **Pet ngũ hành:** 50 loài vẽ bằng một bộ khung chung, dáng đổi theo 6 giai đoạn tuổi. Đồ đeo 4 khe (đầu, mặt, cổ, lưng) gắn vào điểm neo nên đi theo người ở mọi khung hình. Đồ trong Siêu thị vẽ pixel cùng phong cách. Xưởng tạo hình: `/pet-lab.html`. Thiết kế ở [docs/thiet-ke-pet-ngu-hanh.md](docs/thiet-ke-pet-ngu-hanh.md).
+- **Pet ngũ hành:** 50 loài vẽ bằng một bộ khung chung, dáng đổi theo 6 giai đoạn tuổi. Cứ 10 cấp bé đổi dáng một lần (lớn người, vạch màu hành, vằn hông, vòng linh khí, đốm sáng; cấp 50 ánh vàng). Đồ đeo 5 khe (đầu, mặt, cổ, lưng, bùa) gắn vào điểm neo nên đi theo người ở mọi khung hình; dưới cấp 30 đeo 3 món, từ cấp 30 đeo 4, bé Huyền thoại thêm 1. Đồ trong Siêu thị vẽ pixel cùng phong cách. Xưởng tạo hình: `/pet-lab.html`. Thiết kế ở [docs/thiet-ke-pet-ngu-hanh.md](docs/thiet-ke-pet-ngu-hanh.md).
 
 ## Thêm loài thú
 

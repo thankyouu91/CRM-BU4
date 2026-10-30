@@ -2,8 +2,8 @@
 // - bé vẽ bằng bộ khung (rig.js): vẽ thẳng từ dữ liệu loài, đúng giai đoạn tuổi;
 // - bé khách mời Petdex (ảnh vẽ sẵn): dò điểm neo trên từng khung của ảnh rồi gắn đồ vào đó.
 import { makeCanvas } from './pixel.js';
-import { RIG_ANIMS, drawFrame, skeleton, wearImage, wearSpotAt } from './rig.js';
-import { LIFE_STAGES, SPECIES_BY_ID, WEARABLES } from './shared/pets.js';
+import { RIG_ANIMS, drawFrame, formStage, skeleton, wearImage, wearSpotAt } from './rig.js';
+import { SLOT_IDS, SPECIES_BY_ID, WEARABLES, formIndex } from './shared/pets.js';
 
 /** Cỡ một pixel nghệ thuật trên màn hình ở tỉ lệ 1 (bằng độ thô của Boba và cảnh pixel). */
 export const ART_PX = 4.8;
@@ -38,13 +38,13 @@ export const PETDEX_SHEET = {
   },
 };
 
-const wearKey = (wear) => ['head', 'face', 'neck', 'back'].map((s) => wear?.[s] ?? '-').join(',');
+const wearKey = (wear) => SLOT_IDS.map((s) => wear?.[s] ?? '-').join(',');
 const hasWear = (wear) => Object.values(wear ?? {}).some((id) => id && WEARABLES[id]);
 const cache = new Map();
 
-/** Spritesheet của bé vẽ bằng bộ khung (tức thì, vài chục khung hình nhỏ). */
-export function rigSheet(speciesId, stageKey, wear = {}) {
-  const key = `rig|${speciesId}|${stageKey}|${wearKey(wear)}`;
+/** Spritesheet của bé vẽ bằng bộ khung (tức thì, vài chục khung hình nhỏ); `level` chọn dáng theo cấp. */
+export function rigSheet(speciesId, stageKey, wear = {}, level = 1) {
+  const key = `rig|${speciesId}|${stageKey}|${formIndex(level)}|${wearKey(wear)}`;
   if (cache.has(key)) return cache.get(key);
   const [c, g] = makeCanvas(RIG_COLS * RIG_FW, RIG_ROWS.length * RIG_FH);
   const anims = {};
@@ -52,14 +52,13 @@ export function rigSheet(speciesId, stageKey, wear = {}) {
     const def = RIG_ANIMS[anim];
     def.frames.forEach((pose, i) => {
       // Chỉ lấy RIG_FH hàng trên của khung (cao hơn ô), để 3 hàng bị cắt không lấn sang đầu ô hàng dưới.
-      const frame = drawFrame(speciesId, stageKey, { ...pose, mirror: mirror ? !pose.mirror : pose.mirror }, wear, i);
+      const frame = drawFrame(speciesId, stageKey, { ...pose, mirror: mirror ? !pose.mirror : pose.mirror }, wear, i, { level });
       g.drawImage(frame, 0, 0, RIG_FW, RIG_FH, i * RIG_FW, row * RIG_FH, RIG_FW, RIG_FH);
     });
     anims[name] = { row, frames: def.frames.length, fps: def.fps };
   });
   // Chiều cao phần thân bé (từ đỉnh đầu tới chân), để hiệu ứng bay lên đúng đầu bé.
-  const stage = LIFE_STAGES.find((s) => s.key === stageKey) ?? LIFE_STAGES[3];
-  const top = skeleton(SPECIES_BY_ID[speciesId], stage).head.top;
+  const top = skeleton(SPECIES_BY_ID[speciesId], formStage(stageKey, level)).head.top;
   const sheet = {
     url: c.toDataURL(),
     frameW: RIG_FW * ART_PX,
@@ -134,9 +133,10 @@ function guestAnchors(img, spec) {
       }
       const cx = sum / Math.max(1, count);
       const at = (fy) => ({ x: Math.round(cx / ART_PX), y: Math.round((top + h * fy) / ART_PX) });
+      const headRx = Math.round((maxX - minX) / 2 / ART_PX);
       out[name].push({
-        anchors: { head: at(0.03), face: at(0.33), neck: at(0.47), back: at(0.45) },
-        headRx: Math.round((maxX - minX) / 2 / ART_PX),
+        anchors: { head: at(0.03), face: at(0.33), neck: at(0.47), back: at(0.45), charm: { ...at(0.6), x: at(0).x + headRx + 2 } },
+        headRx,
       });
     }
   }
@@ -171,7 +171,7 @@ export async function guestSheet(sprite, wear = {}) {
       put(wear.back, cell, x0, y0);
       put(wear.neck, cell, x0, y0);
       g.drawImage(img, x0, y0, PETDEX_SHEET.frameW, PETDEX_SHEET.frameH, x0, y0, PETDEX_SHEET.frameW, PETDEX_SHEET.frameH);
-      for (const slot of ['face', 'head']) put(wear[slot], cell, x0, y0);
+      for (const slot of ['face', 'head', 'charm']) put(wear[slot], cell, x0, y0);
     }
   }
   const blob = await new Promise((resolve) => c.toBlob(resolve));

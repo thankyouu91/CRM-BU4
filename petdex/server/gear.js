@@ -3,10 +3,12 @@
 import { db, getMeta, getUser, gearBonusOf, setMeta, setWear } from './db.js';
 import { GameError, ITEMS } from './game.js';
 import { post } from './ledger.js';
-import { AFFIX_ORDER, DEFAULT_GEAR_CONFIG, TIERS, affixText, cleanAffixes, normalizeGearConfig, rollGear, sumBonus } from '../../public/ta-tua/game/js/shared/gear.js';
+import { AFFIX_ORDER, DEFAULT_GEAR_CONFIG, TIERS, affixText, cleanAffixes, normalizeGearConfig, rollGear, rollShopGear, sumBonus } from '../../public/ta-tua/game/js/shared/gear.js';
+import { SLOTS, speciesOrGuest, wearLimit } from '../../public/ta-tua/game/js/shared/pets.js';
 
 const q = {
-  insert: db.prepare('INSERT INTO gear (owner_id, item_id, tier, affixes, source, created_at) VALUES (?, ?, ?, ?, ?, ?)'),
+  insert: db.prepare('INSERT INTO gear (owner_id, item_id, tier, affixes, source, created_at, sealed) VALUES (?, ?, ?, ?, ?, ?, ?)'),
+  unseal: db.prepare('UPDATE gear SET sealed = 0 WHERE id = ?'),
   byId: db.prepare('SELECT * FROM gear WHERE id = ?'),
   ofOwner: db.prepare(`
     SELECT g.*, w.pet_id AS worn_by FROM gear g LEFT JOIN pet_wear w ON w.gear_id = g.id
@@ -53,8 +55,11 @@ export function setGearConfig(input) {
 export const isWearable = (itemId) => ITEMS[itemId]?.type === 'accessory';
 const wearables = () => Object.values(ITEMS).filter((i) => i.type === 'accessory');
 
-/** Tạo một bản cho `ownerId`. `affixes` bỏ trống thì quay theo cấu hình (cấp `tier` hoặc quay cả cấp). */
-export function createGear(ownerId, itemId, { tier = null, affixes = null, source, luck = 0, rand = Math.random } = {}, now = Date.now()) {
+/**
+ * Tạo một bản cho `ownerId`. `affixes` bỏ trống thì quay theo cấu hình (cấp `tier` hoặc quay cả cấp).
+ * `shop`: mua ở Siêu thị, chỉ ra 1–2 dòng chỉ số và về tay dưới dạng hộp kín (mở ra mới lộ dòng nào).
+ */
+export function createGear(ownerId, itemId, { tier = null, affixes = null, source, luck = 0, shop = false, rand = Math.random } = {}, now = Date.now()) {
   if (!isWearable(itemId)) throw new GameError('Món này không phải trang phục.');
   if (tier && !TIERS[tier]) throw new GameError('Không có cấp này.');
   let rolled;
@@ -64,10 +69,12 @@ export function createGear(ownerId, itemId, { tier = null, affixes = null, sourc
     } catch (err) {
       throw new GameError(err.message);
     }
+  } else if (shop) {
+    rolled = rollShopGear(gearConfig(), rand, { luck });
   } else {
     rolled = rollGear(gearConfig(), rand, { luck, tier });
   }
-  const id = Number(q.insert.run(ownerId, itemId, rolled.tier, JSON.stringify(rolled.affixes), source, now).lastInsertRowid);
+  const id = Number(q.insert.run(ownerId, itemId, rolled.tier, JSON.stringify(rolled.affixes), source, now, shop ? 1 : 0).lastInsertRowid);
   return getGear(id);
 }
 
@@ -79,13 +86,33 @@ export function createRandomGear(ownerId, { source, luck = 0, tier = null, rand 
 
 export const getGear = (id) => parse(q.byId.get(Number(id)));
 
-/** Tủ đồ của người chơi, kèm món nào đang đeo trên bé nào (đồ đang bày bán thì bỏ ra). */
-export function listGear(ownerId, { includeListed = false } = {}) {
-  return q.ofOwner.all(ownerId).map(parse).filter((g) => includeListed || !g.listed).map(describeGear);
+/** Tủ đồ của người chơi, kèm món nào đang đeo trên bé nào (đồ đang bày bán thì bỏ ra). `reveal`: quản trị viên xem cả hộp kín. */
+export function listGear(ownerId, { includeListed = false, reveal = false } = {}) {
+  return q.ofOwner.all(ownerId).map(parse).filter((g) => includeListed || !g.listed).map((g) => describeGear(g, { reveal }));
 }
 
-export function describeGear(g) {
+/** Thẻ một món; hộp kín (chưa mở) thì giấu cấp và dòng chỉ số, trừ khi `reveal`. */
+export function describeGear(g, { reveal = false } = {}) {
   const item = ITEMS[g.item_id];
+  const sealed = Boolean(g.sealed);
+  if (sealed && !reveal) {
+    return {
+      id: g.id,
+      itemId: g.item_id,
+      name: item?.name ?? g.item_id,
+      slot: item?.slot ?? null,
+      element: item?.element ?? null,
+      sealed: true,
+      tier: null,
+      tierName: 'Hộp chưa mở',
+      affixes: {},
+      lines: [],
+      wornBy: null,
+      listed: Boolean(g.listed),
+      source: g.source,
+      createdAt: g.created_at,
+    };
+  }
   return {
     id: g.id,
     itemId: g.item_id,
@@ -96,6 +123,7 @@ export function describeGear(g) {
     tierName: TIERS[g.tier]?.name ?? g.tier,
     affixes: g.affixes,
     lines: AFFIX_ORDER.filter((a) => g.affixes[a]).map((a) => affixText(a, g.affixes[a])),
+    sealed,
     wornBy: g.worn_by ?? null,
     listed: Boolean(g.listed),
     source: g.source,
@@ -113,12 +141,31 @@ export function wornGear(petId) {
   }]));
 }
 
+/** Mở hộp mua ở Siêu thị: lộ cấp và dòng chỉ số. */
+export function openGear(userId, gearId) {
+  const g = getGear(gearId);
+  if (!g || g.owner_id !== userId) throw new GameError('Bạn không có món này.');
+  if (!g.sealed) throw new GameError('Hộp này đã mở rồi.');
+  q.unseal.run(g.id);
+  return describeGear(getGear(g.id));
+}
+
+/** Số món bé `pet` đeo được cùng lúc (theo cấp và độ hiếm). */
+export const wearLimitOf = (pet) => wearLimit(pet.level, speciesOrGuest(pet.species).rarity);
+
 /** Đeo bản `gearId` lên bé `pet` (gỡ khỏi bé khác nếu đang đeo ở đó). */
 export function equipGear(userId, pet, gearId) {
   const g = getGear(gearId);
   if (!g || g.owner_id !== userId) throw new GameError('Bạn không có món này.');
   if (g.listed) throw new GameError('Món này đang bày bán ở Chợ Phiên.');
+  if (g.sealed) throw new GameError('Mở hộp trước rồi hẵng đeo nhé.');
   const item = ITEMS[g.item_id];
+  // Đổi món trong cùng khe thì không tính thêm; đeo vào khe trống thì phải còn chỗ.
+  const limit = wearLimitOf(pet);
+  const others = Object.keys(pet.wear ?? {}).filter((s) => s !== item.slot && SLOTS[s]).length;
+  if (others >= limit) {
+    throw new GameError(`${pet.name} (cấp ${pet.level}) chỉ đeo được ${limit} món cùng lúc. Tháo bớt một món, hoặc lên cấp 30 để đeo thêm.`);
+  }
   q.unwear.run(g.id);
   setWear(pet.id, item.slot, item.id, g.id);
   return { gear: describeGear(g), item };

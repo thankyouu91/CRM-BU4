@@ -555,6 +555,8 @@ addColumn('users', 'locked_slots', 'INTEGER NOT NULL DEFAULT 0');
   );
   CREATE INDEX IF NOT EXISTS password_links_user ON password_links(user_id);
   `);
+  // Sau khi đã có bảng gear: hộp mua ở Siêu thị chưa mở thì chưa lộ dòng chỉ số.
+  addColumn('gear', 'sealed', 'INTEGER NOT NULL DEFAULT 0');
 
   // ---- Gia tộc & Sở Nhà Đất (clans.js, macro.js) ----
   db.exec(`

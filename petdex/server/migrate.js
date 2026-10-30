@@ -3,7 +3,8 @@ import { allPets, allUsers, db, getMeta, setBornAt, setMeta, setSkill, setTraits
 import { HOUR, ITEMS, PET_DAY_MS } from './game.js';
 import { post } from './ledger.js';
 import { initialSkills } from './rules/careers.js';
-import { createGear, setGearListed } from './gear.js';
+import { createGear, setGearListed, wearLimitOf, wornGear } from './gear.js';
+import { TIER_ORDER } from '../../public/ta-tua/game/js/shared/gear.js';
 import { rollTraits } from './rules/production.js';
 import { TREASURY_SEED } from './rules/town.js';
 
@@ -86,6 +87,19 @@ const steps = {
     }
   },
 
+  /**
+   * Luật đeo đồ mới (dưới cấp 30 đeo 3 món, từ cấp 30 đeo 4, Huyền thoại thêm 1): bé đang đeo quá số món
+   * thì cất bớt vào tủ đồ, giữ lại những món cấp cao nhất. Không mất món nào.
+   */
+  wear_limit_v1() {
+    for (const pet of allPets()) {
+      const worn = Object.entries(wornGear(pet.id));
+      const extra = worn.length - wearLimitOf(pet);
+      if (extra <= 0) continue;
+      worn.sort(([, a], [, b]) => TIER_ORDER.indexOf(a.tier ?? 'blue') - TIER_ORDER.indexOf(b.tier ?? 'blue'));
+      for (const [slot] of worn.slice(0, extra)) setWear(pet.id, slot, null);
+    }
+  },
 };
 
 export function migrate(now = Date.now()) {

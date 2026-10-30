@@ -5,7 +5,7 @@ import { economy } from './bank.js';
 import * as store from './db.js';
 import { digest, hashPassword, randomCode, verifyPassword } from './passwords.js';
 import { createGear, createRandomGear, deleteGear, describeGear, gearConfig, getGear, listGear, setGearConfig, updateGear } from './gear.js';
-import { createGiftCode, giftCodeById, giftRedemptions, giftView, listGiftCodes, revokeGiftCode } from './gifts.js';
+import { GIFT_CATEGORIES, createGiftCode, giftCodeById, giftRedemptions, giftView, listGiftCodes, revokeGiftCode } from './gifts.js';
 import { AFFIXES, DEFAULT_GEAR_CONFIG, TIERS } from '../../public/ta-tua/game/js/shared/gear.js';
 import { GameError, ITEMS, RULES, clamp } from './game.js';
 import { KINDS, post, treasuryBalance } from './ledger.js';
@@ -297,7 +297,7 @@ internalApi.post('/admin/gear/:gearId', (req, res) => {
   const gear = store.transaction(() => {
     const after = updateGear(before.id, { tier: String(req.body?.tier ?? ''), affixes: req.body?.affixes });
     store.adminLog(actor, 'gear_edit', before.owner_id, { gearId: before.id, item: before.item_id, from: { tier: before.tier, affixes: before.affixes }, to: { tier: after.tier, affixes: after.affixes } });
-    return describeGear(after);
+    return describeGear(after, { reveal: true });
   });
   bus.emit('pet:changed', before.owner_id);
   res.json({ ok: true, gear });
@@ -320,8 +320,9 @@ internalApi.get('/admin/gift-codes', (_req, res) => {
   res.json({
     codes: listGiftCodes(),
     // phần quà chọn được: vật phẩm thường (trang phục tặng theo cấp ở mục riêng)
-    items: Object.values(ITEMS).filter((i) => i.type !== 'accessory').map((i) => ({ id: i.id, name: i.name, icon: i.icon ?? '', type: i.type })),
-    wearables: Object.values(ITEMS).filter((i) => i.type === 'accessory').map((i) => ({ id: i.id, name: i.name, slot: i.slot })),
+    items: Object.values(ITEMS).filter((i) => i.type !== 'accessory').map((i) => ({ id: i.id, name: i.name, icon: i.icon ?? '', type: i.type, element: i.element ?? null })),
+    wearables: Object.values(ITEMS).filter((i) => i.type === 'accessory').map((i) => ({ id: i.id, name: i.name, slot: i.slot, element: i.element ?? null })),
+    categories: GIFT_CATEGORIES,
   });
 });
 
@@ -396,7 +397,7 @@ internalApi.get('/admin/players/:id', (req, res) => {
     spendable: { wallet: user.coins, savings: savingsOf(user.id) },
     // Mọi loài, kể cả loài hiếm chỉ nở từ trứng: quản trị viên tặng được bất kỳ loài nào.
     species: listSpecies().map((s) => ({ id: s.id, name: s.name, element: s.element, rarity: s.rarity })),
-    gear: listGear(user.id, { includeListed: true }),
+    gear: listGear(user.id, { includeListed: true, reveal: true }),
     wearables: Object.values(ITEMS).filter((i) => i.type === 'accessory').map((i) => ({ id: i.id, name: i.name, slot: i.slot, element: i.element })),
   });
 });

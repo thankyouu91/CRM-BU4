@@ -344,7 +344,7 @@ export function rollEggSpecies(element, rand) {
 // ---------------------------------------------------------------- đồ đeo theo khe
 
 /**
- * Mỗi món gắn vào một khe trên khung: đầu, mặt, cổ, lưng. Món nào cũng có hành để tính hợp mệnh.
+ * Mỗi món gắn vào một khe trên khung: đầu, mặt, cổ, lưng, bùa (lơ lửng bên hông). Món nào cũng có hành để tính hợp mệnh.
  * (Hình vẽ của từng món nằm ở public/js/rig.js.)
  */
 export const SLOTS = {
@@ -352,7 +352,35 @@ export const SLOTS = {
   face: { name: 'Mặt', icon: '👓' },
   neck: { name: 'Cổ', icon: '🧣' },
   back: { name: 'Lưng', icon: '🦋' },
+  charm: { name: 'Bùa', icon: '🏮' },
 };
+export const SLOT_IDS = Object.keys(SLOTS);
+
+/**
+ * Số món bé đeo được cùng lúc (mỗi khe vẫn chỉ một món): dưới cấp 30 đeo 3 món, từ cấp 30 đeo 4 món;
+ * bé Huyền thoại đeo thêm 1 món (tối đa 5, đủ cả 5 khe).
+ */
+export const WEAR_RULES = { base: 3, grownLevel: 30, grown: 4, legendBonus: 1 };
+export function wearLimit(level, rarity) {
+  const base = (level ?? 1) >= WEAR_RULES.grownLevel ? WEAR_RULES.grown : WEAR_RULES.base;
+  return base + (rarity === 'huyenthoai' ? WEAR_RULES.legendBonus : 0);
+}
+
+/**
+ * Dáng trưởng thành theo cấp: cứ 10 cấp bé đổi dáng một lần (cộng dồn với dáng theo tuổi).
+ * `grow`: hệ số cỡ người; các nét vẽ thêm (ấn trán, vằn, vòng linh khí, đốm sáng, ánh vàng) ở public/js/rig.js.
+ */
+export const LEVEL_FORMS = [
+  { from: 1, name: 'Mầm non', grow: 1, note: 'Dáng mộc mạc lúc mới nuôi.' },
+  { from: 10, name: 'Chớm lớn', grow: 1.03, note: 'Lớn hơn một chút, hai bên thái dương nhú vạch màu hành.' },
+  { from: 20, name: 'Cứng cáp', grow: 1.06, note: 'Vạm vỡ hơn, hai bên hông có vằn.' },
+  { from: 30, name: 'Tinh anh', grow: 1.09, note: 'Vòng linh khí màu hành dưới chân.' },
+  { from: 40, name: 'Linh khí', grow: 1.12, note: 'Đốm sáng ngũ hành bay quanh người.' },
+  { from: 50, name: 'Thần thái', grow: 1.15, note: 'To lớn nhất, vạch và linh khí hóa ánh vàng.' },
+];
+/** Bậc dáng (0 = Mầm non) của bé cấp `level`. */
+export const formIndex = (level) => Math.max(0, LEVEL_FORMS.findLastIndex((f) => (level ?? 1) >= f.from));
+export const levelForm = (level) => LEVEL_FORMS[formIndex(level)];
 
 export const WEARABLES = {
   crown: { name: 'Vương miện', slot: 'head', element: 'kim' },
@@ -377,4 +405,29 @@ export const WEARABLES = {
   wavecape: { name: 'Áo choàng sóng', slot: 'back', element: 'thuy' },
   heartglasses: { name: 'Kính tim', slot: 'face', element: 'hoa' },
   woodglasses: { name: 'Kính gọng gỗ', slot: 'face', element: 'tho' },
+  // Bộ mở rộng: thêm mũ, kính, vòng cổ, cánh và cả khe Bùa.
+  halo: { name: 'Vầng hào quang', slot: 'head', element: 'kim' },
+  cap: { name: 'Mũ lưỡi trai', slot: 'head', element: 'thuy' },
+  strawhat: { name: 'Mũ rơm', slot: 'head', element: 'tho' },
+  mushroom: { name: 'Mũ nấm', slot: 'head', element: 'moc' },
+  devilhorns: { name: 'Băng đô sừng', slot: 'head', element: 'hoa' },
+  monocle: { name: 'Kính một mắt', slot: 'face', element: 'kim' },
+  partymask: { name: 'Mặt nạ hội', slot: 'face', element: 'hoa' },
+  starglasses: { name: 'Kính ngôi sao', slot: 'face', element: 'thuy' },
+  bandana: { name: 'Khăn bịt mắt lá', slot: 'face', element: 'moc' },
+  medal: { name: 'Huy chương vàng', slot: 'neck', element: 'kim' },
+  jade: { name: 'Vòng ngọc bích', slot: 'neck', element: 'moc' },
+  necktie: { name: 'Cà vạt xanh', slot: 'neck', element: 'thuy' },
+  lei: { name: 'Vòng hoa', slot: 'neck', element: 'hoa' },
+  amber: { name: 'Vòng hổ phách', slot: 'neck', element: 'tho' },
+  backpack: { name: 'Ba lô', slot: 'back', element: 'tho' },
+  batwings: { name: 'Cánh dơi', slot: 'back', element: 'thuy' },
+  phoenix: { name: 'Cánh phượng hoàng', slot: 'back', element: 'hoa' },
+  fairy: { name: 'Cánh tiên', slot: 'back', element: 'kim' },
+  lantern: { name: 'Đèn lồng', slot: 'charm', element: 'hoa' },
+  clover: { name: 'Cỏ bốn lá', slot: 'charm', element: 'moc' },
+  luckycoin: { name: 'Đồng xu may mắn', slot: 'charm', element: 'kim' },
+  seashell: { name: 'Vỏ sò', slot: 'charm', element: 'thuy' },
+  gourd: { name: 'Hồ lô', slot: 'charm', element: 'tho' },
+  balloon: { name: 'Bóng bay', slot: 'charm', element: 'thuy' },
 };

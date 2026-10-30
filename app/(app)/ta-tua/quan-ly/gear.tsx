@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { Copy, Gift, Plus, RotateCcw, Shirt, Sparkles, Ticket, Trash2, Users, X } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -25,7 +25,7 @@ const TIERS: Record<Tier, { name: string; color: string; lines: number }> = rule
 const AFFIXES: Record<Affix, { name: string; icon: string; desc: string }> = rules.AFFIXES;
 const BONUS_CAP: number = rules.BONUS_CAP;
 
-const SLOT_LABEL: Record<string, string> = { head: "Đầu", face: "Mặt", neck: "Cổ", back: "Lưng" };
+const SLOT_LABEL: Record<string, string> = { head: "Đầu", face: "Mặt", neck: "Cổ", back: "Lưng", charm: "Bùa" };
 const SOURCE_LABEL: Record<string, string> = { shop: "Mua ở cửa hàng", minigame: "Rớt từ mini-game", gift: "Mã quà", admin: "Quản trị tặng", legacy: "Đồ cũ chuyển sang" };
 const tierName = (t: string) => (TIERS as Record<string, { name: string }>)[t]?.name ?? t;
 
@@ -231,6 +231,8 @@ export interface GearView {
   affixes: Partial<Record<Affix, number>>;
   lines: string[];
   wornBy: number | null;
+  /** Hộp mua ở Siêu thị người chơi chưa mở (quản trị viên vẫn thấy cấp và dòng chỉ số). */
+  sealed?: boolean;
   listed: boolean;
   source: string;
   createdAt: number;
@@ -348,7 +350,7 @@ export function PlayerGear({ player, gear, wearables, pets, onChanged }: { playe
                   <span className="font-medium">{g.name}</span>
                   <TierDot tier={g.tier} />
                   <span className="text-xs text-muted-foreground">{g.slot ? SLOT_LABEL[g.slot] ?? g.slot : ""} · #{g.id} · {SOURCE_LABEL[g.source] ?? g.source}</span>
-                  <span className="ml-auto text-xs text-muted-foreground">{g.listed ? "Đang bày bán" : g.wornBy ? `${petName(g.wornBy)} đang đeo` : "Trong tủ"}</span>
+                  <span className="ml-auto text-xs text-muted-foreground">{g.listed ? "Đang bày bán" : g.wornBy ? `${petName(g.wornBy)} đang đeo` : g.sealed ? "Hộp chưa mở" : "Trong tủ"}</span>
                   <Button size="sm" variant="ghost" onClick={() => setEditing(editing === g.id ? null : g.id)}>Sửa</Button>
                   <button onClick={() => setRemoving(g)} disabled={g.listed} className="rounded p-1 text-muted-foreground hover:bg-muted hover:text-danger disabled:opacity-40" aria-label={`Xoá ${g.name}`} title={g.listed ? "Đang bày bán ở Chợ Phiên" : "Xoá"}>
                     <Trash2 className="h-3.5 w-3.5" />
@@ -423,10 +425,99 @@ interface GiftCode {
 }
 interface GiftData {
   codes: GiftCode[];
-  items: { id: string; name: string; icon: string; type: string }[];
+  items: { id: string; name: string; icon: string; type: string; element: string | null }[];
   wearables: Wearable[];
+  /** Groups for random or element-matched items (petdex/server/gifts.js GIFT_CATEGORIES). */
+  categories: Record<string, { name: string; noElement?: boolean }>;
 }
 const ITEM_TYPE_LABEL: Record<string, string> = { food: "Đồ ăn", care: "Chăm sóc", toy: "Đồ chơi", egg: "Trứng", tool: "Dụng cụ", seed: "Hạt giống" };
+
+/**
+ * One reward in the form. `what` says which one: for an item "random:<group>", "match:<group>" or
+ * "fixed:<item>"; for a piece of gear "random", "match" or "fixed:<item>". "match" means an item that
+ * suits the receiver's main pet (same element or the one feeding it), so one code fits every player.
+ */
+interface RewardRow {
+  kind: "item" | "gear" | "coins";
+  what: string;
+  qty: string;
+  tier: string;
+  amount: string;
+}
+const newRow = (kind: RewardRow["kind"]): RewardRow => ({ kind, what: kind === "item" ? "match:food" : "match", qty: "1", tier: "random", amount: "" });
+function rowToEntry(r: RewardRow) {
+  if (r.kind === "coins") return { kind: "coins", amount: Number(r.amount) };
+  const [pick, ref] = r.what.split(":");
+  if (r.kind === "gear") return pick === "fixed" ? { kind: "gear", pick, itemId: ref, tier: r.tier } : { kind: "gear", pick, tier: r.tier };
+  return pick === "fixed" ? { kind: "item", pick, itemId: ref, qty: Number(r.qty) || 1 } : { kind: "item", pick, category: ref, qty: Number(r.qty) || 1 };
+}
+
+function RewardRows({ rows, onChange, data, allowCoins }: { rows: RewardRow[]; onChange: (rows: RewardRow[]) => void; data: GiftData | null; allowCoins?: boolean }) {
+  const itemTypes = [...new Set((data?.items ?? []).map((i) => i.type))];
+  const categories = Object.entries(data?.categories ?? {});
+  const set = (i: number, patch: Partial<RewardRow>) => onChange(rows.map((r, j) => (j === i ? { ...r, ...patch } : r)));
+  return (
+    <div className="space-y-2">
+      {rows.map((row, i) => (
+        <div key={i} className="grid items-end gap-2 sm:grid-cols-[9.5rem_1fr_11rem_auto]">
+          <Field label={i === 0 ? "Loại" : undefined}>
+            <Select value={row.kind} onChange={(e) => set(i, newRow(e.target.value as RewardRow["kind"]))} aria-label="Loại quà">
+              <option value="item">Vật phẩm</option>
+              <option value="gear">Trang phục</option>
+              {allowCoins && <option value="coins">Xu</option>}
+            </Select>
+          </Field>
+          {row.kind === "coins" ? (
+            <Field label={i === 0 ? "Số xu" : undefined} className="sm:col-span-2">
+              <Input type="number" min={1} max={1000000} step={1} value={row.amount} onChange={(e) => set(i, { amount: e.target.value })} placeholder="500" aria-label="Số xu" />
+            </Field>
+          ) : (
+            <>
+              <Field label={i === 0 ? "Món" : undefined}>
+                {row.kind === "item" ? (
+                  <Select value={row.what} onChange={(e) => set(i, { what: e.target.value })} aria-label="Vật phẩm">
+                    <optgroup label="Hợp mệnh bé chính của người nhận">
+                      {categories.filter(([, c]) => !c.noElement).map(([key, c]) => <option key={key} value={`match:${key}`}>{c.name} hợp mệnh</option>)}
+                    </optgroup>
+                    <optgroup label="Ngẫu nhiên">
+                      {categories.map(([key, c]) => <option key={key} value={`random:${key}`}>{c.name} ngẫu nhiên</option>)}
+                    </optgroup>
+                    {itemTypes.map((type) => (
+                      <optgroup key={type} label={ITEM_TYPE_LABEL[type] ?? type}>
+                        {data?.items.filter((it) => it.type === type).map((it) => <option key={it.id} value={`fixed:${it.id}`}>{it.icon} {it.name}</option>)}
+                      </optgroup>
+                    ))}
+                  </Select>
+                ) : (
+                  <Select value={row.what} onChange={(e) => set(i, { what: e.target.value })} aria-label="Trang phục">
+                    <option value="match">Hợp mệnh bé chính của người nhận</option>
+                    <option value="random">Món ngẫu nhiên</option>
+                    {Object.keys(SLOT_LABEL).map((slot) => (
+                      <optgroup key={slot} label={SLOT_LABEL[slot]}>
+                        {(data?.wearables ?? []).filter((w) => w.slot === slot).map((w) => <option key={w.id} value={`fixed:${w.id}`}>{w.name}</option>)}
+                      </optgroup>
+                    ))}
+                  </Select>
+                )}
+              </Field>
+              {row.kind === "item" ? (
+                <Field label={i === 0 ? "Số lượng" : undefined}><Input type="number" min={1} max={99} value={row.qty} onChange={(e) => set(i, { qty: e.target.value })} aria-label="Số lượng" /></Field>
+              ) : (
+                <Field label={i === 0 ? "Cấp" : undefined}><TierSelect value={row.tier} onChange={(v) => set(i, { tier: v })} randomLabel="Quay theo tỷ lệ" /></Field>
+              )}
+            </>
+          )}
+          <Button variant="ghost" size="sm" onClick={() => onChange(rows.filter((_, j) => j !== i))} aria-label="Bỏ món này"><X className="h-4 w-4" /></Button>
+        </div>
+      ))}
+      <div className="flex flex-wrap gap-2">
+        <Button variant="outline" size="sm" onClick={() => onChange([...rows, newRow("item")])}><Plus className="h-4 w-4" /> Vật phẩm</Button>
+        <Button variant="outline" size="sm" onClick={() => onChange([...rows, newRow("gear")])}><Plus className="h-4 w-4" /> Trang phục</Button>
+        {allowCoins && <Button variant="outline" size="sm" onClick={() => onChange([...rows, newRow("coins")])}><Plus className="h-4 w-4" /> Xu</Button>}
+      </div>
+    </div>
+  );
+}
 
 async function copyText(text: string, done = "Đã chép") {
   try {
@@ -445,21 +536,16 @@ export function GiftCodesTab() {
   const [maxUses, setMaxUses] = useState("");
   const [expires, setExpires] = useState("");
   const [coinsText, setCoinsText] = useState("");
-  const [items, setItems] = useState<{ id: string; qty: string }[]>([]);
-  const [gear, setGear] = useState<{ itemId: string; tier: string }[]>([]);
+  const [always, setAlways] = useState<RewardRow[]>([]);
+  const [choice, setChoice] = useState<RewardRow[]>([]);
   const [busy, setBusy] = useState(false);
   const [made, setMade] = useState<GiftCode[] | null>(null);
   const [revoking, setRevoking] = useState<GiftCode | null>(null);
   const [viewing, setViewing] = useState<GiftCode | null>(null);
-  const itemTypes = useMemo(() => [...new Set((data?.items ?? []).map((i) => i.type))], [data]);
   const batch = Number(count) > 1;
 
   const create = async () => {
-    const rewards = {
-      coins: coinsText ? Number(coinsText) : 0,
-      items: Object.fromEntries(items.filter((i) => i.id).map((i) => [i.id, Number(i.qty) || 1])),
-      gear,
-    };
+    const rewards = { coins: coinsText ? Number(coinsText) : 0, entries: always.map(rowToEntry), choice: choice.map(rowToEntry) };
     setBusy(true);
     try {
       const res = await api<{ codes: GiftCode[] }>(`${ADMIN}/gift-codes`, {
@@ -506,37 +592,25 @@ export function GiftCodesTab() {
           </div>
 
           <div className="space-y-3 rounded-lg border bg-muted/30 p-3">
-            <p className="text-sm font-medium">Phần quà</p>
+            <div>
+              <p className="text-sm font-medium">Luôn nhận</p>
+              <p className="text-xs text-muted-foreground">
+                Mỗi món chọn cố định, ngẫu nhiên trong một nhóm, hoặc hợp mệnh bé chính của người nhận (cùng hành hoặc tương sinh; người chưa có bé thì quay ngẫu nhiên). Nhờ vậy một mã hợp với người chơi ở cả 5 hành.
+              </p>
+            </div>
             <div className="grid gap-3 sm:grid-cols-[12rem_1fr]">
               <Field label="Xu"><Input type="number" min={0} max={1000000} step={1} value={coinsText} onChange={(e) => setCoinsText(e.target.value)} placeholder="0" /></Field>
             </div>
-            {items.map((row, i) => (
-              <div key={i} className="grid items-end gap-2 sm:grid-cols-[1fr_7rem_auto]">
-                <Field label={i === 0 ? "Vật phẩm" : undefined}>
-                  <Select value={row.id} onChange={(e) => setItems(items.map((r, j) => (j === i ? { ...r, id: e.target.value } : r)))} aria-label="Vật phẩm">
-                    <option value="">Chọn vật phẩm…</option>
-                    {itemTypes.map((type) => (
-                      <optgroup key={type} label={ITEM_TYPE_LABEL[type] ?? type}>
-                        {data?.items.filter((it) => it.type === type).map((it) => <option key={it.id} value={it.id}>{it.icon} {it.name}</option>)}
-                      </optgroup>
-                    ))}
-                  </Select>
-                </Field>
-                <Field label={i === 0 ? "Số lượng" : undefined}><Input type="number" min={1} max={99} value={row.qty} onChange={(e) => setItems(items.map((r, j) => (j === i ? { ...r, qty: e.target.value } : r)))} aria-label="Số lượng" /></Field>
-                <Button variant="ghost" size="sm" onClick={() => setItems(items.filter((_, j) => j !== i))} aria-label="Bỏ vật phẩm"><X className="h-4 w-4" /></Button>
-              </div>
-            ))}
-            {gear.map((row, i) => (
-              <div key={i} className="grid items-end gap-2 sm:grid-cols-[1fr_12rem_auto]">
-                <Field label={i === 0 ? "Trang phục" : undefined}><WearableSelect value={row.itemId} onChange={(v) => setGear(gear.map((r, j) => (j === i ? { ...r, itemId: v } : r)))} wearables={data?.wearables ?? []} randomLabel="Món ngẫu nhiên" /></Field>
-                <Field label={i === 0 ? "Cấp" : undefined}><TierSelect value={row.tier} onChange={(v) => setGear(gear.map((r, j) => (j === i ? { ...r, tier: v } : r)))} randomLabel="Quay theo tỷ lệ" /></Field>
-                <Button variant="ghost" size="sm" onClick={() => setGear(gear.filter((_, j) => j !== i))} aria-label="Bỏ trang phục"><X className="h-4 w-4" /></Button>
-              </div>
-            ))}
-            <div className="flex flex-wrap gap-2">
-              <Button variant="outline" size="sm" onClick={() => setItems([...items, { id: "", qty: "1" }])}><Plus className="h-4 w-4" /> Vật phẩm</Button>
-              <Button variant="outline" size="sm" onClick={() => setGear([...gear, { itemId: "random", tier: "random" }])} disabled={gear.length >= 10}><Plus className="h-4 w-4" /> Trang phục</Button>
+            <RewardRows rows={always} onChange={setAlways} data={data} />
+          </div>
+
+          <div className="space-y-3 rounded-lg border bg-muted/30 p-3">
+            <div>
+              <p className="text-sm font-medium">Cho người chơi tự chọn 1 trong</p>
+              <p className="text-xs text-muted-foreground">Không bắt buộc. Thêm 2 đến 6 món; khi nhập mã, người chơi thấy các món này và chọn 1, sau đó mới tính lượt dùng.</p>
             </div>
+            {choice.length === 1 && <p role="alert" className="text-xs text-danger">Cần ít nhất 2 món để người chơi chọn.</p>}
+            <RewardRows rows={choice} onChange={setChoice} data={data} allowCoins />
           </div>
 
           <div className="flex justify-end">

@@ -1,11 +1,15 @@
-// Mã quà: quản trị viên tạo mã (xu, vật phẩm, trang phục theo cấp), người chơi nhập trong game để nhận.
+// Mã quà: quản trị viên tạo mã, người chơi nhập trong game để nhận.
+// Phần quà gồm phần luôn nhận (xu và các món) và, nếu có, một lượt chọn: người chơi tự chọn 1 trong 2–6 món.
+// Mỗi món có thể cố định, ngẫu nhiên trong một nhóm, hoặc hợp mệnh bé chính của người nhận (cùng hành hoặc
+// tương sinh), để quà hợp với từng người chơi dù bé thuộc hành nào.
 // Mỗi người nhận một mã một lần; mã có thể giới hạn tổng lượt dùng và hạn dùng, và thu hồi được.
 import { randomInt } from 'node:crypto';
-import { addItem, db, getUser, transaction } from './db.js';
+import { addItem, db, getPet, getUser, transaction } from './db.js';
 import { GameError, ITEMS } from './game.js';
 import { post } from './ledger.js';
-import { createGear, createRandomGear, describeGear } from './gear.js';
+import { createGear, describeGear } from './gear.js';
 import { TIERS } from '../../public/ta-tua/game/js/shared/gear.js';
+import { elementOfSpecies, relation } from '../../public/ta-tua/game/js/shared/pets.js';
 
 const q = {
   insert: db.prepare('INSERT INTO gift_codes (code, label, rewards, max_uses, expires_at, created_by, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)'),
@@ -24,6 +28,18 @@ const q = {
 const ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // bỏ chữ dễ nhầm: I, O, 0, 1
 export const CODE_RULE = /^[A-Z0-9_-]{4,32}$/;
 const MAX_COINS = 1_000_000;
+const MAX_ENTRIES = 12;
+const MAX_GEAR = 10;
+
+/** Nhóm vật phẩm để quay ngẫu nhiên hoặc chọn hợp mệnh (trang phục là loại quà riêng). */
+export const GIFT_CATEGORIES = {
+  food: { name: 'Đồ ăn' },
+  care: { name: 'Đồ chăm sóc' },
+  toy: { name: 'Đồ chơi', noElement: true },
+  egg: { name: 'Trứng ngũ hành' },
+  any: { name: 'Vật phẩm' },
+};
+const PICKS = ['fixed', 'random', 'match'];
 
 /** Mã ngẫu nhiên dạng XXXX-XXXX. */
 export function randomGiftCode() {
@@ -31,41 +47,131 @@ export function randomGiftCode() {
   return `${pick()}-${pick()}`;
 }
 
-/** Kiểm tra phần quà quản trị viên nhập; trả về bản đã chuẩn hóa. */
-export function cleanRewards(input = {}) {
-  const coins = input.coins == null || input.coins === '' ? 0 : Number(input.coins);
-  if (!Number.isInteger(coins) || coins < 0 || coins > MAX_COINS) throw new GameError(`Xu thưởng phải là số nguyên 0–${MAX_COINS.toLocaleString('vi-VN')}.`);
-  const items = {};
-  for (const [id, n] of Object.entries(input.items ?? {})) {
-    const item = Object.hasOwn(ITEMS, id) ? ITEMS[id] : null;
-    if (!item) throw new GameError(`Không có vật phẩm "${id}".`);
-    if (item.type === 'accessory') throw new GameError('Trang phục thêm ở mục "Trang phục" để chọn cấp.');
-    const qty = Number(n);
-    if (!Number.isInteger(qty) || qty < 1 || qty > 99) throw new GameError(`Số lượng ${item.name} phải từ 1 đến 99.`);
-    items[id] = qty;
+const itemsOf = (category) => Object.values(ITEMS).filter((i) => i.type !== 'accessory' && (category === 'any' || i.type === category));
+const wearables = () => Object.values(ITEMS).filter((i) => i.type === 'accessory');
+/** Hợp mệnh: cùng hành hoặc hành của món sinh ra hành của bé. */
+const fits = (item, element) => ['same', 'feeds'].includes(relation(item.element, element));
+const intIn = (v, lo, hi, what) => {
+  const n = Number(v);
+  if (!Number.isInteger(n) || n < lo || n > hi) throw new GameError(`${what} phải là số nguyên ${lo}–${hi.toLocaleString('vi-VN')}.`);
+  return n;
+};
+
+/** Kiểm tra một món quà; trả về bản chuẩn hóa. `allowCoins`: món "xu" chỉ dùng trong lượt chọn. */
+function cleanEntry(raw, { allowCoins }) {
+  const kind = raw?.kind;
+  if (kind === 'coins') {
+    if (!allowCoins) throw new GameError('Xu của phần luôn nhận nhập ở ô Xu.');
+    return { kind, amount: intIn(raw.amount, 1, MAX_COINS, 'Số xu') };
   }
-  const gear = (input.gear ?? []).map((g) => {
-    const itemId = g?.itemId && g.itemId !== 'random' ? String(g.itemId) : 'random';
-    if (itemId !== 'random' && ITEMS[itemId]?.type !== 'accessory') throw new GameError('Trang phục không hợp lệ.');
-    const tier = g?.tier && g.tier !== 'random' ? String(g.tier) : 'random';
+  const pick = PICKS.includes(raw?.pick) ? raw.pick : 'fixed';
+  if (kind === 'item') {
+    const qty = intIn(raw.qty ?? 1, 1, 99, 'Số lượng');
+    if (pick === 'fixed') {
+      const item = Object.hasOwn(ITEMS, raw.itemId ?? '') ? ITEMS[raw.itemId] : null;
+      if (!item) throw new GameError(`Không có vật phẩm "${raw.itemId ?? ''}".`);
+      if (item.type === 'accessory') throw new GameError('Trang phục chọn ở loại quà "Trang phục" để có cấp.');
+      return { kind, pick, itemId: item.id, qty };
+    }
+    const category = Object.hasOwn(GIFT_CATEGORIES, raw.category ?? '') ? raw.category : null;
+    if (!category) throw new GameError('Chọn nhóm vật phẩm cho quà ngẫu nhiên hoặc hợp mệnh.');
+    if (pick === 'match' && GIFT_CATEGORIES[category].noElement) throw new GameError(`${GIFT_CATEGORIES[category].name} không có hành, hãy chọn ngẫu nhiên.`);
+    return { kind, pick, category, qty };
+  }
+  if (kind === 'gear') {
+    const tier = raw.tier && raw.tier !== 'random' ? String(raw.tier) : 'random';
     if (tier !== 'random' && !TIERS[tier]) throw new GameError('Cấp trang phục không hợp lệ.');
-    return { itemId, tier };
-  });
-  if (gear.length > 10) throw new GameError('Mỗi mã tặng tối đa 10 món trang phục.');
-  if (!coins && !Object.keys(items).length && !gear.length) throw new GameError('Mã quà cần có ít nhất một phần quà.');
-  return { coins, items, gear };
+    if (pick === 'fixed') {
+      if (ITEMS[raw.itemId]?.type !== 'accessory') throw new GameError('Trang phục không hợp lệ.');
+      return { kind, pick, itemId: raw.itemId, tier };
+    }
+    return { kind, pick, tier };
+  }
+  throw new GameError('Loại quà không hợp lệ.');
 }
 
-/** Mô tả phần quà cho người xem. */
-export function rewardsText(rewards) {
-  const parts = [];
-  if (rewards.coins) parts.push(`${rewards.coins.toLocaleString('vi-VN')} 🪙`);
-  for (const [id, n] of Object.entries(rewards.items ?? {})) parts.push(`${n} × ${ITEMS[id]?.icon ?? ''} ${ITEMS[id]?.name ?? id}`);
-  for (const g of rewards.gear ?? []) {
-    const name = g.itemId === 'random' ? 'Trang phục ngẫu nhiên' : ITEMS[g.itemId]?.name ?? g.itemId;
-    parts.push(`${name} (${g.tier === 'random' ? 'cấp ngẫu nhiên' : `cấp ${TIERS[g.tier].name}`})`);
+/** Phần quà kiểu cũ ({ items: { id: n }, gear: [{ itemId|'random', tier }] }) sang kiểu mới. */
+function fromLegacy(input) {
+  const entries = [...(input.entries ?? [])];
+  for (const [itemId, qty] of Object.entries(input.items ?? {})) entries.push({ kind: 'item', pick: 'fixed', itemId, qty });
+  for (const g of input.gear ?? []) {
+    entries.push(g?.itemId && g.itemId !== 'random' ? { kind: 'gear', pick: 'fixed', itemId: g.itemId, tier: g.tier } : { kind: 'gear', pick: 'random', tier: g?.tier });
   }
+  return entries;
+}
+
+/** Kiểm tra phần quà quản trị viên nhập; trả về bản đã chuẩn hóa { coins, entries, choice }. */
+export function cleanRewards(input = {}) {
+  const coins = input.coins == null || input.coins === '' ? 0 : intIn(input.coins, 0, MAX_COINS, 'Xu thưởng');
+  const entries = fromLegacy(input).map((e) => cleanEntry(e, { allowCoins: false }));
+  const choice = (input.choice ?? []).map((e) => cleanEntry(e, { allowCoins: true }));
+  if (entries.length > MAX_ENTRIES) throw new GameError(`Phần luôn nhận tối đa ${MAX_ENTRIES} món.`);
+  if (choice.length === 1 || choice.length > 6) throw new GameError('Lượt chọn cần từ 2 đến 6 món để người chơi chọn.');
+  if ([...entries, ...choice].filter((e) => e.kind === 'gear').length > MAX_GEAR) throw new GameError(`Mỗi mã tặng tối đa ${MAX_GEAR} món trang phục.`);
+  if (!coins && !entries.length && !choice.length) throw new GameError('Mã quà cần có ít nhất một phần quà.');
+  return { coins, entries, choice };
+}
+
+/** Phần quà đã lưu (kể cả mã tạo trước khi có lượt chọn) ở dạng chuẩn. */
+export const normalizeRewards = (stored) => ({ coins: stored.coins ?? 0, entries: fromLegacy(stored), choice: stored.choice ?? [] });
+
+const tierText = (tier) => (tier === 'random' ? 'cấp ngẫu nhiên' : `cấp ${TIERS[tier]?.name ?? tier}`);
+
+/** Mô tả một món quà cho người xem (trước khi quay). */
+export function entryText(e) {
+  if (e.kind === 'coins') return `${e.amount.toLocaleString('vi-VN')} 🪙`;
+  if (e.kind === 'item') {
+    if (e.pick === 'fixed') return `${e.qty} × ${ITEMS[e.itemId]?.icon ?? ''} ${ITEMS[e.itemId]?.name ?? e.itemId}`;
+    const name = GIFT_CATEGORIES[e.category]?.name ?? e.category;
+    return `${e.qty} × ${name} ${e.pick === 'match' ? 'hợp mệnh bé chính' : 'ngẫu nhiên'}`;
+  }
+  const name = e.pick === 'fixed' ? ITEMS[e.itemId]?.name ?? e.itemId : e.pick === 'match' ? 'Trang phục hợp mệnh bé chính' : 'Trang phục ngẫu nhiên';
+  return `${name} (${tierText(e.tier)})`;
+}
+
+/** Mô tả cả phần quà. */
+export function rewardsText(stored) {
+  const r = normalizeRewards(stored);
+  const parts = [];
+  if (r.coins) parts.push(`${r.coins.toLocaleString('vi-VN')} 🪙`);
+  parts.push(...r.entries.map(entryText));
+  if (r.choice.length) parts.push(`tự chọn 1 trong: ${r.choice.map(entryText).join(' / ')}`);
   return parts.join(', ');
+}
+
+/** Hành của bé chính người nhận (null nếu chưa có bé): dùng cho quà hợp mệnh. */
+function elementOf(userId) {
+  const user = getUser(userId);
+  const pet = user?.active_pet_id ? getPet(user.active_pet_id) : null;
+  return pet ? elementOfSpecies(pet.species) : null;
+}
+
+/** Trao một món quà; trả về lời mô tả món thật sự nhận được. */
+function grant(userId, e, { element, rand, now, gear, code }) {
+  const pickFrom = (pool) => pool[Math.floor(rand() * pool.length)];
+  if (e.kind === 'coins') {
+    post({ userId, delta: e.amount, kind: 'gift_code', memo: `Mã quà ${code}`, now });
+    return entryText(e);
+  }
+  if (e.kind === 'item') {
+    let item = e.pick === 'fixed' ? ITEMS[e.itemId] : null;
+    if (!item) {
+      const pool = itemsOf(e.category);
+      const fitting = e.pick === 'match' && element ? pool.filter((i) => fits(i, element)) : [];
+      item = pickFrom(fitting.length ? fitting : pool);
+    }
+    addItem(userId, item.id, e.qty);
+    return `${e.qty} × ${item.icon ?? ''} ${item.name}`;
+  }
+  let itemId = e.pick === 'fixed' ? e.itemId : null;
+  if (!itemId) {
+    const pool = wearables();
+    const fitting = e.pick === 'match' && element ? pool.filter((i) => fits(i, element)) : [];
+    itemId = pickFrom(fitting.length ? fitting : pool).id;
+  }
+  const made = describeGear(createGear(userId, itemId, { source: 'gift', tier: e.tier === 'random' ? null : e.tier, rand }, now));
+  gear.push(made);
+  return `${made.name} (cấp ${made.tierName})`;
 }
 
 export function createGiftCode({ code, label, rewards, maxUses = null, expiresAt = null, createdBy }, now = Date.now()) {
@@ -83,7 +189,7 @@ export function createGiftCode({ code, label, rewards, maxUses = null, expiresAt
 }
 
 export function giftView(row, now = Date.now()) {
-  const rewards = JSON.parse(row.rewards);
+  const rewards = normalizeRewards(JSON.parse(row.rewards));
   return {
     id: row.id,
     code: row.code,
@@ -116,8 +222,11 @@ function throttle(userId, now) {
   attempts.set(userId, recent);
 }
 
-/** Người chơi nhập mã: kiểm tra rồi trao quà; trả về lời nhắn và những gì đã nhận. */
-export function redeemGiftCode(userId, rawCode, now = Date.now()) {
+/**
+ * Người chơi nhập mã: kiểm tra rồi trao quà; trả về lời nhắn và những gì đã nhận.
+ * Mã có lượt chọn mà chưa chọn (`choice` trống): chưa trao gì, chưa tính lượt, trả về các món để chọn.
+ */
+export function redeemGiftCode(userId, rawCode, choice = null, now = Date.now(), rand = Math.random) {
   throttle(userId, now);
   const code = String(rawCode ?? '').trim().toUpperCase();
   if (!CODE_RULE.test(code)) throw new GameError('Mã quà không đúng.');
@@ -127,25 +236,42 @@ export function redeemGiftCode(userId, rawCode, now = Date.now()) {
     if (row.revoked_at) throw new GameError('Mã quà này đã bị thu hồi.');
     if (row.expires_at && row.expires_at <= now) throw new GameError('Mã quà này đã hết hạn.');
     if (q.redeemed.get(row.id, userId)) throw new GameError('Bạn đã nhận quà của mã này rồi.');
+    if (row.max_uses != null && row.uses >= row.max_uses) throw new GameError('Mã quà này đã hết lượt.');
+    const rewards = normalizeRewards(JSON.parse(row.rewards));
+    const fixed = { ...rewards, choice: [] };
+    if (rewards.choice.length && (choice === null || choice === undefined || choice === '')) {
+      return {
+        needsChoice: true,
+        code: row.code,
+        label: row.label,
+        always: rewardsText(fixed),
+        options: rewards.choice.map((e, index) => ({ index, text: entryText(e) })),
+        message: `🎁 ${row.label}: chọn 1 món quà.`,
+      };
+    }
+    let picked = null;
+    if (rewards.choice.length) {
+      const i = Number(choice);
+      if (!Number.isInteger(i) || i < 0 || i >= rewards.choice.length) throw new GameError('Món quà chọn không hợp lệ.');
+      picked = rewards.choice[i];
+    }
     if (q.use.run(row.id).changes === 0) throw new GameError('Mã quà này đã hết lượt.');
     q.redeem.run(row.id, userId, now);
-    const rewards = JSON.parse(row.rewards);
-    const gear = [];
-    if (rewards.coins) post({ userId, delta: rewards.coins, kind: 'gift_code', memo: `Mã quà ${row.code}`, now });
-    for (const [id, n] of Object.entries(rewards.items ?? {})) if (ITEMS[id]) addItem(userId, id, n);
-    for (const g of rewards.gear ?? []) {
-      const tier = g.tier === 'random' ? null : g.tier;
-      const made = g.itemId === 'random'
-        ? createRandomGear(userId, { source: 'gift', tier }, now)
-        : createGear(userId, g.itemId, { source: 'gift', tier }, now);
-      gear.push(describeGear(made));
+    const ctx = { element: elementOf(userId), rand, now, gear: [], code: row.code };
+    const got = [];
+    if (rewards.coins) {
+      post({ userId, delta: rewards.coins, kind: 'gift_code', memo: `Mã quà ${row.code}`, now });
+      got.push(`${rewards.coins.toLocaleString('vi-VN')} 🪙`);
     }
+    for (const e of rewards.entries) got.push(grant(userId, e, ctx));
+    if (picked) got.push(grant(userId, picked, ctx));
     const user = getUser(userId);
     return {
       code: row.code,
       label: row.label,
-      gear,
-      message: `🎁 ${row.label}: đã nhận ${rewardsText(rewards)}.`,
+      gear: ctx.gear,
+      received: got,
+      message: `🎁 ${row.label}: đã nhận ${got.join(', ')}.`,
       who: user.display_name ?? user.username,
     };
   });

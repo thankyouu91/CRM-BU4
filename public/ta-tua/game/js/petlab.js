@@ -1,7 +1,8 @@
 // Xưởng tạo hình: xem 50 loài pet ngũ hành, 6 giai đoạn tuổi, thử đồ đeo theo khe và xem số liệu từng loài.
 import { RIG_ANIMS, RIG_H, RIG_W, animFrames, drawFrame } from './rig.js';
 import {
-  ELEMENTS, LIFE_STAGES, MASCOTS, RARITIES, RELATIONS, SKILL_IDS, SLOTS, SPECIES, SPECIES_BY_ID, WEARABLES, relation, speciesStats,
+  ELEMENTS, LEVEL_FORMS, LIFE_STAGES, MASCOTS, RARITIES, RELATIONS, SKILL_IDS, SLOTS, SPECIES, SPECIES_BY_ID, WEARABLES, relation, speciesStats,
+  wearLimit,
 } from './shared/pets.js';
 import { esc } from './ui.js';
 
@@ -19,7 +20,8 @@ const state = {
   stage: 'young',
   selected: 'meo_bac',
   anim: 'idle',
-  wear: { head: 'nonla', face: null, neck: 'scarf', back: null },
+  wear: { head: 'nonla', face: null, neck: 'scarf', back: null, charm: null },
+  level: 1, // dáng theo cấp (LEVEL_FORMS)
   anchors: false,
   dressAll: true,
   rarity: 'all', // độ hiếm tối thiểu: all, hiem, quy, huyenthoai
@@ -29,12 +31,14 @@ const state = {
 const params = new URLSearchParams(location.search);
 if (RARITIES[params.get('rarity')]) state.rarity = params.get('rarity');
 if (LIFE_STAGES.some((s) => s.key === params.get('stage'))) state.stage = params.get('stage');
+if (Number(params.get('level')) >= 1) state.level = Math.floor(Number(params.get('level')));
+if (SPECIES_BY_ID[params.get('species')]) state.selected = params.get('species');
 if (params.get('wear') === '0') {
-  state.wear = { head: null, face: null, neck: null, back: null };
+  state.wear = { head: null, face: null, neck: null, back: null, charm: null };
   state.dressAll = false;
 }
 const minStars = () => (state.rarity === 'all' ? 0 : RARITIES[state.rarity].stars);
-if (params.get('rarity')) state.selected = SPECIES.find((s) => s.rarity === 'huyenthoai')?.id ?? state.selected;
+if (params.get('rarity') && !params.get('species')) state.selected = SPECIES.find((s) => s.rarity === 'huyenthoai')?.id ?? state.selected;
 
 const $ = (s) => document.querySelector(s);
 const wearKey = (w) => Object.values(w).map((v) => v ?? '-').join(',');
@@ -43,8 +47,8 @@ const wearKey = (w) => Object.values(w).map((v) => v ?? '-').join(',');
 
 const frameCache = new Map();
 function framesFor(id, stage, anim, wear) {
-  const key = `${id}|${stage}|${anim}|${wearKey(wear)}|${state.anchors}`;
-  if (!frameCache.has(key)) frameCache.set(key, animFrames(id, stage, anim, wear, { anchors: state.anchors }));
+  const key = `${id}|${stage}|${anim}|${wearKey(wear)}|${state.anchors}|${state.level}`;
+  if (!frameCache.has(key)) frameCache.set(key, animFrames(id, stage, anim, wear, { anchors: state.anchors, level: state.level }));
   return frameCache.get(key);
 }
 
@@ -178,7 +182,13 @@ function drawDetail() {
             title="${RELATIONS[rel].label}">${ELEMENTS[w.element].icon} ${esc(w.name)}${tag ? `<small>${RELATIONS[rel].short}</small>` : ''}</button>`;
         }).join('')}
       </div>`).join('')}
+    <p class="muted small">Lv ${state.level}: bé ${RARITIES[sp.rarity].name.toLowerCase()} này đeo được <b>${wearLimit(state.level, sp.rarity)} món</b> cùng lúc
+      (dưới Lv 30 đeo 3, từ Lv 30 đeo 4, Huyền thoại thêm 1).</p>
     ${outfitBonus(sp)}
+
+    <h3>📈 Dáng theo cấp</h3>
+    <div class="life-strip">${LEVEL_FORMS.map((f) => `
+      <button class="life-step ${f.from === state.level ? 'on' : ''}" data-level="${f.from}"><canvas data-form="${f.from}"></canvas><small>Lv ${f.from}+ · ${esc(f.name)}</small></button>`).join('')}</div>
 
     <h3>🌱 Vòng đời</h3>
     <div class="life-strip">${LIFE_STAGES.map((s) => `
@@ -206,7 +216,15 @@ function drawDetail() {
 
   play(detail.querySelector('#big'), framesFor(sp.id, state.stage, state.anim, state.wear), RIG_ANIMS[state.anim].fps, 5);
   for (const c of detail.querySelectorAll('[data-life]')) {
-    const frame = drawFrame(sp, c.dataset.life, {}, state.wear, 0, { anchors: state.anchors });
+    const frame = drawFrame(sp, c.dataset.life, {}, state.wear, 0, { anchors: state.anchors, level: state.level });
+    c.width = frame.width * 2;
+    c.height = frame.height * 2;
+    const g = c.getContext('2d');
+    g.imageSmoothingEnabled = false;
+    g.drawImage(frame, 0, 0, c.width, c.height);
+  }
+  for (const c of detail.querySelectorAll('[data-form]')) {
+    const frame = drawFrame(sp, state.stage, {}, state.wear, 0, { level: Number(c.dataset.form) });
     c.width = frame.width * 2;
     c.height = frame.height * 2;
     const g = c.getContext('2d');
@@ -235,6 +253,9 @@ document.addEventListener('click', (e) => {
     state.element = d.element;
     drawFilters();
     drawGallery();
+  } else if (d.level) {
+    state.level = Number(d.level);
+    render();
   } else if (d.stage) {
     state.stage = d.stage;
     render();
