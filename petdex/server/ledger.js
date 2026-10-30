@@ -79,6 +79,8 @@ export const KINDS = {
   corp_tax: { group: 'transfer', label: 'Thuế doanh nghiệp' },
   corp_tax_refund: { group: 'transfer', label: 'Hoàn thuế doanh nghiệp' },
   corp_tax_collect: { group: 'transfer', label: 'Sở thuế truy thu' },
+  goods_trade: { group: 'transfer', label: 'Mua bán hàng công nghiệp' },
+  goods_import: { group: 'transfer', label: 'Nhập khẩu nguyên liệu' },
 };
 
 /** Thu thuế: một nửa vào ngân sách thị trấn, một nửa bị hủy (cùng tỉ lệ như phí). */

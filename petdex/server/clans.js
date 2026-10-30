@@ -8,9 +8,11 @@ import { DAY, GameError } from './game.js';
 import { post, treasuryBalance } from './ledger.js';
 import { macroFor, rollNextDay } from './macro.js';
 import { weekKey } from './town.js';
+import { expireListings, plotDeposits, productionPreview, runProduction, setPlotVariant, tradeIncome } from './industry.js';
+import { plantsFor } from '../../public/ta-tua/game/js/shared/industry.js';
 import {
   CLAN_EMBLEMS, CLAN_LEVELS, INDUSTRIES, INDUSTRY_ORDER, LAND, PHASES, PLOTS, WEATHER, cleanDesign, clanLevelOf, clanPerks,
-  competitionFactor, designBonus, designComplete, designCost, envFactor, scarcityFactor, weatherFactor,
+  competitionFactor, designBonus, designComplete, designCost, envFactor, isProduction, scarcityFactor, weatherFactor,
 } from '../../public/ta-tua/game/js/shared/clan.js';
 
 // ---------------------------------------------------------------- cấu hình (quản trị viên chỉnh được)
@@ -466,7 +468,17 @@ export function setPlotIndustry(userId, plotId, industry) {
     const { clan, plot } = ownPlot(userId, plotId, ['leader', 'elder'], 'chọn ngành cho lô đất');
     if (!q.industries.all(clan.id).some((i) => i.industry === industry)) throw new GameError('Gia tộc chưa thâu tóm ngành này.');
     q.setPlotIndustry.run(industry, plot.id);
+    if (industry === 'power') setPlotVariant(plot.id, plantsFor(plot)[0]);
     return { message: `Lô ${plot.code} giờ làm ngành ${INDUSTRIES[industry].icon} ${INDUSTRIES[industry].name}.` };
+  });
+}
+
+/** Chọn loại nhà máy điện cho một lô làm ngành Năng lượng. */
+export function choosePlant(userId, plotId, plant) {
+  return transaction(() => {
+    const { row, plot } = ownPlot(userId, plotId, ['leader', 'elder'], 'chọn loại nhà máy điện');
+    if (row.industry !== 'power') throw new GameError(`Lô ${plot.code} chưa làm ngành Năng lượng.`);
+    return setPlotVariant(plot.id, plant);
   });
 }
 
@@ -522,9 +534,10 @@ export function clanView(userId, now = Date.now()) {
   const plots = q.clanPlots.all(clan.id).map((row) => {
     const plot = PLOT_BY_ID.get(row.id);
     const design = JSON.parse(row.design);
-    const rev = row.industry ? plotRevenue(plot, { industry: row.industry, design, level, macro: stats.macro, clansInIndustry: counts[row.industry] ?? 1 }) : null;
+    const prod = row.industry && isProduction(row.industry) ? productionPreview(plot, { industry: row.industry, variant: row.variant, design, level, macro: stats.macro }) : null;
+    const rev = row.industry && !prod ? plotRevenue(plot, { industry: row.industry, design, level, macro: stats.macro, clansInIndustry: counts[row.industry] ?? 1 }) : prod && { operating: designComplete(design), revenue: designComplete(design) ? prod.value : 0 };
     return {
-      id: plot.id, code: plot.code, zone: plot.zone, climate: plot.climate, industry: row.industry, pieces: design.length,
+      id: plot.id, code: plot.code, zone: plot.zone, climate: plot.climate, industry: row.industry, variant: row.variant, pieces: design.length,
       operating: Boolean(rev?.operating), estimate: rev?.revenue ?? 0, boughtPrice: row.bought_price,
       value: plotValue(plot, row, stats.landIndex, now),
     };
@@ -576,6 +589,8 @@ export function landView(userId, now = Date.now()) {
         value: owner ? plotValue(p, row, stats.landIndex, now, cfg) : null,
         owner,
         industry: row?.industry ?? null,
+        variant: row?.variant ?? null,
+        deposits: plotDeposits(p.id),
         design: owner ? JSON.parse(row.design) : [],
         mine: Boolean(owner && myClan && owner.id === myClan.clan_id),
         spent: owner && myClan && owner.id === myClan.clan_id ? row.design_spent : null,
@@ -607,9 +622,15 @@ export function plotPreview(userId, plotId, industry, now = Date.now()) {
   const row = q.plot.get(plot.id);
   const design = row?.clan_id && clan && row.clan_id === clan.id ? JSON.parse(row.design) : [];
   const clansInIndustry = (counts[industry] ?? 0) + (has ? 0 : 1);
+  const rate = taxRate(Math.max(1, owned.length + (has ? 0 : 1)), cfg);
+  if (isProduction(industry)) {
+    const variant = row?.industry === 'power' && industry === 'power' ? row.variant : plantsFor(plot)[0];
+    const prod = productionPreview(plot, { industry, variant, design, level, macro: stats.macro });
+    const margin = Math.max(0, prod.value - prod.cost);
+    return { plotId: plot.id, industry, production: prod, variant, revenue: prod.value, afterTax: Math.round(margin * (1 - rate)), taxRate: rate, clansInIndustry };
+  }
   // Doanh thu khi lô đã có công trình hoàn chỉnh (thưởng công trình tính theo thiết kế hiện có, nếu có).
   const rev = plotRevenue(plot, { industry, design, level, macro: stats.macro, clansInIndustry });
-  const rate = taxRate(Math.max(1, owned.length + (has ? 0 : 1)), cfg);
   return {
     plotId: plot.id,
     industry,
@@ -638,17 +659,21 @@ export function settleClansDay(day, rand = Math.random) {
       const level = levelOf(clan);
       const nInd = q.industries.all(clan.id).length;
       const plots = q.clanPlots.all(clan.id);
-      let revenue = 0;
+      let service = 0;
       for (const row of plots) {
-        if (!row.industry) continue;
+        if (!row.industry || isProduction(row.industry)) continue;
         const r = plotRevenue(PLOT_BY_ID.get(row.id), { industry: row.industry, design: JSON.parse(row.design), level, macro, clansInIndustry: counts[row.industry] ?? 1 }, cfg);
-        revenue += r.revenue;
+        service += r.revenue;
       }
+      // Ngành sản xuất: hàng làm ra vào kho, phần bán cho NPC vào quỹ ngay trong runProduction;
+      // tiền bán trên sàn chung trong ngày đã vào quỹ lúc giao dịch. Cả ba đều tính thuế.
+      const sold = runProduction(clan, plots, { day, macro, at, rand });
+      const revenue = service + sold + tradeIncome(clan.id, day);
       const rate = taxRate(Math.max(1, nInd), cfg);
       const declared = Math.round(revenue * clan.declare_ratio);
       const tax = Math.round(declared * rate);
       if (revenue > 0) {
-        post({ account: clanAccount(clan.id), delta: revenue, kind: 'clan_revenue', memo: day, now: at });
+        if (service > 0) post({ account: clanAccount(clan.id), delta: service, kind: 'clan_revenue', memo: day, now: at });
         if (tax > 0) {
           post({ account: clanAccount(clan.id), delta: -tax, kind: 'corp_tax', memo: day, now: at });
           toTreasury(tax / 2, 'corp_tax', `Thuế doanh nghiệp ${clan.name} ${day}`, at);
@@ -686,6 +711,7 @@ export function settleClansDay(day, rand = Math.random) {
         }
       }
     }
+    expireListings(end);
     rollNextDay(day, { rand, force: cfg.macro });
   });
 }
