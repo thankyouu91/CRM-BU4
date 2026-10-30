@@ -13,6 +13,7 @@ import { attachPlayground } from './playground.js';
 import { handleFetch } from './router.js';
 import { api } from './routes.js';
 import { runDue } from './scheduler.js';
+import { runBots } from './bots.js';
 import { setBackend } from './sql/backend.js';
 import { openDurableSql } from './sql/durable-sql.js';
 
@@ -47,6 +48,12 @@ export class PetdexPark extends DurableObject {
 
   async alarm() {
     this.tick();
+    // Cư dân tự động: một nhóm nhỏ bot mỗi nhịp, qua đúng router của game (không WebSocket, không gọi HTTP).
+    try {
+      await runBots(api);
+    } catch (err) {
+      console.error('Lỗi nhịp bot Petdex:', err);
+    }
     await this.ctx.storage.setAlarm(Date.now() + TICK_MS);
   }
 

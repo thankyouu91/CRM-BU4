@@ -519,6 +519,8 @@ addColumn('users', 'locked_slots', 'INTEGER NOT NULL DEFAULT 0');
   addColumn('users', 'banned', 'INTEGER NOT NULL DEFAULT 0');
   addColumn('users', 'invite_id', 'INTEGER');
   addColumn('users', 'last_seen_at', 'INTEGER NOT NULL DEFAULT 0');
+  // Cư dân tự động (bots.js): chỉ dùng nội bộ và ở bảng quản trị, không bao giờ gửi ra API của người chơi.
+  addColumn('users', 'is_bot', 'INTEGER NOT NULL DEFAULT 0');
   // Khóa đăng nhập: tên đã chuẩn hóa NFC và viết thường đủ cả chữ có dấu (COLLATE NOCASE chỉ gộp A–Z).
   addColumn('users', 'login_key', 'TEXT');
   const unkeyed = db.prepare('SELECT id, username FROM users WHERE login_key IS NULL').all();
@@ -821,6 +823,21 @@ addColumn('users', 'locked_slots', 'INTEGER NOT NULL DEFAULT 0');
     hits   TEXT NOT NULL,
     PRIMARY KEY (war_id, round)
   );
+  -- Cư dân tự động (bots.js): phiên đăng nhập nội bộ, tính cách, lượt "mở game" tiếp theo và trạng thái dở dang.
+  CREATE TABLE IF NOT EXISTS bots (
+    user_id      INTEGER PRIMARY KEY,
+    token        TEXT NOT NULL,
+    persona      TEXT NOT NULL,
+    state        TEXT,
+    next_at      INTEGER NOT NULL,
+    last_action  TEXT,
+    last_at      INTEGER,
+    actions      INTEGER NOT NULL DEFAULT 0,
+    last_chat_at INTEGER,
+    chat_day     TEXT,
+    created_at   INTEGER NOT NULL
+  );
+  CREATE INDEX IF NOT EXISTS bots_next ON bots(next_at);
   -- Sổ chào giá cho Siêu thị: mỗi gia tộc một lệnh mỗi nhóm (qty còn lại, giá = ratio × giá tham chiếu).
   CREATE TABLE IF NOT EXISTS essentials_asks (
     clan_id    INTEGER NOT NULL,
@@ -1168,6 +1185,10 @@ const w = {
     FROM users u WHERE (? = '' OR u.username LIKE ? OR u.display_name LIKE ?) AND (? = '' OR u.kind = ?) ORDER BY u.last_seen_at DESC, u.id DESC LIMIT 200`),
   countByKind: db.prepare('SELECT kind, COUNT(*) AS n, SUM(coins) AS coins, SUM(CASE WHEN banned THEN 1 ELSE 0 END) AS banned FROM users GROUP BY kind'),
   activeSince: db.prepare('SELECT COUNT(*) AS n FROM users WHERE last_seen_at >= ?'),
+  // Số liệu chỉ tính người thật (bỏ cư dân tự động), để chủ game vẫn thấy con số thật.
+  realStats: db.prepare('SELECT COUNT(*) AS n, COALESCE(SUM(coins), 0) AS coins FROM users WHERE is_bot = 0'),
+  realActiveSince: db.prepare('SELECT COUNT(*) AS n FROM users WHERE last_seen_at >= ? AND is_bot = 0'),
+  botCount: db.prepare('SELECT COUNT(*) AS n FROM users WHERE is_bot = 1'),
   totalSavings: db.prepare('SELECT COALESCE(SUM(savings), 0) AS n FROM bank_accounts'),
   petCount: db.prepare('SELECT COUNT(*) AS n FROM pets'),
   ledgerByKind: db.prepare('SELECT kind, SUM(CASE WHEN delta > 0 THEN delta ELSE 0 END) AS inflow, SUM(CASE WHEN delta < 0 THEN -delta ELSE 0 END) AS outflow, COUNT(*) AS n FROM ledger WHERE created_at >= ? AND user_id IS NOT NULL GROUP BY kind ORDER BY n DESC'),
@@ -1224,6 +1245,13 @@ export const usersOverview = (now = Date.now()) => ({
   savings: w.totalSavings.get().n,
   pets: w.petCount.get().n,
   ledger7d: w.ledgerByKind.all(now - 7 * 86_400_000),
+  bots: w.botCount.get().n,
+  realPlayers: {
+    total: w.realStats.get().n,
+    coins: w.realStats.get().coins,
+    activeToday: w.realActiveSince.get(now - 86_400_000).n,
+    activeWeek: w.realActiveSince.get(now - 7 * 86_400_000).n,
+  },
 });
 
 export const createInvite = ({ label, maxUses = null, expiresAt = null, createdBy }, now = Date.now()) => {
