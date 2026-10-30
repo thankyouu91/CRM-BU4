@@ -14,6 +14,7 @@ import { Drawer } from "@/components/ui/modal";
 import { api } from "@/lib/client";
 import { cn } from "@/lib/utils";
 import { inviteUrl, passwordUrl, playUrl } from "@/lib/petdex-public";
+import { AnnouncementsTab } from "./announcements";
 import { ClansTab } from "./clans";
 import { GearConfigTab, GiftCodesTab, PlayerGear, type GearView, type Wearable } from "./gear";
 import { ADMIN, errorText, Failure, useLoad, when } from "./shared";
@@ -29,6 +30,7 @@ const TABS = [
   { key: "players", label: "Người chơi" },
   { key: "gear", label: "Trang phục & rớt đồ" },
   { key: "gifts", label: "Mã quà" },
+  { key: "announcements", label: "Thông báo" },
   { key: "clans", label: "Gia tộc & Đất" },
   { key: "invites", label: "Link mời khách" },
   { key: "log", label: "Nhật ký" },
@@ -154,6 +156,7 @@ export function Board() {
       {tab === "players" && <PlayersTab />}
       {tab === "gear" && <GearConfigTab />}
       {tab === "gifts" && <GiftCodesTab />}
+      {tab === "announcements" && <AnnouncementsTab />}
       {tab === "clans" && <ClansTab />}
       {tab === "invites" && <InvitesTab />}
       {tab === "log" && <LogTab />}
@@ -768,7 +771,7 @@ function InvitesTab() {
   );
 }
 
-const LOG_LABEL: Record<string, string> = { coins: "Cộng/trừ xu", pet: "Sửa chỉ số bé", pet_grant: "Tặng thú cưng", ban: "Khoá", unban: "Mở khoá", rename: "Đổi tên", invite: "Tạo link mời", invite_revoke: "Thu hồi link", password_link: "Tạo link đặt mật khẩu", password_set: "Đặt mật khẩu qua link", gear_config: "Chỉnh tỷ lệ trang phục", gear_grant: "Tặng trang phục", gear_edit: "Sửa trang phục", gear_delete: "Xoá trang phục", gift_code: "Tạo mã quà", gift_code_revoke: "Thu hồi mã quà", clan_config: "Chỉnh luật gia tộc & giá đất", land_price: "Đặt giá lô đất", macro: "Chỉnh kinh tế vĩ mô", tax_evasion: "Sở thuế: phát hiện khai thiếu", tax_collect: "Truy thu thuế", tax_dismiss: "Bỏ qua hồ sơ thuế" };
+const LOG_LABEL: Record<string, string> = { coins: "Cộng/trừ xu", pet: "Sửa chỉ số bé", pet_grant: "Tặng thú cưng", ban: "Khoá", unban: "Mở khoá", rename: "Đổi tên", invite: "Tạo link mời", invite_revoke: "Thu hồi link", password_link: "Tạo link đặt mật khẩu", password_set: "Đặt mật khẩu qua link", gear_config: "Chỉnh tỷ lệ trang phục", gear_grant: "Tặng trang phục", gear_edit: "Sửa trang phục", gear_delete: "Xoá trang phục", gift_code: "Tạo mã quà", gift_code_revoke: "Thu hồi mã quà", announcement: "Đăng thông báo", announcement_delete: "Gỡ thông báo", clan_config: "Chỉnh luật gia tộc & giá đất", land_price: "Đặt giá lô đất", macro: "Chỉnh kinh tế vĩ mô", tax_evasion: "Sở thuế: phát hiện khai thiếu", tax_collect: "Truy thu thuế", tax_dismiss: "Bỏ qua hồ sơ thuế" };
 const TIER_LABEL: Record<string, string> = { blue: "Xanh lam", green: "Xanh lục", gold: "Vàng", red: "Đỏ" };
 const AFFIX_LABEL: Record<string, string> = { income: "thu nhập", stats: "chỉ số", trade: "giao dịch", luck: "may mắn" };
 const affixList = (a: unknown) => Object.entries((a as Record<string, number>) ?? {}).map(([k, v]) => `+${v}% ${AFFIX_LABEL[k] ?? k}`).join(", ");
@@ -801,6 +804,7 @@ function LogTab() {
       return `“${String(d.label ?? "")}” · ${codes.length > 1 ? `${codes.length} mã` : codes[0] ?? ""} · ${String(d.rewards ?? "")}`;
     }
     if (row.action === "gift_code_revoke") return String(d.code ?? "");
+    if (row.action === "announcement" || row.action === "announcement_delete") return String(d.title ?? "");
     return "";
   };
   return (

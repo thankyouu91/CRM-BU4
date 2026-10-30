@@ -5,6 +5,7 @@ import { economy } from './bank.js';
 import * as store from './db.js';
 import { digest, hashPassword, randomCode, verifyPassword } from './passwords.js';
 import { createGear, createRandomGear, deleteGear, describeGear, gearConfig, getGear, listGear, setGearConfig, updateGear } from './gear.js';
+import { ANNOUNCEMENT, announcementById, createAnnouncement, listAnnouncements, removeAnnouncement } from './announcements.js';
 import { GIFT_CATEGORIES, createGiftCode, giftCodeById, giftRedemptions, giftView, listGiftCodes, revokeGiftCode } from './gifts.js';
 import { AFFIXES, DEFAULT_GEAR_CONFIG, TIERS } from '../../public/ta-tua/game/js/shared/gear.js';
 import { GameError, ITEMS, RULES, clamp } from './game.js';
@@ -355,6 +356,30 @@ internalApi.post('/admin/gift-codes/:id/revoke', (req, res) => {
   const actor = actorOf(req);
   store.transaction(() => {
     if (revokeGiftCode(row.id)) store.adminLog(actor, 'gift_code_revoke', null, { id: row.id, code: row.code });
+  });
+  res.json({ ok: true });
+});
+
+// ---- Thông báo cho người chơi ----
+
+internalApi.get('/admin/announcements', (_req, res) => res.json({ announcements: listAnnouncements(), rules: ANNOUNCEMENT }));
+
+internalApi.post('/admin/announcements', (req, res) => {
+  const actor = actorOf(req);
+  const made = store.transaction(() => {
+    const a = createAnnouncement({ title: req.body?.title, body: req.body?.body, days: Number(req.body?.days ?? ANNOUNCEMENT.defaultDays), popup: req.body?.popup !== false, createdBy: actor });
+    store.adminLog(actor, 'announcement', null, { id: a.id, title: a.title, days: Math.round((a.endsAt - a.startsAt) / 86_400_000), popup: a.popup });
+    return a;
+  });
+  res.json({ ok: true, announcement: made });
+});
+
+internalApi.post('/admin/announcements/:id/delete', (req, res) => {
+  const a = announcementById(req.params.id);
+  if (!a) throw new GameError('Không có thông báo này.');
+  const actor = actorOf(req);
+  store.transaction(() => {
+    if (removeAnnouncement(a.id)) store.adminLog(actor, 'announcement_delete', null, { id: a.id, title: a.title });
   });
   res.json({ ok: true });
 });

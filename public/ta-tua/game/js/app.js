@@ -57,7 +57,7 @@ import { renderGames } from './views/games.js';
 import { renderJobs } from './views/jobs.js';
 import { renderMap } from './views/map.js';
 import { renderMarket } from './views/market.js';
-import { renderNews } from './views/news.js';
+import { renderAnnouncement, renderNews } from './views/news.js';
 import { renderWallet as renderWalletView } from './views/wallet.js';
 
 const state = {
@@ -170,6 +170,43 @@ function showApp() {
   const fromHash = location.hash.slice(1);
   state.view = VIEW_NAMES.includes(fromHash) ? fromHash : 'map';
   render();
+  showNewAnnouncement();
+}
+
+const SEEN_KEY = 'petdex.seenAnnouncement';
+const seenAnnouncement = () => {
+  try {
+    return Number(localStorage.getItem(SEEN_KEY)) || 0;
+  } catch {
+    return 0;
+  }
+};
+
+/** Thông báo mới của ban quản lý bật lên một lần (máy này nhớ thông báo nào đã xem); đọc lại ở Báo Trân Châu. */
+async function showNewAnnouncement() {
+  let notes;
+  try {
+    notes = await api('/announcements');
+  } catch {
+    return;
+  }
+  const seen = seenAnnouncement();
+  const next = notes.find((a) => a.popup && a.id > seen);
+  if (!next || modalOpen()) return;
+  try {
+    localStorage.setItem(SEEN_KEY, String(Math.max(...notes.map((a) => a.id))));
+  } catch {
+    // không lưu được thì lần sau bật lại, không sao
+  }
+  openModal({
+    title: `📣 ${next.title}`,
+    html: `<div class="announcement-body modal-scroll">${renderAnnouncement(next.body)}</div>
+      <div class="row end"><button class="btn small" data-go-news>Xem ở Báo Trân Châu</button><button class="btn primary" data-close>Đã xem</button></div>`,
+  });
+  document.querySelector('[data-go-news]')?.addEventListener('click', () => {
+    closeModal();
+    go('news');
+  });
 }
 
 async function logout() {

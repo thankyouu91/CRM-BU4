@@ -12,6 +12,7 @@ import { track } from './quests.js';
 import { ledgerPage, walletView } from './wallet.js';
 import { cancelP2P, fundP2P, p2pView, repayP2P, requestP2P } from './p2p.js';
 import { bidHui, createHui, huiView, joinHui, leaveHui, startHuiNow } from './hui.js';
+import { activeAnnouncements } from './announcements.js';
 
 export const economyApi = Router();
 economyApi.use(auth);
@@ -154,6 +155,11 @@ economyApi.get('/wallet/ledger', (req, res) => {
 });
 
 // ---- Tin tức ----
+
+/** Thông báo của ban quản lý đang hiện (ghim đầu Báo Trân Châu, bật lên một lần cho mỗi người chơi). */
+economyApi.get('/announcements', (_req, res) => {
+  res.json(activeAnnouncements().map(({ id, title, body, popup, startsAt }) => ({ id, title, body, popup, at: startsAt })));
+});
 
 const newsQuery = store.db.prepare('SELECT * FROM news WHERE created_at >= ? AND starts_at <= ? ORDER BY starts_at DESC LIMIT 40');
 

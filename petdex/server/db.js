@@ -115,6 +115,18 @@ export function ensureSchema() {
     price     REAL NOT NULL,
     PRIMARY KEY (commodity, at)
   );
+  -- Thông báo của ban quản lý (bảng quản lý đăng): ghim đầu Báo Trân Châu và bật lên một lần cho mỗi người chơi.
+  CREATE TABLE IF NOT EXISTS announcements (
+    id         INTEGER PRIMARY KEY AUTOINCREMENT,
+    title      TEXT NOT NULL,
+    body       TEXT NOT NULL,
+    popup      INTEGER NOT NULL DEFAULT 1,
+    created_by TEXT,
+    created_at INTEGER NOT NULL,
+    starts_at  INTEGER NOT NULL,
+    ends_at    INTEGER NOT NULL,
+    removed_at INTEGER
+  );
   CREATE TABLE IF NOT EXISTS news (
     id         INTEGER PRIMARY KEY AUTOINCREMENT,
     commodity  TEXT,

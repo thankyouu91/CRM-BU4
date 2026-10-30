@@ -88,6 +88,8 @@ export const AUDIT_ACTIONS = {
   "tatua.gear_delete": { label: "Xoá trang phục người chơi", group: "tatua" },
   "tatua.gift_code": { label: "Tạo mã quà", group: "tatua" },
   "tatua.gift_code_revoke": { label: "Thu hồi mã quà", group: "tatua" },
+  "tatua.announcement": { label: "Đăng thông báo trong game", group: "tatua" },
+  "tatua.announcement_delete": { label: "Gỡ thông báo trong game", group: "tatua" },
   "tatua.clan_config": { label: "Chỉnh luật gia tộc, thuế và giá đất", group: "tatua" },
   "tatua.land_price": { label: "Đặt giá lô đất", group: "tatua" },
   "tatua.macro": { label: "Chỉnh kinh tế vĩ mô", group: "tatua" },
