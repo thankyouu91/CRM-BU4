@@ -91,10 +91,23 @@ function write(day, state, now) {
   if (traffic) q.insertEffect.run('traffic', null, traffic, `${PHASES[state.phase].icon} Kinh tế ${PHASES[state.phase].name}`, from, to);
 }
 
+/**
+ * Bản ghi tạo từ trước khi game có thêm ngành mới thì thiếu cầu của các ngành đó (hiện 0%, như ngành chết):
+ * bổ sung cho mỗi ngành thiếu một mức cầu dao động nhẹ quanh 1 (như ngày đầu của ngành) và lưu lại.
+ */
+function fillMissingDemand(state, rand) {
+  const missing = INDUSTRY_ORDER.filter((id) => state.demand?.[id] == null);
+  if (!missing.length) return state;
+  const demand = { ...(state.demand ?? {}) };
+  for (const id of missing) demand[id] = Math.round(clamp(1 + gaussian(rand) * 0.03, 0.7, 1.35) * 1000) / 1000;
+  q.insert.run(state.day, state.phase, state.weather, state.landIndex, state.gdp, JSON.stringify(demand), Date.now());
+  return { ...state, demand };
+}
+
 /** Trạng thái vĩ mô của `day`; chưa có thì tạo từ ngày gần nhất trước đó. */
 export function macroFor(day, { rand = Math.random, force = {}, now = Date.now() } = {}) {
   const found = parse(q.day.get(day));
-  if (found) return found;
+  if (found) return fillMissingDemand(found, rand);
   const prev = parse(q.before.get(day)) ?? INITIAL;
   const state = rollMacro(prev, { rand, baseRate: economy().baseRate, force });
   write(day, state, now);

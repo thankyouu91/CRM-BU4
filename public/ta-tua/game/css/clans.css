@@ -164,3 +164,5 @@
 .clan-impact li { padding: 8px 10px; border-radius: 12px; background: var(--surface-2); }
 .vote-box { border-color: #f0b4c4; }
 .vote-box .row { flex-wrap: wrap; gap: 6px; }
+.demand-sector { margin: 4px 0; } .demand-sector summary { cursor: pointer; font-weight: 800; padding: 6px 0; }
+.demand .badge { display: inline; padding: 0 4px; font-size: .68rem; margin-left: 2px; white-space: nowrap; }
