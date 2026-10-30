@@ -15,10 +15,10 @@ commit: e03a0db
 
 ```mermaid
 flowchart LR
-  M["module game\nconst q = { db.prepare(...) }"] --> S["Statement(sql)\nbackend.js:21-35"]
-  S --> C["current()\nbackend.js:16-19"]
-  C --> N["node-sqlite\nDatabaseSync + cache"]
-  C --> D["durable-sql\nctx.storage.sql.exec"]
+  M["module game<br/>const q = { db.prepare(...) }"] --> S["Statement(sql)<br/>backend.js:21-35"]
+  S --> C["current()<br/>backend.js:16-19"]
+  C --> N["node-sqlite<br/>DatabaseSync + cache"]
+  C --> D["durable-sql<br/>ctx.storage.sql.exec"]
 ```
 
 | API | `node-sqlite.js` | `durable-sql.js` |

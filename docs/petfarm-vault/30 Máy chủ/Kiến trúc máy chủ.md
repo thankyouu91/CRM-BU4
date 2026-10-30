@@ -16,27 +16,27 @@ commit: e03a0db
 ```mermaid
 flowchart LR
   subgraph Browser["Trình duyệt"]
-    WH["WorkHub (Next.js)\napp/, lib/petdex.ts"]
-    IF["iframe game\npublic/ta-tua/game"]
+    WH["WorkHub (Next.js)<br/>app/, lib/petdex.ts"]
+    IF["iframe game<br/>public/ta-tua/game"]
   end
   subgraph CF["Cloudflare Worker (worker.ts)"]
-    GR["gameRequest()\nworker.ts:29"]
-    NX["OpenNext handler\n(ứng dụng WorkHub)"]
+    GR["gameRequest()<br/>worker.ts:29"]
+    NX["OpenNext handler<br/>(ứng dụng WorkHub)"]
   end
   subgraph DO["Durable Object PetdexPark (durable.js)"]
-    F["fetch()\ndurable.js:53"]
-    A["alarm() mỗi 60 s\ndurable.js:48"]
-    RT["handleFetch + Router\nrouter.js"]
-    HB["Hub WebSocket\nhub.js + playground.js"]
-    SV["Dịch vụ nghiệp vụ\nservice.js, market.js, bank.js, clans.js..."]
-    SC["scheduler.runDue()\nscheduler.js:50"]
-    SQL["sql/backend.js\n-> durable-sql.js\nctx.storage.sql"]
+    F["fetch()<br/>durable.js:53"]
+    A["alarm() mỗi 60 s<br/>durable.js:48"]
+    RT["handleFetch + Router<br/>router.js"]
+    HB["Hub WebSocket<br/>hub.js + playground.js"]
+    SV["Dịch vụ nghiệp vụ<br/>service.js, market.js, bank.js, clans.js..."]
+    SC["scheduler.runDue()<br/>scheduler.js:50"]
+    SQL["sql/backend.js<br/>-> durable-sql.js<br/>ctx.storage.sql"]
   end
   IF -- "/ta-tua/api/*" --> GR
   IF -- "WS /ta-tua/ws" --> GR
   WH --> NX
-  NX -- "stub.fetch /internal/*\nlib/petdex.ts:37" --> F
-  GR -- "stub park\nworker.ts:35" --> F
+  NX -- "stub.fetch /internal/*<br/>lib/petdex.ts:37" --> F
+  GR -- "stub park<br/>worker.ts:35" --> F
   F -- "/api/*" --> RT
   F -- "/internal/*" --> RT
   F -- "/ws (101)" --> HB

@@ -16,10 +16,10 @@ commit: e03a0db
 
 ```mermaid
 stateDiagram-v2
-  night: night (19:00 tới 4:59)
-  dawn: dawn (5:00 tới 6:59)
-  day: day (7:00 tới 16:59)
-  dusk: dusk (17:00 tới 18:59)
+  night: night, 19 giờ tới trước 5 giờ
+  dawn: dawn, 5 giờ tới trước 7 giờ
+  day: day, 7 giờ tới trước 17 giờ
+  dusk: dusk, 17 giờ tới trước 19 giờ
   night --> dawn
   dawn --> day
   day --> dusk

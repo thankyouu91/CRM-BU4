@@ -57,7 +57,7 @@ Biên giá theo tham chiếu, phí đăng không hoàn, phí bán, tin còn `rul
 Làm mới: đồng hồ 1 giây; poll 60 giây **chỉ ở tab Mua**, khi tab trình duyệt hiện và không gõ ô nhập (`bazaar.js:271-281`).
 
 > [!warning] Lệch tài liệu
-> Biểu tượng tòa trên bản đồ là 🛒 (`public/ta-tua/game/js/views/map.js:21`) còn tiêu đề màn và nút ở Bếp dùng 🏮 (`bazaar.js:18`, `public/ta-tua/game/js/views/kitchen.js:185`). Câu "Tài khoản cần đủ … ngày tuổi mới bày bán được — mở lúc" trong mã có dấu gạch dài (`bazaar.js:131`).
+> Biểu tượng tòa trên bản đồ là 🛒 (`public/ta-tua/game/js/views/map.js:21`) còn tiêu đề màn và nút ở Bếp dùng 🏮 (`bazaar.js:18`, `public/ta-tua/game/js/views/kitchen.js:185`). Câu báo tuổi tài khoản trong mã ("… ngày tuổi mới bày bán được", ngay sau là "mở lúc") có dấu gạch dài (`bazaar.js:131`).
 
 ## Liên quan
 - [[Chợ Phiên]], [[Trang phục]], [[Cấp trang phục]], [[Bếp]], [[Siêu thị]]

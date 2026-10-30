@@ -118,7 +118,7 @@ flowchart LR
 | Hội giải tán còn quỹ | `guild_upgrade` | toàn bộ quỹ | 0 | `petdex/server/social.js:252-255` |
 | Lập gia tộc | `clan_create` | 3.000 | 50% | `petdex/server/clans.js:286-288` |
 | Bồi thường thâu tóm ngành | `clan_comp` | 20.000–500.000 | 50% | `petdex/server/clans.js:386-389` |
-| Mua đất | `clan_land` | 100.000–6.000.000 | 20% (`treasuryShare`) | `petdex/server/clans.js:444-446` |
+| Mua đất | `clan_land` | khoảng 154.000–10.800.000 (giá gốc 257.000–2.000.000 × khan hiếm 1–3 × chỉ số đất 0,6–1,8) | 20% (`treasuryShare`) | `petdex/server/clans.js:444-446` |
 | Lắp ghép công trình | `clan_build` | 190–2.550/mảnh | 0 | `petdex/server/clans.js:483-485` |
 | Phí duy trì gia tộc | `clan_upkeep` | 80×cấp + 200×lô mỗi đêm | 50% | `petdex/server/clans.js:663-666` |
 | Thuế doanh nghiệp | `corp_tax` | 35% +5 điểm/ngành thêm | 50% | `petdex/server/clans.js:647-655` |

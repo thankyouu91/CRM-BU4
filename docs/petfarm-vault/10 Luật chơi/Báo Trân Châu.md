@@ -36,4 +36,4 @@ Tin thị trường và tác động giá thuộc phần [[Tin tức thị trư�
 - Báo là chung cho mọi người, không có tin riêng tư.
 
 ## Liên quan
-- [[Tin tức thị trường]] · [[Sàn Nguyên Liệu]] · [[Ngân hàng Trung ương]] · [[Vòng đời và Đồi Sao]] · [[Clan]] · [[Kinh tế vĩ mô]] · [[Màn Báo]]
+- [[Tin tức thị trường]] · [[Sàn Nguyên Liệu]] · [[Ngân hàng Trung ương]] · [[Vòng đời và Đồi Sao]] · [[Clan]] · [[Kinh tế vĩ mô]] · [[Màn Báo Trân Châu]]

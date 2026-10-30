@@ -38,4 +38,4 @@ commit: e03a0db
 - Tưới hộ vườn bạn: chỉ bạn bè, +20% vụ đó cho chủ vườn, người tưới +2 xu, +5 XP (xem [[Vườn]], agent B).
 
 ## Liên quan
-- [[Công viên]] · [[Hội]] · [[Vườn]] · [[Thú chính]] · [[Nhiệm vụ ngày]] · [[Màn Bạn bè và Hội]] · [[Module social]]
+- [[Công viên]] · [[Hội]] · [[Vườn]] · [[Thú chính]] · [[Nhiệm vụ ngày]] · [[Màn Bạn bè]] · [[Module social]]
