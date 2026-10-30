@@ -152,7 +152,10 @@ td { padding: 7px 8px; border-bottom: 1px dashed var(--line); vertical-align: to
 .warehouse { display: grid; gap: 4px; min-width: 220px; font-weight: 800; font-size: .9rem; }
 .warehouse .bar { height: 10px; }
 .market-grid { display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr); gap: 16px; align-items: start; }
-.mk-board { padding: 10px 6px; grid-row: span 2; }
+/* Hai cột độc lập: mỗi khung xếp sát khung trên nó trong cột của mình, không chờ khung cao ở cột bên kia. */
+.mk-col { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+.market-grid section { min-width: 0; max-width: 100%; }
+.mk-board { padding: 10px 6px; }
 .mk-board tr { cursor: pointer; }
 .mk-board tbody tr:hover { background: var(--surface-2); }
 .mk-board tr.current { background: #fff1d6; }
@@ -215,7 +218,15 @@ td { padding: 7px 8px; border-bottom: 1px dashed var(--line); vertical-align: to
 
 @media (max-width: 960px) {
   .bank-grid, .wallet-grid, .market-grid { grid-template-columns: minmax(0, 1fr); }
-  .mk-board { grid-row: auto; }
+  /* Một cột: bỏ hai cột bọc, xếp theo thứ tự dùng: bảng giá → giao dịch → kho → lệnh chờ → sổ → tin. */
+  .market-grid { display: flex; flex-direction: column; gap: 16px; }
+  .mk-col { display: contents; }
+  .mk-board { order: 1; }
+  .mk-detail { order: 2; }
+  .mk-holdings-box { order: 3; }
+  .mk-orders-box { order: 4; }
+  .mk-book { order: 5; }
+  .mk-news-box { order: 6; }
 }
 @media (max-width: 640px) {
   .caps-grid, .flow-lists, .chart-pair, .legend { grid-template-columns: minmax(0, 1fr); }
