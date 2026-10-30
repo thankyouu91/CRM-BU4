@@ -7,7 +7,9 @@ import {
   CLIMATES, DESIGN, INDUSTRIES, INDUSTRY_ORDER, LAND, PALETTE, PHASES, PIECES, PIECE_FAMILIES, PLOTS, WEATHER, ZONES,
   designBonus, designComplete, designCost, designSvg, envFactor, pieceById, pieceSvg,
 } from '../shared/clan.js';
-import { GOODS, GOOD_ORDER, PRODUCTION_INDUSTRIES, SECTORS, STRATEGIC_INDUSTRIES, STRATEGIC_RULES, plantsFor } from '../shared/industry.js';
+import {
+  GOODS, GOOD_ORDER, PRODUCTION_INDUSTRIES, SECTORS, STRATEGIC_INDUSTRIES, STRATEGIC_RULES, extractKindOf, lineOf, variantInfo, variantsFor,
+} from '../shared/industry.js';
 import { industryMarketText } from '../shared/industry-market.js';
 
 /** Tên mặt hàng trên Sàn (lấy từ catalog khi mở màn). */
@@ -55,16 +57,14 @@ function recipeLine(id) {
   const ind = PRODUCTION_INDUSTRIES[id];
   if (!ind) return '';
   if (ind.extracts) {
-    const goods = GOOD_ORDER.filter((g) => ({
-      mineral: GOODS[g].group === 'mineral' && g !== 'crude_oil' && g !== 'gas',
-      oilgas: g === 'crude_oil' || g === 'gas',
-      forest: GOODS[g].group === 'forest',
-      livestock: g === 'beef' || g === 'chicken',
-      crop: GOODS[g].group === 'farm' && g !== 'beef' && g !== 'chicken',
-    }[ind.extracts]));
+    const goods = GOOD_ORDER.filter((g) => ind.extracts.includes(extractKindOf(g)));
     return `<small class="recipe">Khai thác ${goods.map((g) => GOODS[g].icon).join('')}</small>`;
   }
   if (id === 'power') return `<small class="recipe">${Object.values(ind.plants).map((pl) => pl.icon).join('')} → ⚡</small>`;
+  // Nhà máy gộp: mỗi dây chuyền một dòng, mỗi lô chọn một dây chuyền.
+  if (ind.lines) {
+    return `<small class="recipe">${Object.values(ind.lines).map((l) => `${l.icon} ${esc(l.name)}: ${chips(l.recipe.in)} → ${chips(l.recipe.out)}`).join('<br>')}</small>`;
+  }
   return `<small class="recipe">${chips(ind.recipe.in)} → ${chips(ind.recipe.out)}</small>`;
 }
 
@@ -80,7 +80,9 @@ function productionBox(pv) {
   } else if (pr.kind === 'power' && !pr.batches) {
     body = '<p class="warn">Chưa chọn loại nhà máy điện phù hợp với lô.</p>';
   } else {
-    body = `<p>Tối đa ${fmt(pr.batches)} mẻ/đêm</p><p>Cần: ${chips(pr.in) || 'không cần nguyên liệu'}</p><p>Làm ra: ${chips(pr.out)}</p>`;
+    const line = pr.line && variantInfo(pv.industry, pr.line);
+    body = `${line ? `<p>Dây chuyền: <b>${line.icon} ${esc(line.name)}</b>${pr.lines?.length > 1 ? ' <small class="muted">(đổi ở ô Dây chuyền của lô)</small>' : ''}</p>` : ''}
+      <p>Tối đa ${fmt(pr.batches)} mẻ/đêm</p><p>Cần: ${chips(pr.in) || 'không cần nguyên liệu'}</p><p>Làm ra: ${chips(pr.out)}</p>`;
   }
   return `<div class="prod-preview">
       <p class="muted small">Hệ số sản xuất của lô (tốc độ, đất, khí hậu, thời tiết, chu kỳ, cấp, công trình): <b>×${pr.factor.toFixed(2)}</b></p>
@@ -529,8 +531,12 @@ export function renderClans(root, ctx) {
       </dl>
       <div class="plot-deposits"><small class="muted">Tài nguyên mỗi đêm</small>
         ${Object.keys(info.deposits).length ? Object.entries(info.deposits).map(([g, n]) => `<span title="${esc(GOODS[g].name)}">${GOODS[g].icon} ${esc(GOODS[g].name)} <b>${n}</b></span>`).join('') : '<span class="muted">Không có mỏ (nhà máy ở đây chạy nhanh hơn)</span>'}</div>
-      ${info.mine && info.industry === 'power' ? `<label class="plot-industry">Loại nhà máy điện
-        <select data-plant="${p.id}" ${canManage ? '' : 'disabled'}>${plantsFor(p).map((k) => `<option value="${k}" ${info.variant === k ? 'selected' : ''}>${PRODUCTION_INDUSTRIES.power.plants[k].icon} ${esc(PRODUCTION_INDUSTRIES.power.plants[k].name)}</option>`).join('')}</select></label>` : ''}
+      ${info.mine && info.industry && variantsFor(info.industry, p).length ? `<label class="plot-industry">${info.industry === 'power' ? 'Loại nhà máy điện' : 'Dây chuyền của nhà máy'}
+        <select data-plant="${p.id}" ${canManage ? '' : 'disabled'}>${variantsFor(info.industry, p).map((k) => {
+          const v = variantInfo(info.industry, k);
+          const cur = info.industry === 'power' ? info.variant : lineOf(info.industry, info.variant);
+          return `<option value="${k}" ${cur === k ? 'selected' : ''}>${v.icon} ${esc(v.name)}</option>`;
+        }).join('')}</select></label>` : ''}
       ${info.owner && info.design.length ? `<div class="plot-building">${designSvg(info.design, { background: '#f7efe1' })}</div>` : ''}
       <label class="plot-industry">Xem trước với ngành
         <select data-preview-industry>${INDUSTRY_ORDER.map((id) => `<option value="${id}" ${ui.industry === id ? 'selected' : ''}>${INDUSTRIES[id].icon} ${esc(INDUSTRIES[id].name)}${myIndustries.includes(id) ? ' ✓' : ''}</option>`).join('')}</select></label>

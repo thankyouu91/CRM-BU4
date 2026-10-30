@@ -9,8 +9,8 @@ import { post, treasuryBalance } from './ledger.js';
 import { macroFor, rollNextDay } from './macro.js';
 import { weekKey } from './town.js';
 import { clanDeposited, clanGovView, coverFromDeposits, isDeposed } from './clan-gov.js';
-import { expireListings, plotDeposits, productionPreview, runProduction, setPlotVariant, tradeIncome } from './industry.js';
-import { STRATEGIC_INDUSTRIES, STRATEGIC_RULES, plantsFor, strategicPlaceOk } from '../../public/ta-tua/game/js/shared/industry.js';
+import { IRRIGATED, expireListings, plotDeposits, productionPreview, runProduction, setPlotVariant, tradeIncome } from './industry.js';
+import { STRATEGIC_INDUSTRIES, STRATEGIC_RULES, strategicPlaceOk, variantsFor } from '../../public/ta-tua/game/js/shared/industry.js';
 import { buffFor, chargeInfraFee, operatingOwners, strategicOf } from './strategic.js';
 import { openShopBuying, settleEssentialsDay } from './essentials.js';
 import {
@@ -487,17 +487,19 @@ export function setPlotIndustry(userId, plotId, industry) {
     if (!q.industries.all(clan.id).some((i) => i.industry === industry)) throw new GameError('Gia tộc chưa thâu tóm ngành này.');
     if (isStrategic(industry) && !strategicPlaceOk(industry, plot)) throw new GameError(`Lô ${plot.code} không dựng được hạ tầng ${INDUSTRIES[industry].name}.`);
     q.setPlotIndustry.run(industry, plot.id);
-    if (industry === 'power') setPlotVariant(plot.id, plantsFor(plot)[0]);
+    // Ngành có lựa chọn (loại nhà máy điện, dây chuyền của nhà máy gộp): chọn sẵn lựa chọn đầu tiên hợp với lô.
+    const first = variantsFor(industry, plot)[0];
+    if (first) setPlotVariant(plot.id, first, industry);
     return { message: `Lô ${plot.code} giờ làm ngành ${INDUSTRIES[industry].icon} ${INDUSTRIES[industry].name}.` };
   });
 }
 
-/** Chọn loại nhà máy điện cho một lô làm ngành Năng lượng. */
+/** Chọn loại nhà máy điện (ngành Năng lượng) hoặc dây chuyền (nhà máy gộp) cho một lô. */
 export function choosePlant(userId, plotId, plant) {
   return transaction(() => {
-    const { row, plot } = ownPlot(userId, plotId, ['leader', 'elder'], 'chọn loại nhà máy điện');
-    if (row.industry !== 'power') throw new GameError(`Lô ${plot.code} chưa làm ngành Năng lượng.`);
-    return setPlotVariant(plot.id, plant);
+    const { row, plot } = ownPlot(userId, plotId, ['leader', 'elder'], 'chọn nhà máy cho lô');
+    if (!row.industry || !variantsFor(row.industry, plot).length) throw new GameError(`Lô ${plot.code} không có nhà máy để chọn.`);
+    return setPlotVariant(plot.id, plant, row.industry);
   });
 }
 
@@ -644,7 +646,8 @@ export function plotPreview(userId, plotId, industry, now = Date.now()) {
   const clansInIndustry = (counts[industry] ?? 0) + (has ? 0 : 1);
   const rate = taxRate(Math.max(1, owned.length + (has ? 0 : 1)), cfg);
   if (isProduction(industry)) {
-    const variant = row?.industry === 'power' && industry === 'power' ? row.variant : plantsFor(plot)[0];
+    // Đang làm đúng ngành này thì xem trước theo lựa chọn hiện có, không thì lựa chọn đầu tiên hợp với lô.
+    const variant = row?.industry === industry && row.variant ? row.variant : variantsFor(industry, plot)[0] ?? null;
     const prod = productionPreview(plot, { industry, variant, design, level, macro: stats.macro });
     const margin = Math.max(0, prod.value - prod.cost);
     return { plotId: plot.id, industry, production: prod, variant, revenue: prod.value, afterTax: Math.round(margin * (1 - rate)), taxRate: rate, clansInIndustry };
@@ -692,7 +695,7 @@ export function settleClansDay(day, rand = Math.random) {
       const irr = buffFor('irrigation', { clanId: clan.id });
       const wind = buffFor('wind_farm', { clanId: clan.id });
       const estimate = (pred) => plots.filter((r) => pred(r.industry)).reduce((s, r) => s + (productionPreview(PLOT_BY_ID.get(r.id), { industry: r.industry, variant: r.variant, design: JSON.parse(r.design), level, macro })?.value ?? 0), 0);
-      const irrOk = irr.total > 0 && clanBalance(clan.id) >= estimate((i) => ['agriculture', 'livestock', 'forestry'].includes(i)) * irr.paid * STRATEGIC_RULES.fee;
+      const irrOk = irr.total > 0 && clanBalance(clan.id) >= estimate((i) => IRRIGATED.includes(i)) * irr.paid * STRATEGIC_RULES.fee;
       const windOk = wind.total > 0 && clanBalance(clan.id) >= estimate((i) => isProduction(i) && !isStrategic(i)) * wind.paid * STRATEGIC_RULES.fee;
       const { revenue: sold, extra } = runProduction(clan, plots, { day, macro, at, rand, buffs: { irrigation: irrOk ? irr.total : 0, wind: windOk ? wind.total : 0 } });
       if (irrOk && irr.paid > 0) chargeInfraFee('irrigation', extra.irrigation * (irr.paid / irr.total), { clanId: clan.id, now: at, memo: 'sản lượng nông lâm' });

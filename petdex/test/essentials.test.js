@@ -107,7 +107,7 @@ test('NPC luôn giữ tối thiểu 10%: ở D = 90% vẫn được 1 × 3 × 10
 test('gia tộc chế biến thực phẩm: Siêu thị mua trước bằng giá tham chiếu, kho suất ăn tăng, người chơi mua được Suất ăn gia tộc', () => {
   clans.createClan(owner, { name: 'Bếp Làng', emblem: '🌾', color: '#aa7733' }, T0);
   clans.donateClan(owner, 8_000_000, T0);
-  clans.enterIndustry(owner, 'food_processing', T0);
+  clans.enterIndustry(owner, 'consumer_goods', T0);
   clans.enterIndustry(owner, 'power', T0);
   const factory = shared.PLOTS.find((p) => p.zone === 'urban');
   const hydro = shared.PLOTS.find((p) => p.zone === 'river' && rules.plantsFor(p).includes('hydro'));
@@ -116,7 +116,7 @@ test('gia tộc chế biến thực phẩm: Siêu thị mua trước bằng giá
     { piece: 'wall_brick-8', x: 2, y: 15, color: '#e85d5d' },
     { piece: 'roof_gable-5', x: 2, y: 11, color: '#4b8ff2' },
   ];
-  for (const [plot, ind] of [[factory, 'food_processing'], [hydro, 'power']]) {
+  for (const [plot, ind] of [[factory, 'consumer_goods'], [hydro, 'power']]) {
     clans.buyPlot(owner, plot.id, T0);
     clans.setPlotIndustry(owner, plot.id, ind);
     clans.saveDesign(owner, plot.id, BUILT, T0);
@@ -166,7 +166,7 @@ test('chất lượng: gia tộc cấp cao, nhà xưởng đủ mảnh, tự tr�
   essentials.settleEssentialsDay(nextDayKey);
   // Hàm điểm của gia tộc: đọc cấp, số mảnh nhà xưởng và ngành đầu vào trên các lô.
   const rows = [
-    { industry: 'food_processing', design: JSON.stringify(Array(20).fill({})) },
+    { industry: 'consumer_goods', variant: 'food_processing', design: JSON.stringify(Array(20).fill({})) },
     { industry: 'agriculture', design: '[]' },
   ];
   assert.equal(industry.clanQuality('food', rows, 10), 1);

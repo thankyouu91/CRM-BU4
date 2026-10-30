@@ -68,29 +68,23 @@ const FACTORY_LAND = { urban: 0.12, river: 0.1, coast: 0.08, plain: 0.05, hill: 
 const MILD = { temperate: 0.04, sunny: 0, rainy: -0.02, windy: -0.02 };
 
 /**
- * Ngành mới. `extracts`: nhóm tài nguyên khai thác từ mỏ trên lô. `recipe`: { in: {hàng: số}, out: {hàng: số} } mỗi mẻ,
- * `batches`: số mẻ tối đa mỗi đêm của một lô (trước các hệ số). `plants`: ngành điện chọn loại nhà máy cho từng lô.
+ * Ngành sản xuất. `extracts`: các nhóm tài nguyên khai thác từ mỏ trên lô. Nhà máy có `lines`: các dây chuyền
+ * (mỗi lô chọn một), mỗi dây chuyền một công thức `recipe` ({ in, out } mỗi mẻ) và `batches` (số mẻ tối đa mỗi đêm
+ * của một lô, trước các hệ số). Ngành điện chọn loại nhà máy `plants` cho từng lô.
+ * Các ngành na ná nhau đã được gộp (xem MERGED_INTO): hàng hóa và công thức giữ nguyên, chỉ còn ít ngành hơn.
  */
 export const PRODUCTION_INDUSTRIES = {
   mining: {
-    name: 'Khai khoáng', icon: '⛏️', sector: 'raw', comp: 30_000, extracts: 'mineral', commodities: [],
-    zones: { hill: 0.25, coast: 0, forest: -0.05, plain: -0.05, river: -0.05, urban: -0.4, sea: -0.2 }, climates: MILD,
-  },
-  oil_gas: {
-    name: 'Dầu khí', icon: '🛢️', sector: 'raw', comp: 45_000, extracts: 'oilgas', commodities: [],
-    zones: { sea: 0.2, coast: 0.1, plain: 0, river: -0.05, hill: -0.1, forest: -0.1, urban: -0.4 }, climates: { windy: -0.05, sunny: 0, rainy: -0.03, temperate: 0.02 },
+    name: 'Khai khoáng & dầu khí', icon: '⛏️', sector: 'raw', comp: 35_000, extracts: ['mineral', 'oilgas'], commodities: [],
+    zones: { hill: 0.25, sea: 0.15, coast: 0.08, forest: -0.05, plain: -0.03, river: -0.05, urban: -0.4 }, climates: MILD,
   },
   forestry: {
-    name: 'Lâm nghiệp', icon: '🪓', sector: 'raw', comp: 20_000, extracts: 'forest', commodities: [],
+    name: 'Lâm nghiệp', icon: '🪓', sector: 'raw', comp: 20_000, extracts: ['forest'], commodities: [],
     zones: { forest: 0.25, hill: 0.05, river: 0, plain: -0.1, coast: -0.15, urban: -0.5, sea: -0.6 }, climates: { rainy: 0.1, temperate: 0.04, sunny: -0.04, windy: -0.04 },
   },
   agriculture: {
-    name: 'Nông nghiệp', icon: '🚜', sector: 'raw', comp: 20_000, extracts: 'crop', commodities: [],
-    zones: OPEN_LAND, climates: { temperate: 0.08, sunny: 0.06, rainy: 0.02, windy: -0.06 },
-  },
-  livestock: {
-    name: 'Chăn nuôi', icon: '🐄', sector: 'raw', comp: 25_000, extracts: 'livestock', commodities: [],
-    zones: { plain: 0.15, hill: 0.05, river: 0.05, forest: -0.05, coast: -0.05, urban: -0.4, sea: -0.6 }, climates: MILD,
+    name: 'Nông nghiệp & chăn nuôi', icon: '🚜', sector: 'raw', comp: 25_000, extracts: ['crop', 'livestock'], commodities: [],
+    zones: { plain: 0.14, river: 0.08, hill: 0, coast: 0, urban: -0.2, forest: -0.1, sea: -0.6 }, climates: { temperate: 0.08, sunny: 0.05, rainy: 0.02, windy: -0.05 },
   },
   power: {
     name: 'Năng lượng', icon: '⚡', sector: 'energy', comp: 30_000, commodities: [],
@@ -105,89 +99,138 @@ export const PRODUCTION_INDUSTRIES = {
     },
     batches: 6,
   },
-  food_processing: {
-    name: 'Chế biến thực phẩm', icon: '🥫', sector: 'light', comp: 30_000, commodities: [], zones: FACTORY_LAND, climates: MILD,
-    recipe: { in: { wheat: 1, beef: 1, power: 1 }, out: { processed_food: 2 } }, batches: 6,
-  },
-  textiles: {
-    name: 'Dệt may', icon: '👕', sector: 'light', comp: 35_000, commodities: [], zones: FACTORY_LAND, climates: MILD,
-    recipe: { in: { cotton: 3, power: 1 }, out: { clothing: 1 } }, batches: 6,
-  },
-  furniture: {
-    name: 'Đồ gỗ nội thất', icon: '🪑', sector: 'light', comp: 35_000, commodities: [], zones: FACTORY_LAND, climates: MILD,
-    recipe: { in: { timber: 3, power: 1 }, out: { furniture: 1 } }, batches: 6,
+  consumer_goods: {
+    name: 'Hàng tiêu dùng', icon: '🛍️', sector: 'light', comp: 35_000, commodities: [], zones: FACTORY_LAND, climates: MILD,
+    lines: {
+      food_processing: { name: 'Thực phẩm chế biến', icon: '🥫', recipe: { in: { wheat: 1, beef: 1, power: 1 }, out: { processed_food: 2 } }, batches: 6 },
+      textiles: { name: 'Dệt may', icon: '👕', recipe: { in: { cotton: 3, power: 1 }, out: { clothing: 1 } }, batches: 6 },
+      furniture: { name: 'Đồ gỗ nội thất', icon: '🪑', recipe: { in: { timber: 3, power: 1 }, out: { furniture: 1 } }, batches: 6 },
+    },
   },
   pharma: {
     name: 'Dược phẩm', icon: '💊', sector: 'light', comp: 45_000, commodities: [], zones: FACTORY_LAND, climates: MILD,
     recipe: { in: { chemicals: 2, beans: 1, power: 1 }, out: { medicine: 1 } }, batches: 4,
   },
   electronics: {
-    name: 'Điện tử, máy tính', icon: '💻', sector: 'light', comp: 50_000, commodities: [], zones: FACTORY_LAND, climates: MILD,
-    recipe: { in: { chips: 2, aluminium: 1, power: 1 }, out: { computers: 1 } }, batches: 3,
+    name: 'Điện tử & vi mạch', icon: '💻', sector: 'light', comp: 50_000, commodities: [], zones: FACTORY_LAND, climates: MILD,
+    lines: {
+      semiconductors: { name: 'Vi mạch', icon: '💾', recipe: { in: { silicon: 2, rare_earth: 1, copper: 1, power: 2 }, out: { chips: 1 } }, batches: 3 },
+      electronics: { name: 'Máy tính', icon: '💻', recipe: { in: { chips: 2, aluminium: 1, power: 1 }, out: { computers: 1 } }, batches: 3 },
+    },
   },
-  steel: {
-    name: 'Luyện thép', icon: '🔗', sector: 'heavy', comp: 40_000, commodities: [], zones: FACTORY_LAND, climates: MILD,
-    recipe: { in: { iron_ore: 2, coal: 1, power: 2 }, out: { steel: 1 } }, batches: 5,
+  metallurgy: {
+    name: 'Luyện kim', icon: '🔗', sector: 'heavy', comp: 40_000, commodities: [], zones: FACTORY_LAND, climates: MILD,
+    lines: {
+      steel: { name: 'Luyện thép', icon: '🔗', recipe: { in: { iron_ore: 2, coal: 1, power: 2 }, out: { steel: 1 } }, batches: 5 },
+      aluminium: { name: 'Luyện nhôm', icon: '🥫', recipe: { in: { bauxite: 2, power: 3 }, out: { aluminium: 1 } }, batches: 5 },
+    },
   },
-  aluminium: {
-    name: 'Luyện nhôm', icon: '🥫', sector: 'heavy', comp: 40_000, commodities: [], zones: FACTORY_LAND, climates: MILD,
-    recipe: { in: { bauxite: 2, power: 3 }, out: { aluminium: 1 } }, batches: 5,
-  },
-  refinery: {
-    name: 'Lọc dầu', icon: '⛽', sector: 'heavy', comp: 45_000, commodities: [], zones: { ...FACTORY_LAND, coast: 0.15, sea: 0 }, climates: MILD,
-    recipe: { in: { crude_oil: 2, power: 1 }, out: { fuel: 1 } }, batches: 5,
-  },
-  chemicals: {
-    name: 'Hóa chất', icon: '🧪', sector: 'heavy', comp: 40_000, commodities: [], zones: FACTORY_LAND, climates: MILD,
-    recipe: { in: { gas: 1, salt: 2, power: 1 }, out: { chemicals: 1 } }, batches: 5,
-  },
-  semiconductors: {
-    name: 'Vi mạch', icon: '💾', sector: 'heavy', comp: 50_000, commodities: [], zones: FACTORY_LAND, climates: MILD,
-    recipe: { in: { silicon: 2, rare_earth: 1, copper: 1, power: 2 }, out: { chips: 1 } }, batches: 3,
+  petrochem: {
+    name: 'Hóa dầu', icon: '🧪', sector: 'heavy', comp: 45_000, commodities: [], zones: { ...FACTORY_LAND, coast: 0.15, sea: 0 }, climates: MILD,
+    lines: {
+      refinery: { name: 'Lọc dầu', icon: '⛽', recipe: { in: { crude_oil: 2, power: 1 }, out: { fuel: 1 } }, batches: 5 },
+      chemicals: { name: 'Hóa chất', icon: '🧪', recipe: { in: { gas: 1, salt: 2, power: 1 }, out: { chemicals: 1 } }, batches: 5 },
+    },
   },
   machinery: {
     name: 'Cơ khí, máy móc', icon: '⚙️', sector: 'heavy', comp: 45_000, commodities: [], zones: FACTORY_LAND, climates: MILD,
     recipe: { in: { steel: 3, copper: 1, power: 2 }, out: { machinery: 1 } }, batches: 3,
   },
-  autos: {
-    name: 'Ô tô', icon: '🚗', sector: 'heavy', comp: 50_000, commodities: [], zones: FACTORY_LAND, climates: MILD,
-    recipe: { in: { steel: 2, rubber: 2, machinery: 1, power: 2 }, out: { autos: 1 } }, batches: 2,
-  },
-  trains: {
-    name: 'Tàu hỏa', icon: '🚆', sector: 'heavy', comp: 50_000, commodities: [], zones: FACTORY_LAND, climates: MILD,
-    recipe: { in: { steel: 4, machinery: 1, power: 2 }, out: { trains: 1 } }, batches: 2,
-  },
-  shipbuilding: {
-    name: 'Đóng tàu', icon: '🚢', sector: 'heavy', comp: 50_000, commodities: [], zones: { coast: 0.25, sea: 0.1, river: 0.05, urban: -0.1, plain: -0.3, hill: -0.5, forest: -0.5 }, climates: MILD,
-    recipe: { in: { steel: 5, timber: 2, machinery: 1, power: 2 }, out: { ships: 1 } }, batches: 2,
-  },
-  aerospace: {
-    name: 'Hàng không', icon: '✈️', sector: 'heavy', comp: 50_000, commodities: [], zones: FACTORY_LAND, climates: { sunny: 0.05, temperate: 0.05, rainy: -0.05, windy: -0.08 },
-    recipe: { in: { aluminium: 4, titanium: 2, chips: 1, fuel: 1, power: 3 }, out: { aircraft: 1 } }, batches: 1,
+  vehicles: {
+    name: 'Phương tiện vận tải', icon: '🚗', sector: 'heavy', comp: 50_000, commodities: [], zones: { ...FACTORY_LAND, coast: 0.12 }, climates: MILD,
+    lines: {
+      autos: { name: 'Ô tô', icon: '🚗', recipe: { in: { steel: 2, rubber: 2, machinery: 1, power: 2 }, out: { autos: 1 } }, batches: 2 },
+      trains: { name: 'Tàu hỏa', icon: '🚆', recipe: { in: { steel: 4, machinery: 1, power: 2 }, out: { trains: 1 } }, batches: 2 },
+      shipbuilding: { name: 'Đóng tàu', icon: '🚢', recipe: { in: { steel: 5, timber: 2, machinery: 1, power: 2 }, out: { ships: 1 } }, batches: 2, zones: ['coast', 'sea', 'river'] },
+      aerospace: { name: 'Máy bay', icon: '✈️', recipe: { in: { aluminium: 4, titanium: 2, chips: 1, fuel: 1, power: 3 }, out: { aircraft: 1 } }, batches: 1 },
+    },
   },
 };
+
+/**
+ * Ngành cũ đã gộp → ngành mới, và dây chuyền tương ứng (null nếu ngành mới là ngành khai thác).
+ * Dùng để chuyển đất, ngành đã thâu tóm và cầu vĩ mô của dữ liệu cũ.
+ */
+export const MERGED_INTO = {
+  oil_gas: { industry: 'mining', line: null },
+  livestock: { industry: 'agriculture', line: null },
+  food_processing: { industry: 'consumer_goods', line: 'food_processing' },
+  textiles: { industry: 'consumer_goods', line: 'textiles' },
+  furniture: { industry: 'consumer_goods', line: 'furniture' },
+  semiconductors: { industry: 'electronics', line: 'semiconductors' },
+  steel: { industry: 'metallurgy', line: 'steel' },
+  aluminium: { industry: 'metallurgy', line: 'aluminium' },
+  refinery: { industry: 'petrochem', line: 'refinery' },
+  chemicals: { industry: 'petrochem', line: 'chemicals' },
+  autos: { industry: 'vehicles', line: 'autos' },
+  trains: { industry: 'vehicles', line: 'trains' },
+  shipbuilding: { industry: 'vehicles', line: 'shipbuilding' },
+  aerospace: { industry: 'vehicles', line: 'aerospace' },
+};
+/** Ngành mới gồm những ngành cũ nào (kể cả chính nó nếu giữ id), để lấy trung bình cầu vĩ mô cũ. */
+export const MERGED_FROM = Object.entries(MERGED_INTO).reduce((m, [old, { industry }]) => {
+  (m[industry] ??= [industry]).push(old);
+  return m;
+}, {});
+
+/** Các lựa chọn của một lô: dây chuyền (nhà máy gộp) hoặc loại nhà máy điện; ngành khác không có lựa chọn. */
+export function variantsFor(industry, plot) {
+  const ind = PRODUCTION_INDUSTRIES[industry];
+  if (!ind) return [];
+  if (ind.plants) return plantsFor(plot);
+  if (!ind.lines) return [];
+  return Object.entries(ind.lines).filter(([, l]) => !l.zones || !plot || l.zones.includes(plot.zone)).map(([id]) => id);
+}
+
+/** Dây chuyền đang chạy của lô: đã chọn thì dùng, chưa chọn thì dây chuyền đầu tiên. */
+export const lineOf = (industry, variant) => {
+  const lines = PRODUCTION_INDUSTRIES[industry]?.lines;
+  if (!lines) return null;
+  return lines[variant] ? variant : Object.keys(lines)[0];
+};
+
+/** Số mẻ tối đa mỗi đêm của một lô (theo dây chuyền nếu có). */
+export function batchesOf(industry, variant) {
+  const ind = PRODUCTION_INDUSTRIES[industry];
+  if (!ind) return 0;
+  const line = ind.lines?.[lineOf(industry, variant)];
+  return line?.batches ?? ind.batches ?? 4;
+}
+
+/** Tên lựa chọn của lô (dây chuyền hoặc loại nhà máy điện). */
+export function variantInfo(industry, variant) {
+  const ind = PRODUCTION_INDUSTRIES[industry];
+  if (ind?.plants) return ind.plants[variant] ?? null;
+  return ind?.lines?.[lineOf(industry, variant)] ?? null;
+}
 
 /** Ngành nào làm ra hàng nào (để lấy cầu vĩ mô làm giá). Hàng thô theo ngành khai thác. */
 export const GOOD_INDUSTRY = (() => {
   const map = {};
-  for (const [id, ind] of Object.entries(PRODUCTION_INDUSTRIES)) for (const g of Object.keys(ind.recipe?.out ?? {})) map[g] = id;
+  for (const [id, ind] of Object.entries(PRODUCTION_INDUSTRIES)) {
+    for (const g of Object.keys(ind.recipe?.out ?? {})) map[g] = id;
+    for (const line of Object.values(ind.lines ?? {})) for (const g of Object.keys(line.recipe.out)) map[g] = id;
+  }
   map.power = 'power';
   for (const [g, def] of Object.entries(GOODS)) {
     if (map[g]) continue;
-    if (g === 'crude_oil' || g === 'gas') map[g] = 'oil_gas';
-    else if (def.group === 'mineral') map[g] = 'mining';
+    if (def.group === 'mineral') map[g] = 'mining';
     else if (def.group === 'forest') map[g] = 'forestry';
-    else if (g === 'beef' || g === 'chicken') map[g] = 'livestock';
     else map[g] = 'agriculture';
   }
   return map;
 })();
 
-/** Thứ tự chạy trong đêm: khai thác, điện, rồi nhà máy từ thượng nguồn tới hạ nguồn. */
-export const RUN_ORDER = [
-  'mining', 'oil_gas', 'forestry', 'agriculture', 'livestock', 'power',
-  'steel', 'aluminium', 'refinery', 'chemicals', 'semiconductors', 'food_processing', 'textiles', 'furniture',
-  'machinery', 'pharma', 'electronics', 'autos', 'trains', 'shipbuilding', 'aerospace',
+/**
+ * Thứ tự chạy trong đêm: khai thác, điện, rồi nhà máy từ thượng nguồn tới hạ nguồn.
+ * Mỗi bước là [ngành, dây chuyền] (dây chuyền null: mọi lô của ngành đó).
+ */
+export const RUN_STEPS = [
+  ['mining', null], ['forestry', null], ['agriculture', null], ['power', null],
+  ['metallurgy', 'steel'], ['metallurgy', 'aluminium'], ['petrochem', 'refinery'], ['petrochem', 'chemicals'], ['electronics', 'semiconductors'],
+  ['consumer_goods', 'food_processing'], ['consumer_goods', 'textiles'], ['consumer_goods', 'furniture'],
+  ['machinery', null], ['pharma', null], ['electronics', 'electronics'],
+  ['vehicles', 'autos'], ['vehicles', 'trains'], ['vehicles', 'shipbuilding'], ['vehicles', 'aerospace'],
 ];
 
 // ---------------------------------------------------------------- mỏ và tài nguyên trên từng lô
@@ -272,19 +315,21 @@ export function depositsOf(plot) {
   return out;
 }
 
-/** Nhóm tài nguyên mà mỗi ngành khai thác được lấy từ mỏ của lô. */
+/** Hàng `g` thuộc nhóm tài nguyên `kind` nào (khoáng, dầu khí, lâm sản, gia súc, nông sản). */
+export function extractKindOf(g) {
+  const group = GOODS[g]?.group;
+  if (g === 'crude_oil' || g === 'gas') return 'oilgas';
+  if (group === 'mineral') return 'mineral';
+  if (group === 'forest') return 'forest';
+  if (g === 'beef' || g === 'chicken') return 'livestock';
+  return group === 'farm' ? 'crop' : null;
+}
+
+/** Tài nguyên mà ngành khai thác được lấy từ mỏ của lô (ngành gộp khai thác nhiều nhóm). */
 export function extractable(industry, deposits) {
-  const kind = PRODUCTION_INDUSTRIES[industry]?.extracts;
-  if (!kind) return {};
-  const pick = Object.entries(deposits).filter(([g]) => {
-    const group = GOODS[g].group;
-    if (kind === 'mineral') return group === 'mineral' && g !== 'crude_oil' && g !== 'gas';
-    if (kind === 'oilgas') return g === 'crude_oil' || g === 'gas';
-    if (kind === 'forest') return group === 'forest';
-    if (kind === 'livestock') return g === 'beef' || g === 'chicken';
-    return group === 'farm' && g !== 'beef' && g !== 'chicken';
-  });
-  return Object.fromEntries(pick);
+  const kinds = PRODUCTION_INDUSTRIES[industry]?.extracts;
+  if (!kinds?.length) return {};
+  return Object.fromEntries(Object.entries(deposits).filter(([g]) => kinds.includes(extractKindOf(g))));
 }
 
 /** Loại nhà máy điện dựng được trên một lô (thủy điện cần sông, mặt trời cần nắng, gió cần gió). */
@@ -294,14 +339,15 @@ export function plantsFor(plot) {
     .map(([id]) => id);
 }
 
-/** Công thức một mẻ của lô: ngành nhà máy dùng recipe; ngành điện theo loại nhà máy đã chọn. */
+/** Công thức một mẻ của lô: ngành điện theo loại nhà máy, nhà máy gộp theo dây chuyền đã chọn, còn lại theo recipe. */
 export function recipeOf(industry, variant) {
   const ind = PRODUCTION_INDUSTRIES[industry];
   if (!ind) return null;
-  if (industry === 'power') {
+  if (ind.plants) {
     const plant = ind.plants[variant];
     return plant ? { in: plant.in, out: plant.out } : null;
   }
+  if (ind.lines) return ind.lines[lineOf(industry, variant)].recipe;
   return ind.recipe ?? null;
 }
 
@@ -415,12 +461,13 @@ export const ESSENTIALS = {
   npcPriceUp: 0.3,
   cats: {
     food: {
-      name: 'Đồ ăn', label: 'Tự chủ thực phẩm', icon: '🍱', unit: 'suất', good: 'processed_food', industry: 'food_processing',
-      upstream: ['agriculture', 'livestock'], perUnit: 5, perPetDay: 3, item: 'clan_meal',
+      // Nhà xưởng làm ra: ngành `industry` (dây chuyền `line` nếu là nhà máy gộp); `upstream`: ngành/dây chuyền đầu vào.
+      name: 'Đồ ăn', label: 'Tự chủ thực phẩm', icon: '🍱', unit: 'suất', good: 'processed_food', industry: 'consumer_goods', line: 'food_processing',
+      upstream: ['agriculture'], perUnit: 5, perPetDay: 3, item: 'clan_meal',
     },
     care: {
       name: 'Đồ chăm sóc', label: 'Tự chủ đồ chăm sóc', icon: '🧴', unit: 'bộ', good: 'medicine', industry: 'pharma',
-      upstream: ['chemicals', 'agriculture'], perUnit: 10, perPetDay: 2, item: 'clan_care',
+      upstream: ['petrochem:chemicals', 'agriculture'], perUnit: 10, perPetDay: 2, item: 'clan_care',
     },
   },
   /**

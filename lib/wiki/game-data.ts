@@ -126,7 +126,11 @@ export const guildProjectRows = (): Row[] =>
 // ---------------------------------------------------------------- gia tộc, đất, vĩ mô
 
 
-type Industry = Named & { sector: string; comp: number; zones: Record<string, number>; recipe?: { in: Record<string, number>; out: Record<string, number> }; extracts?: string; plants?: Record<string, Named & { in: Record<string, number>; out: Record<string, number> }> };
+type Recipe = { in: Record<string, number>; out: Record<string, number> };
+type Industry = Named & {
+  sector: string; comp: number; zones: Record<string, number>; recipe?: Recipe; extracts?: string[];
+  plants?: Record<string, Named & Recipe>; lines?: Record<string, Named & { recipe: Recipe }>;
+};
 const industries = INDUSTRIES as unknown as Record<string, Industry>;
 const sectors = SECTORS as Record<string, Named>;
 const goodsInd = GOODS as Record<string, Named>;
@@ -146,7 +150,10 @@ export const industryRows = (sector: string): Row[] =>
   Object.values(industries).filter((i) => i.sector === sector).map((i) => [
     `${i.icon} ${i.name}`,
     i.comp,
-    i.extracts ? `Khai thác ${EXTRACTS[i.extracts] ?? i.extracts}` : i.plants ? Object.values(i.plants).map((p) => `${p.icon} ${p.name}`).join(", ") : i.recipe ? `${goodList(i.recipe.in)} → ${goodList(i.recipe.out)}` : bestZones(i),
+    i.extracts ? `Khai thác ${i.extracts.map((k) => EXTRACTS[k] ?? k).join("; ")}`
+      : i.plants ? Object.values(i.plants).map((p) => `${p.icon} ${p.name}`).join(", ")
+      : i.lines ? `Mỗi lô chọn một dây chuyền: ${Object.values(i.lines).map((l) => `${l.icon} ${l.name} (${goodList(l.recipe.in)} → ${goodList(l.recipe.out)})`).join("; ")}`
+      : i.recipe ? `${goodList(i.recipe.in)} → ${goodList(i.recipe.out)}` : bestZones(i),
   ]);
 export const clanLevelRows = (): Row[] =>
   (CLAN_LEVELS as number[]).map((xp, i) => {

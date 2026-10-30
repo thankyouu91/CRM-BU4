@@ -1230,7 +1230,7 @@ export const ARTICLES: WikiArticle[] = [
         id: "nganh",
         title: "Thâu tóm ngành",
         blocks: [
-          { p: `Gia tộc chỉ làm ăn trên đất bằng những **ngành** đã thâu tóm. Có ${INDUSTRY_COUNT} ngành chia năm khối:` },
+          { p: `Gia tộc chỉ làm ăn trên đất bằng những **ngành** đã thâu tóm. Có ${INDUSTRY_COUNT} ngành chia theo khối (các ngành na ná nhau đã được gộp, nhà máy gộp có nhiều dây chuyền để chọn):` },
           { table: { head: ["Khối", "Các ngành"], rows: sectorRows() } },
           { list: [
             `Ngành thứ 1, 2, 3 cần gia tộc đạt cấp ${CLAN.industryLevels.join(", ")}.`,

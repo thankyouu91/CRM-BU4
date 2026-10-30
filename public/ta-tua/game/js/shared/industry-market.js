@@ -24,29 +24,18 @@ export const INDUSTRY_MARKET = {
   logistics: { stabilize: [...RAW, ...PROCESSED] },
   education: { stabilize: [...RAW, ...PROCESSED], weight: 0.5 },
   entertainment: { demand: ['strawberry', 'mango', 'pearl'], weight: 0.6 },
-  // ---- khối sản xuất ----
-  agriculture: { supply: ['cane', 'cassava', 'tea_leaf', 'mango'] },
-  livestock: { supply: ['milk', 'pork'] },
-  power: { cost: PROCESSED },
-  oil_gas: { cost: PROCESSED, weight: 0.6 },
-  refinery: { cost: PROCESSED, weight: 0.6 },
-  food_processing: { demand: ['cane', 'cassava', 'milk', 'tea_leaf'], supply: PROCESSED },
-  chemicals: { supply: ['tea_leaf', 'cane', 'cassava', 'strawberry'], weight: 0.5 }, // phân bón
-  machinery: { supply: ['cane', 'cassava', 'tea_leaf'], weight: 0.4, stabilize: RAW },
-  shipbuilding: { supply: ['fish'], weight: 0.6 },
-  trains: { stabilize: [...RAW, ...PROCESSED], weight: 0.5 },
-  autos: { stabilize: [...RAW, ...PROCESSED], weight: 0.4 },
-  aerospace: { demand: ['strawberry', 'fish'], weight: 0.4, stabilize: RAW },
-  pharma: { demand: ['strawberry', 'tea_leaf'], weight: 0.4 },
-  // Các ngành công nghiệp còn lại nuôi nhiều công nhân: cầu thực phẩm tăng nhẹ.
-  mining: { demand: ['pork', 'fish', 'cassava'], weight: 0.3 },
+  // ---- khối sản xuất (đã gộp các ngành na ná nhau) ----
+  mining: { demand: ['pork', 'fish', 'cassava'], cost: PROCESSED, weight: 0.4 }, // thợ mỏ ăn nhiều; khí đốt hạ chi phí chế biến
   forestry: { demand: ['pork', 'cassava'], weight: 0.3 },
-  textiles: { demand: ['pork', 'fish', 'milk'], weight: 0.3 },
-  furniture: { demand: ['pork', 'fish'], weight: 0.3 },
+  agriculture: { supply: ['cane', 'cassava', 'tea_leaf', 'mango', 'milk', 'pork'] },
+  power: { cost: PROCESSED },
+  consumer_goods: { demand: ['cane', 'cassava', 'milk', 'tea_leaf'], supply: PROCESSED, weight: 0.8 },
+  pharma: { demand: ['strawberry', 'tea_leaf'], weight: 0.4 },
   electronics: { demand: ['milk', 'pearl', 'sugar'], weight: 0.3 },
-  steel: { demand: ['pork', 'fish', 'cassava'], weight: 0.3 },
-  aluminium: { demand: ['pork', 'fish'], weight: 0.3 },
-  semiconductors: { demand: ['milk', 'pearl', 'tea_leaf'], weight: 0.3 },
+  metallurgy: { demand: ['pork', 'fish', 'cassava'], weight: 0.3 },
+  petrochem: { cost: PROCESSED, supply: ['tea_leaf', 'cane', 'cassava', 'strawberry'], weight: 0.6 }, // nhiên liệu và phân bón
+  machinery: { supply: ['cane', 'cassava', 'tea_leaf'], weight: 0.4, stabilize: RAW },
+  vehicles: { stabilize: [...RAW, ...PROCESSED], supply: ['fish'], weight: 0.5 }, // đội xe chở hàng, tàu đánh cá
   // ---- ngành chiến lược ----
   irrigation: { supply: ['tea_leaf', 'cane', 'cassava', 'strawberry', 'mango'], weight: 0.5, stabilize: ['tea_leaf', 'cane', 'cassava', 'strawberry', 'mango'] },
   wind_farm: { cost: PROCESSED, weight: 0.6 },

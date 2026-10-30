@@ -53,7 +53,13 @@ test('mỏ trên lô cố định theo địa hình: đồi có khoáng sản, r
   const sea = shared.PLOTS.find((p) => p.zone === 'sea');
   assert.ok(rules.depositsOf(sea).crude_oil > 0 || rules.depositsOf(sea).gas > 0);
   assert.deepEqual(rules.depositsOf(forest), rules.depositsOf(forest), 'cố định');
-  assert.equal(rules.RUN_ORDER.length, Object.keys(rules.PRODUCTION_INDUSTRIES).length);
+  // Mỗi ngành sản xuất, mỗi dây chuyền đều có đúng một bước trong thứ tự chạy ban đêm.
+  const steps = rules.RUN_STEPS.map(([i, l]) => `${i}:${l}`);
+  assert.equal(new Set(steps).size, steps.length);
+  for (const [id, ind] of Object.entries(rules.PRODUCTION_INDUSTRIES)) {
+    if (ind.lines) for (const line of Object.keys(ind.lines)) assert.ok(steps.includes(`${id}:${line}`), `${id}:${line}`);
+    else assert.ok(steps.includes(`${id}:null`), id);
+  }
 });
 
 let ironPlot;
@@ -64,13 +70,13 @@ test('gia tộc khai khoáng + luyện thép + điện: quặng và than vào kh
   clans.createClan(a, { name: 'Tập Đoàn Thép', emblem: '🐉', color: '#555555' }, T0);
   clans.donateClan(a, 5_000_000, T0);
   clans.enterIndustry(a, 'mining', T0);
-  clans.enterIndustry(a, 'steel', T0);
+  clans.enterIndustry(a, 'metallurgy', T0);
   clans.enterIndustry(a, 'power', T0);
   ironPlot = shared.PLOTS.find((p) => p.zone === 'hill' && rules.depositsOf(p).iron_ore && rules.depositsOf(p).coal);
   factoryPlot = shared.PLOTS.find((p) => p.zone === 'urban');
   powerPlot = shared.PLOTS.find((p) => p.zone === 'river' && rules.plantsFor(p).includes('hydro'));
   assert.ok(ironPlot && factoryPlot && powerPlot, 'phải có lô phù hợp trên bản đồ');
-  for (const [plot, ind] of [[ironPlot, 'mining'], [factoryPlot, 'steel'], [powerPlot, 'power']]) {
+  for (const [plot, ind] of [[ironPlot, 'mining'], [factoryPlot, 'metallurgy'], [powerPlot, 'power']]) {
     clans.buyPlot(a, plot.id, T0);
     clans.setPlotIndustry(a, plot.id, ind);
     clans.saveDesign(a, plot.id, BUILT, T0);
@@ -78,7 +84,8 @@ test('gia tộc khai khoáng + luyện thép + điện: quặng và than vào kh
   clans.choosePlant(a, powerPlot.id, 'hydro');
   assert.throws(() => clans.choosePlant(a, powerPlot.id, 'nuclear-x'), /không dựng được/);
 
-  const preview = clans.plotPreview(a, factoryPlot.id, 'steel', T0);
+  const preview = clans.plotPreview(a, factoryPlot.id, 'metallurgy', T0);
+  assert.equal(preview.production.line, 'steel', 'dây chuyền mặc định của Luyện kim là luyện thép');
   assert.ok(preview.production.batches > 0);
   assert.ok(preview.production.in.iron_ore > 0);
 

@@ -7,10 +7,13 @@ import { DAY, GameError } from './game.js';
 import { offerToShop } from './essentials.js';
 import { post } from './ledger.js';
 import {
-  ESSENTIALS, ESSENTIAL_CATS, GOODS, GOOD_INDUSTRY, GOOD_ORDER, MARKET_RULES, PRODUCTION_INDUSTRIES, RUN_ORDER, depositsOf,
-  extractable, plantsFor, qualityScore, recipeOf,
+  ESSENTIALS, ESSENTIAL_CATS, GOODS, GOOD_INDUSTRY, GOOD_ORDER, MARKET_RULES, PRODUCTION_INDUSTRIES, RUN_STEPS, batchesOf, depositsOf,
+  extractable, lineOf, plantsFor, qualityScore, recipeOf, variantInfo, variantsFor,
 } from '../../public/ta-tua/game/js/shared/industry.js';
 import { PHASES, PLOTS, clanLevelOf, clanPerks, designBonus, designComplete, envFactor, weatherFactor } from '../../public/ta-tua/game/js/shared/clan.js';
+
+/** Ngành khai thác hưởng buff Trị thủy (trồng trọt, chăn nuôi, lâm nghiệp). */
+export const IRRIGATED = ['agriculture', 'forestry'];
 
 const q = {
   goods: db.prepare('SELECT * FROM clan_goods WHERE clan_id = ?'),
@@ -115,12 +118,15 @@ export function productionPreview(plot, { industry, variant, design = [], level 
   }
   const recipe = recipeOf(industry, variant);
   if (!recipe) return { kind: 'power', factor, deposits, out: {}, in: {}, batches: 0, value: 0, cost: 0, plants: plantsFor(plot) };
-  const batches = Math.round((ind.batches ?? 4) * factor * 10) / 10;
+  const batches = Math.round(batchesOf(industry, variant) * factor * 10) / 10;
   const out = Object.fromEntries(Object.entries(recipe.out).map(([g, n]) => [g, n * batches]));
   const input = Object.fromEntries(Object.entries(recipe.in).map(([g, n]) => [g, n * batches]));
   const value = Object.entries(out).reduce((s, [g, n]) => s + n * npcBuyPrice(g, macro), 0);
   const cost = Object.entries(input).reduce((s, [g, n]) => s + n * refPrice(g, macro), 0);
-  return { kind: industry === 'power' ? 'power' : 'factory', factor, deposits, out, in: input, batches, value: Math.round(value), cost: Math.round(cost), plants: industry === 'power' ? plantsFor(plot) : undefined };
+  return {
+    kind: industry === 'power' ? 'power' : 'factory', factor, deposits, out, in: input, batches, value: Math.round(value), cost: Math.round(cost),
+    plants: industry === 'power' ? plantsFor(plot) : undefined, lines: ind.lines ? variantsFor(industry, plot) : undefined, line: lineOf(industry, variant),
+  };
 }
 
 /**
@@ -134,8 +140,13 @@ export function productionPreview(plot, { industry, variant, design = [], level 
  */
 export function clanQuality(cat, rows, level) {
   const meta = ESSENTIALS.cats[cat];
-  const pieces = Math.max(0, ...rows.filter((r) => r.industry === meta.industry).map((r) => JSON.parse(r.design).length));
-  const upstream = meta.upstream.some((ind) => rows.some((r) => r.industry === ind)) ? 1 : 0;
+  // Lô khớp "ngành" hoặc "ngành:dây chuyền" (nhà máy gộp nhiều dây chuyền).
+  const runs = (r, industry, line = null) => r.industry === industry && (!line || lineOf(r.industry, r.variant) === line);
+  const pieces = Math.max(0, ...rows.filter((r) => runs(r, meta.industry, meta.line)).map((r) => JSON.parse(r.design).length));
+  const upstream = meta.upstream.some((spec) => {
+    const [industry, line] = spec.split(':');
+    return rows.some((r) => runs(r, industry, line));
+  }) ? 1 : 0;
   return qualityScore({ level, pieces, upstream });
 }
 
@@ -164,14 +175,14 @@ export function runProduction(clan, plots, { day, macro, at, rand = Math.random,
     note(g, 'used', n);
   };
 
-  for (const industry of RUN_ORDER) {
-    for (const row of rows.filter((r) => r.industry === industry)) {
+  for (const [industry, line] of RUN_STEPS) {
+    for (const row of rows.filter((r) => r.industry === industry && (line === null || lineOf(industry, r.variant) === line))) {
       const plot = PLOT_BY_ID.get(row.id);
       const factor = plotFactor(plot, row, { level, macro });
       const ind = PRODUCTION_INDUSTRIES[industry];
       if (ind.extracts) {
         // Trị thủy chỉ tăng trồng trọt, chăn nuôi, lâm nghiệp.
-        const boost = ['agriculture', 'livestock', 'forestry'].includes(industry) ? irr : 0;
+        const boost = IRRIGATED.includes(industry) ? irr : 0;
         for (const [g, n] of Object.entries(extractable(industry, DEPOSITS.get(plot.id)))) {
           const made = stochastic(n * factor * (1 + boost), rand);
           give(g, made);
@@ -182,7 +193,7 @@ export function runProduction(clan, plots, { day, macro, at, rand = Math.random,
       const recipe = recipeOf(industry, row.variant);
       if (!recipe) continue;
       // Năng lượng gió tăng số mẻ của nhà máy và nhà máy điện.
-      const cap = stochastic((ind.batches ?? 4) * factor * (1 + wind), rand);
+      const cap = stochastic(batchesOf(industry, row.variant) * factor * (1 + wind), rand);
       const can = Math.min(cap, ...Object.entries(recipe.in).map(([g, n]) => Math.floor(have(g) / n)));
       if (can <= 0) continue;
       for (const [g, n] of Object.entries(recipe.in)) take(g, n * can);
@@ -403,11 +414,14 @@ export function sellToNpc(userId, good, qty, macro, now = Date.now()) {
   });
 }
 
-export function setPlotVariant(plotId, plant) {
+/** Chọn lựa chọn của lô: loại nhà máy điện (ngành Năng lượng) hoặc dây chuyền (nhà máy gộp nhiều dây chuyền). */
+export function setPlotVariant(plotId, variant, industry = 'power') {
   const plot = PLOT_BY_ID.get(Number(plotId));
   if (!plot) throw new GameError('Không có lô đất này.');
-  if (!plantsFor(plot).includes(plant)) throw new GameError('Lô này không dựng được loại nhà máy điện đó.');
-  q.setVariant.run(plant, plot.id);
-  return { message: `Lô ${plot.code}: ${PRODUCTION_INDUSTRIES.power.plants[plant].name}.` };
+  if (!variantsFor(industry, plot).includes(variant)) {
+    throw new GameError(industry === 'power' ? 'Lô này không dựng được loại nhà máy điện đó.' : 'Lô này không chạy được dây chuyền đó.');
+  }
+  q.setVariant.run(variant, plot.id);
+  return { message: `Lô ${plot.code}: ${variantInfo(industry, variant).name}.` };
 }
 

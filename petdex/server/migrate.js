@@ -5,6 +5,7 @@ import { post } from './ledger.js';
 import { initialSkills } from './rules/careers.js';
 import { createGear, setGearListed, wearLimitOf, wornGear } from './gear.js';
 import { TIER_ORDER } from '../../public/ta-tua/game/js/shared/gear.js';
+import { MERGED_INTO } from '../../public/ta-tua/game/js/shared/industry.js';
 import { rollTraits } from './rules/production.js';
 import { TREASURY_SEED } from './rules/town.js';
 
@@ -87,6 +88,37 @@ const steps = {
     }
   },
 
+  /**
+   * Gộp ngành (41 → 26): lô đất chuyển sang ngành mới và giữ đúng dây chuyền đang chạy; ngành đã thâu tóm đổi id,
+   * gia tộc nắm hai ngành cũ nay là một thì được hoàn tiền thâu tóm của ngành thừa và trống thêm một suất ngành.
+   */
+  industries_merge_v1(now) {
+    // Lô làm "Điện tử, máy tính" cũ (giữ id electronics) chạy dây chuyền máy tính.
+    db.prepare("UPDATE land_plots SET variant = 'electronics' WHERE industry = 'electronics' AND variant IS NULL").run();
+    const setPlot = db.prepare('UPDATE land_plots SET industry = ?, variant = ? WHERE id = ?');
+    for (const row of db.prepare('SELECT id, industry FROM land_plots WHERE industry IS NOT NULL').all()) {
+      const to = MERGED_INTO[row.industry];
+      if (to) setPlot.run(to.industry, to.line, row.id);
+    }
+    const rows = db.prepare('SELECT * FROM clan_industries ORDER BY clan_id, entered_at').all();
+    const drop = db.prepare('DELETE FROM clan_industries WHERE clan_id = ? AND industry = ?');
+    const rename = db.prepare('UPDATE clan_industries SET industry = ? WHERE clan_id = ? AND industry = ?');
+    const news = db.prepare('INSERT INTO news (commodity, headline, effect, created_at, starts_at, ends_at) VALUES (NULL, ?, 0, ?, ?, ?)');
+    const kept = new Map(); // clan → các ngành mới đã có
+    for (const r of rows) {
+      const target = MERGED_INTO[r.industry]?.industry ?? r.industry;
+      const have = kept.get(r.clan_id) ?? new Set();
+      if (have.has(target)) {
+        drop.run(r.clan_id, r.industry);
+        if (r.fee > 0) post({ account: `clan:${r.clan_id}`, delta: r.fee, kind: 'clan_comp', memo: `Hoàn tiền thâu tóm ${r.industry} (gộp ngành)`, now });
+      } else {
+        if (target !== r.industry) rename.run(target, r.clan_id, r.industry);
+        have.add(target);
+      }
+      kept.set(r.clan_id, have);
+    }
+    news.run('🏭 Sở Kế hoạch gộp các ngành na ná nhau: 41 ngành còn 26. Đất và nhà máy giữ nguyên dây chuyền; gia tộc nắm ngành trùng được hoàn tiền thâu tóm.', now, now, now + 3 * 86_400_000);
+  },
   /**
    * Luật đeo đồ mới (dưới cấp 30 đeo 3 món, từ cấp 30 đeo 4, Huyền thoại thêm 1): bé đang đeo quá số món
    * thì cất bớt vào tủ đồ, giữ lại những món cấp cao nhất. Không mất món nào.

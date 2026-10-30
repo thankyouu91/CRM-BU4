@@ -7,6 +7,7 @@ import { db } from './db.js';
 import { DAY } from './game.js';
 import { gaussian } from './rules/market.js';
 import { INDUSTRIES, INDUSTRY_ORDER, PHASES, PHASE_NEXT, WEATHER } from '../../public/ta-tua/game/js/shared/clan.js';
+import { MERGED_FROM } from '../../public/ta-tua/game/js/shared/industry.js';
 
 const q = {
   day: db.prepare('SELECT * FROM macro_days WHERE day = ?'),
@@ -99,7 +100,13 @@ function fillMissingDemand(state, rand) {
   const missing = INDUSTRY_ORDER.filter((id) => state.demand?.[id] == null);
   if (!missing.length) return state;
   const demand = { ...(state.demand ?? {}) };
-  for (const id of missing) demand[id] = Math.round(clamp(1 + gaussian(rand) * 0.03, 0.7, 1.35) * 1000) / 1000;
+  for (const id of missing) {
+    // Ngành gộp: trung bình cầu của các ngành cũ đã gộp vào nó (nếu ngày đó có); ngành hoàn toàn mới: dao động quanh 1.
+    const old = (MERGED_FROM[id] ?? []).map((k) => demand[k]).filter((v) => v != null);
+    demand[id] = old.length
+      ? Math.round((old.reduce((a, b) => a + b, 0) / old.length) * 1000) / 1000
+      : Math.round(clamp(1 + gaussian(rand) * 0.03, 0.7, 1.35) * 1000) / 1000;
+  }
   q.insert.run(state.day, state.phase, state.weather, state.landIndex, state.gdp, JSON.stringify(demand), Date.now());
   return { ...state, demand };
 }
