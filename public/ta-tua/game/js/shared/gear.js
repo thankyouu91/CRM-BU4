@@ -23,8 +23,29 @@ export const AFFIXES = {
   luck: { name: 'May mắn', icon: '🍀', desc: 'Nấu dễ ra món ngon, mini-game dễ rớt vật liệu và trang phục, mua đồ dễ ra cấp cao.' },
 };
 
-/** Tổng % mỗi loại chỉ số trên một bé không vượt mức này, dù đeo đồ gì. */
+/** Một dòng chỉ số (quản trị viên nhập tay hoặc biên độ cấu hình) không vượt mức này. */
 export const BONUS_CAP = 100;
+
+/**
+ * Cộng dồn có giảm dần, để bé đeo 5 món không bỏ xa bé đeo 3 món: mỗi loại chỉ số tính đủ tới SOFT_CAP %,
+ * phần vượt chỉ tính OVER_RATE, và tổng không quá TOTAL_CAP %. Ví dụ 4 món Đỏ cộng thô 60% → thực nhận 42,5%.
+ * Số liệu mô phỏng: docs/pet-town-gear-balance.md.
+ */
+export const STACKING = { softCap: 25, overRate: 0.5, totalCap: 60 };
+
+/** % thực nhận của một loại chỉ số khi các dòng cộng thô được `raw` %. */
+export function effectiveBonus(raw) {
+  const { softCap, overRate, totalCap } = STACKING;
+  const v = Math.max(0, Number(raw) || 0);
+  const eff = v <= softCap ? v : softCap + (v - softCap) * overRate;
+  return Math.min(totalCap, Math.round(eff * 10) / 10);
+}
+
+/**
+ * Đồ có yêu cầu cấp cao mở hộp dễ ra Xanh lục hơn: cứ 10 cấp yêu cầu thì cộng 10 điểm May mắn
+ * khi quay hộp ở Siêu thị (vẫn chỉ ra Xanh lam/Xanh lục).
+ */
+export const gradeLuck = (minLevel = 1) => Math.floor(Math.max(0, minLevel) / 10) * 10;
 
 /** Cấu hình mặc định; quản trị viên chỉnh được trên bảng quản lý (lưu ở máy chủ game). */
 export const DEFAULT_GEAR_CONFIG = {
@@ -128,13 +149,13 @@ export function rollShopGear(config, rand, { luck = 0 } = {}) {
   return rollGear(config, rand, { tier: rollTier(odds, rand, luck) });
 }
 
-/** Cộng các dòng chỉ số của những món đang đeo; mỗi loại không vượt BONUS_CAP. */
+/** Cộng các dòng chỉ số của những món đang đeo, rồi áp giảm dần và trần (effectiveBonus) cho từng loại. */
 export function sumBonus(list) {
   const total = Object.fromEntries(AFFIX_ORDER.map((a) => [a, 0]));
   for (const affixes of list) {
     for (const a of AFFIX_ORDER) total[a] += Number(affixes?.[a] ?? 0) || 0;
   }
-  for (const a of AFFIX_ORDER) total[a] = Math.min(BONUS_CAP, total[a]);
+  for (const a of AFFIX_ORDER) total[a] = effectiveBonus(total[a]);
   return total;
 }
 

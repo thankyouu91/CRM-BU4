@@ -32,9 +32,9 @@ import { createPetFigure } from './sprite.js';
 import { itemIcon } from './itemart.js';
 import {
   EGG, EGG_ODDS, ELEMENTS, ELEMENT_RULES, LEVEL_FORMS, LIFE, LIFE_STAGES, RARITIES, RELATIONS, SLOTS, WEAR_RULES, foodBonus, formIndex,
-  fullSetOf, relation, wearBonus,
+  relation, setOf, wearBonus,
 } from './shared/pets.js';
-import { AFFIXES, AFFIX_ORDER, SHOP_TIERS, TIERS, TIER_ORDER, affixText } from './shared/gear.js';
+import { AFFIXES, AFFIX_ORDER, SHOP_TIERS, STACKING, TIERS, TIER_ORDER, affixText } from './shared/gear.js';
 import {
   $, MOOD_ICONS, STAT_ICONS, STAT_LABELS, TYPE_LABELS,
   ageText, busyOf, clock, closeModal, countdown, effectText, esc, fmt, formatWait, modalOpen, openModal, toast, viewHead,
@@ -448,12 +448,14 @@ function outfitSummary(pet) {
   const el = ELEMENTS[pet.element];
   if (!el) return wearCountLine(pet);
   const pct = Math.round(wearBonus(pet.wear, pet.element) * 100);
-  const set = fullSetOf(pet.wear);
+  const set = setOf(pet.wear);
+  const sets = Object.entries(ELEMENT_RULES.sets).map(([n, k]) => `${n} món +${k * 100}%`).join(', ');
   return `${wearCountLine(pet)}
     <p class="muted small">Đồ hành nuôi dưỡng bé ${el.icon} ${el.name} (tương sinh) +10% tốc độ lên kỹ năng,
-      cùng hành +5%, đồ kỵ mệnh −5%. Đủ 4 khe cùng một hành thì +${ELEMENT_RULES.fullSet * 100}% lương.</p>
-    <p class="outfit-now">Đang mặc: <b class="${pct > 0 ? 'up' : pct < 0 ? 'down' : ''}">${pct > 0 ? '+' : ''}${pct}%</b> tốc độ lên kỹ năng${set ? ` · ✨ đủ bộ hành ${ELEMENTS[set].name}: +${ELEMENT_RULES.fullSet * 100}% lương` : ''}</p>
-    <p class="muted small">Trang phục có cấp ${TIER_ORDER.map((t) => tierChip(t)).join(' → ')}, lần lượt 1–4 dòng chỉ số; các dòng của đồ đang đeo cộng dồn cho bé.
+      cùng hành +5%, đồ kỵ mệnh −5% (cả bộ tối đa +${ELEMENT_RULES.wearCap * 100}%). Mặc nhiều món cùng một hành thì thêm lương: ${sets}.</p>
+    <p class="outfit-now">Đang mặc: <b class="${pct > 0 ? 'up' : pct < 0 ? 'down' : ''}">${pct > 0 ? '+' : ''}${pct}%</b> tốc độ lên kỹ năng${set ? ` · ✨ bộ ${set.count} món hành ${ELEMENTS[set.element].name}: +${Math.round(set.pay * 100)}% lương` : ''}</p>
+    <p class="muted small">Trang phục có cấp ${TIER_ORDER.map((t) => tierChip(t)).join(' → ')}, lần lượt 1–4 dòng chỉ số; các dòng của đồ đang đeo cộng dồn cho bé:
+      mỗi loại tính đủ tới ${STACKING.softCap}%, phần vượt tính một nửa, tối đa ${STACKING.totalCap}%.
       Đồ mua ở Siêu thị là hộp kín 1–2 dòng, mở ra mới biết dòng nào.</p>
     ${gearBonusLine(pet)}`;
 }

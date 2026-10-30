@@ -165,7 +165,7 @@ export function GearConfigTab() {
       <Card>
         <CardHeader
           title={<span className="flex items-center gap-2"><Shirt className="h-4 w-4 text-muted-foreground" /> Biên độ mỗi dòng chỉ số (%)</span>}
-          description={`Khi quay một món, mỗi dòng nhận một số ngẫu nhiên trong khoảng [thấp nhất, cao nhất] theo cấp. Tổng mỗi loại chỉ số trên một bé không vượt ${BONUS_CAP}%. Chỉ áp dụng cho đồ quay mới; đồ đã có giữ nguyên.`}
+          description={`Khi quay một món, mỗi dòng nhận một số ngẫu nhiên trong khoảng [thấp nhất, cao nhất] theo cấp. Trên một bé, mỗi loại chỉ số tính đủ tới ${rules.STACKING.softCap}%, phần vượt tính ${rules.STACKING.overRate * 100}%, tổng tối đa ${rules.STACKING.totalCap}%. Chỉ áp dụng cho đồ quay mới; đồ đã có giữ nguyên.`}
         />
         <CardBody className="overflow-x-auto pt-3">
           <table className="w-full min-w-[40rem] text-sm">
