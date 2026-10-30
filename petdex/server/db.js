@@ -1045,6 +1045,7 @@ addColumn('users', 'locked_slots', 'INTEGER NOT NULL DEFAULT 0');
   CREATE INDEX IF NOT EXISTS mail_to ON mail(to_user, id);
   `);
   addColumn('users', 'chat_muted_until', 'INTEGER NOT NULL DEFAULT 0');
+  addColumn('central_bank', 'money_total', 'REAL'); // tổng lượng xu lúc họp, để tính tốc độ tăng
 }
 
 const q = {

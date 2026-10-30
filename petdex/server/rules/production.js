@@ -198,8 +198,16 @@ export const LOANS = { terms: [3, 7, 14], originationFee: 0.02, lateFee: 0.01, d
 export const tierOf = (score) => TIERS.findLast((t) => score >= t.min);
 export const clampCredit = (score) => clamp(score, CREDIT.min, CREDIT.max);
 
+/**
+ * Làm tròn số tiền / lãi suất tới 6 chữ số thập phân để bỏ sai số dấu phẩy động (0,003 + 0,01 = 0,013000000000000001),
+ * rồi mới làm tròn lên xu: 1.000 × 1,3% là 13 xu, không phải 14.
+ */
+export const tidy = (x) => Math.round(x * 1e6) / 1e6;
+export const ceilCoins = (x) => Math.ceil(tidy(x));
+export const floorCoins = (x) => Math.floor(tidy(x));
+
 /** Lãi vay mỗi ngày = lãi cơ bản + phụ phí hạng + phụ phí lạm phát. */
-export const loanRate = (baseRate, score, growth = 0) => baseRate + tierOf(score).premium + Math.max(0, growth - 0.1) / 7;
+export const loanRate = (baseRate, score, growth = 0) => tidy(baseRate + tierOf(score).premium + Math.max(0, growth - 0.1) / 7);
 
 /** Hạn mức vay = min(hạn mức hạng, 3 × thu nhập bình quân 7 ngày + 50% tiết kiệm) − dư nợ hiện có. */
 export function loanLimit({ score, avgIncome, savings, outstanding }) {
@@ -211,7 +219,7 @@ export function loanLimit({ score, avgIncome, savings, outstanding }) {
  * cộng phí và lãi còn nợ từ các kỳ trước.
  */
 export function installment(loan, pastDue = false) {
-  const interest = Math.ceil(loan.remaining * loan.rate);
-  const principal = pastDue ? loan.remaining : Math.min(loan.remaining, Math.ceil(loan.principal / loan.term_days));
+  const interest = ceilCoins(loan.remaining * loan.rate);
+  const principal = pastDue ? loan.remaining : Math.min(loan.remaining, ceilCoins(loan.principal / loan.term_days));
   return { arrears: loan.fees ?? 0, interest, principal, total: (loan.fees ?? 0) + interest + principal };
 }

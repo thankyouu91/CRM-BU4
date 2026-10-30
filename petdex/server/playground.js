@@ -7,7 +7,6 @@ export const WORLD = { width: 1000, height: 600, minX: 50, maxX: 950, minY: 318,
 
 const ROOM = 'park';
 const CUDDLE_COOLDOWN_MS = 30_000;
-const CHAT_GAP_MS = 1_000;
 const GIFT_GAP_MS = 2_000;
 const EMOTES = new Set(['wave', 'jump', 'spin']);
 
@@ -155,7 +154,6 @@ export function attachPlayground(io) {
         username: nameOf(user),
         x: randomIn(WORLD.minX + 100, WORLD.maxX - 100),
         y: randomIn(WORLD.minY + 60, WORLD.maxY - 20),
-        lastChat: 0,
         lastGift: 0,
       };
       player.pet = petCard(row);
@@ -175,16 +173,6 @@ export function attachPlayground(io) {
       me.x = Math.round(clamp(x, WORLD.minX, WORLD.maxX));
       me.y = Math.round(clamp(y, WORLD.minY, WORLD.maxY));
       io.to(ROOM).emit('pg:moved', { id: me.id, x: me.x, y: me.y });
-    });
-
-    on('pg:chat', ({ text }) => {
-      const me = self();
-      const clean = String(text ?? '').replace(/\s+/g, ' ').trim().slice(0, 120);
-      if (!clean) return;
-      const now = Date.now();
-      if (now - me.lastChat < CHAT_GAP_MS) throw new GameError('Từ từ thôi, nói chậm lại nào!');
-      me.lastChat = now;
-      io.to(ROOM).emit('pg:chat', { id: me.id, username: me.username, text: clean });
     });
 
     on('pg:emote', ({ kind }) => {

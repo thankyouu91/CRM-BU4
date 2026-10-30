@@ -10,6 +10,8 @@ const { migrate } = await import('../server/migrate.js');
 const { runDue } = await import('../server/scheduler.js');
 const { dayKey } = await import('../server/clock.js');
 const p2p = await import('../server/p2p.js');
+const bank = await import('../server/bank.js');
+const { LOANS } = await import('../server/rules/production.js');
 const hui = await import('../server/hui.js');
 const clans = await import('../server/clans.js');
 const wallet = await import('../server/wallet.js');
@@ -86,12 +88,19 @@ test('P2P: không trả được thì trễ hạn (phí trễ, trừ điểm), t
   loan = p2p.p2pView(borrower, t + 10 * DAY + HOUR).borrowing[0];
   assert.equal(loan.status, 'defaulted');
   assert.ok(store.getUser(borrower).loan_ban_until > t + 10 * DAY);
-  // Vỡ nợ: mỗi đêm ngân hàng giữ 30% số dư ví trả cho người cho vay.
-  setCoins(borrower, 1000);
+  // Vỡ nợ: mỗi đêm ngân hàng giữ 30% THU NHẬP trong ngày (như vay ngân hàng), lấy ví trước rồi tới tiết kiệm:
+  // nhận lương 1.000 rồi giấu 900 vào tiết kiệm vẫn bị giữ đủ 300.
+  setCoins(borrower, 0);
+  const payday = t + 11 * DAY - 2 * HOUR;
+  post({ userId: borrower, delta: 1000, kind: 'salary', memo: 'lương', now: payday });
+  bank.moveSavings(borrower, 'deposit', 900, payday + 1);
   const before = coins(lender);
-  p2p.settleP2PDay(dayKey(t + 11 * DAY));
-  assert.equal(coins(borrower), 1000 - Math.floor(1000 * P2P.garnish));
-  assert.equal(coins(lender), before + Math.floor(1000 * P2P.garnish)); // còn đang trả gốc nên chưa có phần ngân hàng
+  p2p.settleP2PDay(dayKey(t + 11 * DAY - 3 * HOUR));
+  const garnish = Math.floor(1000 * P2P.garnish);
+  assert.equal(coins(borrower), 0, 'ví 100 xu bị giữ hết');
+  assert.equal(store.db.prepare('SELECT savings FROM bank_accounts WHERE user_id = ?').get(borrower).savings, 900 - (garnish - 100), 'phần còn lại lấy từ tiết kiệm');
+  assert.equal(coins(lender), before + garnish); // còn đang trả gốc nên chưa có phần ngân hàng
+  assert.ok(store.getUser(borrower).loan_ban_until >= t + 10 * DAY + LOANS.banDays * DAY - DAY, 'cấm vay theo LOANS.banDays');
 });
 
 test('luật hụi: thăm cao nhất hốt; không ai bỏ thăm thì kỳ đầu chủ hụi, sau đó theo thứ tự vào', () => {

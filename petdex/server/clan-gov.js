@@ -4,6 +4,7 @@ import { economy } from './bank.js';
 import { db, getUser, transaction } from './db.js';
 import { DAY, GameError, HOUR } from './game.js';
 import { post } from './ledger.js';
+import { ceilCoins, floorCoins } from './rules/production.js';
 import { CLAN_BANK, CLAN_GOV, clanDepositPayout, clanDepositRate, voteOutcome } from './rules/finance.js';
 
 const clanAccount = (id) => `clan:${id}`;
@@ -269,7 +270,7 @@ export function clanGovView(userId, clanId, now = Date.now()) {
       terms: Object.keys(CLAN_BANK.termPremium).map((t) => ({ days: Number(t), rate: clanDepositRate(baseRate, Number(t)) })),
       deposits: q.deposits.all(clanId).map((d) => ({
         id: d.id, amount: d.amount, rate: d.rate, termDays: d.term_days, openedAt: d.opened_at, maturesAt: d.matures_at,
-        interest: Math.floor(d.amount * d.rate * d.term_days), earlyPenalty: Math.ceil(d.amount * CLAN_BANK.earlyPenalty),
+        interest: floorCoins(d.amount * d.rate * d.term_days), earlyPenalty: ceilCoins(d.amount * CLAN_BANK.earlyPenalty),
       })),
       closed: q.closedDeposits.all(clanId).map((d) => ({ id: d.id, amount: d.amount, payout: d.payout, penalty: d.penalty, kind: d.close_kind, closedAt: d.closed_at })),
       total: clanDeposited(clanId),
