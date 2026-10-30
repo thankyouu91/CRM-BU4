@@ -13,6 +13,9 @@ import { parkUsers } from './playground.js';
 import { Router } from './router.js';
 import { SKILLS } from './rules/careers.js';
 import { createPet } from './eggs.js';
+import { adminClanView, resolveEvasion, setClanConfig, setPlotOverride } from './clans.js';
+import { dayKey } from './clock.js';
+import { overrideMacro } from './macro.js';
 import { slotsOf } from './lifecycle.js';
 import { bus, snapshot } from './service.js';
 import { getSpecies, listSpecies } from './species.js';
@@ -566,6 +569,40 @@ internalApi.post('/admin/invites/:id/revoke', (req, res) => {
 internalApi.get('/admin/log', (req, res) => {
   const limit = Math.min(200, Math.max(1, Number(req.query.limit) || 50));
   res.json({ log: store.adminLogs(limit) });
+});
+
+// ---- Gia tộc, Sở Nhà Đất, vĩ mô và Sở thuế ----
+
+internalApi.get('/admin/clans', (_req, res) => res.json(adminClanView()));
+
+internalApi.post('/admin/clans/config', (req, res) => {
+  const config = setClanConfig(req.body?.config ?? {});
+  store.adminLog(actorOf(req), 'clan_config', null, { config });
+  res.json(adminClanView());
+});
+
+internalApi.post('/admin/clans/plots/:plotId', (req, res) => {
+  const price = setPlotOverride(req.params.plotId, req.body?.price ?? null);
+  store.adminLog(actorOf(req), 'land_price', null, { plotId: Number(req.params.plotId), price });
+  res.json(adminClanView());
+});
+
+/** Ép pha kinh tế / thời tiết cho các ngày tới; `today: true` thì áp luôn cho hôm nay. */
+internalApi.post('/admin/clans/macro', (req, res) => {
+  const b = req.body ?? {};
+  const macro = { phase: b.phase || null, weather: b.weather || null };
+  setClanConfig({ macro });
+  if (b.today) overrideMacro(dayKey(Date.now()), { phase: macro.phase, weather: macro.weather, landIndex: b.landIndex == null ? undefined : Number(b.landIndex) });
+  store.adminLog(actorOf(req), 'macro', null, { ...macro, today: Boolean(b.today), landIndex: b.landIndex ?? null });
+  res.json(adminClanView());
+});
+
+internalApi.post('/admin/clans/evasion/:evasionId/:action', (req, res) => {
+  const action = req.params.action === 'dismiss' ? 'dismiss' : req.params.action === 'collect' ? 'collect' : null;
+  if (!action) throw new GameError('Thao tác không hợp lệ.');
+  const result = resolveEvasion(req.params.evasionId, action, { penalty: req.body?.penalty, actor: actorOf(req) });
+  store.adminLog(actorOf(req), action === 'collect' ? 'tax_collect' : 'tax_dismiss', null, { evasionId: Number(req.params.evasionId), ...result });
+  res.json(adminClanView());
 });
 
 internalApi.use('/{*rest}', (_req, res) => res.status(404).json({ error: 'Không tìm thấy.' }));

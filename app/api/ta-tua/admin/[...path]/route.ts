@@ -9,10 +9,10 @@ import { isAdmin } from "@/lib/rbac";
 // internal admin API (petdex/server/internal.js); every change is also written to WorkHub's
 // audit log with the administrator as actor.
 
-const ALLOWED = /^(overview|log|gear-config|gear\/\d+(\/delete)?|gift-codes(\/\d+(\/revoke)?)?|invites(\/\d+\/revoke)?|players(\/\d+(\/(coins|status|name|password-link|gear|pets(\/\d+)?))?)?)$/;
+const ALLOWED = /^(overview|log|gear-config|gear\/\d+(\/delete)?|gift-codes(\/\d+(\/revoke)?)?|clans(\/(config|macro|plots\/\d+|evasion\/\d+\/(collect|dismiss)))?|invites(\/\d+\/revoke)?|players(\/\d+(\/(coins|status|name|password-link|gear|pets(\/\d+)?))?)?)$/;
 
 /** Body fields that only label the audit entry; the game never sees them. */
-const LABEL_FIELDS = ["playerName", "petName", "speciesName", "itemName", "tierName"];
+const LABEL_FIELDS = ["playerName", "petName", "speciesName", "itemName", "tierName", "clanName", "plotCode"];
 
 type Params = { params: Promise<{ path: string[] }> };
 
@@ -44,6 +44,14 @@ function describe(path: string, body: Record<string, unknown>): { action: AuditA
     return { action: "tatua.gift_code", entityId: null, summary: `Tạo ${n > 1 ? `${n} mã quà` : "mã quà"} “${String(body.label || "Mã quà")}”` };
   }
   if (/^gift-codes\/\d+\/revoke$/.test(path)) return { action: "tatua.gift_code_revoke", entityId: id, summary: `Thu hồi mã quà #${id}` };
+  if (path === "clans/config") return { action: "tatua.clan_config", entityId: null, summary: "Chỉnh luật gia tộc, thuế doanh nghiệp và giá đất" };
+  if (/^clans\/plots\/\d+$/.test(path)) {
+    const plot = body.plotCode ? `lô ${String(body.plotCode)}` : `lô #${path.split("/")[2]}`;
+    return { action: "tatua.land_price", entityId: path.split("/")[2], summary: body.price ? `Đặt giá ${plot}: ${Number(body.price).toLocaleString("vi-VN")} xu` : `Trả ${plot} về giá tự tính` };
+  }
+  if (path === "clans/macro") return { action: "tatua.macro", entityId: null, summary: `Chỉnh kinh tế vĩ mô: pha ${String(body.phase ?? "tự động")}, thời tiết ${String(body.weather ?? "tự động")}${body.today ? " (áp dụng ngay)" : ""}` };
+  if (/^clans\/evasion\/\d+\/collect$/.test(path)) return { action: "tatua.tax_collect", entityId: path.split("/")[2], summary: `Truy thu thuế trốn của gia tộc${body.clanName ? ` “${String(body.clanName)}”` : ""} (hồ sơ #${path.split("/")[2]})` };
+  if (/^clans\/evasion\/\d+\/dismiss$/.test(path)) return { action: "tatua.tax_dismiss", entityId: path.split("/")[2], summary: `Bỏ qua hồ sơ thuế #${path.split("/")[2]}${body.clanName ? ` của “${String(body.clanName)}”` : ""}` };
   if (path === "invites") return { action: "tatua.invite", entityId: null, summary: `Tạo link mời khách “${String(body.label ?? "Khách mời")}”` };
   if (/^invites\/\d+\/revoke$/.test(path)) return { action: "tatua.invite_revoke", entityId: path.split("/")[1], summary: `Thu hồi link mời #${path.split("/")[1]}` };
   return null;

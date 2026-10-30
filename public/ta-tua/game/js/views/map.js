@@ -22,7 +22,7 @@ const PLACES = [
   { id: 'boba', name: 'Quầy trà sữa', icon: '🧋', row: 1, slot: 5, kind: 'boba', view: 'business', level: 'business' },
   // Khu công nghiệp mở cùng Sàn: gia công thuê dùng được từ cấp 2, xây xưởng thì màn bên trong tự khóa tới cấp 6.
   { id: 'factory', name: 'Khu công nghiệp', icon: '🏭', row: 1, slot: 6, kind: 'factory', view: 'factory', level: 'market' },
-  { id: 'realestate', name: 'Sở Nhà Đất', icon: '🏘️', row: 1, slot: 7, kind: 'realestate', soon: 'Sắp mở: nhà đất cho thuê' },
+  { id: 'realestate', name: 'Gia tộc & Nhà Đất', icon: '🏘️', row: 1, slot: 7, kind: 'realestate', view: 'clans', level: 'clan' },
   { id: 'arena', name: 'Bảng vàng', icon: '🏆', row: 1, slot: 8, kind: 'arena', view: 'ranks' },
 ];
 

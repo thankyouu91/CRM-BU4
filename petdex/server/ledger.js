@@ -67,6 +67,18 @@ export const KINDS = {
   town_seed: { group: 'transfer', label: 'Quỹ khởi tạo' },
   slot_reopen: { group: 'expense', label: 'Mở lại ô tưởng niệm' },
   admin: { group: 'transfer', label: 'Quản trị viên điều chỉnh' },
+  clan_create: { group: 'expense', label: 'Lập gia tộc' },
+  clan_donation: { group: 'expense', label: 'Góp quỹ gia tộc' },
+  clan_dividend: { group: 'income', label: 'Cổ tức gia tộc' },
+  // Các dòng dưới chỉ ghi trên tài khoản quỹ gia tộc (clan:<id>) và ngân sách thị trấn.
+  clan_comp: { group: 'transfer', label: 'Bồi thường thị trường (thâu tóm ngành)' },
+  clan_land: { group: 'transfer', label: 'Mua bán đất' },
+  clan_build: { group: 'transfer', label: 'Xây công trình' },
+  clan_revenue: { group: 'transfer', label: 'Doanh thu gia tộc' },
+  clan_upkeep: { group: 'transfer', label: 'Phí duy trì gia tộc' },
+  corp_tax: { group: 'transfer', label: 'Thuế doanh nghiệp' },
+  corp_tax_refund: { group: 'transfer', label: 'Hoàn thuế doanh nghiệp' },
+  corp_tax_collect: { group: 'transfer', label: 'Sở thuế truy thu' },
 };
 
 /** Thu thuế: một nửa vào ngân sách thị trấn, một nửa bị hủy (cùng tỉ lệ như phí). */

@@ -1,0 +1,133 @@
+/* Gia tộc & Sở Nhà Đất: bản đồ 200 lô, xưởng lắp ghép, thuế, vĩ mô. */
+
+.clan-tabs { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; }
+.clan-tabs .btn.current, .family-chips .chip.current { background: var(--ink); border-color: var(--ink); color: #fff; box-shadow: 0 3px 0 #000; }
+.clan-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+.clan-box { padding: 16px 18px; display: grid; gap: 10px; align-content: start; min-width: 0; }
+.clan-box.wide, .clan-hero { grid-column: 1 / -1; }
+.clan-box h3 { font-size: 1.2rem; }
+.clan-box p { margin: 0; }
+.clan-box form.row input { flex: 1; min-width: 120px; }
+.small { font-size: .85rem; }
+.ok { color: var(--mint-deep); font-weight: 800; }
+.warn { color: #c0444f; font-weight: 800; }
+.up { color: var(--mint-deep); }
+.down { color: #c0444f; }
+.big { font-size: 1.6rem; font-family: var(--font-display); }
+
+.clan-hero { padding: 18px; display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 16px; align-items: center; border-top: 6px solid var(--clan); }
+.clan-hero h3 { font-size: 1.6rem; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.clan-hero p { margin: 4px 0 8px; }
+.clan-hero .bar { height: 12px; }
+.clan-emblem { font-size: 3rem; width: 76px; height: 76px; display: grid; place-items: center; border-radius: 22px; background: color-mix(in srgb, var(--clan) 18%, #fff); border: 3px solid var(--clan); }
+.clan-treasury { display: grid; justify-items: end; text-align: right; gap: 2px; }
+.clan-treasury b { font-size: 1.5rem; font-family: var(--font-display); }
+
+.clan-members, .clan-list, .refund-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.clan-members li { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 4px 10px; align-items: center; padding: 8px 10px; border-radius: 12px; background: var(--surface-2); }
+.clan-members li > span:first-child { display: grid; }
+.clan-members li .row { grid-column: 1 / -1; justify-content: flex-end; align-items: center; }
+.clan-members select, .land-tools select, .build-palette select, .plot-industry select {
+  padding: 5px 8px; border-radius: 10px; border: 2px solid var(--line-strong); background: #fff; font-weight: 700; max-width: 100%;
+}
+.clan-list li { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 10px; align-items: center; padding: 8px 10px; border-radius: 12px; background: var(--surface-2); border-left: 5px solid var(--clan); }
+.clan-list li > span:nth-child(2) { display: grid; }
+.clan-dot { font-size: 1.6rem; }
+.clan-create { display: grid; gap: 10px; }
+.emblem-row { display: flex; flex-wrap: wrap; gap: 6px; }
+.emblem-row .emblem { font-size: 1.4rem; width: 44px; height: 44px; border-radius: 12px; border: 2px solid var(--line); background: #fff; }
+.emblem-row .emblem.current { border-color: var(--tea); box-shadow: 0 3px 0 var(--tea-deep); }
+.clan-intro ul { margin: 0; padding-left: 20px; display: grid; gap: 4px; }
+
+.industry-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 10px; }
+.industry { display: grid; gap: 4px; justify-items: center; text-align: center; padding: 12px 8px; border-radius: 16px; border: 2px solid var(--line); background: #fff; font-size: .88rem; }
+.industry.held { border-color: var(--mint-deep); background: #eef9f5; }
+.industry-icon { font-size: 1.8rem; }
+.industry .btn { white-space: normal; }
+
+.clan-table { width: 100%; border-collapse: collapse; font-size: .88rem; }
+.clan-table th { text-align: left; color: var(--muted); font-weight: 800; padding: 6px; border-bottom: 2px solid var(--line); }
+.clan-table td { padding: 6px; border-bottom: 1px dashed var(--line); }
+.clan-table .num { text-align: right; font-variant-numeric: tabular-nums; }
+.clan-box:has(.clan-table) { overflow-x: auto; }
+
+/* ---------- bản đồ đất ---------- */
+.land-layout { display: grid; grid-template-columns: minmax(0, 1fr) 320px; gap: 16px; align-items: start; }
+.land-main { padding: 14px; display: grid; gap: 10px; min-width: 0; }
+.land-stats { display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: .88rem; }
+.land-tools { display: flex; flex-wrap: wrap; gap: 10px; font-size: .88rem; }
+.land-tools label { display: flex; align-items: center; gap: 6px; }
+.land-scroll { overflow-x: auto; border-radius: 12px; }
+.land-svg { display: block; width: 100%; min-width: 640px; height: auto; touch-action: manipulation; }
+.land-svg .plot { cursor: pointer; }
+.land-svg .hit { fill: transparent; stroke: transparent; stroke-width: 2; stroke-linejoin: round; transition: stroke .12s; }
+.land-svg .plot:hover .hit { stroke: #2b2d3399; }
+.land-svg .plot.sel .hit { stroke: #2b2d33; stroke-width: 3; fill: #ffffff33; }
+.land-svg .code { font-size: 6.5px; font-weight: 800; fill: #00000066; pointer-events: none; }
+.land-legend { display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: .82rem; align-items: center; }
+.land-legend i { display: inline-block; width: 12px; height: 12px; border-radius: 3px; margin-right: 4px; vertical-align: -1px; border: 1px solid #0002; }
+.heat-scale { width: 120px; height: 10px; border-radius: 6px; background: linear-gradient(90deg, #e8665a, #f4d35e, #5fbf77); }
+.land-panel { padding: 16px; display: grid; gap: 10px; position: sticky; top: 12px; }
+.plot-head { display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap; }
+.plot-head h3 { font-size: 1.4rem; }
+.owner-tag { padding: 3px 10px; border-radius: 999px; border: 2px solid var(--clan); background: color-mix(in srgb, var(--clan) 15%, #fff); font-weight: 800; font-size: .85rem; }
+.plot-env { display: grid; gap: 6px; }
+.plot-env span { display: grid; grid-template-columns: auto 1fr; gap: 0 6px; }
+.plot-env small { grid-column: 2; }
+.plot-facts { display: grid; grid-template-columns: 1fr auto; gap: 4px 10px; margin: 0; font-size: .9rem; }
+.plot-facts dt { color: var(--muted); }
+.plot-facts dd { margin: 0; font-weight: 800; text-align: right; }
+.plot-building svg { width: 100%; height: auto; border-radius: 12px; border: 2px solid var(--line); }
+.plot-industry { display: grid; gap: 4px; font-size: .88rem; }
+.factor-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 3px; font-size: .84rem; }
+.factor-list li { display: flex; justify-content: space-between; gap: 8px; padding: 3px 8px; border-radius: 8px; background: var(--surface-2); }
+.preview-total { margin: 6px 0 0; font-size: .92rem; }
+.plot-actions { display: grid; gap: 8px; }
+
+/* ---------- xưởng lắp ghép ---------- */
+.build-layout { display: grid; grid-template-columns: 300px minmax(0, 1fr); gap: 16px; align-items: start; }
+.build-palette, .build-stage, .build-layers { padding: 14px; display: grid; gap: 10px; min-width: 0; }
+.build-layers { grid-column: 1 / -1; }
+.build-palette label { display: flex; align-items: center; gap: 8px; font-weight: 800; }
+.family-chips { display: flex; flex-wrap: wrap; gap: 4px; }
+.family-chips .chip { padding: 4px 8px; font-size: .8rem; gap: 4px; }
+.family-chips .chip span { display: none; }
+.family-chips .chip.current span { display: inline; }
+.piece-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; max-height: 420px; overflow-y: auto; }
+.piece { display: grid; gap: 2px; justify-items: center; padding: 6px; border-radius: 12px; border: 2px solid var(--line); background: #fff; font-size: .72rem; line-height: 1.15; text-align: center; }
+.piece svg { width: 100%; height: 54px; }
+.piece.current { border-color: var(--tea); box-shadow: 0 3px 0 var(--tea-deep); background: #fff6ea; }
+.build-svg { display: block; width: 100%; height: auto; border-radius: 12px; border: 2px solid var(--line-strong); touch-action: none; cursor: crosshair; }
+.build-svg .layer { cursor: grab; }
+.color-row { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.swatch { width: 26px; height: 26px; border-radius: 8px; border: 2px solid #0002; padding: 0; }
+.swatch.small { width: 14px; height: 14px; border-radius: 4px; display: inline-block; flex: none; }
+.swatch.current { outline: 3px solid var(--ink); outline-offset: 1px; }
+.color-row input[type="color"] { width: 40px; height: 30px; padding: 0; border: 0; background: none; }
+.build-save { gap: 10px; flex-wrap: wrap; font-size: .9rem; }
+.build-layers ol { margin: 0; padding: 0; list-style: none; display: grid; gap: 4px; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); }
+.build-layers li { display: flex; align-items: center; gap: 8px; padding: 5px 8px; border-radius: 10px; background: var(--surface-2); font-size: .85rem; cursor: pointer; }
+.build-layers li > span:nth-child(2) { flex: 1; min-width: 0; }
+.build-layers li.current { outline: 2px solid var(--tea); }
+.layer-tools { display: flex; gap: 2px; }
+
+/* ---------- thuế & vĩ mô ---------- */
+.declare-form { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.declare-form input[type="range"] { flex: 1; min-width: 140px; }
+.declare-form output { font-weight: 800; min-width: 44px; }
+.macro-card { grid-template-columns: auto 1fr; align-items: center; }
+.macro-big { font-size: 3rem; }
+.macro-chart { width: 100%; height: 140px; background: var(--surface-2); border-radius: 12px; }
+.demand-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 8px 16px; }
+.demand { display: grid; grid-template-columns: 170px 1fr 48px; align-items: center; gap: 8px; font-size: .85rem; }
+.demand .bar { height: 10px; }
+.demand b { text-align: right; }
+
+@media (max-width: 900px) {
+  .clan-grid, .land-layout, .build-layout { grid-template-columns: minmax(0, 1fr); }
+  .clan-hero { grid-template-columns: auto minmax(0, 1fr); }
+  .clan-treasury { grid-column: 1 / -1; justify-items: start; text-align: left; }
+  .land-panel { position: static; }
+  .demand { grid-template-columns: 130px 1fr 44px; }
+}
+.clan-create input[type="color"] { width: 56px; height: 34px; padding: 2px; border-radius: 10px; }

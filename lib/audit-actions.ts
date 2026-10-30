@@ -88,6 +88,11 @@ export const AUDIT_ACTIONS = {
   "tatua.gear_delete": { label: "Xoá trang phục người chơi", group: "tatua" },
   "tatua.gift_code": { label: "Tạo mã quà", group: "tatua" },
   "tatua.gift_code_revoke": { label: "Thu hồi mã quà", group: "tatua" },
+  "tatua.clan_config": { label: "Chỉnh luật gia tộc, thuế và giá đất", group: "tatua" },
+  "tatua.land_price": { label: "Đặt giá lô đất", group: "tatua" },
+  "tatua.macro": { label: "Chỉnh kinh tế vĩ mô", group: "tatua" },
+  "tatua.tax_collect": { label: "Truy thu thuế gia tộc", group: "tatua" },
+  "tatua.tax_dismiss": { label: "Bỏ qua hồ sơ thuế", group: "tatua" },
 } as const satisfies Record<string, { label: string; group: AuditGroup }>;
 
 export type AuditAction = keyof typeof AUDIT_ACTIONS;
