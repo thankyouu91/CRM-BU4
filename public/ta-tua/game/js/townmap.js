@@ -5,10 +5,13 @@ import { PARK_PX, timeOfDay } from './scenes.js';
 import { Pen, bitmap, hexToRgb, makeCanvas, outline, seeded, shadeBlob } from './pixel.js';
 
 const PX = PARK_PX;
-const W = 334;
-const H = 200;
-const SLOTS = 9;
+const SLOTS = 11;
 const SLOT_W = 37;
+const W = 1 + SLOTS * SLOT_W;
+const H = 200;
+// Khung thế giới tính bằng px CSS trước khi thu phóng theo bề ngang khung chứa.
+const WORLD_W = W * PX;
+const WORLD_H = H * PX;
 const BASE = [92, 188]; // hàng pixel ngay dưới chân dãy nhà sau / dãy trước
 const ROAD = [100, 126];
 const HEAD = 22; // khoảng trống trên nóc cho khói, cờ bay
@@ -407,6 +410,7 @@ const BUILD = {};
 const HEIGHT = {
   home: 40, shop: 36, jobs: 50, bank: 44, market: 46, news: 34, townhall: 56, school: 50, clinic: 40,
   park: 34, arcade: 36, kitchen: 42, garden: 32, bazaar: 32, boba: 52, factory: 46, realestate: 44, arena: 48, filler: 34,
+  forge: 44, matshop: 36, colosseum: 50,
 };
 
 BUILD.home = (k) => {
@@ -946,6 +950,96 @@ BUILD.arena = (k) => {
   for (let x = 15; x < 25; x += 2) p.rect(x, 33, 1, 15, '#7a5a44');
 };
 
+/** Lò rèn: tường đá, ống khói bốc khói, cửa lò đỏ rực, biển đe treo. */
+BUILD.forge = (k) => {
+  const { p } = k;
+  p.rect(27, 2, 6, 16, '#8b8698');
+  p.rect(27, 2, 1, 16, '#a7a3b3');
+  p.rect(26, 1, 8, 2, '#5c5870');
+  for (let y = 5; y < 18; y += 3) p.rect(28 + (y % 2), y, 3, 1, '#77728a');
+  gable(k, 17, 8, 16, 11, '#6e5a4e', '#57463c', '#8a7466');
+  p.rect(1, 19, 37, 1, '#3d2f28');
+  wall(k, 3, 20, 33, 24, '#b9b3c4', '#9a94a8');
+  for (let y = 22; y < 43; y += 3) for (let x = 4 + ((y / 3) % 2) * 3; x < 33; x += 6) p.rect(x, y, 4, 1, '#a49eb2');
+  // cửa lò: vòm đỏ rực
+  p.rect(5, 28, 13, 16, '#4a4458');
+  p.ellipse(11, 28, 6, 3, '#4a4458');
+  p.rect(6, 29, 11, 15, '#3a1f18');
+  p.vGradient(7, 32, 9, 12, ['#ffb347', '#ff7a2f', '#e8452c']);
+  for (const x of [8, 11, 14]) p.rect(x, 30 + (x % 3), 1, 2, '#ffd27a');
+  k.glows.push([11, 37, 9, 'rgba(255, 140, 60, 0.22)']);
+  // biển đe treo
+  p.rect(22, 21, 1, 3, '#4a4458');
+  p.rect(32, 21, 1, 3, '#4a4458');
+  p.rect(21, 24, 13, 6, '#7a4f33');
+  p.rect(21, 24, 13, 1, '#9b6238');
+  p.rect(24, 26, 7, 1, '#2e2a38');
+  p.rect(25, 27, 5, 1, '#2e2a38');
+  p.rect(26, 28, 3, 1, '#2e2a38');
+  p.px(23, 26, '#2e2a38');
+  win(k, 22, 33, 4, 4, '#fffaf0', false);
+  door(k, 29, 33, 6, 11, '#7a5a44', '#5c4033');
+  if (!k.locked) k.anim = smoke(30, 0, 5);
+};
+
+/** Tiệm vật liệu: quầy gỗ, mái hiên xanh lá, thùng hàng và bao tải trước cửa. */
+BUILD.matshop = (k) => {
+  const { p } = k;
+  cornice(k, 1, 4, 37, '#9b6238', '#c8915f');
+  wall(k, 2, 6, 35, 30, '#e9c99c', '#cfa874');
+  for (let x = 3; x < 35; x += 4) p.rect(x, 6, 1, 30, '#ddb784');
+  p.rect(6, 8, 27, 6, '#5c4033');
+  p.rect(7, 9, 25, 4, '#fff1dc');
+  for (const [x, c] of [[9, '#79c25a'], [13, '#c8915f'], [17, '#f4c24f'], [21, '#9fa8bd'], [25, '#d9708a'], [29, '#79c25a']]) p.rect(x, 10, 2, 2, c);
+  awning(k, 2, 15, 35, 3, '#5aa860', '#e8f5dc');
+  win(k, 5, 22, 9, 7, '#7a4f33', false);
+  for (const [x, c] of [[6, '#c8915f'], [9, '#f4c24f'], [12, '#79c25a']]) p.rect(x, 26, 2, 3, c);
+  door(k, 17, 23, 7, 13, '#7a4f33', '#5c4033');
+  // thùng gỗ và bao tải
+  for (const [x, y, w, h] of [[26, 29, 6, 7], [32, 31, 5, 5], [28, 24, 5, 5]]) {
+    p.rect(x, y, w, h, '#b07a48');
+    p.rect(x, y, w, 1, '#d19a64');
+    p.rect(x, y + Math.floor(h / 2), w, 1, '#8a5a34');
+    p.rect(x + Math.floor(w / 2), y, 1, h, '#8a5a34');
+  }
+  p.ellipse(5, 33, 3, 3, '#e4d3b0');
+  p.rect(4, 30, 3, 1, '#c9b48a');
+  p.ellipse(10, 34, 2, 2, '#d8c49c');
+};
+
+/** Đấu trường: vòng đá nhiều tầng vòm, cờ gia tộc bay trên đỉnh. */
+BUILD.colosseum = (k) => {
+  const { p } = k;
+  const flags = [[6, '#e2493b'], [19, '#4f8fd6'], [32, '#3fa860']];
+  for (const [x] of flags) p.rect(x, 2, 1, 12, '#6f6886');
+  for (let c = 0; c < 37; c++) {
+    const top = 14 - Math.round(Math.sin((c / 36) * Math.PI) * 4);
+    p.rect(1 + c, top, 1, 50 - top, c > 32 ? '#c9b89e' : '#e6d6bb');
+    p.px(1 + c, top, '#f5ead6');
+  }
+  for (const y of [20, 32, 44]) p.rect(1, y, 37, 1, '#b8a68a');
+  for (const [y, h] of [[23, 7], [35, 8]]) {
+    for (let x = 3; x < 36; x += 6) {
+      p.rect(x, y, 4, h, '#7a6650');
+      p.px(x, y, '#e6d6bb');
+      p.px(x + 3, y, '#e6d6bb');
+      p.rect(x + 1, y + 1, 2, h - 1, '#5c4a38');
+    }
+  }
+  p.rect(15, 35, 9, 15, '#4a3a2c');
+  p.ellipse(19, 35, 4, 2, '#4a3a2c');
+  for (let x = 16; x < 24; x += 2) p.rect(x, 36, 1, 14, '#6e5a46');
+  k.glows.push([19, 22, 8, 'rgba(255, 220, 140, 0.12)']);
+  if (!k.locked) k.anim = (q, t, tint) => {
+    for (const [x, color] of flags) {
+      for (let i = 0; i < 5; i++) {
+        const dy = Math.round(Math.sin(t * 4 + i * 0.9 + x) * 0.8);
+        q.rect(x + 1 + i, 2 + dy, 1, 4 - (i > 3 ? 1 : 0), mul(color, tint));
+      }
+    }
+  };
+};
+
 /** Ô trống: vài cái cây cho phố khỏi hở. */
 BUILD.filler = (k) => {
   grassLot(k, 29);
@@ -1014,7 +1108,7 @@ function renderBuilding(kind, { locked, time, seed }) {
 
 // ---------------------------------------------------------------- nền phố
 
-const LAMPS = [2, 4, 6].map((s) => slotLeft(s) - 1).concat([slotLeft(0) + 4, slotLeft(8) + SLOT_W - 5]);
+const LAMPS = [2, 4, 6, 8].map((s) => slotLeft(s) - 1).concat([slotLeft(0) + 4, slotLeft(SLOTS - 1) + SLOT_W - 5]);
 
 function walkway(p, y0, y1) {
   p.rect(0, y0, W, y1 - y0, '#ead6b4');
@@ -1056,7 +1150,7 @@ function drawStreetContent() {
   p.rect(0, ROAD[0], W, 1, '#57526a');
   p.rect(0, 102, W, 1, '#8a84a0');
   p.rect(0, 124, W, 1, '#8a84a0');
-  const cross = [158, 178];
+  const cross = [Math.round(W / 2) - 9, Math.round(W / 2) + 11];
   for (let x = 3; x < W; x += 14) if (x + 7 < cross[0] || x > cross[1]) p.rect(x, 112, 7, 1, '#fff1c4');
   for (let x = cross[0]; x < cross[1]; x += 4) p.rect(x, 104, 2, 19, '#e4e0ee');
 
@@ -1115,7 +1209,7 @@ function drawStreetFurniture(time) {
     const img = streetLamp(lit);
     g.drawImage(img, x - Math.floor(img.width / 2), 101 - img.height);
   }
-  for (const [s, make] of [[1, HYDRANT], [5, BIN], [7, HYDRANT], [3, BIN]]) {
+  for (const [s, make] of [[1, HYDRANT], [5, BIN], [7, HYDRANT], [3, BIN], [9, BIN]]) {
     const img = make();
     g.drawImage(img, slotLeft(s) + (s % 4 === 1 ? -3 : 1), 100 - img.height);
   }
@@ -1206,8 +1300,11 @@ const BIRD = [[[-2, -1], [-1, 0], [0, 1], [1, 0], [2, -1]], [[-2, 1], [-1, 0], [
 export function mountTownMap(container, { places = [], onSelect } = {}) {
   const wrap = document.createElement('div');
   wrap.className = 'tm-wrap';
+  wrap.style.aspectRatio = `${WORLD_W} / ${WORLD_H}`;
   const world = document.createElement('div');
   world.className = 'tm-world';
+  world.style.width = `${WORLD_W}px`;
+  world.style.height = `${WORLD_H}px`;
   wrap.append(world);
   container.append(wrap);
 
@@ -1374,7 +1471,7 @@ export function mountTownMap(container, { places = [], onSelect } = {}) {
       const tag = e.btn.firstElementChild;
       const half = (tag.offsetWidth * k) / 2;
       const cx = (slotLeft(e.slot) + SLOT_W / 2) * PX;
-      const dx = Math.max(0, 4 - (cx - half)) + Math.min(0, 1000 - 4 - (cx + half));
+      const dx = Math.max(0, 4 - (cx - half)) + Math.min(0, WORLD_W - 4 - (cx + half));
       const top = e.btn.offsetTop - 4 - tag.offsetHeight * k;
       tag.style.setProperty('--tm-dx', `${Math.round(dx)}px`);
       tag.style.setProperty('--tm-dy', `${Math.max(0, Math.round(4 - top))}px`);
@@ -1386,7 +1483,7 @@ export function mountTownMap(container, { places = [], onSelect } = {}) {
     world.dataset.time = time;
     bg.g.clearRect(0, 0, W, H);
     drawSky(bg.p, 0, 0, W, 52, time, seeded(3));
-    const sun = { dawn: [36, 20], day: [302, 13], dusk: [58, 22], night: [44, 12] }[time];
+    const sun = { dawn: [36, 20], day: [W - 32, 13], dusk: [58, 22], night: [44, 12] }[time];
     drawSunOrMoon(bg.p, sun[0], sun[1], time, 7);
     bg.g.drawImage(tinted(drawStreetContent(), TINTS[time]), 0, 0);
     mid.g.clearRect(0, 0, W, H);
@@ -1493,7 +1590,7 @@ export function mountTownMap(container, { places = [], onSelect } = {}) {
   const fit = () => {
     const width = wrap.clientWidth;
     if (!width) return;
-    const scale = width / 1000;
+    const scale = width / WORLD_W;
     const compact = width < COMPACT_BELOW;
     world.style.transform = `scale(${scale})`;
     wrap.classList.toggle('tm-compact', compact);

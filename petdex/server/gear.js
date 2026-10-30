@@ -222,9 +222,9 @@ export function updateGear(id, { tier, affixes }) {
 /** Giá trị tham chiếu của một bản: giá cửa hàng × hệ số cấp; hộp chưa mở tính như Xanh lam để không lộ cấp. */
 export const gearValue = (g) => indexedPrice(ITEMS[g.item_id].price) * (g.sealed ? 1 : TIER_VALUE[g.tier] ?? 1);
 
-/** Số xu Siêu thị trả khi bán nhanh: 10–40% giá trị tùy các dòng chỉ số; hộp chưa mở trả mức thấp nhất. */
+/** Số xu Siêu thị trả khi bán nhanh: 10–40% giá trị tùy các dòng chỉ số; hộp chưa mở và đồ hỏng trả mức thấp nhất. */
 export function quickSellPrice(g) {
-  const rate = g.sealed ? QUICK_SELL.min : quickSellRate(g.tier, g.affixes, gearConfig().ranges);
+  const rate = g.sealed || g.broken ? QUICK_SELL.min : quickSellRate(g.tier, g.affixes, gearConfig().ranges);
   return Math.max(1, Math.floor(gearValue(g) * rate));
 }
 
@@ -253,8 +253,13 @@ export function transferGear(id, newOwnerId) {
   q.setOwner.run(newOwnerId, Number(id));
 }
 
+/** Bày bán hoặc thôi bán; đồ hỏng hay đang sửa thì không bày được (người mua không nhận đồ hỏng). */
 export function setGearListed(id, listed) {
-  if (listed) q.unwear.run(Number(id));
+  if (listed) {
+    const g = getGear(id);
+    if (g && !durabilityOf(g).usable) throw new GameError('Món này đang hỏng hoặc đang sửa ở Lò rèn, chưa bày bán được.');
+    q.unwear.run(Number(id));
+  }
   q.setListed.run(listed ? 1 : 0, Number(id));
 }
 

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Copy, Gift, Plus, RotateCcw, Shirt, Sparkles, Ticket, Trash2, Users, X } from "lucide-react";
+import { Copy, Gift, Hammer, Plus, RotateCcw, Shirt, Sparkles, Ticket, Trash2, Users, X } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card, CardBody, CardHeader } from "@/components/ui/card";
@@ -49,6 +49,25 @@ interface GearConfig {
   materialChance: number;
   materialQty: [number, number];
   gearDropChance: number;
+  forge: ForgeConfig;
+}
+interface Cost { coins: number; lots: number }
+interface ForgeConfig {
+  repairChance: number;
+  repairHours: number;
+  repair: Record<Tier, Cost>;
+  upgradeChance: Record<string, number>;
+  upgrade: Record<string, Cost>;
+  shopMarkup: number;
+}
+type CostDraft = { coins: string; lots: string };
+interface ForgeDraft {
+  repairChance: string;
+  repairHours: string;
+  repair: Record<string, CostDraft>;
+  upgradeChance: Record<string, string>;
+  upgrade: Record<string, CostDraft>;
+  shopMarkup: string;
 }
 interface Draft {
   odds: Record<string, string>;
@@ -56,7 +75,13 @@ interface Draft {
   materialChance: string;
   materialQty: [string, string];
   gearDropChance: string;
+  forge: ForgeDraft;
 }
+/** Tiers that can still be upgraded (red is the top). */
+const UPGRADABLE = TIER_ORDER.slice(0, -1);
+const UPGRADE_MAX: number = rules.UPGRADE_MAX_CHANCE;
+const costDraft = (c: Cost): CostDraft => ({ coins: String(c.coins), lots: String(c.lots) });
+const costValue = (c: CostDraft) => ({ coins: Number(c.coins), lots: Number(c.lots) });
 
 const toDraft = (c: GearConfig): Draft => ({
   odds: Object.fromEntries(TIER_ORDER.map((t) => [t, String(c.odds[t])])),
@@ -64,6 +89,14 @@ const toDraft = (c: GearConfig): Draft => ({
   materialChance: String(c.materialChance),
   materialQty: [String(c.materialQty[0]), String(c.materialQty[1])],
   gearDropChance: String(c.gearDropChance),
+  forge: {
+    repairChance: String(c.forge.repairChance),
+    repairHours: String(c.forge.repairHours),
+    repair: Object.fromEntries(TIER_ORDER.map((t) => [t, costDraft(c.forge.repair[t])])),
+    upgradeChance: Object.fromEntries(UPGRADABLE.map((t) => [t, String(c.forge.upgradeChance[t])])),
+    upgrade: Object.fromEntries(UPGRADABLE.map((t) => [t, costDraft(c.forge.upgrade[t])])),
+    shopMarkup: String(c.forge.shopMarkup),
+  },
 });
 const fromDraft = (d: Draft) => ({
   odds: Object.fromEntries(TIER_ORDER.map((t) => [t, Number(d.odds[t])])),
@@ -71,6 +104,14 @@ const fromDraft = (d: Draft) => ({
   materialChance: Number(d.materialChance),
   materialQty: d.materialQty.map(Number),
   gearDropChance: Number(d.gearDropChance),
+  forge: {
+    repairChance: Number(d.forge.repairChance),
+    repairHours: Number(d.forge.repairHours),
+    repair: Object.fromEntries(TIER_ORDER.map((t) => [t, costValue(d.forge.repair[t])])),
+    upgradeChance: Object.fromEntries(UPGRADABLE.map((t) => [t, Number(d.forge.upgradeChance[t])])),
+    upgrade: Object.fromEntries(UPGRADABLE.map((t) => [t, costValue(d.forge.upgrade[t])])),
+    shopMarkup: Number(d.forge.shopMarkup),
+  },
 });
 
 /** Share of each tier for a given luck %, the same formula as rollTier in shared/gear.js. */
@@ -205,6 +246,60 @@ export function GearConfigTab() {
           <Field label="Số lô ít nhất" hint="mỗi lần rớt"><Input type="number" min={1} max={20} step={1} value={form.materialQty[0]} onChange={(e) => edit((d) => { d.materialQty[0] = e.target.value; })} /></Field>
           <Field label="Số lô nhiều nhất" hint="tối đa 20"><Input type="number" min={1} max={20} step={1} value={form.materialQty[1]} onChange={(e) => edit((d) => { d.materialQty[1] = e.target.value; })} /></Field>
           <Field label="Tỷ lệ rớt trang phục" hint="% mỗi ván"><Input type="number" min={0} max={100} step={0.1} value={form.gearDropChance} onChange={(e) => edit((d) => { d.gearDropChance = e.target.value; })} /></Field>
+        </CardBody>
+      </Card>
+
+      <Card>
+        <CardHeader
+          title={<span className="flex items-center gap-2"><Hammer className="h-4 w-4 text-muted-foreground" /> Lò rèn: sửa và nâng cấp</span>}
+          description={`Sau mỗi trận đấu trường gia tộc, mọi trang phục người tham gia đang đeo đều hỏng và không cộng chỉ số tới khi sửa. Vật liệu là hàng thô bất kỳ trong kho, tính bằng lô (10 phần). Thất bại thì mất xu và vật liệu. Tỉ lệ nâng cấp tối đa ${UPGRADE_MAX}%.`}
+        />
+        <CardBody className="space-y-4 pt-3">
+          <div className="grid gap-3 sm:grid-cols-3">
+            <Field label="Tỷ lệ sửa thành công" hint="%"><Input type="number" min={1} max={100} step={0.1} value={form.forge.repairChance} onChange={(e) => edit((d) => { d.forge.repairChance = e.target.value; })} /></Field>
+            <Field label="Thời gian ở lò sau khi sửa" hint="giờ, tối đa 168"><Input type="number" min={0} max={168} step={1} value={form.forge.repairHours} onChange={(e) => edit((d) => { d.forge.repairHours = e.target.value; })} /></Field>
+            <Field label="Giá Tiệm vật liệu" hint="gấp mấy lần giá Sàn"><Input type="number" min={1} max={20} step={0.1} value={form.forge.shopMarkup} onChange={(e) => edit((d) => { d.forge.shopMarkup = e.target.value; })} /></Field>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[36rem] text-sm">
+              <thead className="border-b text-left text-xs text-muted-foreground">
+                <tr>
+                  <th className="py-2 pr-3 font-medium">Cấp</th>
+                  <th className="px-2 py-2 font-medium">Sửa: xu</th>
+                  <th className="px-2 py-2 font-medium">Sửa: lô vật liệu</th>
+                  <th className="px-2 py-2 font-medium">Nâng cấp: tỷ lệ %</th>
+                  <th className="px-2 py-2 font-medium">Nâng cấp: xu</th>
+                  <th className="px-2 py-2 font-medium">Nâng cấp: lô vật liệu</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y">
+                {TIER_ORDER.map((t) => {
+                  const cell = (value: string, set: (d: Draft, v: string) => void, label: string, max: number, step = 1) => (
+                    <td className="px-2 py-2">
+                      <Input type="number" min={0} max={max} step={step} className="h-8 w-24 px-2 text-right tabular-nums" value={value} onChange={(e) => edit((d) => set(d, e.target.value))} aria-label={`${label} cấp ${TIERS[t].name}`} />
+                    </td>
+                  );
+                  const up = UPGRADABLE.includes(t);
+                  return (
+                    <tr key={t}>
+                      <td className="py-2 pr-3"><TierDot tier={t} /></td>
+                      {cell(form.forge.repair[t].coins, (d, v) => { d.forge.repair[t].coins = v; }, "Xu sửa", 10_000_000)}
+                      {cell(form.forge.repair[t].lots, (d, v) => { d.forge.repair[t].lots = v; }, "Lô vật liệu sửa", 1000)}
+                      {up ? (
+                        <>
+                          {cell(form.forge.upgradeChance[t], (d, v) => { d.forge.upgradeChance[t] = v; }, "Tỷ lệ nâng cấp", UPGRADE_MAX, 0.1)}
+                          {cell(form.forge.upgrade[t].coins, (d, v) => { d.forge.upgrade[t].coins = v; }, "Xu nâng cấp", 10_000_000)}
+                          {cell(form.forge.upgrade[t].lots, (d, v) => { d.forge.upgrade[t].lots = v; }, "Lô vật liệu nâng cấp", 1000)}
+                        </>
+                      ) : (
+                        <td colSpan={3} className="px-2 py-2 text-xs text-muted-foreground">Cấp cao nhất, không nâng nữa</td>
+                      )}
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
         </CardBody>
       </Card>
 
