@@ -1,7 +1,8 @@
 import type { Metadata, Viewport } from "next";
 import Image from "next/image";
-import { ArrowRight, ArrowUpRight, Briefcase, Clover, Gamepad2, Gift, KeyRound, Link2, Store, TrendingUp } from "lucide-react";
+import { ArrowRight, ArrowUpRight, Briefcase, Clover, Gamepad2, Gift, KeyRound, Link2, Lock, Store, TrendingUp } from "lucide-react";
 import { ClanWarHero } from "@/components/petfarm/clan-war-hero";
+import { GearSprite } from "@/components/petfarm/gear-sprite";
 import { PetRow } from "@/components/petfarm/wiki/pet-gallery";
 import { Reveal } from "@/components/petfarm/reveal";
 import { cn } from "@/lib/utils";
@@ -10,7 +11,7 @@ import { INDUSTRY_COUNT, LAND_RULES, SPECIES_COUNT, legendaryPets } from "@/lib/
 import { CLAN, UNLOCKS } from "@/lib/wiki/rules";
 import * as gear from "@/public/ta-tua/game/js/shared/gear.js";
 import { CLAN_LEVELS, clanPerks } from "@/public/ta-tua/game/js/shared/clan.js";
-import { LEVEL_FORMS } from "@/public/ta-tua/game/js/shared/pets.js";
+import { ELEMENTS, LEVEL_FORMS, SLOTS, WEARABLES } from "@/public/ta-tua/game/js/shared/pets.js";
 import "../petfarm-fonts.css";
 
 // The Petfarm website (petfarm.online, rewritten to /petfarm by middleware.ts): one page about the
@@ -51,6 +52,17 @@ const AFFIX_COPY: { key: Affix; icon: typeof Briefcase; name: string; text: stri
 ];
 
 const TOP_FORM = (LEVEL_FORMS as { from: number; name: string }[]).at(-1)!;
+/** One sample piece per tier, with stat lines rolled by the game's own roller (fixed seed, so the page is stable). */
+const SAMPLE_PIECE: Record<Tier, string> = { blue: "scarf", green: "shades", gold: "tophat", red: "phoenix" };
+const SAMPLES = TIER_ORDER.map((t, i) => {
+  const id = SAMPLE_PIECE[t];
+  const w = (WEARABLES as Record<string, { name: string; slot: string; element: string }>)[id];
+  let seed = 7 + i * 101;
+  const rand = () => ((seed = (seed * 1664525 + 1013904223) >>> 0) / 4294967296);
+  const affixes = gear.rollAffixes(t, CONFIG.ranges, rand, gear.affixPool(w.slot, w.element)) as Partial<Record<Affix, number>>;
+  const lines = (gear.AFFIX_ORDER as Affix[]).filter((a) => affixes[a] != null).map((a) => ({ key: a, value: affixes[a]! }));
+  return { tier: t, id, name: w.name, slot: (SLOTS as Record<string, { name: string }>)[w.slot].name, element: (ELEMENTS as Record<string, { name: string }>)[w.element].name, lines };
+});
 const xu = (n: number) => n.toLocaleString("vi-VN");
 const TOP_CLAN = clanPerks(CLAN_LEVELS.length) as { maxMembers: number; maxPlots: number; maxIndustries: number; prodBonus: number };
 
@@ -286,26 +298,55 @@ export default function PetfarmSite() {
             <h2 className={H2}>Lên đồ cho bé chiến.</h2>
             <p className={LEAD}>Trang phục có 4 cấp. Mỗi món là một bản riêng; cấp càng cao càng nhiều dòng chỉ số cộng thẳng cho bé.</p>
           </Reveal>
-          <ol className="mt-12 grid grid-cols-2 items-end gap-3 md:grid-cols-4 md:gap-4">
-            {TIER_ORDER.map((t, i) => {
+          <ol className="mt-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            {SAMPLES.map(({ tier: t, id, name, slot, element, lines }, i) => {
               const [lo, hi] = CONFIG.ranges[t].income;
+              const color = TIERS[t].color;
               return (
-                <li key={t} className={cn(["md:h-52", "md:h-60", "md:h-[17rem]", "md:h-[19rem]"][i])}>
+                <li key={t}>
                   <Reveal delay={i * 90} className="h-full">
-                    <div className={cn(PANEL, "relative flex h-full flex-col justify-end overflow-hidden p-5")}>
-                      <span aria-hidden className="absolute inset-x-0 top-0 h-1" style={{ background: TIERS[t].color }} />
-                      <span className="mb-auto inline-flex w-fit items-center gap-2 rounded-full px-3 py-1 font-[family-name:var(--pf-display)] text-sm font-bold text-white" style={{ background: TIERS[t].color }}>
-                        {TIERS[t].name}
-                      </span>
-                      <p className="mt-4 font-[family-name:var(--pf-display)] text-4xl font-extrabold leading-none">{TIERS[t].lines}<span className="ml-1.5 text-lg text-[var(--pf-muted)]">dòng</span></p>
-                      <p className="mt-2 text-sm text-[var(--pf-muted)]">+{lo} đến +{hi}% mỗi dòng</p>
-                      <p className="text-sm text-[var(--pf-muted)]">{SHOP_TIERS.includes(t) ? `${shopShare(t)}% hộp mua ở cửa hàng` : "Từ mini-game, mã quà, Chợ Phiên"}</p>
-                    </div>
+                    <article className={cn(PANEL, "relative flex h-full flex-col overflow-hidden")} style={{ ["--tier" as string]: color }}>
+                      <span aria-hidden className="absolute inset-x-0 top-0 h-1 bg-[var(--tier)]" />
+                      <div className="flex items-center justify-between px-5 pt-5">
+                        <span className="rounded-full bg-[var(--tier)] px-3 py-1 font-[family-name:var(--pf-display)] text-sm font-bold text-white">{TIERS[t].name}</span>
+                        <span className="font-[family-name:var(--pf-display)] text-sm font-bold text-[var(--pf-muted)]">{TIERS[t].lines} dòng</span>
+                      </div>
+                      <div className="relative mx-5 mt-4 flex h-48 items-center justify-center overflow-hidden rounded-[10px] border border-[var(--pf-line)] bg-[radial-gradient(circle_at_50%_55%,color-mix(in_srgb,var(--tier)_40%,transparent),transparent_72%)]">
+                        <GearSprite id={id} fit={200} fx={i} color={color} label={`${name}, cấp ${TIERS[t].name}`} />
+                      </div>
+                      <div className="px-5 pt-4">
+                        <h3 className="font-[family-name:var(--pf-display)] text-xl font-extrabold">{name}</h3>
+                        <p className="text-sm text-[var(--pf-muted)]">Khe {slot} · Hành {element}</p>
+                      </div>
+                      <ul className="mx-5 mt-3 divide-y divide-[var(--pf-line)] border-y border-[var(--pf-line)]">
+                        {lines.map(({ key, value }) => {
+                          const Icon = AFFIX_COPY.find((a) => a.key === key)!.icon;
+                          return (
+                            <li key={key} className="flex items-center gap-2.5 py-2 text-[15px]">
+                              <Icon className="h-4 w-4 shrink-0 text-[var(--tier)]" strokeWidth={2} />
+                              <span className="text-[var(--pf-muted)]">{AFFIX_COPY.find((a) => a.key === key)!.name}</span>
+                              <span className="ml-auto font-bold tabular-nums">+{value}%</span>
+                            </li>
+                          );
+                        })}
+                        {Array.from({ length: TIERS.red.lines - lines.length }, (_, k) => (
+                          <li key={`trong-${k}`} className="flex items-center gap-2.5 py-2 text-[15px] text-[var(--pf-muted)] opacity-40">
+                            <Lock className="h-4 w-4 shrink-0" strokeWidth={2} />
+                            <span>Dòng mở ở cấp cao hơn</span>
+                          </li>
+                        ))}
+                      </ul>
+                      <div className="mt-auto px-5 pb-5 pt-4 text-sm text-[var(--pf-muted)]">
+                        <p>+{lo} đến +{hi}% mỗi dòng</p>
+                        <p>{SHOP_TIERS.includes(t) ? `${shopShare(t)}% hộp mua ở cửa hàng` : "Từ mini-game, mã quà, Chợ Phiên"}</p>
+                      </div>
+                    </article>
                   </Reveal>
                 </li>
               );
             })}
           </ol>
+          <p className="mt-4 text-sm text-[var(--pf-muted)]">Món và chỉ số trên là ví dụ. Mỗi món thật quay cấp và dòng ngẫu nhiên khi mở hộp.</p>
           <div className="mt-14 grid gap-x-10 gap-y-7 sm:grid-cols-2">
             {AFFIX_COPY.map(({ key, icon: Icon, name, text }) => (
               <Reveal key={key} className="flex gap-4">
