@@ -65,3 +65,12 @@
   .mail-open { grid-template-columns: 1fr auto; }
   .mail-open .mail-subject { grid-column: 1 / -1; }
 }
+
+/* Khung chat dưới công viên (tab Công viên): công viên thấp lại để thấy chat mà không phải cuộn nhiều. */
+.park-chat { display: grid; gap: 14px; }
+.park-chat .park-wrap { width: min(100%, calc(58 * var(--vh) * 1000 / 600)); }
+.chat-page.compact { display: grid; gap: 10px; }
+.chat-title { margin: 0; font-size: 1.2rem; display: flex; flex-wrap: wrap; align-items: baseline; gap: 8px; }
+.chat-title small { font-size: .82rem; font-weight: 600; }
+.chat-page.compact .chat-room { height: min(calc(46 * var(--vh)), 460px); }
+.chat-page.compact .chat-threads { max-height: min(calc(46 * var(--vh)), 460px); }

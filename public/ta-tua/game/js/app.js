@@ -184,7 +184,7 @@ function showApp() {
   authFigure = null;
   $('#auth-screen').hidden = true;
   $('#app').hidden = false;
-  const fromHash = location.hash.slice(1);
+  const fromHash = viewOf(location.hash.slice(1));
   state.view = VIEW_NAMES.includes(fromHash) ? fromHash : 'map';
   render();
   showNewAnnouncement();
@@ -253,7 +253,11 @@ $('#auth-form').addEventListener('submit', async (e) => {
 
 // ---------------------------------------------------------------- điều hướng & vẽ
 
+/** Trò chuyện nằm chung màn Công viên (khung chat dưới công viên): link cũ #chat mở Công viên. */
+const viewOf = (view) => (view === 'chat' ? 'park' : view);
+
 function go(view, filter) {
+  view = viewOf(view);
   state.adopting = false;
   if (filter) state.shopFilter = filter;
   if (location.hash !== `#${view}`) location.hash = view;
@@ -261,7 +265,7 @@ function go(view, filter) {
 }
 
 window.addEventListener('hashchange', () => {
-  const view = location.hash.slice(1);
+  const view = viewOf(location.hash.slice(1));
   if (!state.me || !VIEW_NAMES.includes(view)) return;
   state.view = view;
   state.adopting = false;
@@ -332,9 +336,9 @@ function renderWallet() {
     ? `⏳ <span class="label">Quà sau ${formatWait(wait)}</span>`
     : `🎁 <span class="label">Nhận quà ngày${user.streak ? ` · 🔥${user.streak}` : ''}</span>`;
   daily.title = `Chuỗi đăng nhập ${user.streak} ngày. Nhận liên tiếp mỗi ngày để quà tăng dần tới 120 xu.`;
-  // Chấm đỏ: tin gia tộc + tin nhắn riêng chưa đọc ở tab Trò chuyện, thư chưa đọc / quà chưa nhận ở Hộp thư.
+  // Chấm đỏ: tin gia tộc + tin nhắn riêng chưa đọc ở khung chat (tab Công viên), thư chưa đọc / quà chưa nhận ở Hộp thư.
   const b = state.me.badges ?? {};
-  setDot($('#tabs [data-view="chat"]'), (b.clan ?? 0) + (b.pm ?? 0));
+  setDot($('#tabs [data-view="park"]'), (b.clan ?? 0) + (b.pm ?? 0));
   setDot($('#mail-btn'), b.mail ?? 0);
 }
 
@@ -1174,18 +1178,22 @@ async function renderRanks(root) {
 
 // ---------------------------------------------------------------- Công viên
 
+/** Công viên ở trên, khung trò chuyện (kênh chung, gia tộc, tin riêng) ở dưới, chung một màn. */
 function renderPark(root) {
+  root.innerHTML = '<div class="park-chat"><div class="park-slot"></div><div class="chat-slot"></div></div>';
+  const parkSlot = root.querySelector('.park-slot');
+  const stopChat = renderChat(root.querySelector('.chat-slot'), ctx, { compact: true });
   if (!state.me.pets.length) {
-    root.innerHTML = `
+    parkSlot.innerHTML = `
       <section class="card empty">
         <b>🌳</b>
         <h2>Công viên đang chờ bạn</h2>
         <p class="muted">Nhận nuôi một bé trước rồi dắt bé ra đây chơi nhé.</p>
         <button class="btn primary" data-go="home">Nhận nuôi ngay</button>
       </section>`;
-    return;
+    return stopChat;
   }
-  teardown = mountPark(root, {
+  const stopPark = mountPark(parkSlot, {
     token: session.token,
     catalog: state.catalog,
     me: () => state.me,
@@ -1195,6 +1203,10 @@ function renderPark(root) {
       celebrate(levelUps, petName);
     },
   });
+  return () => {
+    stopPark?.();
+    stopChat?.();
+  };
 }
 
 // ---------------------------------------------------------------- sự kiện chung

@@ -15,11 +15,12 @@ export function openPm(id) {
 
 const time = (ts) => (Date.now() - ts < 20 * 3_600_000 ? clock(ts) : ago(ts));
 
-export function renderChat(root, ctx) {
+/** `compact`: khung chat nằm dưới công viên (không có tiêu đề màn, khung thấp hơn). */
+export function renderChat(root, ctx, { compact = false } = {}) {
   const badges = ctx.me.badges ?? {};
   const dot = (n) => (n ? `<span class="chat-dot">${n > 99 ? '99+' : n}</span>` : '');
-  root.innerHTML = `<div class="chat-page">
-    ${viewHead('💬 Trò chuyện', 'Kênh chung cho cả thị trấn, kênh riêng của gia tộc và tin nhắn riêng. Lịch sự, không spam, không lộ mật khẩu nhé.')}
+  root.innerHTML = `<div class="chat-page ${compact ? 'compact' : ''}">
+    ${compact ? '<h3 class="chat-title">💬 Trò chuyện <small class="muted">Lịch sự, không spam, không lộ mật khẩu nhé.</small></h3>' : viewHead('💬 Trò chuyện', 'Kênh chung cho cả thị trấn, kênh riêng của gia tộc và tin nhắn riêng. Lịch sự, không spam, không lộ mật khẩu nhé.')}
     <div class="filters">
       <button class="btn small ${tab === 'world' ? 'current' : ''}" data-tab="world">🌐 Kênh chung</button>
       <button class="btn small ${tab === 'clan' ? 'current' : ''}" data-tab="clan">🏯 Gia tộc ${dot(badges.clan)}</button>

@@ -33,7 +33,7 @@ export function mountPark(root, ctx) {
         <div class="park-pop park-rooms" id="park-rooms" hidden></div>
         <div class="park-pop park-tip" id="park-tip" role="tooltip" hidden>
           Bấm lên bãi cỏ để đi tới đó, khung hình đi theo bé của bạn. Bấm vào bé khác để vuốt ve 💖 hoặc tặng quà 🎁.
-          Công viên chia thành nhiều kênh; bấm nút Kênh để sang kênh khác còn chỗ. Trò chuyện ở tab 💬 Chat.
+          Công viên chia thành nhiều kênh; bấm nút Kênh để sang kênh khác còn chỗ. Trò chuyện ở khung 💬 bên dưới.
         </div>
         <div class="park-status" id="park-status">Đang vào công viên…</div>
       </div>
