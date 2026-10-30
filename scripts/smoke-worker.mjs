@@ -145,9 +145,9 @@ try {
     req.on("error", reject);
     req.end();
   });
-  // The Petfarm website (www.petfarm.online): the landing page at "/", nothing of WorkHub.
+  // The Petfarm website (petfarm.online): the landing page at "/", nothing of WorkHub.
   const onSiteHost = (path) => new Promise((resolve, reject) => {
-    const req = request(`${origin}${path}`, { headers: { Host: "www.petfarm.online" }, timeout: 20000 }, (res) => {
+    const req = request(`${origin}${path}`, { headers: { Host: "petfarm.online" }, timeout: 20000 }, (res) => {
       let text = "";
       res.setEncoding("utf8");
       res.on("data", (chunk) => { text += chunk; });

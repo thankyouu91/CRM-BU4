@@ -8,7 +8,7 @@ import { cn } from "@/lib/utils";
 import { PLAY_DESCRIPTION, SITE_ORIGIN, WIKI_ORIGIN, playUrl } from "@/lib/petdex-public";
 import * as gear from "@/public/ta-tua/game/js/shared/gear.js";
 
-// The Petfarm website (www.petfarm.online, rewritten to /petfarm by middleware.ts): one page about
+// The Petfarm website (petfarm.online, rewritten to /petfarm by middleware.ts): one page about
 // the game, in the game's own type (Baloo 2, Nunito) and milk-tea colours. Every picture is a real
 // screenshot of the game (public/petfarm), and the hero is the live meadow of the sign-in page.
 // Shapes: pictures and panels 24px, buttons 14px, chips full round.
