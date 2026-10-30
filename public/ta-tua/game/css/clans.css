@@ -175,3 +175,45 @@
 .shop-book .trade-form input { width: 84px; flex: 0 0 auto; }
 .shop-book .trade-form input[name="pct"] { width: 64px; }
 .clan-table tr.held td { background: #eef9f5; font-weight: 700; }
+
+/* Đấu trường gia tộc (views/arena.js) */
+.arena-page .card { margin-bottom: 14px; padding: 14px 16px; }
+.arena-page h3 { margin: 0 0 8px; }
+.arena-roster { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 6px 14px; counter-reset: rank; }
+.arena-roster li { counter-increment: rank; display: grid; grid-template-columns: 1fr auto; gap: 0 8px; padding: 6px 8px; border-radius: 10px; background: #fff8ee; }
+.arena-roster li::before { content: counter(rank); grid-row: span 2; display: none; }
+.arena-roster li.out { opacity: .55; }
+.arena-roster li .muted { grid-column: 1; }
+.arena-roster li .power { grid-row: 1 / span 2; grid-column: 2; align-self: center; font-weight: 800; }
+.arena-form { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px; align-items: end; }
+.arena-form label { display: flex; flex-direction: column; gap: 4px; font-weight: 700; }
+.arena-form select { min-width: 0; max-width: 100%; }
+.arena-form .row { display: flex; gap: 6px; }
+.arena-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.arena-war { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 12px; padding: 8px 10px; border-radius: 10px; background: #fff8ee; }
+.arena-war .vs { flex: 1 1 260px; min-width: 0; overflow-wrap: anywhere; }
+.arena-war .tag { font-size: .8rem; padding: 2px 8px; border-radius: 999px; background: #eee; }
+.arena-war .tag.wait { background: #fff1c9; }
+.arena-war .tag.set { background: #dff3ea; }
+.arena-war .tag.done { background: #e7e4f7; }
+.arena-war .row { display: flex; flex-wrap: wrap; gap: 6px; }
+.arena-stage { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.arena-side { min-width: 0; padding: 8px; border-radius: 12px; background: linear-gradient(#f5ecd8, #eadcbf); }
+.arena-side.side-1 { background: linear-gradient(#e6eef8, #d3e0ef); }
+.arena-side h4 { margin: 0 0 8px; font-size: .95rem; overflow-wrap: anywhere; }
+.arena-fighters { display: grid; grid-template-columns: repeat(auto-fill, minmax(64px, 1fr)); gap: 6px; }
+.fighter { display: flex; flex-direction: column; align-items: center; gap: 2px; min-width: 0; transition: transform .15s, opacity .3s; }
+.fighter .fig { height: 62px; width: 100%; overflow: hidden; display: flex; align-items: flex-end; justify-content: center; }
+.fighter .fig .flip { transform: scaleX(-1); }
+.fighter .hp { width: 100%; height: 6px; border-radius: 4px; background: #c9b9a0; overflow: hidden; }
+.fighter .hp i { display: block; height: 100%; background: #3fa860; transition: width .4s; }
+.fighter small { font-size: .68rem; text-align: center; line-height: 1.1; overflow-wrap: anywhere; }
+.fighter.hit { transform: translateX(3px); }
+.fighter.down { opacity: .35; filter: grayscale(1); }
+.arena-result { margin: 10px 0 0; font-size: 1.05rem; }
+@media (max-width: 480px) {
+  .arena-stage { gap: 6px; }
+  .arena-side { padding: 6px; }
+  .arena-fighters { grid-template-columns: repeat(auto-fill, minmax(52px, 1fr)); gap: 4px; }
+  .fighter .fig { height: 56px; }
+}

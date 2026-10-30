@@ -101,7 +101,7 @@ function marketLine(id) {
 export function renderClans(root, ctx) {
   COMMODITY_NAMES = Object.fromEntries(Object.entries(ctx.catalog.commodities ?? {}).map(([id, c]) => [id, c.name]));
   root.innerHTML = `<div class="clan-page">
-    ${viewHead('🏯 Gia tộc & Sở Nhà Đất', 'Lập gia tộc, góp quỹ, thâu tóm tối đa 3 ngành, mua đất và tự lắp ghép công trình.')}
+    ${viewHead('🏯 Gia tộc & Sở Nhà Đất', 'Lập gia tộc, góp quỹ, thâu tóm tối đa 3 ngành, mua đất và tự lắp ghép công trình.', '<button class="btn" data-go="arena">⚔️ Đấu trường</button>')}
     <nav class="clan-tabs"></nav>
     <div class="clan-body"><div class="empty muted">Đang tải…</div></div></div>`;
   const tabsEl = root.querySelector('.clan-tabs');
@@ -188,7 +188,7 @@ export function renderClans(root, ctx) {
           <h3>👥 Thành viên</h3>
           <ul class="clan-members">${c.members.map((m) => `
             <li class="${m.week >= c.quota ? '' : 'short'}">
-              <span><b>${esc(m.username)}</b><small class="muted">${ROLE[m.role]}${m.deposed ? ' · ⚖️ đã bị phế truất' : ''} · góp tổng ${money(m.donated)}</small></span>
+              <span><b>${esc(m.username)}</b><small class="muted">${ROLE[m.role]}${m.deposed ? ' · ⚖️ đã bị phế truất' : ''} · góp tổng ${money(m.donated)} · ⚔️ chiến lực ${fmt(m.power ?? 0)}</small></span>
               <small class="${m.week >= c.quota ? 'ok' : 'warn'}">${fmt(m.week)}/${fmt(c.quota)}</small>
               ${leader && m.id !== ctx.me.user.id ? `<span class="row">
                 <select data-role="${m.id}">

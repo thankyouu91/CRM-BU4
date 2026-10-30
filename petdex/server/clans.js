@@ -13,6 +13,7 @@ import { IRRIGATED, clearShopBook, expireListings, plotDeposits, productionPrevi
 import { STRATEGIC_INDUSTRIES, STRATEGIC_RULES, strategicPlaceOk, variantsFor } from '../../public/ta-tua/game/js/shared/industry.js';
 import { buffFor, chargeInfraFee, operatingOwners, strategicOf } from './strategic.js';
 import { openShopBuying, settleEssentialsDay } from './essentials.js';
+import { memberPower } from './arena.js';
 import {
   CLAN_EMBLEMS, CLAN_LEVELS, INDUSTRIES, INDUSTRY_ORDER, LAND, PHASES, PLOTS, WEATHER, cleanDesign, clanLevelOf, clanPerks,
   competitionFactor, designBonus, designComplete, designCost, envFactor, isProduction, isStrategic, scarcityFactor, weatherFactor,
@@ -580,7 +581,7 @@ export function clanView(userId, now = Date.now()) {
       industries: industries.map((i) => ({ id: i.industry, fee: i.fee, enteredAt: i.entered_at })),
       nextFees: Object.fromEntries(INDUSTRY_ORDER.map((id) => [id, entryFee(id, industries.length, cfg)])),
       nextIndustryLevel: cfg.industryLevels[industries.length] ?? null,
-      members: q.members.all(week, clan.id).map((x) => ({ id: x.user_id, username: x.username, role: x.role, donated: x.donated, week: x.week_amount, deposed: isDeposed(clan.id, x.user_id) })),
+      members: q.members.all(week, clan.id).map((x) => ({ id: x.user_id, username: x.username, role: x.role, donated: x.donated, week: x.week_amount, deposed: isDeposed(clan.id, x.user_id), power: memberPower(x.user_id, now)?.power ?? 0 })),
       quota,
       plots,
       days: q.days.all(clan.id, 14).map((d) => ({ day: d.day, revenue: d.revenue, declared: d.declared, rate: d.rate, tax: d.tax, upkeep: d.upkeep })),

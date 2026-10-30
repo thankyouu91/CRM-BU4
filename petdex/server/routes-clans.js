@@ -10,6 +10,7 @@ import { macroHistory, macroToday } from './macro.js';
 import { assignOperator, removeOperator, strategicView, upgradeInfra } from './strategic.js';
 import { buyListing, cancelListing, importGoods, industryView, listGoods, sellToNpc, setKeep, setShopAsk } from './industry.js';
 import { requireLevel } from './routes-economy.js';
+import { arenaView, challenge, confirmSlot, warReplay, withdraw } from './arena.js';
 import { castBallot, openClanDeposit, resolveVotes, startDepose, withdrawClanDeposit } from './clan-gov.js';
 
 export const clanApi = Router();
@@ -17,9 +18,19 @@ clanApi.use('/clans', auth);
 clanApi.use('/land', auth);
 clanApi.use('/macro', auth);
 clanApi.use('/industry', auth);
+clanApi.use('/arena', auth);
 
 const uid = (req) => req.user.id;
 const unlock = (req, what) => requireLevel(uid(req), clanConfig().unlockLevel, what);
+
+// ---- Đấu trường gia tộc ----
+clanApi.get('/arena', (req, res) => res.json(arenaView(uid(req))));
+clanApi.get('/arena/:id', (req, res) => res.json(warReplay(intField(req.params.id, 'Trận'))));
+clanApi.post('/arena/challenge', (req, res) => reply(res, uid(req), challenge(uid(req), {
+  defenderId: intField(req.body?.defenderId, 'Gia tộc'), kind: String(req.body?.kind ?? ''), ref: String(req.body?.ref ?? ''), slots: req.body?.slots,
+})));
+clanApi.post('/arena/:id/confirm', (req, res) => reply(res, uid(req), confirmSlot(uid(req), intField(req.params.id, 'Trận'), Number(req.body?.at))));
+clanApi.post('/arena/:id/withdraw', (req, res) => reply(res, uid(req), withdraw(uid(req), intField(req.params.id, 'Trận'))));
 
 clanApi.get('/clans', (req, res) => {
   resolveVotes(); // phiếu hết giờ thì khép trước khi xem

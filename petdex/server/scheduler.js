@@ -9,6 +9,7 @@ import { settleP2PDay } from './p2p.js';
 import { settleHuiDay } from './hui.js';
 import { expireListings } from './bazaar.js';
 import { settleAuctions } from './auction.js';
+import { settleArena } from './arena.js';
 import { settleCareDay } from './care.js';
 import { settleContractsDay } from './contracts.js';
 import { settleLoansDay } from './credit.js';
@@ -74,6 +75,8 @@ export function runDue(now = Date.now(), rand = Math.random) {
 
   // Phiên đấu giá đóng đúng giờ, không đợi nửa đêm.
   settleAuctions(now);
+  // Đấu trường gia tộc: xử thua lời thách quá hạn, đánh các trận đã đến giờ (19h/20h).
+  settleArena(now);
 
   const today = dayKey(now);
   let settled = getMeta('settled_day');

@@ -792,6 +792,35 @@ addColumn('users', 'locked_slots', 'INTEGER NOT NULL DEFAULT 0');
     created_at INTEGER NOT NULL
   );
   CREATE INDEX IF NOT EXISTS clan_trades_good ON clan_trades(good, day);
+  -- Đấu trường gia tộc (arena.js): một dòng mỗi lời thách đấu, nhật ký từng lượt đánh để xem lại.
+  CREATE TABLE IF NOT EXISTS clan_wars (
+    id            INTEGER PRIMARY KEY AUTOINCREMENT,
+    challenger_id INTEGER NOT NULL,
+    defender_id   INTEGER NOT NULL,
+    target_kind   TEXT NOT NULL,             -- 'plot' | 'seat'
+    target_ref    TEXT NOT NULL,             -- mã lô hoặc mã ngành chiến lược
+    slots         TEXT NOT NULL,             -- JSON: các mốc giờ bên thách đấu đề xuất
+    status        TEXT NOT NULL DEFAULT 'proposed', -- 'proposed' | 'scheduled' | 'done' | 'forfeit' | 'cancelled'
+    created_by    INTEGER NOT NULL,
+    created_at    INTEGER NOT NULL,
+    deadline      INTEGER NOT NULL,          -- hạn bên bị thách chọn khung giờ
+    scheduled_at  INTEGER,
+    confirmed_by  INTEGER,
+    confirmed_at  INTEGER,
+    resolved_at   INTEGER,
+    winner_id     INTEGER,
+    penalty       INTEGER NOT NULL DEFAULT 0,
+    result        TEXT,                      -- JSON: đội hình, máu còn lại, chuyển giao, số đồ hỏng
+    note          TEXT
+  );
+  CREATE INDEX IF NOT EXISTS clan_wars_status ON clan_wars(status, scheduled_at);
+  CREATE INDEX IF NOT EXISTS clan_wars_target ON clan_wars(target_kind, target_ref);
+  CREATE TABLE IF NOT EXISTS clan_war_rounds (
+    war_id INTEGER NOT NULL,
+    round  INTEGER NOT NULL,
+    hits   TEXT NOT NULL,
+    PRIMARY KEY (war_id, round)
+  );
   -- Sổ chào giá cho Siêu thị: mỗi gia tộc một lệnh mỗi nhóm (qty còn lại, giá = ratio × giá tham chiếu).
   CREATE TABLE IF NOT EXISTS essentials_asks (
     clan_id    INTEGER NOT NULL,

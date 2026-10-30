@@ -18,6 +18,7 @@ import { AnnouncementsTab } from "./announcements";
 import { ChatTab } from "./chat";
 import { ClansTab } from "./clans";
 import { CommerceTab } from "./commerce";
+import { ArenaTab } from "./arena";
 import { GearConfigTab, GiftCodesTab, PlayerGear, type GearView, type Wearable } from "./gear";
 import { ADMIN, errorText, Failure, useLoad, when } from "./shared";
 
@@ -36,6 +37,7 @@ const TABS = [
   { key: "chat", label: "Thư & trò chuyện" },
   { key: "clans", label: "Gia tộc & Đất" },
   { key: "commerce", label: "Sở Công Thương" },
+  { key: "arena", label: "Đấu trường" },
   { key: "invites", label: "Link mời khách" },
   { key: "log", label: "Nhật ký" },
 ] as const;
@@ -164,6 +166,7 @@ export function Board() {
       {tab === "chat" && <ChatTab />}
       {tab === "clans" && <ClansTab />}
       {tab === "commerce" && <CommerceTab />}
+      {tab === "arena" && <ArenaTab />}
       {tab === "invites" && <InvitesTab />}
       {tab === "log" && <LogTab />}
     </div>
