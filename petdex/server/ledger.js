@@ -14,6 +14,7 @@ export const KINDS = {
   market_sell: { group: 'income', label: 'Bán trên Sàn' },
   gear_trade: { group: 'income', label: 'Thưởng giao dịch (trang phục)' },
   gift_code: { group: 'income', label: 'Mã quà' },
+  mail: { group: 'income', label: 'Quà trong hộp thư' },
   interest: { group: 'income', label: 'Lãi ngân hàng' },
   shop: { group: 'expense', label: 'Siêu thị' },
   adopt: { group: 'expense', label: 'Nhận nuôi' },

@@ -43,6 +43,7 @@ import {
 import { renderBank } from './views/bank.js';
 import { renderBazaar } from './views/bazaar.js';
 import { renderBusiness } from './views/business.js';
+import { renderChat } from './views/chat.js';
 import { renderClans } from './views/clans.js';
 import { renderClinic } from './views/clinic.js';
 import { renderCommunity } from './views/community.js';
@@ -57,6 +58,7 @@ import { renderTownhall } from './views/townhall.js';
 import { renderGames } from './views/games.js';
 import { renderJobs } from './views/jobs.js';
 import { renderMap } from './views/map.js';
+import { renderMail } from './views/mail.js';
 import { renderMarket } from './views/market.js';
 import { renderAnnouncement, renderNews } from './views/news.js';
 import { renderWallet as renderWalletView } from './views/wallet.js';
@@ -73,7 +75,7 @@ const state = {
 
 const VIEW_NAMES = [
   'map', 'home', 'shop', 'bag', 'park', 'ranks', 'jobs', 'games', 'bank', 'market', 'wallet', 'news', 'business', 'townhall', 'community',
-  'garden', 'kitchen', 'school', 'clinic', 'factory', 'contracts', 'bazaar', 'credit', 'clans', 'finance',
+  'garden', 'kitchen', 'school', 'clinic', 'factory', 'contracts', 'bazaar', 'credit', 'clans', 'finance', 'chat', 'mail',
 ];
 const TYPE_ORDER = ['food', 'care', 'toy', 'accessory', 'egg'];
 const IDLE_BY_MOOD = { great: 'idle', ok: 'idle', hungry: 'wait', tired: 'think', sad: 'sad', sick: 'sad', dirty: 'wait' };
@@ -274,7 +276,7 @@ function render() {
     business: renderBusiness, townhall: renderTownhall, community: renderCommunity,
     garden: renderGarden, kitchen: renderKitchen, school: renderSchool, clinic: renderClinic,
     factory: renderFactory, contracts: renderContracts, bazaar: renderBazaar, credit: renderCredit, clans: renderClans,
-    finance: renderFinance,
+    finance: renderFinance, chat: renderChat, mail: renderMail,
   };
   const out = views[state.view]($('#view'), ctx);
   if (typeof out === 'function') teardown = out;
@@ -323,6 +325,22 @@ function renderWallet() {
     ? `⏳ <span class="label">Quà sau ${formatWait(wait)}</span>`
     : `🎁 <span class="label">Nhận quà ngày${user.streak ? ` · 🔥${user.streak}` : ''}</span>`;
   daily.title = `Chuỗi đăng nhập ${user.streak} ngày. Nhận liên tiếp mỗi ngày để quà tăng dần tới 120 xu.`;
+  // Chấm đỏ: tin gia tộc + tin nhắn riêng chưa đọc ở tab Trò chuyện, thư chưa đọc / quà chưa nhận ở Hộp thư.
+  const b = state.me.badges ?? {};
+  setDot($('#tabs [data-view="chat"]'), (b.clan ?? 0) + (b.pm ?? 0));
+  setDot($('#mail-btn'), b.mail ?? 0);
+}
+
+function setDot(el, n) {
+  if (!el) return;
+  let dot = el.querySelector('.nav-dot');
+  if (!n) return dot?.remove();
+  if (!dot) {
+    dot = document.createElement('span');
+    dot.className = 'nav-dot';
+    el.append(dot);
+  }
+  dot.textContent = n > 99 ? '99+' : String(n);
 }
 
 /** Tải lại trạng thái (chỉ số tụt dần theo thời gian, quà từ người khác...) mà không làm phiền người đang thao tác. */
@@ -1176,6 +1194,7 @@ $('#daily-btn').addEventListener('click', () =>
   }));
 
 $('#coin-count').addEventListener('click', () => go('wallet'));
+$('#mail-btn').addEventListener('click', () => go('mail'));
 
 $('#logout-btn').addEventListener('click', () => {
   if (!embedded) {

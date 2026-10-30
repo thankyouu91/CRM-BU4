@@ -16,6 +16,7 @@
   <link rel="stylesheet" href="css/production-a.css" />
   <link rel="stylesheet" href="css/production-b.css" />
   <link rel="stylesheet" href="css/clans.css" />
+  <link rel="stylesheet" href="css/chat.css" />
 </head>
 <body>
   <section id="auth-screen" class="auth" hidden>
@@ -46,10 +47,12 @@
         <button data-view="wallet"><i>👛</i><span>Ví</span></button>
         <button data-view="community"><i>👥</i><span>Bạn bè</span></button>
         <button data-view="park"><i>🌳</i><span>Công viên</span></button>
+        <button data-view="chat" title="Trò chuyện"><i>💬</i><span>Chat</span></button>
       </nav>
       <div class="wallet">
         <button class="chip daily" id="daily-btn" type="button">🎁 Quà ngày</button>
         <button class="chip coins" id="coin-count" type="button" title="Mở ví">🪙 0</button>
+        <button class="chip mail" id="mail-btn" type="button" title="Hộp thư">📬</button>
         <button class="chip" id="logout-btn" type="button" title="Đăng xuất">👤 <span id="username"></span></button>
       </div>
     </header>

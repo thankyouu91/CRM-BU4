@@ -1,0 +1,67 @@
+/* Trò chuyện và hộp thư */
+.tabs button, .chip.mail { position: relative; }
+.nav-dot, .chat-dot {
+  display: inline-flex; align-items: center; justify-content: center;
+  min-width: 18px; height: 18px; padding: 0 5px;
+  border-radius: 999px;
+  background: var(--pink-deep); color: #fff;
+  font-size: .7rem; font-weight: 800; line-height: 1;
+}
+.nav-dot { position: absolute; top: -4px; right: -4px; }
+
+.chat-room { display: flex; flex-direction: column; min-height: 0; height: min(68vh, 640px); padding: 0; overflow: hidden; }
+.chat-head { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 10px 14px; border-bottom: 2px solid var(--line); }
+.chat-head .row { margin-left: auto; }
+.chat-log-list { flex: 1; min-height: 0; overflow-y: auto; list-style: none; margin: 0; padding: 10px 14px; display: flex; flex-direction: column; gap: 8px; }
+.chat-line { max-width: 80%; align-self: flex-start; background: var(--surface-2); border-radius: 14px 14px 14px 4px; padding: 6px 10px; }
+.chat-line.mine { align-self: flex-end; background: #fff3c4; border-radius: 14px 14px 4px 14px; }
+.chat-meta { display: flex; gap: 8px; align-items: baseline; font-size: .8rem; }
+.chat-meta time { color: var(--muted); font-size: .72rem; }
+.chat-who { padding: 0; font: inherit; }
+.chat-text { white-space: pre-wrap; overflow-wrap: anywhere; }
+.chat-more, .chat-empty { align-self: center; list-style: none; }
+.chat-send { display: flex; gap: 8px; padding: 10px 14px; border-top: 2px solid var(--line); }
+.chat-send input { flex: 1; min-width: 0; }
+
+.chat-pm { display: grid; grid-template-columns: minmax(220px, 300px) 1fr; gap: 14px; }
+.chat-threads { padding: 10px; display: flex; flex-direction: column; gap: 8px; max-height: min(68vh, 640px); overflow-y: auto; }
+.chat-threads ul { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 4px; }
+.chat-find { display: flex; gap: 6px; }
+.chat-find input { flex: 1; min-width: 0; }
+.chat-thread {
+  width: 100%; text-align: left; display: grid; grid-template-columns: 1fr auto; gap: 2px 6px;
+  padding: 8px 10px; border: 2px solid transparent; border-radius: 12px; background: none;
+}
+.chat-thread small { grid-column: 1 / -1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.chat-thread:hover, .chat-thread.current { background: var(--surface-2); border-color: var(--line); }
+.chat-blocked { font-size: .85rem; }
+
+.mail-grid { display: grid; grid-template-columns: 1fr minmax(260px, 360px); gap: 14px; align-items: start; }
+.mail-head { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+.mail-list ul { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 4px; }
+.mail-open {
+  width: 100%; text-align: left; display: grid; grid-template-columns: auto 1fr auto auto; align-items: center; gap: 4px 10px;
+  padding: 8px 10px; border: 2px solid transparent; border-radius: 12px; background: none;
+}
+.mail-open:hover, .mail-row.open .mail-open { background: var(--surface-2); border-color: var(--line); }
+.mail-row:not(.unread) .mail-subject { font-weight: 600; color: var(--muted); }
+.mail-row.unread .mail-from::before { content: '● '; color: var(--pink-deep); }
+.mail-subject { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mail-body { padding: 6px 12px 12px; overflow-wrap: anywhere; }
+.mail-list, .mail-compose { padding: 14px; }
+.mail-head h3, .mail-compose h3 { margin: 0 0 8px; }
+.mail-compose form { display: flex; flex-direction: column; gap: 8px; }
+.mail-compose textarea {
+  resize: vertical; font: inherit; color: inherit;
+  padding: 10px 14px; border: 2px solid var(--line-strong); border-radius: 14px; background: #fff; outline: none;
+}
+.mail-compose textarea:focus { border-color: var(--tea); box-shadow: 0 0 0 4px #c8915f33; }
+
+@media (max-width: 720px) {
+  .chat-pm, .mail-grid { grid-template-columns: 1fr; }
+  .chat-threads { max-height: 40vh; }
+  .chat-room { height: 62vh; }
+  .chat-line { max-width: 92%; }
+  .mail-open { grid-template-columns: 1fr auto; }
+  .mail-open .mail-subject { grid-column: 1 / -1; }
+}

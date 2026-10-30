@@ -4,6 +4,7 @@ import { centralBankWeek, settleBankDay } from './bank.js';
 import { settleBusinessDay } from './business.js';
 import { settleClansDay } from './clans.js';
 import { settleClanGovDay } from './clan-gov.js';
+import { pruneChat } from './chat.js';
 import { settleP2PDay } from './p2p.js';
 import { settleHuiDay } from './hui.js';
 import { expireListings } from './bazaar.js';
@@ -47,6 +48,7 @@ export function closeDay(day, rand = Math.random) {
   expireListings(end);
   snapshotNetWorth(day, end);
   pruneHistory(end - 14 * DAY);
+  pruneChat(end);
   if (weekday(day) === 0) {
     centralBankWeek(day, end);
     closeWeek(weekKey(day), end, rand);

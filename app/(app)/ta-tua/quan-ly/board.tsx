@@ -15,6 +15,7 @@ import { api } from "@/lib/client";
 import { cn } from "@/lib/utils";
 import { inviteUrl, passwordUrl, playUrl } from "@/lib/petdex-public";
 import { AnnouncementsTab } from "./announcements";
+import { ChatTab } from "./chat";
 import { ClansTab } from "./clans";
 import { CommerceTab } from "./commerce";
 import { GearConfigTab, GiftCodesTab, PlayerGear, type GearView, type Wearable } from "./gear";
@@ -32,6 +33,7 @@ const TABS = [
   { key: "gear", label: "Trang phục & rớt đồ" },
   { key: "gifts", label: "Mã quà" },
   { key: "announcements", label: "Thông báo" },
+  { key: "chat", label: "Thư & trò chuyện" },
   { key: "clans", label: "Gia tộc & Đất" },
   { key: "commerce", label: "Sở Công Thương" },
   { key: "invites", label: "Link mời khách" },
@@ -159,6 +161,7 @@ export function Board() {
       {tab === "gear" && <GearConfigTab />}
       {tab === "gifts" && <GiftCodesTab />}
       {tab === "announcements" && <AnnouncementsTab />}
+      {tab === "chat" && <ChatTab />}
       {tab === "clans" && <ClansTab />}
       {tab === "commerce" && <CommerceTab />}
       {tab === "invites" && <InvitesTab />}

@@ -9,10 +9,10 @@ import { isAdmin } from "@/lib/rbac";
 // internal admin API (petdex/server/internal.js); every change is also written to WorkHub's
 // audit log with the administrator as actor.
 
-const ALLOWED = /^(overview|log|announcements(\/\d+\/delete)?|gear-config|gear\/\d+(\/delete)?|gift-codes(\/\d+(\/revoke)?)?|industries\/(status|unmerge|merge)|commerce|clans(\/(config|macro|plots\/\d+|evasion\/\d+\/(collect|dismiss)))?|invites(\/\d+\/revoke)?|players(\/\d+(\/(coins|status|name|password-link|gear|pets(\/\d+)?))?)?)$/;
+const ALLOWED = /^(overview|log|announcements(\/\d+\/delete)?|gear-config|gear\/\d+(\/delete)?|gift-codes(\/\d+(\/revoke)?)?|industries\/(status|unmerge|merge)|commerce|chat(\/\d+\/delete)?|mail|clans(\/(config|macro|plots\/\d+|evasion\/\d+\/(collect|dismiss)))?|invites(\/\d+\/revoke)?|players(\/\d+(\/(coins|status|name|password-link|gear|mute|pets(\/\d+)?))?)?)$/;
 
 /** Body fields that only label the audit entry; the game never sees them. */
-const LABEL_FIELDS = ["announcementTitle", "playerName", "petName", "speciesName", "itemName", "tierName", "clanName", "plotCode"];
+const LABEL_FIELDS = ["announcementTitle", "playerName", "petName", "speciesName", "itemName", "tierName", "clanName", "plotCode", "author"];
 
 type Params = { params: Promise<{ path: string[] }> };
 
@@ -54,6 +54,16 @@ function describe(path: string, body: Record<string, unknown>): { action: AuditA
   if (/^clans\/evasion\/\d+\/dismiss$/.test(path)) return { action: "tatua.tax_dismiss", entityId: path.split("/")[2], summary: `Bỏ qua hồ sơ thuế #${path.split("/")[2]}${body.clanName ? ` của “${String(body.clanName)}”` : ""}` };
   if (path === "industries/unmerge") return { action: "tatua.industry_unmerge", entityId: null, summary: "Gỡ gộp ngành gia tộc (26 → 41 ngành) để quay lại bản cũ" };
   if (path === "industries/merge") return { action: "tatua.industry_merge", entityId: null, summary: "Gộp lại các ngành gia tộc (41 → 26 ngành)" };
+  if (path === "mail") {
+    const to = body.to === "all" ? "mọi người chơi" : typeof body.playerName === "string" ? `“${body.playerName}”` : `người chơi #${String(body.to)}`;
+    const gift = Number(body.coins) > 0 ? ` kèm ${Number(body.coins).toLocaleString("vi-VN")} xu` : "";
+    return { action: "tatua.mail", entityId: body.to === "all" ? null : String(body.to), summary: `Gửi thư “${String(body.subject ?? "")}” cho ${to}${gift}` };
+  }
+  if (/^chat\/\d+\/delete$/.test(path)) return { action: "tatua.chat_delete", entityId: id, summary: `Xoá tin nhắn #${id}${body.author ? ` của “${String(body.author)}”` : ""}` };
+  if (/^players\/\d+\/mute$/.test(path)) {
+    const hours = Number(body.hours) || 0;
+    return { action: hours ? "tatua.chat_mute" : "tatua.chat_unmute", entityId: id, summary: hours ? `Cấm chat ${player} ${hours} giờ` : `Bỏ cấm chat ${player}` };
+  }
   if (path === "announcements") return { action: "tatua.announcement", entityId: null, summary: `Đăng thông báo “${String(body.title ?? "")}” (${Number(body.days) || 7} ngày${body.popup === false ? ", không bật lên" : ""})` };
   if (/^announcements\/\d+\/delete$/.test(path)) return { action: "tatua.announcement_delete", entityId: id, summary: `Gỡ thông báo #${id}${body.announcementTitle ? ` “${String(body.announcementTitle)}”` : ""}` };
   if (path === "invites") return { action: "tatua.invite", entityId: null, summary: `Tạo link mời khách “${String(body.label ?? "Khách mời")}”` };

@@ -945,7 +945,53 @@ addColumn('users', 'locked_slots', 'INTEGER NOT NULL DEFAULT 0');
     fee          INTEGER NOT NULL DEFAULT 0,
     at           INTEGER NOT NULL
   );
+
+  -- Trò chuyện: channel 'world' (kênh chung), 'clan:<id>' (kênh gia tộc), 'pm:<id nhỏ>:<id lớn>' (tin nhắn riêng).
+  CREATE TABLE IF NOT EXISTS chat_messages (
+    id         INTEGER PRIMARY KEY AUTOINCREMENT,
+    channel    TEXT NOT NULL,
+    user_id    INTEGER NOT NULL,
+    text       TEXT NOT NULL,
+    deleted    INTEGER NOT NULL DEFAULT 0,
+    created_at INTEGER NOT NULL
+  );
+  CREATE INDEX IF NOT EXISTS chat_messages_channel ON chat_messages(channel, id);
+  CREATE TABLE IF NOT EXISTS chat_reads (
+    user_id INTEGER NOT NULL,
+    channel TEXT NOT NULL,
+    last_id INTEGER NOT NULL DEFAULT 0,
+    PRIMARY KEY (user_id, channel)
+  );
+  CREATE TABLE IF NOT EXISTS chat_pm (
+    channel  TEXT NOT NULL,
+    user_id  INTEGER NOT NULL,
+    other_id INTEGER NOT NULL,
+    PRIMARY KEY (user_id, channel)
+  );
+  CREATE TABLE IF NOT EXISTS chat_blocks (
+    user_id    INTEGER NOT NULL,
+    blocked_id INTEGER NOT NULL,
+    created_at INTEGER NOT NULL,
+    PRIMARY KEY (user_id, blocked_id)
+  );
+
+  -- Hộp thư: from_user NULL là thư hệ thống / quản trị; coins là quà đính kèm, nhận một lần (claimed_at).
+  CREATE TABLE IF NOT EXISTS mail (
+    id         INTEGER PRIMARY KEY AUTOINCREMENT,
+    to_user    INTEGER NOT NULL,
+    from_user  INTEGER,
+    from_name  TEXT,
+    subject    TEXT NOT NULL,
+    body       TEXT NOT NULL,
+    coins      INTEGER NOT NULL DEFAULT 0,
+    read_at    INTEGER,
+    claimed_at INTEGER,
+    deleted_at INTEGER,
+    created_at INTEGER NOT NULL
+  );
+  CREATE INDEX IF NOT EXISTS mail_to ON mail(to_user, id);
   `);
+  addColumn('users', 'chat_muted_until', 'INTEGER NOT NULL DEFAULT 0');
 }
 
 const q = {

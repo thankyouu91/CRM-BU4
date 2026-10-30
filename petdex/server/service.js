@@ -13,6 +13,7 @@ import { essentialRefs } from './industry.js';
 import { macroToday } from './macro.js';
 
 /** Phát 'pet:changed' (userId) để sân chơi cập nhật thẻ thú cưng khi chủ thay đổi ở nơi khác. */
+import { chatBadges } from './chat.js';
 export { bus } from './events.js';
 import { bus } from './events.js';
 
@@ -51,6 +52,7 @@ export function snapshot(userId, now = Date.now()) {
     badges: {
       jobs: q.readyShifts.get(userId, now).n,
       bank: q.maturedDeposits.get(userId, now).n,
+      ...chatBadges(userId),
     },
   };
 }

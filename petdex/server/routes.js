@@ -21,6 +21,7 @@ import {
   KITCHEN, LOANS, QUALITY, SCHOOL, TIERS, TRAITS,
 } from './rules/production.js';
 import { communityApi } from './routes-community.js';
+import { chatApi } from './routes-chat.js';
 import { UNLOCKS, economyApi } from './routes-economy.js';
 import { productionApi } from './routes-production.js';
 import { clanApi } from './routes-clans.js';
@@ -328,6 +329,7 @@ api.use(economyApi);
 api.use(communityApi);
 api.use(productionApi);
 api.use(clanApi);
+api.use(chatApi);
 
 api.use('/{*rest}', (_req, res) => res.status(404).json({ error: 'Không tìm thấy.' }));
 

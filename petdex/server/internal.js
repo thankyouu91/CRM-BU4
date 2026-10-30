@@ -4,6 +4,7 @@
 import { economy } from './bank.js';
 import * as store from './db.js';
 import { digest, hashPassword, randomCode, verifyPassword } from './passwords.js';
+import { adminChat, adminDeleteMessage, adminMail, muteUser } from './chat.js';
 import { mergeDone, remergeIndustries, unmergeIndustries, unmergePlan } from './industry-merge.js';
 import { createGear, createRandomGear, deleteGear, describeGear, gearConfig, getGear, listGear, setGearConfig, updateGear } from './gear.js';
 import { ANNOUNCEMENT, announcementById, createAnnouncement, listAnnouncements, removeAnnouncement } from './announcements.js';
@@ -617,6 +618,15 @@ internalApi.post('/admin/industries/unmerge', (req, res) => {
   res.json(unmergeIndustries(actorOf(req)));
 });
 internalApi.post('/admin/industries/merge', (req, res) => res.json(remergeIndustries(actorOf(req))));
+
+// ---- Trò chuyện và hộp thư ----
+internalApi.get('/admin/chat', (req, res) => res.json({ messages: adminChat({ channel: String(req.query?.channel ?? ''), limit: req.query?.limit }) }));
+internalApi.post('/admin/chat/:id/delete', (req, res) => res.json(adminDeleteMessage(actorOf(req), req.params.id)));
+internalApi.post('/admin/players/:id/mute', (req, res) => res.json(muteUser(actorOf(req), userOf(req).id, req.body?.hours)));
+internalApi.post('/admin/mail', (req, res) => {
+  const to = req.body?.to === 'all' ? 'all' : Number(req.body?.to);
+  res.json(adminMail(actorOf(req), { to, subject: req.body?.subject, body: req.body?.body, coins: req.body?.coins }));
+});
 
 internalApi.post('/admin/clans/config', (req, res) => {
   const config = setClanConfig(req.body?.config ?? {});

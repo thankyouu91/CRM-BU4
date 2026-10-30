@@ -97,6 +97,10 @@ export const AUDIT_ACTIONS = {
   "tatua.tax_dismiss": { label: "Bỏ qua hồ sơ thuế", group: "tatua" },
   "tatua.industry_unmerge": { label: "Gỡ gộp ngành gia tộc", group: "tatua" },
   "tatua.industry_merge": { label: "Gộp lại ngành gia tộc", group: "tatua" },
+  "tatua.mail": { label: "Gửi thư trong game", group: "tatua" },
+  "tatua.chat_delete": { label: "Xoá tin nhắn trong game", group: "tatua" },
+  "tatua.chat_mute": { label: "Cấm chat người chơi", group: "tatua" },
+  "tatua.chat_unmute": { label: "Bỏ cấm chat người chơi", group: "tatua" },
 } as const satisfies Record<string, { label: string; group: AuditGroup }>;
 
 export type AuditAction = keyof typeof AUDIT_ACTIONS;
