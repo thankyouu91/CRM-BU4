@@ -9,7 +9,7 @@ import { post, treasuryBalance } from './ledger.js';
 import { macroFor, rollNextDay } from './macro.js';
 import { weekKey } from './town.js';
 import { clanDeposited, clanGovView, coverFromDeposits, isDeposed } from './clan-gov.js';
-import { IRRIGATED, expireListings, plotDeposits, productionPreview, runProduction, setPlotVariant, tradeIncome } from './industry.js';
+import { IRRIGATED, clearShopBook, expireListings, plotDeposits, productionPreview, runProduction, setPlotVariant, tradeIncome } from './industry.js';
 import { STRATEGIC_INDUSTRIES, STRATEGIC_RULES, strategicPlaceOk, variantsFor } from '../../public/ta-tua/game/js/shared/industry.js';
 import { buffFor, chargeInfraFee, operatingOwners, strategicOf } from './strategic.js';
 import { openShopBuying, settleEssentialsDay } from './essentials.js';
@@ -677,6 +677,8 @@ export function settleClansDay(day, rand = Math.random) {
     const macro = macroFor(day, { rand, force: cfg.macro, now: startOfDay(day) });
     const counts = industryCounts();
     openShopBuying(day);
+    // Sổ chào giá: Siêu thị khớp lệnh giá thấp trước, sau đó mới mua hàng vừa làm ra (trong runProduction).
+    clearShopBook(day, macro, at, rand);
     const sundayWeek = weekday(day) === 0 ? weekKey(day) : null;
     const monthEnd = nextDay(day).endsWith('-01');
     for (const clan of q.active.all()) {
