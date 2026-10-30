@@ -9,8 +9,11 @@ import { auth, intField, reply } from './http.js';
 import { macroHistory, macroToday } from './macro.js';
 import { assignOperator, removeOperator, strategicView, upgradeInfra } from './strategic.js';
 import { buyListing, cancelListing, importGoods, industryView, listGoods, sellToNpc, setKeep, setShopAsk } from './industry.js';
-import { requireLevel } from './routes-economy.js';
+import { UNLOCKS, requireLevel } from './routes-economy.js';
 import { arenaView, challenge, confirmSlot, warReplay, withdraw } from './arena.js';
+import {
+  bidSeizedPlot, borrowFromBank, clanBankView, depositAtBank, keepSeizedPlot, moveBankCapital, openBank, repayBankLoan, setBankTerms, withdrawFromBank,
+} from './clan-bank.js';
 import { castBallot, openClanDeposit, resolveVotes, startDepose, withdrawClanDeposit } from './clan-gov.js';
 
 export const clanApi = Router();
@@ -19,6 +22,7 @@ clanApi.use('/land', auth);
 clanApi.use('/macro', auth);
 clanApi.use('/industry', auth);
 clanApi.use('/arena', auth);
+clanApi.use('/clan-bank', auth);
 
 const uid = (req) => req.user.id;
 const unlock = (req, what) => requireLevel(uid(req), clanConfig().unlockLevel, what);
@@ -31,6 +35,28 @@ clanApi.post('/arena/challenge', (req, res) => reply(res, uid(req), challenge(ui
 })));
 clanApi.post('/arena/:id/confirm', (req, res) => reply(res, uid(req), confirmSlot(uid(req), intField(req.params.id, 'Trận'), Number(req.body?.at))));
 clanApi.post('/arena/:id/withdraw', (req, res) => reply(res, uid(req), withdraw(uid(req), intField(req.params.id, 'Trận'))));
+
+// ---- Ngân hàng gia tộc: tiền gửi của người chơi, cho vay thế chấp lô đất, đấu giá lô siết nợ ----
+clanApi.get('/clan-bank', (req, res) => res.json(clanBankView(uid(req))));
+clanApi.post('/clan-bank/open', (req, res) => reply(res, uid(req), openBank(uid(req), intField(req.body?.capital, 'Vốn'))));
+clanApi.post('/clan-bank/terms', (req, res) => reply(res, uid(req), setBankTerms(uid(req), {
+  rates: req.body?.rates && typeof req.body.rates === 'object' ? req.body.rates : {},
+  loanRate: req.body?.loanRate, lendingOpen: req.body?.lendingOpen,
+})));
+clanApi.post('/clan-bank/capital', (req, res) => reply(res, uid(req), moveBankCapital(uid(req), String(req.body?.action ?? ''), intField(req.body?.amount, 'Số tiền'))));
+clanApi.post('/clan-bank/deposits/:id/withdraw', (req, res) => reply(res, uid(req), withdrawFromBank(uid(req), intField(req.params.id, 'Khoản gửi'))));
+clanApi.post('/clan-bank/loans/:id/repay', (req, res) => reply(res, uid(req), repayBankLoan(
+  uid(req), intField(req.params.id, 'Khoản vay'), req.body?.amount == null ? null : intField(req.body.amount, 'Số tiền'),
+)));
+clanApi.post('/clan-bank/auctions/:id/bid', (req, res) => reply(res, uid(req), bidSeizedPlot(uid(req), intField(req.params.id, 'Phiên'), intField(req.body?.amount, 'Giá'))));
+clanApi.post('/clan-bank/auctions/:id/keep', (req, res) => reply(res, uid(req), keepSeizedPlot(uid(req), intField(req.params.id, 'Phiên'))));
+clanApi.post('/clan-bank/:bankId/deposit', (req, res) => {
+  requireLevel(uid(req), UNLOCKS.bank, 'Gửi ngân hàng gia tộc');
+  reply(res, uid(req), depositAtBank(uid(req), intField(req.params.bankId, 'Ngân hàng'), intField(req.body?.amount, 'Số tiền'), Number(req.body?.term)));
+});
+clanApi.post('/clan-bank/:bankId/borrow', (req, res) => reply(res, uid(req), borrowFromBank(uid(req), {
+  bankId: intField(req.params.bankId, 'Ngân hàng'), plotId: intField(req.body?.plotId, 'Lô đất'), amount: intField(req.body?.amount, 'Số tiền'), term: Number(req.body?.term),
+})));
 
 clanApi.get('/clans', (req, res) => {
   resolveVotes(); // phiếu hết giờ thì khép trước khi xem

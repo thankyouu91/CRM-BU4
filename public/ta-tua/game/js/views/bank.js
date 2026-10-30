@@ -88,6 +88,14 @@ export function renderBank(root, ctx) {
 
         <section class="card bank-box wide row-between">
           <div>
+            <h3>🏯 Ngân hàng gia tộc</h3>
+            <p class="muted">Gửi kỳ hạn ở ngân hàng do gia tộc nắm Ngân hàng nhà nước điều hành: lãi có thể cao hơn ở đây (tối đa 3 lần), đổi lại rủi ro ngân hàng thiếu tiền mặt hay đổ vỡ.</p>
+          </div>
+          <button class="btn gold" data-go="clanbank">Xem</button>
+        </section>
+
+        <section class="card bank-box wide row-between">
+          <div>
             <h3>🤝 Vay ngang hàng & 🔄 Hụi</h3>
             <p class="muted">Cho người chơi khác vay qua ngân hàng trung gian (ngân hàng giữ 10–20% tiền lãi), hoặc góp hụi bỏ thăm với bạn bè và các gia tộc.</p>
           </div>

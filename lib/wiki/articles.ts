@@ -10,6 +10,8 @@ import { article as A_ngan_hang } from "./articles/ngan-hang";
 import { article as A_tin_dung } from "./articles/tin-dung";
 import { article as A_vay_ngang_hang } from "./articles/vay-ngang-hang";
 import { article as A_hui } from "./articles/hui";
+import { article as A_ngan_hang_gia_toc } from "./articles/ngan-hang-gia-toc";
+import { article as A_vay_the_chap } from "./articles/vay-the-chap";
 import { article as A_thue_toa_thi_chinh } from "./articles/thue-toa-thi-chinh";
 import { article as A_gia_toc } from "./articles/gia-toc";
 import { article as A_kinh_te_vi_mo } from "./articles/kinh-te-vi-mo";
@@ -1010,6 +1012,8 @@ export const ARTICLES: WikiArticle[] = [
   A_tin_dung,
   A_vay_ngang_hang,
   A_hui,
+  A_ngan_hang_gia_toc,
+  A_vay_the_chap,
   {
     slug: "quay-tra-sua",
     title: "Quầy trà sữa",

@@ -23,6 +23,7 @@ import { macroToday, overrideMacro } from './macro.js';
 import { commerceView } from './commerce.js';
 import { adminArenaView, adminCancelWar } from './arena.js';
 import { adminBotsView, setBotConfig } from './bots.js';
+import { adminClanBankView, setClanBankFrozen } from './clan-bank.js';
 import { refPrice } from './industry.js';
 import { slotsOf } from './lifecycle.js';
 import { bus, snapshot } from './service.js';
@@ -85,7 +86,7 @@ function playerRow(u, now = Date.now()) {
     displayName: u.display_name ?? u.username,
     kind: u.kind,
     coins: u.coins,
-    savings: worth.parts.savings + worth.parts.deposits,
+    savings: worth.parts.savings + worth.parts.deposits + worth.parts.clanBank,
     netWorth: worth.total,
     pets: pets.length,
     topLevel: pets.reduce((m, p) => Math.max(m, p.level), 0),
@@ -623,6 +624,16 @@ internalApi.post('/admin/bots/config', (req, res) => {
   const b = req.body ?? {};
   setBotConfig({ enabled: b.enabled, target: b.target, onlineMin: b.onlineMin, onlineMax: b.onlineMax }, actorOf(req));
   res.json(adminBotsView());
+});
+
+// ---- Ngân hàng gia tộc: vốn, tiền gửi, khoản vay, vỡ nợ; phong tỏa khẩn cấp một ngân hàng hoặc toàn bộ ----
+internalApi.get('/admin/clan-bank', (_req, res) => res.json(adminClanBankView()));
+internalApi.post('/admin/clan-bank/freeze', (req, res) => {
+  const b = req.body ?? {};
+  const clanId = b.clanId == null ? null : Number(b.clanId);
+  const out = setClanBankFrozen(Number.isInteger(clanId) ? clanId : null, Boolean(b.frozen));
+  store.adminLog(actorOf(req), 'cbank_freeze', null, { clanId, frozen: Boolean(b.frozen) });
+  res.json({ ...adminClanBankView(), result: out });
 });
 
 // ---- Đấu trường gia tộc: xem và hủy trận chưa đánh ----

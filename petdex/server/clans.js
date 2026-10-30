@@ -15,6 +15,8 @@ import { industryClosed } from './heavy-industry.js';
 import { buffFor, chargeInfraFee, operatingOwners, strategicOf } from './strategic.js';
 import { openShopBuying, settleEssentialsDay } from './essentials.js';
 import { memberPower } from './arena.js';
+import { clanBankDissolve, plotPledged } from './clan-bank.js';
+import { collateralOf } from '../../public/ta-tua/game/js/shared/clan-bank.js';
 import {
   CLAN_EMBLEMS, CLAN_LEVELS, INDUSTRIES, INDUSTRY_ORDER, LAND, PHASES, PLOTS, WEATHER, cleanDesign, clanLevelOf, clanPerks,
   competitionFactor, designBonus, designComplete, designCost, envFactor, isProduction, isStrategic, scarcityFactor, weatherFactor,
@@ -133,6 +135,10 @@ const q = {
   addMember: db.prepare('INSERT INTO clan_members (user_id, clan_id, role, joined_at) VALUES (?, ?, ?, ?)'),
   removeMember: db.prepare('DELETE FROM clan_members WHERE user_id = ?'),
   dropMembers: db.prepare('DELETE FROM clan_members WHERE clan_id = ?'),
+  memberIds: db.prepare('SELECT user_id FROM clan_members WHERE clan_id = ?'),
+  logMember: db.prepare('INSERT INTO clan_member_log (user_id, clan_id, event, at) VALUES (?, ?, ?, ?)'),
+  transferPlot: db.prepare('UPDATE land_plots SET clan_id = ?, bought_at = ?, bought_price = ?, index_at_buy = ?, industry = ? WHERE id = ?'),
+  dropOperator: db.prepare('DELETE FROM clan_operators WHERE plot_id = ?'),
   cancelWars: db.prepare("UPDATE clan_wars SET status = 'cancelled', resolved_at = ?, note = 'Gia tộc đã giải tán' WHERE status IN ('proposed', 'scheduled') AND (challenger_id = ? OR defender_id = ?)"),
   dropAsks: db.prepare('DELETE FROM essentials_asks WHERE clan_id = ?'),
   setRole: db.prepare('UPDATE clan_members SET role = ? WHERE user_id = ?'),
@@ -267,6 +273,37 @@ function landStats(now = Date.now()) {
   return { sold, free: LAND.count - sold, soldRatio: sold / LAND.count, landIndex: macro.landIndex, macro };
 }
 
+/** Ngân hàng gia tộc: giá trị thế chấp hiện tại của một lô đã có chủ và số xu Sở Nhà Đất trả nếu mua lại. */
+export function plotCollateral(plotId, now = Date.now()) {
+  ensurePlots();
+  const plot = PLOT_BY_ID.get(Number(plotId));
+  const row = plot && q.plot.get(plot.id);
+  if (!row?.clan_id) return null;
+  const land = plotValue(plot, row, landStats(now).landIndex, now);
+  return { plot, row, land, value: collateralOf(land, row.design_spent), resale: Math.round(land * clanConfig().land.resaleRate) };
+}
+
+/** Số lô gia tộc còn mua (hay nhận) thêm được theo cấp. */
+export function plotRoom(clanId) {
+  const clan = q.clan.get(clanId);
+  if (!clan || clan.dissolved_at) return 0;
+  return clanPerks(levelOf(clan)).maxPlots - q.clanPlots.all(clanId).length;
+}
+
+/** Sang tên lô (giữ công trình); gia tộc mới chưa có ngành của lô thì lô về trạng thái chưa chọn ngành. */
+export function transferPlot(plotId, toClanId, price, now = Date.now()) {
+  const row = q.plot.get(plotId);
+  const keep = row.industry && q.industries.all(toClanId).some((i) => i.industry === row.industry);
+  q.transferPlot.run(toClanId, now, Math.max(1, Math.round(price)), landStats(now).landIndex, keep ? row.industry : null, plotId);
+  q.dropOperator.run(plotId);
+}
+
+/** Trả lô về Sở Nhà Đất (Sở mua lại lô siết nợ). */
+export function releasePlotToLand(plotId) {
+  q.releasePlot.run(plotId);
+  q.dropOperator.run(plotId);
+}
+
 /** Phí thâu tóm ngành tiếp theo: ngành đầu trả mức gốc, từ ngành thứ hai trả gấp `expandMultiplier`. */
 export const entryFee = (industry, owned, cfg = clanConfig()) => Math.round((cfg.comp[industry] ?? 0) * (owned > 0 && !isStrategic(industry) ? cfg.expandMultiplier : 1));
 
@@ -304,6 +341,7 @@ export function createClan(userId, { name, emblem, color }, now = Date.now()) {
     toTreasury(cost / 2, 'clan_create', clean, now);
     const id = Number(q.insertClan.run(clean, icon, hue, userId, now).lastInsertRowid);
     q.addMember.run(userId, id, 'leader', now);
+    q.logMember.run(userId, id, 'join', now);
     q.insertNews.run(`🏯 Gia tộc ${icon} ${clean} ra mắt`, now, now, now + 2 * DAY);
     return { message: `${icon} Đã lập gia tộc ${clean}!` };
   });
@@ -316,12 +354,15 @@ export function joinClan(userId, clanId, now = Date.now()) {
     if (!clan || clan.dissolved_at) throw new GameError('Không tìm thấy gia tộc này.');
     if (q.memberCount.get(clanId).n >= clanPerks(levelOf(clan)).maxMembers) throw new GameError('Gia tộc đã đủ người, chờ gia tộc lên cấp nhé.');
     q.addMember.run(userId, clanId, 'member', now);
+    q.logMember.run(userId, clanId, 'join', now);
     return { message: `Chào mừng bạn về ${clan.emblem} ${clan.name}!` };
   });
 }
 
 function dissolveClan(clan, now) {
   coverFromDeposits(clan.id, Infinity, now); // tiền gửi về quỹ trước khi quỹ về ngân sách
+  // Ngân hàng gia tộc: ngân hàng của nó đổ vỡ, lô đang thế chấp về tay ngân hàng chủ nợ trước khi đất trả về Sở Nhà Đất.
+  clanBankDissolve(clan.id, now);
   q.releaseClanPlots.run(clan.id);
   q.dropIndustries.run(clan.id);
   const left = clanBalance(clan.id);
@@ -330,6 +371,7 @@ function dissolveClan(clan, now) {
     toTreasury(left, 'clan_upkeep', `Quỹ gia tộc ${clan.name} giải tán`, now);
   }
   // Mọi thành viên còn lại (kể cả người bị phế truất) được thả ra, để vào hay lập gia tộc khác được.
+  for (const m of q.memberIds.all(clan.id)) q.logMember.run(m.user_id, clan.id, 'leave', now);
   q.dropMembers.run(clan.id);
   q.cancelWars.run(now, clan.id, clan.id);
   q.dropAsks.run(clan.id);
@@ -340,6 +382,7 @@ export function leaveClan(userId, now = Date.now()) {
   return transaction(() => {
     const { clan, member } = mustClanOf(userId);
     q.removeMember.run(userId);
+    q.logMember.run(userId, clan.id, 'leave', now);
     if (member.role === 'leader') {
       const next = q.successor.get(clan.id, userId);
       if (!next) {
@@ -363,6 +406,7 @@ export function kickMember(userId, targetId, now = Date.now()) {
     if (!target || target.clan_id !== clan.id) throw new GameError('Người này không ở gia tộc của bạn.');
     if (targetId === userId) throw new GameError('Muốn rời thì bấm "Rời gia tộc".');
     q.removeMember.run(targetId);
+    q.logMember.run(targetId, clan.id, 'leave', now);
     return { message: `Đã mời ${getUser(targetId)?.username ?? 'thành viên'} rời gia tộc.`, at: now };
   });
 }
@@ -486,6 +530,7 @@ export function buyPlot(userId, plotId, now = Date.now()) {
 export function sellPlot(userId, plotId, now = Date.now()) {
   return transaction(() => {
     const { clan, row, plot } = ownPlot(userId, plotId, ['leader'], 'bán đất');
+    if (plotPledged(plot.id)) throw new GameError(`Lô ${plot.code} đang thế chấp ở ngân hàng gia tộc, trả hết nợ mới bán được.`);
     const value = plotValue(plot, row, landStats(now).landIndex, now);
     const pay = Math.round(value * clanConfig().land.resaleRate);
     q.releasePlot.run(plot.id);
