@@ -60,11 +60,10 @@
 .land-scroll { overflow-x: auto; border-radius: 12px; }
 .land-svg { display: block; width: 100%; min-width: 640px; height: auto; touch-action: manipulation; }
 .land-svg .plot { cursor: pointer; }
-.land-svg .tile { stroke: #00000022; stroke-width: 1; }
-.land-svg .plot:hover .tile { filter: brightness(1.08); }
-.land-svg .plot.free:hover .tile { stroke: #2b2d33; stroke-width: 2; }
-.land-svg .code { font-size: 7px; font-weight: 800; fill: #00000088; pointer-events: none; }
-.land-svg .plot.mine .own { stroke-dasharray: 5 2; }
+.land-svg .hit { fill: transparent; stroke: transparent; stroke-width: 2; stroke-linejoin: round; transition: stroke .12s; }
+.land-svg .plot:hover .hit { stroke: #2b2d3399; }
+.land-svg .plot.sel .hit { stroke: #2b2d33; stroke-width: 3; fill: #ffffff33; }
+.land-svg .code { font-size: 6.5px; font-weight: 800; fill: #00000066; pointer-events: none; }
 .land-legend { display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: .82rem; align-items: center; }
 .land-legend i { display: inline-block; width: 12px; height: 12px; border-radius: 3px; margin-right: 4px; vertical-align: -1px; border: 1px solid #0002; }
 .heat-scale { width: 120px; height: 10px; border-radius: 6px; background: linear-gradient(90deg, #e8665a, #f4d35e, #5fbf77); }
