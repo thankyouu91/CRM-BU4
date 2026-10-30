@@ -71,7 +71,7 @@ Script chép các bé trong `~/.petdex/pets` và `~/.codex/pets` vào `public/pe
 | Trường học (cấp 2) | Lớp 30 phút, 30–50 xu và 15 năng lượng, +2 đến +4 kỹ năng, mỗi môn 3 buổi/ngày |
 | Vườn (cấp 2) | 4 ô (mua thêm tới 9): chè, dâu, mía, sắn; thu hoạch vào kho Sàn. Bạn bè tưới hộ +20% sản lượng, người tưới +2 xu. Sâu ăn mất 30% nếu không bắt |
 | Bếp (cấp 3) | Nấu món từ nguyên liệu trong kho, 3 mức chất lượng theo Khéo tay, 3 món ẩn tự ghép mà khám phá. Món để 3 ngày; cho bé ăn, bán quán, hoặc bán ở Chợ Phiên |
-| Khu công nghiệp (cấp 6) | 4 loại xưởng biến hàng thô thành hàng chế biến, chỉ chạy khi có bé đứng máy (bé nhà mình hoặc công nhân thuê). Nhận gia công thuê lấy phí mỗi mẻ. Thuê đất mỗi đêm, nợ 3 đêm thì đóng cửa |
+| Khu công nghiệp (cấp 6) | 4 loại xưởng biến hàng thô thành hàng chế biến, chỉ chạy khi có bé đứng máy (bé nhà mình hoặc công nhân thuê). Bật "Chạy liên tục" thì ca của bé nhà mình xong là tự vào ca kế cùng độ dài, dừng khi hết nguyên liệu, hết giờ làm hoặc bé mệt/ốm (nối ca tính lười lúc đọc và lúc đóng sổ, không hẹn giờ). Ca đêm 8 giờ (vào ca 20:00 tới trước 02:00, mỗi bé một ca mỗi đêm, không tính vào giờ làm, hao sức ×1,5, xưởng chạy 85%). Nhận gia công thuê lấy phí mỗi mẻ. Thuê đất mỗi đêm, nợ 3 đêm thì đóng cửa |
 | Hợp đồng cung ứng (cấp 6) | Giao Q lô mỗi đêm với giá chốt trong 3–14 ngày, hai bên ký quỹ. Giao thiếu thì bồi thường; phá hợp đồng thì bồi thường 10% phần còn lại và −30 điểm tín dụng |
 | Chợ Phiên (cấp 4) | Người chơi bày bán đồ siêu thị và món tự nấu, giá 50–300% giá tham chiếu, phí đăng 1%, phí bán 5%, tin còn 48 giờ |
 | Tín dụng & vay | Điểm tín dụng 300–850 cho mọi người, lên khi giữ lời hứa. Chế độ Tài chính nâng cao (cấp 8): vay trả góp 3/7/14 ngày theo hạn mức hạng, tự trừ mỗi tối; trễ 7 kỳ là nợ xấu |

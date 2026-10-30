@@ -1109,7 +1109,7 @@ export const ARTICLES: WikiArticle[] = [
     category: "kinh-te",
     emoji: "🏭",
     summary: "Bốn loại xưởng biến hàng thô thành hàng chế biến, gia công thuê, công nhân và hợp đồng cung ứng.",
-    keywords: ["xưởng", "nhà máy", "gia công", "sản xuất", "hợp đồng", "cung ứng", "công nhân"],
+    keywords: ["xưởng", "nhà máy", "gia công", "sản xuất", "hợp đồng", "cung ứng", "công nhân", "chạy liên tục", "ca đêm"],
     related: ["san-nguyen-lieu", "tin-dung", "quay-tra-sua"],
     sections: [
       {
@@ -1122,6 +1122,19 @@ export const ARTICLES: WikiArticle[] = [
             "Nâng cấp 2.000, 4.000, 8.000 xu; mỗi cấp thêm 3 mẻ/giờ.",
             "Xưởng **chỉ chạy khi có bé đứng máy**: bé nhà mình hoặc công nhân thuê (8–80 xu/giờ, 1–3 người). Bé càng giỏi Sức mạnh và Khéo tay, xưởng càng nhanh (tới +30%); bé **Kim** thêm 10%.",
             "Thuê đất **50 xu mỗi đêm**. Nợ 3 đêm liền thì xưởng bị đóng, mất 40 điểm tín dụng.",
+          ] },
+        ],
+      },
+      {
+        id: "chay-lien-tuc",
+        title: "Chạy liên tục và ca đêm",
+        blocks: [
+          { list: [
+            "Bật **Chạy liên tục** ở thẻ xưởng: ca đứng máy của bé nhà mình xong là bé tự vào ca kế cùng độ dài, kể cả lúc bạn tắt app.",
+            "Chuỗi ca dừng khi **hết nguyên liệu** (kho không đủ một mẻ), bé **hết giờ làm** trong ngày (qua nửa đêm thì giờ làm tính lại), hoặc bé **mệt/ốm/đói**. Thẻ xưởng ghi rõ lý do dừng.",
+            "**Ca đêm** 8 giờ, nhận từ 20:00 tới trước 02:00, chỉ cho bé nhà mình ở xưởng của mình. Không tính vào giờ làm trong ngày, nhưng mỗi bé chỉ một ca đêm mỗi đêm.",
+            "Ca đêm hao sức gấp rưỡi (bé phải đầy 100 năng lượng mới vào ca), xưởng chạy 85% tốc độ, không lương. Ca đêm không tự nối.",
+            "Ca vắt qua nửa đêm: mẻ trước 00:00 tính cho ngày cũ, phần sau tính cho ngày mới; tiền thuê đất vẫn thu mỗi đêm như thường.",
           ] },
         ],
       },

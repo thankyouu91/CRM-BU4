@@ -13,6 +13,7 @@ import { ledgerPage, walletView } from './wallet.js';
 import { cancelP2P, fundP2P, p2pView, repayP2P, requestP2P } from './p2p.js';
 import { bidHui, createHui, huiView, joinHui, leaveHui, startHuiNow } from './hui.js';
 import { activeAnnouncements } from './announcements.js';
+import { NIGHT_SHIFT } from './rules/production.js';
 
 export const economyApi = Router();
 economyApi.use(auth);
@@ -35,7 +36,9 @@ economyApi.post('/jobs/start', (req, res) => {
   const result = startShift(req.user.id, {
     petId: intField(req.body?.petId, 'Thú cưng'),
     career: String(req.body?.career ?? ''),
-    hours: intField(req.body?.hours, 'Số giờ'),
+    // Ca đêm luôn dài 8 giờ, không cần gửi số giờ.
+    night: Boolean(req.body?.night),
+    hours: req.body?.night ? NIGHT_SHIFT.hours : intField(req.body?.hours, 'Số giờ'),
     businessId: req.body?.businessId ? intField(req.body.businessId, 'Quầy') : null,
     factoryId: req.body?.factoryId ? intField(req.body.factoryId, 'Xưởng') : null,
   });

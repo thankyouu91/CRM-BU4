@@ -1,5 +1,5 @@
 // Luật chơi thuần: không đụng tới DB hay HTTP, dùng chung cho REST API và sân chơi.
-import { HEALTH, ILLNESSES, TRAITS, has, healthDelta, sickChance } from './rules/production.js';
+import { HEALTH, ILLNESSES, NIGHT_SHIFT, TRAITS, has, healthDelta, sickChance } from './rules/production.js';
 import {
   EGG, ELEMENTS, LIFE, WEARABLES, elementOfSpecies, foodBonus, lifespanWeeks, speciesOrGuest, stageAt, statsOfSpecies,
 } from '../../public/ta-tua/game/js/shared/pets.js';
@@ -183,9 +183,9 @@ export class GameError extends Error {}
 
 export const clamp = (value, lo = 0, hi = 100) => Math.min(hi, Math.max(lo, value));
 
-/** Bé đang bận việc gì: 'work' (ca làm), 'school' (lớp học) hay 'bath' (tắm); lúc rảnh là null. */
+/** Bé đang bận việc gì: 'work' (ca làm), 'night' (ca đêm ở xưởng), 'school' (lớp học) hay 'bath' (tắm); lúc rảnh là null. */
 export const busyKind = (pet, now = Date.now()) => (isBusy(pet, now) ? pet.busy_kind ?? 'work' : null);
-const BUSY_TEXT = { work: 'đang đi làm', school: 'đang đi học', bath: 'đang tắm' };
+const BUSY_TEXT = { work: 'đang đi làm', night: 'đang làm ca đêm', school: 'đang đi học', bath: 'đang tắm' };
 
 /** Số giờ trong [from, to] trùng với lúc bé bận việc hao sức (ca làm, lớp học); tắm tính như lúc rảnh. */
 function busyHours(pet, from, to) {
@@ -220,7 +220,8 @@ export function tick(pet, now = Date.now()) {
     ...pet,
     fullness: clamp(pet.fullness - fullnessLoss),
     happiness: clamp(pet.happiness + PER_HOUR.happiness * st.happiness * (sr.moodDrop ?? 1) * (hours + hungryHours + (pet.sick ? hours : 0))),
-    energy: clamp(pet.energy + PER_HOUR.energy * regen * free + BUSY_PER_HOUR.energy * busy),
+    // Ca đêm hao sức gấp 1,5 lần ca thường.
+    energy: clamp(pet.energy + PER_HOUR.energy * regen * free + BUSY_PER_HOUR.energy * busy * (pet.busy_kind === 'night' ? NIGHT_SHIFT.energy : 1)),
     hygiene: clamp(hygiene - dirtyPerHour * hours),
     health: clamp(health + healthDelta(hours, { hungryAfter: hoursUntilHungry, dirtyAfter, goodFor, regen: st.healthRegen })),
     updated_at: Math.max(pet.updated_at, now),

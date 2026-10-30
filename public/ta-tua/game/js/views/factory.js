@@ -9,6 +9,8 @@ const ui = { orderFor: null, batches: '10', help: false };
 const HOUR = 3600_000;
 /** Ngày theo giờ Việt Nam ('2026-10-29'), khớp với `day` trong số liệu 7 ngày. */
 const todayKey = () => new Date(Date.now() + 7 * HOUR).toISOString().slice(0, 10);
+/** Giờ:phút theo giờ Việt Nam ('06:00'). */
+const clock = (ts) => new Date(ts + 7 * HOUR).toISOString().slice(11, 16);
 
 export function renderFactory(root, ctx) {
   const { commodities, factory: rules, unlocks } = ctx.catalog;
@@ -18,6 +20,8 @@ export function renderFactory(root, ctx) {
   const wageMax = biz.wageMax ?? 80;
   const unpaidLimit = biz.unpaidLimit ?? 3;
   const evicted = Math.abs(ctx.catalog.credit?.evicted ?? 40);
+  const nightRules = rules.night ?? { hours: 8, from: 20, until: 2, energy: 1.5, speed: 0.85 };
+  const hh = (h) => `${String(h).padStart(2, '0')}:00`;
 
   root.innerHTML = `<div class="pb-page factory-page">
     ${viewHead('🏭 Khu công nghiệp', 'Biến hàng thô thành hàng chế biến: xây xưởng, cho bé đứng máy, nhận gia công thuê.',
@@ -60,6 +64,8 @@ export function renderFactory(root, ctx) {
       <summary>❓ Xưởng chạy thế nào?</summary>
       <ul>
         <li>Xưởng <b>chỉ chạy khi có bé đứng máy</b>. Bé nhà mình đứng máy không lương (nhận ca ở Trung tâm việc làm); cần thêm người thì đăng tin tuyển công nhân.</li>
+        <li>Bật <b>Chạy liên tục</b>: ca của bé nhà mình xong là tự vào ca kế cùng độ dài, kể cả lúc bạn tắt app. Dừng khi hết nguyên liệu, bé hết giờ làm trong ngày, hoặc bé mệt/ốm/đói.</li>
+        <li><b>Ca đêm</b> ${nightRules.hours} giờ, nhận từ ${hh(nightRules.from)} tới trước ${hh(nightRules.until)}: không tính vào giờ làm trong ngày, mỗi bé một ca mỗi đêm, hao sức ×${String(nightRules.energy).replace('.', ',')} (bé phải đầy sức), xưởng chạy ${pct(nightRules.speed, 0, false)} tốc độ.</li>
         <li>Mỗi giờ làm <b>(công suất gốc + ${rules.perLevel} × cấp)</b> mẻ, thêm tới ${pct(rules.skillBoost, 0, false)} theo Sức mạnh và Khéo tay của bé giỏi nhất đang đứng máy.</li>
         <li><b>Đơn gia công thuê làm trước</b>, xong mới tới nguyên liệu trong kho của bạn. Thành phẩm vào thẳng kho Sàn.</li>
         <li>Tiền thuê đất trừ <b>mỗi đêm</b>. Ví không đủ ${unpaidLimit} đêm liền thì xưởng bị đóng và bạn mất ${evicted} điểm tín dụng.</li>
@@ -72,8 +78,39 @@ export function renderFactory(root, ctx) {
     const now = Date.now();
     if (!f.duty.length) return '<p class="muted small">Chưa có bé nào đứng máy, xưởng đang nghỉ.</p>';
     return `<ul class="pb-list">${f.duty.map((d) => `
-      <li><span><b>${esc(d.petName)}</b> <small class="muted">${d.own ? 'bé nhà mình' : `của ${esc(d.owner)}`}</small></span>
+      <li><span><b>${esc(d.petName)}</b> <small class="muted">${d.night ? '🌙 ca đêm' : d.own ? 'bé nhà mình' : `của ${esc(d.owner)}`}</small></span>
         <small class="countdown">${d.startsAt > now ? `vào ca sau ${until(d.startsAt, true)}` : `còn ${until(d.endsAt, true)}`}</small></li>`).join('')}</ul>`;
+  }
+
+  /** Dòng trạng thái chạy liên tục: ca kế tiếp, ca đêm, hoặc lý do đã dừng. */
+  function autoStatus(f) {
+    const now = Date.now();
+    const lines = f.duty.filter((d) => d.own && d.endsAt > now).map((d) => {
+      if (d.night) return `<li><span>🌙 <b>${esc(d.petName)}</b> ca đêm đến ${clock(d.endsAt)}</span></li>`;
+      if (!d.next) return '';
+      return d.next.stop
+        ? `<li class="down"><span>⏸ <b>${esc(d.petName)}</b> dừng lúc ${clock(d.next.at)}</span><small>${esc(d.next.stop)}</small></li>`
+        : `<li><span>⏭ Ca kế tiếp <b>${clock(d.next.at)}</b></span><small class="muted">${esc(d.petName)} · ${d.next.hours} giờ</small></li>`;
+    }).join('');
+    const stopped = f.stop ? `<li class="down"><span>⏸ Đã dừng lúc ${clock(f.stop.at)}: <b>${esc(f.stop.reason)}</b></span><small class="muted">${esc(f.stop.petName)}</small></li>` : '';
+    if (lines || stopped) return `<ul class="pb-list">${lines}${stopped}</ul>`;
+    return f.autoRun ? '<p class="muted small">Cho bé nhà mình vào một ca đứng máy, xong ca bé tự vào ca kế.</p>' : '';
+  }
+
+  /** Ca đêm: bé nhà mình vào ca 8 giờ ở xưởng này, chỉ trong khung giờ đêm. */
+  function nightHtml(f) {
+    const n = data.night;
+    if (!n?.pets.length) return '';
+    const head = n.open
+      ? `<small class="muted">Đang mở, nhận tới ${clock(n.closesAt)}. Xưởng chạy ${pct(n.speed, 0, false)} tốc độ.</small>`
+      : `<small class="muted">Mở lúc ${hh(nightRules.from)} (sau ${until(n.opensAt, true)}).</small>`;
+    const pets = n.open ? `<ul class="pb-list">${n.pets.map((p) => `
+      <li><span><b>${esc(p.name)}</b> <small class="muted">⚡ ${p.energy}</small>${p.ok ? '' : `<br><small class="muted">${esc(p.why)}</small>`}</span>
+        <button class="btn small" data-fx-night="${f.id}:${p.id}" ${p.ok ? '' : 'disabled'}>🌙 Vào ca đêm</button></li>`).join('')}</ul>` : '';
+    return `<div class="factory-block">
+      <div><h4>🌙 Ca đêm ${n.hours} giờ</h4>${head}</div>
+      ${pets}
+    </div>`;
   }
 
   function queueHtml(f) {
@@ -101,6 +138,7 @@ export function renderFactory(root, ctx) {
     const def = data.kinds[f.kind];
     const now = Date.now();
     const working = f.duty.some((d) => d.startsAt <= now && d.endsAt > now);
+    const nightOn = f.duty.some((d) => d.night && d.startsAt <= now && d.endsAt > now);
     const today = f.days.find((d) => d.day === todayKey()) ?? { batches: 0, toll_batches: 0, toll_income: 0 };
     const rate = perHour(f.kind, f.level);
     const post = f.jobPost;
@@ -114,12 +152,12 @@ export function renderFactory(root, ctx) {
             <h3>${esc(def.name)} <span class="badge level">cấp ${f.level + 1}</span></h3>
             <small class="muted">${spec(def.input)} → ${spec(def.output)}</small>
           </div>
-          <span class="badge ${working ? 'star' : ''}">${working ? '🟢 Đang chạy' : '⚪ Đang nghỉ'}</span>
+          <span class="badge ${working ? 'star' : ''}">${nightOn ? '🌙 Ca đêm' : working ? '🟢 Đang chạy' : '⚪ Đang nghỉ'}</span>
         </header>
         ${f.unpaidDays ? `<p class="pb-warn">⚠️ Nợ tiền thuê đất ${f.unpaidDays} đêm. Nợ ${unpaidLimit} đêm liền xưởng sẽ bị đóng (−${evicted} điểm tín dụng) — nhớ để đủ ${fmt(f.rent)} 🪙 trong ví trước nửa đêm.</p>` : ''}
         <div class="cb-stats">
           <div><span class="muted">Công suất</span><b>${rate}–${fmt(Math.floor(rate * (1 + rules.skillBoost)))}</b><small class="muted">mẻ/giờ</small></div>
-          <div><span class="muted">Kho đủ cho</span><b class="${f.canRun ? '' : 'down'}">${fmt(f.canRun)} mẻ</b><small class="muted">${com(inC).icon} ${fmtLots(have(inC))} lô</small></div>
+          <div><span class="muted">Kho đủ cho</span><b class="${f.canRun ? '' : 'down'}">${fmt(f.canRun)} mẻ</b><small class="muted">${com(inC).icon} ${fmtLots(have(inC))} lô${f.canRun ? ` · ≈ ${fmt(Math.max(1, Math.round(f.canRun / rate)))} giờ máy` : ''}</small></div>
           <div><span class="muted">Hôm nay</span><b>${fmt(today.batches + today.toll_batches)} mẻ</b><small class="muted">${com(outC).icon} kho ${fmtLots(have(outC))} lô</small></div>
           <div><span class="muted">Thuê đất</span><b>${fmt(f.rent)} 🪙</b><small class="muted">mỗi đêm</small></div>
         </div>
@@ -129,6 +167,15 @@ export function renderFactory(root, ctx) {
           <div class="row-between"><h4>🧑‍🏭 Đứng máy</h4><button class="btn small gold" data-go="jobs">Cho bé đứng máy</button></div>
           ${dutyHtml(f)}
         </div>
+
+        <div class="factory-block">
+          <div class="row-between">
+            <div><h4>🔁 Chạy liên tục</h4><small class="muted">Ca của bé nhà mình xong thì tự vào ca kế cùng độ dài.</small></div>
+            <label class="check"><input type="checkbox" data-fx-auto="${f.id}" ${f.autoRun ? 'checked' : ''} /> ${f.autoRun ? 'Đang bật' : 'Đang tắt'}</label>
+          </div>
+          ${autoStatus(f)}
+        </div>
+        ${nightHtml(f)}
 
         <div class="factory-block">
           <div class="row-between">
@@ -273,6 +320,7 @@ export function renderFactory(root, ctx) {
     }, 0);
     const rent = mine.reduce((sum, f) => sum + f.rent, 0);
     const queued = mine.reduce((sum, f) => sum + f.queue.reduce((n, o) => n + o.batches - o.done, 0), 0);
+    const auto = mine.filter((f) => f.autoRun).length;
     return `<section class="card factory-stats">
       <h4>📊 Tổng quan</h4>
       <dl>
@@ -280,6 +328,7 @@ export function renderFactory(root, ctx) {
         <div><dt>Đang chạy</dt><dd class="${running ? 'up' : ''}">${fmt(running)}</dd></div>
         <div><dt>Mẻ hôm nay</dt><dd>${fmt(today)}</dd></div>
         <div><dt>Đơn thuê chờ</dt><dd>${fmt(queued)} mẻ</dd></div>
+        <div><dt>Chạy liên tục</dt><dd>${fmt(auto)}/${fmt(mine.length)}</dd></div>
         <div><dt>Thuê đất/đêm</dt><dd>${fmt(rent)} 🪙</dd></div>
       </dl>
     </section>`;
@@ -374,9 +423,17 @@ export function renderFactory(root, ctx) {
       const form = btn.closest('form');
       form.querySelector('input[name="batches"]').value = ui.batches;
       updatePreview(form);
+    } else if (d.fxNight) {
+      const [factoryId, petId] = d.fxNight.split(':').map(Number);
+      ctx.act('/jobs/start', { petId, factoryId, night: true });
     } else if (d.fxCancel) {
       if (confirm(`Hủy đơn gia công? Bạn nhận lại nguyên liệu và phí của ${d.left} mẻ chưa làm.`)) ctx.act(`/factory/orders/${d.fxCancel}/cancel`);
     }
+  });
+
+  page.addEventListener('change', (e) => {
+    const box = e.target.closest?.('[data-fx-auto]');
+    if (box) ctx.act(`/factory/${box.dataset.fxAuto}/auto`, { on: box.checked });
   });
 
   page.addEventListener('input', (e) => {

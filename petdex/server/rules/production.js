@@ -146,6 +146,21 @@ export const FACTORIES = {
 };
 export const FACTORY = { landRent: 50, upgradeCosts: [2000, 4000, 8000], perLevel: 3, skillBoost: 0.3, maxTollFee: 100 };
 
+/**
+ * Ca đêm ở xưởng của mình: 8 giờ, vào ca từ 20:00 tới trước 02:00 (giờ Việt Nam), mỗi bé một ca mỗi đêm,
+ * không tính vào giờ làm trong ngày. Bé hao sức gấp 1,5 lần ca thường, xưởng chạy 85% tốc độ, không lương.
+ */
+export const NIGHT_SHIFT = { hours: 8, from: 20, until: 2, energy: 1.5, speed: 0.85 };
+
+/** Lý do dừng tự nối ca (lưu ở `shifts.chain`); 'next' là đã nối sang ca mới, 'off' là lúc đó chưa bật chạy liên tục. */
+export const CHAIN_STOPS = {
+  stock: 'hết nguyên liệu',
+  hours: 'hết giờ làm',
+  tired: 'bé mệt/ốm',
+  busy: 'bé bận việc khác',
+  closed: 'xưởng đã đóng',
+};
+
 /** Số mẻ mỗi giờ: theo cấp, cộng tới +30% theo Sức mạnh và Khéo tay của bé đứng máy giỏi nhất. */
 export function batchesPerHour(kind, level, strength, craft) {
   return (FACTORIES[kind].perHour + level * FACTORY.perLevel) * (1 + (FACTORY.skillBoost * clamp((strength + craft) / 2, 0, 100)) / 100);

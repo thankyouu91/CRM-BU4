@@ -16,7 +16,7 @@ export function renderJobs(root, ctx) {
   const petName = (id) => data.pets.find((p) => p.id === id)?.name ?? 'Bé';
 
   function shiftRow(s) {
-    const career = s.career === 'factory' ? { icon: '🏭', name: `Đứng máy ở ${s.businessName}` }
+    const career = s.career === 'factory' ? { icon: s.night ? '🌙' : '🏭', name: `${s.night ? 'Ca đêm' : 'Đứng máy'} ở ${s.businessName}` }
       : s.businessName ? { icon: '🧋', name: `Trực ${s.businessName}` } : careers[s.career];
     const now = Date.now();
     const done = Math.min(1, (now - s.startsAt) / (s.endsAt - s.startsAt));
@@ -104,9 +104,16 @@ export function renderJobs(root, ctx) {
     const buttons = (factoryId, wage) => rules.shiftHours.map((h) => `
       <button class="btn small" data-factory-shift="${factoryId}:${h}" ${blocked || h > hoursLeft || pet.energy < h * 10 ? 'disabled' : ''}>
         ${h} giờ${wage ? ` · ${fmt(wage * h)} 🪙` : ''}</button>`).join('');
+    // Ca đêm: chỉ bé nhà mình, chỉ trong khung giờ đêm; không tính vào giờ làm trong ngày (máy chủ kiểm tra lại).
+    const night = rules.night ?? { hours: 8, from: 20, until: 2 };
+    const hour = new Date(Date.now() + 7 * 3600_000).getUTCHours();
+    const nightOpen = hour >= night.from || hour < night.until;
+    const nightBlocked = pet.busyUntil || pet.sick || pet.fullness < 15 || pet.energy < 100;
+    const nightBtn = (factoryId) => (nightOpen
+      ? `<button class="btn small" data-factory-night="${factoryId}" ${nightBlocked ? 'disabled title="Bé cần rảnh, khỏe, no và đầy sức"' : ''}>🌙 Ca đêm ${night.hours} giờ</button>` : '');
     const own = data.myFactories.map((f) => `
       <div class="job-row"><div><b>🏭 Đứng máy ở ${esc(f.name)}</b><br><small class="muted">Không lương: có bé đứng máy thì xưởng mới chạy. Lên 💪 Sức mạnh.</small></div>
-        <div class="shift-buttons">${buttons(f.id, 0)}</div></div>`).join('');
+        <div class="shift-buttons">${buttons(f.id, 0)}${nightBtn(f.id)}</div></div>`).join('');
     const hire = data.factoryJobs.map((j) => `
       <div class="job-row"><div><b>${esc(j.name)}</b> <small class="muted">của ${esc(j.owner)} · còn ${j.free} chỗ</small>
         <br><small><b>${fmt(j.wage)} 🪙/giờ</b> · lên 💪 Sức mạnh</small></div>
@@ -172,6 +179,8 @@ export function renderJobs(root, ctx) {
     } else if (btn.dataset.factoryShift) {
       const [factoryId, hours] = btn.dataset.factoryShift.split(':').map(Number);
       ctx.act('/jobs/start', { petId: selectedPet, factoryId, hours });
+    } else if (btn.dataset.factoryNight) {
+      ctx.act('/jobs/start', { petId: selectedPet, factoryId: Number(btn.dataset.factoryNight), night: true });
     } else if (btn.dataset.claim) {
       ctx.act(`/jobs/${btn.dataset.claim}/claim`, {}, {
         onResult: (r) => {
