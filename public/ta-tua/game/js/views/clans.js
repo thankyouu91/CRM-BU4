@@ -7,11 +7,14 @@ import {
   CLIMATES, DESIGN, INDUSTRIES, INDUSTRY_ORDER, LAND, PALETTE, PHASES, PIECES, PIECE_FAMILIES, PLOTS, WEATHER, ZONES,
   designBonus, designComplete, designCost, designSvg, envFactor, pieceById, pieceSvg,
 } from '../shared/clan.js';
+import { GOODS, GOOD_ORDER, PRODUCTION_INDUSTRIES, SECTORS, plantsFor } from '../shared/industry.js';
 
 const TABS = [
   { key: 'clan', label: '🏯 Gia tộc' },
   { key: 'map', label: '🗺️ Bản đồ đất' },
   { key: 'build', label: '🏗️ Xây dựng', needClan: true },
+  { key: 'prod', label: '🏭 Sản xuất & Kho', needClan: true },
+  { key: 'market', label: '🏪 Sàn công nghiệp' },
   { key: 'tax', label: '🧾 Thuế', needClan: true },
   { key: 'macro', label: '📊 Vĩ mô' },
 ];
@@ -37,6 +40,49 @@ function lerpColor(a, b, t) {
 }
 const heatColor = (t) => (t < 0.5 ? lerpColor('#e8665a', '#f4d35e', t * 2) : lerpColor('#f4d35e', '#5fbf77', (t - 0.5) * 2));
 
+const goodChip = (g, n) => `<span class="good-chip" title="${esc(GOODS[g].name)}">${GOODS[g].icon}${n != null ? `<b>${fmt(n)}</b>` : ''}</span>`;
+const chips = (map) => Object.entries(map).map(([g, n]) => goodChip(g, Math.round(n * 10) / 10)).join('');
+
+/** Một dòng tóm tắt ngành sản xuất: khai thác gì, hoặc công thức một mẻ. */
+function recipeLine(id) {
+  const ind = PRODUCTION_INDUSTRIES[id];
+  if (!ind) return '';
+  if (ind.extracts) {
+    const goods = GOOD_ORDER.filter((g) => ({
+      mineral: GOODS[g].group === 'mineral' && g !== 'crude_oil' && g !== 'gas',
+      oilgas: g === 'crude_oil' || g === 'gas',
+      forest: GOODS[g].group === 'forest',
+      livestock: g === 'beef' || g === 'chicken',
+      crop: GOODS[g].group === 'farm' && g !== 'beef' && g !== 'chicken',
+    }[ind.extracts]));
+    return `<small class="recipe">Khai thác ${goods.map((g) => GOODS[g].icon).join('')}</small>`;
+  }
+  if (id === 'power') return `<small class="recipe">${Object.values(ind.plants).map((pl) => pl.icon).join('')} → ⚡</small>`;
+  return `<small class="recipe">${chips(ind.recipe.in)} → ${chips(ind.recipe.out)}</small>`;
+}
+
+/** 2 tài nguyên nhiều nhất của lô, để hiện trên bản đồ. */
+const topDeposits = (deposits) => Object.entries(deposits ?? {}).sort((a, b) => GOODS[b[0]].base * b[1] - GOODS[a[0]].base * a[1]).slice(0, 2).map(([g]) => GOODS[g].icon).join('');
+
+function productionBox(pv) {
+  const pr = pv.production;
+  const ind = INDUSTRIES[pv.industry];
+  let body;
+  if (pr.kind === 'extract') {
+    body = Object.keys(pr.out).length ? `<p>Khai thác mỗi đêm: ${chips(pr.out)}</p>` : `<p class="warn">Lô này không có tài nguyên cho ngành ${esc(ind.name)}.</p>`;
+  } else if (pr.kind === 'power' && !pr.batches) {
+    body = '<p class="warn">Chưa chọn loại nhà máy điện phù hợp với lô.</p>';
+  } else {
+    body = `<p>Tối đa ${fmt(pr.batches)} mẻ/đêm</p><p>Cần: ${chips(pr.in) || 'không cần nguyên liệu'}</p><p>Làm ra: ${chips(pr.out)}</p>`;
+  }
+  return `<div class="prod-preview">
+      <p class="muted small">Hệ số sản xuất của lô (tốc độ, đất, khí hậu, thời tiết, chu kỳ, cấp, công trình): <b>×${pr.factor.toFixed(2)}</b></p>
+      ${body}
+      <p class="preview-total">Giá trị bán NPC ≈ <b>${money(pr.value)}</b>/đêm${pr.cost ? ` · nguyên liệu ≈ ${money(pr.cost)}` : ''} · lãi sau thuế ${pctInt(pv.taxRate)}: <b>${money(pv.afterTax)}</b></p>
+      <p class="muted small">Hàng làm ra vào kho gia tộc. Hàng không giữ được tự bán cho NPC mỗi đêm; hoặc đăng bán trên Sàn công nghiệp.</p>
+    </div>`;
+}
+
 export function renderClans(root, ctx) {
   root.innerHTML = `<div class="clan-page">
     ${viewHead('🏯 Gia tộc & Sở Nhà Đất', 'Lập gia tộc, góp quỹ, thâu tóm tối đa 3 ngành, mua đất và tự lắp ghép công trình.')}
@@ -58,9 +104,9 @@ export function renderClans(root, ctx) {
 
   function draw() {
     if (!alive || !data) return;
-    if (!data.clan && (ui.tab === 'build' || ui.tab === 'tax')) ui.tab = 'clan';
+    if (!data.clan && ['build', 'tax', 'prod'].includes(ui.tab)) ui.tab = 'clan';
     drawTabs();
-    ({ clan: drawClan, map: drawMap, build: drawBuild, tax: drawTax, macro: drawMacro })[ui.tab]();
+    ({ clan: drawClan, map: drawMap, build: drawBuild, prod: drawProduction, market: drawMarket, tax: drawTax, macro: drawMacro })[ui.tab]();
   }
 
   tabsEl.addEventListener('click', (e) => {
@@ -137,7 +183,8 @@ export function renderClans(root, ctx) {
           <p class="muted small">Ngành đầu tiên trả <b>tiền bồi thường thị trường</b> 20.000–50.000 xu tùy mô hình. Mở rộng sang ngành thứ hai, thứ ba phải trả
             <b>gấp ${cfg.expandMultiplier} lần</b> mức gốc và thuế doanh nghiệp tăng ${pctInt(cfg.extraTaxPerIndustry)} mỗi ngành.
             ${c.nextIndustryLevel ? `Ngành tiếp theo cần gia tộc cấp ${c.nextIndustryLevel}.` : ''}</p>
-          <div class="industry-grid">${INDUSTRY_ORDER.map((id) => {
+          ${Object.entries(SECTORS).map(([sector, sec]) => `<h4 class="sector-head">${sec.icon} ${sec.name}</h4>
+          <div class="industry-grid">${INDUSTRY_ORDER.filter((id) => INDUSTRIES[id].sector === sector).map((id) => {
             const ind = INDUSTRIES[id];
             const mine = owned.has(id);
             const rivals = (cfg.industryClans[id] ?? 0) - (mine ? 1 : 0);
@@ -146,11 +193,12 @@ export function renderClans(root, ctx) {
             return `<div class="industry ${mine ? 'held' : ''}">
               <span class="industry-icon">${ind.icon}</span>
               <b>${esc(ind.name)}</b>
+              ${recipeLine(id)}
               <small class="muted">${rivals ? `${rivals} gia tộc ${mine ? 'khác cùng ' : ''}đang nắm` : mine ? 'Chỉ gia tộc bạn nắm' : 'Chưa ai nắm'}</small>
               ${mine ? '<span class="badge star">Đã thâu tóm</span>'
                 : `<button class="btn small ${can ? 'primary' : ''}" data-industry="${id}" ${can ? '' : 'disabled'}>Thâu tóm · ${money(fee)}</button>`}
             </div>`;
-          }).join('')}</div>
+          }).join('')}</div>`).join('')}
         </section>
 
         <section class="card clan-box wide">
@@ -230,17 +278,19 @@ export function renderClans(root, ctx) {
     const values = land.plots.map((x) => x.price ?? x.value);
     const range = { min: Math.min(...values), max: Math.max(...values) };
     // Giá thay đổi theo dữ liệu nên chế độ "giá" lấy cả khoảng giá vào khóa bộ nhớ đệm.
-    const key = ui.heat === 'fit' ? `fit:${ui.industry}` : ui.heat === 'price' ? `price:${values.join(',')}` : ui.heat;
+    const key = ui.heat === 'fit' ? `fit:${ui.industry}` : ui.heat === 'price' ? `price:${values.join(',')}` : ui.heat === 'resource' ? 'zone' : ui.heat;
     return landMapSvg({
       key,
       fillFor: heatFill(range),
       infos: new Map(land.plots.map((x) => [x.id, x])),
       selected: ui.plotId,
       showClimate: ui.heat === 'climate',
+      resources: ui.heat === 'resource' ? new Map(land.plots.map((x) => [x.id, topDeposits(x.deposits)])) : null,
     });
   }
 
   function legend() {
+    if (ui.heat === 'resource') return '<span>Biểu tượng trên mỗi ô là mỏ hoặc tài nguyên chính của lô (khai thác bằng ngành Khai khoáng, Dầu khí, Lâm nghiệp, Nông nghiệp, Chăn nuôi).</span>';
     if (ui.heat === 'zone') return Object.values(ZONES).map((z) => `<span><i style="background:${z.color}"></i>${z.icon} ${z.name}</span>`).join('');
     if (ui.heat === 'climate') return Object.entries(CLIMATES).map(([k, c]) => `<span><i style="background:${{ sunny: '#f7d774', rainy: '#8fb8de', temperate: '#b9dba0', windy: '#c9c4e8' }[k]}"></i>${c.icon} ${c.name}</span>`).join('');
     const label = { price: ['Đắt', 'Rẻ'], growth: ['Tăng chậm', 'Tăng nhanh'], fit: ['Không hợp', 'Rất hợp'] }[ui.heat];
@@ -263,7 +313,7 @@ export function renderClans(root, ctx) {
           <div class="land-tools">
             <label>Tô màu theo
               <select data-heat>
-                ${[['zone', 'Địa hình'], ['climate', 'Khí hậu'], ['price', 'Giá đất'], ['growth', '% tăng giá'], ['fit', 'Độ hợp ngành']].map(([k, n]) => `<option value="${k}" ${ui.heat === k ? 'selected' : ''}>${n}</option>`).join('')}
+                ${[['zone', 'Địa hình'], ['resource', 'Tài nguyên & mỏ'], ['climate', 'Khí hậu'], ['price', 'Giá đất'], ['growth', '% tăng giá'], ['fit', 'Độ hợp ngành']].map(([k, n]) => `<option value="${k}" ${ui.heat === k ? 'selected' : ''}>${n}</option>`).join('')}
               </select></label>
             <label ${ui.heat === 'fit' ? '' : 'hidden'}>Ngành
               <select data-fit>${INDUSTRY_ORDER.map((id) => `<option value="${id}" ${ui.industry === id ? 'selected' : ''}>${INDUSTRIES[id].icon} ${esc(INDUSTRIES[id].name)}</option>`).join('')}</select></label>
@@ -303,6 +353,10 @@ export function renderClans(root, ctx) {
         <dt>Tốc độ sản xuất</dt><dd>+${pct(p.prod, 1, false)}</dd>
         ${info.industry ? `<dt>Ngành</dt><dd>${INDUSTRIES[info.industry].icon} ${esc(INDUSTRIES[info.industry].name)}</dd>` : ''}
       </dl>
+      <div class="plot-deposits"><small class="muted">Tài nguyên mỗi đêm</small>
+        ${Object.keys(info.deposits).length ? Object.entries(info.deposits).map(([g, n]) => `<span title="${esc(GOODS[g].name)}">${GOODS[g].icon} ${esc(GOODS[g].name)} <b>${n}</b></span>`).join('') : '<span class="muted">Không có mỏ (nhà máy ở đây chạy nhanh hơn)</span>'}</div>
+      ${info.mine && info.industry === 'power' ? `<label class="plot-industry">Loại nhà máy điện
+        <select data-plant="${p.id}" ${canManage ? '' : 'disabled'}>${plantsFor(p).map((k) => `<option value="${k}" ${info.variant === k ? 'selected' : ''}>${PRODUCTION_INDUSTRIES.power.plants[k].icon} ${esc(PRODUCTION_INDUSTRIES.power.plants[k].name)}</option>`).join('')}</select></label>` : ''}
       ${info.owner && info.design.length ? `<div class="plot-building">${designSvg(info.design, { background: '#f7efe1' })}</div>` : ''}
       <label class="plot-industry">Xem trước với ngành
         <select data-preview-industry>${INDUSTRY_ORDER.map((id) => `<option value="${id}" ${ui.industry === id ? 'selected' : ''}>${INDUSTRIES[id].icon} ${esc(INDUSTRIES[id].name)}${myIndustries.includes(id) ? ' ✓' : ''}</option>`).join('')}</select></label>
@@ -323,6 +377,11 @@ export function renderClans(root, ctx) {
     const seq = ++previewSeq;
     api(`/land/${ui.plotId}/preview?industry=${ui.industry}`).then((pv) => {
       if (!alive || seq !== previewSeq || !box.isConnected) return;
+      box.classList.remove('muted');
+      if (pv.production) {
+        box.innerHTML = productionBox(pv);
+        return;
+      }
       const f = pv.factors;
       const row = (label, v) => `<li><span>${label}</span><b class="${v > 1.0001 ? 'up' : v < 0.9999 ? 'down' : ''}">${v === 1 ? '±0%' : signed(v - 1)}</b></li>`;
       box.classList.remove('muted');
@@ -522,6 +581,99 @@ export function renderClans(root, ctx) {
   body.addEventListener('pointerup', endDrag);
   body.addEventListener('pointercancel', endDrag);
 
+  // ================================================================ sản xuất, kho, sàn
+
+  let ind = null;
+  const loadIndustry = (then) => api('/industry').then((d) => {
+    ind = d;
+    if (alive) then();
+  }).catch(ctx.fail);
+
+  function chainDiagram() {
+    const col = (sector) => INDUSTRY_ORDER.filter((id) => INDUSTRIES[id].sector === sector).map((id) => `
+      <div class="chain-node ${data.clan?.industries.some((i) => i.id === id) ? 'held' : ''}"><b>${INDUSTRIES[id].icon} ${esc(INDUSTRIES[id].name)}</b>${recipeLine(id)}</div>`).join('');
+    return `<div class="chain">
+      ${['raw', 'energy', 'heavy', 'light'].map((sec) => `<div class="chain-col"><h4>${SECTORS[sec].icon} ${SECTORS[sec].name}</h4>${col(sec)}</div>`).join('<div class="chain-arrow">➜</div>')}
+    </div>`;
+  }
+
+  function drawProduction() {
+    if (!ind) return loadIndustry(drawProduction);
+    const manage = ind.clan && (ind.clan.role === 'leader' || ind.clan.role === 'elder');
+    const goods = ind.goods.filter((g) => g.good !== 'power');
+    body.innerHTML = `
+      <div class="clan-grid">
+        <section class="card clan-box wide">
+          <div class="row-between"><h3>📦 Kho gia tộc</h3><span class="muted">${fmt(ind.used)}/${fmt(ind.capacity)} đơn vị · quỹ ${money(ind.clan.treasury)}</span></div>
+          <div class="bar"><i style="width:${Math.min(100, (ind.used / ind.capacity) * 100)}%;background:var(--tea)"></i></div>
+          ${goods.length ? `<table class="clan-table"><thead><tr><th>Hàng</th><th class="num">Tồn</th><th class="num">Giá NPC mua</th><th>Mỗi đêm</th><th>Bán / đăng sàn</th></tr></thead><tbody>
+            ${goods.map((g) => `<tr>
+              <td>${GOODS[g.good].icon} ${esc(GOODS[g.good].name)}${g.input ? ' <small class="muted">(nguyên liệu)</small>' : ''}</td>
+              <td class="num">${fmt(g.qty)}</td>
+              <td class="num">${fmt(ind.prices[g.good].npc)}</td>
+              <td><label class="check"><input type="checkbox" data-keep="${g.good}" ${g.keep ? 'checked' : ''} ${manage ? '' : 'disabled'}/> Giữ trong kho</label></td>
+              <td>${manage && g.qty ? `<form class="row trade-form" data-form="goods" data-good="${g.good}">
+                <input name="qty" type="number" min="1" max="${g.qty}" value="${g.qty}" />
+                <input name="price" type="number" min="1" value="${ind.prices[g.good].ref}" title="Giá đăng sàn mỗi đơn vị" />
+                <button class="btn small" name="do" value="sell">Bán NPC</button>
+                <button class="btn small mint" name="do" value="list">Đăng sàn</button></form>` : ''}</td>
+            </tr>`).join('')}</tbody></table>` : '<p class="muted">Kho trống. Lô làm ngành khai thác hoặc nhà máy sẽ đưa hàng vào đây mỗi đêm.</p>'}
+          <p class="muted small">Mặc định gia tộc giữ những hàng là nguyên liệu cho nhà máy của mình; hàng khác và điện thừa tự bán cho NPC lúc nửa đêm theo giá vĩ mô. Tiền bán hàng tính vào doanh thu chịu thuế.</p>
+        </section>
+        <section class="card clan-box">
+          <h3>🚢 Nhập khẩu nguyên liệu</h3>
+          <p class="muted small">Mua từ NPC với giá gấp ${pctInt(ind.rules.importMarkup)} giá tham chiếu, khi gia tộc không tự khai thác được hoặc sàn không có.</p>
+          <form class="row" data-form="import">
+            <select name="good">${GOOD_ORDER.filter((g) => g !== 'power').map((g) => `<option value="${g}">${GOODS[g].icon} ${esc(GOODS[g].name)} · ${fmt(ind.prices[g].import)}</option>`).join('')}</select>
+            <input name="qty" type="number" min="1" value="10" />
+            <button class="btn gold" ${manage ? '' : 'disabled'}>Nhập</button>
+          </form>
+        </section>
+        <section class="card clan-box">
+          <h3>🌙 Sản xuất đêm qua ${ind.production ? `(${ind.production.day.slice(8)}/${ind.production.day.slice(5, 7)})` : ''}</h3>
+          ${ind.production?.rows.length ? `<table class="clan-table"><thead><tr><th>Hàng</th><th class="num">Làm ra</th><th class="num">Dùng</th><th class="num">Bán NPC</th><th class="num">Tiền</th></tr></thead><tbody>
+            ${ind.production.rows.map((r) => `<tr><td>${GOODS[r.good].icon} ${esc(GOODS[r.good].name)}</td><td class="num">${fmt(r.produced)}</td><td class="num">${fmt(r.used)}</td><td class="num">${fmt(r.sold)}</td><td class="num">${fmt(r.revenue)}</td></tr>`).join('')}
+          </tbody></table>` : '<p class="muted">Chưa có đêm sản xuất nào.</p>'}
+          ${ind.trades.length ? `<h4>Giao dịch gần đây</h4><ul class="refund-list">${ind.trades.map((t) => `<li>${t.side === 'sell' ? '📤 Bán' : '📥 Mua'} ${fmt(t.qty)} ${GOODS[t.good].icon} ${t.side === 'sell' ? 'cho' : 'của'} ${esc(t.other)} · ${fmt(t.price)}/đv</li>`).join('')}</ul>` : ''}
+        </section>
+        <section class="card clan-box wide">
+          <h3>🔗 Chuỗi ngành</h3>
+          <p class="muted small">Khai thác và nông nghiệp làm ra nguyên liệu, nhà máy điện cấp điện, công nghiệp nặng luyện thành vật liệu và máy móc, công nghiệp nhẹ làm hàng tiêu dùng. Ngành gia tộc đang nắm được tô sáng.</p>
+          ${chainDiagram()}
+        </section>
+      </div>`;
+  }
+
+  function drawMarket() {
+    if (!ind) return loadIndustry(drawMarket);
+    const manage = ind.clan && (ind.clan.role === 'leader' || ind.clan.role === 'elder');
+    const byGood = GOOD_ORDER.filter((g) => ind.listings.some((l) => l.good === g));
+    body.innerHTML = `
+      <div class="clan-grid">
+        <section class="card clan-box wide">
+          <h3>🏪 Sàn công nghiệp</h3>
+          <p class="muted small">Gia tộc đăng bán hàng trong kho với giá ${pctInt(ind.rules.band[0])}–${pctInt(ind.rules.band[1])} giá tham chiếu; gia tộc khác mua về kho để làm nguyên liệu.
+            Phí sàn ${pctInt(ind.rules.fee)} do người bán trả. Tin đăng hết hạn sau ${ind.rules.listingDays} ngày, hàng tự về kho.</p>
+          ${byGood.length ? `<table class="clan-table"><thead><tr><th>Hàng</th><th>Gia tộc bán</th><th class="num">Còn</th><th class="num">Giá/đv</th><th class="num">Tham chiếu</th><th></th></tr></thead><tbody>
+            ${byGood.flatMap((g) => ind.listings.filter((l) => l.good === g).map((l) => `<tr>
+              <td>${GOODS[g].icon} ${esc(GOODS[g].name)}</td>
+              <td><span class="owner-tag" style="--clan:${esc(l.clan.color)}">${esc(l.clan.emblem)} ${esc(l.clan.name)}</span></td>
+              <td class="num">${fmt(l.qty)}</td>
+              <td class="num">${fmt(l.price)}</td>
+              <td class="num muted">${fmt(ind.prices[g].ref)}</td>
+              <td>${l.mine ? (manage ? `<button class="link-btn danger" data-cancel-listing="${l.id}">Gỡ tin</button>` : '')
+                : manage ? `<form class="row trade-form" data-form="buy" data-listing="${l.id}"><input name="qty" type="number" min="1" max="${l.qty}" value="${l.qty}" /><button class="btn small primary">Mua</button></form>` : ''}</td>
+            </tr>`)).join('')}</tbody></table>` : '<p class="muted">Chưa có tin đăng nào. Đăng hàng từ tab Sản xuất & Kho.</p>'}
+          ${!ind.clan ? '<p class="muted small">Vào một gia tộc để mua bán trên sàn.</p>' : ''}
+        </section>
+        <section class="card clan-box wide">
+          <h3>📈 Giá tham chiếu hôm nay</h3>
+          <div class="price-grid">${GOOD_ORDER.map((g) => `<span>${GOODS[g].icon} ${esc(GOODS[g].name)} <b>${fmt(ind.prices[g].ref)}</b></span>`).join('')}</div>
+          <p class="muted small">Giá = giá gốc × cầu của ngành làm ra hàng đó × chu kỳ kinh tế (xem tab Vĩ mô).</p>
+        </section>
+      </div>`;
+  }
+
   // ================================================================ thuế
 
   function drawTax() {
@@ -605,7 +757,8 @@ export function renderClans(root, ctx) {
     const t = e.target;
     const on = (sel) => t.closest(sel);
     let el;
-    if ((el = on('[data-emblem]'))) {
+    if ((el = on('[data-cancel-listing]'))) act(`/industry/listings/${el.dataset.cancelListing}/cancel`);
+    else if ((el = on('[data-emblem]'))) {
       ui.emblem = el.dataset.emblem;
       body.querySelectorAll('[data-emblem]').forEach((b) => b.classList.toggle('current', b === el));
     } else if ((el = on('[data-join]'))) act(`/clans/${el.dataset.join}/join`);
@@ -705,6 +858,10 @@ export function renderClans(root, ctx) {
       ui.industry = t.value;
       body.querySelector('.land-panel').innerHTML = plotPanel();
       loadPreview();
+    } else if (t.matches('[data-plant]')) {
+      act(`/land/${t.dataset.plant}/plant`, { plant: t.value });
+    } else if (t.matches('[data-keep]')) {
+      act('/industry/keep', { good: t.dataset.keep, keep: t.checked });
     } else if (t.matches('[data-build-plot]')) {
       loadDraft(Number(t.value));
       drawBuild();
@@ -729,6 +886,13 @@ export function renderClans(root, ctx) {
       case 'donate': return act('/clans/donate', { amount: Number(fd.amount) });
       case 'dividend': return act('/clans/dividend', { amount: Number(fd.amount) });
       case 'declare': return act('/clans/declare', { ratio: Number(fd.ratio) / 100 });
+      case 'import': return act('/industry/import', { good: fd.good, qty: Number(fd.qty) });
+      case 'buy': return act(`/industry/listings/${form.dataset.listing}/buy`, { qty: Number(fd.qty) });
+      case 'goods': {
+        const mode = e.submitter?.value === 'list' ? 'list' : 'sell';
+        const good = form.dataset.good;
+        return mode === 'list' ? act('/industry/list', { good, qty: Number(fd.qty), price: Number(fd.price) }) : act('/industry/sell', { good, qty: Number(fd.qty) });
+      }
       default: return undefined;
     }
   });

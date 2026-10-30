@@ -1,18 +1,20 @@
 // API Gia tộc, Sở Nhà Đất (bản đồ 200 lô, xem trước, mua bán, lắp ghép công trình) và bản tin vĩ mô.
 import { Router } from './router.js';
 import {
-  buyPlot, clanConfig, clanView, createClan, donateClan, enterIndustry, joinClan, kickMember, landView, leaveClan, payDividend,
+  buyPlot, choosePlant, clanConfig, clanView, createClan, donateClan, enterIndustry, joinClan, kickMember, landView, leaveClan, payDividend,
   plotPreview, saveDesign, sellPlot, setDeclareRatio, setMemberRole, setPlotIndustry,
 } from './clans.js';
 import { dayKey } from './clock.js';
 import { auth, intField, reply } from './http.js';
 import { macroHistory, macroToday } from './macro.js';
+import { buyListing, cancelListing, importGoods, industryView, listGoods, sellToNpc, setKeep } from './industry.js';
 import { requireLevel } from './routes-economy.js';
 
 export const clanApi = Router();
 clanApi.use('/clans', auth);
 clanApi.use('/land', auth);
 clanApi.use('/macro', auth);
+clanApi.use('/industry', auth);
 
 const uid = (req) => req.user.id;
 const unlock = (req, what) => requireLevel(uid(req), clanConfig().unlockLevel, what);
@@ -45,3 +47,15 @@ clanApi.get('/macro', (_req, res) => {
   const today = macroToday();
   res.json({ today, history: macroHistory(dayKey(Date.now()), 14) });
 });
+
+clanApi.post('/land/:id/plant', (req, res) => reply(res, uid(req), choosePlant(uid(req), intField(req.params.id, 'Lô đất'), String(req.body?.plant ?? ''))));
+
+// ---- Kho, sàn công nghiệp, nhập khẩu ----
+
+clanApi.get('/industry', (req, res) => res.json(industryView(uid(req), macroToday())));
+clanApi.post('/industry/keep', (req, res) => reply(res, uid(req), setKeep(uid(req), String(req.body?.good ?? ''), Boolean(req.body?.keep))));
+clanApi.post('/industry/list', (req, res) => reply(res, uid(req), listGoods(uid(req), { good: String(req.body?.good ?? ''), qty: req.body?.qty, price: req.body?.price }, macroToday())));
+clanApi.post('/industry/listings/:id/cancel', (req, res) => reply(res, uid(req), cancelListing(uid(req), intField(req.params.id, 'Tin'))));
+clanApi.post('/industry/listings/:id/buy', (req, res) => reply(res, uid(req), buyListing(uid(req), intField(req.params.id, 'Tin'), req.body?.qty)));
+clanApi.post('/industry/import', (req, res) => reply(res, uid(req), importGoods(uid(req), String(req.body?.good ?? ''), req.body?.qty, macroToday())));
+clanApi.post('/industry/sell', (req, res) => reply(res, uid(req), sellToNpc(uid(req), String(req.body?.good ?? ''), req.body?.qty, macroToday())));

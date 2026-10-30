@@ -640,6 +640,47 @@ addColumn('users', 'locked_slots', 'INTEGER NOT NULL DEFAULT 0');
     created_at  INTEGER NOT NULL,
     UNIQUE (clan_id, day)
   );
+  -- Chuỗi sản xuất (industry.js): kho hàng của gia tộc, sàn công nghiệp chung, giao dịch, nhật ký sản xuất mỗi đêm.
+  CREATE TABLE IF NOT EXISTS clan_goods (
+    clan_id INTEGER NOT NULL,
+    good    TEXT NOT NULL,
+    qty     INTEGER NOT NULL DEFAULT 0,
+    keep    INTEGER, -- 1 giữ trong kho, 0 tự bán cho NPC mỗi đêm, NULL theo mặc định (giữ nếu là nguyên liệu của gia tộc)
+    PRIMARY KEY (clan_id, good)
+  );
+  CREATE TABLE IF NOT EXISTS goods_listings (
+    id         INTEGER PRIMARY KEY AUTOINCREMENT,
+    clan_id    INTEGER NOT NULL,
+    good       TEXT NOT NULL,
+    qty        INTEGER NOT NULL,
+    price      INTEGER NOT NULL,
+    created_at INTEGER NOT NULL,
+    expires_at INTEGER NOT NULL,
+    closed_at  INTEGER
+  );
+  CREATE INDEX IF NOT EXISTS goods_listings_open ON goods_listings(closed_at, good);
+  CREATE TABLE IF NOT EXISTS clan_trades (
+    id         INTEGER PRIMARY KEY AUTOINCREMENT,
+    seller_id  INTEGER NOT NULL,
+    buyer_id   INTEGER, -- NULL: bán cho NPC
+    good       TEXT NOT NULL,
+    qty        INTEGER NOT NULL,
+    price      INTEGER NOT NULL,
+    income     INTEGER NOT NULL, -- tiền người bán thực nhận (sau phí)
+    day        TEXT NOT NULL,
+    created_at INTEGER NOT NULL
+  );
+  CREATE INDEX IF NOT EXISTS clan_trades_seller ON clan_trades(seller_id, day);
+  CREATE TABLE IF NOT EXISTS clan_production (
+    clan_id  INTEGER NOT NULL,
+    day      TEXT NOT NULL,
+    good     TEXT NOT NULL,
+    produced INTEGER NOT NULL DEFAULT 0,
+    used     INTEGER NOT NULL DEFAULT 0,
+    sold     INTEGER NOT NULL DEFAULT 0,
+    revenue  INTEGER NOT NULL DEFAULT 0,
+    PRIMARY KEY (clan_id, day, good)
+  );
   CREATE TABLE IF NOT EXISTS macro_days (
     day        TEXT PRIMARY KEY,
     phase      TEXT NOT NULL,
@@ -650,6 +691,7 @@ addColumn('users', 'locked_slots', 'INTEGER NOT NULL DEFAULT 0');
     created_at INTEGER NOT NULL
   );
   `);
+  addColumn('land_plots', 'variant', 'TEXT'); // loại nhà máy điện của lô (ngành Năng lượng)
 }
 
 const q = {

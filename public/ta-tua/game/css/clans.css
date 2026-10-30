@@ -131,3 +131,25 @@
   .demand { grid-template-columns: 130px 1fr 44px; }
 }
 .clan-create input[type="color"] { width: 56px; height: 34px; padding: 2px; border-radius: 10px; }
+
+/* ---------- chuỗi sản xuất ---------- */
+.sector-head { margin: 8px 0 0; font-size: 1rem; }
+.recipe { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 2px; color: var(--muted); }
+.good-chip { display: inline-flex; align-items: center; gap: 1px; padding: 0 4px; border-radius: 8px; background: var(--surface-2); font-size: .8rem; }
+.good-chip b { font-size: .75rem; }
+.plot-deposits { display: flex; flex-wrap: wrap; gap: 4px 8px; font-size: .85rem; }
+.plot-deposits small { width: 100%; }
+.prod-preview { display: grid; gap: 4px; font-size: .88rem; }
+.prod-preview p { margin: 0; }
+.trade-form { flex-wrap: nowrap; gap: 4px; }
+.trade-form input { width: 76px; padding: 4px 6px; }
+.chain { display: grid; grid-template-columns: 1fr auto 1fr auto 1fr auto 1fr; gap: 8px; align-items: start; overflow-x: auto; }
+.chain-col { display: grid; gap: 6px; min-width: 150px; }
+.chain-col h4 { margin: 0; font-size: .95rem; }
+.chain-arrow { align-self: center; font-size: 1.4rem; color: var(--muted); }
+.chain-node { display: grid; gap: 2px; padding: 6px 8px; border-radius: 12px; border: 2px solid var(--line); background: #fff; font-size: .82rem; }
+.chain-node.held { border-color: var(--mint-deep); background: #eef9f5; }
+.chain-node .recipe { justify-content: flex-start; }
+.price-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 4px 12px; font-size: .85rem; }
+.price-grid span { display: flex; justify-content: space-between; gap: 6px; }
+@media (max-width: 900px) { .chain { grid-template-columns: minmax(0, 1fr); } .chain-arrow { transform: rotate(90deg); justify-self: center; } }
