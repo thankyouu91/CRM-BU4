@@ -388,37 +388,78 @@ export function combinedBuff(buffs, cap = STRATEGIC_RULES.softCap) {
 // ---------------------------------------------------------------- vòng đời vật phẩm thiết yếu (đồ ăn)
 
 /**
- * Chỉ số tự chủ thực phẩm D (0–90%): phần nhu cầu đồ ăn do người chơi cung cấp qua chuỗi Chế biến thực phẩm.
- * Siêu thị mua "Thực phẩm chế biến" của gia tộc mỗi đêm (1 đơn vị = 5 "Suất ăn gia tộc") rồi bán lại cho người chơi.
- * Đồ ăn NPC vẫn bán nhưng: mỗi người mỗi ngày chỉ được mua phần (1 − D) nhu cầu (NPC luôn giữ tối thiểu 10%),
+ * Vòng đời vật phẩm thiết yếu, tính riêng cho từng nhóm: đồ ăn và đồ chăm sóc. Mỗi nhóm có chỉ số tự chủ D (0–90%):
+ * phần nhu cầu do người chơi cung cấp. Siêu thị mua hàng công nghiệp nhẹ của gia tộc mỗi đêm (Thực phẩm chế biến →
+ * Suất ăn gia tộc, Thuốc → Bộ chăm sóc gia tộc) rồi bán lại cho người chơi, theo 3 hạng chất lượng.
+ * Đồ NPC vẫn bán nhưng: mỗi người mỗi ngày chỉ được mua phần (1 − D) nhu cầu (NPC luôn giữ tối thiểu 10%),
  * XP của đồ NPC giảm theo giai đoạn, giá tăng nhẹ khi D cao. Tài khoản mới 7 ngày đầu được miễn mọi giới hạn.
  */
 export const ESSENTIALS = {
-  mealsPerUnit: 5,
   /** Phần nhu cầu NPC luôn giữ (chủ game chốt 10%). */
   npcFloor: 0.1,
   /** D thay đổi tối đa mỗi ngày, để không sốc giá. */
   maxDailyShift: 0.1,
-  mealsPerPetDay: 3,
   /** Mỗi gia tộc bán cho Siêu thị tối đa 40% lượng thu mua của một đêm (chống độc quyền). */
   perClanShare: 0.4,
-  /** Siêu thị trả bằng giá tham chiếu (cao hơn NPC thu mua 85%). */
-  buyPrice: 1,
-  /** Giá bán lẻ suất ăn = giá tham chiếu một đơn vị / 5 × hệ số này. */
-  mealMarkup: 1.15,
+  /** Giá bán lẻ một suất/bộ = giá tham chiếu một đơn vị ÷ số suất × hệ số này × hệ số chất lượng. */
+  markup: 1.15,
+  /** Mỗi người còn được mua thêm chừng này món NPC mỗi nhóm mỗi ngày, ngoài phần theo số bé. */
+  npcSpare: 2,
   newbieDays: 7,
   stages: [
     { key: 'pioneer', name: 'Khai hoang', icon: '🌱', from: 0 },
     { key: 'growing', name: 'Phát triển', icon: '🏗️', from: 0.2 },
     { key: 'self', name: 'Tự chủ', icon: '🏆', from: 0.8 },
   ],
-  /** Giá đồ ăn NPC tăng tới +30% khi D đi từ 20% lên 80%. */
+  /** Giá đồ NPC tăng tới +30% khi D đi từ 20% lên 80%. */
   npcPriceUp: 0.3,
+  cats: {
+    food: {
+      name: 'Đồ ăn', label: 'Tự chủ thực phẩm', icon: '🍱', unit: 'suất', good: 'processed_food', industry: 'food_processing',
+      upstream: ['agriculture', 'livestock'], perUnit: 5, perPetDay: 3, item: 'clan_meal',
+    },
+    care: {
+      name: 'Đồ chăm sóc', label: 'Tự chủ đồ chăm sóc', icon: '🧴', unit: 'bộ', good: 'medicine', industry: 'pharma',
+      upstream: ['chemicals', 'agriculture'], perUnit: 10, perPetDay: 2, item: 'clan_care',
+    },
+  },
+  /**
+   * Hạng chất lượng hàng gia tộc. Hiệu ứng, XP, giá Siêu thị trả gia tộc và giá bán lẻ đều nhân `mult`.
+   * Điểm chất lượng (0–1) = 40% cấp gia tộc + 30% độ hoàn thiện nhà xưởng (số mảnh / 20) + 30% tự chủ nguyên liệu
+   * (gia tộc nắm ngành đầu vào). Tỉ lệ Tuyệt hảo = 35% × điểm, Ngon = 20% + 40% × điểm, còn lại Thường.
+   */
+  qualities: [
+    { key: '', name: 'Thường', mult: 1 },
+    { key: 'ngon', name: 'Ngon', mult: 1.2 },
+    { key: 'tuyet', name: 'Tuyệt hảo', mult: 1.5 },
+  ],
+  qualityWeights: { level: 0.4, design: 0.3, upstream: 0.3 },
 };
+export const ESSENTIAL_CATS = Object.keys(ESSENTIALS.cats);
+
+/** Mã món gia tộc theo nhóm và hạng: clan_meal, clan_meal_ngon, clan_care_tuyet... */
+export const clanItemId = (cat, q) => (q ? `${ESSENTIALS.cats[cat].item}_${ESSENTIALS.qualities[q].key}` : ESSENTIALS.cats[cat].item);
+
+/** Nhóm thiết yếu của một món trong Siêu thị (food/care), hoặc null. */
+export const essentialCat = (item) => (ESSENTIALS.cats[item?.type] ? item.type : null);
+
+/** Điểm chất lượng 0–1 của hàng gia tộc. `pieces`: số mảnh của nhà xưởng đẹp nhất; `upstream`: 0–1. */
+export function qualityScore({ level = 1, pieces = 0, upstream = 0 }) {
+  const w = ESSENTIALS.qualityWeights;
+  const s = w.level * ((Math.min(10, level) - 1) / 9) + w.design * Math.min(1, pieces / 20) + w.upstream * upstream;
+  return Math.round(Math.min(1, Math.max(0, s)) * 1000) / 1000;
+}
+
+/** Tỉ lệ [Thường, Ngon, Tuyệt hảo] theo điểm chất lượng. */
+export function qualitySplit(score) {
+  const best = 0.35 * score;
+  const good = 0.2 + 0.4 * score;
+  return [1 - best - good, good, best];
+}
 
 export const essentialStage = (d) => ESSENTIALS.stages.findLast((s) => d >= s.from);
 
-/** Hệ số XP của đồ ăn NPC theo D: khai hoang 50%, phát triển giảm dần về 25%, tự chủ 10%. */
+/** Hệ số XP của đồ NPC theo D: khai hoang 50%, phát triển giảm dần về 25%, tự chủ 10%. */
 export function npcXpFactor(d) {
   if (d < 0.2) return 0.5;
   if (d < 0.8) return 0.5 - ((d - 0.2) / 0.6) * 0.25;

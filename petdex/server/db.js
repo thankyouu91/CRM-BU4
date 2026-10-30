@@ -758,8 +758,17 @@ addColumn('users', 'locked_slots', 'INTEGER NOT NULL DEFAULT 0');
     created_at    INTEGER NOT NULL
   );
   CREATE INDEX IF NOT EXISTS infra_fees_owner ON infra_fees(owner_clan_id, day);
-  -- Vòng đời vật phẩm thiết yếu (essentials.js): chỉ số tự chủ thực phẩm theo ngày, lượng đồ ăn mỗi người mua.
+  -- Vòng đời vật phẩm thiết yếu (essentials.js): chỉ số tự chủ theo ngày của từng nhóm, lượng mỗi người mua.
   CREATE TABLE IF NOT EXISTS essentials_days (
+    day       TEXT PRIMARY KEY,
+    d         REAL NOT NULL DEFAULT 0,
+    demand    INTEGER NOT NULL DEFAULT 0,
+    supplied  INTEGER NOT NULL DEFAULT 0,
+    npc_sold  INTEGER NOT NULL DEFAULT 0,
+    meal_sold INTEGER NOT NULL DEFAULT 0
+  );
+  -- Đồ chăm sóc: cùng cột với essentials_days (meal_sold = số bộ chăm sóc gia tộc bán ra).
+  CREATE TABLE IF NOT EXISTS essentials_care_days (
     day       TEXT PRIMARY KEY,
     d         REAL NOT NULL DEFAULT 0,
     demand    INTEGER NOT NULL DEFAULT 0,
@@ -785,6 +794,9 @@ addColumn('users', 'locked_slots', 'INTEGER NOT NULL DEFAULT 0');
   );
   `);
   addColumn('land_plots', 'variant', 'TEXT'); // loại nhà máy điện của lô (ngành Năng lượng)
+  // Lượng đồ chăm sóc NPC / bộ chăm sóc gia tộc mỗi người mua trong ngày (essentials.js).
+  addColumn('essentials_buys', 'care_npc', 'INTEGER NOT NULL DEFAULT 0');
+  addColumn('essentials_buys', 'care_clan', 'INTEGER NOT NULL DEFAULT 0');
 
   // ---- Quản trị gia tộc (clan-gov.js), vay ngang hàng (p2p.js), hụi (hui.js) ----
   db.exec(`
