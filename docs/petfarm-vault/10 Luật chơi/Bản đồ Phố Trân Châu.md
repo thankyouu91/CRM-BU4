@@ -34,7 +34,7 @@ commit: e03a0db
 | 1 · 7 | 🏘️ Gia tộc & Nhà Đất | Gia tộc | 4 mặc định (`clan`, quản trị chỉnh 1–30) | [[Clan]], [[Bản đồ đất]] |
 | 1 · 8 | 🏆 Bảng vàng | Xếp hạng | 1 | [[Bảng vàng]] |
 
-Nguồn: `PLACES`, `public/ta-tua/game/js/views/map.js:7-27`; cấp từ `UNLOCKS` (`petdex/server/routes-economy.js:18-20`) và `clanConfig().unlockLevel` (`petdex/server/clans.js:20,61`). Ngân hàng hiện ở hàng 0 dù màn ngân hàng trên máy chủ chỉ khóa thao tác gửi tiền.
+Nguồn: `PLACES`, `public/ta-tua/game/js/views/map.js:7-27`; cấp từ `UNLOCKS` (`petdex/server/routes-economy.js:18-20`) và `clanConfig().unlockLevel` (`petdex/server/clans.js:20,61`). Ô Ngân hàng khóa tới cấp 3 trên bản đồ, dù máy chủ chỉ khóa thao tác gửi tiền (`petdex/server/routes-economy.js:93,102`).
 
 ## Cách hoạt động
 - `placesFor` tính từng ô: `unlocked = cấp bé cao nhất ≥ unlocks[place.level]`, chữ khóa "Mở khi có bé cấp N", huy hiệu theo `me.badges` (`public/ta-tua/game/js/views/map.js:38-55`; `badges` từ `petdex/server/service.js:47-50`).
@@ -43,7 +43,7 @@ Nguồn: `PLACES`, `public/ta-tua/game/js/views/map.js:7-27`; cấp từ `UNLOCK
 - Màn Gia tộc có tiêu đề "🏯 Gia tộc & Sở Nhà Đất" (`public/ta-tua/game/js/views/clans.js:42`).
 
 > [!warning] Lệch tài liệu
-> Fact sheet cũ ghi ô "Sở Nhà Đất (sắp mở)". Code hiện tại đã thay bằng "Gia tộc & Nhà Đất" mở theo `unlocks.clan` (`public/ta-tua/game/js/views/map.js:25`). Chợ Phiên trên bản đồ dùng biểu tượng 🛒, còn tiêu đề màn và README dùng 🏮.
+> Fact sheet cũ ghi ô "Sở Nhà Đất (sắp mở)". Code hiện tại đã thay bằng "Gia tộc & Nhà Đất" mở theo `unlocks.clan` (`public/ta-tua/game/js/views/map.js:25`). Chợ Phiên trên bản đồ dùng biểu tượng 🛒, còn tiêu đề màn và README dùng 🏮 (`public/ta-tua/game/js/views/bazaar.js:18`).
 
 ## Liên quan
 - [[Mở khóa theo cấp]] · [[Hành vượng]] · [[Nhiệm vụ ngày]] · [[Màn Phố]] · [[Vẽ bản đồ phố]] · [[Clan]] · [[Bản đồ đất]]
