@@ -159,7 +159,7 @@ try {
   const onSiteHost = (path) => onHost("petfarm.online", path);
   const site = await onSiteHost("/");
   assert.equal(site.status, 200, "website: landing page status");
-  assert(site.text.includes("Nuôi bé, đi làm") && site.text.includes("/petfarm/map.webp"), "website: landing page renders");
+  assert(site.text.includes("Chiến gia tộc") && site.text.includes("/petfarm/map.webp"), "website: landing page renders");
   assert.equal((await onSiteHost("/dashboard")).location, "/", "website: WorkHub pages go home");
   assert.equal((await onSiteHost("/api/projects")).status, 404, "website: no WorkHub API");
   assert.equal((await onHost("www.petfarm.online", "/abc")).location, "https://petfarm.online/abc", "website: www moves to the bare domain");
