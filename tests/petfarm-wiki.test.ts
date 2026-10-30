@@ -5,6 +5,8 @@ import { ARTICLES } from "@/lib/wiki/articles";
 import { CATEGORIES, getArticle, searchEntries } from "@/lib/wiki";
 import { fold } from "@/lib/wiki/fold";
 import { middleware } from "@/middleware";
+import { CLAN } from "@/lib/wiki/rules";
+import { SPECIES } from "@/public/ta-tua/game/js/shared/pets.js";
 
 // wiki.petfarm.online is the players' guide: "/" is the wiki home and "/<article>" an article.
 
@@ -56,6 +58,23 @@ describe("Petfarm wiki content", () => {
         if (slug) expect(getArticle(slug), `${a.slug} → ${slug}`).toBeDefined();
       }
     }
+  });
+
+  it("shows every species, and every legendary pet by name", () => {
+    const gallery = getArticle("thu-vien-be")!;
+    const blocks = gallery.sections.flatMap((s) => s.blocks);
+    expect(blocks.some((b) => "petGallery" in b)).toBe(true);
+    const legends = (SPECIES as { id: string; rarity: string }[]).filter((s) => s.rarity === "huyenthoai").map((s) => s.id);
+    const shown = blocks.flatMap((b) => ("pets" in b ? b.pets.map((p) => p.id) : []));
+    for (const id of legends) expect(shown).toContain(id);
+    const text = searchEntries("").find((e) => e.href === "/thu-vien-be")!.text;
+    expect(text).toContain("bach ho");
+  });
+
+  it("lists the clan in the unlock table at the game's level", () => {
+    const table = getArticle("cap-do")!.sections.flatMap((s) => s.blocks).find((b) => "table" in b && b.table.head[0] === "Cấp");
+    const row = table && "table" in table ? table.table.rows.find((r) => String(r[1]).includes("gia-toc")) : undefined;
+    expect(row?.[0]).toBe(CLAN.unlockLevel);
   });
 
   it("is searchable without Vietnamese marks", () => {

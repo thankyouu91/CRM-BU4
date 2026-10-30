@@ -1283,7 +1283,7 @@ export const ARTICLES: WikiArticle[] = [
         title: `Ngành dịch vụ (${SERVICE_COUNT} ngành)`,
         blocks: [
           { p: "Ngành dịch vụ thu **xu** mỗi đêm theo giá trị lô, độ hợp địa hình và khí hậu, thời tiết, pha kinh tế, nhu cầu của ngành và số gia tộc cùng ngành." },
-          { table: { head: ["Ngành", "Bồi thường thị trường", "Làm gì"], rows: industryRows("service") } },
+          { table: { head: ["Ngành", "Bồi thường thị trường", "Hợp đất nào nhất"], rows: industryRows("service") } },
         ],
       },
       {

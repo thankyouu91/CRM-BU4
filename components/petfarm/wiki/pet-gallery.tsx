@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { cn } from "@/lib/utils";
 import { ELEMENTS, LEVEL_FORMS, LIFE_STAGES, MASCOTS, RARITIES, SPECIES, speciesStats } from "@/public/ta-tua/game/js/shared/pets.js";
 import { SKILLS } from "@/petdex/server/rules/careers.js";
@@ -19,6 +19,7 @@ const forms = LEVEL_FORMS as { from: number; name: string }[];
 const ALL: Species[] = [...(MASCOTS as Species[]), ...(SPECIES as Species[])];
 const RARITY_ORDER = Object.keys(rarities);
 
+const reducedMotion = () => typeof matchMedia !== "undefined" && matchMedia("(prefers-reduced-motion: reduce)").matches;
 const stars = (r: string) => "★".repeat(rarities[r].stars);
 const howToGet = (s: Species) => (s.rarity === "thuong" ? "Nhận nuôi ngay hoặc nở từ trứng" : `Chỉ nở từ Trứng ${elements[s.element].name}`);
 
@@ -65,7 +66,7 @@ function Detail({ sp }: { sp: Species }) {
         </div>
       </div>
       <h4 className="mt-6 font-[family-name:var(--pf-display)] text-lg font-extrabold">Lớn lên theo tuổi</h4>
-      <ul className="mt-2 flex gap-2 overflow-x-auto pb-2">
+      <ul className="mt-2 flex flex-wrap gap-2">
         {stages.map((s) => (
           <li key={s.key} className="flex shrink-0 flex-col items-center rounded-[14px] bg-[var(--pf-surface-2)] px-2 pb-2 pt-1">
             <PetPortrait id={sp.id} stage={s.key} level={1} scale={2} label={`${sp.name}, ${s.name}`} />
@@ -75,7 +76,7 @@ function Detail({ sp }: { sp: Species }) {
         ))}
       </ul>
       <h4 className="mt-4 font-[family-name:var(--pf-display)] text-lg font-extrabold">Dáng theo cấp</h4>
-      <ul className="mt-2 flex gap-2 overflow-x-auto pb-2">
+      <ul className="mt-2 flex flex-wrap gap-2">
         {forms.map((f) => (
           <li key={f.from} className="flex shrink-0 flex-col items-center rounded-[14px] bg-[var(--pf-surface-2)] px-2 pb-2 pt-1">
             <PetPortrait id={sp.id} stage="adult" level={f.from} scale={2} label={`${sp.name}, dáng ${f.name}`} />
@@ -93,6 +94,12 @@ export function PetGallery() {
   const [element, setElement] = useState<string | null>(null);
   const [rarity, setRarity] = useState<string | null>(null);
   const [picked, setPicked] = useState<string>(ALL.find((s) => s.rarity === "huyenthoai")?.id ?? ALL[0].id);
+  const detail = useRef<HTMLDivElement>(null);
+  const pick = (id: string) => {
+    history.replaceState(null, "", `#be-${id}`);
+    setPicked(id);
+    requestAnimationFrame(() => detail.current?.scrollIntoView({ behavior: reducedMotion() ? "auto" : "smooth", block: "start" }));
+  };
   useEffect(() => {
     const fromHash = () => {
       const id = decodeURIComponent(location.hash.replace(/^#be-/, ""));
@@ -128,7 +135,10 @@ export function PetGallery() {
           <li key={s.id}>
             <a
               href={`#be-${s.id}`}
-              onClick={() => setPicked(s.id)}
+              onClick={(ev) => {
+                ev.preventDefault();
+                pick(s.id);
+              }}
               aria-current={s.id === picked ? "true" : undefined}
               className={cn(
                 "flex h-full flex-col items-center rounded-[16px] border-2 bg-[var(--pf-surface)] px-1 pb-2 pt-1 text-center transition-transform hover:-translate-y-0.5",
@@ -144,7 +154,7 @@ export function PetGallery() {
           </li>
         ))}
       </ul>
-      <div id={`be-${sp.id}`} className="scroll-mt-24">
+      <div ref={detail} id={`be-${sp.id}`} className="scroll-mt-24">
         <Detail sp={sp} />
       </div>
     </div>
@@ -154,7 +164,7 @@ export function PetGallery() {
 /** A row of pets with captions, for an article. */
 export function PetRow({ items }: { items: { id: string; stage?: string; level?: number; label: string; sub?: string }[] }) {
   return (
-    <ul className="flex gap-3 overflow-x-auto pb-2">
+    <ul className="flex flex-wrap gap-3">
       {items.map((it) => (
         <li key={`${it.id}-${it.stage}-${it.level}-${it.label}`} className="flex shrink-0 flex-col items-center rounded-[16px] border-2 border-[var(--pf-line)] bg-[var(--pf-surface)] px-2 pb-2 pt-1 text-center">
           <PetPortrait id={it.id} stage={it.stage} level={it.level} animate scale={2.2} label={`${it.label}${it.sub ? `, ${it.sub}` : ""}`} />
