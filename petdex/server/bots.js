@@ -2,6 +2,8 @@
 // (router chạy trong tiến trình, không WebSocket, không gọi HTTP), nên mọi luật đều áp dụng: hạn mức, phí, thuế, Đấu trường.
 // Mỗi bot có lịch phiên chơi riêng (1–3 phiên/ngày, 20–90 phút, tối nhiều hơn); cùng lúc chỉ 50–100 bot online, bot offline
 // không làm gì. Mỗi nhịp chỉ xử lý một nhóm nhỏ bot online đã tới lượt, dừng khi hết ngân sách hành động hoặc thời gian.
+// Mỗi lượt bot chọn một việc theo nhu cầu của bé và tính cách (bot-brain.js): nuôi bé, đi làm, gia tộc, Sàn, quầy trà sữa,
+// vườn, bếp, xưởng, Chợ Phiên, ngân hàng.
 // Cờ users.is_bot chỉ dùng nội bộ và ở bảng quản trị; không bao giờ nằm trong API của người chơi.
 import { randomBytes } from 'node:crypto';
 import { adminLog, createSession, createUser, db, getMeta, setMeta, transaction } from './db.js';
@@ -9,6 +11,7 @@ import { dayKey } from './clock.js';
 import { GameError, HOUR, RULES } from './game.js';
 import { post } from './ledger.js';
 import { buildResponse } from './router.js';
+import { makeContext, think } from './bot-brain.js';
 
 export const BOT_RULES = {
   /** Trần số tài khoản bot; quản trị viên đặt mục tiêu trong khoảng này (tăng dần 50 → 200 → 500 → 1000). */
@@ -137,6 +140,8 @@ export function createBot(now = Date.now(), rand = Math.random) {
       social: rand(),
       trader: rand(),
       fighter: rand(),
+      producer: rand(), // thích sản xuất: quầy trà sữa, vườn, bếp, xưởng
+      carer: rand(), // chăm bé kỹ: cho ăn, tắm sớm hơn, mua đồ chơi
       sessions: BOT_RULES.sessionsPerDay[0] + Math.floor(rand() * (BOT_RULES.sessionsPerDay[1] - BOT_RULES.sessionsPerDay[0] + 1)),
     };
     // Phiên đầu tiên theo lịch riêng của bot, như người mới tải game rồi vào chơi lúc rảnh.
@@ -208,8 +213,8 @@ const sessionLength = (rand) => Math.round(between(BOT_RULES.sessionMinutes, ran
 const actionGap = (persona, rand) => Math.round((between(BOT_RULES.actionGapMinutes, rand) * MINUTE_MS) / (persona.zeal ?? 1));
 
 /**
- * Một lượt "mở game" của bot: xem trạng thái rồi làm 1 việc như người chơi trung bình. Lỗi luật chơi (GameError)
- * thì bỏ qua. Trả về tên việc đã làm (hoặc null).
+ * Một lượt "mở game" của bot: đọc trạng thái (GET /me) rồi để bộ não (bot-brain.js) chọn một việc như người chơi
+ * bình thường: nhu cầu của bé trước, rồi tới tính cách. Lỗi luật chơi thì bỏ qua. Trả về tên việc đã làm (hoặc null).
  */
 async function visit(api, bot, persona, state, now, rand) {
   const call = (method, path, body) => botCall(api, bot.token, method, path, body);
@@ -224,165 +229,20 @@ async function visit(api, bot, persona, state, now, rand) {
     const r = await call('POST', '/pets', { name: pickOne(['Mochi', 'Bông', 'Mít', 'Na', 'Bơ', 'Kem', 'Sữa', 'Cún', 'Mèo Ú', 'Bắp', 'Su Su', 'Tôm'], rand), species: species.id });
     return r.ok ? 'adopt' : null;
   }
-  const pet = me.pets.find((p) => p.id === me.user.activePetId) ?? me.pets[0];
-
-  // Ván câu cá đang dở: kết thúc với kết quả trung bình.
-  if (state.game) {
-    const g = state.game;
-    delete state.game;
-    const casts = 3 + Math.floor(rand() * 6);
-    const caught = Array.from({ length: casts }, () => rand() < 0.5);
-    const r = await call('POST', '/games/finish', { sessionId: g, result: { caught } });
-    return r.ok ? 'game_finish' : null;
-  }
-
-  // Quà ngày.
-  if (!me.user.dailyReadyAt) {
-    const r = await call('POST', '/daily', {});
-    if (r.ok) return 'daily';
-  }
-
-  // Đói thì mua đồ ăn rồi cho ăn.
-  const fullness = pet.stats?.fullness ?? pet.fullness ?? 100;
-  if (fullness < 55) {
-    const foods = ['onigiri', 'fish', 'boba', 'clan_meal'];
-    const have = foods.find((f) => (me.inventory?.[f] ?? 0) > 0);
-    if (have) {
-      const r = await call('POST', `/pets/${pet.id}/use`, { itemId: have });
-      if (r.ok) return 'feed';
-    } else {
-      const r = await call('POST', '/shop/buy', { itemId: pickOne(foods.slice(0, 3), rand), qty: 1 + Math.floor(rand() * 3) });
-      if (r.ok) return 'buy_food';
-    }
-  }
-
-  // Ca làm đã xong thì nhận lương.
-  if (me.badges?.jobs) {
-    const jobs = (await call('GET', '/jobs')).body;
-    const done = (jobs?.shifts ?? jobs?.active ?? []).find?.((s) => s.ready || s.endsAt <= now);
-    if (done) {
-      const r = await call('POST', `/jobs/${done.id}/claim`, {});
-      if (r.ok) return 'claim_shift';
-    }
-  }
-
-  const roll = rand();
-  // Đi làm (việc chính của người chơi trung bình).
-  if (roll < 0.3) {
-    const careers = Object.keys(catalog.careers ?? {});
-    for (const career of [state.career, ...careers.sort(() => rand() - 0.5).slice(0, 3)].filter(Boolean)) {
-      const r = await call('POST', '/jobs/start', { petId: pet.id, career, hours: 1 + Math.floor(rand() * 3) });
-      if (r.ok) {
-        state.career = career;
-        return 'shift';
-      }
-    }
-  }
-  // Mini-game câu cá.
-  if (roll < 0.45) {
-    const r = await call('POST', '/games/fishing/start', {});
-    if (r.ok && r.body?.session?.id) {
-      state.game = r.body.session.id;
-      return 'game_start';
-    }
-  }
-  // Chơi với bé, tắm cho bé.
-  if (roll < 0.55) {
-    const r = await call('POST', `/pets/${pet.id}/play`, {});
-    if (r.ok) return 'play';
-  }
-  if (roll < 0.6) {
-    const r = await call('POST', `/pets/${pet.id}/bath`, {});
-    if (r.ok) return 'bath';
-  }
-  // Sàn: lệnh nhỏ theo thị trường.
-  if (roll < 0.66 + persona.trader * 0.05) {
-    const commodity = pickOne(Object.keys(catalog.commodities ?? {}), rand);
-    const r = await call('POST', '/market/order', { commodity, side: rand() < 0.6 ? 'buy' : 'sell', qty: 1 + Math.floor(rand() * 3), type: 'market' });
-    if (r.ok) return 'market';
-  }
-  // Ngân hàng: gửi một phần nhỏ khi có dư.
-  if (roll < 0.72 && me.user.coins > 1500) {
-    const r = await call('POST', '/bank/savings', { action: 'deposit', amount: Math.floor(me.user.coins * (0.1 + rand() * 0.2)) });
-    if (r.ok) return 'bank';
-  }
-  // Gia tộc, đất, Đấu trường.
-  if (roll < 0.86) {
-    const done = await clanStep(call, me, persona, state, now, rand);
-    if (done) return done;
-  }
-  // Kênh chung: hiếm, câu soạn sẵn.
-  if (roll < 0.9 && rand() < BOT_RULES.chatChance * (0.5 + persona.social)) {
-    const done = await chatStep(call, bot, now, rand);
-    if (done) return done;
-  }
-  return 'browse';
-}
-
-/** Việc gia tộc: vào/lập gia tộc, góp quỹ, mua đất, chọn giờ khi bị thách, thách đấu (theo luật Đấu trường). */
-async function clanStep(call, me, persona, state, now, rand) {
-  const view = (await call('GET', '/clans')).body;
-  if (!view) return null;
-  const clan = view.clan;
-  if (!clan) {
-    const open = (view.clans ?? []).filter((c) => (c.members ?? 0) < 30);
-    if (open.length && rand() < 0.8) {
-      const target = pickOne(open, rand);
-      const r = await call('POST', `/clans/${target.id}/join`, {});
-      if (r.ok) return 'clan_join';
-    }
-    const counts = q.clanCounts.get();
-    if (counts.bot < BOT_RULES.clanShare * Math.max(1, counts.total + 1) && rand() < 0.3) {
-      const r = await call('POST', '/clans/create', {
-        name: `${pickOne(['Nhà', 'Họ', 'Hội', 'Bang', 'Phố'], rand)} ${pickOne(['Mây', 'Gió', 'Sen', 'Trúc', 'Mai', 'Lúa', 'Sóng', 'Đá', 'Rồng', 'Phượng'], rand)} ${pickOne(['Vàng', 'Xanh', 'Đỏ', 'Bạc', 'Ngọc', 'Hồng'], rand)}`,
-        emblem: pickOne(['🏯', '🐉', '🌾', '🌸', '⚓', '🐯', '💎'], rand), color: pickOne(['#aa5533', '#2266aa', '#338844', '#884499', '#cc8800'], rand),
-      });
-      if (r.ok) return 'clan_create';
-    }
-    return null;
-  }
-  // Góp quỹ một ít mỗi tuần.
-  if (rand() < 0.4 && me.user.coins > 800) {
-    const r = await call('POST', '/clans/donate', { amount: Math.floor(me.user.coins * (0.05 + rand() * 0.1)) });
-    if (r.ok) return 'clan_donate';
-  }
-  const manage = clan.role === 'leader' || clan.role === 'elder';
-  if (!manage) return null;
-  // Bị thách đấu: chọn khung đầu tiên còn hạn.
-  const arena = (await call('GET', '/arena')).body;
-  const pending = arena?.clan?.wars?.find((w) => w.status === 'proposed' && w.defender.id === clan.id);
-  if (pending) {
-    const slot = pending.slots.find((s) => s > now);
-    if (slot) {
-      const r = await call('POST', `/arena/${pending.id}/confirm`, { at: slot });
-      if (r.ok) return 'arena_confirm';
-    }
-  }
-  // Mua đất khi quỹ dư (chọn lô rẻ còn trống).
-  if (rand() < 0.3) {
-    const land = (await call('GET', '/land')).body;
-    const free = (land?.plots ?? []).filter((p) => !p.owner && p.price && p.price < (clan.treasury ?? 0) * 0.5).sort((a, b) => a.price - b.price);
-    if (free.length) {
-      const r = await call('POST', `/land/${free[Math.floor(rand() * Math.min(5, free.length))].id}/buy`, {});
-      if (r.ok) return 'land_buy';
-    }
-  }
-  // Thách đấu: hiếm, gia tộc thích đánh; gia tộc người thật chỉ 1 lần mỗi 7 ngày.
-  if (arena?.clan && persona.fighter > 0.6 && rand() < 0.15 && clan.role === 'leader') {
-    const busy = arena.clan.wars.some((w) => w.status === 'proposed' || w.status === 'scheduled');
-    const targets = arena.clan.targets.filter((t) => t.kind === 'plot' && (!botClanRecent(state, t.clanId, now)));
-    if (!busy && targets.length) {
-      const t = pickOne(targets, rand);
-      const days = arena.days;
-      const slot = { day: days[1 + Math.floor(rand() * Math.min(4, days.length - 1))] ?? days[0], hour: rand() < 0.5 ? 19 : 20 };
-      const r = await call('POST', '/arena/challenge', { defenderId: t.clanId, kind: t.kind, ref: t.ref, slots: [slot] });
-      if (r.ok) {
-        if (!clanIsBot(t.clanId)) state.realChallengeAt = now;
-        return 'arena_challenge';
-      }
-    }
-  }
-  return null;
+  const ctx = makeContext({
+    me, catalog, persona, state, now, rand, call, userId: bot.user_id, sessionEnd: bot.session_end,
+    helpers: {
+      clanShareOk: () => {
+        const counts = q.clanCounts.get();
+        return counts.bot < BOT_RULES.clanShare * Math.max(1, counts.total + 1);
+      },
+      clanIsBot,
+      clanRecent: botClanRecent,
+      chat: (c) => chatStep(c, bot, now, rand),
+      chatChance: BOT_RULES.chatChance,
+    },
+  });
+  return think(ctx);
 }
 
 const clanLeaderBot = db.prepare('SELECT u.is_bot FROM clans c JOIN users u ON u.id = c.leader_id WHERE c.id = ?');
@@ -390,12 +250,11 @@ const clanIsBot = (clanId) => Boolean(clanLeaderBot.get(clanId)?.is_bot);
 /** Đã thách đấu một gia tộc người thật trong 7 ngày qua thì không thách gia tộc người thật nữa. */
 export const botClanRecent = (state, clanId, now) => Boolean(!clanIsBot(clanId) && state.realChallengeAt && now - state.realChallengeAt < BOT_RULES.realChallengeDays * 24 * HOUR);
 
-async function chatStep(call, bot, now, rand) {
+async function chatStep(ctx, bot, now, rand) {
   const day = dayKey(now);
   if (bot.chat_day === day) return null;
   if (q.chatsHour.get(now - HOUR).n >= BOT_RULES.chatPerHour) return null;
-  const r = await call('POST', '/chat/world', { text: pickOne(CHAT_LINES, rand) });
-  if (!r.ok) return null;
+  if (!(await ctx.post('/chat/world', { text: pickOne(CHAT_LINES, rand) }))) return null;
   q.setChat.run(now, day, bot.user_id);
   return 'chat';
 }

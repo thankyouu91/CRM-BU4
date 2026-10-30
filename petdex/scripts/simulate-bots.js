@@ -85,6 +85,12 @@ export async function simulateBots({ bots: n = BOTS, days = DAYS, step = STEP_MI
   log(`Online cùng lúc: trung bình ${avg(online).toFixed(0)}, buổi tối ${avg(evening).toFixed(0)}, thấp nhất ${Math.min(...online)}, cao nhất ${Math.max(...online)}.`);
   log(`Thời gian mỗi nhịp: trung vị ${ms[Math.floor(ms.length / 2)]} ms, p95 ${ms[Math.floor(ms.length * 0.95)]} ms, cao nhất ${ms[ms.length - 1]} ms; dừng vì hết thời gian ${ticks.filter((t) => t.stopped === 'time').length} nhịp.`);
   log(`Cấp bé của bot: trung bình ${levels.avg?.toFixed(1)}, cao nhất ${levels.max}. Việc gần nhất: ${acts.map((r) => `${r.a ?? '—'} ${r.n}`).join(', ')}`);
+  const lv = store.db.prepare('SELECT COALESCE(MAX(p.level), 0) AS l FROM bots b LEFT JOIN pets p ON p.owner_id = b.user_id GROUP BY b.user_id ORDER BY l').all().map((r) => r.l);
+  const inClan = store.db.prepare('SELECT COUNT(*) AS n FROM bots b JOIN clan_members m ON m.user_id = b.user_id').get().n;
+  const count = (sql) => store.db.prepare(sql).get().n;
+  log(`Cấp bé: trung vị ${lv[Math.floor(lv.length / 2)] ?? 0}, p90 ${lv[Math.floor(lv.length * 0.9)] ?? 0}; ${Math.round((inClan / n) * 100)}% bot ở gia tộc; `
+    + `${count('SELECT COUNT(*) AS n FROM businesses WHERE closed_at IS NULL')} quầy, ${count('SELECT COUNT(*) AS n FROM factories WHERE closed_at IS NULL')} xưởng, `
+    + `${count('SELECT COUNT(DISTINCT user_id) AS n FROM garden_plots WHERE crop IS NOT NULL')} vườn đang trồng; ${(count('SELECT COUNT(*) AS n FROM market_trades t JOIN bots b ON b.user_id = t.user_id') / n / days).toFixed(2)} lệnh Sàn khớp mỗi bot mỗi ngày.`);
   return { base, rows, total, weekly, injectedWeek, perBotDay, ticks };
 }
 
