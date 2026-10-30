@@ -1,4 +1,5 @@
 import type { WikiArticle } from "../types";
+import { RATE_POWER } from "@/public/ta-tua/game/js/shared/clan-bonds.js";
 import { UNLOCKS } from "../rules";
 import { MONEY } from "../rules-money";
 import { CB, cbHeadline, idx, interest, num, pct, policyExample, policyRows, pts, xu } from "./money";
@@ -36,7 +37,7 @@ export const article: WikiArticle = {
   category: "kinh-te",
   emoji: "🏦",
   summary: `Ngân hàng Trân Châu có tiết kiệm (lãi mỗi ngày trên ${xu(BANK.savingsCap)} đầu) và gửi kỳ hạn ${termDays} ngày; Ngân hàng Trung ương đặt lãi suất cơ bản và chỉ số giá mỗi tuần.`,
-  keywords: ["tiết kiệm", "lãi", "lãi suất", "gửi tiền", "kỳ hạn", "tất toán", "rút sớm", "đáo hạn", "ngân hàng trung ương", "lạm phát", "chỉ số giá", "lãi suất cơ bản", "ngân hàng nhà nước"],
+  keywords: ["tiết kiệm", "lãi", "lãi suất", "gửi tiền", "kỳ hạn", "tất toán", "rút sớm", "đáo hạn", "ngân hàng trung ương", "lạm phát", "chỉ số giá", "lãi suất cơ bản", "ngân hàng nhà nước", "đặt lãi suất"],
   related: ["tai-chinh", "thue-toa-thi-chinh", "tin-dung", "vay-ngang-hang", "hui", "kinh-te-vi-mo"],
   sections: [
     {
@@ -45,6 +46,7 @@ export const article: WikiArticle = {
       blocks: [
         { p: `**🏦 Ngân hàng Trân Châu** là tòa nhà Ngân hàng trên bản đồ thị trấn. Nó mở khi bé tốt nhất của bạn đạt **cấp ${UNLOCKS.bank}**. Ở đây bạn để xu sinh lãi theo hai cách: **🐷 Tiết kiệm không kỳ hạn** và **📜 Gửi kỳ hạn**.` },
         { p: "Cùng màn có khung **🏛️ Ngân hàng Trung ương**: cơ quan họp mỗi tuần để đặt **lãi suất cơ bản** (nền của mọi khoản lãi) và **chỉ số giá** (nhân vào giá NPC). Hai con số này chạm tới gần như mọi khoản thu chi trong game." },
+        { p: `Gia tộc đang nắm **Ngân hàng nhà nước** được đặt lại lãi suất cơ bản trong khoảng lãi chính sách ± ${pts(RATE_POWER.band)}/ngày (luôn trong ${pct(RATE_POWER.min)}–${pct(RATE_POWER.max)}/ngày), giữ tới buổi họp sau. Khi đó tiết kiệm, gửi kỳ hạn và vay ngân hàng dùng con số gia tộc đặt. Xem [Lãi suất cơ bản](lai-suat-co-ban).` },
         { p: "Từ màn Ngân hàng còn có lối sang [Tín dụng và vay](tin-dung), [Vay ngang hàng](vay-ngang-hang) và [Hụi](hui)." },
       ],
     },
