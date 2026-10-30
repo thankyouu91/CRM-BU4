@@ -47,6 +47,7 @@ const ACTION: Record<string, string> = {
   game_start: "Chơi câu cá", game_finish: "Câu cá xong", play: "Chơi với bé", bath: "Tắm cho bé", market: "Đặt lệnh Sàn", bank: "Gửi tiết kiệm",
   clan_join: "Vào gia tộc", clan_create: "Lập gia tộc", clan_donate: "Góp quỹ", land_buy: "Mua đất", arena_confirm: "Chọn giờ Đấu trường",
   arena_challenge: "Thách đấu", chat: "Nói ở kênh chung", browse: "Xem quanh",
+  cbank_deposit: "Gửi ngân hàng gia tộc", cbank_withdraw: "Rút ngân hàng gia tộc", cbank_open: "Mở ngân hàng gia tộc", cbank_terms: "Đặt lãi ngân hàng",
 };
 
 const STOPPED: Record<string, string> = { budget: "hết lượt nhịp", time: "hết thời gian nhịp", off: "đang tắt" };

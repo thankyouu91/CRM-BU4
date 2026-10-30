@@ -374,6 +374,50 @@ async function bank(ctx) {
   return 'bank';
 }
 
+// ---------------------------------------------------------------- Ngân hàng gia tộc
+
+/**
+ * Bot là người gửi nhỏ ở ngân hàng gia tộc: so lãi với tiết kiệm NPC, chỉ gửi nơi uy tín cao; ngân hàng mất uy tín thì
+ * người cẩn thận rút sớm (nên hàng chờ rút có thể xảy ra thật). Tộc trưởng bot của gia tộc nắm Ngân hàng nhà nước mở
+ * ngân hàng khi quỹ dư và đặt lãi 1,5 tới 2,5 lần lãi tiết kiệm. Trả về { path, body, action } hoặc null.
+ */
+export function clanBankMove(ctx, view) {
+  const { rand, persona: p, state } = ctx;
+  if (!view) return null;
+  const rules = view.rules ?? {};
+  const banks = new Map((view.banks ?? []).map((b) => [b.clanId, b]));
+  const live = (view.deposits ?? []).filter((d) => d.status === 'open');
+  state.cbank = live.length;
+  const scared = live.find((d) => !d.matured && (banks.get(d.bankId)?.reputation ?? 100) < 60 && !banks.get(d.bankId)?.frozen);
+  if (scared && rand() < 0.7 - p.trader * 0.3) return { path: `/clan-bank/deposits/${scared.id}/withdraw`, action: 'cbank_withdraw' };
+  const mine = view.clan;
+  if (mine?.leader && mine.holder) {
+    const minCapital = rules.minCapital ?? 50_000;
+    if (mine.bank?.status !== 'open') {
+      if (mine.fund >= minCapital * 3 && rand() < 0.5) return { path: '/clan-bank/open', body: { capital: Math.floor(mine.fund * 0.4) }, action: 'cbank_open' };
+    } else if ((mine.bank.rates?.[7] ?? 0) <= view.baseRate * 1.01) {
+      const k = 1.5 + p.trader;
+      const rates = Object.fromEntries((rules.terms ?? [7, 14, 30]).map((t, i) => [t, Math.min(view.maxDepositRate, view.baseRate * (k + i * 0.25))]));
+      return { path: '/clan-bank/terms', body: { rates, loanRate: Math.min(view.loanRange[1], view.baseRate * (k + 1.5)), lendingOpen: true }, action: 'cbank_terms' };
+    }
+  }
+  const amount = Math.floor((ctx.coins - 2 * ctx.reserve - ctx.goal) * (0.2 + rand() * 0.2));
+  if (amount < (rules.minDeposit ?? 100)) return null;
+  const term = rand() < 0.7 ? 7 : 14;
+  const best = [...banks.values()]
+    .filter((b) => b.accepting && b.reputation >= 70)
+    .map((b) => ({ b, rate: b.rates.find((r) => r.days === term)?.rate ?? 0 }))
+    .filter((x) => x.rate > view.baseRate * 1.2)
+    .sort((x, y) => y.rate - x.rate)[0];
+  if (!best || rand() > 0.3 + p.trader * 0.5) return null;
+  return { path: `/clan-bank/${best.b.clanId}/deposit`, body: { amount: Math.min(amount, 5_000), term }, action: 'cbank_deposit' };
+}
+
+async function clanBank(ctx) {
+  const move = clanBankMove(ctx, await ctx.get('/clan-bank'));
+  return move && (await ctx.post(move.path, move.body ?? {})) ? move.action : null;
+}
+
 /** Trang phục: mở hộp kín, đeo món còn trống khe. Trả về { path, body, action } hoặc null. */
 function gearMove(ctx) {
   const pet = ctx.pet;
@@ -838,6 +882,7 @@ async function clanStep(ctx) {
   }
   // Ngành: thâu tóm ngành rẻ nhất khi quỹ dư nhiều (gấp 1,5 phí).
   const owned = (clan.industries ?? []).map((i) => i.id);
+  state.bankHolder = leader && owned.includes('state_bank');
   if (leader && owned.length < (clan.perks?.maxIndustries ?? 1) && (clan.level ?? 1) >= (clan.nextIndustryLevel ?? 1)) {
     const cheapest = Object.entries(clan.nextFees ?? {}).filter(([id]) => !owned.includes(id)).sort((a, b) => a[1] - b[1])[0];
     if (cheapest && treasury >= cheapest[1] * 1.5 && await ctx.post('/clans/industries', { industry: cheapest[0] })) return 'clan_industry';
@@ -938,6 +983,8 @@ export function candidates(ctx) {
   // Kinh tế: Sàn, ngân hàng, quầy trà sữa, vườn, bếp, xưởng, Chợ Phiên.
   if (ctx.unlocked('market')) add('market', 10 + p.trader * 40, market);
   if (ctx.unlocked('bank') && ctx.coins > 3 * ctx.reserve + 200 + ctx.goal) add('bank', 8 + p.zeal * 6, bank);
+  // Ngân hàng gia tộc: người gửi nhỏ so lãi với NPC; đang có khoản gửi thì thỉnh thoảng xem lại uy tín ngân hàng.
+  if (ctx.unlocked('bank') && (ctx.coins > 3 * ctx.reserve + 400 + ctx.goal || state.cbank || state.bankHolder)) add('clan_bank', 4 + p.trader * 8 + (state.cbank ? 3 : 0) + (state.bankHolder ? 6 : 0), clanBank);
   if (ctx.unlocked('bank') && ctx.goal && ctx.coins < ctx.goal + ctx.reserve && ctx.coins + (state.saved ?? 0) >= ctx.goal + ctx.reserve) add('bank_goal', 40, bank);
   if (ctx.unlocked('business')) {
     if (state.biz) add('stall', 16 + p.producer * 22 + (hour >= 10 && hour < 20 ? 6 : 0), stall);

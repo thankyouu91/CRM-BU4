@@ -109,6 +109,19 @@ export const KINDS = {
   hui_pay: { group: 'transfer', label: 'Góp hụi' },
   hui_win: { group: 'transfer', label: 'Hốt hụi' },
   hui_share: { group: 'income', label: 'Chia tiền thăm hụi' },
+  // Ngân hàng gia tộc (clan-bank.js): vốn và tiền gửi ở bank:<id>, quỹ bảo hiểm tiền gửi cbank_insurance, ký quỹ đấu giá cbank_escrow:<id>.
+  cbank_capital_in: { group: 'transfer', label: 'Góp vốn ngân hàng gia tộc' },
+  cbank_capital_out: { group: 'transfer', label: 'Rút vốn ngân hàng gia tộc' },
+  cbank_deposit: { group: 'transfer', label: 'Gửi ngân hàng gia tộc' },
+  cbank_withdraw: { group: 'transfer', label: 'Rút tiền gửi ngân hàng gia tộc' },
+  cbank_interest: { group: 'income', label: 'Lãi ngân hàng gia tộc' },
+  cbank_insurance: { group: 'transfer', label: 'Phí bảo hiểm tiền gửi' },
+  cbank_insurance_payout: { group: 'transfer', label: 'Bảo hiểm tiền gửi chi trả' },
+  cbank_loan: { group: 'transfer', label: 'Giải ngân vay ngân hàng gia tộc' },
+  cbank_loan_fee: { group: 'transfer', label: 'Phí giải ngân vay ngân hàng gia tộc' },
+  cbank_repay: { group: 'transfer', label: 'Trả nợ ngân hàng gia tộc' },
+  cbank_auction: { group: 'transfer', label: 'Đấu giá lô siết nợ' },
+  cbank_seize_sale: { group: 'transfer', label: 'Sở Nhà Đất mua lại lô siết nợ' },
 };
 
 /** Thu thuế: một nửa vào ngân sách thị trấn, một nửa bị hủy (cùng tỉ lệ như phí). */

@@ -1056,6 +1056,89 @@ addColumn('users', 'locked_slots', 'INTEGER NOT NULL DEFAULT 0');
   `);
   addColumn('users', 'chat_muted_until', 'INTEGER NOT NULL DEFAULT 0');
   addColumn('central_bank', 'money_total', 'REAL'); // tổng lượng xu lúc họp, để tính tốc độ tăng
+  db.exec(`
+  -- Ngân hàng gia tộc (clan-bank.js): gia tộc nắm Ngân hàng nhà nước nhận tiền gửi và cho vay thế chấp lô đất.
+  -- Tiền mặt nằm ở tài khoản 'bank:<clan_id>'; quỹ bảo hiểm tiền gửi chung là tài khoản 'cbank_insurance'.
+  -- status: 'open' | 'failed'. deposit_rates: JSON {"7": lãi/ngày, ...}. run_day: ngày đã trừ uy tín vì rút xếp hàng.
+  CREATE TABLE IF NOT EXISTS cbank_banks (
+    clan_id       INTEGER PRIMARY KEY,
+    status        TEXT NOT NULL DEFAULT 'open',
+    deposit_rates TEXT NOT NULL DEFAULT '{}',
+    loan_rate     REAL NOT NULL DEFAULT 0,
+    lending_open  INTEGER NOT NULL DEFAULT 0,
+    reputation    INTEGER NOT NULL DEFAULT 100,
+    frozen        INTEGER NOT NULL DEFAULT 0,
+    run_day       TEXT,
+    opened_at     INTEGER NOT NULL,
+    failed_at     INTEGER
+  );
+  -- status: 'open' | 'queued' (chờ ngân hàng có tiền mặt) | 'closed' | 'failed' (trả theo phương án đổ vỡ).
+  CREATE TABLE IF NOT EXISTS cbank_deposits (
+    id         INTEGER PRIMARY KEY AUTOINCREMENT,
+    bank_id    INTEGER NOT NULL,
+    user_id    INTEGER NOT NULL,
+    amount     INTEGER NOT NULL,
+    rate       REAL NOT NULL,
+    term_days  INTEGER NOT NULL,
+    opened_at  INTEGER NOT NULL,
+    matures_at INTEGER NOT NULL,
+    status     TEXT NOT NULL DEFAULT 'open',
+    queued_at  INTEGER,
+    payout     INTEGER,
+    insured    INTEGER NOT NULL DEFAULT 0,
+    closed_at  INTEGER
+  );
+  CREATE INDEX IF NOT EXISTS cbank_deposits_bank ON cbank_deposits(bank_id, status);
+  CREATE INDEX IF NOT EXISTS cbank_deposits_user ON cbank_deposits(user_id, status);
+  -- status: 'active' | 'late' | 'repaid' | 'defaulted' (đã siết lô) | 'written_off' (không còn gì để siết).
+  CREATE TABLE IF NOT EXISTS cbank_loans (
+    id          INTEGER PRIMARY KEY AUTOINCREMENT,
+    bank_id     INTEGER NOT NULL,
+    clan_id     INTEGER NOT NULL,
+    plot_id     INTEGER NOT NULL,
+    amount      INTEGER NOT NULL,
+    rate        REAL NOT NULL,
+    term_days   INTEGER NOT NULL,
+    collateral  INTEGER NOT NULL,
+    owed        INTEGER NOT NULL,
+    paid        INTEGER NOT NULL DEFAULT 0,
+    late_nights INTEGER NOT NULL DEFAULT 0,
+    status      TEXT NOT NULL DEFAULT 'active',
+    opened_at   INTEGER NOT NULL,
+    due_at      INTEGER NOT NULL,
+    closed_at   INTEGER
+  );
+  CREATE INDEX IF NOT EXISTS cbank_loans_status ON cbank_loans(status, due_at);
+  CREATE INDEX IF NOT EXISTS cbank_loans_clan ON cbank_loans(clan_id, status);
+  CREATE INDEX IF NOT EXISTS cbank_loans_plot ON cbank_loans(plot_id, status);
+  -- Đấu giá lô bị siết nợ. Tiền giá cao nhất tạm giữ ở tài khoản 'cbank_escrow:<id>'. status: 'open' | 'sold' | 'kept' | 'npc'.
+  CREATE TABLE IF NOT EXISTS cbank_auctions (
+    id          INTEGER PRIMARY KEY AUTOINCREMENT,
+    loan_id     INTEGER NOT NULL,
+    plot_id     INTEGER NOT NULL,
+    bank_id     INTEGER NOT NULL,
+    debtor_id   INTEGER NOT NULL,
+    owed        INTEGER NOT NULL,
+    start_price INTEGER NOT NULL,
+    top_bid     INTEGER,
+    top_clan    INTEGER,
+    bids        INTEGER NOT NULL DEFAULT 0,
+    created_at  INTEGER NOT NULL,
+    ends_at     INTEGER NOT NULL,
+    status      TEXT NOT NULL DEFAULT 'open',
+    closed_at   INTEGER,
+    proceeds    INTEGER
+  );
+  CREATE INDEX IF NOT EXISTS cbank_auctions_open ON cbank_auctions(status, ends_at);
+  -- Ra vào gia tộc (event 'join' | 'leave'), để chặn cho vay giữa hai gia tộc có người qua lại gần đây.
+  CREATE TABLE IF NOT EXISTS clan_member_log (
+    user_id INTEGER NOT NULL,
+    clan_id INTEGER NOT NULL,
+    event   TEXT NOT NULL,
+    at      INTEGER NOT NULL
+  );
+  CREATE INDEX IF NOT EXISTS clan_member_log_user ON clan_member_log(user_id, at);
+  `);
 }
 
 const q = {

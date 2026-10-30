@@ -10,6 +10,7 @@ const PARTS = [
   ['wallet', 'Ví', '#c8915f'],
   ['savings', 'Tiết kiệm', '#58b98d'],
   ['deposits', 'Kỳ hạn', '#3f8f6f'],
+  ['clanBank', 'Ngân hàng gia tộc', '#2f7a8f'],
   ['locked', 'Ký quỹ lệnh', '#9aa6c9'],
   ['goods', 'Hàng trong kho', '#f2a65a'],
   ['items', 'Đồ đạc', '#ef8fa8'],

@@ -1,6 +1,7 @@
 // Ví: tài sản ròng, báo cáo thu chi từ sổ cái, sao kê, ảnh chụp tài sản mỗi đêm.
 import { allUsers, db, getUser, inventory } from './db.js';
 import { bankHoldings, indexedPrice } from './bank.js';
+import { clanBankDeposits } from './clan-bank.js';
 import { dayKey } from './clock.js';
 import { DAY, ITEMS } from './game.js';
 import { KINDS } from './ledger.js';
@@ -31,6 +32,7 @@ export function netWorth(userId, now = Date.now()) {
     wallet: user.coins,
     savings: bank.savings,
     deposits: bank.deposits,
+    clanBank: clanBankDeposits(userId), // gốc tiền gửi ở các ngân hàng gia tộc
     locked: lockedInOrders(userId),
     goods: goodsValue(userId, now),
     items,
