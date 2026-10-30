@@ -82,6 +82,17 @@ export function initMarket(now = Date.now()) {
   }
 }
 
+/** Mặt hàng thêm vào sau khi Sàn đã mở (DB cũ) chưa có dòng giá: tạo ở giá gốc. Chỉ ghi khi thiếu. */
+function ensureStates(states, now) {
+  for (const [id, c] of Object.entries(COMMODITIES)) {
+    if (states[id]) continue;
+    q.initState.run(id, c.base, now, c.base);
+    q.addHistory.run(id, now, c.base);
+    states[id] = q.state.get(id);
+  }
+  return states;
+}
+
 export const currentPrices = () => Object.fromEntries(q.states.all().map((s) => [s.commodity, s.price]));
 
 // ---------------------------------------------------------------- kho
@@ -408,7 +419,7 @@ export function industryPresence() {
  */
 export function marketTick(now, rand = Math.random) {
   transaction(() => {
-    const states = Object.fromEntries(q.states.all().map((s) => [s.commodity, s]));
+    const states = ensureStates(Object.fromEntries(q.states.all().map((s) => [s.commodity, s])), now);
     const prices = Object.fromEntries(Object.entries(states).map(([id, s]) => [id, s.price]));
     const { priceIndex } = economy();
     const influence = industryInfluence(industryPresence());
