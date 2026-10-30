@@ -1033,7 +1033,7 @@ export const ARTICLES: WikiArticle[] = [
             "Lãi = lãi cơ bản + phụ phí hạng (+ phụ phí lạm phát khi xu tăng nhanh). Phí giải ngân 2%.",
             "Mỗi kỳ tự trừ lúc nửa đêm, dùng cả tiền tiết kiệm.",
           ] },
-          { warn: "Trễ kỳ thì mất phí 1% mỗi kỳ. Trễ **7 kỳ** là vỡ nợ: cấm vay 14 ngày và ngân hàng giữ 30% thu nhập mỗi ngày tới khi hết nợ." },
+          { warn: "Trễ kỳ thì mất phí 1% mỗi kỳ. Trễ **7 kỳ** là vỡ nợ: cấm vay 14 ngày, khoản nợ vẫn tính lãi và phí trễ, và ngân hàng giữ 30% thu nhập mỗi ngày (lấy ví rồi tới tiết kiệm) tới khi hết nợ." },
         ],
       },
     ],

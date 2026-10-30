@@ -76,7 +76,7 @@ export function renderFinance(root, ctx) {
           <button class="btn gold">Đăng yêu cầu</button>
         </form>`}
         <p class="muted small">Yêu cầu nằm trên chợ ${r.listDays} ngày. Đáo hạn hệ thống tự thu từ ví, thiếu thì lấy tiết kiệm. Không đủ thì trễ hạn: phí trễ ${pct(r.lateFee, 0, false)}/ngày và trừ điểm;
-          trễ ${r.defaultAfter} ngày là vỡ nợ: bị cấm vay 14 ngày và mỗi đêm ngân hàng giữ ${pct(r.garnish, 0, false)} số dư ví để trả dần người cho vay.</p>
+          trễ ${r.defaultAfter} ngày là vỡ nợ: bị cấm vay ${r.banDays} ngày và mỗi đêm ngân hàng giữ ${pct(r.garnish, 0, false)} thu nhập trong ngày (lấy ví rồi tới tiết kiệm) để trả dần người cho vay.</p>
       </section>
 
       <section class="card fin-box wide">

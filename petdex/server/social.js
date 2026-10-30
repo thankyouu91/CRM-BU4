@@ -1,6 +1,7 @@
 // Cộng đồng: bạn bè (kết bạn, thăm nhà, thả tim, tặng quà) và Hội (quỹ, nâng cấp, dự án tuần).
 import { addItem, db, findUserByName, getUser, listPets, skillsOf, takeItem, transaction } from './db.js';
 import { dayKey } from './clock.js';
+import { sendMail } from './chat.js';
 import { GameError, ITEMS, applyEffect, describePet, isConsumable } from './game.js';
 import { post, treasuryBalance } from './ledger.js';
 import { removeGoods } from './market.js';
@@ -307,11 +308,17 @@ export function contribute(userId, commodity, qty, now = Date.now()) {
 
     q.addPrestige.run(def.prestige, g.id);
     const members = q.members.all(g.id);
+    let paid = 0;
     for (const m of members) {
       if (treasuryBalance() < def.reward) break;
       post({ account: 'treasury', delta: -def.reward, kind: 'guild_reward', memo: `${g.name}: ${def.name}`, now });
       post({ userId: m.user_id, delta: def.reward, kind: 'guild_reward', memo: def.name, now });
+      if (m.user_id !== userId) sendMail({ to: m.user_id, fromName: g.name, subject: `${def.icon} Dự án "${def.name}" hoàn thành`, body: `Hội vừa xong dự án tuần. Bạn được thưởng ${def.reward} xu từ ngân sách thị trấn.`, now });
+      paid += 1;
     }
-    return { message: `${def.icon} "${def.name}" hoàn thành! Hội +${def.prestige} danh vọng, mỗi thành viên +${def.reward} 🪙.` };
+    const reward = paid === members.length
+      ? `mỗi thành viên +${def.reward} 🪙`
+      : paid ? `${paid}/${members.length} thành viên được +${def.reward} 🪙 (ngân sách thị trấn đã cạn)` : 'ngân sách thị trấn đã cạn nên chưa ai được thưởng xu';
+    return { message: `${def.icon} "${def.name}" hoàn thành! Hội +${def.prestige} danh vọng, ${reward}.` };
   });
 }
