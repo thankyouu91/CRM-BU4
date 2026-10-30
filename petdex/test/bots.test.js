@@ -16,10 +16,11 @@ migrate(now);
 runDue(now);
 let seed = 17;
 const rand = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
-// Cho mọi bot thức cả ngày và tới lượt ngay, để nhịp kiểm thử không phụ thuộc giờ chạy.
-const wakeAll = () => {
+// Cho mọi bot thức cả ngày, đang trong phiên và tới lượt ngay, để nhịp kiểm thử không phụ thuộc giờ chạy.
+const wakeAll = (online = true) => {
   for (const b of store.db.prepare('SELECT user_id, persona FROM bots').all()) {
-    store.db.prepare('UPDATE bots SET persona = ?, next_at = 0 WHERE user_id = ?').run(JSON.stringify({ ...JSON.parse(b.persona), wake: 0, sleep: 24 }), b.user_id);
+    store.db.prepare('UPDATE bots SET persona = ?, next_at = 0, session_end = ? WHERE user_id = ?')
+      .run(JSON.stringify({ ...JSON.parse(b.persona), wake: 0, sleep: 24 }), online ? now + 3_600_000 : null, b.user_id);
   }
 };
 const count = () => store.db.prepare('SELECT COUNT(*) AS n FROM bots').get().n;
@@ -34,7 +35,9 @@ test('tên kiểu Việt Nam: tên đăng nhập hợp lệ như người thật
 
 test('công tắc tắt: không tạo bot, không hành động', async () => {
   const r = await bots.runBots(api, now, rand);
-  assert.deepEqual(r, { created: 0, actions: 0, skipped: 0 });
+  assert.equal(r.created, 0);
+  assert.equal(r.actions, 0);
+  assert.equal(r.stopped, 'off');
   assert.equal(count(), 0);
 });
 
@@ -52,14 +55,22 @@ test('tăng dần tới mục tiêu: mỗi nhịp tạo tối đa 5 bot, mỗi b
   assert.equal(b.pass_hash, '', 'không đăng nhập bằng mật khẩu');
   assert.equal(b.invite_id, null, 'không qua link mời');
   assert.ok(b.coins <= RULES.startCoins);
-  assert.equal(bots.setBotConfig({ target: 9999 }, 'test').target, bots.BOT_RULES.max);
+  assert.equal(bots.setBotConfig({ target: 9999 }, 'test').target, 1000);
+  assert.deepEqual(bots.setBotConfig({ onlineMin: 80, onlineMax: 60 }, 'test').onlineMin, 60, 'tối thiểu không quá tối đa');
+  bots.setBotConfig({ onlineMin: 50, onlineMax: 100 }, 'test');
   bots.setBotConfig({ target: 12 }, 'test');
 });
 
-test('ngân sách mỗi nhịp: tối đa `budget` hành động, bot gặp lỗi luật chơi thì bỏ qua', async () => {
+test('ngân sách mỗi nhịp: tối đa `budget` hành động hoặc hết thời gian thì dừng, bot gặp lỗi luật chơi thì bỏ qua', async () => {
   wakeAll();
   const r = await bots.runBots(api, now, rand, { budget: 4 });
   assert.ok(r.actions <= 4);
+  assert.equal(r.stopped, 'budget');
+  wakeAll();
+  const t = await bots.runBots(api, now, rand, { timeBudgetMs: 0 });
+  assert.equal(t.actions, 0);
+  assert.equal(t.stopped, 'time');
+  assert.equal(bots.adminBotsView(now).lastTick.stopped, 'time');
   // Nhiều nhịp: bot nhận nuôi bé, đi làm, mua đồ... qua route thật, không làm hỏng nhịp.
   const seen = new Set();
   for (let i = 0; i < 8; i += 1) {
@@ -70,6 +81,29 @@ test('ngân sách mỗi nhịp: tối đa `budget` hành động, bot gặp lỗ
   for (const r2 of store.db.prepare('SELECT last_action FROM bots').all()) seen.add(r2.last_action);
   assert.ok(store.db.prepare('SELECT COUNT(*) AS n FROM pets p JOIN users u ON u.id = p.owner_id WHERE u.is_bot = 1').get().n >= 10, 'bot đã nhận nuôi bé');
   assert.ok(seen.size >= 2, `bot làm nhiều việc khác nhau: ${[...seen]}`);
+});
+
+test('online: chỉ bot trong phiên mới làm việc; số bot online giữ trong khoảng quản trị viên đặt', async () => {
+  // Không ai online, tới lượt nhưng vượt trần online 3 → chỉ 3 bot vào phiên; bot offline không làm gì.
+  wakeAll(false);
+  bots.setBotConfig({ onlineMin: 0, onlineMax: 3 }, 'test');
+  const before = store.db.prepare('SELECT SUM(actions) AS n FROM bots').get().n;
+  const r = await bots.runBots(api, now, rand);
+  assert.ok(r.online <= 3, `online ${r.online}`);
+  assert.ok(store.db.prepare('SELECT SUM(actions) AS n FROM bots').get().n - before <= 3);
+  // Dưới mức tối thiểu thì mở thêm phiên cho bot đang giờ thức.
+  wakeAll(false);
+  bots.setBotConfig({ onlineMin: 8, onlineMax: 10 }, 'test');
+  const r2 = await bots.runBots(api, now, rand, { budget: 0 });
+  assert.ok(r2.online >= 8 && r2.online <= 10, `online ${r2.online}`);
+  bots.setBotConfig({ onlineMin: 50, onlineMax: 100 }, 'test');
+  // Lịch phiên: rơi vào giờ thức của bot.
+  const persona = { wake: 8, sleep: 22, sessions: 2, zeal: 1 };
+  for (let i = 0; i < 20; i += 1) {
+    const at = bots.nextSessionStart(persona, now + i * 3_600_000, rand);
+    const h = new Date(at + 7 * 3_600_000).getUTCHours();
+    assert.ok(h >= 8 && h <= 22, `giờ ${h}`);
+  }
 });
 
 test('bot đi qua đúng luật của route: hạn mức, số dư', async () => {
@@ -94,7 +128,7 @@ test('cờ is_bot không bao giờ có trong API của người chơi', async ()
 
 test('kết thúc: tắt thì nhịp sau dừng hẳn; bảng quản trị thấy số bot và số người thật', async () => {
   bots.setBotConfig({ enabled: false }, 'test');
-  wakeAll();
+  wakeAll(true);
   const before = store.db.prepare('SELECT SUM(actions) AS n FROM bots').get().n;
   const r = await bots.runBots(api, now, rand);
   assert.equal(r.actions, 0);
