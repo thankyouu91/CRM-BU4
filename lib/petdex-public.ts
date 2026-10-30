@@ -75,15 +75,21 @@ export const WIKI_PATH = "/wiki";
 
 /**
  * On the wiki's domain: "/" is the wiki home and "/<article>" an article (both rewritten under
- * WIKI_PATH); "/wiki/..." moves to the short address; the game's own pages move to the game
+ * WIKI_PATH), deeper paths the wiki's 404; "/wiki/..." moves to the short address; the game's own pages move to the game
  * domain; WorkHub's API answers 404.
  */
 export function wikiHostRoute(pathname: string): { rewrite: string } | { redirect: string } | { notFound: true } {
   if (pathname.startsWith("/api/")) return { notFound: true };
   if ([PLAY_PATH, INVITE_PATH, PASSWORD_PATH].some((p) => pathname === p || pathname.startsWith(`${p}/`))) return { redirect: `${PLAY_ORIGIN}${pathname}` };
   if (pathname === WIKI_PATH || pathname.startsWith(`${WIKI_PATH}/`)) return { redirect: pathname.slice(WIKI_PATH.length) || "/" };
-  return { rewrite: pathname === "/" ? WIKI_PATH : `${WIKI_PATH}${pathname}` };
+  if (pathname === "/") return { rewrite: WIKI_PATH };
+  // Articles are one segment ("/cham-soc"). Deeper paths match no page, so they would get Next's bare
+  // 404 with WorkHub's title; send them to a slug no article can have, which shows the wiki's own 404.
+  return { rewrite: /^\/[^/]+\/?$/.test(pathname) ? `${WIKI_PATH}${pathname}` : `${WIKI_PATH}/${WIKI_MISSING}` };
 }
+
+/** A slug no article can have (slugs are lower-case letters, digits and dashes): the wiki's 404. */
+const WIKI_MISSING = "_";
 
 /** Game pages and what they need; on the game domain everything else of WorkHub is out of reach. */
 const PLAY_HOST_PATHS = [PLAY_PATH, INVITE_PATH, PASSWORD_PATH, "/ta-tua/game", "/ta-tua/api", "/ta-tua/ws", "/ta-tua/khach", "/api/ta-tua/guest", "/api/ta-tua/account", "/login", "/api/auth", "/change-password"];
