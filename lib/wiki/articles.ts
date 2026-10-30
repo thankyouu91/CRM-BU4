@@ -5,10 +5,22 @@ import {
   locationRows, promotionRows, proposalRows, questRows, rarityRows, recipeRows, relationRows, setRows, slotName, speciesRows, stageRows, tierRows, toyRows, wearRows,
 } from "./game-data";
 import type { WikiArticle } from "./types";
+
+/** Bảng thuế lũy tiến lấy thẳng từ luật game. */
+function taxRows(): string[][] {
+  const vnd = (n: number) => n.toLocaleString("vi-VN");
+  let prev = 0;
+  return (BRACKETS as [number, number][]).map(([cap, rate]) => {
+    const row = [cap === Infinity ? `Trên ${vnd(prev)} xu` : `${vnd(prev)}–${vnd(cap)} xu`, `${Math.round(rate * 100)}%`];
+    prev = cap;
+    return row;
+  });
+}
 import { CLAN, UNLOCKS } from "./rules";
 import { BAZAAR, LOANS, SCHOOL } from "@/petdex/server/rules/production.js";
 import { MARKET } from "@/petdex/server/rules/market.js";
-import { EGG, LIFE_STAGES } from "@/public/ta-tua/game/js/shared/pets.js";
+import { DAILY_XP, EGG, LIFE_STAGES, UPKEEP } from "@/public/ta-tua/game/js/shared/pets.js";
+import { BRACKETS } from "@/petdex/server/rules/town.js";
 import {
   COMMODITY_COUNT, DESIGN_RULES, GOODS_COUNT, INDUSTRIAL_MARKET, INDUSTRY_COUNT, LAND_RULES, LEGEND_ID, MASCOT_ID, SERVICE_COUNT,
   clanLevelRows, climateNames, elementPets, formPets, freshnessRows, industryRows, legendaryPets, phaseRows, sectorRows, stagePets, unlockRows, weatherRows, zoneRows,
@@ -530,6 +542,15 @@ export const ARTICLES: WikiArticle[] = [
           { pets: stagePets(MASCOT_ID) },
           { table: { head: ["Giai đoạn", "Từ tuần", "Giờ làm tối đa/ngày", "Lương", "XP", "Đặc điểm"], rows: stageRows() } },
           { p: "Từ **Trưởng thành**, bé có **lương thâm niên**: +1% cho mỗi 10 giờ đã làm ở nghề đó, tối đa +30%." },
+        ],
+      },
+      {
+        id: "tu-lon",
+        title: "Bé tự lớn và phí chăm nuôi",
+        blocks: [
+          { p: `Mỗi đêm lúc quyết toán, mọi bé còn sống tự được cộng **${DAILY_XP.share * 100}%** số XP cần để lên cấp hiện tại (ít nhất ${DAILY_XP.min} XP), kể cả khi bạn không vào game. Bé yếu (sức khỏe dưới ${DAILY_XP.weakBelow}) chỉ được một nửa. Đủ XP thì bé lên cấp và bạn nhận xu thưởng lên cấp như thường.` },
+          { p: `Nuôi bé cũng tốn **phí chăm nuôi** mỗi ngày: (${UPKEEP.base} + ${UPKEEP.perLevel} × cấp) xu mỗi bé, nhân chỉ số giá của Ngân hàng Trung ương. Cả ngày không quá **${UPKEEP.incomeShare * 100}% thu nhập hôm đó** của bạn (tối thiểu ${UPKEEP.base} xu mỗi bé), và chỉ tính khi bạn có vào game trong ${UPKEEP.activeDays} ngày qua. Ví không đủ thì trừ phần đang có, không ghi nợ.` },
+          { tip: "Phí chăm nuôi giữ cho lượng xu trong thị trấn không phình nhanh hơn hàng hóa, nhờ vậy giá cả và tiền tiết kiệm của bạn giữ được giá trị." },
         ],
       },
       {
@@ -1169,13 +1190,13 @@ export const ARTICLES: WikiArticle[] = [
         title: "Thuế thu nhập",
         blocks: [
           { p: "Thuế tính theo thu nhập chịu thuế **trong ngày**, thu lúc nửa đêm, lũy tiến từng bậc:" },
-          { table: { head: ["Phần thu nhập trong ngày", "Thuế suất"], rows: [["0–300 xu", "0%"], ["300–1.000 xu", "5%"], ["1.000–3.000 xu", "10%"], ["Trên 3.000 xu", "15%"]] } },
+          { table: { head: ["Phần thu nhập trong ngày", "Thuế suất"], rows: taxRows() } },
           { list: [
-            "Thu nhập chịu thuế: lương, lãi ngân hàng, phí gia công nhận được, lợi nhuận quầy, lãi khi bán hàng trên Sàn (so với giá vốn).",
+            "Thu nhập chịu thuế: lương, tiền thưởng mini-game, lãi ngân hàng, phí gia công nhận được, lợi nhuận quầy, lãi khi bán hàng trên Sàn (so với giá vốn).",
             "Thiếu tiền nộp thì ghi nợ thuế. Quầy trà sữa còn chịu thêm 3% thuế doanh thu.",
             "Một nửa mọi khoản thuế và phí đi vào **ngân sách thị trấn**, dùng cho trợ cấp tân thủ, dự án Hội và các đề xuất.",
           ] },
-          { tip: "Người chơi kiếm dưới 300 xu một ngày không phải nộp thuế." },
+          { tip: `Người chơi kiếm dưới ${BRACKETS[0][0]} xu một ngày không phải nộp thuế.` },
         ],
       },
       {

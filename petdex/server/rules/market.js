@@ -23,7 +23,7 @@ export const MARKET = {
   tickMs: 10 * 60_000,
   theta: 0.35, // tốc độ hồi về giá trung bình, mỗi ngày
   spread: 0.01, // chênh lệch mua/bán của NPC mỗi phía
-  fee: 0.01,
+  fee: 0.015, // phí giao dịch mỗi lệnh khớp (một nguồn hút xu)
   liquidity: 200, // số lô làm giá dịch 100%
   processedDepth: 3, // hàng chế biến có thương lái nơi khác mua sỉ: sâu gấp 3 lần hàng thô
   band: 0.15, // giá lệnh giới hạn phải nằm trong ±15% giá hiện tại
@@ -41,7 +41,9 @@ export const MARKET = {
   playerWeight: 0.45,
   pressureHalfLifeMs: 6 * 3_600_000,
   maxPressure: 2,
-  ceiling: 5, // giá không vượt 5 lần giá gốc (sàn: 0,25 lần)
+  ceiling: 5, // giá không vượt 5 lần giá gốc
+  floor: 0.25, // giá không dưới 0,25 lần giá gốc
+  freshFloor: 0.4, // hàng tươi (có hạn dùng) không giữ chờ giá lên được: sàn cao hơn, 0,4 lần giá gốc
   // Pha thị trường ẩn của từng hàng thô: đổi bất chợt, trung bình mỗi `regimeHours` giờ một lần.
   regimeHours: 10,
   // Sốt giá / sập giá đột ngột: mỗi hàng thô trung bình `jumpsPerDay` lần/ngày, nhảy 12–30% tức thì.
@@ -110,12 +112,15 @@ export function meanPrice(id, { prices, drift = 1, index = 1, news = 1 }) {
   return c.base * (now / base) * news;
 }
 
+/** Giá sàn (phần của giá gốc): hàng tươi cao hơn hàng để lâu được. */
+export const floorOf = (id) => (COMMODITIES[id]?.shelfDays ? MARKET.freshFloor : MARKET.floor);
+
 /** Một bước Ornstein–Uhlenbeck: kéo về giá trung bình cộng nhiễu theo biến động ngày của hàng (nhân `volMul` của pha). */
 export function stepPrice(id, price, mean, dtMs, z, volMul = 1) {
   const dt = dtMs / DAY;
   const { vol, base } = COMMODITIES[id];
   const next = price + MARKET.theta * (mean - price) * dt + vol * volMul * price * Math.sqrt(dt) * z;
-  return Math.min(base * MARKET.ceiling, Math.max(base * 0.25, next));
+  return Math.min(base * MARKET.ceiling, Math.max(base * floorOf(id), next));
 }
 
 /**
@@ -151,7 +156,7 @@ export const pushPressure = (pressure, lots, side, depth = MARKET.liquidity) =>
 /** Giá niêm yết: giá theo luật game nhân phần áp lực người chơi (chỉ chiếm playerWeight), trong khoảng sàn–trần. */
 export function blendPrice(id, rulePrice, pressure) {
   const { base } = COMMODITIES[id];
-  return Math.min(base * MARKET.ceiling, Math.max(base * 0.25, rulePrice * (1 + MARKET.playerWeight * pressure)));
+  return Math.min(base * MARKET.ceiling, Math.max(base * floorOf(id), rulePrice * (1 + MARKET.playerWeight * pressure)));
 }
 
 /** Cú sốt giá / sập giá trong một nhịp: có thì trả về { up, size } (size là tỷ lệ nhảy, âm khi sập). */

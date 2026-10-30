@@ -14,7 +14,7 @@ import { settleCareDay } from './care.js';
 import { settleContractsDay } from './contracts.js';
 import { settleLoansDay } from './credit.js';
 import { settleFactoryDay } from './factory.js';
-import { settleLifeDay } from './lifecycle.js';
+import { settleLifeDay, settleUpkeepDay } from './lifecycle.js';
 import { closeWeek, settleTaxes, weekKey } from './town.js';
 import { dayKey, nextDay, startOfDay, weekday } from './clock.js';
 import { getMeta, setMeta } from './db.js';
@@ -38,6 +38,7 @@ export function closeDay(day, rand = Math.random) {
   settleClansDay(day, rand);
   settleCareDay(day, end, rand);
   settleLifeDay(day);
+  settleUpkeepDay(day);
   settleContractsDay(day);
   settleBankDay(end);
   settleClanGovDay(end);
