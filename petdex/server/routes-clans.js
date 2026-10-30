@@ -8,7 +8,7 @@ import { dayKey } from './clock.js';
 import { auth, intField, reply } from './http.js';
 import { macroHistory, macroToday } from './macro.js';
 import { assignOperator, removeOperator, strategicView, upgradeInfra } from './strategic.js';
-import { buyListing, cancelListing, importGoods, industryView, listGoods, sellToNpc, setKeep } from './industry.js';
+import { buyListing, cancelListing, importGoods, industryView, listGoods, sellToNpc, setKeep, setShopAsk } from './industry.js';
 import { requireLevel } from './routes-economy.js';
 import { castBallot, openClanDeposit, resolveVotes, startDepose, withdrawClanDeposit } from './clan-gov.js';
 
@@ -63,6 +63,7 @@ clanApi.post('/land/:id/plant', (req, res) => reply(res, uid(req), choosePlant(u
 // ---- Kho, sàn công nghiệp, nhập khẩu ----
 
 clanApi.get('/industry', (req, res) => res.json(industryView(uid(req), macroToday())));
+clanApi.post('/industry/shop-ask', (req, res) => reply(res, uid(req), setShopAsk(uid(req), { cat: String(req.body?.cat ?? ''), qty: req.body?.qty, pct: req.body?.pct })));
 clanApi.post('/industry/keep', (req, res) => reply(res, uid(req), setKeep(uid(req), String(req.body?.good ?? ''), Boolean(req.body?.keep))));
 clanApi.post('/industry/list', (req, res) => reply(res, uid(req), listGoods(uid(req), { good: String(req.body?.good ?? ''), qty: req.body?.qty, price: req.body?.price }, macroToday())));
 clanApi.post('/industry/listings/:id/cancel', (req, res) => reply(res, uid(req), cancelListing(uid(req), intField(req.params.id, 'Tin'))));

@@ -776,6 +776,15 @@ addColumn('users', 'locked_slots', 'INTEGER NOT NULL DEFAULT 0');
     npc_sold  INTEGER NOT NULL DEFAULT 0,
     meal_sold INTEGER NOT NULL DEFAULT 0
   );
+  -- Sổ chào giá cho Siêu thị: mỗi gia tộc một lệnh mỗi nhóm (qty còn lại, giá = ratio × giá tham chiếu).
+  CREATE TABLE IF NOT EXISTS essentials_asks (
+    clan_id    INTEGER NOT NULL,
+    cat        TEXT NOT NULL,
+    qty        INTEGER NOT NULL,
+    ratio      REAL NOT NULL,
+    created_at INTEGER NOT NULL,
+    PRIMARY KEY (clan_id, cat)
+  );
   CREATE TABLE IF NOT EXISTS essentials_buys (
     user_id INTEGER NOT NULL,
     day     TEXT NOT NULL,

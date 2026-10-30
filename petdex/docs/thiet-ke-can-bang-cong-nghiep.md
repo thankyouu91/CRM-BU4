@@ -234,7 +234,6 @@ Mở rộng `scripts/simulate-economy.js` với bot gia tộc (8 gia tộc, 60 n
 - **Đồ ăn NPC** (người chơi cũ hơn 7 ngày): hạn mức mỗi ngày = ⌈số bé × 3 × max(10%, 1 − D)⌉ + 2 món; XP còn 50% (D < 20%) → 25% (D = 80%) → 10%; giá × (1 + 30% theo D từ 20% đến 80%).
 - **Tài khoản mới 7 ngày**: đồ ăn NPC không giới hạn, đủ XP, giá gốc.
 - Giao diện: Siêu thị hiện thanh "Tự chủ thực phẩm D%", hạn mức NPC còn lại, kho và giá suất ăn gia tộc.
-- Chưa làm: sổ chào giá thấp trước (Siêu thị đang mua theo thứ tự gia tộc chạy sản xuất trong đêm).
 
 ### 4.5 Đồ chăm sóc và hạng chất lượng (đợt 5)
 
@@ -243,6 +242,13 @@ Mở rộng `scripts/simulate-economy.js` với bot gia tộc (8 gia tộc, 60 n
 - **Điểm chất lượng** của gia tộc (0–1) = 40% cấp gia tộc + 30% nhà xưởng (số mảnh công trình của ngành chế biến ÷ 20) + 30% nếu gia tộc tự chạy một ngành đầu vào (Nông nghiệp hoặc Chăn nuôi cho thực phẩm; Hóa chất hoặc Nông nghiệp cho thuốc).
 - **Tỉ lệ hạng** mỗi đêm: Tuyệt hảo = 35% × điểm, Ngon = 20% + 40% × điểm, còn lại Thường. Gia tộc mới (điểm 0) ra 80% Thường, 20% Ngon; gia tộc tối đa ra 5% / 60% / 35%.
 - Siêu thị chỉ hiện thẻ hạng Ngon / Tuyệt hảo khi còn hàng; thanh tự chủ hiện kho từng hạng.
+
+### 4.6 Sổ chào giá thấp trước (đợt 6)
+
+- Tộc trưởng / trưởng lão đặt **lệnh chào bán** Thực phẩm chế biến hoặc Thuốc từ kho cho Siêu thị: số lượng tối đa và giá **70–100% giá tham chiếu** (bảng `essentials_asks`, mỗi gia tộc một lệnh mỗi nhóm). Đặt lệnh thì mặt hàng chuyển sang "Giữ trong kho" để không bị tự bán NPC.
+- Lúc nửa đêm, sau khi Siêu thị tính lượng cần mua, **sổ được khớp trước khi các gia tộc chạy sản xuất**: giá thấp trước; cùng giá thì điểm chất lượng cao trước; rồi lệnh đặt trước (đổi giá thì mất thứ tự). Trần 40% mỗi gia tộc tính chung cho sổ và hàng tự bán.
+- Siêu thị trả giá chào × hệ số hạng chất lượng; tiền vào quỹ gia tộc, ghi vào giao dịch ("Siêu thị") và tính thuế đêm đó như giao dịch trên sàn. Lệnh còn lại sau khớp được giữ cho đêm sau.
+- Hàng vừa làm ra mà không có lệnh vẫn được Siêu thị mua sau sổ, ở giá 100% tham chiếu. Như vậy giá thấp hơn đổi lấy chắc chắn bán được khi Siêu thị cần ít hàng.
 
 ---
 
