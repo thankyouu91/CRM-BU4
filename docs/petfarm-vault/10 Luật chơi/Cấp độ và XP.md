@@ -18,7 +18,7 @@ XP cần để từ cấp L lên L+1 = 80 + (L − 1) × 40
 Thưởng xu khi đạt cấp L     = 20 + L × 10
 XP thực nhận                = round( XP gốc × (hành vượng ? 1,1 : 1) × stage.xp )
 ```
-(`petdex/server/game.js:217-218`, `petdex/server/service.js:70-71`, `petdex/server/elements.js:26`.) Hệ số tuổi `stage.xp`: Sơ sinh 1,5, Nhí nhố 1,25, Thiếu niên 1,1, Thanh niên 1, Trưởng thành 1, Lão làng 0,7 (`public/ta-tua/game/js/shared/pets.js:82-113`). Tổng XP cộng dồn tới cấp N là `40·N² − 40·N`... cụ thể: `Σ_{L=1}^{N−1} (40 + 40L) = 20·(N−1)·(N+2)`.
+(`petdex/server/game.js:217-218`, `petdex/server/service.js:70-71`, `petdex/server/elements.js:26`.) Hệ số tuổi `stage.xp`: Sơ sinh 1,5, Nhí nhố 1,25, Thiếu niên 1,1, Thanh niên 1, Trưởng thành 1, Lão làng 0,7 (`public/ta-tua/game/js/shared/pets.js:82-113`). Tổng XP cộng dồn để đạt cấp N: `Σ_{L=1}^{N−1} (40 + 40L) = 20·(N−1)·(N+2)` (ví dụ cấp 10: 20·9·12 = 2.160).
 
 `settle` xử lý lên nhiều cấp một lúc và cộng dồn thưởng (`petdex/server/game.js:288-299`); thưởng ghi sổ loại `level` với ghi chú "<tên> lên cấp N" (`petdex/server/service.js:73-76`).
 
