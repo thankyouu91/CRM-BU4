@@ -45,12 +45,13 @@ import { renderBazaar } from './views/bazaar.js';
 import { renderBusiness } from './views/business.js';
 import { renderChat } from './views/chat.js';
 import { renderClans } from './views/clans.js';
+import { renderArena } from './views/arena.js';
 import { renderClinic } from './views/clinic.js';
 import { renderCommunity } from './views/community.js';
 import { renderContracts } from './views/contracts.js';
 import { renderCredit } from './views/credit.js';
 import { renderFinance } from './views/finance.js';
-import { durabilityChip, forgeButtons, forgeConfirmText, renderArenaSoon, renderForge, renderMaterials } from './views/forge.js';
+import { durabilityChip, forgeButtons, forgeConfirmText, renderForge, renderMaterials } from './views/forge.js';
 import { renderFactory } from './views/factory.js';
 import { renderGarden } from './views/garden.js';
 import { renderKitchen } from './views/kitchen.js';
@@ -279,7 +280,7 @@ function render() {
     garden: renderGarden, kitchen: renderKitchen, school: renderSchool, clinic: renderClinic,
     factory: renderFactory, contracts: renderContracts, bazaar: renderBazaar, credit: renderCredit, clans: renderClans,
     finance: renderFinance, chat: renderChat, mail: renderMail,
-    forge: renderForge, materials: renderMaterials, arena: renderArenaSoon,
+    forge: renderForge, materials: renderMaterials, arena: renderArena,
   };
   const out = views[state.view]($('#view'), ctx);
   if (typeof out === 'function') teardown = out;

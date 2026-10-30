@@ -20,6 +20,7 @@ import { adminClanView, resolveEvasion, setClanConfig, setPlotOverride } from '.
 import { dayKey } from './clock.js';
 import { macroToday, overrideMacro } from './macro.js';
 import { commerceView } from './commerce.js';
+import { adminArenaView, adminCancelWar } from './arena.js';
 import { refPrice } from './industry.js';
 import { slotsOf } from './lifecycle.js';
 import { bus, snapshot } from './service.js';
@@ -603,6 +604,10 @@ internalApi.get('/admin/log', (req, res) => {
 // ---- Gia tộc, Sở Nhà Đất, vĩ mô và Sở thuế ----
 
 internalApi.get('/admin/clans', (_req, res) => res.json(adminClanView()));
+
+// ---- Đấu trường gia tộc: xem và hủy trận chưa đánh ----
+internalApi.get('/admin/arena', (_req, res) => res.json(adminArenaView()));
+internalApi.post('/admin/arena/:warId/cancel', (req, res) => res.json(adminCancelWar(req.params.warId, actorOf(req), String(req.body?.reason ?? '').slice(0, 200))));
 
 // ---- Sở Công Thương: HHI, thị phần, lệch giá trên sàn công nghiệp, hàng thiết yếu, thuế chống độc quyền, cờ liên kết ----
 internalApi.get('/admin/commerce', (_req, res) => {

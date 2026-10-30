@@ -85,6 +85,8 @@ export const KINDS = {
   corp_tax_collect: { group: 'transfer', label: 'Sở thuế truy thu' },
   goods_trade: { group: 'transfer', label: 'Mua bán hàng công nghiệp' },
   antitrust_tax: { group: 'transfer', label: 'Thuế chống độc quyền' },
+  arena_penalty: { group: 'transfer', label: 'Phạt thua Đấu trường' },
+  arena_prize: { group: 'transfer', label: 'Thưởng thắng Đấu trường' },
   infra_bonus: { group: 'income', label: 'Buff hạ tầng chiến lược' },
   infra_fee: { group: 'expense', label: 'Phí hạ tầng' },
   tax_commission: { group: 'transfer', label: 'Hoa hồng truy thu thuế' },

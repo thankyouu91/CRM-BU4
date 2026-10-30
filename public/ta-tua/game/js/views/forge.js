@@ -124,11 +124,3 @@ export function renderMaterials(root, ctx) {
   });
   draw();
 }
-
-/** Màn Đấu trường: chỗ giữ cho màn đấu trường gia tộc (phiên gia tộc thay bằng màn thật). */
-export function renderArenaSoon(root) {
-  root.innerHTML = `<div class="forge-page">
-    ${viewHead('⚔️ Đấu trường', 'Nơi các gia tộc so tài.')}
-    <div class="empty muted">Đấu trường gia tộc sắp mở. Lưu ý: sau mỗi trận, mọi trang phục người tham gia đang đeo đều hỏng và phải sửa ở Lò rèn.</div>
-    <p><button class="btn" data-go="forge">⚒️ Tới Lò rèn</button> <button class="btn" data-go="map">🗺️ Về phố</button></p></div>`;
-}
