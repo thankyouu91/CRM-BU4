@@ -34,6 +34,7 @@ import { bus, mutatePet, ownedPet, snapshot } from './service.js';
 import { getSpecies, listSpecies } from './species.js';
 import { richList } from './wallet.js';
 import { createGear, equipGear, gearConfig, openGear, quickSellGear, userBonus } from './gear.js';
+import { buyMaterials, forgeView, repairGear, upgradeGear } from './forge.js';
 import { redeemGiftCode } from './gifts.js';
 import { chargeEssential, essentialXpFactor } from './essentials.js';
 import { essentialRefs } from './industry.js';
@@ -274,6 +275,28 @@ api.post('/gear/:id/quick-sell', auth, (req, res) => {
   const result = store.transaction(() => quickSellGear(req.user.id, Number(req.params.id)));
   bus.emit('pet:changed', req.user.id);
   reply(res, req.user.id, result);
+});
+
+/** Lò rèn: giá, tỉ lệ và số lô vật liệu đang có. */
+api.get('/forge', auth, (req, res) => res.json(forgeView(req.user.id)));
+
+/** Sửa món hỏng sau đấu trường (70% thành công, xong thì chờ 24 giờ ở lò). */
+api.post('/gear/:id/repair', auth, (req, res) => {
+  const result = repairGear(req.user.id, Number(req.params.id));
+  bus.emit('pet:changed', req.user.id);
+  reply(res, req.user.id, result);
+});
+
+/** Nâng món lên cấp kế tiếp (tối đa 30%, hỏng thì mất xu và vật liệu). */
+api.post('/gear/:id/upgrade', auth, (req, res) => {
+  const result = upgradeGear(req.user.id, Number(req.params.id));
+  bus.emit('pet:changed', req.user.id);
+  reply(res, req.user.id, result);
+});
+
+/** Tiệm vật liệu: mua hàng thô giá cao để rèn. */
+api.post('/forge/materials', auth, (req, res) => {
+  reply(res, req.user.id, buyMaterials(req.user.id, String(req.body?.commodity ?? ''), Number(req.body?.lots)));
 });
 
 /** Mở hộp trang phục mua ở Siêu thị: lộ 1–2 dòng chỉ số. */

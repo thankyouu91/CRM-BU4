@@ -50,6 +50,7 @@ import { renderCommunity } from './views/community.js';
 import { renderContracts } from './views/contracts.js';
 import { renderCredit } from './views/credit.js';
 import { renderFinance } from './views/finance.js';
+import { durabilityChip, forgeButtons, forgeConfirmText, renderArenaSoon, renderForge, renderMaterials } from './views/forge.js';
 import { renderFactory } from './views/factory.js';
 import { renderGarden } from './views/garden.js';
 import { renderKitchen } from './views/kitchen.js';
@@ -76,6 +77,7 @@ const state = {
 const VIEW_NAMES = [
   'map', 'home', 'shop', 'bag', 'park', 'ranks', 'jobs', 'games', 'bank', 'market', 'wallet', 'news', 'business', 'townhall', 'community',
   'garden', 'kitchen', 'school', 'clinic', 'factory', 'contracts', 'bazaar', 'credit', 'clans', 'finance', 'chat', 'mail',
+  'forge', 'materials', 'arena',
 ];
 const TYPE_ORDER = ['food', 'care', 'toy', 'accessory', 'egg'];
 const IDLE_BY_MOOD = { great: 'idle', ok: 'idle', hungry: 'wait', tired: 'think', sad: 'sad', sick: 'sad', dirty: 'wait' };
@@ -277,6 +279,7 @@ function render() {
     garden: renderGarden, kitchen: renderKitchen, school: renderSchool, clinic: renderClinic,
     factory: renderFactory, contracts: renderContracts, bazaar: renderBazaar, credit: renderCredit, clans: renderClans,
     finance: renderFinance, chat: renderChat, mail: renderMail,
+    forge: renderForge, materials: renderMaterials, arena: renderArenaSoon,
   };
   const out = views[state.view]($('#view'), ctx);
   if (typeof out === 'function') teardown = out;
@@ -737,7 +740,7 @@ const ACTIONS = {
         return `
           <button class="pick ${here ? 'current' : ''}" data-pick="gear:${g.id}">
             <b>${itemIcon(item, 3)}</b>
-            <span>${esc(item.name)} ${tierChip(g.tier)}<small>${esc(gearLines(g))}${elsewhere}</small></span>
+            <span>${esc(item.name)} ${tierChip(g.tier)} ${durabilityChip(g)}<small>${esc(gearLines(g))}${elsewhere}${g.usable === false ? ' · chưa cộng chỉ số, sửa ở Lò rèn' : ''}</small></span>
             <span class="badge">${here ? 'Đang đeo' : `${ELEMENTS[item.element].icon} Đeo${tag}`}</span>
           </button>`;
       }).join('');
@@ -1021,8 +1024,9 @@ function gearShelf(pet) {
         <div class="icon">${itemIcon(item)}</div>
         <span class="type-tag">${SLOTS[g.slot].name} · ${ELEMENTS[item.element].icon} ${ELEMENTS[item.element].name}</span>
         <h3>${esc(item.name)} ${tierChip(g.tier)}</h3>
-        <ul class="gear-lines">${AFFIX_ORDER.filter((a) => g.affixes[a]).map((a) => `<li title="${esc(AFFIXES[a].desc)}">${affixText(a, g.affixes[a])}</li>`).join('')}</ul>
-        <div class="foot">${button(g)}${quickSellButton(g)}</div>
+        ${durabilityChip(g)}
+        <ul class="gear-lines ${g.usable === false ? 'off' : ''}">${AFFIX_ORDER.filter((a) => g.affixes[a]).map((a) => `<li title="${esc(AFFIXES[a].desc)}">${affixText(a, g.affixes[a])}</li>`).join('')}</ul>
+        <div class="foot">${button(g)}${forgeButtons(g, state.forge)}${quickSellButton(g)}</div>
       </article>`;
   };
   return `
@@ -1033,6 +1037,13 @@ function gearShelf(pet) {
 
 function renderBag(root) {
   const pet = state.me.pets.length ? currentPet() : null;
+  // Tỉ lệ sửa / nâng cấp ghi trên nút: tải một lần (quản trị viên chỉnh được), có rồi thì vẽ lại cho hiện tỉ lệ.
+  if (!state.forge && myGear().some((g) => !g.sealed)) {
+    api('/forge').then((f) => {
+      state.forge = f;
+      if (state.view === 'bag' && root.isConnected) render();
+    }).catch(() => {});
+  }
   const owned = Object.values(items())
     .filter((i) => qtyOf(i.id) > 0 && i.type !== 'accessory')
     .sort((a, b) => TYPE_ORDER.indexOf(a.type) - TYPE_ORDER.indexOf(b.type) || a.price - b.price);
@@ -1357,6 +1368,17 @@ $('#view').addEventListener('click', (e) => {
   }
   if (d.buy) return act('/shop/buy', { itemId: d.buy, qty: Number(d.qty) });
   if (d.openGear) return act(`/gear/${d.openGear}/open`, {}, { fx: sparkleFx('jump', 'sparkle') });
+  if (d.forgeRepair || d.forgeUpgrade) {
+    const kind = d.forgeRepair ? 'repair' : 'upgrade';
+    const id = Number(d.forgeRepair ?? d.forgeUpgrade);
+    const g = myGear().find((x) => x.id === id);
+    if (!g) return;
+    return api('/forge').then((forge) => {
+      state.forge = forge;
+      if (!confirm(forgeConfirmText(kind, g, items()[g.itemId], forge))) return;
+      return act(`/gear/${id}/${kind}`, {}, { fx: sparkleFx('jump', 'sparkle') });
+    }).catch((err) => toast(err.message, 'error'));
+  }
   if (d.quickSell) {
     const g = myGear().find((x) => x.id === Number(d.quickSell));
     if (!g) return;
