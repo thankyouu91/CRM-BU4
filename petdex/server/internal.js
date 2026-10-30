@@ -17,7 +17,9 @@ import { SKILLS } from './rules/careers.js';
 import { createPet } from './eggs.js';
 import { adminClanView, resolveEvasion, setClanConfig, setPlotOverride } from './clans.js';
 import { dayKey } from './clock.js';
-import { overrideMacro } from './macro.js';
+import { macroToday, overrideMacro } from './macro.js';
+import { commerceView } from './commerce.js';
+import { refPrice } from './industry.js';
 import { slotsOf } from './lifecycle.js';
 import { bus, snapshot } from './service.js';
 import { getSpecies, listSpecies } from './species.js';
@@ -600,6 +602,12 @@ internalApi.get('/admin/log', (req, res) => {
 // ---- Gia tộc, Sở Nhà Đất, vĩ mô và Sở thuế ----
 
 internalApi.get('/admin/clans', (_req, res) => res.json(adminClanView()));
+
+// ---- Sở Công Thương: HHI, thị phần, lệch giá trên sàn công nghiệp, hàng thiết yếu, thuế chống độc quyền, cờ liên kết ----
+internalApi.get('/admin/commerce', (_req, res) => {
+  const macro = macroToday();
+  res.json(commerceView((good) => refPrice(good, macro)));
+});
 
 // ---- Gộp / gỡ gộp ngành (chuẩn bị quay lại bản cũ, xem industry-merge.js) ----
 internalApi.get('/admin/industries/status', (_req, res) => res.json(unmergePlan()));

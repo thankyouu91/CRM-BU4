@@ -860,6 +860,14 @@ export function renderClans(root, ctx) {
       </div>`;
   }
 
+  /** Ô mua một tin đăng, giới hạn theo hạn mức mua gom 24 giờ của gia tộc (Sở Công Thương). */
+  function buyForm(l) {
+    const left = ind.buyLeft?.[l.good] ?? l.qty;
+    const max = Math.min(l.qty, left);
+    if (max <= 0) return '<span class="muted small">Đã đủ hạn mức mua 24 giờ</span>';
+    return `<form class="row trade-form" data-form="buy" data-listing="${l.id}"><input name="qty" type="number" min="1" max="${max}" value="${max}" title="Còn được mua ${fmt(left)} đv mặt hàng này trong 24 giờ" /><button class="btn small primary">Mua</button></form>`;
+  }
+
   function drawMarket() {
     if (!ind) return loadIndustry(drawMarket);
     const manage = ind.clan && (ind.clan.role === 'leader' || ind.clan.role === 'elder');
@@ -870,6 +878,8 @@ export function renderClans(root, ctx) {
           <h3>🏪 Sàn công nghiệp</h3>
           <p class="muted small">Gia tộc đăng bán hàng trong kho với giá ${pctInt(ind.rules.band[0])}–${pctInt(ind.rules.band[1])} giá tham chiếu; gia tộc khác mua về kho để làm nguyên liệu.
             Phí sàn ${pctInt(ind.rules.fee)} do người bán trả. Tin đăng hết hạn sau ${ind.rules.listingDays} ngày, hàng tự về kho.</p>
+          <p class="muted small">🏛️ Sở Công Thương: trong 24 giờ mỗi gia tộc mua tối đa ${pctInt(ind.rules.buyCapShare)} số hàng đang niêm yết của một mặt hàng (luôn được ít nhất ${fmt(ind.rules.buyCapMin)} đv).
+            Gia tộc bán quá ${pctInt(ind.rules.antitrustShare)} khối lượng một mặt hàng trên sàn trong ${ind.rules.windowDays} ngày thì phần vượt chịu thêm thuế chống độc quyền ${pctInt(ind.rules.antitrustRate)}.</p>
           ${byGood.length ? `<table class="clan-table"><thead><tr><th>Hàng</th><th>Gia tộc bán</th><th class="num">Còn</th><th class="num">Giá/đv</th><th class="num">Tham chiếu</th><th></th></tr></thead><tbody>
             ${byGood.flatMap((g) => ind.listings.filter((l) => l.good === g).map((l) => `<tr>
               <td>${GOODS[g].icon} ${esc(GOODS[g].name)}</td>
@@ -878,7 +888,7 @@ export function renderClans(root, ctx) {
               <td class="num">${fmt(l.price)}</td>
               <td class="num muted">${fmt(ind.prices[g].ref)}</td>
               <td>${l.mine ? (manage ? `<button class="link-btn danger" data-cancel-listing="${l.id}">Gỡ tin</button>` : '')
-                : manage ? `<form class="row trade-form" data-form="buy" data-listing="${l.id}"><input name="qty" type="number" min="1" max="${l.qty}" value="${l.qty}" /><button class="btn small primary">Mua</button></form>` : ''}</td>
+                : manage ? buyForm(l) : ''}</td>
             </tr>`)).join('')}</tbody></table>` : '<p class="muted">Chưa có tin đăng nào. Đăng hàng từ tab Sản xuất & Kho.</p>'}
           ${!ind.clan ? '<p class="muted small">Vào một gia tộc để mua bán trên sàn.</p>' : ''}
         </section>

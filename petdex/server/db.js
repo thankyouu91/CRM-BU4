@@ -776,6 +776,18 @@ addColumn('users', 'locked_slots', 'INTEGER NOT NULL DEFAULT 0');
     npc_sold  INTEGER NOT NULL DEFAULT 0,
     meal_sold INTEGER NOT NULL DEFAULT 0
   );
+  -- Thuế chống độc quyền trên sàn công nghiệp (commerce.js, M6).
+  CREATE TABLE IF NOT EXISTS antitrust_taxes (
+    id         INTEGER PRIMARY KEY AUTOINCREMENT,
+    clan_id    INTEGER NOT NULL,
+    good       TEXT NOT NULL,
+    qty        INTEGER NOT NULL,
+    tax        INTEGER NOT NULL,
+    share      REAL NOT NULL,
+    day        TEXT NOT NULL,
+    created_at INTEGER NOT NULL
+  );
+  CREATE INDEX IF NOT EXISTS clan_trades_good ON clan_trades(good, day);
   -- Sổ chào giá cho Siêu thị: mỗi gia tộc một lệnh mỗi nhóm (qty còn lại, giá = ratio × giá tham chiếu).
   CREATE TABLE IF NOT EXISTS essentials_asks (
     clan_id    INTEGER NOT NULL,

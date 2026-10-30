@@ -9,7 +9,7 @@ import { isAdmin } from "@/lib/rbac";
 // internal admin API (petdex/server/internal.js); every change is also written to WorkHub's
 // audit log with the administrator as actor.
 
-const ALLOWED = /^(overview|log|announcements(\/\d+\/delete)?|gear-config|gear\/\d+(\/delete)?|gift-codes(\/\d+(\/revoke)?)?|industries\/(status|unmerge|merge)|clans(\/(config|macro|plots\/\d+|evasion\/\d+\/(collect|dismiss)))?|invites(\/\d+\/revoke)?|players(\/\d+(\/(coins|status|name|password-link|gear|pets(\/\d+)?))?)?)$/;
+const ALLOWED = /^(overview|log|announcements(\/\d+\/delete)?|gear-config|gear\/\d+(\/delete)?|gift-codes(\/\d+(\/revoke)?)?|industries\/(status|unmerge|merge)|commerce|clans(\/(config|macro|plots\/\d+|evasion\/\d+\/(collect|dismiss)))?|invites(\/\d+\/revoke)?|players(\/\d+(\/(coins|status|name|password-link|gear|pets(\/\d+)?))?)?)$/;
 
 /** Body fields that only label the audit entry; the game never sees them. */
 const LABEL_FIELDS = ["announcementTitle", "playerName", "petName", "speciesName", "itemName", "tierName", "clanName", "plotCode"];
