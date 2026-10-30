@@ -32,7 +32,7 @@ function Block({ block, base }: { block: WikiBlock; base: string }) {
           <tbody>
             {block.table.rows.map((row, r) => (
               <tr key={r} className="border-t border-[var(--pf-line)] align-top even:bg-[var(--pf-surface)]">
-                {row.map((cell, c) => <td key={c} className="px-4 py-2.5 tabular-nums">{typeof cell === "number" ? cell.toLocaleString("vi-VN") : <Inline text={cell} base={base} />}</td>)}
+                {row.map((cell, c) => <td key={c} className={c === 0 ? "whitespace-nowrap px-4 py-2.5 font-semibold" : "px-4 py-2.5 tabular-nums"}>{typeof cell === "number" ? cell.toLocaleString("vi-VN") : <Inline text={cell} base={base} />}</td>)}
               </tr>
             ))}
           </tbody>

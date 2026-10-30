@@ -19,7 +19,7 @@ export const metadata: Metadata = {
 };
 
 /** The first articles a new player should read, in order. */
-const FIRST_STEPS = ["bat-dau", "cham-soc", "viec-lam", "nhiem-vu-hang-ngay", "cap-do"];
+const FIRST_STEPS = ["bat-dau", "cham-soc", "moi-ngay", "viec-lam", "cap-do"];
 
 export default async function WikiHome() {
   const base = await wikiBase();
