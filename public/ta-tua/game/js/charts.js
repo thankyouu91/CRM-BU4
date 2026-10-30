@@ -13,6 +13,22 @@ export const COLORS = {
   blue: '#58b9d6',
 };
 
+/**
+ * Vẽ lại khi khung đổi chiều rộng (xoay điện thoại, thu nhỏ cửa sổ): mỗi khung nhớ cách vẽ gần nhất
+ * và bề rộng lúc vẽ; ResizeObserver thấy bề rộng khác thì vẽ lại cho vừa.
+ */
+const redraws = new WeakMap();
+const resizer = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver((entries) => {
+  for (const { target } of entries) {
+    const last = redraws.get(target);
+    if (last && target.isConnected && Math.abs(target.clientWidth - last.width) >= 2) last.draw();
+  }
+});
+function remember(host, draw) {
+  redraws.set(host, { draw, width: host.clientWidth });
+  resizer?.observe(host);
+}
+
 /** Tạo canvas vừa khung `host`, trả về { g, w, h } theo đơn vị pixel biểu đồ. */
 function setup(host, height) {
   host.classList.add('chart');
@@ -26,6 +42,8 @@ function setup(host, height) {
   canvas.width = Math.round(cssW / PIX);
   canvas.height = Math.round(height / PIX);
   canvas.style.width = `${canvas.width * PIX}px`;
+  // không bao giờ rộng hơn khung (cho tới khi kịp vẽ lại theo bề rộng mới)
+  canvas.style.maxWidth = '100%';
   canvas.style.height = `${canvas.height * PIX}px`;
   const g = canvas.getContext('2d');
   g.imageSmoothingEnabled = false;
@@ -66,7 +84,9 @@ const range = (values) => {
  * Biểu đồ đường có tô nền. `values` là mảng số; `format` định dạng nhãn min/max;
  * `color` tùy chọn, mặc định xanh nếu đi lên, đỏ nếu đi xuống.
  */
-export function lineChart(host, values, { height = 160, format = (v) => v.toFixed(1), color } = {}) {
+export function lineChart(host, values, opts = {}) {
+  remember(host, () => lineChart(host, values, opts));
+  const { height = 160, format = (v) => v.toFixed(1), color } = opts;
   const { g, w, h } = setup(host, height);
   if (values.length < 2) return;
   const [lo, hi] = range(values);
@@ -92,7 +112,9 @@ export function lineChart(host, values, { height = 160, format = (v) => v.toFixe
 }
 
 /** Biểu đồ nến: candles = [{ open, high, low, close }]. */
-export function candleChart(host, candles, { height = 180, format = (v) => v.toFixed(1) } = {}) {
+export function candleChart(host, candles, opts = {}) {
+  remember(host, () => candleChart(host, candles, opts));
+  const { height = 180, format = (v) => v.toFixed(1) } = opts;
   const { g, w, h } = setup(host, height);
   if (!candles.length) return;
   const [lo, hi] = range(candles.flatMap((c) => [c.high, c.low]));
@@ -113,7 +135,9 @@ export function candleChart(host, candles, { height = 180, format = (v) => v.toF
 }
 
 /** Cột đôi thu/chi theo ngày: rows = [{ income, expense }]. */
-export function barChart(host, rows, { height = 150 } = {}) {
+export function barChart(host, rows, opts = {}) {
+  remember(host, () => barChart(host, rows, opts));
+  const { height = 150 } = opts;
   const { g, w, h } = setup(host, height);
   if (!rows.length) return;
   const max = Math.max(1, ...rows.flatMap((r) => [r.income, r.expense]));
@@ -134,7 +158,9 @@ export function barChart(host, rows, { height = 150 } = {}) {
 }
 
 /** Đường nhỏ trong bảng giá. */
-export function sparkline(host, values, { height = 28 } = {}) {
+export function sparkline(host, values, opts = {}) {
+  remember(host, () => sparkline(host, values, opts));
+  const { height = 28 } = opts;
   const { g, w, h } = setup(host, height);
   if (values.length < 2) return;
   const [lo, hi] = range(values);
