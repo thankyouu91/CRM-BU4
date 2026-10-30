@@ -81,10 +81,12 @@ export const article: WikiArticle = {
           ["Góp quỹ, bỏ phiếu phế truất, cho bé đứng máy trang trại gió", "Mọi thành viên"],
           ["Mua đất, chọn ngành và dây chuyền cho lô, lắp công trình", "👑 Tộc trưởng, 🎖️ Trưởng lão"],
           ["Mua bán hàng của gia tộc (sàn công nghiệp, nhập khẩu, bán NPC, sổ chào giá Siêu thị)", "👑 Tộc trưởng, 🎖️ Trưởng lão"],
+          ["Thách đấu và chọn giờ đấu ở [Đấu trường](dau-truong)", "👑 Tộc trưởng, 🎖️ Trưởng lão"],
           ["Thâu tóm ngành, nộp tờ khai thuế, chia cổ tức, bán lại đất", "👑 Tộc trưởng"],
           ["Phân vai, mời ra, nhường chức, nâng cấp hạ tầng chiến lược", "👑 Tộc trưởng"],
           ["Bảng **👑 Quản trị**: gửi quỹ kỳ hạn; cho gia tộc chơi hụi lớn", "👑 Tộc trưởng (chưa từng bị phế truất)"],
         ] } },
+        { warn: "Lô đất và ghế ngành chiến lược của gia tộc có thể bị gia tộc khác giành mất qua [Đấu trường](dau-truong)." },
       ],
     },
     {

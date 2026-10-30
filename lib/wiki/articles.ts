@@ -20,7 +20,8 @@ import { article as A_dau_truong } from "./articles/dau-truong";
 import { CLAN, UNLOCKS } from "./rules";
 import { BAZAAR, SCHOOL } from "@/petdex/server/rules/production.js";
 import { MARKET } from "@/petdex/server/rules/market.js";
-import { EGG, LIFE_STAGES } from "@/public/ta-tua/game/js/shared/pets.js";
+import { DAILY_XP, EGG, LIFE_STAGES } from "@/public/ta-tua/game/js/shared/pets.js";
+import { DEFAULT_GEAR_CONFIG, TIERS, nextTier } from "@/public/ta-tua/game/js/shared/gear.js";
 import {
   COMMODITY_COUNT, DESIGN_RULES, GOODS_COUNT, INDUSTRIAL_MARKET, LAND_RULES, LEGEND_ID, MASCOT_ID, SERVICE_COUNT,
   climateNames, elementPets, formPets, freshnessRows, industryRows, legendaryPets, stagePets, unlockRows, zoneRows,
@@ -35,6 +36,19 @@ import {
 const schoolByStage = () =>
   (LIFE_STAGES as { name: string; rules: { school: number } }[]).map((s) => `${s.name} ${s.rules.school ? `×${String(s.rules.school).replace(".", ",")}` : "chưa học được"}`).join(", ");
 
+/** Nightly growth for the cap-do XP table (DAILY_XP in the game's shared/pets.js). */
+const DAILY_XP_TEXT = `${Math.round(DAILY_XP.share * 100)}% XP cần lên cấp kế (ít nhất ${DAILY_XP.min}), ${DAILY_XP.weakFactor === 0.5 ? "một nửa" : `chỉ ${Math.round(DAILY_XP.weakFactor * 100)}%`} nếu Sức khỏe dưới ${DAILY_XP.weakBelow}`;
+
+/** Forge upgrade odds, e.g. "Xanh lam → Xanh lục 30%, ..." (forge defaults in shared/gear.js). */
+const UPGRADE_ODDS = Object.entries(DEFAULT_GEAR_CONFIG.forge.upgradeChance as Record<string, number>)
+  .map(([t, pct]) => `${(TIERS as Record<string, { name: string }>)[t].name} → ${(TIERS as Record<string, { name: string }>)[nextTier(t) as string].name} ${String(pct).replace(".", ",")}%`).join(", ");
+
+/** Accessory groups as the Siêu thị and Túi đồ show them (GEAR_GROUPS in public/ta-tua/game/js/app.js). */
+const GEAR_GROUPS: Record<string, string> = {
+  head: "🎩 Đội đầu", face: "👓 Đeo mặt", neck: "🧣 Đeo cổ", back: "🦋 Cánh & áo choàng", charm: "🏮 Cầm tay & bùa",
+};
+const GEAR_GROUP_TEXT = "**Đội đầu** (mũ, nơ, vương miện, hào quang), **Đeo mặt** (kính, mặt nạ), **Đeo cổ** (khăn, vòng, cà vạt, huy chương), **Cánh & áo choàng** (cánh, áo choàng, ba lô) và **Cầm tay & bùa** (đèn lồng, quạt, sáo, bùa may)";
+
 const PRICE_NOTE = "Giá trong bảng là **giá gốc**. Mỗi Chủ nhật Ngân hàng Trung ương đặt lại chỉ số giá, nên giá thật trong game có thể cao hoặc thấp hơn một chút.";
 
 export const ARTICLES: WikiArticle[] = [
@@ -46,13 +60,13 @@ export const ARTICLES: WikiArticle[] = [
     emoji: "🌱",
     summary: "Tạo tài khoản, nhận nuôi bé đầu tiên miễn phí và làm quen với Phố Trân Châu trong 10 phút.",
     keywords: ["tân thủ", "người mới", "đăng ký", "tạo tài khoản", "nhận nuôi"],
-    related: ["tai-khoan", "moi-ngay", "cham-soc", "cap-do"],
+    related: ["tai-khoan", "moi-ngay", "cham-soc", "cap-do", "ban-be"],
     sections: [
       {
         id: "vao-game",
         title: "Vào game",
         blocks: [
-          { p: `Petfarm chạy ngay trên trình duyệt, cả điện thoại lẫn máy tính, không cần cài gì. Trang chơi là **${playUrl().replace("https://", "")}**.` },
+          { p: `**Pet Farm** (*Có làm mới có ăn*) chạy ngay trên trình duyệt, cả điện thoại lẫn máy tính, không cần cài gì. Trang chơi là **${playUrl().replace("https://", "")}**.` },
           {
             steps: [
               "Mở trang chơi, chọn **Tạo tài khoản**.",
@@ -81,7 +95,7 @@ export const ARTICLES: WikiArticle[] = [
         id: "ban-do",
         title: "Bản đồ phố",
         blocks: [
-          { p: "Màn **Phố** là bản đồ: chạm vào tòa nhà nào là vào tòa nhà đó. Thanh trên cùng có Phố, Nhà, Túi đồ, Ví, Bạn bè, Công viên, nút quà ngày, số xu và tên của bạn." },
+          { p: "Màn **Phố** là bản đồ: chạm vào tòa nhà nào là vào tòa nhà đó. Thanh trên cùng có Phố, Nhà, Túi đồ, Ví, Bạn bè, Công viên, **💬 Chat**, nút quà ngày, số xu, **📬 Hộp thư** và tên của bạn. Chat và hộp thư xem ở [Bạn bè](ban-be#tro-chuyen)." },
           { img: { src: "/petfarm/map.webp", alt: "Bản đồ Phố Trân Châu với nhà, siêu thị, việc làm, ngân hàng, Sàn Nguyên Liệu, trường học, phòng khám, công viên, bếp, vườn và chợ phiên", width: 1600, height: 961 } },
           { table: { head: ["Khu", "Để làm gì", "Mở ở cấp"], rows: [
             ["Nhà", "Cho ăn, tắm, chơi đùa, mặc đồ, chọn bé chính", 1],
@@ -89,12 +103,14 @@ export const ARTICLES: WikiArticle[] = [
             ["Việc làm", "Nhận ca làm để kiếm lương", 1],
             ["Khu vui chơi", "Mini-game kiếm xu và nguyên liệu", 1],
             ["Phòng khám", "Khám, chữa bệnh, mua bảo hiểm", 1],
-            ["Công viên", "Gặp người chơi khác, chat, vuốt ve bé", 1],
+            ["Công viên", "Gặp người chơi khác, biểu cảm, vuốt ve bé", 1],
+            ["Báo Trân Châu", "Tin thị trường, thông báo của Ban quản lý", 1],
+            ["Lò rèn, Tiệm vật liệu", "Sửa, nâng cấp trang phục; mua vật liệu rèn. Xem [Lò rèn](lo-ren)", 1],
             ["Trường học", "Học thêm kỹ năng", UNLOCKS.school],
             ["Sàn Nguyên Liệu, Vườn", "Buôn nguyên liệu, trồng cây", UNLOCKS.market],
             ["Ngân hàng, Tòa thị chính, Bếp", "Gửi tiết kiệm, bỏ phiếu, nấu món", UNLOCKS.bank],
             ["Quầy trà sữa, Chợ Phiên", "Mở quầy bán trà sữa, bán đồ cho người chơi khác", UNLOCKS.business],
-            ["Gia tộc và Sở Nhà Đất", "Làm ăn chung, mua đất, vào ngành", CLAN.unlockLevel],
+            ["Gia tộc, Sở Nhà Đất và Đấu trường", "Làm ăn chung, mua đất, vào ngành, thách đấu gia tộc khác", CLAN.unlockLevel],
             ["Khu công nghiệp", `Gia công thuê (cấp 2), xây xưởng riêng (cấp ${UNLOCKS.factory})`, `2 / ${UNLOCKS.factory}`],
           ] } },
           { p: "Cấp ở đây là **cấp của bé cao nhất** trong nhà. Bảng đầy đủ ở [Cấp độ và mở khóa](cap-do)." },
@@ -112,6 +128,7 @@ export const ARTICLES: WikiArticle[] = [
             "Chơi vài ván mini-game ở **Khu vui chơi** khi chờ ca làm.",
             "Ghé **Công viên** vuốt ve bé của người khác: cả hai bé vui hơn, bạn được 3 xu.",
           ] },
+          { tip: "Tin tức và thông báo của Ban quản lý ở **📰 Báo Trân Châu** trên bản đồ phố. Thông báo mới bật lên một lần khi bạn mở game." },
           { warn: "Bé sống theo **giờ thật**: không vào game thì bé vẫn đói dần, buồn dần, bẩn dần. Ghé thăm mỗi ngày là đủ để bé khỏe." },
         ],
       },
@@ -154,7 +171,7 @@ export const ARTICLES: WikiArticle[] = [
         id: "ma-qua",
         title: "Mã quà",
         blocks: [
-          { p: "Mã quà do đội ngũ Petfarm phát trong các dịp sự kiện, dạng như **ABCD-EFGH** (không phân biệt chữ hoa, chữ thường)." },
+          { p: "Mã quà do đội ngũ Pet Farm phát trong các dịp sự kiện, dạng như **ABCD-EFGH** (không phân biệt chữ hoa, chữ thường)." },
           { list: [
             "Mỗi người nhận **một lần** cho mỗi mã. Mã có thể giới hạn tổng số lượt, có hạn dùng hoặc bị thu hồi.",
             "Quà gồm phần **luôn nhận** (xu và các món đồ) và có thể có phần **tự chọn 1 trong 2–6 món**.",
@@ -240,7 +257,7 @@ export const ARTICLES: WikiArticle[] = [
           { table: { head: ["Hoạt động", "XP"], rows: [
             ["Ca làm", "4 XP mỗi giờ"],
             ["Chơi đùa ở Nhà", "10 (+4 đến +10 nếu có đồ chơi)"],
-            ["Đồ ăn, đồ chăm sóc", "4–30 tùy món"],
+            ["Đồ ăn, đồ chăm sóc", "4–30 tùy món (đồ NPC bị giảm XP khi thị trấn tự chủ, xem [Vật phẩm thiết yếu](vat-pham-thiet-yeu))"],
             ["Nhiệm vụ ngày", "10 mỗi nhiệm vụ"],
             ["Đi học", 5],
             ["Vuốt ve ở công viên", 5],
@@ -248,6 +265,7 @@ export const ARTICLES: WikiArticle[] = [
             ["Nấu ăn", 4],
             ["Một ván mini-game", 3],
             ["Tắm, khám bệnh", 2],
+            ["Tự lớn mỗi đêm, kể cả khi bạn không vào game", `${DAILY_XP_TEXT}. Xem [Việc làm](viec-lam#tu-lon)`],
           ] } },
           { p: "XP được nhân thêm: **+10%** vào ngày hành của bé vượng (xem [Ngũ hành](ngu-hanh)), và theo tuổi: Sơ sinh ×1,5, Nhí nhố ×1,25, Thiếu niên ×1,1, Lão làng ×0,7. Đồ ăn hợp mệnh cho thêm 20% XP." },
         ],
@@ -257,7 +275,7 @@ export const ARTICLES: WikiArticle[] = [
         title: "Bảng mở khóa",
         blocks: [
           { p: "Các khu mở theo **cấp của bé cao nhất** trong nhà:" },
-          { table: { head: ["Cấp", "Mở thêm"], rows: unlockRows({ [EGG.minLevel]: ["mua trứng ngũ hành"], [CLAN.unlockLevel]: ["[Gia tộc và Sở Nhà Đất](gia-toc)"] }) } },
+          { table: { head: ["Cấp", "Mở thêm"], rows: unlockRows({ 1: ["[Lò rèn và Tiệm vật liệu](lo-ren)"], [EGG.minLevel]: ["mua trứng ngũ hành"], [CLAN.unlockLevel]: ["[Gia tộc và Sở Nhà Đất](gia-toc)", "[Đấu trường](dau-truong)"] }) } },
           { p: "Một số món trong Siêu thị cũng cần cấp tối thiểu, xem [Siêu thị](sieu-thi)." },
         ],
       },
@@ -291,6 +309,8 @@ export const ARTICLES: WikiArticle[] = [
             "**Chơi trên điện thoại được không?** Được, ngay trên trình duyệt. Đăng nhập cùng tài khoản thì bé và xu đi theo bạn.",
             "**Một ngày trong game dài bao lâu?** Bằng một ngày thật, tính theo giờ Việt Nam. Quà ngày, nhiệm vụ, hành vượng, hạn mức mini-game đều làm mới lúc 0 giờ. Mỗi ngày thật bé lớn thêm 1 tuần tuổi.",
             "**Giá trong game sao khác wiki?** Wiki ghi giá gốc. Ngân hàng Trung ương chỉnh chỉ số giá mỗi Chủ nhật nên giá thật có thể lệch một chút.",
+            "**Tin tức, thông báo xem ở đâu?** Ở **📰 Báo Trân Châu** trên bản đồ phố. Thông báo của Ban quản lý được ghim ở đầu báo, cái mới nhất mở sẵn; thông báo mới còn bật lên một lần khi bạn mở game.",
+            "**Nhắn riêng cho bạn ở đâu?** Mở tab **💬 Chat**, thẻ ✉️ Tin nhắn riêng, tìm theo tên người chơi. Muốn gửi thư thì dùng **📬 Hộp thư**. Xem [Bạn bè](ban-be#tro-chuyen).",
           ] },
         ],
       },
@@ -299,7 +319,7 @@ export const ARTICLES: WikiArticle[] = [
         title: "Nuôi bé",
         blocks: [
           { list: [
-            "**Không vào game thì bé có sao không?** Bé vẫn đói, buồn, bẩn dần theo giờ thật; để lâu sức khỏe tụt dưới 40 thì dễ ốm. Ghé mỗi ngày cho ăn và tắm là đủ. Xem [Chăm sóc bé](cham-soc).",
+            "**Không vào game thì bé có sao không?** Bé vẫn đói, buồn, bẩn dần theo giờ thật; để lâu sức khỏe tụt dưới 40 thì dễ ốm. Bù lại bé vẫn tự lớn thêm một ít XP mỗi đêm. Ghé mỗi ngày cho ăn và tắm là đủ. Xem [Chăm sóc bé](cham-soc).",
             "**Bé ốm thì làm sao?** Đưa bé tới Phòng khám chữa (120 hoặc 200 xu). Bé ốm không đi làm, đi học, chơi mini-game hay vào bếp được.",
             "**Bé có chết không?** Bé sống khoảng 80–130 tuần tuổi (khoảng 3–4 tháng thật). Chăm tốt thì sống lâu hơn. Xem [Tính cách, tuổi và vòng đời](tinh-cach-tuoi).",
             `**Làm sao có loài hiếm?** Mua trứng ngũ hành (${EGG.price} xu, từ cấp ${EGG.minLevel}) và ấp ${EGG.hours} giờ. Xem [Các loài và trứng](cac-loai).`,
@@ -328,7 +348,7 @@ export const ARTICLES: WikiArticle[] = [
     emoji: "🛁",
     summary: "Năm chỉ số No bụng, Vui vẻ, Năng lượng, Sạch sẽ, Sức khỏe; cho ăn, tắm, chơi đùa; ốm, phòng khám và bảo hiểm.",
     keywords: ["đói", "ăn", "tắm", "ốm", "bệnh", "phòng khám", "bảo hiểm", "sức khỏe", "chỉ số"],
-    related: ["sieu-thi", "tinh-cach-tuoi", "ngu-hanh"],
+    related: ["sieu-thi", "tinh-cach-tuoi", "ngu-hanh", "vat-pham-thiet-yeu"],
     sections: [
       {
         id: "chi-so",
@@ -353,7 +373,7 @@ export const ARTICLES: WikiArticle[] = [
           { table: { head: ["Nút", "Tốn", "Được"], rows: [
             ["🛁 Tắm", "Miễn phí, bé bận 15 phút", "Sạch sẽ lên 100, Vui vẻ +5, +2 XP"],
             ["🎾 Chơi đùa", "15 năng lượng, 5 No bụng, 5 Sạch sẽ (cần No bụng từ 10)", "Vui vẻ +12, +10 XP, +4 xu; có đồ chơi thì thêm vui và XP"],
-            ["Cho ăn", "Một món đồ ăn trong Túi đồ", "Theo món, xem [Siêu thị](sieu-thi). Không cho ăn được khi No bụng từ 97."],
+            ["Cho ăn", "Một món đồ ăn trong Túi đồ", "Theo món, xem [Siêu thị](sieu-thi). Không cho ăn được khi No bụng từ 97. Đồ ăn NPC có hạn mức mỗi ngày và bớt XP khi thị trấn tự chủ, xem [Vật phẩm thiết yếu](vat-pham-thiet-yeu)."],
           ] } },
           { tip: "Tắm ở nhà **miễn phí**. Món *Tắm bong bóng* ở Siêu thị chỉ đáng mua khi cần thêm Vui vẻ và Năng lượng." },
           { tip: "Đồ ăn **hợp mệnh** (cùng hành hoặc hành sinh ra hành của bé) cho thêm **20% XP**." },
@@ -571,15 +591,16 @@ export const ARTICLES: WikiArticle[] = [
     title: "Trang phục",
     category: "nuoi-be",
     emoji: "🎀",
-    summary: `${WEARABLE_COUNT} món đồ đeo ở 5 khe, 4 cấp Xanh lam, Xanh lục, Vàng, Đỏ, các dòng chỉ số, hộp kín ở Siêu thị và số món đeo theo cấp.`,
+    summary: `${WEARABLE_COUNT} món đồ đeo ở 5 khe, 4 cấp Xanh lam, Xanh lục, Vàng, Đỏ, các dòng chỉ số, hộp kín ở Siêu thị, số món đeo theo cấp, đồ hỏng, sửa và nâng cấp ở Lò rèn.`,
     keywords: ["đồ", "gear", "phụ kiện", "đồ đeo", "cấp đồ", "đỏ", "vàng", "hộp", "may mắn", "bùa", "khe"],
-    related: ["ngu-hanh", "sieu-thi", "mini-game", "cho-phien"],
+    related: ["ngu-hanh", "sieu-thi", "mini-game", "cho-phien", "lo-ren", "dau-truong"],
     sections: [
       {
         id: "khe",
         title: "Khe và số món được đeo",
         blocks: [
           { p: `Có 5 khe: ${SLOT_ORDER.map(slotName).join(", ")}. Mỗi khe đeo một món. Món Bùa lơ lửng bên hông bé.` },
+          { p: `Trong Siêu thị và Túi đồ, phụ kiện chia theo nhóm ${GEAR_GROUP_TEXT}; bấm hàng nút trên cùng để nhảy tới nhóm.` },
           { table: { head: ["Bé", "Số món đeo cùng lúc"], rows: [["Dưới cấp 30", 3], ["Từ cấp 30", 4], ["Bé Huyền thoại", "Thêm 1 (tối đa 5)"]] } },
           { img: { src: "/petfarm/gear.webp", alt: "Túi đồ với bốn món trang phục cấp Đỏ, Vàng, Xanh lục và Xanh lam cùng các dòng chỉ số", width: 1600, height: 425 } },
         ],
@@ -608,6 +629,7 @@ export const ARTICLES: WikiArticle[] = [
             [`Mini-game: mỗi ván ${GEAR.gearDropChance}% rớt một món`, "Mọi cấp, theo tỉ lệ ở bảng trên"],
             ["Mã quà", "Tùy mã"],
             ["Chợ Phiên: mua lại của người chơi khác", "Mọi cấp"],
+            ["[Lò rèn](lo-ren): nâng cấp một món lên cấp kế", `Xanh lục, Vàng, Đỏ (${UPGRADE_ODDS})`],
           ] } },
           { steps: [
             "Mua hộp ở Siêu thị (nút **🎁 Mua hộp**).",
@@ -615,7 +637,15 @@ export const ARTICLES: WikiArticle[] = [
             "Mở hộp xong mới đeo hoặc bày bán được.",
           ] },
           { p: "Trước khi mua, mỗi món cho biết **các loại chỉ số có thể ra**: hai loại theo hành và một loại theo khe. Hộp Siêu thị (Xanh lam, Xanh lục) chỉ ra dòng trong nhóm này; đồ Vàng, Đỏ có thêm loại ngoài nhóm. Cấp và % vẫn chỉ biết khi mở hộp." },
-          { warn: "Không có chế tạo hay nâng cấp đồ. Muốn đồ Vàng, Đỏ thì chơi mini-game đều đặn, săn mã quà hoặc mua ở Chợ Phiên. Món đang bày bán hoặc đấu giá ở Chợ Phiên bị tháo ra và không đeo được." },
+          { warn: "Muốn đồ Vàng, Đỏ thì chơi mini-game đều đặn, săn mã quà, mua ở Chợ Phiên hoặc thử **nâng cấp ở [Lò rèn](lo-ren)** (tốn nhiều xu và vật liệu, tỉ lệ thấp). Món đang bày bán hoặc đấu giá ở Chợ Phiên bị tháo ra và không đeo được." },
+        ],
+      },
+      {
+        id: "do-hong",
+        title: "Đồ hỏng",
+        blocks: [
+          { p: "Sau một trận ở [Đấu trường](dau-truong), **mọi món đang đeo trên mọi bé** của người ra sân hỏng hẳn. Món hỏng vẫn đeo trên bé nhưng không cộng dòng chỉ số và không tính vào bộ đồ theo hành, cho tới khi sửa xong ở [Lò rèn](lo-ren)." },
+          { warn: "Đồ hỏng hoặc đang sửa ở Lò rèn không bày bán hay đấu giá được ở Chợ Phiên. Bán nhanh cho Siêu thị thì chỉ được mức thấp nhất." },
         ],
       },
       {
@@ -623,7 +653,7 @@ export const ARTICLES: WikiArticle[] = [
         title: "Bán đồ không cần nữa",
         blocks: [
           { table: { head: ["Cách bán", "Thu về"], rows: [
-            ["**Bán nhanh** cho Siêu thị (nút 💰 trong Túi đồ)", "10–40% giá trị món (giá shop × hệ số cấp), dòng chỉ số quay càng cao trong biên độ của cấp càng được nhiều; hộp chưa mở 10% giá shop"],
+            ["**Bán nhanh** cho Siêu thị (nút 💰 trong Túi đồ)", "10–40% giá trị món (giá shop × hệ số cấp), dòng chỉ số quay càng cao trong biên độ của cấp càng được nhiều; hộp chưa mở 10% giá shop; **đồ hỏng** cũng chỉ được mức thấp nhất (10% giá trị món)"],
             ["Bày bán ở [Chợ Phiên](cho-phien)", "Giá tự đặt 50–300% tham chiếu, trừ phí"],
             ["Đấu giá ở [Chợ Phiên](cho-phien#dau-gia)", "Giá người chơi trả, trừ phí"],
           ] } },
@@ -646,15 +676,15 @@ export const ARTICLES: WikiArticle[] = [
     title: "Siêu thị",
     category: "nuoi-be",
     emoji: "🏪",
-    summary: "Giá, hiệu quả và cấp mở của mọi món: đồ ăn, đồ chăm sóc, đồ chơi, trứng và phụ kiện theo từng khe.",
+    summary: "Giá, hiệu quả và cấp mở của mọi món: đồ ăn, đồ chăm sóc, đồ chơi, trứng và phụ kiện theo từng nhóm; hạn mức đồ NPC và hàng gia tộc.",
     keywords: ["mua", "giá", "đồ ăn", "thức ăn", "đồ chơi", "vitamin", "sushi", "bánh", "phụ kiện", "shop"],
-    related: ["cham-soc", "trang-phuc", "cac-loai"],
+    related: ["cham-soc", "trang-phuc", "cac-loai", "vat-pham-thiet-yeu"],
     sections: [
       {
         id: "do-an",
         title: "Đồ ăn và đồ chăm sóc",
         blocks: [
-          { p: "Dùng là hết. Mỗi lần mua tối đa 20 món." },
+          { p: "Dùng là hết. Mỗi lần mua tối đa 20 món. Đồ ăn, đồ chăm sóc NPC có **hạn mức mỗi ngày** và XP giảm dần khi thị trấn tự chủ; hàng gia tộc (Suất ăn gia tộc, Bộ chăm sóc gia tộc, hạng Thường / Ngon / Tuyệt hảo) chỉ có khi Siêu thị còn hàng. Bảng dưới chỉ ghi đồ NPC; hàng gia tộc tính giá theo giá tham chiếu hôm nay, xem [Vật phẩm thiết yếu](vat-pham-thiet-yeu)." },
           { table: { head: ["Món", "Loại", "Hành", "Giá", "Hiệu quả", "XP", "Cấp"], rows: foodRows() } },
           { p: PRICE_NOTE },
         ],
@@ -672,7 +702,8 @@ export const ARTICLES: WikiArticle[] = [
         title: "Phụ kiện",
         blocks: [
           { p: "Mỗi lần mua là một hộp kín 1–2 dòng chỉ số, xem [Trang phục](trang-phuc). Cột Cấp là cấp tối thiểu: cần một bé đạt cấp đó mới mua được." },
-          ...SLOT_ORDER.map((s) => ({ table: { head: [slotName(s), "Hành", "Giá", "Cấp"], rows: wearRows(s) } })),
+          { p: `Trong Siêu thị, phụ kiện chia theo nhóm ${GEAR_GROUP_TEXT}; bấm nút trên cùng để nhảy tới nhóm. Mỗi nhóm xếp theo cấp mở rồi theo giá.` },
+          ...SLOT_ORDER.map((s) => ({ table: { head: [GEAR_GROUPS[s] ?? slotName(s), "Hành", "Giá", "Cấp"], rows: wearRows(s) } })),
         ],
       },
       {
@@ -778,7 +809,7 @@ export const ARTICLES: WikiArticle[] = [
     emoji: "🎣",
     summary: "Câu cá, Hứng trân châu, Ghép hình nhớ: cách chơi, cách tính xu, giới hạn mỗi ngày, rớt vật liệu và trang phục.",
     keywords: ["câu cá", "trân châu", "ghép hình", "trò chơi", "game", "rớt đồ", "drop"],
-    related: ["trang-phuc", "san-nguyen-lieu"],
+    related: ["trang-phuc", "san-nguyen-lieu", "lo-ren"],
     sections: [
       {
         id: "tro-choi",
@@ -805,7 +836,7 @@ export const ARTICLES: WikiArticle[] = [
         title: "Rớt vật liệu và trang phục",
         blocks: [
           { list: [
-            `Mỗi ván có **${GEAR.materialChance}%** rớt thêm **${GEAR.materialQty[0]}–${GEAR.materialQty[1]} lô** một nguyên liệu thô ngẫu nhiên vào kho Sàn.`,
+            `Mỗi ván có **${GEAR.materialChance}%** rớt thêm **${GEAR.materialQty[0]}–${GEAR.materialQty[1]} lô** một nguyên liệu thô ngẫu nhiên vào kho Sàn. Vật liệu này còn dùng để sửa và nâng cấp trang phục ở [Lò rèn](lo-ren).`,
             `Mỗi ván có **${GEAR.gearDropChance}%** rớt **một món trang phục** ngẫu nhiên, cấp nào cũng có thể ra.`,
             "Dòng **🍀 May mắn** trên trang phục của bé làm cả hai tỉ lệ này cao hơn.",
           ] },
@@ -951,11 +982,13 @@ export const ARTICLES: WikiArticle[] = [
           { table: { head: ["Luật", "Con số"], rows: [
             ["Chênh mua, bán với hệ thống", `±${MARKET.spread * 100}%`],
             ["Phí giao dịch", "1% (tối thiểu 1 xu)"],
-            ["Hạn mức với hệ thống", `${MARKET.npcDailyLots} lô mỗi mặt hàng, mỗi chiều, mỗi ngày`],
+            ["Hạn mức với hệ thống (của bạn)", `${MARKET.npcDailyLots} lô mỗi mặt hàng, mỗi chiều, mỗi ngày`],
+            ["Hạn mức với hệ thống (cả thị trấn)", `Mỗi mặt hàng, mỗi chiều, mỗi ngày: lớn hơn giữa ${MARKET.townBaseLots} lô và ${MARKET.townLotsPerTrader} lô × số người đã giao dịch với hệ thống trong 7 ngày (hàng chế biến ×${MARKET.processedDepth})`],
             ["Một lệnh", "0,1 đến 100 lô"],
             ["Lệnh giới hạn", "Giá trong khoảng ±15% giá hiện tại; khớp với lệnh của người chơi khác trước; chưa khớp thì chờ tới hết ngày"],
             ["Kho", "200 lô miễn phí → 500 lô (1.500 xu) → 2.000 lô (6.000 xu)"],
           ] } },
+          { p: "Mỗi lệnh khớp với hệ thống lấy phần nhỏ hơn giữa hạn mức của bạn và phần thị trấn còn lại. Hết hạn mức chung thì chỉ còn khớp được với lệnh của người chơi khác. Bảng giao dịch hiện cả hai hạn mức." },
           { p: "Lãi khi bán (so với giá vốn từng lô) là thu nhập chịu thuế. Dòng **Thu nhập giao dịch** trên trang phục cho thêm xu mỗi lần bán." },
         ],
       },
@@ -1115,7 +1148,7 @@ export const ARTICLES: WikiArticle[] = [
     emoji: "🗺️",
     summary: `${LAND_RULES.count} lô đất có địa hình và khí hậu riêng, công trình lắp ghép, chuỗi sản xuất từ mỏ tới nhà máy, kho gia tộc và sàn công nghiệp.`,
     keywords: ["đất", "lô đất", "bản đồ", "sở nhà đất", "công trình", "khai thác", "nhà máy", "điện", "kho", "sàn công nghiệp", "nhập khẩu"],
-    related: ["gia-toc", "kinh-te-vi-mo"],
+    related: ["gia-toc", "kinh-te-vi-mo", "dau-truong", "vat-pham-thiet-yeu"],
     sections: [
       {
         id: "dat",
@@ -1174,7 +1207,9 @@ export const ARTICLES: WikiArticle[] = [
             ["Nhập khẩu từ hệ thống", `${INDUSTRIAL_MARKET.importMarkup * 100}% giá tham chiếu`],
             ["Đăng bán trên sàn chung", `${INDUSTRIAL_MARKET.band[0] * 100}–${INDUSTRIAL_MARKET.band[1] * 100}% giá tham chiếu, phí ${INDUSTRIAL_MARKET.fee * 100}%, tin còn ${INDUSTRIAL_MARKET.listingDays} ngày, tối đa ${INDUSTRIAL_MARKET.maxListings} tin`],
           ] } },
+          { p: "Thực phẩm chế biến và Thuốc bán cho **Siêu thị** trước (qua ô **Sổ chào giá** ở tab *Sản xuất & Kho*, hoặc hàng vừa làm ra), phần dư mới bán cho hệ thống. Xem [Vật phẩm thiết yếu](vat-pham-thiet-yeu)." },
           { p: "Tiền bán hàng tính vào doanh thu chịu [thuế doanh nghiệp](gia-toc) cùng đêm." },
+          { warn: "Lô đất và ghế ngành chiến lược có thể bị gia tộc khác giành qua [Đấu trường](dau-truong)." },
         ],
       },
     ],
@@ -1187,8 +1222,8 @@ export const ARTICLES: WikiArticle[] = [
     title: "Bạn bè",
     category: "cong-dong",
     emoji: "💌",
-    summary: "Kết bạn, thăm nhà, thả tim, tặng quà và tưới vườn cho nhau.",
-    keywords: ["kết bạn", "bạn", "thả tim", "tặng quà", "thăm nhà"],
+    summary: "Kết bạn, thăm nhà, thả tim, tặng quà, tưới vườn cho nhau, trò chuyện ở tab Chat và gửi thư.",
+    keywords: ["kết bạn", "bạn", "thả tim", "tặng quà", "thăm nhà", "chat", "trò chuyện", "tin nhắn", "nhắn riêng", "hộp thư", "thư", "chặn"],
     related: ["hoi", "cong-vien", "vuon"],
     sections: [
       {
@@ -1202,6 +1237,31 @@ export const ARTICLES: WikiArticle[] = [
             ["Tặng quà", "5 món mỗi ngày, chỉ đồ ăn và đồ chăm sóc", "Món vào túi của bạn"],
             ["Tưới vườn", "10 ô mỗi ngày", "Vườn bạn +20% sản lượng; bạn được 2 xu, 5 XP"],
           ] } },
+        ],
+      },
+      {
+        id: "tro-chuyen",
+        title: "Trò chuyện và hộp thư",
+        blocks: [
+          { p: "Bấm tab **💬 Chat** trên thanh trên cùng. Có ba thẻ:" },
+          { table: { head: ["Thẻ", "Ai đọc", "Giữ tin"], rows: [
+            ["🌐 Kênh chung", "Cả thị trấn", "7 ngày"],
+            ["🏯 Gia tộc", "Thành viên gia tộc của bạn", "60 ngày"],
+            ["✉️ Tin nhắn riêng", "Hai người, tìm người theo tên", "60 ngày"],
+          ] } },
+          { list: [
+            "Mỗi tin tối đa **300 ký tự**, hai tin cách nhau ít nhất **2,5 giây**.",
+            "Tài khoản mới tạo phải chờ **1 giờ** mới nói được ở kênh chung.",
+            "Tab Chat có **chấm đỏ** khi có tin gia tộc hoặc tin nhắn riêng chưa đọc.",
+            "**🚫 Chặn** một người thì tin của họ bị ẩn, họ không nhắn riêng hay gửi thư cho bạn được nữa.",
+          ] },
+          { p: "Bấm **📬 Hộp thư** ở góc trên để đọc và viết thư:" },
+          { list: [
+            "Thư gửi người chơi khác: tiêu đề tối đa **80 ký tự**, nội dung **2.000 ký tự**; mỗi 30 giây một thư, tối đa **20 thư** trong 24 giờ. Thư giữa người chơi không gửi kèm xu được.",
+            "Ban quản lý có thể gửi thư cho riêng bạn hoặc cả thị trấn, có khi kèm xu: bấm **Nhận** (mỗi thư một lần) rồi mới xoá được thư.",
+            "Thư đã đọc, không còn quà chưa nhận và quá 60 ngày thì tự xoá.",
+          ] },
+          { tip: "Công viên không còn khung chat: muốn nói chuyện với người đang ở công viên thì mở tab **💬 Chat**." },
         ],
       },
     ],
@@ -1253,8 +1313,8 @@ export const ARTICLES: WikiArticle[] = [
     title: "Công viên",
     category: "cong-dong",
     emoji: "🌳",
-    summary: "Dắt bé chính đi dạo, chat, biểu cảm, vuốt ve và tặng đồ ăn cho bé người khác.",
-    keywords: ["công viên", "chat", "vuốt ve", "gặp gỡ", "online", "vẫy tay"],
+    summary: "Dắt bé chính đi dạo, biểu cảm, vuốt ve và tặng đồ ăn cho bé người khác.",
+    keywords: ["công viên", "biểu cảm", "vuốt ve", "gặp gỡ", "online", "vẫy tay"],
     related: ["ban-be", "hoi"],
     sections: [
       {
@@ -1264,7 +1324,7 @@ export const ARTICLES: WikiArticle[] = [
           { img: { src: "/petfarm/park.webp", alt: "Công viên với nhiều bé của người chơi quanh đài phun nước", width: 1400, height: 841 } },
           { list: [
             "Bạn dắt **bé chính** ra công viên; chọn bé chính ở Nhà bằng nút **⭐ Chọn thú chính**.",
-            "Chat tối đa 120 ký tự mỗi tin; biểu cảm vẫy tay, nhảy, xoay.",
+            "Góc màn hình ghi số bé đang ở công viên. Bấm nút biểu cảm vẫy tay, nhảy, xoay. Muốn trò chuyện thì mở tab **💬 Chat**, xem [Bạn bè](ban-be#tro-chuyen).",
             "**Vuốt ve** bé khác: cả hai bé +6 Vui vẻ và +5 XP, người vuốt thêm 3 xu. Mỗi cặp chờ 30 giây giữa hai lần.",
             "Tặng đồ ăn, đồ chăm sóc ngay tại chỗ cho bé người khác.",
           ] },
