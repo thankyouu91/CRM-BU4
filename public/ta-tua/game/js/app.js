@@ -818,7 +818,7 @@ function renderAdopt(root) {
     <section class="card adopt">
       <div class="view-head">
         <div>
-          <h2>${first ? 'Chào mừng tới Petdex Park!' : 'Nhận nuôi thêm một bé'}</h2>
+          <h2>${first ? 'Chào mừng tới Pet Farm!' : 'Nhận nuôi thêm một bé'}</h2>
           <p class="muted">${first ? 'Chọn một bé để bắt đầu. Bé đầu tiên miễn phí 💝' : `Phí nhận nuôi ${rules.adoptCost} 🪙 · mỗi người tối đa ${rules.maxPets} bé`}</p>
         </div>
         ${first ? '' : '<button class="btn" data-act="cancel-adopt">← Quay lại</button>'}
@@ -1198,7 +1198,7 @@ $('#mail-btn').addEventListener('click', () => go('mail'));
 
 $('#logout-btn').addEventListener('click', () => {
   if (!embedded) {
-    if (confirm('Đăng xuất khỏi Petdex Park?')) logout();
+    if (confirm('Đăng xuất khỏi Pet Farm?')) logout();
     return;
   }
   openAccountMenu();

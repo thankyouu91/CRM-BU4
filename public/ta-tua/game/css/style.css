@@ -55,6 +55,10 @@ h1, h2, h3 { font-family: var(--font-display); margin: 0; line-height: 1.1; }
 .logo { font-family: var(--font-display); font-weight: 800; font-size: 2.6rem; color: var(--tea-deep); letter-spacing: -0.5px; }
 .logo span { color: var(--pink-deep); }
 .logo.small { font-size: 1.5rem; white-space: nowrap; }
+/* Khẩu hiệu dưới tên game: một dòng riêng ở màn đăng nhập, nhỏ bên cạnh tên ở thanh trên. */
+p.logo-tag { margin: -6px 0 6px; font-family: var(--font-display); font-weight: 700; font-size: 1.1rem; color: var(--pink-deep); }
+.logo.small .logo-tag { display: none; margin-left: 8px; font-size: 0.85rem; font-weight: 700; color: var(--muted); }
+@media (min-width: 1680px) { .logo.small .logo-tag { display: inline; } }
 
 /* ---------- Nút ---------- */
 .btn {
