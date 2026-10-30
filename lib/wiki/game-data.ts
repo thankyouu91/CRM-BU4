@@ -38,7 +38,7 @@ export const WEARABLE_COUNT = Object.keys(WEARABLES).length;
 
 /** For each element, the slots it has a piece for (a full set needs head, face, neck and back). */
 export const setRows = (): Row[] =>
-  Object.keys(ELEMENTS).map((e) => [el(e), ...["head", "face", "neck", "back"].map((s) => items.filter((i) => i.type === "accessory" && i.slot === s && i.element === e).map((i) => i.name).join(", "))]);
+  Object.keys(ELEMENTS).map((e) => [el(e), ...["head", "face", "neck", "back", "charm"].map((s) => items.filter((i) => i.type === "accessory" && i.slot === s && i.element === e).map((i) => i.name).join(", "))]);
 
 const tiers = TIERS as Record<string, { name: string; lines: number }>;
 const config = DEFAULT_GEAR_CONFIG as { odds: Record<string, number>; ranges: Record<string, { income: number[] }>; materialChance: number; materialQty: number[]; gearDropChance: number };
