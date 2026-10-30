@@ -1,8 +1,9 @@
 // Bản đồ đất của gia tộc theo phong cách bản đồ thành phố phẳng: nền xám, phố trắng uốn lượn giữa các khu,
 // vài trục đường lớn màu cam có vòng xoay, sông xanh có cầu, đồng bằng kẻ sọc, đồi núi có đường đồng mức,
-// rừng chấm cây, biển và bãi cát. 200 lô là 200 khu phố; lưới 20×10 được bẻ cong bằng nhiễu cố định
+// rừng chấm cây, biển và bãi cát. Trong trình duyệt nền được vẽ bằng pixel art như Phố Trân Châu (landpixel.js). 200 lô là 200 khu phố; lưới 20×10 được bẻ cong bằng nhiễu cố định
 // nên ai cũng thấy cùng một bản đồ. Lớp tĩnh vẽ một lần (lưu bộ nhớ đệm), lớp lô đất (chủ, chọn) vẽ đè lên.
 import { CLIMATES, LAND, MAP_PALETTE as C, PLOTS, ZONES, riverRow, seeded } from './shared/clan.js';
+import { drawPixelBase } from './landpixel.js';
 
 export const TW = 48;
 export const TH = 40;
@@ -111,7 +112,7 @@ function smooth(points) {
 
 const zoneAt = (c, r) => PLOTS[r * LAND.cols + c]?.zone;
 
-function riverPath() {
+function riverPoints() {
   const points = [];
   for (let c = 0; c < LAND.cols; c++) {
     const r = Math.min(LAND.rows - 1, c <= 13 ? riverRow(c) : riverRow(13) + (c - 13));
@@ -119,11 +120,11 @@ function riverPath() {
     points.push([c === 0 ? PAD : g.cx, g.cy]);
     if (zoneAt(c, r) === 'sea') break;
   }
-  return smooth(points);
+  return points;
 }
 
 /** Trục đường lớn đi theo đường phố giữa các khu, bỏ phần nằm hẳn trên biển. */
-function arterial(path) {
+function arterialPoints(path) {
   const keep = [];
   for (const [i, j] of path) {
     const near = [[i - 1, j - 1], [i, j - 1], [i - 1, j], [i, j]].some(([c, r]) => {
@@ -133,7 +134,7 @@ function arterial(path) {
     if (!near) break;
     keep.push(corner(i, j));
   }
-  return smooth(keep);
+  return keep;
 }
 
 const ARTERIALS = [
@@ -154,6 +155,23 @@ const cache = new Map();
  */
 export function staticLayer(key, fillFor) {
   if (cache.has(key)) return cache.get(key);
+  const svg = typeof document === 'undefined' ? vectorLayer(fillFor) : pixelLayer(fillFor);
+  cache.set(key, svg);
+  return svg;
+}
+
+/** Nền pixel art (trình duyệt): canvas nửa độ phân giải, phóng to sắc nét. */
+function pixelLayer(fillFor) {
+  const canvas = drawPixelBase({
+    width: MAP_W, height: MAP_H, geometry: GEOMETRY, heat: fillFor,
+    river: riverPoints(), roads: ARTERIALS.map(arterialPoints).filter((r) => r.length > 1),
+    roundabouts: ROUNDABOUTS.map(([i, j]) => corner(i, j)),
+  });
+  return `<image href="${canvas.toDataURL()}" width="${MAP_W}" height="${MAP_H}" preserveAspectRatio="none" style="image-rendering:pixelated"/>`;
+}
+
+/** Nền vector (khi không có canvas, ví dụ khi chạy test trên Node). */
+function vectorLayer(fillFor) {
   const blocks = PLOTS.map((p) => {
     const g = GEOMETRY.get(p.id);
     const heat = fillFor(p);
@@ -161,9 +179,9 @@ export function staticLayer(key, fillFor) {
     const join = p.zone === 'sea' ? '' : ` stroke="${heat ?? (p.zone === 'plain' ? C.field : p.zone === 'hill' ? C.mountain : fill)}" stroke-width="3" stroke-linejoin="round"`;
     return `<polygon points="${pts(g.block)}" fill="${fill}"${join}/>${heat ? '' : decoration(p, g)}`;
   }).join('');
-  const roads = ARTERIALS.map(arterial).filter(Boolean);
-  const river = riverPath();
-  const svg = `
+  const roads = ARTERIALS.map((a) => smooth(arterialPoints(a))).filter(Boolean);
+  const river = smooth(riverPoints());
+  return `
     <defs>
       <pattern id="lm-field" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
         <rect width="6" height="6" fill="${C.field}"/><rect width="2" height="6" fill="${C.fieldHatch}"/>
@@ -180,8 +198,6 @@ export function staticLayer(key, fillFor) {
       const [x, y] = corner(i, j);
       return `<circle cx="${f1(x)}" cy="${f1(y)}" r="10" fill="${C.arterialEdge}"/><circle cx="${f1(x)}" cy="${f1(y)}" r="8.5" fill="${C.arterial}"/><circle cx="${f1(x)}" cy="${f1(y)}" r="4.5" fill="${C.park}"/>`;
     }).join('')}`;
-  cache.set(key, svg);
-  return svg;
 }
 
 // ---------------------------------------------------------------- lớp lô đất
