@@ -3,6 +3,10 @@ import { fold } from "./fold";
 import { ARTICLES } from "./articles";
 import { wikiHref } from "./base";
 import type { WikiArticle, WikiBlock, WikiCategory } from "./types";
+import { SPECIES, MASCOTS } from "@/public/ta-tua/game/js/shared/pets.js";
+
+/** The gallery is drawn in the browser; its species names still count for search. */
+const GALLERY_WORDS = [...(MASCOTS as { name: string }[]), ...(SPECIES as { name: string }[])].map((s) => s.name);
 
 export const CATEGORIES: { key: WikiCategory; title: string; emoji: string; blurb: string }[] = [
   { key: "bat-dau", title: "Bắt đầu", emoji: "🌱", blurb: "Tạo tài khoản, nhận nuôi bé đầu tiên và những việc nên làm mỗi ngày." },
@@ -22,7 +26,9 @@ const blockText = (b: WikiBlock): string[] => {
   if ("table" in b) return [...b.table.head, ...b.table.rows.flat().map(String)];
   if ("tip" in b) return [b.tip];
   if ("warn" in b) return [b.warn];
-  return [b.img.alt];
+  if ("img" in b) return [b.img.alt];
+  if ("pets" in b) return b.pets.map((x) => `${x.label} ${x.sub ?? ""}`);
+  return GALLERY_WORDS;
 };
 
 const articleText = (a: WikiArticle) =>

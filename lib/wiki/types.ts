@@ -9,7 +9,11 @@ export type WikiBlock =
   | { table: { head: string[]; rows: (string | number)[][] } }
   | { tip: string }
   | { warn: string }
-  | { img: { src: string; alt: string; width: number; height: number } };
+  | { img: { src: string; alt: string; width: number; height: number } }
+  /** Pets drawn live by the game's renderer: a species at an age stage ("baby" … "elder") and a level. */
+  | { pets: { id: string; stage?: string; level?: number; label: string; sub?: string }[] }
+  /** The whole species catalogue with filters, every age stage and every level form. */
+  | { petGallery: true };
 
 export interface WikiSection {
   /** Anchor for the table of contents. */
