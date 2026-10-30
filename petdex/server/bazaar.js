@@ -74,7 +74,7 @@ function giveBack(l, now) {
  */
 export function listForSale(userId, { kind, ref, price }, now = Date.now()) {
   const user = getUser(userId);
-  if (now - user.created_at < BAZAAR.minAccountDays * DAY) throw new GameError(`Tài khoản cần đủ ${BAZAAR.minAccountDays} ngày tuổi mới bày bán được.`);
+  if (now - user.created_at < BAZAAR.minAccountDays * DAY) throw new GameError(`Tài khoản mới cần đủ ${BAZAAR.minAccountDays * 24} giờ mới bày bán được.`);
   if (!Number.isInteger(price) || price < 1) throw new GameError('Giá bán không hợp lệ.');
   return transaction(() => {
     if (q.myOpen.get(userId).n >= BAZAAR.maxListings) throw new GameError(`Mỗi người bày tối đa ${BAZAAR.maxListings} món.`);

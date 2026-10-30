@@ -79,8 +79,8 @@ export const LIFE_STAGES = [
   {
     key: 'baby', name: 'Sơ sinh', fromWeek: 0,
     look: { scale: 0.62, head: 1.06, body: 0.72, leg: 0.5, eye: 1.25 },
-    rules: { sickness: 2, xp: 1.5, work: 0.5, maxHours: 2, school: 0, spend: 0.8 },
-    note: 'Chóng lớn nhưng dễ ốm; chưa đi học; làm việc nhẹ 2 giờ/ngày, lương 50%.',
+    rules: { sickness: 2, xp: 1.5, work: 0.5, maxHours: 2, school: 1.3, spend: 0.8 },
+    note: 'Chóng lớn nhưng dễ ốm; đi học được ngay, học nhanh hơn 30%; làm việc nhẹ 2 giờ/ngày, lương 50%.',
   },
   {
     key: 'kid', name: 'Nhí nhố', fromWeek: 2,

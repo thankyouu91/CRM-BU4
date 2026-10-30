@@ -89,6 +89,24 @@ test('trường học: tốn xu và năng lượng, bé bận 30 phút, mỗi m�
   assert.throws(() => care.attendClass(alice.id, alice.petId, 'strength', t), /đủ/);
 });
 
+test('tân thủ: bé mới nở đi học được ngay; tài khoản mới đủ 24 giờ thì bày bán ở Chợ Phiên', () => {
+  const t = T0 + 2 * HOUR;
+  const id = store.createUser('tan_thu', 'x', t);
+  post({ userId: id, delta: 1000, kind: 'opening', now: t });
+  const petId = store.insertPet(id, 'Bé mới', 'test_pet', t); // vừa nhận nuôi: Sơ sinh, cấp 1
+  store.savePet({ ...store.getPet(petId), energy: 100, fullness: 90, updated_at: t });
+  const before = store.skillsOf(petId).intellect ?? 0;
+  care.attendClass(id, petId, 'intellect', t, always(0.5));
+  assert.ok((store.skillsOf(petId).intellect ?? 0) > before);
+
+  store.addItem(id, 'ball', 1);
+  const ref = bazaar.bazaarView(id, t).sellable.items.find((i) => i.ref === 'ball').refPrice;
+  assert.throws(() => bazaar.listForSale(id, { kind: 'item', ref: 'ball', price: ref }, t + 23 * HOUR), /24 giờ/);
+  assert.equal(bazaar.bazaarView(id, t + 23 * HOUR).canSell, false);
+  assert.equal(bazaar.bazaarView(id, t + 24 * HOUR).canSell, true);
+  bazaar.listForSale(id, { kind: 'item', ref: 'ball', price: ref }, t + 24 * HOUR);
+});
+
 test('vườn: gieo hạt, bạn bè tưới hộ được thưởng, người lạ không vào được, thu hoạch có giá vốn', () => {
   const t = T0 + 2 * HOUR;
   farm.plant(alice.id, 0, 'tea', t, always(0.9)); // 0.9 ≥ tỉ lệ sâu: vụ này không có sâu

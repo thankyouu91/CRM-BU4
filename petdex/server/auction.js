@@ -68,7 +68,7 @@ const auctionView = (a, userId) => ({
 /** Mở phiên đấu giá cho món `gearId` (đã mở hộp hoặc còn nguyên hộp), giá khởi điểm `startPrice`, kéo dài `hours` giờ. */
 export function listAuction(userId, { gearId, startPrice, hours }, now = Date.now()) {
   const user = getUser(userId);
-  if (now - user.created_at < BAZAAR.minAccountDays * DAY) throw new GameError(`Tài khoản cần đủ ${BAZAAR.minAccountDays} ngày tuổi mới bày bán được.`);
+  if (now - user.created_at < BAZAAR.minAccountDays * DAY) throw new GameError(`Tài khoản mới cần đủ ${BAZAAR.minAccountDays * 24} giờ mới bày bán được.`);
   if (!AUCTION.hours.includes(hours)) throw new GameError(`Thời hạn đấu giá chỉ chọn ${AUCTION.hours.join(', ')} giờ.`);
   if (!Number.isInteger(startPrice) || startPrice < 1) throw new GameError('Giá khởi điểm không hợp lệ.');
   return transaction(() => {

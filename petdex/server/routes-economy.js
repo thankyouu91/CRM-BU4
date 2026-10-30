@@ -16,7 +16,7 @@ economyApi.use(auth);
 
 /** Cấp (của bé cao cấp nhất) cần để mở từng khu. */
 export const UNLOCKS = {
-  market: 2, school: 2, garden: 2, bank: 3, townhall: 3, guild: 3, kitchen: 3, business: 4, bazaar: 4, factory: 6, contracts: 6, advanced: 8,
+  market: 2, school: 1, garden: 2, bank: 3, townhall: 3, guild: 3, kitchen: 3, business: 4, bazaar: 4, factory: 6, contracts: 6, advanced: 8,
 };
 
 export function requireLevel(userId, level, place) {
