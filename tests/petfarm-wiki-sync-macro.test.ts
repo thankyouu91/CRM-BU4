@@ -148,7 +148,7 @@ describe("Petfarm wiki clan formulas stay in step with the game (CLAN_XP, servic
 
   it("charges strategic industries their base compensation and caps clans at the wiki's industry count", () => {
     expect(clans.entryFee("irrigation", 2), "CLAN_XP.strategicMultiplied").toBe((INDUSTRIES as Record<string, { comp: number }>).irrigation.comp);
-    expect(clans.entryFee("tea", 1)).toBe((INDUSTRIES as Record<string, { comp: number }>).tea.comp * 10);
+    expect(clans.entryFee("tea", 1)).toBe((INDUSTRIES as Record<string, { comp: number }>).tea.comp * CLAN.expandMultiplier);
     const b = newPlayer("wiki_toc_b", 3_000_000);
     clans.createClan(b, { name: "Wiki Gia Tộc B" }, T0);
     clans.donateClan(b, 2_000_000, T0);

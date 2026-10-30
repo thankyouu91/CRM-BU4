@@ -10,6 +10,7 @@ const { post } = await import('../server/ledger.js');
 const { migrate } = await import('../server/migrate.js');
 const { runDue } = await import('../server/scheduler.js');
 const clans = await import('../server/clans.js');
+const heavy = await import('../server/heavy-industry.js');
 const industry = await import('../server/industry.js');
 const macro = await import('../server/macro.js');
 const shared = await import('../../public/ta-tua/game/js/shared/clan.js');
@@ -67,6 +68,8 @@ let factoryPlot;
 let powerPlot;
 
 test('gia tộc khai khoáng + luyện thép + điện: quặng và than vào kho, nhà máy dùng điện luyện thép', () => {
+  // Công nghiệp nặng tạm đóng mặc định: test này kiểm chuỗi luyện thép nên mở lại trước.
+  heavy.setHeavyOpen(true, 'Kiểm thử', T0);
   clans.createClan(a, { name: 'Tập Đoàn Thép', emblem: '🐉', color: '#555555' }, T0);
   clans.donateClan(a, 5_000_000, T0);
   clans.enterIndustry(a, 'mining', T0);

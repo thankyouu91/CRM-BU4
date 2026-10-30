@@ -9,7 +9,7 @@ import { isAdmin } from "@/lib/rbac";
 // internal admin API (petdex/server/internal.js); every change is also written to WorkHub's
 // audit log with the administrator as actor.
 
-const ALLOWED = /^(overview|log|announcements(\/\d+\/delete)?|gear-config|gear\/\d+(\/delete)?|gift-codes(\/\d+(\/revoke)?)?|industries\/(status|unmerge|merge)|commerce|arena(\/\d+\/cancel)?|bots(\/config)?|chat(\/\d+\/delete)?|mail|clans(\/(config|macro|plots\/\d+|evasion\/\d+\/(collect|dismiss)))?|invites(\/\d+\/revoke)?|players(\/\d+(\/(coins|status|name|password-link|gear|mute|pets(\/\d+)?))?)?)$/;
+const ALLOWED = /^(overview|log|announcements(\/\d+\/delete)?|gear-config|gear\/\d+(\/delete)?|gift-codes(\/\d+(\/revoke)?)?|industries\/(status|unmerge|merge|heavy)|commerce|arena(\/\d+\/cancel)?|bots(\/config)?|chat(\/\d+\/delete)?|mail|clans(\/(config|macro|plots\/\d+|evasion\/\d+\/(collect|dismiss)))?|invites(\/\d+\/revoke)?|players(\/\d+(\/(coins|status|name|password-link|gear|mute|pets(\/\d+)?))?)?)$/;
 
 /** Body fields that only label the audit entry; the game never sees them. */
 const LABEL_FIELDS = ["challenger", "defender", "targetName", "announcementTitle", "playerName", "petName", "speciesName", "itemName", "tierName", "clanName", "plotCode", "author"];
@@ -61,6 +61,7 @@ function describe(path: string, body: Record<string, unknown>): { action: AuditA
     return { action: "tatua.arena_cancel", entityId: id, summary: `Hủy trận Đấu trường #${id}${fight}${body.targetName ? ` (${String(body.targetName)})` : ""}${body.reason ? `: ${String(body.reason)}` : ""}` };
   }
   if (path === "industries/unmerge") return { action: "tatua.industry_unmerge", entityId: null, summary: "Gỡ gộp ngành gia tộc (26 → 41 ngành) để quay lại bản cũ" };
+  if (path === "industries/heavy") return { action: body.open ? "tatua.heavy_open" : "tatua.heavy_close", entityId: null, summary: body.open ? "Mở lại công nghiệp nặng" : "Tạm đóng công nghiệp nặng (hoàn phí thâu tóm cho gia tộc đang nắm)" };
   if (path === "industries/merge") return { action: "tatua.industry_merge", entityId: null, summary: "Gộp lại các ngành gia tộc (41 → 26 ngành)" };
   if (path === "mail") {
     const to = body.to === "all" ? "mọi người chơi" : typeof body.playerName === "string" ? `“${body.playerName}”` : `người chơi #${String(body.to)}`;

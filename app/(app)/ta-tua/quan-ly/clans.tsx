@@ -183,6 +183,7 @@ function ClansBoard({ data, reload }: { data: ClanAdmin; reload: () => void }) {
       <TaxOffice evasions={data.evasions} reload={reload} />
       <ConfigCard data={data} reload={reload} />
       <MacroCard data={data} reload={reload} />
+      <HeavyIndustryCard />
       <IndustryMergeCard />
       <ClanTable clans={data.clans} />
       <PlotTable plots={data.plots} reload={reload} />
@@ -258,6 +259,63 @@ function TaxOffice({ evasions, reload }: { evasions: Evasion[]; reload: () => vo
         message={confirm ? (confirm.action === "collect"
           ? `Thu ${coins(Math.round(confirm.row.evaded * (1 + Number(penalty) / 100)))} (thuế trốn + ${penalty}% phạt) từ quỹ ${confirm.row.clan_name}, ngày ${confirm.row.day}.`
           : `Đóng hồ sơ ngày ${confirm.row.day} của ${confirm.row.clan_name} mà không thu.`) : ""}
+      />
+    </Card>
+  );
+}
+
+// ---------------------------------------------------------------------------------------------
+// Heavy industry: closed by default (no one could run the long chains); the board can reopen or close it again
+// ---------------------------------------------------------------------------------------------
+
+interface HeavyStatus {
+  open: boolean;
+  industries: { id: string; name: string; icon: string }[];
+  holders: { clanId: number; clan: string; industry: string; fee: number }[];
+  plots: number;
+  refund: number;
+}
+
+function HeavyIndustryCard() {
+  const { data, error, loading, reload } = useLoad<HeavyStatus>(`${ADMIN}/industries/heavy`);
+  const [confirm, setConfirm] = useState(false);
+  const run = async () => {
+    if (!data) return;
+    try {
+      const res = await api<HeavyStatus & { message: string }>(`${ADMIN}/industries/heavy`, { method: "POST", body: { open: !data.open } });
+      toast.success(res.message);
+      setConfirm(false);
+      reload();
+    } catch (err) {
+      toast.error(errorText(err));
+    }
+  };
+  return (
+    <Card>
+      <CardHeader
+        title={<span className="flex items-center gap-2"><Factory className="h-4 w-4 text-muted-foreground" /> Công nghiệp nặng</span>}
+        description="Luyện kim, Hóa dầu, Điện tử & vi mạch, Máy móc, Phương tiện vận tải đang tạm đóng: chuỗi quá dài, đầu ra không ai dùng. Đóng thì gia tộc đang nắm được hoàn phí thâu tóm, lô về chưa chọn ngành (giữ công trình). Mở lại thì gia tộc thâu tóm lại như thường."
+        action={data && <Button size="sm" variant={data.open ? "danger" : "secondary"} onClick={() => setConfirm(true)}>{data.open ? "Đóng lại" : "Mở lại"}</Button>}
+      />
+      <CardBody className="pt-3 text-sm">
+        {error ? <Failure error={error} onRetry={reload} /> : loading || !data ? <Skeleton className="h-10" /> : (
+          <p>
+            <Badge className="border bg-card">{data.open ? "Đang mở" : "Tạm đóng"}</Badge>{" "}
+            {data.industries.map((i) => `${i.icon} ${i.name}`).join(" · ")}
+            {data.open && data.holders.length ? ` · ${data.holders.length} gia tộc đang nắm, đóng sẽ hoàn ${coins(data.refund)}` : ""}
+          </p>
+        )}
+      </CardBody>
+      <ConfirmDialog
+        open={confirm}
+        onClose={() => setConfirm(false)}
+        onConfirm={run}
+        danger={Boolean(data?.open)}
+        title={data?.open ? "Đóng công nghiệp nặng" : "Mở lại công nghiệp nặng"}
+        confirmLabel={data?.open ? "Đóng" : "Mở lại"}
+        message={data?.open
+          ? `Hoàn ${coins(data.refund)} phí thâu tóm cho ${data.holders.length} gia tộc, ${data.plots} lô về chưa chọn ngành.`
+          : "Gia tộc lại thâu tóm được 5 ngành công nghiệp nặng."}
       />
     </Card>
   );

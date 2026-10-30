@@ -10,7 +10,8 @@ import { macroFor, rollNextDay } from './macro.js';
 import { weekKey } from './town.js';
 import { breakDepositsFor, clanAssets, clanDeposited, clanGovView, coverFromDeposits, isDeposed } from './clan-gov.js';
 import { IRRIGATED, clearShopBook, expireListings, plotDeposits, productionPreview, runProduction, setPlotVariant, tradeIncome } from './industry.js';
-import { STRATEGIC_INDUSTRIES, STRATEGIC_RULES, strategicPlaceOk, variantsFor } from '../../public/ta-tua/game/js/shared/industry.js';
+import { HEAVY_INDUSTRIES, STRATEGIC_INDUSTRIES, STRATEGIC_RULES, strategicPlaceOk, variantsFor } from '../../public/ta-tua/game/js/shared/industry.js';
+import { industryClosed } from './heavy-industry.js';
 import { buffFor, chargeInfraFee, operatingOwners, strategicOf } from './strategic.js';
 import { openShopBuying, settleEssentialsDay } from './essentials.js';
 import { memberPower } from './arena.js';
@@ -27,9 +28,9 @@ export const DEFAULT_CLAN_CONFIG = {
   /** Cấp gia tộc cần để thâu tóm ngành thứ 1, 2, 3. */
   industryLevels: [1, 3, 5],
   /** Ngành thứ 2 và 3 phải trả gấp bao nhiêu lần mức bồi thường gốc của ngành đó. */
-  expandMultiplier: 10,
+  expandMultiplier: 4,
   baseTax: 0.35,
-  extraTaxPerIndustry: 0.05,
+  extraTaxPerIndustry: 0.025,
   refundRate: 0.15,
   donationQuotaPerLevel: 300,
   upkeepPerLevel: 80,
@@ -404,6 +405,7 @@ export function enterIndustry(userId, industry, now = Date.now()) {
     const { clan } = mustRole(userId, ['leader'], 'thâu tóm ngành');
     const cfg = clanConfig();
     if (!INDUSTRIES[industry]) throw new GameError('Không có ngành này.');
+    if (industryClosed(industry)) throw new GameError(`Ngành ${INDUSTRIES[industry].name} đang tạm đóng.`);
     const owned = q.industries.all(clan.id);
     if (owned.some((i) => i.industry === industry)) throw new GameError('Gia tộc đã nắm ngành này rồi.');
     if (owned.length >= 3) throw new GameError('Mỗi gia tộc thâu tóm tối đa 3 ngành.');
@@ -496,6 +498,7 @@ export function setPlotIndustry(userId, plotId, industry) {
   return transaction(() => {
     const { clan, plot } = ownPlot(userId, plotId, ['leader', 'elder'], 'chọn ngành cho lô đất');
     if (!q.industries.all(clan.id).some((i) => i.industry === industry)) throw new GameError('Gia tộc chưa thâu tóm ngành này.');
+    if (industryClosed(industry)) throw new GameError(`Ngành ${INDUSTRIES[industry].name} đang tạm đóng.`);
     if (isStrategic(industry) && !strategicPlaceOk(industry, plot)) throw new GameError(`Lô ${plot.code} không dựng được hạ tầng ${INDUSTRIES[industry].name}.`);
     q.setPlotIndustry.run(industry, plot.id);
     // Ngành có lựa chọn (loại nhà máy điện, dây chuyền của nhà máy gộp): chọn sẵn lựa chọn đầu tiên hợp với lô.
@@ -556,6 +559,7 @@ export function clanView(userId, now = Date.now()) {
     createCost: cfg.createCost, unlockLevel: cfg.unlockLevel, industryLevels: cfg.industryLevels, expandMultiplier: cfg.expandMultiplier,
     baseTax: cfg.baseTax, extraTaxPerIndustry: cfg.extraTaxPerIndustry, refundRate: cfg.refundRate, comp: cfg.comp,
     donationQuotaPerLevel: cfg.donationQuotaPerLevel, levels: CLAN_LEVELS, emblems: CLAN_EMBLEMS, industryClans: counts,
+    closedIndustries: HEAVY_INDUSTRIES.filter(industryClosed),
   };
   const m = q.member.get(userId);
   const clan = m && q.clan.get(m.clan_id);

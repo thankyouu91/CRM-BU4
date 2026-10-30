@@ -97,6 +97,8 @@ export const AUDIT_ACTIONS = {
   "tatua.tax_dismiss": { label: "Bỏ qua hồ sơ thuế", group: "tatua" },
   "tatua.industry_unmerge": { label: "Gỡ gộp ngành gia tộc", group: "tatua" },
   "tatua.industry_merge": { label: "Gộp lại ngành gia tộc", group: "tatua" },
+  "tatua.heavy_open": { label: "Mở lại công nghiệp nặng", group: "tatua" },
+  "tatua.heavy_close": { label: "Tạm đóng công nghiệp nặng", group: "tatua" },
   "tatua.arena_cancel": { label: "Hủy trận Đấu trường", group: "tatua" },
   "tatua.bots_config": { label: "Bật/tắt và đặt số cư dân tự động", group: "tatua" },
   "tatua.mail": { label: "Gửi thư trong game", group: "tatua" },

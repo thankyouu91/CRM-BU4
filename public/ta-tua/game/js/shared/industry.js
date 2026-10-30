@@ -102,14 +102,14 @@ export const PRODUCTION_INDUSTRIES = {
   consumer_goods: {
     name: 'Hàng tiêu dùng', icon: '🛍️', sector: 'light', comp: 35_000, commodities: [], zones: FACTORY_LAND, climates: MILD,
     lines: {
-      food_processing: { name: 'Thực phẩm chế biến', icon: '🥫', recipe: { in: { wheat: 1, beef: 1, power: 1 }, out: { processed_food: 2 } }, batches: 6 },
-      textiles: { name: 'Dệt may', icon: '👕', recipe: { in: { cotton: 3, power: 1 }, out: { clothing: 1 } }, batches: 6 },
-      furniture: { name: 'Đồ gỗ nội thất', icon: '🪑', recipe: { in: { timber: 3, power: 1 }, out: { furniture: 1 } }, batches: 6 },
+      food_processing: { name: 'Thực phẩm chế biến', icon: '🥫', recipe: { in: { wheat: 1, beef: 1, power: 1 }, out: { processed_food: 2 } }, batches: 12 },
+      textiles: { name: 'Dệt may', icon: '👕', recipe: { in: { cotton: 3, power: 1 }, out: { clothing: 1 } }, batches: 12 },
+      furniture: { name: 'Đồ gỗ nội thất', icon: '🪑', recipe: { in: { timber: 3, power: 1 }, out: { furniture: 1 } }, batches: 12 },
     },
   },
   pharma: {
     name: 'Dược phẩm', icon: '💊', sector: 'light', comp: 45_000, commodities: [], zones: FACTORY_LAND, climates: MILD,
-    recipe: { in: { chemicals: 2, beans: 1, power: 1 }, out: { medicine: 1 } }, batches: 4,
+    recipe: { in: { beans: 2, power: 1 }, out: { medicine: 1 } }, batches: 8, // không cần hóa chất từ Hóa dầu (đã tạm đóng)
   },
   electronics: {
     name: 'Điện tử & vi mạch', icon: '💻', sector: 'light', comp: 50_000, commodities: [], zones: FACTORY_LAND, climates: MILD,
@@ -146,6 +146,20 @@ export const PRODUCTION_INDUSTRIES = {
     },
   },
 };
+
+/**
+ * Công nghiệp nặng tạm đóng: chuỗi dài 3–4 bước, đầu ra không ai trong game dùng, gia tộc tối đa 3 ngành nên không làm trọn được.
+ * Không thâu tóm mới được, lô đang làm thì không chạy; quản trị viên có thể mở lại (bảng quản lý → Gia tộc).
+ * Hàng hóa và công thức giữ nguyên để mở lại không mất gì.
+ */
+export const HEAVY_INDUSTRIES = ['metallurgy', 'petrochem', 'electronics', 'machinery', 'vehicles'];
+
+/**
+ * Sản lượng ngành sản xuất tỉ lệ theo giá gốc của lô, như doanh thu ngành dịch vụ (lô đắt thì mỏ giàu, nhà máy lớn):
+ * hệ số = `scale` × giá gốc lô ÷ `refPrice`, trong khoảng [min, max].
+ */
+export const PRODUCTION_YIELD = { scale: 3, refPrice: 300_000, min: 1, max: 12 };
+export const landYield = (plot) => Math.min(PRODUCTION_YIELD.max, Math.max(PRODUCTION_YIELD.min, PRODUCTION_YIELD.scale * (plot.basePrice ?? PRODUCTION_YIELD.refPrice) / PRODUCTION_YIELD.refPrice));
 
 /**
  * Ngành cũ đã gộp → ngành mới, và dây chuyền tương ứng (null nếu ngành mới là ngành khai thác).

@@ -86,11 +86,11 @@ test('lập gia tộc, góp quỹ, thâu tóm ngành đầu trả bồi thườn
   assert.equal(clans.clanView(leader, T0).clan.taxRate, 0.35);
 });
 
-test('ngành thứ hai trả gấp 10 lần và thuế tăng; tối đa 3 ngành', () => {
+test('ngành thứ hai trả gấp 4 lần và thuế tăng; tối đa 3 ngành', () => {
   const before = clans.clanView(leader, T0).clan.treasury;
   clans.enterIndustry(leader, 'tea', T0);
-  assert.equal(clans.clanView(leader, T0).clan.treasury, before - 300_000);
-  assert.ok(Math.abs(clans.clanView(leader, T0).clan.taxRate - 0.4) < 1e-9);
+  assert.equal(clans.clanView(leader, T0).clan.treasury, before - 120_000);
+  assert.ok(Math.abs(clans.clanView(leader, T0).clan.taxRate - 0.375) < 1e-9);
   clans.enterIndustry(leader, 'sugar', T0);
   assert.throws(() => clans.enterIndustry(leader, 'dairy', T0), /tối đa 3/);
 });
@@ -127,7 +127,7 @@ test('mua đất, xem trước theo môi trường, lắp ghép công trình r�
   assert.ok(plot.estimate > 0);
 });
 
-test('đêm: doanh thu vào quỹ, thuế 45% (3 ngành) trên phần khai báo; khai thiếu thì Sở thuế có hồ sơ, gia tộc không thấy', () => {
+test('đêm: doanh thu vào quỹ, thuế 40% (3 ngành) trên phần khai báo; khai thiếu thì Sở thuế có hồ sơ, gia tộc không thấy', () => {
   clans.setDeclareRatio(leader, 0.6);
   const day = dayKey(T0);
   const before = clans.clanView(leader, T0).clan.treasury;
@@ -137,14 +137,14 @@ test('đêm: doanh thu vào quỹ, thuế 45% (3 ngành) trên phần khai báo;
   assert.equal(d.day, day);
   assert.ok(d.revenue > 0);
   assert.equal(d.declared, Math.round(d.revenue * 0.6));
-  assert.ok(Math.abs(d.rate - 0.45) < 1e-9);
-  assert.equal(d.tax, Math.round(d.declared * 0.45));
+  assert.ok(Math.abs(d.rate - 0.4) < 1e-9);
+  assert.equal(d.tax, Math.round(d.declared * 0.4));
   assert.equal(view.clan.treasury, before + d.revenue - d.tax - d.upkeep);
   assert.ok(!JSON.stringify(view).includes('evad'), 'gia tộc không được biết hồ sơ trốn thuế');
   const admin = clans.adminClanView(T0 + DAY);
   const record = admin.evasions.find((e) => e.clan_id === clanId && e.day === day);
   assert.ok(record, 'Sở thuế phải có hồ sơ');
-  assert.equal(record.evaded, Math.round((d.revenue - d.declared) * 0.45));
+  assert.equal(record.evaded, Math.round((d.revenue - d.declared) * 0.4));
   assert.ok(store.adminLogs(5).some((l) => l.action === 'tax_evasion'));
   // Truy thu kèm phạt 50%.
   const t = clans.clanView(leader, T0 + DAY).clan.treasury;

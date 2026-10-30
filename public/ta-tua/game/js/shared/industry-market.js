@@ -12,7 +12,7 @@ const RAW = ['tea_leaf', 'milk', 'cassava', 'cane', 'strawberry', 'fish', 'pork'
 const PROCESSED = ['dried_tea', 'pearl', 'sugar', 'condensed'];
 
 export const INDUSTRY_MARKET = {
-  // Cân bằng: với mọi ngành chạy hết công suất, mỗi mặt hàng có lực tăng (cầu) và lực giảm (cung, chi phí) gần bằng nhau,
+  // Cân bằng: với mọi ngành đang mở (công nghiệp nặng tạm đóng thì không tính) chạy hết công suất, mỗi mặt hàng có lực tăng (cầu) và lực giảm (cung, chi phí) gần bằng nhau,
   // lệch ròng không quá ±10% (kiểm thử trong clan-gov.test.js). Thị trấn càng phát triển thì giá càng sôi động, không rẻ dần một chiều.
   // ---- khối dịch vụ & tiêu dùng ----
   tea: { supply: ['tea_leaf', 'dried_tea'] },
@@ -32,14 +32,14 @@ export const INDUSTRY_MARKET = {
   agriculture: { supply: ['cane', 'cassava', 'tea_leaf', 'mango', 'milk', 'pork'], weight: 0.8 },
   power: { cost: PROCESSED },
   consumer_goods: { demand: ['cane', 'cassava', 'milk', 'tea_leaf', 'mango'], supply: ['sugar'], weight: 0.8 }, // đồ hộp, xoài sấy
-  pharma: { demand: ['strawberry', 'tea_leaf', 'dried_tea', 'sugar'], weight: 0.4 },
+  pharma: { demand: ['strawberry', 'tea_leaf', 'dried_tea', 'sugar', 'cassava'], weight: 0.4 }, // tinh bột sắn làm tá dược
   electronics: { demand: ['milk', 'pearl', 'sugar'], weight: 0.3 },
   metallurgy: { demand: ['pork', 'fish', 'cassava'], weight: 0.3 },
   petrochem: { cost: PROCESSED, demand: ['cane', 'cassava'], weight: 0.6 }, // nhiên liệu sinh học ăn mía, sắn
   machinery: { weight: 0.4, stabilize: RAW }, // máy móc làm mùa vụ đều tay hơn
   vehicles: { stabilize: [...RAW, ...PROCESSED], supply: ['fish'], weight: 0.5 }, // đội xe chở hàng, tàu đánh cá
   // ---- ngành chiến lược ----
-  irrigation: { supply: ['tea_leaf', 'cane', 'cassava', 'strawberry', 'mango'], weight: 0.4, stabilize: ['tea_leaf', 'cane', 'cassava', 'strawberry', 'mango'] },
+  irrigation: { supply: ['tea_leaf', 'strawberry', 'mango'], weight: 0.4, stabilize: ['tea_leaf', 'cane', 'cassava', 'strawberry', 'mango'] },
   wind_farm: { cost: PROCESSED, weight: 0.6 },
   state_bank: { stabilize: [...RAW, ...PROCESSED], weight: 0.4 },
   tax_office: {}, // thu thuế, không đụng tới hàng trên Sàn
