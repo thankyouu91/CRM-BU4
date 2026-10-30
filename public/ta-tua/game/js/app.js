@@ -41,6 +41,7 @@ import {
 import { renderBank } from './views/bank.js';
 import { renderBazaar } from './views/bazaar.js';
 import { renderBusiness } from './views/business.js';
+import { renderClans } from './views/clans.js';
 import { renderClinic } from './views/clinic.js';
 import { renderCommunity } from './views/community.js';
 import { renderContracts } from './views/contracts.js';
@@ -69,7 +70,7 @@ const state = {
 
 const VIEW_NAMES = [
   'map', 'home', 'shop', 'bag', 'park', 'ranks', 'jobs', 'games', 'bank', 'market', 'wallet', 'news', 'business', 'townhall', 'community',
-  'garden', 'kitchen', 'school', 'clinic', 'factory', 'contracts', 'bazaar', 'credit',
+  'garden', 'kitchen', 'school', 'clinic', 'factory', 'contracts', 'bazaar', 'credit', 'clans',
 ];
 const TYPE_ORDER = ['food', 'care', 'toy', 'accessory', 'egg'];
 const IDLE_BY_MOOD = { great: 'idle', ok: 'idle', hungry: 'wait', tired: 'think', sad: 'sad', sick: 'sad', dirty: 'wait' };
@@ -208,7 +209,7 @@ function render() {
     jobs: renderJobs, games: renderGames, bank: renderBank, market: renderMarket, wallet: renderWalletView, news: renderNews,
     business: renderBusiness, townhall: renderTownhall, community: renderCommunity,
     garden: renderGarden, kitchen: renderKitchen, school: renderSchool, clinic: renderClinic,
-    factory: renderFactory, contracts: renderContracts, bazaar: renderBazaar, credit: renderCredit,
+    factory: renderFactory, contracts: renderContracts, bazaar: renderBazaar, credit: renderCredit, clans: renderClans,
   };
   const out = views[state.view]($('#view'), ctx);
   if (typeof out === 'function') teardown = out;

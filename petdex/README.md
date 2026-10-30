@@ -71,6 +71,7 @@ Script chép các bé trong `~/.petdex/pets` và `~/.codex/pets` vào `public/pe
 | Hợp đồng cung ứng (cấp 6) | Giao Q lô mỗi đêm với giá chốt trong 3–14 ngày, hai bên ký quỹ. Giao thiếu thì bồi thường; phá hợp đồng thì bồi thường 10% phần còn lại và −30 điểm tín dụng |
 | Chợ Phiên (cấp 4) | Người chơi bày bán đồ siêu thị và món tự nấu, giá 50–300% giá tham chiếu, phí đăng 1%, phí bán 5%, tin còn 48 giờ |
 | Tín dụng & vay | Điểm tín dụng 300–850 cho mọi người, lên khi giữ lời hứa. Chế độ Tài chính nâng cao (cấp 8): vay trả góp 3/7/14 ngày theo hạn mức hạng, tự trừ mỗi tối; trễ 7 kỳ là nợ xấu |
+| Gia tộc & Nhà Đất (cấp 4) | Lập gia tộc (3.000 xu), góp quỹ theo định mức tuần, gia tộc lên cấp 1–10 (thêm người, thêm lô, +2% sản lượng mỗi cấp). Thâu tóm tối đa 3 trong 11 ngành: ngành đầu trả bồi thường thị trường 20.000–50.000 xu, ngành thứ hai, ba trả gấp 10 lần. Bản đồ 200 lô (giá 100.000–2.000.000 xu, % tăng giá và % sản xuất tối đa 18%) có 7 địa hình và 4 khí hậu, mỗi ngành hợp đất khác nhau; giá lô trống tăng mạnh khi quỹ đất cạn. Công trình tự lắp từ 200 mẫu (tối đa 20 mảnh, đổi màu từng mảnh). Doanh thu mỗi đêm vào quỹ, thuế doanh nghiệp 35% (+5 điểm mỗi ngành thêm), cuối tháng hoàn 15%. Gia tộc tự khai doanh thu; khai thiếu được ghi vào hồ sơ Sở thuế ở bảng quản trị. Kinh tế vĩ mô mỗi ngày: chu kỳ, thời tiết, cầu từng ngành, chỉ số giá đất; tác động lên lô đất, giá trên Sàn và khách quầy |
 | Nhiệm vụ ngày | 3 nhiệm vụ theo những gì người chơi làm được, làm đủ thì mở rương. Quà ngày tăng theo chuỗi đăng nhập (60 → 120 xu). Trợ cấp tân thủ 30 xu/ngày trong 7 ngày đầu |
 
 ## Cấu trúc
@@ -82,6 +83,7 @@ server/
   ledger.js          sổ cái: nơi duy nhất được thay đổi xu
   jobs.js market.js bank.js minigames.js wallet.js   các hệ thống kinh tế
   business.js town.js social.js quests.js            quầy, thuế & ngân sách, bạn bè & Hội, nhiệm vụ
+  clans.js macro.js  gia tộc, đất, thuế doanh nghiệp, Sở thuế; kinh tế vĩ mô (luật chung ở public/ta-tua/game/js/shared/clan.js)
   care.js farm.js factory.js contracts.js bazaar.js credit.js   chăm sóc & trường, vườn & bếp, xưởng, hợp đồng, Chợ Phiên, tín dụng
   scheduler.js       nhịp giá 10 phút, quyết toán nửa đêm (giờ Việt Nam), chạy bù khi server từng tắt
   migrate.js         chuyển dữ liệu cũ (mỗi bước chạy một lần)

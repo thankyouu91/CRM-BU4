@@ -23,6 +23,8 @@ import {
 import { communityApi } from './routes-community.js';
 import { UNLOCKS, economyApi } from './routes-economy.js';
 import { productionApi } from './routes-production.js';
+import { clanApi } from './routes-clans.js';
+import { clanConfig } from './clans.js';
 import { createPet, hatch, heirloomText, incubate } from './eggs.js';
 import { memorialsView, reopenSlot, slotsOf } from './lifecycle.js';
 import { track } from './quests.js';
@@ -66,7 +68,7 @@ api.get('/catalog', (_req, res) => {
     species: listSpecies(),
     rules: RULES,
     gear: { tiers: GEAR_TIERS, odds: gearConfig().odds },
-    unlocks: UNLOCKS,
+    unlocks: { ...UNLOCKS, clan: clanConfig().unlockLevel },
     stages: STAGES,
     skills: SKILLS,
     careers: CAREERS,
@@ -301,6 +303,7 @@ api.post('/shop/buy', auth, (req, res) => {
 api.use(economyApi);
 api.use(communityApi);
 api.use(productionApi);
+api.use(clanApi);
 
 api.use('/{*rest}', (_req, res) => res.status(404).json({ error: 'Không tìm thấy.' }));
 
