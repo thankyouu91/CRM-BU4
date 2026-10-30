@@ -17,6 +17,9 @@ import {
 import {
   appointLeader, buyShares, clanTradeShares, mergeControlled, payShareDividend, repayMargin, sellShares, sharesView, startIpo, subscribeIpo,
 } from './clan-shares.js';
+import {
+  buyBondAsk, bondsView, cancelBondAsk, issueClanBonds, listBonds, setBaseRate, subscribeBonds,
+} from './clan-bonds.js';
 import { castBallot, openClanDeposit, resolveVotes, startDepose, withdrawClanDeposit } from './clan-gov.js';
 
 export const clanApi = Router();
@@ -27,6 +30,7 @@ clanApi.use('/industry', auth);
 clanApi.use('/arena', auth);
 clanApi.use('/clan-bank', auth);
 clanApi.use('/shares', auth);
+clanApi.use('/bonds', auth);
 
 const uid = (req) => req.user.id;
 const unlock = (req, what) => requireLevel(uid(req), clanConfig().unlockLevel, what);
@@ -81,6 +85,21 @@ clanApi.post('/shares/:clanId/clan-trade', (req, res) => reply(res, uid(req), cl
 )));
 clanApi.post('/shares/:clanId/appoint', (req, res) => reply(res, uid(req), appointLeader(uid(req), intField(req.params.clanId, 'Gia tộc'), intField(req.body?.userId, 'Người được bổ nhiệm'))));
 clanApi.post('/shares/:clanId/merge', (req, res) => reply(res, uid(req), mergeControlled(uid(req), intField(req.params.clanId, 'Gia tộc'))));
+
+// ---- Trái phiếu, sàn thứ cấp, lãi suất cơ bản ----
+const asClan = (req) => ({ asClan: Boolean(req.body?.asClan) });
+clanApi.get('/bonds', (req, res) => res.json(bondsView(uid(req))));
+clanApi.post('/bonds/issue', (req, res) => reply(res, uid(req), issueClanBonds(uid(req), {
+  qty: intField(req.body?.qty, 'Số trái phiếu'), coupon: Number(req.body?.coupon), term: Number(req.body?.term),
+})));
+clanApi.post('/bonds/rate', (req, res) => reply(res, uid(req), setBaseRate(uid(req), Number(req.body?.rate))));
+clanApi.post('/bonds/asks/:id/buy', (req, res) => reply(res, uid(req), buyBondAsk(uid(req), intField(req.params.id, 'Lệnh'), intField(req.body?.qty, 'Số trái phiếu'), asClan(req))));
+clanApi.post('/bonds/asks/:id/cancel', (req, res) => reply(res, uid(req), cancelBondAsk(uid(req), intField(req.params.id, 'Lệnh'), asClan(req))));
+clanApi.post('/bonds/:id/subscribe', (req, res) => {
+  requireLevel(uid(req), UNLOCKS.bank, 'Mua trái phiếu');
+  reply(res, uid(req), subscribeBonds(uid(req), intField(req.params.id, 'Đợt'), intField(req.body?.qty, 'Số trái phiếu'), asClan(req)));
+});
+clanApi.post('/bonds/:id/list', (req, res) => reply(res, uid(req), listBonds(uid(req), intField(req.params.id, 'Đợt'), intField(req.body?.qty, 'Số trái phiếu'), intField(req.body?.price, 'Giá'), asClan(req))));
 
 clanApi.get('/clans', (req, res) => {
   resolveVotes(); // phiếu hết giờ thì khép trước khi xem

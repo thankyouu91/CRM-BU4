@@ -3,6 +3,7 @@ import { allUsers, db, getUser, inventory } from './db.js';
 import { bankHoldings, indexedPrice } from './bank.js';
 import { clanBankDeposits } from './clan-bank.js';
 import { sharePositions } from './clan-shares.js';
+import { bondValue } from './clan-bonds.js';
 import { dayKey } from './clock.js';
 import { DAY, ITEMS } from './game.js';
 import { KINDS } from './ledger.js';
@@ -36,6 +37,7 @@ export function netWorth(userId, now = Date.now()) {
     deposits: bank.deposits,
     clanBank: clanBankDeposits(userId), // gốc tiền gửi ở các ngân hàng gia tộc
     shares: shares.value, // cổ phiếu gia tộc theo giá quỹ khớp lệnh hiện tại
+    bonds: bondValue(userId), // trái phiếu theo mệnh giá
     locked: lockedInOrders(userId),
     goods: goodsValue(userId, now),
     items,

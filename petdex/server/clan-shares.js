@@ -7,10 +7,11 @@
 import { adminLog, db, getUser, transaction } from './db.js';
 import { dayKey } from './clock.js';
 import { DAY, GameError, HOUR } from './game.js';
-import { post } from './ledger.js';
+import { chargeFinanceTax, post } from './ledger.js';
 import { isDeposed } from './clan-gov.js';
 import { plotCollateral, plotRoom, transferPlot } from './clans.js';
 import { plotPledged, sheetOf } from './clan-bank.js';
+import { bondsInDefault } from './clan-bonds.js';
 import { isStrategic } from '../../public/ta-tua/game/js/shared/clan.js';
 import {
   PLAYER_CAP, SHARES, SHARE_IPO_MAX, SHARE_POOL, allotByDonation, buyCost, poolPrice, sellProceeds, tradeFee, withinBand,
@@ -333,6 +334,7 @@ export function clanTradeShares(userId, targetId, side, qty, { asBank = false } 
     const { clan } = mustLeader(userId, 'mua bán cổ phiếu bằng quỹ');
     if (!['buy', 'sell'].includes(side)) throw new GameError('Thao tác không hợp lệ.');
     const own = targetId === clan.id;
+    if (own && side === 'buy' && bondsInDefault(clan.id)) throw new GameError('Gia tộc còn nợ trái chủ: trái chủ được trả trước, chưa mua lại cổ phần được.');
     if (asBank) {
       const b = db.prepare('SELECT * FROM cbank_banks WHERE clan_id = ?').get(clan.id);
       if (!b || b.status !== 'open' || b.frozen) throw new GameError('Ngân hàng của gia tộc không hoạt động.');
@@ -416,6 +418,7 @@ export function payShareDividend(userId, amount, now = Date.now()) {
     const { clan } = mustLeader(userId, 'chia cổ tức');
     const l = q.listing.get(clan.id);
     if (!l || l.status !== 'listed') throw new GameError('Gia tộc chưa lên sàn.');
+    if (bondsInDefault(clan.id)) throw new GameError('Gia tộc còn nợ trái chủ: trái chủ được trả trước, chưa chia cổ tức được.');
     const holders = q.external.all(clan.id);
     const shares = holders.reduce((s, h) => s + h.qty, 0);
     if (!shares) throw new GameError('Chưa có cổ đông nào nhận cổ tức.');
@@ -428,7 +431,10 @@ export function payShareDividend(userId, amount, now = Date.now()) {
     for (const h of holders) {
       const x = per * h.qty;
       paid += x;
-      if (h.holder_kind === 'user') post({ userId: h.holder_id, delta: x, kind: 'share_dividend', memo: `Cổ tức ${clan.name}: ${h.qty} cổ phần`, now });
+      if (h.holder_kind === 'user') {
+        post({ userId: h.holder_id, delta: x, kind: 'share_dividend', memo: `Cổ tức ${clan.name}: ${h.qty} cổ phần`, now });
+        chargeFinanceTax(h.holder_id, x, `Cổ tức ${clan.name}`, now);
+      }
       else post({ account: h.holder_kind === 'bank' ? bankAccount(h.holder_id) : clanAccount(h.holder_id), delta: x, kind: 'share_dividend', memo: `Cổ tức ${clan.name}`, now });
     }
     post({ account: clanAccount(clan.id), delta: -paid, kind: 'share_dividend', memo: `Cổ tức ${fmt(per)} xu/cổ phần`, now });

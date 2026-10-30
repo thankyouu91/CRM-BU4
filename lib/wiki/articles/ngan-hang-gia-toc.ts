@@ -2,6 +2,7 @@ import type { WikiArticle } from "../types";
 import { UNLOCKS } from "../rules";
 import { BANK } from "@/petdex/server/rules/bank.js";
 import { CBANK, balanceSheet, failurePayout, maxDepositRate, simpleInterest } from "@/public/ta-tua/game/js/shared/clan-bank.js";
+import { FINANCE_TAX, financeTax } from "@/public/ta-tua/game/js/shared/clan-bonds.js";
 
 // Ngân hàng gia tộc: tiền gửi của người chơi ở ngân hàng do gia tộc nắm Ngân hàng nhà nước điều hành
 // (petdex/server/clan-bank.js). Mọi con số đọc thẳng từ public/ta-tua/game/js/shared/clan-bank.js;
@@ -53,7 +54,7 @@ export const article: WikiArticle = {
           ["Rút đủ hạn", "Người gửi", "Gốc + lãi đơn cả kỳ; nửa đêm ngày đáo hạn hệ thống tự trả"],
           ["Rút trước hạn", "Người gửi", "Chỉ nhận gốc, mất toàn bộ lãi"],
         ] } },
-        { p: `**Lãi** = số tiền × lãi/ngày × số ngày, trả một lần khi đáo hạn. Ví dụ lúc lãi suất cơ bản là ${pct(base)}/ngày: gửi ${xu(EX.amount)} kỳ ${EX.term} ngày ở NPC được ${xu(exNpc)} lãi; ở ngân hàng gia tộc trả mức trần ${pct(cap)}/ngày được ${xu(exClan)}.` },
+        { p: `**Lãi** = số tiền × lãi/ngày × số ngày, trả một lần khi đáo hạn. Ví dụ lúc lãi suất cơ bản là ${pct(base)}/ngày: gửi ${xu(EX.amount)} kỳ ${EX.term} ngày ở NPC được ${xu(exNpc)} lãi; ở ngân hàng gia tộc trả mức trần ${pct(cap)}/ngày được ${xu(exClan)}, trừ ${pct(FINANCE_TAX.rate)} thuế lợi nhuận tài chính còn ${xu(exClan - financeTax(exClan))} (lãi tiết kiệm NPC không chịu thuế này).` },
         { p: `**Phí bảo hiểm:** mỗi khoản gửi mới, ngân hàng (không phải người gửi) nộp **${pct(CBANK.insurancePremium)}** số tiền vào **quỹ bảo hiểm tiền gửi** chung. Phí giải ngân khoản vay (${pct(CBANK.loan.fee)}) cũng vào quỹ này.` },
         { p: `**Bảng cân đối:** vốn chủ = tiền mặt + nợ cho vay còn phải thu − tiền gửi. Ví dụ tiền mặt ${xu(sheet.cash)}, cho vay ${xu(sheet.loans)}, tiền gửi ${xu(sheet.deposits)}: vốn chủ ${xu(sheet.equity)}, tiền mặt tối thiểu ${xu(sheet.floor)}, nhận tiền gửi tới ${xu(sheet.depositCap)}.` },
         { table: { head: ["Uy tín (0–100)", "Thay đổi"], rows: [

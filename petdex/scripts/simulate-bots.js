@@ -24,6 +24,7 @@ const { post } = await import('../server/ledger.js');
 const clans = await import('../server/clans.js');
 const clanBank = await import('../server/clan-bank.js');
 const clanShares = await import('../server/clan-shares.js');
+const clanBonds = await import('../server/clan-bonds.js');
 const { economy } = await import('../server/bank.js');
 
 function seeded(seed) {
@@ -88,6 +89,8 @@ export async function simulateBots({ bots: n = BOTS, days = DAYS, step = STEP_MI
   let prev = base;
   const ticks = [];
   for (let d = 1; d <= days; d += 1) {
+    // --seed-bank: từ ngày thứ hai (bot đã đủ cấp mở ngân hàng) mở bán một đợt trái phiếu kho bạc 14 ngày, lãi gấp đôi lãi suất cơ bản.
+    if (bank && d === 2) clanBonds.issueTreasuryBonds({ qty: 2_000, coupon: economy().baseRate * 2, term: 14 }, 'mô phỏng', clock);
     const end = clock + 24 * 3_600_000;
     for (; clock < end; clock += step * 60_000) {
       runDue(clock, rand);
@@ -136,11 +139,15 @@ export async function simulateBots({ bots: n = BOTS, days = DAYS, step = STEP_MI
       (SELECT COALESCE(SUM(balance), 0) FROM accounts WHERE id = 'cbank_insurance') AS insurance,
       (SELECT COUNT(*) FROM clan_share_trades) AS shareTrades,
       (SELECT COUNT(DISTINCT holder_id) FROM clan_share_trades WHERE holder_kind = 'user') AS shareTraders,
-      (SELECT COUNT(*) FROM clan_margin_loans) AS margins`).get();
+      (SELECT COUNT(*) FROM clan_margin_loans) AS margins,
+      (SELECT COALESCE(SUM(qty), 0) FROM bond_holdings) AS bonds,
+      (SELECT COUNT(DISTINCT holder_id) FROM bond_holdings WHERE holder_kind = 'user') AS bondHolders,
+      (SELECT COALESCE(-SUM(delta), 0) FROM ledger WHERE kind = 'finance_tax' AND user_id IS NOT NULL) AS financeTax`).get();
   log(`Ngân hàng gia tộc: ${cbank.banks} ngân hàng mở, ${cbank.deposits} khoản gửi của ${cbank.depositors} người (đang gửi ${cbank.live.toLocaleString('vi-VN')} xu), ${cbank.queued} lần xếp hàng rút, ${cbank.loans} khoản vay, quỹ bảo hiểm ${cbank.insurance.toLocaleString('vi-VN')} xu.`);
   const prices = store.db.prepare("SELECT clan_id FROM clan_listings WHERE status = 'listed'").all()
     .map((r) => `${r.clan_id}: ${Math.round(clanShares.priceOf(store.db.prepare('SELECT * FROM clan_listings WHERE clan_id = ?').get(r.clan_id)))}`);
   log(`Cổ phiếu gia tộc: ${cbank.shareTrades} lệnh của ${cbank.shareTraders} người, ${cbank.margins} khoản ký quỹ; giá hiện tại ${prices.join(', ') || 'chưa có'}.`);
+  log(`Trái phiếu: ${cbank.bonds} trái phiếu của ${cbank.bondHolders} người; thuế lợi nhuận tài chính đã thu ${cbank.financeTax.toLocaleString('vi-VN')} xu.`);
   log(`Cấp bé của bot: trung bình ${levels.avg?.toFixed(1)}, cao nhất ${levels.max}. Việc gần nhất: ${acts.map((r) => `${r.a ?? '—'} ${r.n}`).join(', ')}`);
   const lv = store.db.prepare('SELECT COALESCE(MAX(p.level), 0) AS l FROM bots b LEFT JOIN pets p ON p.owner_id = b.user_id GROUP BY b.user_id ORDER BY l').all().map((r) => r.l);
   const inClan = store.db.prepare('SELECT COUNT(*) AS n FROM bots b JOIN clan_members m ON m.user_id = b.user_id').get().n;

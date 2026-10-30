@@ -1193,6 +1193,59 @@ addColumn('users', 'locked_slots', 'INTEGER NOT NULL DEFAULT 0');
     closed_at INTEGER
   );
   CREATE INDEX IF NOT EXISTS clan_margin_loans_open ON clan_margin_loans(status, user_id);
+
+  -- Trái phiếu (clan-bonds.js). issuer_kind: 'clan' | 'treasury'. status: 'subscribing' | 'active' | 'defaulted' | 'matured' | 'cancelled'.
+  -- arrears: số xu tổ chức phát hành còn nợ người giữ (coupon, gốc) khi vỡ nợ; trả dần theo tỉ lệ cho người đang giữ.
+  CREATE TABLE IF NOT EXISTS bond_issues (
+    id          INTEGER PRIMARY KEY AUTOINCREMENT,
+    issuer_kind TEXT NOT NULL,
+    issuer_id   INTEGER NOT NULL DEFAULT 0,
+    face        INTEGER NOT NULL,
+    coupon      REAL NOT NULL,
+    term_days   INTEGER NOT NULL,
+    qty         INTEGER NOT NULL,
+    sold        INTEGER NOT NULL DEFAULT 0,
+    status      TEXT NOT NULL,
+    opens_at    INTEGER NOT NULL,
+    closes_at   INTEGER NOT NULL,
+    matures_at  INTEGER,
+    paid_day    TEXT,
+    arrears     INTEGER NOT NULL DEFAULT 0,
+    closed_at   INTEGER
+  );
+  CREATE INDEX IF NOT EXISTS bond_issues_status ON bond_issues(status);
+  -- holder_kind: 'user' | 'clan'. listed: số trái phiếu đang rao bán trên sàn thứ cấp.
+  CREATE TABLE IF NOT EXISTS bond_holdings (
+    issue_id    INTEGER NOT NULL,
+    holder_kind TEXT NOT NULL,
+    holder_id   INTEGER NOT NULL,
+    qty         INTEGER NOT NULL DEFAULT 0,
+    listed      INTEGER NOT NULL DEFAULT 0,
+    carry       REAL NOT NULL DEFAULT 0, -- phần lẻ dưới 1 xu của các lần trả trước, cộng vào lần sau
+    PRIMARY KEY (issue_id, holder_kind, holder_id)
+  );
+  CREATE INDEX IF NOT EXISTS bond_holdings_holder ON bond_holdings(holder_kind, holder_id);
+  CREATE TABLE IF NOT EXISTS bond_asks (
+    id          INTEGER PRIMARY KEY AUTOINCREMENT,
+    issue_id    INTEGER NOT NULL,
+    holder_kind TEXT NOT NULL,
+    holder_id   INTEGER NOT NULL,
+    qty         INTEGER NOT NULL,
+    price       INTEGER NOT NULL,
+    created_at  INTEGER NOT NULL,
+    status      TEXT NOT NULL DEFAULT 'open'
+  );
+  CREATE INDEX IF NOT EXISTS bond_asks_open ON bond_asks(status, issue_id);
+  -- Lần bị phạt vì lượng xu tăng quá nhanh trong tuần gia tộc tự đặt lãi suất cơ bản.
+  CREATE TABLE IF NOT EXISTS rate_strikes (
+    id      INTEGER PRIMARY KEY AUTOINCREMENT,
+    clan_id INTEGER NOT NULL,
+    week    TEXT NOT NULL,
+    growth  REAL NOT NULL,
+    penalty INTEGER NOT NULL,
+    lost    INTEGER NOT NULL DEFAULT 0,
+    at      INTEGER NOT NULL
+  );
   `);
 }
 

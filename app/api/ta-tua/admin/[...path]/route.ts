@@ -9,7 +9,7 @@ import { isAdmin } from "@/lib/rbac";
 // internal admin API (petdex/server/internal.js); every change is also written to WorkHub's
 // audit log with the administrator as actor.
 
-const ALLOWED = /^(overview|log|announcements(\/\d+\/delete)?|gear-config|gear\/\d+(\/delete)?|gift-codes(\/\d+(\/revoke)?)?|industries\/(status|unmerge|merge|heavy)|commerce|arena(\/\d+\/cancel)?|bots(\/config)?|clan-bank(\/freeze)?|chat(\/\d+\/delete)?|mail|clans(\/(config|macro|plots\/\d+|evasion\/\d+\/(collect|dismiss)))?|invites(\/\d+\/revoke)?|players(\/\d+(\/(coins|status|name|password-link|gear|mute|pets(\/\d+)?))?)?)$/;
+const ALLOWED = /^(overview|log|announcements(\/\d+\/delete)?|gear-config|gear\/\d+(\/delete)?|gift-codes(\/\d+(\/revoke)?)?|industries\/(status|unmerge|merge|heavy)|commerce|arena(\/\d+\/cancel)?|bots(\/config)?|clan-bank(\/freeze)?|bonds\/issue|chat(\/\d+\/delete)?|mail|clans(\/(config|macro|plots\/\d+|evasion\/\d+\/(collect|dismiss)))?|invites(\/\d+\/revoke)?|players(\/\d+(\/(coins|status|name|password-link|gear|mute|pets(\/\d+)?))?)?)$/;
 
 /** Body fields that only label the audit entry; the game never sees them. */
 const LABEL_FIELDS = ["challenger", "defender", "targetName", "announcementTitle", "playerName", "petName", "speciesName", "itemName", "tierName", "clanName", "plotCode", "author"];
@@ -52,6 +52,9 @@ function describe(path: string, body: Record<string, unknown>): { action: AuditA
   if (path === "clans/macro") return { action: "tatua.macro", entityId: null, summary: `Chỉnh kinh tế vĩ mô: pha ${String(body.phase ?? "tự động")}, thời tiết ${String(body.weather ?? "tự động")}${body.today ? " (áp dụng ngay)" : ""}` };
   if (/^clans\/evasion\/\d+\/collect$/.test(path)) return { action: "tatua.tax_collect", entityId: path.split("/")[2], summary: `Truy thu thuế trốn của gia tộc${body.clanName ? ` “${String(body.clanName)}”` : ""} (hồ sơ #${path.split("/")[2]})` };
   if (/^clans\/evasion\/\d+\/dismiss$/.test(path)) return { action: "tatua.tax_dismiss", entityId: path.split("/")[2], summary: `Bỏ qua hồ sơ thuế #${path.split("/")[2]}${body.clanName ? ` của “${String(body.clanName)}”` : ""}` };
+  if (path === "bonds/issue") {
+    return { action: "tatua.bond_issue", entityId: null, summary: `Phát hành ${Number(body.qty ?? 0).toLocaleString("vi-VN")} trái phiếu kho bạc kỳ hạn ${Number(body.term ?? 0)} ngày, lãi ${(Number(body.coupon ?? 0) * 100).toLocaleString("vi-VN", { maximumFractionDigits: 3 })}%/ngày` };
+  }
   if (path === "clan-bank/freeze") {
     const target = body.clanId == null ? "toàn bộ ngân hàng gia tộc" : `ngân hàng ${body.clanName ? `“${String(body.clanName)}”` : `gia tộc #${String(body.clanId)}`}`;
     return { action: "tatua.cbank_freeze", entityId: body.clanId == null ? null : String(body.clanId), summary: `${body.frozen ? "Phong tỏa khẩn cấp" : "Gỡ phong tỏa"} ${target}` };

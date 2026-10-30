@@ -17,6 +17,7 @@ const { netWorth } = await import('../server/wallet.js');
 const { SHARES, SHARE_POOL, PLAYER_CAP, buyCost, sellProceeds, allotByDonation } = await import('../../public/ta-tua/game/js/shared/clan-shares.js');
 const { PLOTS } = await import('../../public/ta-tua/game/js/shared/clan.js');
 const { dayKey } = await import('../server/clock.js');
+const { financeTax } = await import('../../public/ta-tua/game/js/shared/clan-bonds.js');
 
 const T0 = Date.parse('2026-11-25T03:00:00Z');
 migrate(T0);
@@ -131,7 +132,7 @@ test('cổ tức: chỉ chia trong lợi nhuận 7 ngày, chia đều theo cổ 
   const m0 = store.getUser(target.members[2]).coins;
   const mine = held(target.id, 'user', target.members[2]);
   sh.payShareDividend(target.leader, amount, now);
-  assert.equal(store.getUser(target.members[2]).coins, m0 + 50 * mine);
+  assert.equal(store.getUser(target.members[2]).coins, m0 + 50 * mine - financeTax(50 * mine));
   assert.equal(sh.dividendRoom(target.id, now), 90_000 - amount);
 });
 

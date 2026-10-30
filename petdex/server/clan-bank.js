@@ -10,7 +10,7 @@ import { economy } from './bank.js';
 import { adminLog, db, getMeta, getUser, setMeta, transaction } from './db.js';
 import { dayKey } from './clock.js';
 import { DAY, GameError, HOUR } from './game.js';
-import { post } from './ledger.js';
+import { chargeFinanceTax, post } from './ledger.js';
 import { breakDepositsFor, isDeposed } from './clan-gov.js';
 import { plotCollateral, plotRoom, releasePlotToLand, transferPlot } from './clans.js';
 import {
@@ -293,7 +293,10 @@ function payOut(dep, total, now, status = 'closed') {
   const principal = total - interest;
   post({ account: bankAccount(dep.bank_id), delta: -total, kind: 'cbank_withdraw', memo: `Khoản gửi #${dep.id}`, now });
   post({ userId: dep.user_id, delta: principal, kind: 'cbank_withdraw', memo: `Khoản gửi #${dep.id}`, now });
-  if (interest) post({ userId: dep.user_id, delta: interest, kind: 'cbank_interest', memo: `Lãi ${dep.term_days} ngày, khoản #${dep.id}`, now });
+  if (interest) {
+    post({ userId: dep.user_id, delta: interest, kind: 'cbank_interest', memo: `Lãi ${dep.term_days} ngày, khoản #${dep.id}`, now });
+    chargeFinanceTax(dep.user_id, interest, `Lãi khoản gửi #${dep.id}`, now);
+  }
   q.closeDeposit.run(status, total, 0, now, dep.id);
 }
 

@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardBody, CardHeader } from "@/components/ui/card";
 import { ConfirmDialog } from "@/components/ui/confirm";
+import { Field, Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/misc";
 import { api } from "@/lib/client";
 import { ADMIN, errorText, Failure, useLoad, when } from "./shared";
@@ -33,7 +34,14 @@ interface ShareListing {
   holders: { kind: string; name: string; qty: number }[];
 }
 interface SharesAdmin { listings: ShareListing[]; margins: { id: number; user: string; clan: string; bank: string; owed: number; shares: number }[] }
-interface ClanBankAdmin { frozen: boolean; insurance: number; baseRate: number; banks: BankRow[]; loans: LoanRow[]; auctions: AuctionRow[]; shares?: SharesAdmin }
+interface BondIssue { id: number; issuer: string; coupon: number; termDays: number; qty: number; sold: number; status: string; maturesAt: number | null; closesAt: number; arrears: number }
+interface BondsAdmin {
+  baseRate: number; policyRate: number; rateSetBy: string | null; couponRange: [number, number]; issues: BondIssue[];
+  strikes: { clan: string; week: string; growth: number; penalty: number; lost: boolean; at: number }[];
+}
+interface ClanBankAdmin { frozen: boolean; insurance: number; baseRate: number; banks: BankRow[]; loans: LoanRow[]; auctions: AuctionRow[]; shares?: SharesAdmin; bonds?: BondsAdmin }
+type Issue = { qty: number; coupon: number; term: number };
+const BOND_STATUS: Record<string, string> = { subscribing: "Đang mở bán", active: "Đang lưu hành", defaulted: "Vỡ nợ", matured: "Đã đáo hạn", cancelled: "Đã hủy" };
 type Freeze = { clanId: number | null; clanName?: string; frozen: boolean };
 
 const xu = (n: number) => `${Math.round(n).toLocaleString("vi-VN")} xu`;
@@ -43,6 +51,8 @@ const LOAN: Record<string, string> = { active: "Đang nợ", late: "Quá hạn",
 export function ClanBankTab() {
   const { data, error, loading, reload } = useLoad<ClanBankAdmin>(`${ADMIN}/clan-bank`);
   const [confirm, setConfirm] = useState<Freeze | null>(null);
+  const [issue, setIssue] = useState<Issue | null>(null);
+  const [draft, setDraft] = useState({ qty: "1000", coupon: "", term: "14" });
   if (error) return <Failure error={error} onRetry={reload} />;
   if (loading || !data) return <div className="space-y-4">{Array.from({ length: 2 }, (_, i) => <Skeleton key={i} className="h-32" />)}</div>;
   const save = async () => {
@@ -51,6 +61,17 @@ export function ClanBankTab() {
       await api(`${ADMIN}/clan-bank/freeze`, { method: "POST", body: confirm });
       toast.success(confirm.frozen ? "Đã phong tỏa" : "Đã gỡ phong tỏa");
       setConfirm(null);
+      reload();
+    } catch (err) {
+      toast.error(errorText(err));
+    }
+  };
+  const issueBonds = async () => {
+    if (!issue) return;
+    try {
+      await api(`${ADMIN}/bonds/issue`, { method: "POST", body: issue });
+      toast.success("Đã mở bán trái phiếu kho bạc");
+      setIssue(null);
       reload();
     } catch (err) {
       toast.error(errorText(err));
@@ -164,6 +185,52 @@ export function ClanBankTab() {
           </CardBody>
         </Card>
       )}
+      {data.bonds && (
+        <Card>
+          <CardHeader
+            title="Trái phiếu & lãi suất cơ bản"
+            description={`Lãi chính sách ${rate(data.bonds.policyRate)}, đang áp dụng ${rate(data.bonds.baseRate)}${data.bonds.rateSetBy ? ` (do ${data.bonds.rateSetBy} đặt)` : ""}. Coupon được phép ${rate(data.bonds.couponRange[0])}–${rate(data.bonds.couponRange[1])}.`}
+          />
+          <CardBody className="space-y-4 pt-3">
+            <div className="flex flex-wrap items-end gap-3">
+              <Field label="Số trái phiếu kho bạc" className="w-40"><Input type="number" min={10} value={draft.qty} onChange={(e) => setDraft({ ...draft, qty: e.target.value })} /></Field>
+              <Field label="Lãi %/ngày" className="w-32"><Input type="number" step={0.001} value={draft.coupon} placeholder={(data.bonds.couponRange[0] * 100).toFixed(3)} onChange={(e) => setDraft({ ...draft, coupon: e.target.value })} /></Field>
+              <Field label="Kỳ hạn (ngày)" className="w-28"><Input type="number" value={draft.term} onChange={(e) => setDraft({ ...draft, term: e.target.value })} /></Field>
+              <Button onClick={() => setIssue({ qty: Number(draft.qty), coupon: Number(draft.coupon) / 100, term: Number(draft.term) })}>Phát hành trái phiếu kho bạc</Button>
+            </div>
+            {data.bonds.issues.length ? (
+              <table className="w-full min-w-[48rem] text-sm">
+                <thead className="border-b text-left text-xs text-muted-foreground">
+                  <tr>{["#", "Tổ chức phát hành", "Lãi", "Kỳ hạn", "Đã bán", "Trạng thái", "Còn nợ"].map((h) => <th key={h} className="px-3 py-2 font-medium">{h}</th>)}</tr>
+                </thead>
+                <tbody className="divide-y tabular-nums">
+                  {data.bonds.issues.map((i) => (
+                    <tr key={i.id}>
+                      <td className="px-3 py-2">{i.id}</td><td className="px-3 py-2">{i.issuer}</td><td className="px-3 py-2">{rate(i.coupon)}</td>
+                      <td className="px-3 py-2">{i.termDays} ngày{i.maturesAt ? ` · đáo hạn ${when(i.maturesAt)}` : ""}</td><td className="px-3 py-2">{i.sold}/{i.qty}</td>
+                      <td className="px-3 py-2">{BOND_STATUS[i.status] ?? i.status}</td><td className="px-3 py-2">{i.arrears ? xu(i.arrears) : "Không"}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            ) : <p className="text-sm text-muted-foreground">Chưa có đợt trái phiếu nào.</p>}
+            {data.bonds.strikes.length > 0 && (
+              <div className="space-y-1 text-sm">
+                <p className="font-medium">Phạt điều hành lãi suất</p>
+                {data.bonds.strikes.map((s, k) => <p key={k}>{s.clan}: lượng xu tăng {(s.growth * 100).toFixed(1)}%/tuần, phạt {xu(s.penalty)}{s.lost ? ", mất ghế Ngân hàng nhà nước" : ""} ({when(s.at)})</p>)}
+              </div>
+            )}
+          </CardBody>
+        </Card>
+      )}
+      <ConfirmDialog
+        open={Boolean(issue)}
+        onClose={() => setIssue(null)}
+        onConfirm={issueBonds}
+        title="Phát hành trái phiếu kho bạc"
+        confirmLabel="Phát hành"
+        message={issue ? `Mở bán ${issue.qty.toLocaleString("vi-VN")} trái phiếu kho bạc, ${issue.term} ngày, lãi ${rate(issue.coupon)} trong 24 giờ. Tiền thu được vào ngân sách thị trấn; ngân sách trả lãi mỗi đêm và trả gốc khi đáo hạn.` : ""}
+      />
       <ConfirmDialog
         open={Boolean(confirm)}
         onClose={() => setConfirm(null)}

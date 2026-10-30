@@ -457,6 +457,26 @@ async function shares(ctx) {
   return move && (await ctx.post(move.path, move.body ?? {})) ? move.action : null;
 }
 
+// ---------------------------------------------------------------- trái phiếu
+
+/** Bot mua vài trái phiếu đang mở bán có lãi từ 1,5 lần lãi suất cơ bản, giữ tới đáo hạn. Trả về { path, body, action } hoặc null. */
+export function bondsMove(ctx, view) {
+  const { rand, persona: p } = ctx;
+  if (!view) return null;
+  const held = new Map((view.holdings ?? []).map((h) => [h.issueId, h.qty]));
+  const budget = ctx.coins - 3 * ctx.reserve - ctx.goal;
+  const open = (view.issues ?? []).filter((i) => i.open && i.status === 'subscribing' && i.coupon >= view.baseRate * 1.5 && (held.get(i.id) ?? 0) < Math.min(i.cap, 10) && i.sold < i.qty);
+  if (!open.length || rand() > 0.3 + (1 - p.trader) * 0.3) return null;
+  const i = open[Math.floor(rand() * open.length)];
+  const qty = Math.min(1 + Math.floor(rand() * 5), Math.floor(budget / i.face), i.cap - (held.get(i.id) ?? 0), i.qty - i.sold);
+  return qty >= 1 ? { path: `/bonds/${i.id}/subscribe`, body: { qty }, action: 'bond_buy' } : null;
+}
+
+async function bondsStep(ctx) {
+  const move = bondsMove(ctx, await ctx.get('/bonds'));
+  return move && (await ctx.post(move.path, move.body ?? {})) ? move.action : null;
+}
+
 /** Trang phục: mở hộp kín, đeo món còn trống khe. Trả về { path, body, action } hoặc null. */
 function gearMove(ctx) {
   const pet = ctx.pet;
@@ -1025,6 +1045,7 @@ export function candidates(ctx) {
   // Ngân hàng gia tộc: người gửi nhỏ so lãi với NPC; đang có khoản gửi thì thỉnh thoảng xem lại uy tín ngân hàng.
   if (ctx.unlocked('bank') && (ctx.coins > 3 * ctx.reserve + 400 + ctx.goal || state.cbank || state.bankHolder)) add('clan_bank', 4 + p.trader * 8 + (state.cbank ? 3 : 0) + (state.bankHolder ? 6 : 0), clanBank);
   if (ctx.unlocked('bank') && (ctx.coins > 3 * ctx.reserve + 600 + ctx.goal || Object.keys(state.sh ?? {}).length)) add('shares', 3 + p.trader * 8 + (Object.keys(state.sh ?? {}).length ? 3 : 0), shares);
+  if (ctx.unlocked('bank') && ctx.coins > 3 * ctx.reserve + 500 + ctx.goal) add('bonds', 2 + (1 - p.trader) * 6, bondsStep);
   if (ctx.unlocked('bank') && ctx.goal && ctx.coins < ctx.goal + ctx.reserve && ctx.coins + (state.saved ?? 0) >= ctx.goal + ctx.reserve) add('bank_goal', 40, bank);
   if (ctx.unlocked('business')) {
     if (state.biz) add('stall', 16 + p.producer * 22 + (hour >= 10 && hour < 20 ? 6 : 0), stall);

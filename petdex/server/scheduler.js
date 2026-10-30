@@ -1,11 +1,12 @@
 // Bộ lập lịch toàn cục: nhịp giá Sàn mỗi 10 phút và quyết toán lúc nửa đêm (giờ Việt Nam).
 // Lưu mốc lần chạy cuối, nên server tắt một thời gian thì bật lên vẫn chạy bù.
-import { centralBankWeek, settleBankDay } from './bank.js';
+import { centralBankWeek, economy, settleBankDay } from './bank.js';
 import { settleBusinessDay } from './business.js';
 import { settleClansDay } from './clans.js';
 import { settleClanGovDay } from './clan-gov.js';
 import { settleBankAuctions, settleClanBankDay } from './clan-bank.js';
 import { closeIpos, settleSharesDay } from './clan-shares.js';
+import { closeBondSubs, currentOverride, rateWeek, settleBondsDay } from './clan-bonds.js';
 import { pruneChat } from './chat.js';
 import { settleP2PDay } from './p2p.js';
 import { settleHuiDay } from './hui.js';
@@ -46,6 +47,7 @@ export function closeDay(day, rand = Math.random) {
   settleClanGovDay(end);
   settleClanBankDay(end);
   settleSharesDay(end);
+  settleBondsDay(end);
   settleLoansDay(day);
   settleP2PDay(day);
   settleHuiDay(day);
@@ -56,7 +58,11 @@ export function closeDay(day, rand = Math.random) {
   pruneHistory(end - 14 * DAY);
   pruneChat(end);
   if (weekday(day) === 0) {
+    // Lựa chọn lãi suất của gia tộc nắm Ngân hàng nhà nước hết hiệu lực khi họp; đọc trước để xét phạt sau phiên họp.
+    const prevOverride = currentOverride();
+    const prevPolicy = economy().policyRate;
     centralBankWeek(day, end);
+    rateWeek(prevOverride, prevPolicy, end);
     closeWeek(weekKey(day), end, rand);
   }
 }
@@ -82,6 +88,7 @@ export function runDue(now = Date.now(), rand = Math.random) {
   settleAuctions(now);
   settleBankAuctions(now);
   closeIpos(now);
+  closeBondSubs(now);
   // Đấu trường gia tộc: xử thua lời thách quá hạn, đánh các trận đã đến giờ (19h/20h).
   settleArena(now);
 

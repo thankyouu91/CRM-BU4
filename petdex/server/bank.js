@@ -1,5 +1,5 @@
 // Ngân hàng Trân Châu (tiết kiệm, gửi kỳ hạn) và Ngân hàng Trung ương (chỉ số giá, lãi suất cơ bản).
-import { db, transaction } from './db.js';
+import { db, getMeta, transaction } from './db.js';
 import { DAY, GameError } from './game.js';
 import { post } from './ledger.js';
 import { BANK, accrue, depositPayout, policy } from './rules/bank.js';
@@ -33,9 +33,25 @@ const q = {
   insertNews: db.prepare('INSERT INTO news (commodity, headline, effect, created_at, starts_at, ends_at) VALUES (NULL, ?, 0, ?, ?, ?)'),
 };
 
+/**
+ * Lãi suất cơ bản gia tộc nắm Ngân hàng nhà nước đặt cho tuần này (clan-bonds.js setBaseRate), hoặc null.
+ * Hết hiệu lực khi Ngân hàng Trung ương họp phiên mới (week đổi).
+ */
+function rateOverride(week) {
+  try {
+    const o = JSON.parse(getMeta('base_rate_set') ?? 'null');
+    return o && o.week === week && Number.isFinite(o.rate) ? o : null;
+  } catch {
+    return null;
+  }
+}
+
 export function economy() {
   const row = q.latest.get();
-  return { priceIndex: row?.price_index ?? 1, baseRate: row?.base_rate ?? BANK.defaultRate, growth: row?.growth ?? BANK.targetGrowth, week: row?.week ?? null };
+  const week = row?.week ?? null;
+  const policyRate = row?.base_rate ?? BANK.defaultRate;
+  const o = rateOverride(week);
+  return { priceIndex: row?.price_index ?? 1, baseRate: o ? o.rate : policyRate, policyRate, rateSetBy: o?.clanId ?? null, growth: row?.growth ?? BANK.targetGrowth, week };
 }
 
 /** Giá siêu thị NPC sau khi nhân chỉ số giá. */

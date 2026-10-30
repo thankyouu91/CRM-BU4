@@ -1,6 +1,7 @@
 import { beforeAll, describe, expect, it } from "vitest";
 import { getArticle } from "@/lib/wiki";
 import { CBANK, collateralOf, maxDepositRate, maxLoanOn, simpleInterest } from "@/public/ta-tua/game/js/shared/clan-bank.js";
+import { financeTax } from "@/public/ta-tua/game/js/shared/clan-bonds.js";
 
 // The clan bank and collateral loan articles read every number from shared/clan-bank.js. This test runs the
 // game's own server code on an in-memory database and checks that the server enforces exactly those numbers,
@@ -89,7 +90,8 @@ describe("Petfarm wiki stays in step with the clan bank", () => {
     const dep = store.db.prepare("SELECT * FROM cbank_deposits ORDER BY id DESC LIMIT 1").get();
     const coins = store.getUser(saver).coins;
     cb.settleClanBankDay(dep.matures_at);
-    expect(store.getUser(saver).coins - coins, "simpleInterest").toBe(CBANK.maxPerDepositor + simpleInterest(CBANK.maxPerDepositor, dep.rate, term));
+    const interest = simpleInterest(CBANK.maxPerDepositor, dep.rate, term);
+    expect(store.getUser(saver).coins - coins, "simpleInterest").toBe(CBANK.maxPerDepositor + interest - financeTax(interest));
   });
 
   it("values collateral with collateralOf and lends up to maxLoanOn of it, charging CBANK.loan.fee", () => {

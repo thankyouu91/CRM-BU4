@@ -13,6 +13,7 @@ const cb = await import('../server/clan-bank.js');
 const { economy } = await import('../server/bank.js');
 const { netWorth } = await import('../server/wallet.js');
 const { CBANK, maxDepositRate, simpleInterest } = await import('../../public/ta-tua/game/js/shared/clan-bank.js');
+const { financeTax } = await import('../../public/ta-tua/game/js/shared/clan-bonds.js');
 const { PLOTS } = await import('../../public/ta-tua/game/js/shared/clan.js');
 
 const T0 = Date.parse('2026-11-25T03:00:00Z');
@@ -105,7 +106,8 @@ test('rút trước hạn chỉ nhận gốc; đáo hạn nửa đêm tự trả
   const before = store.getUser(saver2).coins;
   cb.settleClanBankDay(d.matures_at);
   assert.equal(dep(d.id).status, 'closed');
-  assert.equal(store.getUser(saver2).coins, before + 10_000 + simpleInterest(10_000, d.rate, 7));
+  const interest = simpleInterest(10_000, d.rate, 7);
+  assert.equal(store.getUser(saver2).coins, before + 10_000 + interest - financeTax(interest)); // thuế lợi nhuận tài chính 10%
 });
 
 test('trần tiền gửi = 10 lần vốn chủ', () => {

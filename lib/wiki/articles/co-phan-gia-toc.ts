@@ -1,6 +1,7 @@
 import type { WikiArticle } from "../types";
 import { UNLOCKS } from "../rules";
 import { PLAYER_CAP, SHARES, SHARE_IPO_MAX, SHARE_POOL, buyCost, sellProceeds, tradeFee } from "@/public/ta-tua/game/js/shared/clan-shares.js";
+import { FINANCE_TAX } from "@/public/ta-tua/game/js/shared/clan-bonds.js";
 
 // Cổ phần gia tộc: IPO, sàn giá theo cung cầu, cổ tức, vay ký quỹ (petdex/server/clan-shares.js).
 // Mọi con số đọc thẳng từ public/ta-tua/game/js/shared/clan-shares.js; tests/petfarm-wiki-sync-clan-shares.test.ts đối chiếu với code của game.
@@ -48,7 +49,7 @@ export const article: WikiArticle = {
           ["Mua / bán trên sàn", "Người chơi; tộc trưởng bằng quỹ", `Phí ${pct(SHARES.fee)} mỗi lệnh cho gia tộc nắm Ngân hàng nhà nước. Lệnh làm giá vượt ±${pct(SHARES.band)} so với giá đầu ngày bị từ chối`],
           ["Trần sở hữu", "Mỗi người chơi", `Tối đa ${PLAYER_CAP} cổ phần (${pct(SHARES.playerCap)}) của một gia tộc (phần được chia lúc lên sàn không tính vào trần, nhưng không mua thêm được khi đã vượt)`],
           ["Mua lại", "Tộc trưởng", "Mua cổ phiếu của chính gia tộc bằng quỹ: thành cổ phần tự giữ, không nhận cổ tức, có thể bán ra lại"],
-          ["Cổ tức", "Tộc trưởng", "Chia đều theo cổ phần cho người chơi, gia tộc khác và ngân hàng đang giữ. Tổng cổ tức trong 7 ngày không vượt lợi nhuận 7 ngày (doanh thu − thuế − phí duy trì)"],
+          ["Cổ tức", "Tộc trưởng", `Chia đều theo cổ phần cho người chơi, gia tộc khác và ngân hàng đang giữ. Tổng cổ tức trong 7 ngày không vượt lợi nhuận 7 ngày (doanh thu − thuế − phí duy trì). Người chơi bị khấu ${pct(FINANCE_TAX.rate)} thuế lợi nhuận tài chính. Gia tộc còn nợ [trái chủ](trai-phieu) thì không chia được`],
         ] } },
         { p: `**Giá theo quỹ khớp lệnh:** quỹ giữ tích số (xu × cổ phần) không đổi. Ví dụ quỹ có ${SHARE_POOL} cổ phần và ${xu(exCoins)} (giá ${xu(EX.price)}): mua 3 cổ phần trả ${xu(buy3)} + ${xu(tradeFee(buy3))} phí, giá lên ${xu(Math.round(after3))}; bán 3 cổ phần thì nhận ${xu(sell3)} trừ ${xu(tradeFee(sell3))} phí. Lệnh càng lớn so với quỹ thì giá càng chạy xa.` },
         { p: `**Vay ký quỹ:** khi có ngân hàng gia tộc đang mở, người chơi có thể vay tới **${pct(SHARES.margin.maxLtv)}** giá trị lệnh mua, lãi mỗi ngày bằng lãi cho vay của ngân hàng (cộng vào nợ lúc nửa đêm). Cổ phần mua được bị **cầm cố**, không bán được tới khi trả hết nợ. Giá trị cổ phần cầm cố (theo giá bán vào quỹ) xuống dưới **${pct(SHARES.margin.maintenance)}** số nợ thì bị **bán giải chấp**: bán hết vào quỹ (không theo biên ngày), trả ngân hàng trước, phần dư về ví.` },

@@ -25,6 +25,7 @@ import { adminArenaView, adminCancelWar } from './arena.js';
 import { adminBotsView, setBotConfig } from './bots.js';
 import { adminClanBankView, setClanBankFrozen } from './clan-bank.js';
 import { adminSharesView } from './clan-shares.js';
+import { adminBondsView, issueTreasuryBonds } from './clan-bonds.js';
 import { refPrice } from './industry.js';
 import { slotsOf } from './lifecycle.js';
 import { bus, snapshot } from './service.js';
@@ -628,7 +629,12 @@ internalApi.post('/admin/bots/config', (req, res) => {
 });
 
 // ---- Ngân hàng gia tộc: vốn, tiền gửi, khoản vay, vỡ nợ; phong tỏa khẩn cấp một ngân hàng hoặc toàn bộ ----
-internalApi.get('/admin/clan-bank', (_req, res) => res.json({ ...adminClanBankView(), shares: adminSharesView() }));
+internalApi.get('/admin/clan-bank', (_req, res) => res.json({ ...adminClanBankView(), shares: adminSharesView(), bonds: adminBondsView() }));
+internalApi.post('/admin/bonds/issue', (req, res) => {
+  const b = req.body ?? {};
+  const out = issueTreasuryBonds({ qty: Number(b.qty), coupon: Number(b.coupon), term: Number(b.term) }, actorOf(req));
+  res.json({ ...adminClanBankView(), shares: adminSharesView(), bonds: adminBondsView(), result: out });
+});
 internalApi.post('/admin/clan-bank/freeze', (req, res) => {
   const b = req.body ?? {};
   const clanId = b.clanId == null ? null : Number(b.clanId);
