@@ -468,6 +468,18 @@ input:focus { border-color: var(--tea); box-shadow: 0 0 0 4px #c8915f33; }
 .tier-chip.tier-blue, .tier-chip.tier-green, .tier-chip.tier-gold, .tier-chip.tier-red { background: var(--tier); }
 .gear-card { border-color: color-mix(in srgb, var(--tier) 55%, transparent); box-shadow: inset 0 3px 0 var(--tier); }
 .gear-card.tier-red { box-shadow: inset 0 3px 0 var(--tier), 0 0 0 1px color-mix(in srgb, var(--tier) 35%, transparent); }
+/* hộp mua ở Siêu thị chưa mở: tím, có dải ruy băng */
+.gear-card.sealed { --tier: #a55fd0; border-style: dashed; }
+.gear-card.sealed .tier-chip, .pick .tier-chip:not([class*="tier-"]) { background: #a55fd0; }
+.gear-card.sealed .icon { font-size: 2.2rem; animation: gift-wiggle 2.4s ease-in-out infinite; }
+@keyframes gift-wiggle { 0%, 80%, 100% { transform: rotate(0); } 85% { transform: rotate(-8deg); } 90% { transform: rotate(8deg); } 95% { transform: rotate(-4deg); } }
+@media (prefers-reduced-motion: reduce) { .gear-card.sealed .icon { animation: none; } }
+
+/* dáng trưởng thành theo cấp (cứ 10 cấp) */
+.badge.form-badge { background: #f3ecff; border-color: #c9b2ef; color: #5b3a8f; }
+.badge.form-badge.form-3 { background: #e8f4ff; border-color: #9fc6ee; color: #1f4f80; }
+.badge.form-badge.form-4 { background: #e9fbef; border-color: #95d9ab; color: #1d5a33; }
+.badge.form-badge.form-5 { background: #fff4d6; border-color: #e0a21c; color: #7a4c0e; }
 .gear-lines { margin: 4px 0 0; padding: 0; list-style: none; font-size: .82rem; display: grid; gap: 2px; }
 .gear-bonus-line { display: flex; flex-wrap: wrap; gap: 6px; margin: 6px 0 0; }
 .gear-bonus { font-size: .78rem; padding: 2px 8px; border-radius: 999px; background: var(--surface-2); border: 1px solid var(--line, #e7d9c8); }

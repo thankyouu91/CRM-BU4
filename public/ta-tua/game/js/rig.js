@@ -1,7 +1,7 @@
 // Bộ khung vẽ pet ngũ hành: mọi loài lắp từ cùng một bộ phận trên một khung có điểm neo (đầu, mặt, cổ, lưng).
 // Mỗi khung hình tính lại điểm neo theo dáng (nhún, nhảy, cúi đầu...), nên đồ đeo luôn dính đúng chỗ.
 import { OUTLINE, Pen, bayer, bitmap, hexToRgb, makeCanvas, outline, shadeBlob } from './pixel.js';
-import { ELEMENTS, LIFE_STAGES, SPECIES_BY_ID, WEARABLES, fullSetOf } from './shared/pets.js';
+import { ELEMENTS, LEVEL_FORMS, LIFE_STAGES, SPECIES_BY_ID, WEARABLES, formIndex, fullSetOf } from './shared/pets.js';
 
 export const RIG_W = 44;
 export const RIG_H = 50;
@@ -92,6 +92,8 @@ export function skeleton(sp, stage, pose = {}) {
       // Cổ: ngay dưới cằm (dáng tròn thì dưới miệng), để khăn và vòng không đè lên mặt.
       neck: { x: body.x + Math.round((pose.hx ?? 0) / 2), y: head.y + head.ry + (A.head ? 1 : 0) },
       back: { x: body.x, y: body.y - body.ry + 1 }, // vai: áo choàng buông từ đây, cánh xòe từ đây
+      // bùa lơ lửng bên hông phải, ra ngoài cả đầu lẫn thân để không che mặt bé nhỏ
+      charm: { x: Math.max(body.x + body.rx, head.x + head.rx) + 3, y: body.y - 2 },
     },
   };
 }
@@ -681,6 +683,121 @@ const WEAR_ART = {
     ],
     pal: { b: '#4f8fd6', w: '#bfe3f7' }, line: '#1f3f6b', pivot: [11, 0],
   },
+
+  // ---- bộ mở rộng ----
+  halo: {
+    rows: ['..yyyyyyy..', '.y.......y.', '..yyyyyyy..'],
+    pal: { y: '#ffe680' }, line: '#b8860b', pivot: [5, 2], sink: -2,
+  },
+  cap: {
+    rows: ['....bbbbbb.....', '...bbbbbbbb....', '..bbWbbbbbbb...', '..bbbbbbbbbbb..', '..BBBBBBBBBBBBB'],
+    pal: { b: '#4f8fd6', W: '#bfe3f7', B: '#2f5f9e' }, line: '#1f3f6b', pivot: [7, 4], sink: 3,
+  },
+  strawhat: {
+    rows: ['....yyyyyyy....', '...yyyyyyyyy...', '...rrrrrrrrr...', 'yyyyyyyyyyyyyyy', '.yyyyyyyyyyyyy.'],
+    pal: { y: '#f2d58a', r: '#e2493b' }, line: '#6b4a1f', pivot: [7, 4], sink: 3,
+  },
+  mushroom: {
+    rows: ['....rrrrr....', '..rrwrrrwrr..', '.rrrrrrrrrrr.', 'rrwrrrrrrwrrr', 'rrrrrwrrrrrrr', '.ccccccccccc.'],
+    pal: { r: '#e2493b', w: '#ffffff', c: '#f3e3c8' }, line: '#4a1a14', pivot: [6, 5], sink: 3,
+  },
+  devilhorns: {
+    rows: ['r.........r', 'rr.......rr', 'rRr.....rRr', '.rr.....rr.', 'kkkkkkkkkkk'],
+    pal: { r: '#c8402f', R: '#f5a64a', k: '#3a3340' }, line: '#4a1a14', pivot: [5, 4], sink: 3,
+  },
+  monocle: {
+    rows: ['...........###.', '..........#wLw#', '..........#www#', '...........###.', '..........y....', '.........y.....'],
+    pal: { '#': '#e0a21c', w: '#bfe0f5', L: '#ffffff', y: '#e0a21c' }, line: '#5a3d16', pivot: [7, 2],
+  },
+  partymask: {
+    rows: ['rrrrrrrrrrrrrrr', 'rr...rrrrr...rr', 'rrr.rrrYrrr.rrr', '.rrrrr...rrrrr.'],
+    pal: { r: '#a55fd0', Y: '#ffd75e' }, line: '#3a1a4a', pivot: [7, 1],
+  },
+  starglasses: {
+    rows: ['..y.........y..', '.yyy.......yyy.', 'yybyy#####yybyy', '.yyy.......yyy.', '.y.y.......y.y.'],
+    pal: { y: '#ffd75e', b: '#4f8fd6', '#': '#e0a21c' }, line: '#7a4c0e', pivot: [7, 2],
+  },
+  bandana: {
+    rows: ['ggggggggggggggg', 'gg...ggggg...gg', 'ggggggggggggggg', '.............gG'],
+    pal: { g: '#4f9a3f', G: '#8fdc7a' }, line: '#22421a', pivot: [7, 1],
+  },
+  medal: {
+    rows: ['r.........b', '.r.......b.', '..r.....b..', '...rr.bb...', '....yyy....', '...yYyyy...', '...yyyyy...', '....yyy....'],
+    pal: { r: '#e2493b', b: '#4f8fd6', y: '#e0a21c', Y: '#fff3b0' }, line: '#5a3d16', pivot: [5, 0],
+  },
+  jade: {
+    rows: ['g...........g', '.g.........g.', '..g.g.G.g.g..', '.....GGG.....', '......G......'],
+    pal: { g: '#3f9a5a', G: '#8fdc7a' }, line: '#1d4a2a', pivot: [6, 0],
+  },
+  necktie: {
+    rows: ['.bbbbb.', '..bBb..', '..bbb..', '..bBb..', '..bbb..', '...b...'],
+    pal: { b: '#4f8fd6', B: '#bfe3f7' }, line: '#1f3f6b', pivot: [3, 0],
+  },
+  lei: {
+    rows: ['pYp.......oYo', '.oYo.....pYp.', '...pYpoYopY..'],
+    pal: { p: '#ff8fb1', o: '#ffb347', Y: '#ffd75e' }, line: '#7a2f45', pivot: [6, 0],
+  },
+  amber: {
+    rows: ['b...........b', '.b.........b.', '..b.b.o.b.b..', '.....oOo.....', '......o......'],
+    pal: { b: '#8a5a35', o: '#e08a1c', O: '#ffd27a' }, line: '#3a2410', pivot: [6, 0],
+  },
+  backpack: {
+    // Nhìn từ trước: thân ba lô ló ra hai bên hông, nắp và quai nhô trên vai.
+    rows: [
+      '.........kkkkkk.........', '........kBBBBBBk........', '..bbbbbbbbbbbbbbbbbbbb..', '.bBBbbbbbbbbbbbbbbbbBBb.',
+      'bbBbbbbbbbbbbbbbbbbbbBbb', 'bbbbbbbbbbbbbbbbbbbbbbbb', 'bkkbbbbbbbbbbbbbbbbbbkkb', 'bbbbbbbbbbbbbbbbbbbbbbbb',
+      '.bbbbbbbbbbbbbbbbbbbbbb.',
+    ],
+    pal: { b: '#c0612b', B: '#e6905a', k: '#ffd75e' }, line: '#4a2410', pivot: [12, 2],
+  },
+  batwings: {
+    rows: [
+      'b............................b', 'bb..........................bb', 'bBb........................bBb',
+      'bBBbb....................bbBBb', '.bBBBbb................bbBBBb.', '..bbBBBbb............bbBBBbb..',
+      '..b.b.b.bb..........bb.b.b.b..',
+    ],
+    pal: { b: '#3d3a6b', B: '#7a6fc0' }, line: '#151230', pivot: [15, 5],
+  },
+  phoenix: {
+    rows: [
+      '.r..........................r.', 'rRr........................rRr', 'rRYr......................rYRr',
+      'rRYYrr..................rrYYRr', '.rRYYYrr..............rrYYYRr.', '..rRRYYrr............rrYYRRr..',
+      '...rrRRrr............rrRRrr...', '....r.r.r............r.r.r....',
+    ],
+    pal: { r: '#c8402f', R: '#f0663c', Y: '#ffd75e' }, line: '#4a1a14', pivot: [15, 6],
+  },
+  fairy: {
+    rows: [
+      '.cccc....................cccc.', 'cWWWcc..................ccWWWc', 'cWWWWcc................ccWWWWc',
+      '.cWWWWc................cWWWWc.', '..cccc..................cccc..', '..cWWc..................cWWc..',
+      '...cc....................cc...',
+    ],
+    pal: { c: '#9fd8f0', W: '#e8f8ff' }, line: '#5d6a8a', pivot: [15, 4],
+  },
+  lantern: {
+    rows: ['..k..', '.rrr.', 'rrYrr', 'rYYYr', 'rrYrr', '.rrr.', '..y..'],
+    pal: { k: '#3a3340', r: '#e2493b', Y: '#ffd75e', y: '#ffd75e' }, line: '#4a1a14', pivot: [2, 0],
+  },
+  clover: {
+    rows: ['.g.g.', 'gGgGg', '.gwg.', 'gGgGg', '.g.g.', '..g..', '..g..'],
+    pal: { g: '#3f9a5a', G: '#8fdc7a', w: '#ffd75e' }, line: '#1d4a2a', pivot: [2, 0],
+  },
+  luckycoin: {
+    rows: ['..k..', '.yyy.', 'yyYyy', 'yYyYy', 'yyYyy', '.yyy.'],
+    pal: { k: '#7a4c0e', y: '#e0a21c', Y: '#fff3b0' }, line: '#5a3d16', pivot: [2, 0],
+  },
+  seashell: {
+    rows: ['..p..', '.pPp.', 'pPpPp', 'pPpPp', 'ppppp', '.p.p.'],
+    pal: { p: '#ffb3c1', P: '#fff0f3' }, line: '#7a2f45', pivot: [2, 0],
+  },
+  gourd: {
+    rows: ['..k..', '.ooo.', '.oOo.', '..o..', 'ooooo', 'oOooo', 'ooooo', '.ooo.'],
+    pal: { k: '#e2493b', o: '#c99a4b', O: '#f2d58a' }, line: '#5a3d16', pivot: [2, 0],
+  },
+  balloon: {
+    rows: ['.bbb.', 'bbWbb', 'bWbbb', 'bbbbb', '.bbb.', '..b..', '..k..', '...k.', '..k..', '...k.'],
+    pal: { b: '#4f8fd6', W: '#bfe3f7', k: '#6d6478' }, line: '#1f3f6b', pivot: [3, 9],
+  },
 };
 
 const wearCache = new Map();
@@ -713,6 +830,63 @@ export function wearSpotAt(id, anchors, headRx) {
 
 const wearSpot = (id, sk) => wearSpotAt(id, sk.anchors, sk.head.rx);
 
+// ---------------------------------------------------------------- dáng theo cấp
+
+/** Giai đoạn tuổi `stageKey` đã nhân cỡ người theo dáng của cấp `level` (cứ 10 cấp lớn thêm một chút). */
+export function formStage(stageKey, level = 1) {
+  const stage = LIFE_STAGES.find((s) => s.key === stageKey) ?? LIFE_STAGES.at(-2);
+  const grow = LEVEL_FORMS[formIndex(level)].grow;
+  return grow === 1 ? stage : { ...stage, look: { ...stage.look, scale: stage.look.scale * grow } };
+}
+
+const GOLD = '#ffd75e';
+
+/** Màu vạch trưởng thành: màu nhấn của hành, đậm lên cho nổi trên lông; cấp 50 hóa vàng. */
+const markColor = (el, form) => (form >= 5 ? '#e0a21c' : mix(el.accent, OUTLINE, 0.25));
+
+/** Hai vạch ở thái dương, ngoài đuôi mắt (từ cấp 10): không đè ngọc trán hay má hồng sẵn có của loài. */
+function drawTempleMarks(g, sk, el, form) {
+  const p = new Pen(g);
+  const color = markColor(el, form);
+  const { head } = sk;
+  for (const s of [-1, 1]) {
+    const x = head.x + 1 + s * Math.max(sk.eyeDx + 2, head.rx - 2);
+    for (const y of [sk.eyeY, sk.eyeY + 2]) {
+      p.px(x, y, color);
+      p.px(x - s, y, color);
+    }
+  }
+}
+
+/** Vằn hai bên hông (từ cấp 20). */
+function drawFlankStripes(g, sk, el, form) {
+  const p = new Pen(g);
+  const color = markColor(el, form);
+  const { body } = sk;
+  for (const s of [-1, 1]) {
+    const x = body.x + 1 + s * Math.max(2, body.rx - 2);
+    for (const y of [body.y - 1, body.y + 2]) {
+      p.px(x, y, color);
+      p.px(x - s, y + 1, color);
+    }
+  }
+}
+
+/** Vòng linh khí dưới chân (từ cấp 30), lấp lánh theo khung hình; cấp 50 ánh vàng. */
+function drawSpiritRing(g, sk, el, form, tick) {
+  const p = new Pen(g);
+  const gr = sk.body.rx + 5;
+  const cx = sk.body.x + 1;
+  const y0 = sk.ground + 1;
+  for (let x = -gr; x <= gr; x++) {
+    if ((x + gr + tick) % 3 === 0) continue;
+    const h = Math.round(Math.sqrt(Math.max(0, 1 - (x / (gr + 0.5)) ** 2)));
+    const color = form >= 5 && (x + tick) % 2 ? GOLD : el.color;
+    p.px(cx + x, y0 - h, color);
+    if (h) p.px(cx + x, y0 + h, color);
+  }
+}
+
 // ---------------------------------------------------------------- hoạt ảnh
 
 export const RIG_ANIMS = {
@@ -739,12 +913,15 @@ export const RIG_ANIMS = {
 };
 
 /**
- * Vẽ một khung hình: pet `species` ở giai đoạn `stageKey`, dáng `pose`, đeo các món `wear` ({ head, face, neck, back }).
+ * Vẽ một khung hình: pet `species` ở giai đoạn `stageKey`, dáng `pose`, đeo các món `wear` ({ head, face, neck, back, charm }).
+ * `level`: cấp của bé, cứ 10 cấp đổi dáng một lần (LEVEL_FORMS trong shared/pets.js).
  * Trả về canvas (RIG_W + 2) × (RIG_H + 2) ở độ phân giải pixel nghệ thuật.
  */
-export function drawFrame(species, stageKey, pose = {}, wear = {}, tick = 0, { anchors = false } = {}) {
+export function drawFrame(species, stageKey, pose = {}, wear = {}, tick = 0, { anchors = false, level = 1 } = {}) {
   const sp = typeof species === 'string' ? SPECIES_BY_ID[species] : species;
-  const stage = LIFE_STAGES.find((s) => s.key === stageKey) ?? LIFE_STAGES.at(-2);
+  const stage = formStage(stageKey, level);
+  const form = formIndex(level);
+  const el = ELEMENTS[sp.element];
   const pal = paletteOf(sp, stage);
   const sk = skeleton(sp, stage, pose);
 
@@ -766,17 +943,20 @@ export function drawFrame(species, stageKey, pose = {}, wear = {}, tick = 0, { a
 
   // 2) Ghép: đồ sau lưng → pet → mặt → đồ trước người.
   const [out, g] = makeCanvas(RIG_W + 2, RIG_H + 2);
-  const put = (id) => {
+  const put = (id, dy = 0) => {
     const img = id && wearImage(id);
     if (!img) return;
     const { x, y } = wearSpot(id, sk);
-    g.drawImage(img, x, y);
+    g.drawImage(img, x, y + dy);
   };
   const aura = AURAS[sp.rarity];
   if (aura) drawAura(g, sk, aura, tick);
+  if (el && form >= 3) drawSpiritRing(g, sk, el, form, tick);
   put(wear.back);
   g.drawImage(body, 0, 0);
+  if (el && form >= 2) drawFlankStripes(g, sk, el, form);
   drawFace(g, sk, sp, pal, pose, stage, tick);
+  if (el && form >= 1) drawTempleMarks(g, sk, el, form);
   if (sp.feature === 'bubble') {
     const rise = tick % 6;
     const p = new Pen(g);
@@ -792,12 +972,14 @@ export function drawFrame(species, stageKey, pose = {}, wear = {}, tick = 0, { a
   if (sp.feature === 'cup') drawHeldCup(g, sk, sp, pal, pose);
   put(wear.face);
   put(wear.head);
+  put(wear.charm, tick % 4 < 2 ? 0 : 1); // bùa đung đưa
   const set = fullSetOf(wear);
   if (set) drawSetSparkles(g, sk, ELEMENTS[set], tick);
   if (aura) drawMotes(g, sk, aura, tick);
+  if (el && form >= 4) drawMotes(g, sk, { spark: form >= 5 ? GOLD : el.accent, motes: form >= 5 ? 4 : 2 }, tick + 1);
 
   if (anchors) {
-    const colors = { head: '#ff3b6b', face: '#3bb3ff', neck: '#ffb800', back: '#7a5cff' };
+    const colors = { head: '#ff3b6b', face: '#3bb3ff', neck: '#ffb800', back: '#7a5cff', charm: '#3bd18a' };
     for (const [k, a] of Object.entries(sk.anchors)) {
       g.fillStyle = colors[k];
       g.fillRect(a.x + 1, a.y + 1, 1, 1);

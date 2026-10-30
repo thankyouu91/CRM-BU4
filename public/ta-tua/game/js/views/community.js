@@ -25,7 +25,7 @@ export function renderCommunity(root, ctx) {
   const mountFigure = (slot, pet, base) => {
     if (!slot || !pet) return;
     const figure = createPetFigure(speciesOf(pet.species), base, pet.wear, {
-      stage: pet.stage ?? pet.age?.stage, ageScale: pet.scale ?? pet.age?.scale ?? 1,
+      stage: pet.stage ?? pet.age?.stage, ageScale: pet.scale ?? pet.age?.scale ?? 1, level: pet.level,
     });
     slot.append(figure.el);
     figures.push(figure);

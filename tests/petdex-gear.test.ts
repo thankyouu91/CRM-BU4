@@ -88,20 +88,36 @@ describe("Pet Town tiered gear rules", () => {
 });
 
 describe("Pet Town gear in play", () => {
-  it("the shop sells a fresh, rolled piece each time; it is worn by id and its lines add up on the pet", async () => {
+  it("the shop sells a sealed box each time; opened, it shows 1–2 lines, is worn by id and its lines add up on the pet", async () => {
     const p = await player("Mua_Do");
     store.db.prepare("UPDATE pets SET level = 10 WHERE id = ?").run(p.petId); // the crown needs a level 8 pet
     const first = await game("POST", "/shop/buy", p.token, { itemId: "crown" });
     expect(first.status).toBe(200);
-    expect((first.data.result as Json).message).toMatch(/cấp (Xanh lam|Xanh lục|Vàng|Đỏ)/);
+    expect((first.data.result as Json).message).toMatch(/hộp .*Mở hộp/);
     const second = await game("POST", "/shop/buy", p.token, { itemId: "crown" });
     expect(second.status).toBe(200); // no longer "already owned"
     const me = (await game("GET", "/me", p.token)).data;
-    const owned = me.gear as Json[];
-    expect(owned).toHaveLength(2);
+    const boxes = me.gear as Json[];
+    expect(boxes).toHaveLength(2);
+    // still sealed: the player sees neither the tier nor the lines
+    for (const box of boxes) expect(box).toMatchObject({ sealed: true, tier: null, affixes: {}, lines: [] });
     expect((await game("POST", "/shop/buy", p.token, { itemId: "crown", qty: 2 })).status).toBe(400);
+    // a sealed box can be neither worn nor sold
+    expect((await game("POST", `/pets/${p.petId}/equip`, p.token, { gearId: boxes[0].id })).data.error).toMatch(/Mở hộp/);
+    // the admin board sees inside
+    const board = await internal("GET", `/admin/players/${p.userId}`);
+    expect(((board.data.gear as Json[]) ?? []).every((g) => g.sealed && g.tier)).toBe(true);
 
-    const piece = owned[0];
+    const opened = await game("POST", `/gear/${boxes[0].id}/open`, p.token);
+    expect(opened.status).toBe(200);
+    const piece = (opened.data.result as Json).opened as Json;
+    expect(["blue", "green"]).toContain(piece.tier);
+    expect((piece.lines as string[]).length).toBeGreaterThanOrEqual(1);
+    expect((piece.lines as string[]).length).toBeLessThanOrEqual(2);
+    expect((await game("POST", `/gear/${boxes[0].id}/open`, p.token)).data.error).toMatch(/đã mở/);
+    const other0 = await player("Mo_Ho_Hop");
+    expect((await game("POST", `/gear/${boxes[1].id}/open`, other0.token)).data.error).toMatch(/không có món/);
+
     const worn = await game("POST", `/pets/${p.petId}/equip`, p.token, { gearId: piece.id });
     expect(worn.status).toBe(200);
     const pet = ((worn.data.pets as Json[]) ?? (await game("GET", "/me", p.token)).data.pets as Json[]).find((x) => x.id === p.petId) as Json;
@@ -208,6 +224,66 @@ describe("Pet Town gear in play", () => {
   });
 });
 
+describe("Pet Town wear limits and shop boxes", () => {
+  it("shop boxes only roll 1 or 2 lines", () => {
+    const config = shared.normalizeGearConfig(shared.DEFAULT_GEAR_CONFIG);
+    let seed = 5;
+    const rand = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
+    const tiers = new Set<string>();
+    for (let i = 0; i < 2000; i++) {
+      const g = shared.rollShopGear(config, rand, { luck: 100 });
+      tiers.add(g.tier);
+      expect(Object.keys(g.affixes).length).toBe(g.tier === "blue" ? 1 : 2);
+    }
+    expect([...tiers].sort()).toEqual(["blue", "green"]);
+  });
+
+  it("under level 30 a pet wears 3 pieces, from 30 it wears 4, and a legendary pet one more", async () => {
+    const pets = await import("@/public/ta-tua/game/js/shared/pets.js");
+    expect(pets.wearLimit(1, "thuong")).toBe(3);
+    expect(pets.wearLimit(29, "quy")).toBe(3);
+    expect(pets.wearLimit(30, "hiem")).toBe(4);
+    expect(pets.wearLimit(29, "huyenthoai")).toBe(4);
+    expect(pets.wearLimit(30, "huyenthoai")).toBe(5);
+
+    const p = await player("Deo_Nhieu");
+    const give = async (itemId: string) => ((await internal("POST", `/admin/players/${p.userId}/gear`, { itemId, tier: "blue", actor: "Admin" })).data.gear as Json).id as number;
+    const ids = await Promise.all(["crown", "glasses", "bell", "angel", "luckycoin"].map(give));
+    const equip = (gearId: number) => game("POST", `/pets/${p.petId}/equip`, p.token, { gearId });
+    for (const id of ids.slice(0, 3)) expect((await equip(id)).status).toBe(200);
+    expect((await equip(ids[3])).data.error).toMatch(/chỉ đeo được 3 món/);
+    // swapping inside an occupied slot is still fine
+    const crown2 = await give("tophat");
+    expect((await equip(crown2)).status).toBe(200);
+
+    store.db.prepare("UPDATE pets SET level = 30 WHERE id = ?").run(p.petId);
+    expect((await equip(ids[3])).status).toBe(200);
+    expect((await equip(ids[4])).data.error).toMatch(/chỉ đeo được 4 món/);
+    const me = (await game("GET", "/me", p.token)).data;
+    expect(((me.pets as Json[]).find((x) => x.id === p.petId) as Json).wearLimit).toBe(4);
+
+    const legend = pets.SPECIES.find((s: { rarity: string }) => s.rarity === "huyenthoai") as { id: string };
+    store.db.prepare("UPDATE pets SET species = ? WHERE id = ?").run(legend.id, p.petId);
+    expect((await equip(ids[4])).status).toBe(200); // the 5th slot: charm
+    expect(Object.keys(store.getPet(p.petId).wear as Json).sort()).toEqual(["back", "charm", "face", "head", "neck"]);
+  });
+
+  it("every wearable has pixel art, a shop entry and a known slot", async () => {
+    const pets = await import("@/public/ta-tua/game/js/shared/pets.js");
+    const catalog = await call(api, "/api", "GET", "/catalog");
+    const items = catalog.data.items as Record<string, Json>;
+    const wearables = pets.WEARABLES as Record<string, { slot: string }>;
+    const slots = pets.SLOTS as Record<string, unknown>;
+    const ids = Object.keys(wearables);
+    expect(ids.length).toBeGreaterThanOrEqual(40);
+    for (const id of ids) {
+      expect(items[id], id).toMatchObject({ type: "accessory", slot: wearables[id].slot });
+      expect(slots[wearables[id].slot], id).toBeTruthy();
+    }
+    for (const slot of pets.SLOT_IDS) expect(ids.some((id) => wearables[id].slot === slot), slot).toBe(true);
+  });
+});
+
 describe("Pet Town gift codes", () => {
   it("an admin makes a code; each player redeems it once, within its uses and dates", async () => {
     const created = await internal("POST", "/admin/gift-codes", {
@@ -222,10 +298,15 @@ describe("Pet Town gift codes", () => {
 
     const a = await player("Nhan_Qua_A", 0);
     const before = ((await game("GET", "/me", a.token)).data.user as Json).coins as number;
-    // Pin the roll so the random piece is also a crown, in another tier (16th of 22 wearables, Xanh lục):
-    // the fixed gold crown must still be there.
+    // Pin the roll so the random piece is also a crown, in another tier: the fixed gold crown must still be there.
+    // The pin is the middle of the crown's share of the wearables list, so adding more wearables keeps it a crown.
+    const catalog = await call(api, "/api", "GET", "/catalog");
+    const wearables = Object.values(catalog.data.items as Record<string, Json>).filter((i) => i.type === "accessory");
+    const pin = (wearables.findIndex((i) => i.id === "crown") + 0.5) / wearables.length;
+    const pinnedTier = shared.rollTier(shared.DEFAULT_GEAR_CONFIG.odds, () => pin);
+    expect(pinnedTier).not.toBe("gold");
     const realRandom = Math.random;
-    Math.random = () => 0.7;
+    Math.random = () => pin;
     let got;
     try {
       got = await game("POST", "/gifts/redeem", a.token, { code: code.toLowerCase() });
@@ -235,7 +316,8 @@ describe("Pet Town gift codes", () => {
     expect(got.status).toBe(200);
     expect((got.data.result as Json).message).toMatch(/Quà khai trương/);
     const given = (got.data.result as Json).gear as Json[];
-    expect(given.map((g) => [g.itemId, g.tier])).toEqual([["crown", "gold"], ["crown", "green"]]);
+    expect(given.map((g) => [g.itemId, g.tier])).toEqual([["crown", "gold"], ["crown", pinnedTier]]);
+    expect(given.every((g) => !g.sealed)).toBe(true); // only shop boxes come sealed
     const me = (await game("GET", "/me", a.token)).data;
     expect((me.user as Json).coins).toBe(before + 500);
     expect((me.inventory as Json).bath).toBe(2);

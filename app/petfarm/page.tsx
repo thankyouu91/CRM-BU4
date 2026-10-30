@@ -42,6 +42,9 @@ type Affix = "income" | "stats" | "trade" | "luck";
 const TIERS = gear.TIERS as Record<Tier, { name: string; color: string; lines: number }>;
 const TIER_ORDER = gear.TIER_ORDER as Tier[];
 const CONFIG = gear.DEFAULT_GEAR_CONFIG as { odds: Record<Tier, number>; ranges: Record<Tier, Record<Affix, number[]>> };
+/** Đồ mua ở cửa hàng là hộp kín chỉ ra Xanh lam (1 dòng) hoặc Xanh lục (2 dòng); cấp cao chỉ có ở nguồn khác. */
+const SHOP_TIERS: readonly string[] = gear.SHOP_TIERS;
+const shopShare = (t: Tier) => Math.round((CONFIG.odds[t] / SHOP_TIERS.reduce((s, x) => s + CONFIG.odds[x as Tier], 0)) * 100);
 const AFFIX_COPY: { key: Affix; icon: typeof Briefcase; name: string; text: string }[] = [
   { key: "income", icon: Briefcase, name: "Thu nhập ca làm", text: "Lương mỗi ca làm nghề nhiều hơn." },
   { key: "stats", icon: TrendingUp, name: "Chỉ số", text: "Kỹ năng lên nhanh, chăm sóc hồi nhiều hơn." },
@@ -238,7 +241,7 @@ export default function PetfarmSite() {
                       </span>
                       <p className="mt-4 font-[family-name:var(--pf-display)] text-4xl font-extrabold leading-none">{TIERS[t].lines}<span className="ml-1.5 text-lg text-[var(--pf-muted)]">dòng</span></p>
                       <p className="mt-2 text-sm text-[var(--pf-muted)]">+{lo} đến +{hi}% mỗi dòng</p>
-                      <p className="text-sm text-[var(--pf-muted)]">{CONFIG.odds[t]}% khi mua ở cửa hàng</p>
+                      <p className="text-sm text-[var(--pf-muted)]">{SHOP_TIERS.includes(t) ? `${shopShare(t)}% hộp mua ở cửa hàng` : "Từ mini-game, mã quà, Chợ Phiên"}</p>
                     </div>
                   </Reveal>
                 </li>

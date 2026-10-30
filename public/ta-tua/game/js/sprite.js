@@ -1,6 +1,7 @@
 // Hoạt ảnh spritesheet: ảnh Petdex/Codex v2 vẽ sẵn, hoặc spritesheet dựng từ bộ khung pet ngũ hành (petsheet.js).
 import { art } from './pixel.js';
 import { ART_PX, PETDEX_SHEET, guestSheet, rigSheet } from './petsheet.js';
+import { levelForm } from './shared/pets.js';
 
 export { ART_PX };
 
@@ -92,13 +93,14 @@ export class Sprite {
 
 /**
  * Thú cưng kèm bóng đổ, đồ đeo vẽ sẵn vào từng khung hình.
- * - `wear`: { head, face, neck, back } → mã món đang đeo.
+ * - `wear`: { head, face, neck, back, charm } → mã món đang đeo.
  * - `stage`: giai đoạn tuổi (bé vẽ bằng bộ khung tự đổi dáng theo tuổi).
+ * - `level`: cấp của bé; cứ 10 cấp bé đổi dáng (bé khách mời Petdex chỉ lớn thêm cỡ người).
  * - `ageScale`: chỉ dùng cho bé khách mời Petdex, vì ảnh vẽ sẵn không có dáng theo tuổi.
  */
-export function createPetFigure(species, scale, wear = {}, { stage = 'young', ageScale = 1 } = {}) {
+export function createPetFigure(species, scale, wear = {}, { stage = 'young', ageScale = 1, level = 1 } = {}) {
   const rig = Boolean(species?.rig);
-  const s = rig ? scale : scale * ageScale;
+  const s = rig ? scale : scale * ageScale * levelForm(level).grow;
   const el = document.createElement('div');
   el.className = 'pet-figure';
   const shadowArt = art('shadow');
@@ -109,7 +111,7 @@ export function createPetFigure(species, scale, wear = {}, { stage = 'young', ag
   shadow.style.width = `${shadowArt.w * ART_PX * s}px`;
   const body = document.createElement('div');
   body.className = 'pet-body';
-  const sheetFor = (w) => (rig ? rigSheet(species.id, stage, w ?? {}) : species?.sprite ?? '');
+  const sheetFor = (w) => (rig ? rigSheet(species.id, stage, w ?? {}, level) : species?.sprite ?? '');
   const sprite = new Sprite(sheetFor(wear), s);
   body.append(sprite.el);
   el.append(shadow, body);

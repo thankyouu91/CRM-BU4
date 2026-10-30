@@ -25,7 +25,7 @@ const TIERS: Record<Tier, { name: string; color: string; lines: number }> = rule
 const AFFIXES: Record<Affix, { name: string; icon: string; desc: string }> = rules.AFFIXES;
 const BONUS_CAP: number = rules.BONUS_CAP;
 
-const SLOT_LABEL: Record<string, string> = { head: "Đầu", face: "Mặt", neck: "Cổ", back: "Lưng" };
+const SLOT_LABEL: Record<string, string> = { head: "Đầu", face: "Mặt", neck: "Cổ", back: "Lưng", charm: "Bùa" };
 const SOURCE_LABEL: Record<string, string> = { shop: "Mua ở cửa hàng", minigame: "Rớt từ mini-game", gift: "Mã quà", admin: "Quản trị tặng", legacy: "Đồ cũ chuyển sang" };
 const tierName = (t: string) => (TIERS as Record<string, { name: string }>)[t]?.name ?? t;
 
@@ -231,6 +231,8 @@ export interface GearView {
   affixes: Partial<Record<Affix, number>>;
   lines: string[];
   wornBy: number | null;
+  /** Hộp mua ở Siêu thị người chơi chưa mở (quản trị viên vẫn thấy cấp và dòng chỉ số). */
+  sealed?: boolean;
   listed: boolean;
   source: string;
   createdAt: number;
@@ -348,7 +350,7 @@ export function PlayerGear({ player, gear, wearables, pets, onChanged }: { playe
                   <span className="font-medium">{g.name}</span>
                   <TierDot tier={g.tier} />
                   <span className="text-xs text-muted-foreground">{g.slot ? SLOT_LABEL[g.slot] ?? g.slot : ""} · #{g.id} · {SOURCE_LABEL[g.source] ?? g.source}</span>
-                  <span className="ml-auto text-xs text-muted-foreground">{g.listed ? "Đang bày bán" : g.wornBy ? `${petName(g.wornBy)} đang đeo` : "Trong tủ"}</span>
+                  <span className="ml-auto text-xs text-muted-foreground">{g.listed ? "Đang bày bán" : g.wornBy ? `${petName(g.wornBy)} đang đeo` : g.sealed ? "Hộp chưa mở" : "Trong tủ"}</span>
                   <Button size="sm" variant="ghost" onClick={() => setEditing(editing === g.id ? null : g.id)}>Sửa</Button>
                   <button onClick={() => setRemoving(g)} disabled={g.listed} className="rounded p-1 text-muted-foreground hover:bg-muted hover:text-danger disabled:opacity-40" aria-label={`Xoá ${g.name}`} title={g.listed ? "Đang bày bán ở Chợ Phiên" : "Xoá"}>
                     <Trash2 className="h-3.5 w-3.5" />
