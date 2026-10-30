@@ -22,6 +22,9 @@ describe("Petfarm wiki routing", () => {
     expect(wikiHostRoute("/server1")).toEqual({ redirect: "https://play.petfarm.online/server1" });
     expect(wikiHostRoute("/invitation/abc")).toEqual({ redirect: "https://play.petfarm.online/invitation/abc" });
     expect(wikiHostRoute("/api/tasks")).toEqual({ notFound: true });
+    // Deeper paths match no article: they show the wiki's own 404, not Next's bare one.
+    expect(wikiHostRoute("/abc/xyz")).toEqual({ rewrite: `${WIKI_PATH}/_` });
+    expect(wikiHostRoute("/cham-soc/")).toEqual({ rewrite: `${WIKI_PATH}/cham-soc/` });
   });
 
   it("serves the wiki without a session and keeps WorkHub out of reach", async () => {
