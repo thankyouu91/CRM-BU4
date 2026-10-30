@@ -17,6 +17,12 @@ export const interest = (amount: number, rate: number, days = 1) => Math.floor(M
 /** A price index such as 1.0123 → "1,012" (the game's news shows three decimals). */
 export const idx = (x: number) => x.toLocaleString("vi-VN", { minimumFractionDigits: 3, maximumFractionDigits: 3 });
 
+/** Percent with exactly `digits` decimals, as the Central Bank's news headline prints it: 0.003 → "0,30%". */
+const fixedPct = (x: number, digits: number) => `${(x * 100).toLocaleString("vi-VN", { minimumFractionDigits: digits, maximumFractionDigits: digits })}%`;
+/** The news headline after a Central Bank meeting (bank.js centralBankWeek); tests/petfarm-wiki-sync-money.test.ts compares it. */
+export const cbHeadline = (growth: number, baseRate: number, priceIndex: number) =>
+  `Ngân hàng Trung ương: lượng xu tăng ${fixedPct(growth, 1)}/tuần, lãi suất cơ bản ${fixedPct(baseRate, 2)}/ngày, chỉ số giá ${idx(priceIndex)}`;
+
 const at = (growth: number, priceIndex = 1) => policy({ growth, priceIndex });
 const round = (x: number, d = 6) => Math.round(x * 10 ** d) / 10 ** d;
 

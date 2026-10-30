@@ -39,7 +39,9 @@ function simulate(plan: Plan) {
     }
     const pot = payers.length * plan.amount;
     const eligible = payers.filter((m) => !m.won).map((m) => m.id);
-    const bids = Object.entries(plan.bids[round - 1] ?? {}).map(([name, bid], at) => ({ member_id: people.find((m) => m.name === name)!.id, bid, at }));
+    // Như hui.js runRound: thăm vượt trần của quỹ thực tế kỳ đó thì kéo về trần.
+    const cap = Math.floor(pot * HUI.maxBidRatio);
+    const bids = Object.entries(plan.bids[round - 1] ?? {}).map(([name, bid], at) => ({ member_id: people.find((m) => m.name === name)!.id, bid: Math.min(bid, cap), at }));
     const pick = pickWinner(eligible, bids, round, 0);
     if (pick && pot > 0) {
       const winner = people[pick.winner];
@@ -67,6 +69,8 @@ const [an, binh] = fair.people;
 const runner = runaway.people[1];
 const pot4 = AMOUNT * NAMES.length;
 const maxBid4 = Math.floor(pot4 * HUI.maxBidRatio);
+const pot3 = AMOUNT * (NAMES.length - 1);
+const maxBid3 = Math.floor(pot3 * HUI.maxBidRatio);
 
 const ROUND_HEAD = ["Kỳ", "Số người góp", "Quỹ kỳ", "Người hốt", "Người hốt nhận", "Mỗi người khác nhận"];
 const TOTAL_HEAD = ["Người", "Hốt ở", "Đã góp", "Đã nhận", "Lời / lỗ"];
@@ -109,11 +113,11 @@ export const article: WikiArticle = {
           "Ở **➕ Lập dây hụi**, đặt tên (3 tới 30 ký tự), số tiền góp mỗi kỳ và số thành viên, bấm **Lập dây**. Người lập là **chủ hụi** và là thành viên đầu tiên.",
           "Người khác tìm dây ở **📣 Dây đang gom người** và bấm **Vào dây hụi**.",
           "Đủ số người đã định thì dây **tự chạy**. Chủ hụi cũng có thể bấm **Cho chạy ngay** khi đã có ít nhất số tối thiểu.",
-          "Dây chạy thì **kỳ 1 chốt ngay nửa đêm hôm đó**, rồi mỗi đêm một kỳ.",
+          "Dây chạy thì **kỳ 1 chốt ngay nửa đêm hôm đó**, rồi mỗi đêm một kỳ. Mỗi thành viên nhận **thư báo** trong hộp thư: dây đã chạy, tiền góp mỗi kỳ và ngày chốt kỳ 1 (hụi gia tộc: thư gửi tộc trưởng).",
         ] },
         { list: [
           "Trước khi dây chạy, thành viên bấm **Rời dây** được mà không mất gì (chưa góp kỳ nào). Chủ hụi bấm **Hủy dây** thì cả dây hủy.",
-          `Dây gom người quá **${HUI.openDays} ngày** mà chưa đủ: có từ ${HUI.player.minSize} thành viên trở lên thì tự chạy (kỳ 1 chốt luôn đêm đó), ít hơn thì tự hủy, không ai mất xu nào.`,
+          `Dây gom người quá **${HUI.openDays} ngày** mà chưa đủ: có từ ${HUI.player.minSize} thành viên trở lên thì tự chạy lúc quyết toán nửa đêm, và **kỳ 1 chốt vào nửa đêm hôm sau** để mọi người kịp nhận thư và chuẩn bị tiền góp; ít hơn thì tự hủy, không ai mất xu nào.`,
           "Khi dây đã chạy thì **không rời được** nữa.",
           "Mở dây hụi lớn gia tộc thì cả thị trấn thấy tin trên báo.",
         ] },
@@ -127,11 +131,12 @@ export const article: WikiArticle = {
           `Chỉ người **chưa hốt** mới được bỏ thăm, cho kỳ sắp chốt. Tiền thăm từ 0 tới **${pct(HUI.maxBidRatio)} quỹ kỳ** (quỹ kỳ = tiền góp × số thành viên còn lại).`,
           "Bấm **Đổi thăm** để sửa trước nửa đêm; đặt về 0 là rút thăm.",
           "Nửa đêm: **thăm cao nhất hốt**. Bằng nhau thì ai bỏ thăm trước thắng.",
+          `Nếu có người bị loại vì không đóng nổi thì quỹ kỳ nhỏ lại; thăm nào vượt ${pct(HUI.maxBidRatio)} quỹ thực tế bị **kéo về đúng mức đó** trước khi so.`,
           "**Không ai bỏ thăm**: kỳ 1 chủ hụi hốt, các kỳ sau người vào dây sớm nhất trong số chưa hốt hốt.",
           "Người hốt nhận **quỹ kỳ trừ tiền thăm**. Tiền thăm **chia đều** cho tất cả những người cùng góp kỳ đó (kể cả người đã hốt từ trước); phần lẻ không chia hết trả lại người hốt.",
           "Đã hốt rồi thì **chỉ còn góp đều** tới hết dây, không bỏ thăm nữa.",
         ] },
-        { p: `Ví dụ dây ${NAMES.length} người góp ${xu(AMOUNT)}/kỳ: quỹ kỳ ${xu(pot4)}, tiền thăm tối đa ${xu(maxBid4)}. Ai bỏ thăm ${xu(600)} mà thắng thì nhận ${xu(pot4 - 600)}, ba người kia mỗi người nhận ${xu(200)}.` },
+        { p: `Ví dụ dây ${NAMES.length} người góp ${xu(AMOUNT)}/kỳ: quỹ kỳ ${xu(pot4)}, tiền thăm tối đa ${xu(maxBid4)}. Ai bỏ thăm ${xu(600)} mà thắng thì nhận ${xu(pot4 - 600)}, ba người kia mỗi người nhận ${xu(200)}. Nếu đêm đó một người bị loại, quỹ chỉ còn ${xu(pot3)} nên thăm ${xu(maxBid4)} bị kéo về ${xu(maxBid3)}.` },
         { tip: "Thẻ dây hụi cho biết kỳ nào chốt sau bao lâu, quỹ kỳ bao nhiêu, bạn đã góp và đã nhận bao nhiêu. Mở **Lịch sử** để xem ai hốt kỳ nào, thăm bao nhiêu." },
       ],
     },

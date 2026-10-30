@@ -1312,7 +1312,7 @@ export const ARTICLES: WikiArticle[] = [
         id: "du-an",
         title: "Dự án tuần",
         blocks: [
-          { p: "Cả Hội góp nguyên liệu (tính theo lô) để xây công trình cho công viên chung. Xong thì Hội được danh vọng và mỗi thành viên nhận xu từ ngân sách thị trấn." },
+          { p: "Cả Hội góp nguyên liệu (tính theo lô) để xây công trình cho công viên chung. Xong thì Hội được danh vọng và từng thành viên lần lượt nhận xu từ ngân sách thị trấn. Ngân sách cạn giữa chừng thì những người chưa tới lượt không được thưởng; chỉ người được trả mới nhận thư báo." },
           { table: { head: ["Dự án", "Cần", "Danh vọng", "Thưởng mỗi người"], rows: guildProjectRows() } },
         ],
       },

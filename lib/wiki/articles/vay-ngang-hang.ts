@@ -1,9 +1,9 @@
 import type { WikiArticle } from "../types";
 import { UNLOCKS } from "../rules";
 import { P2P_EXTRA } from "../rules-credit";
-import { CREDIT, LOANS, TIERS } from "@/petdex/server/rules/production.js";
+import { CREDIT, LOANS, TIERS, ceilCoins } from "@/petdex/server/rules/production.js";
 import { BANK } from "@/petdex/server/rules/bank.js";
-import { P2P, p2pInterest, splitRepayment } from "@/petdex/server/rules/finance.js";
+import { P2P, p2pInterest, p2pLimit, splitRepayment } from "@/petdex/server/rules/finance.js";
 
 // Vay ngang hàng qua Ngân hàng Trân Châu làm trung gian (petdex/server/p2p.js, rules/finance.js P2P).
 // Mọi con số đọc từ luật của game hoặc lib/wiki/rules-credit.ts (có test đối chiếu).
@@ -34,7 +34,7 @@ const LATE_NIGHTS = 2;
 const lateRows: (string | number)[][] = [];
 let lateOwed = exOwed;
 for (let night = 1; night <= LATE_NIGHTS; night++) {
-  const fee = Math.ceil(lateOwed * P2P.lateFee);
+  const fee = ceilCoins(lateOwed * P2P.lateFee);
   lateOwed += fee;
   lateRows.push([`Đêm đáo hạn${night > 1 ? ` +${night - 1}` : ""}`, "Ví và tiết kiệm trống", `+${xu(fee)} phí trễ`, xu(lateOwed), String(CREDIT.late).replace("-", "−")]);
 }
@@ -48,7 +48,7 @@ const riskInterest = p2pInterest(RISK.amount, RISK.rate, RISK.term);
 const riskRows = [...TIERS].reverse().map((t) => {
   const cut = cutOf[t.key];
   const s = payout(RISK.amount, RISK.amount + riskInterest, cut);
-  return [`${t.icon} ${t.name}`, `${Math.max(CREDIT.min, t.min)}+`, xu(t.limit * P2P.limitMultiplier), pct(cut), xu(s.lender - RISK.amount), xu(s.bank)];
+  return [`${t.icon} ${t.name}`, `${Math.max(CREDIT.min, t.min)}+`, xu(p2pLimit(t.min)), pct(cut), xu(s.lender - RISK.amount), xu(s.bank)];
 });
 
 export const article: WikiArticle = {
@@ -118,11 +118,11 @@ export const article: WikiArticle = {
         { list: [
           `Mỗi đêm còn thiếu: **phí trễ ${pct(P2P.lateFee)}** trên số còn nợ và **${String(CREDIT.late).replace("-", "−")} điểm** tín dụng của người vay.`,
           "Đang có khoản trễ thì người vay không đăng thêm yêu cầu vay ngang hàng nào được.",
-          `Trễ **${P2P.defaultAfter} đêm** là **⛔ Vỡ nợ**: người vay bị **${String(CREDIT.defaulted).replace("-", "−")} điểm** và **cấm vay ${P2P_EXTRA.banDays} ngày** (cả ở ngân hàng).`,
-          `Từ lúc vỡ nợ, mỗi đêm ngân hàng giữ **${pct(P2P.garnish)} số dư ví** của người vay để trả dần cho người cho vay, tới khi hết nợ. Người vay vẫn có thể tự bấm **Trả hết** bất cứ lúc nào.`,
+          `Trễ **${P2P.defaultAfter} đêm** là **⛔ Vỡ nợ**: người vay bị **${String(CREDIT.defaulted).replace("-", "−")} điểm** và **cấm vay ${LOANS.banDays} ngày** (cả ở ngân hàng).`,
+          `Từ lúc vỡ nợ, mỗi đêm ngân hàng giữ **${pct(P2P.garnish)} thu nhập trong ngày** của người vay (lấy từ ví, thiếu thì lấy sang tiết kiệm) để trả dần cho người cho vay, tới khi hết nợ. Từ đó khoản nợ không cộng thêm phí trễ nữa. Người vay vẫn có thể tự bấm **Trả hết** bất cứ lúc nào.`,
         ] },
-        { warn: `Cho vay là chịu rủi ro thật. Ngân hàng chỉ đứng giữa, **không đền** cho bạn: người vay vỡ nợ mà ví trống thì bạn chỉ thu lại dần, có khi rất lâu. Xem kỹ điểm tín dụng, chia nhỏ số tiền cho nhiều người, và đừng cho vay số xu bạn sắp cần.` },
-        { p: `Với người vay, một khoản bỏ mặc tới vỡ nợ mất ${P2P.defaultAfter} × ${-CREDIT.late} + ${-CREDIT.defaulted} = **${P2P.defaultAfter * -CREDIT.late - CREDIT.defaulted} điểm**, giống như vỡ nợ ngân hàng (ngân hàng cấm ${LOANS.banDays} ngày).` },
+        { warn: `Cho vay là chịu rủi ro thật. Ngân hàng chỉ đứng giữa, **không đền** cho bạn: người vay vỡ nợ mà ít thu nhập thì bạn chỉ thu lại dần, có khi rất lâu. Xem kỹ điểm tín dụng, chia nhỏ số tiền cho nhiều người, và đừng cho vay số xu bạn sắp cần.` },
+        { p: `Với người vay, một khoản bỏ mặc tới vỡ nợ mất ${P2P.defaultAfter} × ${-CREDIT.late} + ${-CREDIT.defaulted} = **${P2P.defaultAfter * -CREDIT.late - CREDIT.defaulted} điểm**, giống như vỡ nợ ngân hàng.` },
       ],
     },
     {

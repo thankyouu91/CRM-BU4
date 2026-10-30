@@ -12,8 +12,6 @@ export const MONEY = {
    * gains are added on top; every other income is tax free.
    */
   taxableKinds: ["salary", "interest", "toll_income", "minigame"],
-  /** The Central Bank divides the coins by the players active in this many days (bank.js centralBankWeek). */
-  activeWindowDays: 7,
   /**
    * Each night the land price index moves by the phase's drift minus this × (base rate − 0,3%/day), so a high
    * base rate pulls land prices down and a low one pushes them up (macro.js rollMacro).

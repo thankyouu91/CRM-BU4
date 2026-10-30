@@ -40,12 +40,11 @@ const phases = PHASES as Record<string, { name: string; land: number }>;
 const recovery = phases.recovery;
 const landAt = (rate: number) => recovery.land - (rate - BANK.defaultRate) * MONEY.landRateDrag;
 
-// Chain 6: players stop playing while their coins stay.
-const before = { players: 20, avg: 5_000 };
+// Chain 6: players stop playing while their coins stay; only the total money supply counts (bank.js centralBankWeek).
+const before = { players: 20, total: 100_000 };
 const quit = 5;
-const total = before.players * before.avg;
-const after = total / (before.players - quit);
-const quitGrowth = (after - before.avg) / before.avg;
+const earned = 8_000;
+const quitGrowth = earned / before.total;
 const quitWeek = policy({ growth: quitGrowth, priceIndex: 1 });
 
 const fest = PROPOSALS.food_fest;
@@ -71,7 +70,7 @@ export const article: WikiArticle = {
         ] },
         { p: "Báo cáo **Thu** và **Chi** của Ví chỉ tính các khoản thu chi thật; những lần chuyển giữa các túi của chính bạn (gửi tiết kiệm, gửi kỳ hạn, ký quỹ lệnh, nhận gốc vay) không được tính là thu hay chi." },
         { p: "Thị trấn có thể có **cư dân tự động** do máy chủ điều khiển; họ chơi theo đúng luật như mọi người chơi, cùng hạn mức, phí và thuế." },
-        { tip: `Vòi chảy mạnh hơn cống thì lượng xu bình quân tăng. Ngân hàng Trung ương muốn nó tăng khoảng **${pct(CB.target, 0)} mỗi tuần**: nhanh hơn thì hãm, chậm hơn thì nới (xem [Ngân hàng](ngan-hang)).` },
+        { tip: `Vòi chảy mạnh hơn cống thì tổng số xu của thị trấn tăng. Ngân hàng Trung ương muốn nó tăng khoảng **${pct(CB.target, 0)} mỗi tuần**: nhanh hơn thì hãm, chậm hơn thì nới (xem [Ngân hàng](ngan-hang)).` },
       ],
     },
     {
@@ -105,7 +104,7 @@ export const article: WikiArticle = {
       title: "Ai điều chỉnh",
       blocks: [
         { table: { head: ["Ai", "Khi nào", "Đổi cái gì"], rows: [
-          ["🏦 Ngân hàng Trung ương", "Nửa đêm cuối Chủ nhật", `Lãi suất cơ bản (${pct(CB.rateMin)} đến ${pct(CB.rateMax)}/ngày) và chỉ số giá (tăng tối đa ${pct(CB.indexUpMax, 1)}, giảm tối đa ${pct(CB.indexDownMax, 1)} mỗi tuần), theo mức tăng xu bình quân. Xem [Ngân hàng](ngan-hang).`],
+          ["🏦 Ngân hàng Trung ương", "Nửa đêm cuối Chủ nhật", `Lãi suất cơ bản (${pct(CB.rateMin)} đến ${pct(CB.rateMax)}/ngày) và chỉ số giá (tăng tối đa ${pct(CB.indexUpMax, 1)}, giảm tối đa ${pct(CB.indexDownMax, 1)} mỗi tuần), theo mức tăng của tổng số xu. Xem [Ngân hàng](ngan-hang).`],
           ["🌦️ Kinh tế vĩ mô", "Mỗi nửa đêm", "Pha kinh tế, thời tiết, cầu từng ngành, chỉ số giá đất (bị lãi suất cơ bản kéo). Pha làm doanh thu gia tộc, giá đất và lượng khách quầy lên xuống. Xem [Kinh tế vĩ mô](kinh-te-vi-mo)."],
           ["🏛️ Tòa thị chính (người chơi bầu)", "Nửa đêm cuối Chủ nhật", "Một đề xuất chi ngân sách: thêm khách cho quầy, giảm thuế, trợ giá, trợ cấp tân thủ. Xem [Thuế và Tòa thị chính](thue-toa-thi-chinh)."],
           ["🛒 Siêu thị", "Mỗi nửa đêm", `Độ tự chủ D của đồ ăn và đồ chăm sóc: D càng cao (gia tộc cung cấp càng nhiều) thì đồ NPC càng đắt, tới +${pct(ESSENTIALS.npcPriceUp, 0)}. Tài khoản dưới ${ESSENTIALS.newbieDays} ngày được miễn. Xem [Siêu thị](sieu-thi).`],
@@ -125,12 +124,12 @@ export const article: WikiArticle = {
       id: "day-chuyen",
       title: "Tác động dây chuyền",
       blocks: [
-        { p: `**1. Xu tăng quá nhanh tự hãm lại.** Một tuần xu bình quân tăng ${pct(hot, 0)} → lãi cơ bản xuống **${pct(hotWeek.baseRate)}/ngày** và chỉ số giá lên **${idx(hotWeek.priceIndex)}**. → ${xu(BANK.savingsCap)} tiết kiệm chỉ lãi ${xu(interest(BANK.savingsCap, hotWeek.baseRate))}/ngày thay vì ${xu(interest(BANK.savingsCap, BANK.defaultRate))}, hóa đơn Siêu thị ${xu(bill)} thành khoảng ${xu(Math.round(bill * hotWeek.priceIndex))}, phí chăm nuôi một bé cấp ${petLevel} từ ${xu(upkeepOf(petLevel))} lên ${xu(upkeepOf(petLevel, hotWeek.priceIndex))} mỗi ngày. → Vòi lãi chảy yếu đi, cống mua sắm và nuôi bé hút mạnh hơn, tuần sau xu tăng chậm lại.` },
+        { p: `**1. Xu tăng quá nhanh tự hãm lại.** Một tuần tổng số xu tăng ${pct(hot, 0)} → lãi cơ bản xuống **${pct(hotWeek.baseRate)}/ngày** và chỉ số giá lên **${idx(hotWeek.priceIndex)}**. → ${xu(BANK.savingsCap)} tiết kiệm chỉ lãi ${xu(interest(BANK.savingsCap, hotWeek.baseRate))}/ngày thay vì ${xu(interest(BANK.savingsCap, BANK.defaultRate))}, hóa đơn Siêu thị ${xu(bill)} thành khoảng ${xu(Math.round(bill * hotWeek.priceIndex))}, phí chăm nuôi một bé cấp ${petLevel} từ ${xu(upkeepOf(petLevel))} lên ${xu(upkeepOf(petLevel, hotWeek.priceIndex))} mỗi ngày. → Vòi lãi chảy yếu đi, cống mua sắm và nuôi bé hút mạnh hơn, tuần sau xu tăng chậm lại.` },
         { p: `**2. Chỉ số giá lên không chỉ làm đắt.** Giá trung bình nguyên liệu thô trên Sàn cũng nhân theo chỉ số, nên giá Sàn dần trôi lên. → Người bán hàng thô thu được nhiều xu hơn, món Bếp bán cho NPC được giá hơn, và giá tham chiếu món của quầy (chi phí nguyên liệu × ${num(BUSINESS.markup, 1)}) lên theo, nên chủ quầy nâng giá bán mà khách vẫn thấy hợp lý. → Nhưng giấy phép, tiền thuê, nâng cấp, học phí cũng lên cùng tỉ lệ, nên ai chỉ tiêu mà không bán thì thiệt.` },
         { p: `**3. Lạm phát làm vay đắt.** Lãi vay ngân hàng cộng thêm phụ phí lạm phát khi tuần trước xu tăng quá ${pct(CB.target, 0)}. Xu tăng ${pct(hotLoan, 0)} → phụ phí **+${pct(inflation, 2)}/ngày**, lớn hơn cả lãi cơ bản lúc đó (${pct(policy({ growth: hotLoan, priceIndex: 1 }).baseRate)}). → Vay để mở quầy hay xưởng lúc đó tốn hơn nhiều. Xem [Tín dụng](tin-dung).` },
         { p: `**4. Lãi suất kéo giá đất.** Mỗi ngày chỉ số giá đất đi theo pha kinh tế, trừ ${num(MONEY.landRateDrag)} lần phần lãi cơ bản vượt ${pct(BANK.defaultRate)}. Trong pha ${recovery.name} (+${pct(recovery.land, 1)}/ngày): lãi cơ bản ${pct(CB.rateMax)} → giá đất trôi khoảng **${pct(landAt(CB.rateMax), 1).replace("-", "−")}/ngày**; lãi ${pct(CB.rateMin)} → **+${pct(landAt(CB.rateMin), 1)}/ngày** (chưa kể nhiễu ngẫu nhiên). → Xu co lại (lãi cao) là lúc đất rẻ dần cho [gia tộc](so-nha-dat) mua, đồng thời gửi kỳ hạn lại lời.` },
         { p: `**5. Thuế quay vòng qua ngân sách.** Thuế và phí hủy ${half} số thu và đưa ${half} vào ngân sách, mà ngân sách không được Ngân hàng Trung ương đếm, nên thuế làm lượng xu đo được giảm. → Ngân sách chi lại qua đề xuất, ví dụ **${fest.name}** (${xu(fest.cost)}): ${fest.desc.replace(/\.$/, "")}. → Quầy bán nhiều hơn, nộp thêm thuế doanh thu ${pct(BUSINESS.revenueTax)} và thuế thu nhập trên lợi nhuận, ngân sách lại đầy dần.` },
-        { p: `**6. Người chơi nghỉ cũng đẩy giá.** Ngân hàng Trung ương đếm xu của **mọi** tài khoản nhưng chỉ chia cho người có giao dịch trong ${MONEY.activeWindowDays} ngày. ${before.players} người đang chơi, bình quân ${xu(before.avg)}; tuần sau ${quit} người nghỉ mà vẫn giữ xu → bình quân thành ${xu(Math.round(after))}, tăng ${pct(quitGrowth, 0)} dù không ai kiếm thêm. → Lãi cơ bản xuống ${pct(quitWeek.baseRate)}, chỉ số giá lên ${idx(quitWeek.priceIndex)}. Ngược lại, nhiều người mới vào với ít xu kéo bình quân xuống, lãi lên và giá giảm.` },
+        { p: `**6. Người chơi nghỉ không làm đổi lãi suất.** Ngân hàng Trung ương so **tổng số xu** của mọi tài khoản với tuần trước, không chia cho số người đang chơi. Thị trấn có ${before.players} người giữ tổng cộng ${xu(before.total)}; tuần sau ${quit} người nghỉ mà vẫn giữ xu, những người còn lại làm tổng tăng thêm ${xu(earned)} → mức tăng là ${pct(quitGrowth, 0)}, đúng như khi không ai nghỉ. → Lãi cơ bản thành ${pct(quitWeek.baseRate)}, chỉ số giá thành ${idx(quitWeek.priceIndex)}. Chỉ xu sinh ra hoặc mất đi mới làm mức tăng đổi; xu đổi chủ giữa người chơi thì không.` },
         { p: `**7. Phí chăm nuôi theo giá và theo thu nhập.** Mỗi nửa đêm mỗi bé tốn (${UPKEEP.base} + ${UPKEEP.perLevel} × cấp) xu × chỉ số giá. Nuôi một bé cấp ${pets[0]} và một bé cấp ${pets[1]}: đủ phí là **${xu(upkeepFull)}** mỗi ngày khi chỉ số giá ${idx(1)}, và **${xu(upkeepHot)}** sau một tuần xu tăng ${pct(hot, 0)} như ở mục 1 (chỉ số ${idx(hotWeek.priceIndex)}). → Phí cả ngày không quá ${pct(UPKEEP.incomeShare, 0)} số xu bạn thu vào hôm đó, nhưng ít nhất ${xu(UPKEEP.base)} mỗi bé: ngày thu ${xu(busyDay)} thì trừ đủ ${xu(atIncome(busyDay))}, ngày chỉ thu ${xu(quietDay)} thì trừ ${xu(atIncome(quietDay))}, ngày không thu gì vẫn trừ ${xu(atIncome(0))}. → Người kiếm nhiều trả đủ phí theo chỉ số giá, người chơi ít vẫn giữ phần lớn số xu kiếm được. Không vào game quá ${UPKEEP.activeDays} ngày thì không bị tính; ví không đủ thì chỉ trừ phần đang có, không ghi nợ. Xem [Tính cách, tuổi và vòng đời](tinh-cach-tuoi).` },
       ],
     },

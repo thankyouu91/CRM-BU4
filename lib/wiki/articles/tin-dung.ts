@@ -1,9 +1,9 @@
 import type { WikiArticle } from "../types";
 import { UNLOCKS } from "../rules";
 import { BANK_LOAN, P2P_EXTRA } from "../rules-credit";
-import { CREDIT, LOANS, TIERS, installment, loanLimit, loanRate } from "@/petdex/server/rules/production.js";
+import { CREDIT, LOANS, TIERS, ceilCoins, installment, loanLimit, loanRate } from "@/petdex/server/rules/production.js";
 import { BANK } from "@/petdex/server/rules/bank.js";
-import { HUI, P2P } from "@/petdex/server/rules/finance.js";
+import { HUI, P2P, p2pLimit } from "@/petdex/server/rules/finance.js";
 
 // Điểm tín dụng, bốn hạng và vay trả góp ở ngân hàng (petdex/server/credit.js, rules/production.js).
 // Mọi con số đọc từ luật của game hoặc lib/wiki/rules-credit.ts (có test đối chiếu).
@@ -19,7 +19,7 @@ const p2pCut = P2P.cut as Record<string, number>;
 
 const EX = { principal: 1_050, term: 7, tier: tierBy("silver") };
 const exRate = loanRate(BANK.defaultRate, EX.tier.min);
-const exFee = Math.ceil(EX.principal * LOANS.originationFee);
+const exFee = ceilCoins(EX.principal * LOANS.originationFee);
 
 /** Các kỳ trả góp của một khoản trả đúng hạn, tính bằng đúng hàm của game. */
 function schedule(principal: number, term: number, rate: number) {
@@ -36,6 +36,9 @@ function schedule(principal: number, term: number, rate: number) {
 }
 const ex = schedule(EX.principal, EX.term, exRate);
 const exCredit = ex.nights * CREDIT.onTime + CREDIT.repaid;
+// Một kỳ lãi tròn: game làm tròn tới 6 chữ số thập phân rồi mới làm tròn lên xu (rules/production.js ceilCoins).
+const ROUND = 1_000;
+const roundInterest = installment({ principal: ROUND, remaining: ROUND, rate: exRate, term_days: 1, fees: 0 }, false).interest;
 
 // Ví dụ hạn mức: hạng Bạc, thu nhập bình quân 300 xu/ngày, tiết kiệm 1.000 xu, chưa nợ gì.
 const LIM = { income: 300, savings: 1_000 };
@@ -81,7 +84,7 @@ export const article: WikiArticle = {
         { table: {
           head: ["Hạng", "Từ điểm", "Hạn mức vay ngân hàng", "Phụ phí lãi", "Hạn mức vay ngang hàng", "Ngân hàng giữ (P2P)"],
           rows: TIERS.map((t) => [
-            `${t.icon} ${t.name}`, Math.max(CREDIT.min, t.min), xu(t.limit), `+${pct(t.premium)}/ngày`, xu(t.limit * P2P.limitMultiplier), `${pct(p2pCut[t.key])} tiền lãi`,
+            `${t.icon} ${t.name}`, Math.max(CREDIT.min, t.min), xu(t.limit), `+${pct(t.premium)}/ngày`, xu(p2pLimit(t.min)), `${pct(p2pCut[t.key])} tiền lãi`,
           ]),
         } },
         { p: "Hạn mức của hạng chỉ là trần. **Hạn mức thực tế** khi vay ngân hàng là:" },
@@ -117,7 +120,7 @@ export const article: WikiArticle = {
       blocks: [
         { p: "Lúc quyết toán nửa đêm (giờ Việt Nam), ngân hàng **tự trừ một kỳ** từ ví, thiếu thì lấy sang tiết kiệm. Kỳ đầu tiên là **ngay nửa đêm hôm vay**." },
         { list: [
-          "**Lãi kỳ này** = dư nợ gốc × lãi/ngày (làm tròn lên).",
+          `**Lãi kỳ này** = dư nợ gốc × lãi/ngày, làm tròn lên tới xu (dư nợ ${xu(ROUND)} ở lãi ${pct(exRate)} là đúng ${xu(roundInterest)}).`,
           "**Gốc kỳ này** = số vay ÷ số ngày (làm tròn lên). Tới hạn mà còn gốc thì phải trả hết.",
           "Cộng thêm lãi và phí còn nợ từ các kỳ trước (nếu có).",
         ] },
@@ -136,7 +139,8 @@ export const article: WikiArticle = {
           `Cộng **phí trễ ${pct(LOANS.lateFee)}** trên phần còn nợ, và **${signed(CREDIT.late)} điểm** tín dụng.`,
           "Đang có khoản trễ thì không vay thêm được.",
           "Kỳ sau trả đủ (hoặc tự trả hết phần lãi, phí còn nợ) thì khoản vay hết trễ, đếm lại từ đầu.",
-          `Trễ **${LOANS.defaultAfter} kỳ liền** là **vỡ nợ**: thêm **${signed(CREDIT.defaulted)} điểm**, **cấm vay ${LOANS.banDays} ngày** (cả ngân hàng lẫn vay ngang hàng), và từ đó mỗi đêm ngân hàng giữ **${pct(LOANS.garnish)} thu nhập trong ngày** từ ví để thu nợ cho tới khi hết.`,
+          `Trễ **${LOANS.defaultAfter} kỳ liền** là **vỡ nợ**: thêm **${signed(CREDIT.defaulted)} điểm** và **cấm vay ${LOANS.banDays} ngày** (cả ngân hàng lẫn vay ngang hàng).`,
+          `Khoản đã vỡ nợ **vẫn tính lãi** mỗi đêm như cũ. Ngân hàng giữ **${pct(LOANS.garnish)} thu nhập trong ngày** của bạn (lấy từ ví, thiếu thì lấy sang tiết kiệm) để trả lãi, phí còn nợ rồi tới gốc; phần còn nợ sau đó lại bị cộng **phí trễ ${pct(LOANS.lateFee)}**. Cứ thế cho tới khi hết nợ.`,
         ] },
         { warn: `Một khoản bỏ mặc tới vỡ nợ mất tổng cộng ${LOANS.defaultAfter} × ${-CREDIT.late} + ${-CREDIT.defaulted} = **${-worstCase} điểm**, đủ kéo người vừa lên ${TIERS[2].icon} ${TIERS[2].name} (${TIERS[2].min} điểm) xuống tận ${TIERS[0].icon} ${TIERS[0].name}. Đừng vay quá sức trả mỗi đêm.` },
       ],

@@ -124,7 +124,7 @@ export const article: WikiArticle = {
         { list: [
           `**Trợ cấp tân thủ**: trong ${STIPEND.days} ngày đầu của tài khoản, mỗi lần nhận quà ngày được thêm **${xu(STIPEND.amount)}** (đề xuất Quỹ chào tân thủ nâng lên ${xu(fund)}). Ngân sách còn ít hơn thì chỉ trả bằng số còn lại.`,
           "**Đề xuất** thắng phiếu mỗi tuần (bảng bên dưới).",
-          `**Thưởng dự án Hội**: Hội góp đủ nguyên liệu cho dự án tuần thì mỗi thành viên nhận ${rewards.length ? `${xu(Math.min(...rewards))} đến ${xu(Math.max(...rewards))}` : "thưởng"} từ ngân sách (xem [Hội](hoi)).`,
+          `**Thưởng dự án Hội**: Hội góp đủ nguyên liệu cho dự án tuần thì từng thành viên lần lượt nhận ${rewards.length ? `${xu(Math.min(...rewards))} đến ${xu(Math.max(...rewards))}` : "thưởng"} từ ngân sách, tới khi ngân sách không đủ trả cho người kế tiếp. Chỉ người được trả mới nhận thư báo (xem [Hội](hoi)).`,
           `**Hoàn thuế doanh nghiệp** ${pct(CLAN.refundRate)} cho các gia tộc vào cuối tháng.`,
         ] },
         { warn: "Ngân sách cạn thì tân thủ nhận ít trợ cấp hơn, dự án Hội có thể không đủ thưởng cho mọi người và đề xuất thắng phiếu có thể không được làm. Nộp thuế đều đặn chính là nuôi các khoản đó." },

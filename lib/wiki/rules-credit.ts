@@ -7,10 +7,10 @@
 export const BANK_LOAN = { min: 50, maxOpen: 2 } as const;
 
 /**
- * Peer-to-peer loans (petdex/server/p2p.js): credit points for paying a loan off (Math.round(CREDIT.repaid / 3))
- * and the days a default bans the borrower from borrowing (the literal `14 * DAY`).
+ * Peer-to-peer loans (petdex/server/p2p.js): credit points for paying a loan off (Math.round(CREDIT.repaid / 3)).
+ * A P2P default bans borrowing for LOANS.banDays, the same as a bank loan, so that number is imported, not copied.
  */
-export const P2P_EXTRA = { repaidCredit: 10, banDays: 14 } as const;
+export const P2P_EXTRA = { repaidCredit: 10 } as const;
 
 /** Hụi (petdex/server/hui.js MAX_GROUPS): groups a player, or a clan, may be in at once. */
 export const HUI_EXTRA = { maxGroups: 3 } as const;

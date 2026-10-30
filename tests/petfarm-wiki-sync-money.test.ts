@@ -1,6 +1,7 @@
 import { beforeAll, describe, expect, it } from "vitest";
 import { KIND_LABELS, MONEY, upkeepCharge } from "@/lib/wiki/rules-money";
 import { SPECIES, UPKEEP } from "@/public/ta-tua/game/js/shared/pets.js";
+import { cbHeadline } from "@/lib/wiki/articles/money";
 
 // The money articles (ngan-hang, thue-toa-thi-chinh, tai-chinh) copy a few rules that live in modules
 // which open the game database. This test runs those modules on an in-memory database and fails as
@@ -68,28 +69,33 @@ describe("Petfarm wiki money rules stay in step with the game", () => {
     for (const [kind, id] of free) expect(row(id)?.tax ?? 0, `${kind} is tax free`).toBe(0);
   });
 
-  it("measures coins per player active in MONEY.activeWindowDays days, without the town budget", () => {
+  it("measures the growth of the total money supply, without the town budget or a per-player split", () => {
     const now1 = T0 + DAY;
     bank.centralBankWeek("2026-11-08", now1);
     const first = bank.economy();
+    // First meeting: nothing to compare with, so growth is on target and policy stays neutral.
     expect(first.priceIndex).toBe(1);
     expect(first.baseRate).toBe(bankRules.BANK.defaultRate);
     const w1 = store.db.prepare("SELECT * FROM central_bank ORDER BY week DESC LIMIT 1").get();
+    expect(w1.growth).toBe(bankRules.BANK.targetGrowth);
     const coins = store.db.prepare("SELECT SUM(coins) AS s FROM users").get().s;
-    expect(w1.money_per_player * w1.players).toBeCloseTo(coins, 6);
+    expect(w1.money_total).toBeCloseTo(coins, 6);
 
-    // One player stays active, everyone else goes quiet for a week.
+    // One player stays active, everyone else goes quiet for a week: only the 5.000 new coins count.
     const id = player(0, now1 + HOUR);
     ledger.post({ userId: id, delta: 5_000, kind: "admin", now: now1 + HOUR });
-    const now2 = now1 + MONEY.activeWindowDays * DAY;
+    const now2 = now1 + 7 * DAY;
     bank.centralBankWeek("2026-11-15", now2);
     const latest = store.db.prepare("SELECT * FROM central_bank ORDER BY week DESC LIMIT 1").get();
     expect(latest.players).toBe(1);
-    const growth = (coins + 5_000 - w1.money_per_player) / w1.money_per_player;
+    expect(latest.money_total).toBeCloseTo(coins + 5_000, 6);
+    const growth = 5_000 / coins;
     expect(latest.growth).toBeCloseTo(growth, 9);
     const next = bankRules.policy({ growth, priceIndex: 1 });
     expect(bank.economy().priceIndex).toBeCloseTo(next.priceIndex, 12);
     expect(bank.economy().baseRate).toBeCloseTo(next.baseRate, 12);
+    const news = store.db.prepare("SELECT headline FROM news WHERE created_at = ? AND headline LIKE 'Ngân hàng Trung ương:%'").get(now2);
+    expect(news?.headline).toBe(cbHeadline(latest.growth, latest.base_rate, latest.price_index));
   });
 
   it("lets the base rate pull the land price index by MONEY.landRateDrag × the rate gap", () => {

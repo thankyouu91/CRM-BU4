@@ -1,6 +1,6 @@
 import type { WikiArticle } from "../types";
 import { UNLOCKS } from "../rules";
-import { CB, idx, interest, num, pct, policyExample, policyRows, pts, xu } from "./money";
+import { CB, cbHeadline, idx, interest, num, pct, policyExample, policyRows, pts, xu } from "./money";
 import { BANK } from "@/petdex/server/rules/bank.js";
 import { QUESTS } from "@/petdex/server/rules/town.js";
 import { LOCATIONS } from "@/petdex/server/rules/business.js";
@@ -64,7 +64,7 @@ export const article: WikiArticle = {
           [`${pct(CB.rateMax)}/ngày (cao nhất)`, xu(perDay(CB.rateMax)), xu(perDay(CB.rateMax) * 7)],
         ] } },
         { p: `**Ví dụ:** bạn để ${xu(15_000)} trong tiết kiệm khi lãi cơ bản ${pct(BANK.defaultRate)}/ngày. Chỉ ${xu(BANK.savingsCap)} được tính, nên mỗi đêm nhận **${xu(perDay(BANK.defaultRate))}**, không phải ${xu(interest(15_000, BANK.defaultRate))}. ${xu(5_000)} còn lại nên chuyển sang gửi kỳ hạn.` },
-        { tip: `Nếu có gia tộc đang vận hành **🏦 Ngân hàng nhà nước** (ngành chiến lược), mọi người chơi được thưởng thêm ${pct(levels[0].buff, 0)} đến ${pct(levels[levels.length - 1].buff, 0)} trên lãi tiết kiệm và lãi kỳ hạn, tùy cấp hạ tầng. Người ngoài gia tộc chủ trả phí hạ tầng bằng ${pct(STRATEGIC_RULES.fee, 0)} phần thưởng thêm đó.` },
+        { tip: `Nếu có gia tộc đang vận hành **🏦 Ngân hàng nhà nước** (ngành chiến lược), mọi người chơi được thưởng thêm ${pct(levels[0].buff, 0)} đến ${pct(levels[levels.length - 1].buff, 0)} trên lãi tiết kiệm và lãi kỳ hạn, tùy cấp hạ tầng. Người ngoài gia tộc chủ trả phí hạ tầng bằng ${pct(STRATEGIC_RULES.fee, 0)} phần thưởng thêm đó. Phí thu **trước**, từ chính chỗ nhận lãi (tiết kiệm với lãi tiết kiệm, ví với lãi kỳ hạn): không đủ tiền trả phí thì lần đó không có phần thưởng thêm.` },
       ],
     },
     {
@@ -86,17 +86,16 @@ export const article: WikiArticle = {
       id: "nhtw",
       title: "Ngân hàng Trung ương",
       blocks: [
-        { p: `Ngân hàng Trung ương họp **mỗi nửa đêm cuối Chủ nhật**, sau khi đã cộng lãi đêm đó. Lãi suất và chỉ số giá mới áp dụng từ thứ Hai, giữ nguyên cả tuần. Tin tức trong game đăng kết quả mỗi buổi họp, màn Ngân hàng có lịch sử 12 tuần.` },
+        { p: `Ngân hàng Trung ương họp **mỗi nửa đêm cuối Chủ nhật**, sau khi đã cộng lãi đêm đó. Lãi suất và chỉ số giá mới áp dụng từ thứ Hai, giữ nguyên cả tuần. Tin tức trong game đăng kết quả mỗi buổi họp, ví dụ: "${cbHeadline(g1, w1.baseRate, w1.priceIndex)}". Màn Ngân hàng có lịch sử 12 tuần.` },
         { steps: [
           "**Đếm tổng số xu** trong thị trấn: ví của mọi người chơi, tiết kiệm, tiền gửi kỳ hạn, tiền ký quỹ lệnh chờ trên Sàn, lương ca làm ở quầy và xưởng chưa nhận, và mọi quỹ chung (quỹ gia tộc, quỹ Hội, quỹ hụi...). **Ngân sách thị trấn không tính.**",
-          "**Chia cho số người chơi có hoạt động** (có ít nhất một giao dịch xu) trong 7 ngày qua, ra **số xu bình quân**.",
-          `**So với tuần trước** để ra mức tăng trưởng. Mục tiêu là **tăng ${pct(CB.target, 1)}/tuần**. Buổi họp đầu tiên chưa có gì để so nên coi như đúng mục tiêu.`,
+          `**So với tổng số xu đếm được ở buổi họp tuần trước** để ra mức tăng trưởng. Mục tiêu là **tăng ${pct(CB.target, 1)}/tuần**. Chưa có số của tuần trước để so (như buổi họp đầu tiên) thì coi như đúng mục tiêu. Số người đang chơi không ảnh hưởng: người nghỉ mà vẫn giữ xu thì tổng không đổi.`,
           `**Chênh lệch** = mức tăng tuần này trừ ${pct(CB.target, 1)}. Mỗi **1 điểm %** vượt mục tiêu làm **lãi cơ bản giảm ${pts(CB.ratePerPoint)}/ngày** (tính từ mức ${pct(CB.neutral)}) và **chỉ số giá tăng ${pct(CB.indexPerPoint)}**. Thấp hơn mục tiêu thì ngược lại.`,
           `Giới hạn: lãi cơ bản kẹt ở **${pct(CB.rateMin)}** khi xu tăng từ ${pct(CB.rateFloorAt, 1)}/tuần trở lên và ở **${pct(CB.rateMax)}** khi xu tăng từ ${pct(CB.rateCeilAt, 1)}/tuần trở xuống. Chỉ số giá một tuần tăng tối đa **${pct(CB.indexUpMax, 1)}** (khi xu tăng từ ${pct(CB.indexUpAt, 1)}/tuần trở lên) và giảm tối đa **${pct(CB.indexDownMax, 1)}** (khi xu tăng từ ${pct(CB.indexDownAt, 1)}/tuần trở xuống).`,
         ] },
         { p: "Chỉ số giá **nhân dồn** qua các tuần (tuần này nhân lên chỉ số của tuần trước), còn lãi cơ bản thì **tính lại từ đầu** mỗi tuần chỉ theo mức tăng của tuần đó." },
-        { table: { head: ["Xu bình quân tăng trong tuần", "Lãi cơ bản tuần sau", "Chỉ số giá thay đổi"], rows: policyRows().map((r) => r.map((c) => c.replace("-", "−"))) } },
-        { p: `**Ví dụ hai tuần liền:** chỉ số giá đang là ${idx(1)}. Tuần 1 xu bình quân tăng **${pct(g1, 1)}** (vượt mục tiêu ${num((g1 - CB.target) * 100)} điểm %): lãi cơ bản xuống **${pct(w1.baseRate)}/ngày**, chỉ số giá lên **${idx(w1.priceIndex)}**. Giấy phép quầy Mặt phố giá gốc ${xu(license)} giờ tốn ${xu(Math.round(license * w1.priceIndex))}, còn ${xu(BANK.savingsCap)} tiết kiệm chỉ lãi ${xu(interest(BANK.savingsCap, w1.baseRate))}/ngày. Tuần 2 xu chỉ tăng **${pct(g2, 1)}** (thiếu ${num((CB.target - g2) * 100)} điểm %, bị kẹp ở mức giảm tối đa): lãi cơ bản lên trần **${pct(w2.baseRate)}/ngày**, chỉ số giá giảm còn **${idx(w2.priceIndex)}**, giấy phép đó còn ${xu(Math.round(license * w2.priceIndex))}.` },
+        { table: { head: ["Tổng số xu tăng trong tuần", "Lãi cơ bản tuần sau", "Chỉ số giá thay đổi"], rows: policyRows().map((r) => r.map((c) => c.replace("-", "−"))) } },
+        { p: `**Ví dụ hai tuần liền:** chỉ số giá đang là ${idx(1)}. Tuần 1 tổng số xu tăng **${pct(g1, 1)}** (vượt mục tiêu ${num((g1 - CB.target) * 100)} điểm %): lãi cơ bản xuống **${pct(w1.baseRate)}/ngày**, chỉ số giá lên **${idx(w1.priceIndex)}**. Giấy phép quầy Mặt phố giá gốc ${xu(license)} giờ tốn ${xu(Math.round(license * w1.priceIndex))}, còn ${xu(BANK.savingsCap)} tiết kiệm chỉ lãi khoảng ${xu(interest(BANK.savingsCap, w1.baseRate))}/ngày. Tuần 2 tổng số xu chỉ tăng **${pct(g2, 1)}** (thiếu ${num((CB.target - g2) * 100)} điểm %, bị kẹp ở mức giảm tối đa): lãi cơ bản lên trần **${pct(w2.baseRate)}/ngày**, chỉ số giá giảm còn **${idx(w2.priceIndex)}**, giấy phép đó còn ${xu(Math.round(license * w2.priceIndex))}.` },
       ],
     },
     {
