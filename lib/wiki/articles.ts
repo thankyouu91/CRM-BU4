@@ -395,8 +395,8 @@ export const ARTICLES: WikiArticle[] = [
           { p: "Tương sinh: Kim sinh Thủy, Thủy sinh Mộc, Mộc sinh Hỏa, Hỏa sinh Thổ, Thổ sinh Kim. Tương khắc: Kim khắc Mộc, Mộc khắc Thổ, Thủy khắc Hỏa, Hỏa khắc Kim, Thổ khắc Thủy." },
           { table: { head: ["Bé hành", "Đồ tương sinh (+10%)", "Đồ cùng hành (+5%)", "Đồ kỵ mệnh (−5%)"], rows: relationRows() } },
           { list: [
-            "**Trang phục**: mỗi món cộng hoặc trừ % trên vào **tốc độ lên kỹ năng**, cộng dồn.",
-            "**Đủ bộ 4 khe** Đầu, Mặt, Cổ, Lưng **cùng một hành**: +5% lương ca làm. Vì dưới cấp 30 bé chỉ đeo được 3 món, đủ bộ chỉ làm được từ cấp 30 (bé Huyền thoại thì sớm hơn).",
+            "**Trang phục**: mỗi món cộng hoặc trừ % trên vào **tốc độ lên kỹ năng**, cộng dồn, cả bộ tối đa **+30%**.",
+            "**Bộ đồ cùng hành** (tính cả 5 khe, kể cả Bùa): **3 món** +3% lương ca làm, **4 món** +5%, **5 món** +8%. Bé dưới cấp 30 đeo 3 món vẫn gom được bộ 3 món.",
             "**Đồ ăn** tương sinh hoặc cùng hành: +20% XP.",
           ] },
         ],
@@ -529,7 +529,7 @@ export const ARTICLES: WikiArticle[] = [
             ["🏮 Thu nhập giao dịch", "Thưởng thêm khi bán ở Chợ Phiên, trên Sàn và bán món cho quán ăn"],
             ["🍀 May mắn", "Nấu dễ ra món ngon, mini-game dễ rớt vật liệu và trang phục, mua hộp dễ ra 2 dòng"],
           ] } },
-          { p: "Các dòng của đồ đang đeo **cộng dồn** cho bé, mỗi loại tối đa **100%**. Việc chung của cả nhà (mua đồ, giao dịch, nấu ăn) dùng chỉ số của **bé chính**." },
+          { p: "Các dòng của đồ đang đeo **cộng dồn** cho bé, có giảm dần: mỗi loại tính đủ tới **25%**, phần vượt chỉ tính **một nửa**, tối đa **60%**. Ví dụ 4 món Đỏ cộng thô 60% thì bé nhận 25 + 35 ÷ 2 = **42,5%**. Việc chung của cả nhà (mua đồ, giao dịch, nấu ăn) dùng chỉ số của **bé chính**." },
         ],
       },
       {
@@ -537,7 +537,7 @@ export const ARTICLES: WikiArticle[] = [
         title: "Có đồ từ đâu",
         blocks: [
           { table: { head: ["Nguồn", "Cấp có thể ra"], rows: [
-            ["Siêu thị: mỗi lần mua là một **hộp kín**", "Xanh lam (1 dòng) hoặc Xanh lục (2 dòng), khoảng 68% : 32%; May mắn giúp ra 2 dòng"],
+            ["Siêu thị: mỗi lần mua là một **hộp kín**", "Xanh lam (1 dòng) hoặc Xanh lục (2 dòng), khoảng 68% : 32%; May mắn giúp ra 2 dòng, món yêu cầu cấp càng cao (cứ 10 cấp) càng dễ ra 2 dòng"],
             [`Mini-game: mỗi ván ${GEAR.gearDropChance}% rớt một món`, "Mọi cấp, theo tỉ lệ ở bảng trên"],
             ["Mã quà", "Tùy mã"],
             ["Chợ Phiên: mua lại của người chơi khác", "Mọi cấp"],
@@ -554,8 +554,8 @@ export const ARTICLES: WikiArticle[] = [
         id: "bo-do",
         title: "Bộ đồ theo hành",
         blocks: [
-          { p: "Mỗi hành đều có món cho cả 4 khe Đầu, Mặt, Cổ, Lưng, nên hành nào cũng gom được bộ đủ 4 khe (+5% lương, xem [Ngũ hành](ngu-hanh))." },
-          { table: { head: ["Hành", "Đầu", "Mặt", "Cổ", "Lưng"], rows: setRows() } },
+          { p: "Mỗi hành đều có món cho cả 5 khe, nên hành nào cũng gom được bộ 3, 4 hay 5 món (+3%, +5%, +8% lương, xem [Ngũ hành](ngu-hanh))." },
+          { table: { head: ["Hành", "Đầu", "Mặt", "Cổ", "Lưng", "Bùa"], rows: setRows() } },
         ],
       },
     ],
@@ -648,7 +648,7 @@ export const ARTICLES: WikiArticle[] = [
           { list: [
             "Tuổi: Sơ sinh 50%, Nhí nhố 60%, Thiếu niên 85%; Trưởng thành trở đi có thêm thâm niên tới +30%.",
             "Tính cách: Chăm chỉ +10%, Ngủ nướng −5%.",
-            "Hành vượng hôm nay +10%; đủ bộ trang phục cùng hành +5%; bé Hỏa làm Bốc vác +5%.",
+            "Hành vượng hôm nay +10%; bộ trang phục cùng hành 3/4/5 món +3/5/8%; bé Hỏa làm Bốc vác +5%.",
             "Dòng **Thu nhập ca làm** trên trang phục; Văn phòng Hội +3% mỗi cấp.",
           ] },
           { p: "Lương là thu nhập chịu thuế, xem [Thuế và Tòa thị chính](thue-toa-thi-chinh)." },

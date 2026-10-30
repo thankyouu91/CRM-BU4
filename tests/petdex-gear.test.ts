@@ -79,8 +79,15 @@ describe("Pet Town tiered gear rules", () => {
     expect(shared.rollTier({ blue: 100, green: 0, gold: 0, red: 0 }, () => 0.999, 500)).toBe("blue");
   });
 
-  it("caps the summed bonus and validates admin input", () => {
-    expect(shared.sumBonus([{ income: 80 }, { income: 70, luck: 5 }])).toEqual({ income: 100, stats: 0, trade: 0, luck: 5 });
+  it("stacks with diminishing returns above the soft cap, up to the total cap, and validates admin input", () => {
+    // 25 counts in full, the 35 above it counts half: 25 + 17.5
+    expect(shared.sumBonus([{ income: 20, luck: 5 }, { income: 20 }, { income: 20 }])).toEqual({ income: 42.5, stats: 0, trade: 0, luck: 5 });
+    expect(shared.sumBonus([{ income: 80 }, { income: 70 }])).toMatchObject({ income: shared.STACKING.totalCap });
+    expect(shared.effectiveBonus(25)).toBe(25);
+    // a fifth red piece still helps, but less than the third
+    expect(shared.effectiveBonus(75) - shared.effectiveBonus(60)).toBeLessThan(shared.effectiveBonus(45) - shared.effectiveBonus(30) + 1e-9);
+    expect(shared.gradeLuck(1)).toBe(0);
+    expect(shared.gradeLuck(40)).toBe(40);
     expect(() => shared.normalizeGearConfig({ odds: { blue: 0, green: 0, gold: 0, red: 0 } })).toThrow(/ít nhất một cấp/);
     expect(() => shared.normalizeGearConfig({ ranges: { red: { income: [30, 10] } } })).toThrow(/Biên độ/);
     expect(() => shared.cleanAffixes({ speed: 5 })).toThrow(/Không có loại/);
@@ -90,7 +97,7 @@ describe("Pet Town tiered gear rules", () => {
 describe("Pet Town gear in play", () => {
   it("the shop sells a sealed box each time; opened, it shows 1–2 lines, is worn by id and its lines add up on the pet", async () => {
     const p = await player("Mua_Do");
-    store.db.prepare("UPDATE pets SET level = 10 WHERE id = ?").run(p.petId); // the crown needs a level 8 pet
+    store.db.prepare("UPDATE pets SET level = 20 WHERE id = ?").run(p.petId); // the crown needs a level 20 pet
     const first = await game("POST", "/shop/buy", p.token, { itemId: "crown" });
     expect(first.status).toBe(200);
     expect((first.data.result as Json).message).toMatch(/hộp .*Mở hộp/);
@@ -148,31 +155,32 @@ describe("Pet Town gear in play", () => {
     };
     expect(await pay(geared)).toBeGreaterThan(0);
     await pay(plain);
-    // the pay multiplier: +50% on top of everything else, the same pet otherwise
+    // the pay multiplier: a raw +50% income counts 25 + 25 / 2 = 37.5% after diminishing returns
     const { elementPay } = await import("@/petdex/server/elements.js");
     const pet = store.getPet(geared.petId);
-    expect(elementPay(pet, 0) - elementPay({ ...pet, bonus: { income: 0, stats: 0, trade: 0, luck: 0 } }, 0)).toBeCloseTo(0.5);
+    expect(elementPay(pet, 0) - elementPay({ ...pet, bonus: { income: 0, stats: 0, trade: 0, luck: 0 } }, 0)).toBeCloseTo(shared.effectiveBonus(50) / 100);
+    expect(shared.effectiveBonus(50)).toBe(37.5);
 
     // stats: positive care effects are 50% stronger, costs unchanged
     const { boostEffect } = await import("@/petdex/server/game.js");
     expect(boostEffect({ bonus: { stats: 50 } }, { fullness: 20, energy: -10 })).toEqual({ fullness: 30, energy: -10 });
 
-    // luck: with 100% luck, a 50% material chance becomes certain
+    // luck: a raw 100% luck counts 60% (the total cap), so a 50% material chance becomes 80%
     await internal("POST", "/admin/gear-config", { config: { materialChance: 50, gearDropChance: 50 }, actor: "Admin" });
     const lucky = store.getPet(geared.petId);
     const drops = minigames.rollDrops(geared.userId, lucky, Date.now(), () => 0.6);
     expect(drops.material).toBeTruthy();
-    expect(drops.gear).toBeTruthy(); // 0.6 * 100 < 50 * 2
+    expect(drops.gear).toBeTruthy(); // 0.6 * 100 < 50 * 1.6
     const unlucky = minigames.rollDrops(plain.userId, store.getPet(plain.petId), Date.now(), () => 0.6);
     expect(unlucky.material).toBeNull();
     expect(unlucky.gear).toBeNull();
     await internal("POST", "/admin/gear-config", { config: shared.DEFAULT_GEAR_CONFIG, actor: "Admin" });
 
-    // trade: a sale pays the active pet's % on top, as its own ledger line
-    expect(gearMod.tradeBonus(geared.userId as never, 1000 as never, "Bán thử" as never)).toBe(400);
+    // trade: a sale pays the active pet's % on top, as its own ledger line (raw 40% counts 32.5%)
+    expect(gearMod.tradeBonus(geared.userId as never, 1000 as never, "Bán thử" as never)).toBe(325);
     expect(gearMod.tradeBonus(plain.userId as never, 1000 as never, "Bán thử" as never)).toBe(0);
     const ledger = (await internal("GET", `/admin/players/${geared.userId}`)).data.ledger as Json;
-    expect(JSON.stringify(ledger)).toContain("+40% trang phục");
+    expect(JSON.stringify(ledger)).toContain("+32.5% trang phục");
   });
 
   it("a piece sold at the bazaar moves to the buyer with its tier and lines", async () => {

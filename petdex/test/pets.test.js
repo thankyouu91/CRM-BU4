@@ -105,7 +105,7 @@ test('chuyển phụ kiện cũ sang khe; bán món đang đeo ở Chợ Phiên 
 const { tick, useItem, ITEMS: ALL_ITEMS } = await import('../server/game.js');
 const elements = await import('../server/elements.js');
 const eggs = await import('../server/eggs.js');
-const { EGG, fortuneOf, fullSetOf, wearBonus, statsOfSpecies } = await import('../../public/ta-tua/game/js/shared/pets.js');
+const { EGG, ELEMENT_RULES, fortuneOf, fullSetOf, setOf, wearBonus, statsOfSpecies } = await import('../../public/ta-tua/game/js/shared/pets.js');
 const { HOUR } = await import('../server/game.js');
 
 const basePet = (species, extra = {}) => ({
@@ -127,7 +127,8 @@ test('hợp mệnh: kỹ năng lên theo sở trường của loài và bộ đ�
   assert.ok(elements.skillFactor(kim, 'craft') > elements.skillFactor(kim, 'charm'), 'Kim lên Khéo tay nhanh');
   const dressed = { ...kim, wear: { head: 'nonla', face: 'woodglasses', neck: 'bowtie', back: 'cape' } }; // bộ Thổ, Thổ sinh Kim
   assert.equal(fullSetOf(dressed.wear), 'tho');
-  assert.ok(Math.abs(wearBonus(dressed.wear, 'kim') - 0.4) < 1e-9, 'bốn món tương sinh: +40%');
+  assert.ok(Math.abs(wearBonus(dressed.wear, 'kim') - ELEMENT_RULES.wearCap) < 1e-9, 'bốn món tương sinh: +40% thô, chạm trần +30%');
+  assert.ok(Math.abs(wearBonus({ head: 'nonla', neck: 'bowtie' }, 'kim') - 0.2) < 1e-9, 'dưới trần thì cộng đủ');
   assert.ok(elements.skillFactor(dressed, 'craft') > elements.skillFactor(kim, 'craft'));
   const clash = { ...kim, wear: { head: 'bow', face: 'heartglasses', neck: 'scarf', back: 'dragonwings' } }; // Hỏa khắc Kim
   assert.ok(elements.skillFactor(clash, 'craft') < elements.skillFactor(kim, 'craft'), 'đồ kỵ mệnh làm chậm');
@@ -136,6 +137,13 @@ test('hợp mệnh: kỹ năng lên theo sở trường của loài và bộ đ�
   while (fortuneOf(new Date(day + 7 * HOUR).toISOString().slice(0, 10)) === 'kim') day += 24 * HOUR;
   assert.equal(elements.elementPay(kim, day), 1);
   assert.ok(Math.abs(elements.elementPay(dressed, day) - 1.05) < 1e-9);
+  // Bộ tính theo số món cùng hành: bé dưới cấp 30 (đeo 3 món) vẫn có bộ 3 món.
+  const three = { ...kim, wear: { head: 'nonla', face: 'woodglasses', neck: 'bowtie' } };
+  assert.deepEqual(setOf(three.wear), { element: 'tho', count: 3, pay: 0.03 });
+  assert.ok(Math.abs(elements.elementPay(three, day) - 1.03) < 1e-9);
+  const five = { ...kim, wear: { ...dressed.wear, charm: 'gourd' } };
+  assert.ok(Math.abs(elements.elementPay(five, day) - 1.08) < 1e-9);
+  assert.equal(setOf({ head: 'nonla', face: 'woodglasses', neck: 'pearls', back: 'wavecape' }), null, 'hai hành mỗi hành 2 món: không thành bộ');
 });
 
 test('vận khí ngày: mỗi hành vượng một ngày trong vòng 5 ngày, bé hành đó thêm XP', () => {

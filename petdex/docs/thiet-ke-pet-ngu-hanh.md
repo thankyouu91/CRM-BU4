@@ -75,7 +75,7 @@ Ngũ hành dùng ở những chỗ sau:
   - Mỗi món có một hành.
   - Hành của món nuôi dưỡng hành của bé (tương sinh): kỹ năng lên nhanh hơn 10%. Cùng hành: nhanh hơn 5%. Món khắc bé (kỵ mệnh): chậm hơn 5%.
   - Trang xưởng đã hiện nhãn "Hợp mệnh" và "Kỵ mệnh", và tổng hiệu quả của bộ đồ đang mặc.
-- **Bộ đồ ngũ hành:** đủ 4 khe cùng một hành thì thêm hiệu ứng lấp lánh màu hành và +5% lương. Mỗi hành cần có đủ đồ cho cả 4 khe; bản mẫu mới có 17 món, phải vẽ thêm cho đủ 20.
+- **Bộ đồ ngũ hành:** từ 3 món cùng một hành thì thêm hiệu ứng lấp lánh màu hành và thêm lương (3 món +3%, 4 món +5%, 5 món +8%; xem docs/pet-town-gear-balance.md). Mỗi hành cần có đủ đồ cho cả 4 khe; bản mẫu mới có 17 món, phải vẽ thêm cho đủ 20.
 - **Đồ ăn có hành:** cá là Thủy, rau và trà là Mộc, đồ nướng là Hỏa, củ là Thổ, sữa là Kim. Ăn món hợp mệnh được thêm 20% XP.
 - **Bạn chơi:** ở công viên, vuốt ve bé có hành được hành mình nuôi dưỡng thì bé kia vui gấp rưỡi. Quầy hoặc xưởng có hai bé trực mà hành tương sinh nhau thì thêm 5% khách hoặc số mẻ.
 - **Vận khí ngày:** mỗi ngày một hành vượng (xoay theo lịch). Bé hành đó được thêm 10% XP và lương trong ngày, báo ở Báo Trân Châu.
@@ -258,7 +258,7 @@ Mỗi loài có số liệu riêng: kỹ năng khởi đầu (nghiêng về sở
   - Hao no bụng, hồi năng lượng, hao vui vẻ, hao sạch sẽ, hồi sức khỏe, khả năng ốm đều theo hệ số của loài và hành.
 - **Hợp mệnh:**
   - Mỗi món đồ đang đeo cộng vào tốc độ lên kỹ năng: tương sinh +10%, cùng hành +5%, kỵ mệnh −5% (chậm nhất là một nửa tốc độ thường).
-  - Đủ 4 khe cùng một hành thì +5% lương ca làm, và có sao lấp lánh màu hành quanh bé.
+  - Từ 3 món cùng một hành thì thêm lương ca làm (3 món +3%, 4 món +5%, 5 món +8%), và có sao lấp lánh màu hành quanh bé.
   - Vẽ thêm 5 món cho đủ bộ: Kính lá và Cánh bướm (Mộc), Áo choàng sóng (Thủy), Kính tim (Hỏa), Kính gọng gỗ (Thổ). Tổng 22 món.
 - **Đồ ăn có hành:**
   - Trà sữa là Mộc; cá và sushi là Thủy; cơm nắm là Thổ; bánh kem là Hỏa; nước tăng lực và vitamin là Kim; tắm bong bóng là Thủy.

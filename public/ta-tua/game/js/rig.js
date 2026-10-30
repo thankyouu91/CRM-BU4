@@ -436,7 +436,7 @@ function drawFace(g, sk, sp, pal, pose, stage, tick) {
   }
 }
 
-/** Bộ đồ đủ 4 khe cùng hành: vài ngôi sao màu hành nhấp nháy quanh bé. */
+/** Bộ đồ cùng hành (từ 3 món): vài ngôi sao màu hành nhấp nháy quanh bé. */
 function drawSetSparkles(g, sk, el, tick) {
   const p = new Pen(g);
   const { head, body } = sk;
@@ -797,6 +797,51 @@ const WEAR_ART = {
   balloon: {
     rows: ['.bbb.', 'bbWbb', 'bWbbb', 'bbbbb', '.bbb.', '..b..', '..k..', '...k.', '..k..', '...k.'],
     pal: { b: '#4f8fd6', W: '#bfe3f7', k: '#6d6478' }, line: '#1f3f6b', pivot: [3, 9],
+  },
+  // ---- bộ cấp cao ----
+  goggles: {
+    rows: ['..###.....###..', 'ss#gg#####gg#ss', '..#Lg#...#Lg#..', '..###.....###..'],
+    pal: { '#': '#b87333', g: '#9fd8c0', L: '#ffffff', s: '#6b4a1f' }, line: '#3a2410', pivot: [7, 2],
+  },
+  khandong: {
+    rows: ['..bbbbbbb..', '.bBbBbBbBb.', 'bBbBbBbBbBb', 'bbbbbbbbbbb'],
+    pal: { b: '#2f5f9e', B: '#4f8fd6' }, line: '#1f3f6b', pivot: [5, 3], sink: 3,
+  },
+  aotoi: {
+    rows: [
+      '......cccccccccc......', '.....cccCccccCccc.....', '....ccCccccCccccCc....', '...cCccccCccccCcccc...',
+      '..CccccCccccCccccCcc..', '..cccCccccCccccCcccc..', '.ccCccccCccccCccccCcc.', '.CccccCccccCccccCcccc.',
+      'ccccCccccCccccCccccCcc', 'c.c.c.c.c.c.c.c.c.c.c.',
+    ],
+    pal: { c: '#8a9a3c', C: '#c8d47a' }, line: '#3a4a14', pivot: [11, 0],
+  },
+  sao: {
+    rows: ['.gGg.', '.gkg.', '.gGg.', '.gkg.', '.gGg.', '.gkg.', '.ggg.', '..r..', '.r.r.'],
+    pal: { g: '#5fae4a', G: '#a8e07a', k: '#2f5a24', r: '#e2493b' }, line: '#1d4a2a', pivot: [2, 0],
+  },
+  lotus: {
+    rows: ['.....p.....', '...p.P.p...', '..pPpPpPp..', '.pPpPyPpPp.', 'ggpppppppgg', '.ggg...ggg.'],
+    pal: { p: '#ff8fb1', P: '#ffd6e4', y: '#ffd75e', g: '#3f9a5a' }, line: '#7a2f45', pivot: [5, 5], sink: 3,
+  },
+  goldmask: {
+    rows: ['yyyyyyyyyyyyyyy', 'yy...yyyyy...yy', 'yyy.yyyRyyy.yyy', '.yyyYy...yYyyy.', '..y.........y..'],
+    pal: { y: '#e0a21c', Y: '#fff3b0', R: '#e2493b' }, line: '#5a3d16', pivot: [7, 1],
+  },
+  quat: {
+    rows: ['.rOrOr.', 'rOrOrOr', '.rOrOr.', '..rrr..', '...k...', '...k...'],
+    pal: { r: '#e2493b', O: '#ffb347', k: '#8a5a35' }, line: '#4a1a14', pivot: [3, 0],
+  },
+  trongdong: {
+    rows: ['.ooooo.', 'oOoYoOo', 'ooooooo', 'oKoKoKo', 'ooooooo', '.o...o.'],
+    pal: { o: '#b0803c', O: '#e6c88a', Y: '#ffd75e', K: '#6b4a1f' }, line: '#3a2410', pivot: [3, 0],
+  },
+  starcape: {
+    rows: [
+      '......cccccccccc......', '.....ccccsccccccc.....', '....ccccccccccwccc....', '...cccscccccccccccc...',
+      '..ccccccccccsccccccc..', '..ccwccccccccccccscc..', '.ccccccccwccccccccccc.', '.ccscccccccccccsccccc.',
+      'cccccccccccwcccccccscc', 'cCcCcCcCcCcCcCcCcCcCcC',
+    ],
+    pal: { c: '#1f2a5a', C: '#3d4f9e', s: '#ffe680', w: '#9fb4ff' }, line: '#0b1030', pivot: [11, 0],
   },
 };
 

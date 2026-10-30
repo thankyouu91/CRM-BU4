@@ -32,7 +32,7 @@ import { getSpecies, listSpecies } from './species.js';
 import { richList } from './wallet.js';
 import { createGear, equipGear, gearConfig, openGear, userBonus } from './gear.js';
 import { redeemGiftCode } from './gifts.js';
-import { TIERS as GEAR_TIERS } from '../../public/ta-tua/game/js/shared/gear.js';
+import { TIERS as GEAR_TIERS, gradeLuck } from '../../public/ta-tua/game/js/shared/gear.js';
 import { SLOTS } from '../../public/ta-tua/game/js/shared/pets.js';
 
 export const api = Router();
@@ -285,14 +285,14 @@ api.post('/shop/buy', auth, (req, res) => {
   const item = findItem(req.body?.itemId);
   const qty = Number(req.body?.qty ?? 1);
   if (!Number.isInteger(qty) || qty < 1 || qty > 20) throw new GameError('Số lượng không hợp lệ.');
-  // Trang phục: mỗi lần mua là một hộp kín, trong có 1–2 dòng chỉ số ngẫu nhiên (May mắn của bé chính giúp ra 2 dòng).
+  // Trang phục: mỗi lần mua là một hộp kín, trong có 1–2 dòng chỉ số ngẫu nhiên (May mắn của bé chính, và món yêu cầu cấp cao, giúp ra 2 dòng).
   if (item.type === 'accessory') {
     if (qty !== 1) throw new GameError('Trang phục mua từng món một.');
     const bestLevel = Math.max(0, ...store.listPets(req.user.id).map((p) => p.level));
     if (item.minLevel && bestLevel < item.minLevel) throw new GameError(`Cần một bé đạt cấp ${item.minLevel} để mua món này.`);
     const gear = store.transaction(() => {
       post({ userId: req.user.id, delta: -indexedPrice(item.price), kind: 'shop', memo: item.name });
-      return createGear(req.user.id, item.id, { source: 'shop', shop: true, luck: userBonus(req.user.id).luck });
+      return createGear(req.user.id, item.id, { source: 'shop', shop: true, luck: userBonus(req.user.id).luck + gradeLuck(item.minLevel) });
     });
     return reply(res, req.user.id, {
       gear: gear.id,

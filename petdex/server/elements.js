@@ -2,7 +2,7 @@
 import { getPet, setSkill, skillsOf } from './db.js';
 import { dayKey } from './clock.js';
 import { gainSkill } from './rules/careers.js';
-import { ELEMENT_RULES, elementOfSpecies, fortuneOf, fullSetOf, statsOfSpecies, wearBonus } from '../../public/ta-tua/game/js/shared/pets.js';
+import { ELEMENT_RULES, elementOfSpecies, fortuneOf, setOf, statsOfSpecies, wearBonus } from '../../public/ta-tua/game/js/shared/pets.js';
 
 /** Hành của bé đang vượng hôm nay không. */
 export const isFortunate = (pet, now = Date.now()) => elementOfSpecies(pet.species) === fortuneOf(dayKey(now));
@@ -25,11 +25,11 @@ export function growSkill(petId, skill, raw) {
 /** Hành vượng hôm nay thì thêm 10% XP. */
 export const xpFactor = (pet, now = Date.now()) => (isFortunate(pet, now) ? 1 + ELEMENT_RULES.fortune : 1);
 
-/** Hệ số lương ca làm: vận khí ngày, bộ đồ đủ 4 khe cùng hành, bé Hỏa làm nghề dùng Sức mạnh. */
+/** Hệ số lương ca làm: vận khí ngày, bộ đồ cùng hành (3/4/5 món), bé Hỏa làm nghề dùng Sức mạnh. */
 export function elementPay(pet, now = Date.now(), careerSkill = null) {
   let k = 1;
   if (isFortunate(pet, now)) k += ELEMENT_RULES.fortune;
-  if (fullSetOf(pet.wear)) k += ELEMENT_RULES.fullSet;
+  k += setOf(pet.wear)?.pay ?? 0;
   k += (pet.bonus?.income ?? 0) / 100; // trang phục: % "Thu nhập ca làm"
   if (careerSkill === 'strength' && elementOfSpecies(pet.species) === 'hoa') k += ELEMENT_RULES.perks.hoa.strengthPay;
   return k;

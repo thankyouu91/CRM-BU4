@@ -285,7 +285,9 @@ export function statsOfSpecies(id) {
 /** Các hệ số của ngũ hành khi vào luật chơi (thiết kế mục 3). */
 export const ELEMENT_RULES = {
   fortune: 0.1, // hành vượng trong ngày: +10% XP và lương
-  fullSet: 0.05, // đủ 4 khe cùng một hành: +5% lương
+  // bộ đồ cùng hành, tính theo số món (bé dưới cấp 30 chỉ đeo được 3 món nên bộ 3 món cũng có thưởng): % lương
+  sets: { 3: 0.03, 4: 0.05, 5: 0.08 },
+  wearCap: 0.3, // hợp mệnh của cả bộ đồ cộng tối đa +30% tốc độ lên kỹ năng (5 món tương sinh thô là +50%)
   food: 0.2, // ăn món hợp mệnh: +20% XP
   perks: {
     kim: { factory: 0.1, cookCraft: 15 }, // xưởng thêm 10% mẻ khi bé Kim đứng máy; nấu như có thêm 15 Khéo tay
@@ -304,20 +306,27 @@ export function fortuneOf(dayKey) {
   return FORTUNE_CYCLE[((n % 5) + 5) % 5];
 }
 
-/** Tổng hệ số hợp mệnh của bộ đồ đang mặc (tương sinh +10%, cùng hành +5%, kỵ mệnh −5% mỗi món). */
+/** Tổng hệ số hợp mệnh của bộ đồ đang mặc (tương sinh +10%, cùng hành +5%, kỵ mệnh −5% mỗi món), tối đa +30%. */
 export function wearBonus(wear, element) {
-  return Object.values(wear ?? {})
+  const sum = Object.values(wear ?? {})
     .filter((id) => WEARABLES[id])
     .reduce((s, id) => s + RELATIONS[relation(WEARABLES[id].element, element)].bonus, 0);
+  return Math.min(ELEMENT_RULES.wearCap, Math.round(sum * 1000) / 1000);
 }
 
-/** Hành của bộ đồ nếu đủ 4 khe cùng một hành, không thì null. */
-export function fullSetOf(wear) {
-  const ids = ['head', 'face', 'neck', 'back'].map((s) => wear?.[s]);
-  if (ids.some((id) => !id || !WEARABLES[id])) return null;
-  const el = WEARABLES[ids[0]].element;
-  return ids.every((id) => WEARABLES[id].element === el) ? el : null;
+/** Bộ đồ cùng hành: hành có nhiều món nhất trên người và số món đó, nếu từ 3 món trở lên; không thì null. */
+export function setOf(wear) {
+  const count = {};
+  for (const slot of SLOT_IDS) {
+    const el = WEARABLES[wear?.[slot]]?.element;
+    if (el) count[el] = (count[el] ?? 0) + 1;
+  }
+  const [element, n] = Object.entries(count).sort((a, b) => b[1] - a[1])[0] ?? [];
+  return n >= 3 ? { element, count: n, pay: ELEMENT_RULES.sets[Math.min(5, n)] } : null;
 }
+
+/** Hành của bộ đồ cùng hành (từ 3 món), không thì null. */
+export const fullSetOf = (wear) => setOf(wear)?.element ?? null;
 
 /** Thưởng XP khi ăn món có hành `food` (hợp mệnh: tương sinh hoặc cùng hành). */
 export const foodBonus = (food, element) => (['feeds', 'same'].includes(relation(food, element)) ? ELEMENT_RULES.food : 0);
@@ -430,4 +439,14 @@ export const WEARABLES = {
   seashell: { name: 'Vỏ sò', slot: 'charm', element: 'thuy' },
   gourd: { name: 'Hồ lô', slot: 'charm', element: 'tho' },
   balloon: { name: 'Bóng bay', slot: 'charm', element: 'thuy' },
+  // Bộ cấp cao (cấp 10–40).
+  goggles: { name: 'Kính thợ mỏ', slot: 'face', element: 'tho' },
+  khandong: { name: 'Khăn đóng', slot: 'head', element: 'thuy' },
+  aotoi: { name: 'Áo tơi lá', slot: 'back', element: 'moc' },
+  sao: { name: 'Sáo trúc', slot: 'charm', element: 'moc' },
+  lotus: { name: 'Hoa sen cài', slot: 'head', element: 'moc' },
+  goldmask: { name: 'Mặt nạ vàng', slot: 'face', element: 'kim' },
+  quat: { name: 'Quạt lông phượng', slot: 'charm', element: 'hoa' },
+  trongdong: { name: 'Trống đồng', slot: 'charm', element: 'tho' },
+  starcape: { name: 'Áo choàng tinh tú', slot: 'back', element: 'thuy' },
 };
