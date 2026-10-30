@@ -1,17 +1,29 @@
 import { playUrl } from "@/lib/petdex-public";
 import {
   GEAR, HIDDEN_DISHES, MASCOT, RANKS, SLOT_ORDER, SPECIES_COUNT, WEARABLE_COUNT,
-  careerRows, classRows, commodityRows, creditTierRows, cropRows, dishRows, elementRows, factoryRows, fishRows, foodRows, formRows, guildProjectRows,
-  locationRows, promotionRows, proposalRows, questRows, rarityRows, recipeRows, relationRows, setRows, slotName, speciesRows, stageRows, tierRows, toyRows, wearRows,
+  careerRows, classRows, commodityRows, cropRows, dishRows, elementRows, factoryRows, fishRows, foodRows, formRows, guildProjectRows,
+  locationRows, promotionRows, questRows, rarityRows, recipeRows, relationRows, setRows, slotName, speciesRows, stageRows, tierRows, toyRows, wearRows,
 } from "./game-data";
 import type { WikiArticle } from "./types";
+import { article as A_tai_chinh } from "./articles/tai-chinh";
+import { article as A_ngan_hang } from "./articles/ngan-hang";
+import { article as A_tin_dung } from "./articles/tin-dung";
+import { article as A_vay_ngang_hang } from "./articles/vay-ngang-hang";
+import { article as A_hui } from "./articles/hui";
+import { article as A_thue_toa_thi_chinh } from "./articles/thue-toa-thi-chinh";
+import { article as A_gia_toc } from "./articles/gia-toc";
+import { article as A_kinh_te_vi_mo } from "./articles/kinh-te-vi-mo";
+import { article as A_so_cong_thuong } from "./articles/so-cong-thuong";
+import { article as A_vat_pham_thiet_yeu } from "./articles/vat-pham-thiet-yeu";
+import { article as A_lo_ren } from "./articles/lo-ren";
+import { article as A_dau_truong } from "./articles/dau-truong";
 import { CLAN, UNLOCKS } from "./rules";
-import { BAZAAR, LOANS, SCHOOL } from "@/petdex/server/rules/production.js";
+import { BAZAAR, SCHOOL } from "@/petdex/server/rules/production.js";
 import { MARKET } from "@/petdex/server/rules/market.js";
 import { EGG, LIFE_STAGES } from "@/public/ta-tua/game/js/shared/pets.js";
 import {
-  COMMODITY_COUNT, DESIGN_RULES, GOODS_COUNT, INDUSTRIAL_MARKET, INDUSTRY_COUNT, LAND_RULES, LEGEND_ID, MASCOT_ID, SERVICE_COUNT,
-  clanLevelRows, climateNames, elementPets, formPets, freshnessRows, industryRows, legendaryPets, phaseRows, sectorRows, stagePets, unlockRows, weatherRows, zoneRows,
+  COMMODITY_COUNT, DESIGN_RULES, GOODS_COUNT, INDUSTRIAL_MARKET, LAND_RULES, LEGEND_ID, MASCOT_ID, SERVICE_COUNT,
+  climateNames, elementPets, formPets, freshnessRows, industryRows, legendaryPets, stagePets, unlockRows, zoneRows,
 } from "./game-data";
 
 // The wiki's articles, in reading order (the order of the side menu and of "previous / next").
@@ -628,6 +640,7 @@ export const ARTICLES: WikiArticle[] = [
       },
     ],
   },
+  A_lo_ren,
   {
     slug: "sieu-thi",
     title: "Siêu thị",
@@ -948,75 +961,11 @@ export const ARTICLES: WikiArticle[] = [
       },
     ],
   },
-  {
-    slug: "ngan-hang",
-    title: "Ngân hàng",
-    category: "kinh-te",
-    emoji: "🏦",
-    summary: "Tiết kiệm có lãi theo giờ, gửi kỳ hạn 3, 7, 14 ngày và cách Ngân hàng Trung ương điều chỉnh giá và lãi.",
-    keywords: ["tiết kiệm", "lãi", "gửi tiền", "kỳ hạn", "ngân hàng trung ương", "lạm phát", "chỉ số giá"],
-    related: ["tin-dung", "thue-toa-thi-chinh"],
-    sections: [
-      {
-        id: "tiet-kiem",
-        title: "Tiết kiệm",
-        blocks: [
-          { p: `**🏦 Ngân hàng Trân Châu** mở ở **cấp ${UNLOCKS.bank}**.` },
-          { list: [
-            "**Không kỳ hạn**: lãi tính theo giờ, cộng vào lúc nửa đêm. Chỉ **10.000 xu đầu** được tính lãi.",
-            "Lãi suất cơ bản ban đầu **0,3%/ngày**; Ngân hàng Trung ương chỉnh trong khoảng 0,05–0,5%/ngày.",
-            "**Có kỳ hạn** 3, 7 hoặc 14 ngày: lãi cơ bản cộng thêm 0,1, 0,2 hoặc 0,3 điểm %/ngày, chốt lúc gửi. Tối thiểu 100 xu. Đến hạn tự tất toán lúc nửa đêm.",
-          ] },
-          { warn: "Rút kỳ hạn trước hạn thì chỉ nhận lại gốc, mất toàn bộ lãi." },
-        ],
-      },
-      {
-        id: "nhtw",
-        title: "Ngân hàng Trung ương",
-        blocks: [
-          { p: "Họp mỗi **nửa đêm cuối Chủ nhật**. Ngân hàng đo lượng xu bình quân của người chơi: nếu xu tăng nhanh hơn **10%/tuần**, chỉ số giá (giá Siêu thị, phí dịch vụ) tăng, có thể tới +4,5% một tuần, và lãi tiết kiệm giảm. Nếu xu co lại thì ngược lại." },
-          { tip: "Thấy tin lãi giảm? Gửi kỳ hạn trước buổi họp để chốt lãi cũ." },
-        ],
-      },
-    ],
-  },
-  {
-    slug: "tin-dung",
-    title: "Tín dụng và vay",
-    category: "kinh-te",
-    emoji: "💳",
-    summary: `Điểm tín dụng 300–850, bốn hạng, vay trả góp từ cấp ${UNLOCKS.advanced}, hạn mức, phí và hậu quả khi trễ hạn.`,
-    keywords: ["vay", "nợ", "tín dụng", "điểm tín dụng", "trả góp", "nợ xấu", "tài chính nâng cao"],
-    related: ["ngan-hang", "khu-cong-nghiep"],
-    sections: [
-      {
-        id: "diem",
-        title: "Điểm tín dụng",
-        blocks: [
-          { p: "Ai cũng có điểm tín dụng, bắt đầu **500**, trong khoảng **300–850**." },
-          { table: { head: ["Việc", "Điểm"], rows: [
-            ["Trả góp đúng hạn", "+5"], ["Tất toán khoản vay", "+30"], ["Mỗi đêm giao đủ hợp đồng cung ứng", "+3"],
-            ["Trễ một kỳ", "−20"], ["Phá hợp đồng", "−30"], ["Quầy hoặc xưởng bị đóng vì nợ thuê", "−40"], ["Vỡ nợ", "−100"],
-          ] } },
-          { table: { head: ["Hạng", "Điểm", "Hạn mức tối đa", "Phụ phí lãi"], rows: creditTierRows() } },
-        ],
-      },
-      {
-        id: "vay",
-        title: "Vay trả góp",
-        blocks: [
-          { list: [
-            `Cần bé đạt **cấp ${UNLOCKS.advanced}** để bật **Tài chính nâng cao**, tài khoản từ ${LOANS.minAccountDays} ngày tuổi, không có khoản đang trễ.`,
-            "Tối đa **2 khoản** cùng lúc, mỗi khoản từ 50 xu, kỳ hạn **3, 7 hoặc 14 ngày**.",
-            "Hạn mức = nhỏ hơn giữa hạn mức của hạng và (3 × thu nhập trung bình 7 ngày + 50% tiết kiệm), trừ dư nợ.",
-            "Lãi = lãi cơ bản + phụ phí hạng (+ phụ phí lạm phát khi xu tăng nhanh). Phí giải ngân 2%.",
-            "Mỗi kỳ tự trừ lúc nửa đêm, dùng cả tiền tiết kiệm.",
-          ] },
-          { warn: "Trễ kỳ thì mất phí 1% mỗi kỳ. Trễ **7 kỳ** là vỡ nợ: cấm vay 14 ngày và ngân hàng giữ 30% thu nhập mỗi ngày tới khi hết nợ." },
-        ],
-      },
-    ],
-  },
+  A_tai_chinh,
+  A_ngan_hang,
+  A_tin_dung,
+  A_vay_ngang_hang,
+  A_hui,
   {
     slug: "quay-tra-sua",
     title: "Quầy trà sữa",
@@ -1155,105 +1104,10 @@ export const ARTICLES: WikiArticle[] = [
       },
     ],
   },
-  {
-    slug: "thue-toa-thi-chinh",
-    title: "Thuế và Tòa thị chính",
-    category: "kinh-te",
-    emoji: "🏛️",
-    summary: "Thuế thu nhập lũy tiến theo ngày, ngân sách thị trấn và bỏ phiếu chọn đề xuất chi tiêu mỗi tuần.",
-    keywords: ["thuế", "ngân sách", "bỏ phiếu", "đề xuất", "tòa thị chính", "lễ hội"],
-    related: ["ngan-hang", "quay-tra-sua", "moi-ngay"],
-    sections: [
-      {
-        id: "thue",
-        title: "Thuế thu nhập",
-        blocks: [
-          { p: "Thuế tính theo thu nhập chịu thuế **trong ngày**, thu lúc nửa đêm, lũy tiến từng bậc:" },
-          { table: { head: ["Phần thu nhập trong ngày", "Thuế suất"], rows: [["0–300 xu", "0%"], ["300–1.000 xu", "5%"], ["1.000–3.000 xu", "10%"], ["Trên 3.000 xu", "15%"]] } },
-          { list: [
-            "Thu nhập chịu thuế: lương, lãi ngân hàng, phí gia công nhận được, lợi nhuận quầy, lãi khi bán hàng trên Sàn (so với giá vốn).",
-            "Thiếu tiền nộp thì ghi nợ thuế. Quầy trà sữa còn chịu thêm 3% thuế doanh thu.",
-            "Một nửa mọi khoản thuế và phí đi vào **ngân sách thị trấn**, dùng cho trợ cấp tân thủ, dự án Hội và các đề xuất.",
-          ] },
-          { tip: "Người chơi kiếm dưới 300 xu một ngày không phải nộp thuế." },
-        ],
-      },
-      {
-        id: "bo-phieu",
-        title: "Bỏ phiếu",
-        blocks: [
-          { p: `Từ **cấp ${UNLOCKS.townhall}**. Mỗi tuần (thứ Hai tới hết Chủ nhật) Tòa thị chính đưa ra **3 trong 6** đề xuất. Mỗi người một phiếu, đổi được. Đề xuất nhiều phiếu nhất thắng (hòa thì chọn cái rẻ hơn) và chỉ được làm khi ngân sách đủ tiền.` },
-          { table: { head: ["Đề xuất", "Chi phí", "Tác dụng"], rows: proposalRows() } },
-        ],
-      },
-    ],
-  },
+  A_thue_toa_thi_chinh,
 
   // ------------------------------------------------------------------ Cộng đồng
-  {
-    slug: "gia-toc",
-    title: "Gia tộc",
-    category: "kinh-te",
-    emoji: "🏯",
-    summary: `Lập hoặc vào gia tộc từ cấp ${CLAN.unlockLevel}: góp quỹ, lên cấp gia tộc, thâu tóm tới 3 ngành, chia cổ tức và nộp thuế doanh nghiệp.`,
-    keywords: ["clan", "gia tộc", "tộc trưởng", "trưởng lão", "quỹ", "cổ tức", "ngành", "thâu tóm", "thuế doanh nghiệp"],
-    related: ["so-nha-dat", "kinh-te-vi-mo", "hoi", "thue-toa-thi-chinh"],
-    sections: [
-      {
-        id: "lap",
-        title: "Lập và gia nhập",
-        blocks: [
-          { list: [
-            `Mở khi có một bé đạt **cấp ${CLAN.unlockLevel}**. Vào màn **🏯 Gia tộc & Sở Nhà Đất** trên bản đồ phố.`,
-            `**Lập gia tộc** tốn **${CLAN.createCost.toLocaleString("vi-VN")} xu**: đặt tên, chọn huy hiệu và màu. Một nửa số tiền vào ngân sách thị trấn.`,
-            "Mỗi người chỉ ở **một gia tộc**. Gia nhập tự do tới khi gia tộc đủ người.",
-            "Vai trò: 👑 **Tộc trưởng** làm mọi việc; 🎖️ **Trưởng lão** mua đất, chọn ngành cho lô, lắp công trình; thành viên góp quỹ.",
-            "Tộc trưởng rời thì trưởng lão (rồi người góp nhiều nhất) lên thay. Người cuối cùng rời thì gia tộc giải tán và đất trả về Sở Nhà Đất.",
-          ] },
-        ],
-      },
-      {
-        id: "quy",
-        title: "Quỹ và cấp gia tộc",
-        blocks: [
-          { list: [
-            "Thành viên **góp quỹ** từ 10 xu; cứ 10 xu góp được 1 XP cho gia tộc.",
-            `Mỗi tuần mỗi thành viên nên góp **${CLAN.donationQuotaPerLevel} × cấp gia tộc** xu. Phần góp thiếu làm gia tộc mất XP vào đêm Chủ nhật.`,
-            `Mỗi đêm gia tộc trả **phí duy trì** ${CLAN.upkeepPerLevel} × cấp + ${CLAN.upkeepPerPlot} × số lô đất. Quỹ không đủ thì không trừ tiền mà mất XP.`,
-            "Doanh thu sau thuế mỗi đêm cũng cộng XP (1 XP cho mỗi 100 xu).",
-            "Tộc trưởng **chia cổ tức** từ quỹ, chia đều cho mọi thành viên.",
-          ] },
-          { table: { head: ["Cấp", "XP cần", "Thành viên tối đa", "Lô đất tối đa", "Số ngành", "Sản lượng thêm"], rows: clanLevelRows() } },
-        ],
-      },
-      {
-        id: "nganh",
-        title: "Thâu tóm ngành",
-        blocks: [
-          { p: `Gia tộc chỉ làm ăn trên đất bằng những **ngành** đã thâu tóm. Có ${INDUSTRY_COUNT} ngành chia theo khối (các ngành na ná nhau đã được gộp, nhà máy gộp có nhiều dây chuyền để chọn):` },
-          { table: { head: ["Khối", "Các ngành"], rows: sectorRows() } },
-          { list: [
-            `Ngành thứ 1, 2, 3 cần gia tộc đạt cấp ${CLAN.industryLevels.join(", ")}.`,
-            `Thâu tóm phải trả **bồi thường thị trường** của ngành (xem bảng ở [Sở Nhà Đất và sản xuất](so-nha-dat)); từ ngành thứ hai trả gấp **${CLAN.expandMultiplier} lần**.`,
-            "Nhiều gia tộc cùng một ngành thì ai cũng thu ít hơn vì phải chia khách.",
-          ] },
-        ],
-      },
-      {
-        id: "thue",
-        title: "Thuế doanh nghiệp",
-        blocks: [
-          { table: { head: ["Số ngành", "Thuế suất trên doanh thu"], rows: [1, 2, 3].map((n) => [n, `${Math.round((CLAN.baseTax + CLAN.extraTaxPerIndustry * (n - 1)) * 100)}%`]) } },
-          { list: [
-            "Thuế tính trên doanh thu mỗi đêm, trừ thẳng vào quỹ; một nửa vào ngân sách thị trấn.",
-            `Cuối mỗi tháng gia tộc được **hoàn ${CLAN.refundRate * 100}%** số thuế đã nộp trong tháng (nếu ngân sách còn tiền).`,
-            "Gia tộc tự khai phần doanh thu chịu thuế, mặc định 100%.",
-          ] },
-          { warn: "Khai thiếu doanh thu là trốn thuế. Sở thuế ghi lại phần khai thiếu và có thể truy thu kèm phạt. Phần hoàn thuế cuối tháng cũng tính trên số thuế thật sự đã nộp." },
-        ],
-      },
-    ],
-  },
+  A_gia_toc,
   {
     slug: "so-nha-dat",
     title: "Sở Nhà Đất và sản xuất",
@@ -1325,41 +1179,9 @@ export const ARTICLES: WikiArticle[] = [
       },
     ],
   },
-  {
-    slug: "kinh-te-vi-mo",
-    title: "Kinh tế vĩ mô",
-    category: "kinh-te",
-    emoji: "🌦️",
-    summary: "Pha kinh tế và thời tiết đổi mỗi ngày, làm doanh thu gia tộc, giá đất và giá một số hàng trên Sàn lên xuống.",
-    keywords: ["vĩ mô", "pha", "suy thoái", "tăng trưởng", "thời tiết", "bão", "giá đất", "chu kỳ"],
-    related: ["gia-toc", "so-nha-dat", "san-nguyen-lieu", "ngan-hang"],
-    sections: [
-      {
-        id: "pha",
-        title: "Pha kinh tế",
-        blocks: [
-          { p: "Nền kinh tế của phố đi theo chu kỳ: Phục hồi → Tăng trưởng nóng → Đỉnh chu kỳ → Suy thoái → Phục hồi. Mỗi đêm có một xác suất nhỏ chuyển sang pha kế tiếp." },
-          { table: { head: ["Pha", "Doanh thu gia tộc", "Giá đất mỗi ngày", "Khách"], rows: phaseRows() } },
-        ],
-      },
-      {
-        id: "thoi-tiet",
-        title: "Thời tiết",
-        blocks: [
-          { p: "Mỗi ngày có một kiểu thời tiết. Thời tiết làm sản lượng các lô tăng hoặc giảm theo địa hình và khí hậu, và đẩy giá một số nguyên liệu trên [Sàn](san-nguyen-lieu)." },
-          { table: { head: ["Thời tiết", "Sản lượng lô", "Giá trên Sàn"], rows: weatherRows() } },
-          { tip: "Ngày Bão biển, các lô trên biển và ven biển thu ít hẳn đi, còn giá cá tươi trên Sàn tăng: đó là lúc người có cá trong kho nên bán." },
-        ],
-      },
-      {
-        id: "nhu-cau",
-        title: "Nhu cầu từng ngành",
-        blocks: [
-          { p: "Mỗi ngành có một mức **nhu cầu** trôi dần theo ngày. Nhu cầu cao thì doanh thu của ngành dịch vụ và giá thu mua hàng của ngành sản xuất đều cao hơn. Màn Gia tộc hiện pha, thời tiết và nhu cầu hôm nay." },
-        ],
-      },
-    ],
-  },
+  A_kinh_te_vi_mo,
+  A_so_cong_thuong,
+  A_vat_pham_thiet_yeu,
   {
     slug: "ban-be",
     title: "Bạn bè",
@@ -1425,6 +1247,7 @@ export const ARTICLES: WikiArticle[] = [
       },
     ],
   },
+  A_dau_truong,
   {
     slug: "cong-vien",
     title: "Công viên",
