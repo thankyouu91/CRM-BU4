@@ -50,11 +50,11 @@ export interface GuestSession {
   hasPassword?: boolean;
 }
 
-/** The Petfarm website (www.petfarm.online): one landing page about the game, served by this app at SITE_PATH. */
-export const SITE_ORIGIN = (process.env.NEXT_PUBLIC_PETFARM_SITE_ORIGIN || "https://www.petfarm.online").replace(/\/+$/, "");
+/** The Petfarm website (petfarm.online): one landing page about the game, served by this app at SITE_PATH. */
+export const SITE_ORIGIN = (process.env.NEXT_PUBLIC_PETFARM_SITE_ORIGIN || "https://petfarm.online").replace(/\/+$/, "");
 export const SITE_HOST = new URL(SITE_ORIGIN).host;
-/** The bare domain (petfarm.online) moves to SITE_HOST. */
-export const SITE_APEX = SITE_HOST.replace(/^www\./, "");
+/** The other spelling of the website's name (www.petfarm.online), which moves to SITE_HOST. */
+export const SITE_ALIAS = SITE_HOST.startsWith("www.") ? SITE_HOST.slice(4) : `www.${SITE_HOST}`;
 export const SITE_PATH = "/petfarm";
 
 /**

@@ -1,6 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { SESSION_COOKIE, verifyToken } from "@/lib/jwt";
-import { INVITE_PATH, PASSWORD_PATH, PLAY_HOST, PLAY_PATH, SITE_APEX, SITE_HOST, SITE_ORIGIN, SITE_PATH, playHostRedirect, siteHostRoute } from "@/lib/petdex-public";
+import { INVITE_PATH, PASSWORD_PATH, PLAY_HOST, PLAY_PATH, SITE_ALIAS, SITE_HOST, SITE_ORIGIN, SITE_PATH, playHostRedirect, siteHostRoute } from "@/lib/petdex-public";
 
 // Edge middleware. Next.js 16 deprecates this file name for proxy.ts, but a proxy always runs
 // on the Node.js runtime, which OpenNext does not support on Cloudflare Workers (only as an
@@ -21,9 +21,9 @@ export async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
   const isApi = pathname.startsWith("/api/");
 
-  // The Petfarm website (www.petfarm.online): the landing page only. The bare domain moves to www.
+  // The Petfarm website (petfarm.online): the landing page only. www.petfarm.online moves to it.
   const host = req.headers.get("host");
-  if (host === SITE_APEX && SITE_APEX !== SITE_HOST) return NextResponse.redirect(new URL(`${pathname}${req.nextUrl.search}`, SITE_ORIGIN), 308);
+  if (host === SITE_ALIAS) return NextResponse.redirect(new URL(`${pathname}${req.nextUrl.search}`, SITE_ORIGIN), 308);
   if (host === SITE_HOST) {
     const route = siteHostRoute(pathname);
     if ("rewrite" in route) return NextResponse.rewrite(new URL(route.rewrite, req.url));
