@@ -1,12 +1,13 @@
 // API Gia tộc, Sở Nhà Đất (bản đồ 200 lô, xem trước, mua bán, lắp ghép công trình) và bản tin vĩ mô.
 import { Router } from './router.js';
 import {
-  buyPlot, choosePlant, clanConfig, clanView, createClan, donateClan, enterIndustry, joinClan, kickMember, landView, leaveClan, payDividend,
+  buyPlot, choosePlant, clanConfig, collectAsTaxOffice, taxOfficeCases, clanView, createClan, donateClan, enterIndustry, joinClan, kickMember, landView, leaveClan, payDividend,
   plotPreview, saveDesign, sellPlot, setDeclareRatio, setMemberRole, setPlotIndustry,
 } from './clans.js';
 import { dayKey } from './clock.js';
 import { auth, intField, reply } from './http.js';
 import { macroHistory, macroToday } from './macro.js';
+import { assignOperator, removeOperator, strategicView, upgradeInfra } from './strategic.js';
 import { buyListing, cancelListing, importGoods, industryView, listGoods, sellToNpc, setKeep } from './industry.js';
 import { requireLevel } from './routes-economy.js';
 
@@ -59,3 +60,11 @@ clanApi.post('/industry/listings/:id/cancel', (req, res) => reply(res, uid(req),
 clanApi.post('/industry/listings/:id/buy', (req, res) => reply(res, uid(req), buyListing(uid(req), intField(req.params.id, 'Tin'), req.body?.qty)));
 clanApi.post('/industry/import', (req, res) => reply(res, uid(req), importGoods(uid(req), String(req.body?.good ?? ''), req.body?.qty, macroToday())));
 clanApi.post('/industry/sell', (req, res) => reply(res, uid(req), sellToNpc(uid(req), String(req.body?.good ?? ''), req.body?.qty, macroToday())));
+
+// ---- Hạ tầng chiến lược & ngành nhà nước ----
+
+clanApi.get('/clans/strategic', (req, res) => res.json({ ...strategicView(uid(req)), taxOffice: taxOfficeCases(uid(req)) }));
+clanApi.post('/clans/strategic/upgrade', (req, res) => reply(res, uid(req), upgradeInfra(uid(req))));
+clanApi.post('/clans/strategic/operator', (req, res) => reply(res, uid(req), assignOperator(uid(req), intField(req.body?.plotId, 'Lô đất'), intField(req.body?.petId, 'Bé'))));
+clanApi.post('/clans/strategic/operator/remove', (req, res) => reply(res, uid(req), removeOperator(uid(req), intField(req.body?.plotId, 'Lô đất'))));
+clanApi.post('/clans/tax-office/:id/collect', (req, res) => reply(res, uid(req), collectAsTaxOffice(uid(req), intField(req.params.id, 'Hồ sơ'))));

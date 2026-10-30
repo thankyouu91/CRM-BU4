@@ -3,7 +3,7 @@
 // Máy chủ dùng để kiểm tra và tính tiền; trình duyệt dùng để vẽ bản đồ, xem trước và lắp ghép.
 
 // ---------------------------------------------------------------- ngành nghề
-import { PRODUCTION_INDUSTRIES } from './industry.js';
+import { PRODUCTION_INDUSTRIES, STRATEGIC_INDUSTRIES } from './industry.js';
 
 /**
  * Mỗi ngành ứng với một mảng đang có trong game. `comp`: tiền bồi thường thị trường khi gia tộc
@@ -70,8 +70,9 @@ export const INDUSTRIES = {
 // 11 ngành trên là khối dịch vụ & tiêu dùng (doanh thu bằng xu); các ngành sản xuất (khai thác, năng lượng,
 // công nghiệp nhẹ và nặng) ở shared/industry.js làm ra hàng hóa vào kho gia tộc.
 for (const ind of Object.values(INDUSTRIES)) ind.sector = 'service';
-Object.assign(INDUSTRIES, PRODUCTION_INDUSTRIES);
+Object.assign(INDUSTRIES, PRODUCTION_INDUSTRIES, STRATEGIC_INDUSTRIES);
 export const INDUSTRY_ORDER = Object.keys(INDUSTRIES);
+export const isStrategic = (industry) => INDUSTRIES[industry]?.sector === 'strategic';
 export const isProduction = (industry) => INDUSTRIES[industry]?.sector !== undefined && INDUSTRIES[industry].sector !== 'service';
 
 // ---------------------------------------------------------------- địa hình & khí hậu

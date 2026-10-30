@@ -123,10 +123,13 @@ export function productionPreview(plot, { industry, variant, design = [], level 
  * điện thừa và hàng không giữ (hoặc tràn kho). Ghi tiền bán vào quỹ, trả về doanh thu để tính thuế.
  * Lô chỉ chạy khi công trình đã hoàn chỉnh.
  */
-export function runProduction(clan, plots, { day, macro, at, rand = Math.random }) {
+export function runProduction(clan, plots, { day, macro, at, rand = Math.random, buffs = {} }) {
+  const irr = buffs.irrigation ?? 0;
+  const wind = buffs.wind ?? 0;
+  const extra = { irrigation: 0, wind: 0 };
   const level = clanLevelOf(clan.xp);
   const rows = plots.filter((r) => PRODUCTION_INDUSTRIES[r.industry] && designComplete(JSON.parse(r.design)));
-  if (!rows.length && !q.goods.all(clan.id).length) return 0;
+  if (!rows.length && !q.goods.all(clan.id).length) return { revenue: 0, extra };
   const log = new Map();
   const note = (good, field, n) => {
     if (!n) return;
@@ -151,16 +154,26 @@ export function runProduction(clan, plots, { day, macro, at, rand = Math.random 
       const factor = plotFactor(plot, row, { level, macro });
       const ind = PRODUCTION_INDUSTRIES[industry];
       if (ind.extracts) {
-        for (const [g, n] of Object.entries(extractable(industry, DEPOSITS.get(plot.id)))) give(g, stochastic(n * factor, rand));
+        // Trị thủy chỉ tăng trồng trọt, chăn nuôi, lâm nghiệp.
+        const boost = ['agriculture', 'livestock', 'forestry'].includes(industry) ? irr : 0;
+        for (const [g, n] of Object.entries(extractable(industry, DEPOSITS.get(plot.id)))) {
+          const made = stochastic(n * factor * (1 + boost), rand);
+          give(g, made);
+          extra.irrigation += (made * boost / (1 + boost)) * npcBuyPrice(g, macro);
+        }
         continue;
       }
       const recipe = recipeOf(industry, row.variant);
       if (!recipe) continue;
-      const cap = stochastic((ind.batches ?? 4) * factor, rand);
+      // Năng lượng gió tăng số mẻ của nhà máy và nhà máy điện.
+      const cap = stochastic((ind.batches ?? 4) * factor * (1 + wind), rand);
       const can = Math.min(cap, ...Object.entries(recipe.in).map(([g, n]) => Math.floor(have(g) / n)));
       if (can <= 0) continue;
       for (const [g, n] of Object.entries(recipe.in)) take(g, n * can);
-      for (const [g, n] of Object.entries(recipe.out)) give(g, n * can);
+      for (const [g, n] of Object.entries(recipe.out)) {
+        give(g, n * can);
+        extra.wind += (n * can * wind / (1 + wind)) * npcBuyPrice(g, macro);
+      }
     }
   }
 
@@ -200,7 +213,7 @@ export function runProduction(clan, plots, { day, macro, at, rand = Math.random 
   }
   for (const [g, e] of log) q.addProduction.run(clan.id, day, g, e.produced, e.used, e.sold, e.revenue);
   if (revenue > 0) post({ account: clanAccount(clan.id), delta: revenue, kind: 'clan_revenue', memo: `Bán hàng cho NPC ${day}`, now: at });
-  return revenue;
+  return { revenue, extra: { irrigation: Math.round(extra.irrigation), wind: Math.round(extra.wind) } };
 }
 
 /** Tiền bán hàng trên sàn chung (và bán NPC tức thì) trong ngày, đã vào quỹ, cần tính thuế. */

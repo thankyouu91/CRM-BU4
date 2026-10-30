@@ -153,3 +153,5 @@
 .price-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 4px 12px; font-size: .85rem; }
 .price-grid span { display: flex; justify-content: space-between; gap: 6px; }
 @media (max-width: 900px) { .chain { grid-template-columns: minmax(0, 1fr); } .chain-arrow { transform: rotate(90deg); justify-self: center; } }
+.infra-mine { display: grid; gap: 6px; margin-top: 8px; padding: 12px; border-radius: 14px; background: #eef9f5; border: 2px solid var(--mint-deep); }
+.infra-mine h4, .infra-mine p { margin: 0; }

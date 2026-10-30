@@ -6,6 +6,7 @@ import { chargeFee, post } from './ledger.js';
 import { giveDish, takeDish } from './farm.js';
 import { getGear, describeGear, listGear, setGearListed, tradeBonus, transferGear } from './gear.js';
 import { TIER_VALUE } from '../../public/ta-tua/game/js/shared/gear.js';
+import { windTradeBonus } from './strategic.js';
 import { BAZAAR, DISHES, KITCHEN, QUALITY, dishValue } from './rules/production.js';
 
 const q = {
@@ -130,6 +131,7 @@ export function buyListing(userId, listingId, now = Date.now()) {
     post({ userId, delta: -l.price, kind: 'bazaar_buy', memo: `${what.name} của ${seller.username}`, now });
     post({ userId: l.seller_id, delta: l.price - fee, kind: 'bazaar_sale', memo: `${what.name} cho ${getUser(userId).username} (đã trừ phí ${fee})`, now });
     tradeBonus(l.seller_id, l.price - fee, `Chợ Phiên: ${what.name}`, now);
+    windTradeBonus(l.seller_id, l.price - fee, `Chợ Phiên: ${what.name}`, now);
     // Phí bán: một nửa vào ngân sách thị trấn, một nửa bị hủy.
     if (Math.floor(fee / 2) > 0) post({ account: 'treasury', delta: Math.floor(fee / 2), kind: 'fee', memo: 'Phí Chợ Phiên', now });
     if (q.sell.run(userId, now, l.id).changes === 0) throw new GameError('Món này vừa có người mua mất rồi.');

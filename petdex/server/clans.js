@@ -9,10 +9,11 @@ import { post, treasuryBalance } from './ledger.js';
 import { macroFor, rollNextDay } from './macro.js';
 import { weekKey } from './town.js';
 import { expireListings, plotDeposits, productionPreview, runProduction, setPlotVariant, tradeIncome } from './industry.js';
-import { plantsFor } from '../../public/ta-tua/game/js/shared/industry.js';
+import { STRATEGIC_INDUSTRIES, STRATEGIC_RULES, plantsFor, strategicPlaceOk } from '../../public/ta-tua/game/js/shared/industry.js';
+import { buffFor, chargeInfraFee, operatingOwners, strategicOf } from './strategic.js';
 import {
   CLAN_EMBLEMS, CLAN_LEVELS, INDUSTRIES, INDUSTRY_ORDER, LAND, PHASES, PLOTS, WEATHER, cleanDesign, clanLevelOf, clanPerks,
-  competitionFactor, designBonus, designComplete, designCost, envFactor, isProduction, scarcityFactor, weatherFactor,
+  competitionFactor, designBonus, designComplete, designCost, envFactor, isProduction, isStrategic, scarcityFactor, weatherFactor,
 } from '../../public/ta-tua/game/js/shared/clan.js';
 
 // ---------------------------------------------------------------- cấu hình (quản trị viên chỉnh được)
@@ -255,7 +256,7 @@ function landStats(now = Date.now()) {
 }
 
 /** Phí thâu tóm ngành tiếp theo: ngành đầu trả mức gốc, từ ngành thứ hai trả gấp `expandMultiplier`. */
-export const entryFee = (industry, owned, cfg = clanConfig()) => Math.round((cfg.comp[industry] ?? 0) * (owned > 0 ? cfg.expandMultiplier : 1));
+export const entryFee = (industry, owned, cfg = clanConfig()) => Math.round((cfg.comp[industry] ?? 0) * (owned > 0 && !isStrategic(industry) ? cfg.expandMultiplier : 1));
 
 // ---------------------------------------------------------------- gia tộc
 
@@ -383,6 +384,11 @@ export function enterIndustry(userId, industry, now = Date.now()) {
     const owned = q.industries.all(clan.id);
     if (owned.some((i) => i.industry === industry)) throw new GameError('Gia tộc đã nắm ngành này rồi.');
     if (owned.length >= 3) throw new GameError('Mỗi gia tộc thâu tóm tối đa 3 ngành.');
+    if (isStrategic(industry)) {
+      if (owned.some((i) => isStrategic(i.industry))) throw new GameError('Mỗi gia tộc chỉ nắm được 1 ngành chiến lược (Trị thủy, Năng lượng gió, Ngân hàng nhà nước, Thuế vụ).');
+      const holders = (industryCounts()[industry] ?? 0);
+      if (holders >= STRATEGIC_INDUSTRIES[industry].maxClans) throw new GameError(`${INDUSTRIES[industry].name} đã đủ ${STRATEGIC_INDUSTRIES[industry].maxClans} gia tộc nắm giữ.`);
+    }
     const need = cfg.industryLevels[owned.length];
     if (levelOf(clan) < need) throw new GameError(`Thâu tóm ngành thứ ${owned.length + 1} cần gia tộc đạt cấp ${need}.`);
     const fee = entryFee(industry, owned.length, cfg);
@@ -467,6 +473,7 @@ export function setPlotIndustry(userId, plotId, industry) {
   return transaction(() => {
     const { clan, plot } = ownPlot(userId, plotId, ['leader', 'elder'], 'chọn ngành cho lô đất');
     if (!q.industries.all(clan.id).some((i) => i.industry === industry)) throw new GameError('Gia tộc chưa thâu tóm ngành này.');
+    if (isStrategic(industry) && !strategicPlaceOk(industry, plot)) throw new GameError(`Lô ${plot.code} không dựng được hạ tầng ${INDUSTRIES[industry].name}.`);
     q.setPlotIndustry.run(industry, plot.id);
     if (industry === 'power') setPlotVariant(plot.id, plantsFor(plot)[0]);
     return { message: `Lô ${plot.code} giờ làm ngành ${INDUSTRIES[industry].icon} ${INDUSTRIES[industry].name}.` };
@@ -534,7 +541,7 @@ export function clanView(userId, now = Date.now()) {
   const plots = q.clanPlots.all(clan.id).map((row) => {
     const plot = PLOT_BY_ID.get(row.id);
     const design = JSON.parse(row.design);
-    const prod = row.industry && isProduction(row.industry) ? productionPreview(plot, { industry: row.industry, variant: row.variant, design, level, macro: stats.macro }) : null;
+    const prod = row.industry && isStrategic(row.industry) ? { value: 0 } : row.industry && isProduction(row.industry) ? productionPreview(plot, { industry: row.industry, variant: row.variant, design, level, macro: stats.macro }) : null;
     const rev = row.industry && !prod ? plotRevenue(plot, { industry: row.industry, design, level, macro: stats.macro, clansInIndustry: counts[row.industry] ?? 1 }) : prod && { operating: designComplete(design), revenue: designComplete(design) ? prod.value : 0 };
     return {
       id: plot.id, code: plot.code, zone: plot.zone, climate: plot.climate, industry: row.industry, variant: row.variant, pieces: design.length,
@@ -667,8 +674,24 @@ export function settleClansDay(day, rand = Math.random) {
       }
       // Ngành sản xuất: hàng làm ra vào kho, phần bán cho NPC vào quỹ ngay trong runProduction;
       // tiền bán trên sàn chung trong ngày đã vào quỹ lúc giao dịch. Cả ba đều tính thuế.
-      const sold = runProduction(clan, plots, { day, macro, at, rand });
-      const revenue = service + sold + tradeIncome(clan.id, day);
+      // Hạ tầng chiến lược: buff được áp khi quỹ đủ trả phí ước tính (20% phần tăng thêm), không đủ thì dừng buff.
+      const irr = buffFor('irrigation', { clanId: clan.id });
+      const wind = buffFor('wind_farm', { clanId: clan.id });
+      const estimate = (pred) => plots.filter((r) => pred(r.industry)).reduce((s, r) => s + (productionPreview(PLOT_BY_ID.get(r.id), { industry: r.industry, variant: r.variant, design: JSON.parse(r.design), level, macro })?.value ?? 0), 0);
+      const irrOk = irr.total > 0 && clanBalance(clan.id) >= estimate((i) => ['agriculture', 'livestock', 'forestry'].includes(i)) * irr.paid * STRATEGIC_RULES.fee;
+      const windOk = wind.total > 0 && clanBalance(clan.id) >= estimate((i) => isProduction(i) && !isStrategic(i)) * wind.paid * STRATEGIC_RULES.fee;
+      const { revenue: sold, extra } = runProduction(clan, plots, { day, macro, at, rand, buffs: { irrigation: irrOk ? irr.total : 0, wind: windOk ? wind.total : 0 } });
+      if (irrOk && irr.paid > 0) chargeInfraFee('irrigation', extra.irrigation * (irr.paid / irr.total), { clanId: clan.id, now: at, memo: 'sản lượng nông lâm' });
+      if (windOk && wind.paid > 0) chargeInfraFee('wind_farm', extra.wind * (wind.paid / wind.total), { clanId: clan.id, now: at, memo: 'số mẻ nhà máy' });
+      const traded = tradeIncome(clan.id, day);
+      // Năng lượng gió: thêm xu trên tiền bán hàng (NPC và sàn) của gia tộc.
+      let windCoins = 0;
+      if (windOk && sold + traded > 0) {
+        windCoins = Math.floor((sold + traded) * wind.total);
+        post({ account: clanAccount(clan.id), delta: windCoins, kind: 'clan_revenue', memo: `Năng lượng gió +${Math.round(wind.total * 100)}% ${day}`, now: at });
+        if (wind.paid > 0) chargeInfraFee('wind_farm', (sold + traded) * wind.paid, { clanId: clan.id, now: at, memo: 'thu nhập bán hàng' });
+      }
+      const revenue = service + sold + traded + windCoins;
       const rate = taxRate(Math.max(1, nInd), cfg);
       const declared = Math.round(revenue * clan.declare_ratio);
       const tax = Math.round(declared * rate);
@@ -773,6 +796,52 @@ export function setPlotOverride(plotId, price) {
 }
 
 /** Sở thuế xử lý hồ sơ: truy thu phần thuế trốn cộng tiền phạt (lấy tới hết quỹ), hoặc bỏ qua. */
+// ---------------------------------------------------------------- Thuế vụ (ngành nhà nước của gia tộc)
+
+/** Gia tộc nắm Thuế vụ (đang vận hành) và mức hoa hồng theo cấp hạ tầng; null nếu người này không thuộc gia tộc đó. */
+function taxOfficeOf(userId) {
+  const m = q.member.get(userId);
+  if (!m || strategicOf(m.clan_id) !== 'tax_office') return null;
+  const owner = operatingOwners('tax_office').find((o) => o.id === m.clan_id);
+  return owner ? { clanId: m.clan_id, role: m.role, rate: STRATEGIC_RULES.levels[owner.level - 1].buff } : null;
+}
+
+/** Hồ sơ khai thiếu của các gia tộc khác, chỉ gia tộc Thuế vụ thấy. */
+export function taxOfficeCases(userId) {
+  const office = taxOfficeOf(userId);
+  if (!office) return null;
+  return {
+    rate: office.rate,
+    penalty: STRATEGIC_RULES.collectPenalty,
+    cases: q.evasions.all(100).filter((e) => e.status === 'open' && e.clan_id !== office.clanId)
+      .map((e) => ({ id: e.id, clan: e.clan_name, emblem: e.emblem, day: e.day, revenue: e.revenue, declared: e.declared, evaded: e.evaded })),
+  };
+}
+
+/** Thuế vụ đi truy thu một hồ sơ: thu phần thuế trốn + phạt từ quỹ gia tộc trốn thuế, hưởng hoa hồng, còn lại vào ngân sách. */
+export function collectAsTaxOffice(userId, id, now = Date.now()) {
+  return transaction(() => {
+    const office = taxOfficeOf(userId);
+    if (!office) throw new GameError('Chỉ gia tộc nắm Thuế vụ (đang vận hành) mới đi truy thu được.');
+    if (office.role !== 'leader' && office.role !== 'elder') throw new GameError('Chỉ tộc trưởng hoặc trưởng lão mới đi truy thu.');
+    const row = q.evasion.get(Number(id));
+    if (!row || row.status !== 'open') throw new GameError('Hồ sơ không còn mở.');
+    if (row.clan_id === office.clanId) throw new GameError('Không tự truy thu chính gia tộc mình.');
+    const clan = q.clan.get(office.clanId);
+    const due = Math.round(row.evaded * (1 + STRATEGIC_RULES.collectPenalty));
+    const collected = Math.min(due, Math.max(0, clanBalance(row.clan_id)));
+    const commission = Math.round(collected * office.rate);
+    if (collected > 0) {
+      post({ account: clanAccount(row.clan_id), delta: -collected, kind: 'corp_tax_collect', memo: `Thuế vụ truy thu ngày ${row.day}`, now });
+      if (commission > 0) post({ account: clanAccount(office.clanId), delta: commission, kind: 'tax_commission', memo: `Hoa hồng truy thu hồ sơ #${row.id}`, now });
+      if (collected - commission > 0) post({ account: 'treasury', delta: collected - commission, kind: 'corp_tax_collect', memo: `Thuế vụ ${clan.name} truy thu gia tộc #${row.clan_id}`, now });
+    }
+    q.resolveEvasion.run('collected', collected, `Thuế vụ: ${clan.name}`, now, row.id);
+    adminLog(`Thuế vụ: ${clan.name}`, 'tax_collect', null, { evasionId: row.id, collected, commission });
+    return { message: `🧾 Truy thu ${collected.toLocaleString('vi-VN')} xu, gia tộc hưởng hoa hồng ${commission.toLocaleString('vi-VN')} xu.` };
+  });
+}
+
 export function resolveEvasion(id, action, { penalty = 0.5, actor = 'Quản trị viên' } = {}, now = Date.now()) {
   return transaction(() => {
     const row = q.evasion.get(Number(id));
