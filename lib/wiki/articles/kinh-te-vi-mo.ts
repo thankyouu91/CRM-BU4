@@ -107,7 +107,7 @@ export const article: WikiArticle = {
         ] },
         { p: `**Chỉ số giá đất.** Bắt đầu ở 1. Mỗi ngày chỉ số nhân thêm (1 + độ trôi), với độ trôi = mức của pha (bảng pha ở trên) − (lãi suất cơ bản − ${pct(MACRO.land.neutralRate)}) × ${num(MACRO.land.rateWeight)} + một bước ngẫu nhiên cỡ ±${pct(MACRO.land.noise)}. Chỉ số luôn nằm trong khoảng **${num(MACRO.land.min, 1)} đến ${num(MACRO.land.max, 1)}**.` },
         { list: [
-          `**Lãi suất kéo giá đất**: lãi suất cơ bản của [Ngân hàng](ngan-hang) (mặc định ${pct(BANK.defaultRate)}/ngày, Ngân hàng Trung ương chỉnh trong khoảng ${pct(rateLow, 2)}–${pct(rateHigh)}/ngày). Mỗi 0,1 điểm lãi suất trên mức ${pct(MACRO.land.neutralRate)} bớt ${pct(landPerRate)} độ trôi giá đất mỗi ngày; dưới mức đó thì cộng thêm.`,
+          `**Lãi suất kéo giá đất**: lãi suất cơ bản của [Ngân hàng](ngan-hang) (mặc định ${pct(BANK.defaultRate)}/ngày, Ngân hàng Trung ương chỉnh trong khoảng ${pct(rateLow, 2)}–${pct(rateHigh)}/ngày; gia tộc nắm Ngân hàng nhà nước có thể [đặt lại](lai-suat-co-ban) quanh mức đó, và giá đất đi theo con số đang áp dụng). Mỗi 0,1 điểm lãi suất trên mức ${pct(MACRO.land.neutralRate)} bớt ${pct(landPerRate)} độ trôi giá đất mỗi ngày; dưới mức đó thì cộng thêm.`,
           "**Lô còn trống**: giá Sở Nhà Đất bán = giá gốc của lô × hệ số khan hiếm (đất bán càng nhiều càng đắt) × chỉ số giá đất hôm nay.",
           "**Lô đã mua**: giá trị = giá đã mua × phần tăng giá riêng của lô theo tháng × (chỉ số hôm nay ÷ chỉ số lúc mua).",
           `Bán lại cho Sở Nhà Đất được **${pct(CLAN.land.resaleRate, 0)}** giá trị hiện tại (xem [Sở Nhà Đất và sản xuất](so-nha-dat)).`,
