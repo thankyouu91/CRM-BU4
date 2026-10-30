@@ -150,6 +150,6 @@
 .chain-node { display: grid; gap: 2px; padding: 6px 8px; border-radius: 12px; border: 2px solid var(--line); background: #fff; font-size: .82rem; }
 .chain-node.held { border-color: var(--mint-deep); background: #eef9f5; }
 .chain-node .recipe { justify-content: flex-start; }
-.price-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 4px 12px; font-size: .85rem; }
+.price-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(170px, 100%), 1fr)); gap: 4px 12px; font-size: .85rem; }
 .price-grid span { display: flex; justify-content: space-between; gap: 6px; }
 @media (max-width: 900px) { .chain { grid-template-columns: minmax(0, 1fr); } .chain-arrow { transform: rotate(90deg); justify-self: center; } }
