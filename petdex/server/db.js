@@ -746,6 +746,22 @@ addColumn('users', 'locked_slots', 'INTEGER NOT NULL DEFAULT 0');
     created_at    INTEGER NOT NULL
   );
   CREATE INDEX IF NOT EXISTS infra_fees_owner ON infra_fees(owner_clan_id, day);
+  -- Vòng đời vật phẩm thiết yếu (essentials.js): chỉ số tự chủ thực phẩm theo ngày, lượng đồ ăn mỗi người mua.
+  CREATE TABLE IF NOT EXISTS essentials_days (
+    day       TEXT PRIMARY KEY,
+    d         REAL NOT NULL DEFAULT 0,
+    demand    INTEGER NOT NULL DEFAULT 0,
+    supplied  INTEGER NOT NULL DEFAULT 0,
+    npc_sold  INTEGER NOT NULL DEFAULT 0,
+    meal_sold INTEGER NOT NULL DEFAULT 0
+  );
+  CREATE TABLE IF NOT EXISTS essentials_buys (
+    user_id INTEGER NOT NULL,
+    day     TEXT NOT NULL,
+    npc     INTEGER NOT NULL DEFAULT 0,
+    meal    INTEGER NOT NULL DEFAULT 0,
+    PRIMARY KEY (user_id, day)
+  );
   CREATE TABLE IF NOT EXISTS macro_days (
     day        TEXT PRIMARY KEY,
     phase      TEXT NOT NULL,

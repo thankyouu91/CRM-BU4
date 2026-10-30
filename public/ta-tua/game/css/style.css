@@ -544,3 +544,6 @@ input:focus { border-color: var(--tea); box-shadow: 0 0 0 4px #c8915f33; }
 .view :is(.factory-kind, .game-card, .garden-plot) > :last-child { margin-top: auto; }
 
 .view :is(.garden-grid, .kitchen-grid, .clinic-grid, .credit-grid, .factory-view) { align-items: stretch; }
+
+/* Siêu thị: mức tự chủ thực phẩm và hạn mức đồ ăn NPC */
+.essentials-banner { display: flex; flex-direction: column; gap: 4px; padding: 10px 14px; margin-bottom: 12px; }

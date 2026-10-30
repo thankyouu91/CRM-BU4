@@ -12,6 +12,7 @@ import { clanDeposited, clanGovView, coverFromDeposits, isDeposed } from './clan
 import { expireListings, plotDeposits, productionPreview, runProduction, setPlotVariant, tradeIncome } from './industry.js';
 import { STRATEGIC_INDUSTRIES, STRATEGIC_RULES, plantsFor, strategicPlaceOk } from '../../public/ta-tua/game/js/shared/industry.js';
 import { buffFor, chargeInfraFee, operatingOwners, strategicOf } from './strategic.js';
+import { openShopBuying, settleEssentialsDay } from './essentials.js';
 import {
   CLAN_EMBLEMS, CLAN_LEVELS, INDUSTRIES, INDUSTRY_ORDER, LAND, PHASES, PLOTS, WEATHER, cleanDesign, clanLevelOf, clanPerks,
   competitionFactor, designBonus, designComplete, designCost, envFactor, isProduction, isStrategic, scarcityFactor, weatherFactor,
@@ -672,6 +673,7 @@ export function settleClansDay(day, rand = Math.random) {
     ensurePlots();
     const macro = macroFor(day, { rand, force: cfg.macro, now: startOfDay(day) });
     const counts = industryCounts();
+    openShopBuying(day);
     const sundayWeek = weekday(day) === 0 ? weekKey(day) : null;
     const monthEnd = nextDay(day).endsWith('-01');
     for (const clan of q.active.all()) {
@@ -750,6 +752,7 @@ export function settleClansDay(day, rand = Math.random) {
       }
     }
     expireListings(end);
+    settleEssentialsDay(day);
     rollNextDay(day, { rand, force: cfg.macro });
   });
 }

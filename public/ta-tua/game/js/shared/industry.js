@@ -384,3 +384,44 @@ export function combinedBuff(buffs, cap = STRATEGIC_RULES.softCap) {
   const rest = buffs.reduce((s, b) => s + b, 0) - top;
   return Math.min(cap, top + 0.25 * rest);
 }
+
+// ---------------------------------------------------------------- vòng đời vật phẩm thiết yếu (đồ ăn)
+
+/**
+ * Chỉ số tự chủ thực phẩm D (0–90%): phần nhu cầu đồ ăn do người chơi cung cấp qua chuỗi Chế biến thực phẩm.
+ * Siêu thị mua "Thực phẩm chế biến" của gia tộc mỗi đêm (1 đơn vị = 5 "Suất ăn gia tộc") rồi bán lại cho người chơi.
+ * Đồ ăn NPC vẫn bán nhưng: mỗi người mỗi ngày chỉ được mua phần (1 − D) nhu cầu (NPC luôn giữ tối thiểu 10%),
+ * XP của đồ NPC giảm theo giai đoạn, giá tăng nhẹ khi D cao. Tài khoản mới 7 ngày đầu được miễn mọi giới hạn.
+ */
+export const ESSENTIALS = {
+  mealsPerUnit: 5,
+  /** Phần nhu cầu NPC luôn giữ (chủ game chốt 10%). */
+  npcFloor: 0.1,
+  /** D thay đổi tối đa mỗi ngày, để không sốc giá. */
+  maxDailyShift: 0.1,
+  mealsPerPetDay: 3,
+  /** Mỗi gia tộc bán cho Siêu thị tối đa 40% lượng thu mua của một đêm (chống độc quyền). */
+  perClanShare: 0.4,
+  /** Siêu thị trả bằng giá tham chiếu (cao hơn NPC thu mua 85%). */
+  buyPrice: 1,
+  /** Giá bán lẻ suất ăn = giá tham chiếu một đơn vị / 5 × hệ số này. */
+  mealMarkup: 1.15,
+  newbieDays: 7,
+  stages: [
+    { key: 'pioneer', name: 'Khai hoang', icon: '🌱', from: 0 },
+    { key: 'growing', name: 'Phát triển', icon: '🏗️', from: 0.2 },
+    { key: 'self', name: 'Tự chủ', icon: '🏆', from: 0.8 },
+  ],
+  /** Giá đồ ăn NPC tăng tới +30% khi D đi từ 20% lên 80%. */
+  npcPriceUp: 0.3,
+};
+
+export const essentialStage = (d) => ESSENTIALS.stages.findLast((s) => d >= s.from);
+
+/** Hệ số XP của đồ ăn NPC theo D: khai hoang 50%, phát triển giảm dần về 25%, tự chủ 10%. */
+export function npcXpFactor(d) {
+  if (d < 0.2) return 0.5;
+  if (d < 0.8) return 0.5 - ((d - 0.2) / 0.6) * 0.25;
+  return 0.1;
+}
+export const npcPriceFactor = (d) => 1 + ESSENTIALS.npcPriceUp * Math.min(1, Math.max(0, (d - 0.2) / 0.6));

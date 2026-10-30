@@ -4,6 +4,7 @@
 import { db, transaction } from './db.js';
 import { dayKey } from './clock.js';
 import { DAY, GameError } from './game.js';
+import { offerToShop } from './essentials.js';
 import { post } from './ledger.js';
 import {
   GOODS, GOOD_INDUSTRY, GOOD_ORDER, MARKET_RULES, PRODUCTION_INDUSTRIES, RUN_ORDER, depositsOf, extractable, plantsFor, recipeOf,
@@ -196,7 +197,20 @@ export function runProduction(clan, plots, { day, macro, at, rand = Math.random,
     space += n;
   }
   let revenue = 0;
+  // Thực phẩm chế biến: Siêu thị mua trước (giá tham chiếu) để bán lại thành Suất ăn gia tộc, phần thừa mới bán NPC.
+  if (sell.processed_food > 0) {
+    const toShop = offerToShop(clan.id, sell.processed_food);
+    if (toShop > 0) {
+      const income = toShop * refPrice('processed_food', macro);
+      goods.processed_food -= toShop;
+      sell.processed_food -= toShop;
+      note('processed_food', 'sold', toShop);
+      log.get('processed_food').revenue += income;
+      revenue += income;
+    }
+  }
   for (const [g, n] of Object.entries(sell)) {
+    if (n <= 0) continue;
     const income = n * npcBuyPrice(g, macro);
     goods[g] -= n;
     note(g, 'sold', n);

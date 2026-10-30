@@ -226,6 +226,16 @@ Mở rộng `scripts/simulate-economy.js` với bot gia tộc (8 gia tộc, 60 n
 - Lượng xu tăng mỗi tuần nằm trong mục tiêu 10% ±3 điểm, ở mọi kịch bản có M9.
 - Thời gian để D đạt 50% nằm trong khoảng 14–30 ngày với 60 người chơi.
 
+### 4.4 Bản đã làm (đợt 4)
+
+- **D** chốt mỗi nửa đêm cho ngày hôm sau = suất ăn gia tộc bán cho Siêu thị ÷ suất đồ ăn người chơi mua (7 ngày), kẹp 0–90%, mỗi ngày dịch tối đa 10 điểm.
+- **Siêu thị thu mua**: trong lúc chốt sổ đêm, Thực phẩm chế biến của gia tộc được Siêu thị mua **trước** theo giá tham chiếu (tính vào doanh thu chịu thuế), 1 đơn vị = 5 **Suất ăn gia tộc 🍱**. Siêu thị chỉ mua đủ kho cho khoảng 1,5 ngày phần người chơi; mỗi gia tộc tối đa 40% lượng thu mua của đêm. Phần thừa bán NPC như cũ.
+- **Suất ăn gia tộc**: +50 no, +12 vui, 22 XP (đủ XP, không giới hạn), giá = giá tham chiếu Thực phẩm chế biến ÷ 5 × 1,15; hết kho thì không mua được.
+- **Đồ ăn NPC** (người chơi cũ hơn 7 ngày): hạn mức mỗi ngày = ⌈số bé × 3 × max(10%, 1 − D)⌉ + 2 món; XP còn 50% (D < 20%) → 25% (D = 80%) → 10%; giá × (1 + 30% theo D từ 20% đến 80%).
+- **Tài khoản mới 7 ngày**: đồ ăn NPC không giới hạn, đủ XP, giá gốc.
+- Giao diện: Siêu thị hiện thanh "Tự chủ thực phẩm D%", hạn mức NPC còn lại, kho và giá suất ăn gia tộc.
+- Chưa làm: đồ chăm sóc (chỉ đồ ăn trong đợt này), món "Ngon / Tuyệt hảo", sổ chào giá thấp trước.
+
 ---
 
 ## 9. Quyết định của chủ game (30/10/2026) và trạng thái
@@ -234,7 +244,7 @@ Mở rộng `scripts/simulate-economy.js` với bot gia tộc (8 gia tộc, 60 n
 |---|---|---|
 | 1 | Buff áp cho **toàn bộ thị trấn** (không theo vùng). Người chơi/gia tộc hưởng buff thì bị thu phí; hết tiền thì dừng buff. | Đã làm (`server/strategic.js`): `buffFor`, `chargeInfraFee`. Gia tộc chủ không tự trả phí. |
 | 2 | Phí hạ tầng 20% phần tăng thêm; gia tộc chủ xây và nâng cấp hạ tầng để buff +10% → +40%. | Đã làm: 4 cấp (miễn phí, 150.000, 400.000, 900.000). Nhiều gia tộc cùng ngành: lấy mức cao nhất + 25% phần còn lại, trần 60%. |
-| 3 | Phần NPC giữ cho vật phẩm thiết yếu được xuống **10%**. | Chưa làm (đợt 4: vòng đời thiết yếu). Đã sửa mặc định ở mục 4 thành 10%. |
+| 3 | Phần NPC giữ cho vật phẩm thiết yếu được xuống **10%**. | Đã làm (`server/essentials.js`, luật `ESSENTIALS` ở `shared/industry.js`), xem mục 4.4. |
 | 4 | Năng lượng gió buff cả thu nhập mua bán **cá nhân**; thành viên gia tộc chủ **+10%**; **pet huyền thoại đứng máy** thêm 10–30% theo hành. | Đã làm: Sàn Nguyên Liệu, Chợ Phiên; số mẻ nhà máy và xu bán hàng của gia tộc. Pet đứng máy: Kim 30%, Hỏa 25%, Mộc 20%, Thủy 15%, Thổ 10%. |
 | 5 | Thêm ngành nhà nước: **Ngân hàng**, **Thuế** (đi truy thu). | Đã làm: Ngân hàng nhà nước (buff lãi tiết kiệm, kỳ hạn) và Thuế vụ (xem hồ sơ khai thiếu của gia tộc khác, truy thu thuế trốn + 50% phạt, hưởng hoa hồng 10–40%). Mỗi ngành chỉ 1 gia tộc nắm. |
 
