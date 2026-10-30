@@ -8,6 +8,7 @@ import { goodsValue, lockedInOrders } from './market.js';
 import { escrowOf } from './contracts.js';
 import { heldInAuctions } from './auction.js';
 import { debtOf } from './credit.js';
+import { p2pPositions } from './p2p.js';
 
 const q = {
   since: db.prepare('SELECT delta, kind, created_at FROM ledger WHERE user_id = ? AND created_at >= ? ORDER BY id'),
@@ -25,6 +26,7 @@ export function netWorth(userId, now = Date.now()) {
   const bank = bankHoldings(userId, now);
   const items = Object.entries(inventory(userId))
     .reduce((sum, [id, qty]) => sum + (ITEMS[id] ? Math.floor(indexedPrice(ITEMS[id].price) * 0.5) * qty : 0), 0);
+  const p2p = p2pPositions(userId);
   const parts = {
     wallet: user.coins,
     savings: bank.savings,
@@ -33,7 +35,8 @@ export function netWorth(userId, now = Date.now()) {
     goods: goodsValue(userId, now),
     items,
     escrow: escrowOf(userId) + heldInAuctions(userId),
-    debt: -debtOf(userId),
+    lent: p2p.lent, // khoản cho vay ngang hàng chưa thu về (tính theo số phải thu, trước phí ngân hàng)
+    debt: -debtOf(userId) - p2p.debt,
   };
   return { total: Object.values(parts).reduce((a, b) => a + b, 0), parts };
 }

@@ -10,6 +10,7 @@ import { macroHistory, macroToday } from './macro.js';
 import { assignOperator, removeOperator, strategicView, upgradeInfra } from './strategic.js';
 import { buyListing, cancelListing, importGoods, industryView, listGoods, sellToNpc, setKeep } from './industry.js';
 import { requireLevel } from './routes-economy.js';
+import { castBallot, openClanDeposit, resolveVotes, startDepose, withdrawClanDeposit } from './clan-gov.js';
 
 export const clanApi = Router();
 clanApi.use('/clans', auth);
@@ -20,7 +21,15 @@ clanApi.use('/industry', auth);
 const uid = (req) => req.user.id;
 const unlock = (req, what) => requireLevel(uid(req), clanConfig().unlockLevel, what);
 
-clanApi.get('/clans', (req, res) => res.json(clanView(uid(req))));
+clanApi.get('/clans', (req, res) => {
+  resolveVotes(); // phiếu hết giờ thì khép trước khi xem
+  res.json(clanView(uid(req)));
+});
+// ---- Bỏ phiếu phế truất, tiền gửi kỳ hạn của quỹ ----
+clanApi.post('/clans/depose', (req, res) => reply(res, uid(req), startDepose(uid(req), intField(req.body?.candidateId, 'Người được đề cử'))));
+clanApi.post('/clans/votes/:id', (req, res) => reply(res, uid(req), castBallot(uid(req), intField(req.params.id, 'Phiếu'), Boolean(req.body?.yes))));
+clanApi.post('/clans/deposits', (req, res) => reply(res, uid(req), openClanDeposit(uid(req), intField(req.body?.amount, 'Số tiền', { min: 1 }), Number(req.body?.term))));
+clanApi.post('/clans/deposits/:id/withdraw', (req, res) => reply(res, uid(req), withdrawClanDeposit(uid(req), intField(req.params.id, 'Khoản gửi'))));
 clanApi.post('/clans/create', (req, res) => {
   unlock(req, 'Lập gia tộc');
   reply(res, uid(req), createClan(uid(req), { name: req.body?.name, emblem: req.body?.emblem, color: req.body?.color }));

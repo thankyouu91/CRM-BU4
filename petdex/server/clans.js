@@ -8,6 +8,7 @@ import { DAY, GameError } from './game.js';
 import { post, treasuryBalance } from './ledger.js';
 import { macroFor, rollNextDay } from './macro.js';
 import { weekKey } from './town.js';
+import { clanDeposited, clanGovView, coverFromDeposits, isDeposed } from './clan-gov.js';
 import { expireListings, plotDeposits, productionPreview, runProduction, setPlotVariant, tradeIncome } from './industry.js';
 import { STRATEGIC_INDUSTRIES, STRATEGIC_RULES, plantsFor, strategicPlaceOk } from '../../public/ta-tua/game/js/shared/industry.js';
 import { buffFor, chargeInfraFee, operatingOwners, strategicOf } from './strategic.js';
@@ -133,8 +134,10 @@ const q = {
   addWeekDonation: db.prepare(`
     INSERT INTO clan_donations (clan_id, user_id, week, amount) VALUES (?, ?, ?, ?)
     ON CONFLICT (clan_id, user_id, week) DO UPDATE SET amount = amount + excluded.amount`),
+  // Người kế nhiệm khi tộc trưởng rời đi: không lấy người từng bị phế truất.
   successor: db.prepare(`
-    SELECT user_id FROM clan_members WHERE clan_id = ? AND user_id != ?
+    SELECT user_id FROM clan_members m WHERE clan_id = ? AND user_id != ?
+      AND NOT EXISTS (SELECT 1 FROM clan_deposed d WHERE d.clan_id = m.clan_id AND d.user_id = m.user_id)
     ORDER BY CASE role WHEN 'elder' THEN 0 ELSE 1 END, donated DESC, joined_at LIMIT 1`),
 
   industries: db.prepare('SELECT * FROM clan_industries WHERE clan_id = ? ORDER BY entered_at'),
@@ -191,7 +194,10 @@ function ensurePlots() {
 
 function clanSpend(clanId, amount, kind, memo, now) {
   if (amount <= 0) return;
-  if (clanBalance(clanId) < amount) throw new GameError(`Quỹ gia tộc không đủ: cần ${fmt(amount)} xu, quỹ còn ${fmt(clanBalance(clanId))} xu.`);
+  if (clanBalance(clanId) < amount) {
+    const parked = clanDeposited(clanId);
+    throw new GameError(`Quỹ gia tộc không đủ: cần ${fmt(amount)} xu, quỹ còn ${fmt(clanBalance(clanId))} xu.${parked ? ` Tộc trưởng có thể rút gấp tiền gửi ngân hàng (${fmt(parked)} xu) ở bảng Quản trị.` : ''}`);
+  }
   post({ account: clanAccount(clanId), delta: -amount, kind, memo, now });
 }
 
@@ -269,7 +275,8 @@ function mustClanOf(userId) {
 
 function mustRole(userId, roles, what) {
   const ctx = mustClanOf(userId);
-  if (!roles.includes(ctx.member.role)) throw new GameError(`Chỉ ${roles.includes('elder') ? 'tộc trưởng hoặc trưởng lão' : 'tộc trưởng'} mới được ${what}.`);
+  // Người từng bị phế truất ở gia tộc này không còn quyền quản trị nào nữa.
+  if (!roles.includes(ctx.member.role) || isDeposed(ctx.clan.id, userId)) throw new GameError(`Chỉ ${roles.includes('elder') ? 'tộc trưởng hoặc trưởng lão' : 'tộc trưởng'} mới được ${what}.`);
   return ctx;
 }
 
@@ -308,6 +315,7 @@ export function joinClan(userId, clanId, now = Date.now()) {
 }
 
 function dissolveClan(clan, now) {
+  coverFromDeposits(clan.id, Infinity, now); // tiền gửi về quỹ trước khi quỹ về ngân sách
   q.releaseClanPlots.run(clan.id);
   q.dropIndustries.run(clan.id);
   const left = clanBalance(clan.id);
@@ -351,6 +359,9 @@ export function setMemberRole(userId, targetId, role) {
     const { clan } = mustRole(userId, ['leader'], 'phân vai');
     const target = q.member.get(targetId);
     if (!target || target.clan_id !== clan.id || targetId === userId) throw new GameError('Không phân vai được cho người này.');
+    if ((role === 'leader' || role === 'elder') && isDeposed(clan.id, targetId)) {
+      throw new GameError('Người này từng bị thành viên bỏ phiếu phế truất, không được giữ chức nữa.');
+    }
     if (role === 'leader') {
       q.setRole.run('elder', userId);
       q.setRole.run('leader', targetId);
@@ -560,12 +571,13 @@ export function clanView(userId, now = Date.now()) {
       perks: clanPerks(level),
       role: m.role,
       treasury: clanBalance(clan.id),
+      gov: clanGovView(userId, clan.id, now),
       declareRatio: clan.declare_ratio,
       taxRate: taxRate(industries.length, cfg),
       industries: industries.map((i) => ({ id: i.industry, fee: i.fee, enteredAt: i.entered_at })),
       nextFees: Object.fromEntries(INDUSTRY_ORDER.map((id) => [id, entryFee(id, industries.length, cfg)])),
       nextIndustryLevel: cfg.industryLevels[industries.length] ?? null,
-      members: q.members.all(week, clan.id).map((x) => ({ id: x.user_id, username: x.username, role: x.role, donated: x.donated, week: x.week_amount })),
+      members: q.members.all(week, clan.id).map((x) => ({ id: x.user_id, username: x.username, role: x.role, donated: x.donated, week: x.week_amount, deposed: isDeposed(clan.id, x.user_id) })),
       quota,
       plots,
       days: q.days.all(clan.id, 14).map((d) => ({ day: d.day, revenue: d.revenue, declared: d.declared, rate: d.rate, tax: d.tax, upkeep: d.upkeep })),
@@ -698,6 +710,7 @@ export function settleClansDay(day, rand = Math.random) {
       if (revenue > 0) {
         if (service > 0) post({ account: clanAccount(clan.id), delta: service, kind: 'clan_revenue', memo: day, now: at });
         if (tax > 0) {
+          if (clanBalance(clan.id) < tax) coverFromDeposits(clan.id, tax - clanBalance(clan.id), at);
           post({ account: clanAccount(clan.id), delta: -tax, kind: 'corp_tax', memo: day, now: at });
           toTreasury(tax / 2, 'corp_tax', `Thuế doanh nghiệp ${clan.name} ${day}`, at);
         }
@@ -709,6 +722,8 @@ export function settleClansDay(day, rand = Math.random) {
         q.addXp.run(Math.floor((revenue - tax) / 100), clan.id);
       }
       let upkeep = cfg.upkeepPerLevel * level + cfg.upkeepPerPlot * plots.length;
+      // Quỹ cạn: tự rút gấp tiền gửi ngân hàng (bị phạt) trước khi phải chịu trừ kinh nghiệm.
+      if (upkeep > 0 && clanBalance(clan.id) < upkeep) coverFromDeposits(clan.id, upkeep - clanBalance(clan.id), at);
       if (upkeep > 0 && clanBalance(clan.id) >= upkeep) {
         post({ account: clanAccount(clan.id), delta: -upkeep, kind: 'clan_upkeep', memo: day, now: at });
         toTreasury(upkeep / 2, 'clan_upkeep', clan.name, at);

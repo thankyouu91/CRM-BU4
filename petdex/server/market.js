@@ -10,6 +10,8 @@ import {
   COMMODITIES, LOT, MARKET, RAW_FIRST, REGIMES, amountFor, blendPrice, decayPressure, depthOf, fillPrice, freshnessOf, gaussian, inBand,
   jumpHeadline, meanPrice, profitOf, pushPressure, quote, rollJump, rollNews, shelfLife, stepDrift, stepPrice, stepRegime, tradeFee,
 } from './rules/market.js';
+import { designComplete } from '../../public/ta-tua/game/js/shared/clan.js';
+import { industryInfluence } from '../../public/ta-tua/game/js/shared/industry-market.js';
 
 const q = {
   states: db.prepare('SELECT * FROM commodity_state'),
@@ -28,6 +30,12 @@ const q = {
   recentTrades: db.prepare('SELECT * FROM market_trades WHERE user_id = ? ORDER BY at DESC, id DESC LIMIT 15'),
   realized: db.prepare("SELECT COALESCE(SUM(pnl), 0) AS pnl, COUNT(*) AS n, COALESCE(SUM(CASE WHEN pnl > 0 THEN 1 ELSE 0 END), 0) AS wins FROM market_trades WHERE user_id = ? AND side = 'sell' AND at >= ?"),
   pruneTrades: db.prepare('DELETE FROM market_trades WHERE at < ?'),
+  industryClans: db.prepare(`
+    SELECT ci.industry, COUNT(DISTINCT ci.clan_id) AS n FROM clan_industries ci JOIN clans c ON c.id = ci.clan_id
+    WHERE c.dissolved_at IS NULL GROUP BY ci.industry`),
+  industryPlots: db.prepare(`
+    SELECT lp.industry, lp.design FROM land_plots lp JOIN clans c ON c.id = lp.clan_id
+    WHERE lp.industry IS NOT NULL AND c.dissolved_at IS NULL`),
   insertNews: db.prepare('INSERT INTO news (commodity, headline, effect, created_at, starts_at, ends_at) VALUES (?, ?, ?, ?, ?, ?)'),
   recentNews: db.prepare('SELECT * FROM news WHERE created_at >= ? ORDER BY created_at DESC LIMIT 60'),
 
@@ -347,6 +355,25 @@ function matchRestingWithNpc(now) {
 // ---------------------------------------------------------------- nhịp giá
 
 /**
+ * Tình hình các ngành gia tộc: { ngành: { clans, plots } } (lô đất có công trình hoàn chỉnh mới tính là đang chạy),
+ * và hệ số giá/biến động mỗi mặt hàng chịu từ các ngành đó. Ngành chưa ai nắm không có mặt: hàng chạy bình thường.
+ */
+export function industryPresence() {
+  const presence = {};
+  for (const r of q.industryClans.all()) (presence[r.industry] ??= { clans: 0, plots: 0 }).clans = r.n;
+  for (const r of q.industryPlots.all()) {
+    let design = [];
+    try {
+      design = JSON.parse(r.design);
+    } catch {
+      design = [];
+    }
+    if (designComplete(design)) (presence[r.industry] ??= { clans: 0, plots: 0 }).plots += 1;
+  }
+  return presence;
+}
+
+/**
  * Một nhịp 10 phút. Phần luật game (55%): tin tức, pha thị trường ẩn, độ trôi, bước giá, cú sốt/sập giá.
  * Phần người chơi (45%): áp lực mua bán phai dần. Giá niêm yết ghép hai phần, rồi khớp lệnh chờ.
  */
@@ -355,8 +382,10 @@ export function marketTick(now, rand = Math.random) {
     const states = Object.fromEntries(q.states.all().map((s) => [s.commodity, s]));
     const prices = Object.fromEntries(Object.entries(states).map(([id, s]) => [id, s.price]));
     const { priceIndex } = economy();
+    const influence = industryInfluence(industryPresence());
     for (const id of RAW_FIRST) {
       const st = states[id];
+      const ind = influence[id] ?? { mean: 1, vol: 1 };
       const raw = COMMODITIES[id].kind === 'raw';
       if (rand() < (MARKET.newsPerDay * MARKET.tickMs) / DAY) {
         const n = rollNews(id, now, rand);
@@ -365,8 +394,9 @@ export function marketTick(now, rand = Math.random) {
       const news = q.activeNews.all(id, now, now).reduce((m, n) => m * (1 + n.effect), 1);
       const regime = raw ? stepRegime(st.regime, MARKET.tickMs, rand) : 'calm';
       const drift = raw ? stepDrift(st.drift, MARKET.tickMs, gaussian(rand), REGIMES[regime].trend) : 1;
-      const mean = meanPrice(id, { prices, drift, index: priceIndex, news });
-      let rule = stepPrice(id, st.rule_price ?? st.price, mean, MARKET.tickMs, gaussian(rand), REGIMES[regime].vol);
+      // Ngành gia tộc đang chạy kéo giá trung bình (cung/cầu/chi phí) và làm biến động dịu đi (giao vận, máy móc...).
+      const mean = meanPrice(id, { prices, drift, index: priceIndex, news }) * ind.mean;
+      let rule = stepPrice(id, st.rule_price ?? st.price, mean, MARKET.tickMs, gaussian(rand), REGIMES[regime].vol * ind.vol);
       const jump = raw ? rollJump(MARKET.tickMs, rand) : null;
       if (jump) {
         rule = blendPrice(id, rule * (1 + jump.size), 0); // nhảy tức thì, vẫn trong khoảng sàn–trần
@@ -431,6 +461,7 @@ export function marketView(userId, now = Date.now()) {
   }
   for (const h of Object.values(holdings)) h.quality = h.qty ? h.quality / h.qty : 1;
   const statesNow = Object.fromEntries(q.states.all().map((s) => [s.commodity, s]));
+  const influence = industryInfluence(industryPresence());
   let bookCost = 0;
   let bookValue = 0;
   for (const [id, h] of Object.entries(holdings)) {
@@ -457,6 +488,7 @@ export function marketView(userId, now = Date.now()) {
       change: (s.price - dayAgo) / dayAgo,
       spark: ticks.filter((_, i) => i % 3 === 0 || i === ticks.length - 1).map((t) => t.price),
       held: holdings[s.commodity]?.qty ?? 0,
+      industry: influence[s.commodity] ?? null,
       npcLeft: { buy: npcLeft(userId, day, s.commodity, 'buy'), sell: npcLeft(userId, day, s.commodity, 'sell') },
     };
   });

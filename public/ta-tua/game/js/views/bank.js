@@ -85,6 +85,14 @@ export function renderBank(root, ctx) {
           </div>
           <button class="btn gold" data-go="credit">Xem điểm tín dụng</button>
         </section>
+
+        <section class="card bank-box wide row-between">
+          <div>
+            <h3>🤝 Vay ngang hàng & 🔄 Hụi</h3>
+            <p class="muted">Cho người chơi khác vay qua ngân hàng trung gian (ngân hàng giữ 10–20% tiền lãi), hoặc góp hụi bỏ thăm với bạn bè và các gia tộc.</p>
+          </div>
+          <button class="btn gold" data-go="finance">Mở</button>
+        </section>
       </div>`;
     if (b.history.length > 1) {
       lineChart(view.querySelector('#cb-index'), b.history.map((h) => h.priceIndex), { height: 110, format: (v) => v.toFixed(3) });

@@ -32,6 +32,7 @@ export function renderCredit(root, ctx) {
     ${viewHead('💳 Tín dụng', 'Điểm tín dụng cho thấy bạn giữ lời hứa tới đâu. Điểm cao thì vay được nhiều hơn, lãi thấp hơn.',
       `<div class="pb-links">
         <button class="btn small" data-go="bank">🏦 Ngân hàng</button>
+        <button class="btn small" data-go="finance">🤝 Vay P2P & Hụi</button>
         <button class="btn small" data-go="contracts">📜 Hợp đồng</button>
       </div>`)}
     <div class="credit-view"><div class="empty muted">Đang tải…</div></div></div>`;

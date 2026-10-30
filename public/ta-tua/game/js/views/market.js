@@ -2,6 +2,9 @@
 import { api } from '../api.js';
 import { candleChart, lineChart, sparkline } from '../charts.js';
 import { ago, countdown, esc, fmt, fmtLots, fmtPrice, pct, viewHead } from '../ui.js';
+import { INDUSTRIES } from '../shared/clan.js';
+
+const KIND_TEXT = { supply: 'cung tăng', demand: 'cầu tăng', cost: 'chi phí chế biến giảm', stabilize: 'bớt biến động' };
 
 /** Lựa chọn của người chơi giữ nguyên qua các lần vẽ lại. */
 const ui = { selected: 'milk', range: 'day', side: 'buy', type: 'market', qty: '1', limit: '' };
@@ -74,6 +77,7 @@ export function renderMarket(root, ctx) {
           <small class="muted">mua ${fmtPrice(c.ask)} · bán ${fmtPrice(c.bid)}</small>
         </div>
       </header>
+      ${industryHtml(c)}
       ${positionHtml(c)}
       <div class="seg range">
         <button class="${ui.range === 'day' ? 'current' : ''}" data-range="day">24 giờ</button>
@@ -115,6 +119,18 @@ export function renderMarket(root, ctx) {
   }
 
   const pnlCell = (h) => `<small>${profitHtml(h.pnl, h.pct)}</small>`;
+
+  /** Các ngành gia tộc đang chi phối mặt hàng này; không ngành nào thì giá chạy theo thị trường bình thường. */
+  function industryHtml(c) {
+    if (!c.industry) return '<p class="muted small">🏯 Chưa gia tộc nào chi phối mặt hàng này: giá chạy theo thị trường bình thường.</p>';
+    const items = c.industry.sources.map((s) => {
+      const ind = INDUSTRIES[s.industry];
+      return `<li>${ind?.icon ?? ''} ${esc(ind?.name ?? s.industry)}: ${KIND_TEXT[s.kind]} <b class="${s.effect > 0 ? 'up' : 'down'}">${pct(s.effect)}</b></li>`;
+    }).join('');
+    const mean = c.industry.mean - 1;
+    return `<details class="mk-industry"><summary>🏯 Gia tộc đang chi phối: giá trung bình ${mean ? `<b class="${mean > 0 ? 'up' : 'down'}">${pct(mean)}</b>` : 'giữ nguyên'}${c.industry.vol < 0.999 ? `, biến động <b>${pct(c.industry.vol - 1)}</b>` : ''}</summary>
+      <ul>${items}</ul></details>`;
+  }
 
   /** Vị thế của mặt hàng đang xem: giá vốn bình quân, giá bán ngay, lãi/lỗ tạm tính nếu bán hết bây giờ. */
   function positionHtml(c) {

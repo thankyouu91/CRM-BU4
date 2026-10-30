@@ -3,6 +3,9 @@
 import { centralBankWeek, settleBankDay } from './bank.js';
 import { settleBusinessDay } from './business.js';
 import { settleClansDay } from './clans.js';
+import { settleClanGovDay } from './clan-gov.js';
+import { settleP2PDay } from './p2p.js';
+import { settleHuiDay } from './hui.js';
 import { expireListings } from './bazaar.js';
 import { settleAuctions } from './auction.js';
 import { settleCareDay } from './care.js';
@@ -35,7 +38,10 @@ export function closeDay(day, rand = Math.random) {
   settleLifeDay(day);
   settleContractsDay(day);
   settleBankDay(end);
+  settleClanGovDay(end);
   settleLoansDay(day);
+  settleP2PDay(day);
+  settleHuiDay(day);
   settleTaxes(day, end);
   expireOrders(nextDay(day), end);
   expireListings(end);

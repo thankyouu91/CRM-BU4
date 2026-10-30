@@ -10,6 +10,8 @@ import { cancelOrder, marketView, placeOrder, priceHistory, upgradeWarehouse } f
 import { finishGame, gamesView, startGame } from './minigames.js';
 import { track } from './quests.js';
 import { ledgerPage, walletView } from './wallet.js';
+import { cancelP2P, fundP2P, p2pView, repayP2P, requestP2P } from './p2p.js';
+import { bidHui, createHui, huiView, joinHui, leaveHui, startHuiNow } from './hui.js';
 
 export const economyApi = Router();
 economyApi.use(auth);
@@ -108,6 +110,36 @@ economyApi.post('/bank/deposits', (req, res) => {
 economyApi.post('/bank/deposits/:id/close', (req, res) => {
   reply(res, req.user.id, closeDeposit(req.user.id, intField(req.params.id, 'Khoản gửi')));
 });
+
+// ---- Vay ngang hàng (ngân hàng làm trung gian) và hụi ----
+
+const bankGate = (req) => requireLevel(req.user.id, UNLOCKS.bank, 'Ngân hàng');
+economyApi.get('/p2p', (req, res) => res.json(p2pView(req.user.id)));
+economyApi.post('/p2p/request', (req, res) => {
+  bankGate(req);
+  reply(res, req.user.id, requestP2P(req.user.id, { amount: intField(req.body?.amount, 'Số tiền'), termDays: Number(req.body?.term), rate: Number(req.body?.rate) }));
+});
+economyApi.post('/p2p/:id/fund', (req, res) => {
+  bankGate(req);
+  reply(res, req.user.id, fundP2P(req.user.id, intField(req.params.id, 'Khoản vay')));
+});
+economyApi.post('/p2p/:id/cancel', (req, res) => reply(res, req.user.id, cancelP2P(req.user.id, intField(req.params.id, 'Khoản vay'))));
+economyApi.post('/p2p/:id/repay', (req, res) => reply(res, req.user.id, repayP2P(req.user.id, intField(req.params.id, 'Khoản vay'))));
+
+economyApi.get('/hui', (req, res) => res.json(huiView(req.user.id)));
+economyApi.post('/hui/create', (req, res) => {
+  bankGate(req);
+  reply(res, req.user.id, createHui(req.user.id, {
+    scope: String(req.body?.scope ?? 'player'), name: req.body?.name, amount: Number(req.body?.amount), size: Number(req.body?.size),
+  }));
+});
+economyApi.post('/hui/:id/join', (req, res) => {
+  bankGate(req);
+  reply(res, req.user.id, joinHui(req.user.id, intField(req.params.id, 'Dây hụi')));
+});
+economyApi.post('/hui/:id/leave', (req, res) => reply(res, req.user.id, leaveHui(req.user.id, intField(req.params.id, 'Dây hụi'))));
+economyApi.post('/hui/:id/start', (req, res) => reply(res, req.user.id, startHuiNow(req.user.id, intField(req.params.id, 'Dây hụi'))));
+economyApi.post('/hui/:id/bid', (req, res) => reply(res, req.user.id, bidHui(req.user.id, intField(req.params.id, 'Dây hụi'), Number(req.body?.bid))));
 
 // ---- Ví ----
 

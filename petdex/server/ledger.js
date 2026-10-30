@@ -84,6 +84,22 @@ export const KINDS = {
   infra_fee: { group: 'expense', label: 'Phí hạ tầng' },
   tax_commission: { group: 'transfer', label: 'Hoa hồng truy thu thuế' },
   goods_import: { group: 'transfer', label: 'Nhập khẩu nguyên liệu' },
+  clan_deposit: { group: 'transfer', label: 'Gia tộc gửi kỳ hạn' },
+  clan_deposit_close: { group: 'transfer', label: 'Gia tộc tất toán kỳ hạn' },
+  clan_interest: { group: 'transfer', label: 'Lãi tiền gửi gia tộc' },
+  clan_penalty: { group: 'transfer', label: 'Phạt rút trước hạn (gia tộc)' },
+  // Vay ngang hàng (p2p.js): tiền đi thẳng giữa người cho vay và người vay, ngân hàng giữ một phần lãi.
+  p2p_lend: { group: 'transfer', label: 'Cho vay ngang hàng' },
+  p2p_borrow: { group: 'transfer', label: 'Nhận khoản vay ngang hàng' },
+  p2p_repay: { group: 'transfer', label: 'Trả nợ vay ngang hàng' },
+  p2p_principal: { group: 'transfer', label: 'Thu gốc cho vay ngang hàng' },
+  p2p_interest: { group: 'income', label: 'Lãi cho vay ngang hàng' },
+  p2p_cost: { group: 'expense', label: 'Lãi và phí vay ngang hàng' },
+  p2p_bank_fee: { group: 'transfer', label: 'Ngân hàng trung gian thu phí P2P' },
+  // Hụi (hui.js): góp vào quỹ hụi:<id>, người hốt nhận lại; tiền thăm chia cho người góp.
+  hui_pay: { group: 'transfer', label: 'Góp hụi' },
+  hui_win: { group: 'transfer', label: 'Hốt hụi' },
+  hui_share: { group: 'income', label: 'Chia tiền thăm hụi' },
 };
 
 /** Thu thuế: một nửa vào ngân sách thị trấn, một nửa bị hủy (cùng tỉ lệ như phí). */

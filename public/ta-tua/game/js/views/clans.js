@@ -8,9 +8,14 @@ import {
   designBonus, designComplete, designCost, designSvg, envFactor, pieceById, pieceSvg,
 } from '../shared/clan.js';
 import { GOODS, GOOD_ORDER, PRODUCTION_INDUSTRIES, SECTORS, STRATEGIC_INDUSTRIES, STRATEGIC_RULES, plantsFor } from '../shared/industry.js';
+import { industryMarketText } from '../shared/industry-market.js';
+
+/** Tên mặt hàng trên Sàn (lấy từ catalog khi mở màn). */
+let COMMODITY_NAMES = {};
 
 const TABS = [
   { key: 'clan', label: '🏯 Gia tộc' },
+  { key: 'admin', label: '👑 Quản trị', needManage: true },
   { key: 'map', label: '🗺️ Bản đồ đất' },
   { key: 'build', label: '🏗️ Xây dựng', needClan: true },
   { key: 'prod', label: '🏭 Sản xuất & Kho', needClan: true },
@@ -85,7 +90,14 @@ function productionBox(pv) {
     </div>`;
 }
 
+/** Ngành này tác động gì lên Sàn Nguyên Liệu khi có gia tộc nắm và lô đất đang chạy. */
+function marketLine(id) {
+  const text = industryMarketText(id, COMMODITY_NAMES);
+  return text ? `<small class="industry-market">📈 Sàn: ${esc(text)}</small>` : '';
+}
+
 export function renderClans(root, ctx) {
+  COMMODITY_NAMES = Object.fromEntries(Object.entries(ctx.catalog.commodities ?? {}).map(([id, c]) => [id, c.name]));
   root.innerHTML = `<div class="clan-page">
     ${viewHead('🏯 Gia tộc & Sở Nhà Đất', 'Lập gia tộc, góp quỹ, thâu tóm tối đa 3 ngành, mua đất và tự lắp ghép công trình.')}
     <nav class="clan-tabs"></nav>
@@ -100,15 +112,18 @@ export function renderClans(root, ctx) {
 
   function drawTabs() {
     const inClan = Boolean(data?.clan);
-    tabsEl.innerHTML = TABS.filter((t) => !t.needClan || inClan)
+    const canManage = Boolean(data?.clan?.gov?.canManage);
+    tabsEl.innerHTML = TABS.filter((t) => (!t.needClan || inClan) && (!t.needManage || canManage))
       .map((t) => `<button class="btn small ${ui.tab === t.key ? 'current' : ''}" data-tab="${t.key}">${t.label}</button>`).join('');
   }
 
   function draw() {
     if (!alive || !data) return;
     if (!data.clan && ['build', 'tax', 'prod'].includes(ui.tab)) ui.tab = 'clan';
+    // Bảng quản trị chỉ dành cho tộc trưởng đương nhiệm; bị phế truất là mất quyền vào.
+    if (ui.tab === 'admin' && !data.clan?.gov?.canManage) ui.tab = 'clan';
     drawTabs();
-    ({ clan: drawClan, map: drawMap, build: drawBuild, prod: drawProduction, market: drawMarket, tax: drawTax, macro: drawMacro })[ui.tab]();
+    ({ clan: drawClan, admin: drawAdmin, map: drawMap, build: drawBuild, prod: drawProduction, market: drawMarket, tax: drawTax, macro: drawMacro })[ui.tab]();
   }
 
   tabsEl.addEventListener('click', (e) => {
@@ -165,17 +180,19 @@ export function renderClans(root, ctx) {
           </form>` : ''}
         </section>
 
+        ${voteBox(c)}
+
         <section class="card clan-box">
           <h3>👥 Thành viên</h3>
           <ul class="clan-members">${c.members.map((m) => `
             <li class="${m.week >= c.quota ? '' : 'short'}">
-              <span><b>${esc(m.username)}</b><small class="muted">${ROLE[m.role]} · góp tổng ${money(m.donated)}</small></span>
+              <span><b>${esc(m.username)}</b><small class="muted">${ROLE[m.role]}${m.deposed ? ' · ⚖️ đã bị phế truất' : ''} · góp tổng ${money(m.donated)}</small></span>
               <small class="${m.week >= c.quota ? 'ok' : 'warn'}">${fmt(m.week)}/${fmt(c.quota)}</small>
               ${leader && m.id !== ctx.me.user.id ? `<span class="row">
                 <select data-role="${m.id}">
                   <option value="member" ${m.role === 'member' ? 'selected' : ''}>Thành viên</option>
-                  <option value="elder" ${m.role === 'elder' ? 'selected' : ''}>Trưởng lão</option>
-                  <option value="leader">Nhường tộc trưởng</option>
+                  ${m.deposed ? '' : `<option value="elder" ${m.role === 'elder' ? 'selected' : ''}>Trưởng lão</option>
+                  <option value="leader">Nhường tộc trưởng</option>`}
                 </select>
                 <button class="link-btn danger" data-kick="${m.id}">Mời ra</button></span>` : ''}
             </li>`).join('')}</ul>
@@ -198,6 +215,7 @@ export function renderClans(root, ctx) {
               <span class="industry-icon">${ind.icon}</span>
               <b>${esc(ind.name)}</b>
               ${recipeLine(id)}
+              ${marketLine(id)}
               <small class="muted">${rivals ? `${rivals} gia tộc ${mine ? 'khác cùng ' : ''}đang nắm` : mine ? 'Chỉ gia tộc bạn nắm' : 'Chưa ai nắm'}</small>
               ${mine ? '<span class="badge star">Đã thâu tóm</span>'
                 : `<button class="btn small ${can ? 'primary' : ''}" data-industry="${id}" ${can ? '' : 'disabled'}>Thâu tóm · ${money(fee)}</button>`}
@@ -220,6 +238,104 @@ export function renderClans(root, ctx) {
               <td><button class="btn small" data-open-plot="${p.id}">Xem</button></td>
             </tr>`).join('')}</tbody></table>`
             : '<p class="muted">Gia tộc chưa có lô đất nào. Mở <b>Bản đồ đất</b> để chọn lô hợp với ngành của mình.</p>'}
+        </section>
+      </div>`;
+  }
+
+  /** Bỏ phiếu phế truất tộc trưởng: xem phiếu đang mở, bỏ phiếu, hoặc mở phiếu mới (đề cử người thay). */
+  function voteBox(c) {
+    const g = c.gov;
+    const me = ctx.me.user.id;
+    const v = g.vote;
+    const deposedNote = g.iAmDeposed ? '<p class="warn small">Bạn từng bị thành viên phế truất ở gia tộc này: không thể giữ chức tộc trưởng hay trưởng lão, không vào được bảng quản trị.</p>' : '';
+    if (v) {
+      return `<section class="card clan-box vote-box">
+        <h3>⚖️ Bỏ phiếu phế truất tộc trưởng</h3>
+        <p><b>${esc(v.startedBy)}</b> đề nghị phế truất <b>${esc(v.target)}</b>, đưa <b>${esc(v.candidate)}</b> lên thay.</p>
+        <div class="bar"><i style="width:${Math.min(100, (v.yes / Math.max(1, v.need)) * 100)}%;background:var(--pink)"></i></div>
+        <small class="muted">Thuận ${v.yes} · chống ${v.no} · cần ${v.need}/${v.eligible} phiếu thuận · đóng lúc ${new Date(v.endsAt).toLocaleString('vi-VN', { hour: '2-digit', minute: '2-digit', day: '2-digit', month: '2-digit' })}</small>
+        ${v.canVote ? `<div class="row">
+          <button class="btn small pink ${v.mine === 1 ? 'current' : ''}" data-ballot="${v.id}" data-yes="1">👍 Thuận</button>
+          <button class="btn small ${v.mine === 0 ? 'current' : ''}" data-ballot="${v.id}" data-yes="0">👎 Chống</button>
+          ${v.mine === null ? '' : `<small class="muted">Bạn đã bỏ phiếu ${v.mine ? 'thuận' : 'chống'} (đổi được tới khi phiếu đóng)</small>`}</div>`
+          : '<p class="muted small">Bạn là người bị đề nghị phế truất, không bỏ phiếu.</p>'}
+        ${deposedNote}
+      </section>`;
+    }
+    const candidates = c.members.filter((m) => m.role !== 'leader' && !m.deposed);
+    const cooling = g.cooldownUntil && g.cooldownUntil > Date.now();
+    const canStart = c.role !== 'leader' && c.members.length >= g.rules.minMembers && !cooling && candidates.length;
+    const last = g.history[0];
+    return `<section class="card clan-box vote-box">
+      <h3>⚖️ Phế truất tộc trưởng</h3>
+      <p class="muted small">Thành viên ở gia tộc đủ ${g.rules.joinedHours} giờ được mở phiếu và đề cử người thay. Phiếu mở ${g.rules.voteHours} giờ,
+        thông qua khi quá nửa thành viên (trừ tộc trưởng) thuận. Tộc trưởng bị phế truất thành thành viên thường và <b>không bao giờ</b> được giữ chức lại trong gia tộc này.</p>
+      ${last ? `<p class="small">Lần gần nhất: ${last.status === 'passed' ? `✅ ${esc(last.target)} bị phế truất, ${esc(last.candidate)} lên thay` : last.status === 'failed' ? `❌ phiếu phế truất ${esc(last.target)} không thành` : 'phiếu bị hủy'}</p>` : ''}
+      ${cooling ? `<p class="muted small">Phải chờ tới ${new Date(g.cooldownUntil).toLocaleString('vi-VN', { hour: '2-digit', minute: '2-digit', day: '2-digit', month: '2-digit' })} mới mở phiếu mới.</p>` : ''}
+      ${canStart ? `<form class="row" data-form="depose">
+        <select name="candidate">${candidates.map((m) => `<option value="${m.id}">${esc(m.username)}${m.id === me ? ' (bạn)' : ''}</option>`).join('')}</select>
+        <button class="btn small pink">Mở phiếu phế truất</button>
+      </form>` : c.role === 'leader' ? '' : c.members.length < g.rules.minMembers ? `<p class="muted small">Cần ít nhất ${g.rules.minMembers} người mới bỏ phiếu được.</p>` : ''}
+      ${deposedNote}
+    </section>`;
+  }
+
+  // ================================================================ bảng quản trị của tộc trưởng
+
+  function drawAdmin() {
+    const c = data.clan;
+    const g = c.gov;
+    const bank = g.bank;
+    const days = c.days.slice(0, 7);
+    const sum = (k) => days.reduce((s, d) => s + (d[k] ?? 0), 0);
+    const dt = (ts) => new Date(ts).toLocaleString('vi-VN', { hour: '2-digit', minute: '2-digit', day: '2-digit', month: '2-digit' });
+    const KIND = { matured: 'Đúng hạn', early: 'Rút gấp', emergency: 'Tự rút gấp (quỹ cạn)' };
+    body.innerHTML = `
+      <div class="clan-grid">
+        <section class="card clan-box wide">
+          <h3>👑 Bảng quản trị · ${esc(c.emblem)} ${esc(c.name)}</h3>
+          <div class="admin-kpis">
+            <div><small class="muted">Quỹ tiền mặt</small><b>${money(c.treasury)}</b></div>
+            <div><small class="muted">Gửi ngân hàng</small><b>${money(bank.total)}</b></div>
+            <div><small class="muted">Phí duy trì/đêm</small><b>${money(c.upkeep)}</b></div>
+            <div><small class="muted">Doanh thu 7 ngày</small><b>${money(sum('revenue'))}</b></div>
+            <div><small class="muted">Thuế 7 ngày</small><b>${money(sum('tax'))}</b></div>
+            <div><small class="muted">Thành viên</small><b>${c.members.length}/${c.perks.maxMembers}</b></div>
+          </div>
+          ${c.treasury < c.upkeep * 3 ? `<p class="warn small">⚠️ Quỹ tiền mặt chỉ đủ dưới 3 đêm phí duy trì. Nếu quỹ cạn, hệ thống tự rút gấp tiền gửi (phạt ${pctInt(bank.rules.emergencyPenalty)} gốc).</p>` : ''}
+          ${g.vote ? `<p class="warn">⚖️ Đang có phiếu phế truất bạn: thuận ${g.vote.yes}/${g.vote.need} cần thiết. Thông qua thì bạn mất quyền vào bảng này.</p>` : ''}
+        </section>
+
+        <section class="card clan-box">
+          <h3>🏦 Gửi kỳ hạn từ quỹ</h3>
+          <p class="muted small">Lãi/ngày = lãi cơ bản + phụ phí kỳ hạn + ưu đãi gia tộc. Rút trước hạn mất lãi, phạt ${pctInt(bank.rules.earlyPenalty)} gốc;
+            quỹ không đủ trả phí duy trì hoặc thuế thì hệ thống tự rút gấp (phạt ${pctInt(bank.rules.emergencyPenalty)}).</p>
+          <form class="row" data-form="deposit">
+            <input name="amount" type="number" min="${bank.rules.minDeposit}" step="100" placeholder="Tối thiểu ${fmt(bank.rules.minDeposit)}" required />
+            <select name="term">${bank.terms.map((t) => `<option value="${t.days}">${t.days} ngày · ${pct(t.rate, 2, false)}/ngày</option>`).join('')}</select>
+            <button class="btn gold">Gửi</button>
+          </form>
+          ${bank.deposits.length ? `<ul class="clan-deposits">${bank.deposits.map((d) => `<li>
+            <span><b>${money(d.amount)}</b> · ${d.termDays} ngày · ${pct(d.rate, 2, false)}/ngày<br>
+              <small class="muted">Đáo hạn ${dt(d.maturesAt)} · lãi ${money(d.interest)}</small></span>
+            <button class="btn small ${d.maturesAt <= Date.now() ? 'mint' : ''}" data-withdraw="${d.id}" data-penalty="${d.maturesAt <= Date.now() ? 0 : d.earlyPenalty}">
+              ${d.maturesAt <= Date.now() ? 'Tất toán' : `Rút gấp · phạt ${money(d.earlyPenalty)}`}</button>
+          </li>`).join('')}</ul>` : '<p class="muted">Chưa có khoản gửi nào.</p>'}
+          ${bank.closed.length ? `<small class="muted">Đã tất toán: ${bank.closed.map((d) => `#${d.id} ${KIND[d.kind] ?? ''} ${money(d.payout)}${d.penalty ? ` (phạt ${money(d.penalty)})` : ''}`).join(' · ')}</small>` : ''}
+        </section>
+
+        <section class="card clan-box">
+          <h3>📈 Ngành đang nắm và tác động lên Sàn</h3>
+          ${c.industries.length ? `<ul class="clan-impact">${c.industries.map((i) => `<li>${INDUSTRIES[i.id].icon} <b>${esc(INDUSTRIES[i.id].name)}</b><br>${marketLine(i.id) || '<small class="muted">Không tác động trực tiếp lên Sàn Nguyên Liệu.</small>'}</li>`).join('')}</ul>
+            <p class="muted small">Càng nhiều lô đất của ngành có công trình hoàn chỉnh, tác động càng mạnh (tối đa khi khoảng 8 lô). Ngành chưa gia tộc nào nắm thì hàng chạy bình thường.</p>`
+            : '<p class="muted">Gia tộc chưa thâu tóm ngành nào.</p>'}
+        </section>
+
+        <section class="card clan-box">
+          <h3>⚖️ Phế truất & chức vụ</h3>
+          ${g.deposed.length ? `<p class="small">Đã bị phế truất (không được giữ chức): ${g.deposed.map((d) => `<b>${esc(d.username)}</b>`).join(', ')}</p>` : '<p class="muted small">Chưa ai bị phế truất.</p>'}
+          ${g.history.length ? `<ul class="small">${g.history.map((h) => `<li>${h.status === 'passed' ? '✅' : h.status === 'failed' ? '❌' : '➖'} Phiếu phế truất ${esc(h.target)} (đề cử ${esc(h.candidate)}) · ${dt(h.closedAt)}</li>`).join('')}</ul>` : ''}
+          <p class="muted small">Phân vai, mời ra và chia cổ tức ở tab Gia tộc.</p>
         </section>
       </div>`;
   }
@@ -820,6 +936,10 @@ export function renderClans(root, ctx) {
     else if ((el = on('[data-op-remove]'))) act('/clans/strategic/operator/remove', { plotId: Number(el.dataset.opRemove) });
     else if ((el = on('[data-tax-collect]'))) {
       if (confirm('Truy thu hồ sơ này? Tiền lấy từ quỹ gia tộc trốn thuế.')) act(`/clans/tax-office/${el.dataset.taxCollect}/collect`);
+    else if ((el = on('[data-ballot]'))) act(`/clans/votes/${el.dataset.ballot}`, { yes: el.dataset.yes === '1' });
+    else if ((el = on('[data-withdraw]'))) {
+      const penalty = Number(el.dataset.penalty);
+      if (!penalty || confirm(`Rút gấp trước hạn: mất lãi và bị phạt ${fmt(penalty)} xu. Tiếp tục?`)) act(`/clans/deposits/${el.dataset.withdraw}/withdraw`);
     }
     else if ((el = on('[data-emblem]'))) {
       ui.emblem = el.dataset.emblem;
@@ -948,6 +1068,10 @@ export function renderClans(root, ctx) {
       case 'create': return act('/clans/create', { name: fd.name, emblem: ui.emblem, color: fd.color });
       case 'donate': return act('/clans/donate', { amount: Number(fd.amount) });
       case 'dividend': return act('/clans/dividend', { amount: Number(fd.amount) });
+      case 'deposit': return act('/clans/deposits', { amount: Number(fd.amount), term: Number(fd.term) });
+      case 'depose':
+        if (!confirm('Mở phiếu phế truất tộc trưởng? Mọi thành viên sẽ thấy và bỏ phiếu.')) return undefined;
+        return act('/clans/depose', { candidateId: Number(fd.candidate) });
       case 'declare': return act('/clans/declare', { ratio: Number(fd.ratio) / 100 });
       case 'import': return act('/industry/import', { good: fd.good, qty: Number(fd.qty) });
       case 'operator': return act('/clans/strategic/operator', { plotId: Number(fd.plotId), petId: Number(fd.petId) });

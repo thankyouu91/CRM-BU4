@@ -13,6 +13,7 @@ const PARTS = [
   ['locked', 'Ký quỹ lệnh', '#9aa6c9'],
   ['goods', 'Hàng trong kho', '#f2a65a'],
   ['items', 'Đồ đạc', '#ef8fa8'],
+  ['lent', 'Cho vay P2P', '#7a6cf2'],
 ];
 
 export function renderWallet(root, ctx) {

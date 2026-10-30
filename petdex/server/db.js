@@ -757,6 +757,118 @@ addColumn('users', 'locked_slots', 'INTEGER NOT NULL DEFAULT 0');
   );
   `);
   addColumn('land_plots', 'variant', 'TEXT'); // loại nhà máy điện của lô (ngành Năng lượng)
+
+  // ---- Quản trị gia tộc (clan-gov.js), vay ngang hàng (p2p.js), hụi (hui.js) ----
+  db.exec(`
+  -- Bỏ phiếu trong gia tộc: hiện có 'depose' (phế truất tộc trưởng, đưa người được đề cử lên thay).
+  CREATE TABLE IF NOT EXISTS clan_votes (
+    id           INTEGER PRIMARY KEY AUTOINCREMENT,
+    clan_id      INTEGER NOT NULL,
+    kind         TEXT NOT NULL,
+    target_id    INTEGER NOT NULL,
+    candidate_id INTEGER NOT NULL,
+    started_by   INTEGER NOT NULL,
+    started_at   INTEGER NOT NULL,
+    ends_at      INTEGER NOT NULL,
+    status       TEXT NOT NULL DEFAULT 'open', -- 'open' | 'passed' | 'failed' | 'cancelled'
+    closed_at    INTEGER
+  );
+  CREATE INDEX IF NOT EXISTS clan_votes_clan ON clan_votes(clan_id, status);
+  CREATE TABLE IF NOT EXISTS clan_ballots (
+    vote_id INTEGER NOT NULL,
+    user_id INTEGER NOT NULL,
+    yes     INTEGER NOT NULL,
+    at      INTEGER NOT NULL,
+    PRIMARY KEY (vote_id, user_id)
+  );
+  -- Người đã bị phế truất: không bao giờ được làm tộc trưởng hay trưởng lão của gia tộc đó nữa.
+  CREATE TABLE IF NOT EXISTS clan_deposed (
+    clan_id INTEGER NOT NULL,
+    user_id INTEGER NOT NULL,
+    at      INTEGER NOT NULL,
+    PRIMARY KEY (clan_id, user_id)
+  );
+  -- Tiền gửi kỳ hạn của quỹ gia tộc (tiền nằm ở tài khoản clandep:<id> trong sổ cái).
+  CREATE TABLE IF NOT EXISTS clan_deposits (
+    id         INTEGER PRIMARY KEY AUTOINCREMENT,
+    clan_id    INTEGER NOT NULL,
+    amount     INTEGER NOT NULL,
+    rate       REAL NOT NULL,
+    term_days  INTEGER NOT NULL,
+    opened_at  INTEGER NOT NULL,
+    matures_at INTEGER NOT NULL,
+    closed_at  INTEGER,
+    payout     INTEGER,
+    penalty    INTEGER NOT NULL DEFAULT 0,
+    close_kind TEXT -- 'matured' | 'early' | 'emergency'
+  );
+  CREATE INDEX IF NOT EXISTS clan_deposits_clan ON clan_deposits(clan_id, closed_at);
+  -- Vay ngang hàng: người vay đăng yêu cầu, người cho vay rót vốn, ngân hàng làm trung gian ăn một phần lãi.
+  CREATE TABLE IF NOT EXISTS p2p_loans (
+    id          INTEGER PRIMARY KEY AUTOINCREMENT,
+    borrower_id INTEGER NOT NULL,
+    lender_id   INTEGER,
+    amount      INTEGER NOT NULL,
+    rate        REAL NOT NULL,
+    term_days   INTEGER NOT NULL,
+    bank_cut    REAL NOT NULL,
+    status      TEXT NOT NULL DEFAULT 'open', -- 'open' | 'funded' | 'late' | 'defaulted' | 'repaid' | 'cancelled' | 'expired'
+    created_at  INTEGER NOT NULL,
+    expires_at  INTEGER NOT NULL,
+    funded_at   INTEGER,
+    due_at      INTEGER,
+    owed        INTEGER NOT NULL DEFAULT 0,
+    paid        INTEGER NOT NULL DEFAULT 0,
+    late_days   INTEGER NOT NULL DEFAULT 0,
+    closed_at   INTEGER
+  );
+  CREATE INDEX IF NOT EXISTS p2p_status ON p2p_loans(status);
+  -- Hụi: mỗi kỳ ai cũng góp, một người hốt (người bỏ thăm cao nhất, hoặc theo thứ tự); bỏ kỳ là bị loại, không hoàn tiền.
+  CREATE TABLE IF NOT EXISTS hui_groups (
+    id            INTEGER PRIMARY KEY AUTOINCREMENT,
+    name          TEXT NOT NULL,
+    scope         TEXT NOT NULL, -- 'player' (thành viên là người chơi) | 'clan' (thành viên là gia tộc, góp bằng quỹ)
+    owner_id      INTEGER NOT NULL, -- người chơi hoặc gia tộc làm chủ hụi
+    amount        INTEGER NOT NULL, -- tiền góp mỗi kỳ
+    size          INTEGER NOT NULL,
+    status        TEXT NOT NULL DEFAULT 'open', -- 'open' | 'running' | 'done' | 'cancelled'
+    round         INTEGER NOT NULL DEFAULT 0,
+    next_round_at INTEGER,
+    created_at    INTEGER NOT NULL,
+    closed_at     INTEGER
+  );
+  CREATE TABLE IF NOT EXISTS hui_members (
+    group_id   INTEGER NOT NULL,
+    member_id  INTEGER NOT NULL,
+    joined_at  INTEGER NOT NULL,
+    status     TEXT NOT NULL DEFAULT 'active', -- 'active' | 'out'
+    received   INTEGER, -- kỳ đã hốt hụi
+    paid       INTEGER NOT NULL DEFAULT 0,
+    got        INTEGER NOT NULL DEFAULT 0,
+    out_at     INTEGER,
+    PRIMARY KEY (group_id, member_id)
+  );
+  CREATE TABLE IF NOT EXISTS hui_bids (
+    group_id  INTEGER NOT NULL,
+    round     INTEGER NOT NULL,
+    member_id INTEGER NOT NULL,
+    bid       INTEGER NOT NULL,
+    at        INTEGER NOT NULL,
+    PRIMARY KEY (group_id, round, member_id)
+  );
+  CREATE TABLE IF NOT EXISTS hui_rounds (
+    group_id  INTEGER NOT NULL,
+    round     INTEGER NOT NULL,
+    winner_id INTEGER,
+    pot       INTEGER NOT NULL,
+    bid       INTEGER NOT NULL DEFAULT 0,
+    payers    INTEGER NOT NULL,
+    dropped   INTEGER NOT NULL DEFAULT 0,
+    at        INTEGER NOT NULL,
+    PRIMARY KEY (group_id, round)
+  );
+  `);
+  addColumn('users', 'hui_ban_until', 'INTEGER NOT NULL DEFAULT 0');
 }
 
 const q = {
