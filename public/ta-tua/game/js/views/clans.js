@@ -2,9 +2,10 @@
 // xem trước sản lượng theo môi trường, lắp ghép công trình từ 200 mẫu (tối đa 20 mảnh), thuế doanh nghiệp và bản tin vĩ mô.
 import { api } from '../api.js';
 import { esc, fmt, pct, viewHead } from '../ui.js';
+import { landMapSvg } from '../landmap.js';
 import {
   CLIMATES, DESIGN, INDUSTRIES, INDUSTRY_ORDER, LAND, PALETTE, PHASES, PIECES, PIECE_FAMILIES, PLOTS, WEATHER, ZONES,
-  designBonus, designComplete, designCost, designSvg, envFactor, pieceById, pieceSvg, riverRow,
+  designBonus, designComplete, designCost, designSvg, envFactor, pieceById, pieceSvg,
 } from '../shared/clan.js';
 
 const TABS = [
@@ -211,67 +212,32 @@ export function renderClans(root, ctx) {
 
   // ================================================================ bản đồ đất
 
-  const TW = 48;
-  const TH = 40;
-  const PAD = 6;
-
-  function terrainDeco(p) {
-    switch (p.zone) {
-      case 'sea': return '<path d="M6 14 q5 -5 10 0 t10 0 t10 0 M10 28 q5 -5 10 0 t10 0" fill="none" stroke="#ffffffaa" stroke-width="2"/>';
-      case 'coast': return '<path d="M0 34 q6 -4 12 0 t12 0 t12 0 t12 0 V40 H0Z" fill="#7cc3e8aa"/><circle cx="12" cy="12" r="2" fill="#e8c76b"/>';
-      case 'hill': return '<path d="M4 34 L16 14 L28 34Z M20 34 L32 10 L44 34Z" fill="#8fae62"/><path d="M29 15 L32 10 L35 15Z" fill="#ffffffcc"/>';
-      case 'forest': return '<path d="M8 32 L14 14 L20 32Z M20 34 L27 12 L34 34Z M32 31 L38 16 L44 31Z" fill="#4f8a4f"/>';
-      case 'urban': return '<rect x="6" y="18" width="9" height="16" fill="#a9998a"/><rect x="18" y="10" width="10" height="24" fill="#b8a898"/><rect x="31" y="20" width="10" height="14" fill="#9d8d7e"/>';
-      case 'river': return '<rect x="0" y="16" width="48" height="10" fill="#7cc3e8"/><path d="M6 21 h6 M22 20 h6 M36 22 h6" stroke="#ffffffaa" stroke-width="1.5"/>';
-      default: return '<path d="M8 30 v-6 M14 32 v-7 M20 29 v-6 M28 31 v-7 M34 30 v-6 M40 32 v-7" stroke="#b4c46a" stroke-width="2"/>';
-    }
-  }
-
-  function plotFill(p, info, range) {
+  function heatFill(range) {
     switch (ui.heat) {
-      case 'climate': return { sunny: '#f7d774', rainy: '#8fb8de', temperate: '#b9dba0', windy: '#c9c4e8' }[p.climate];
-      case 'price': {
+      case 'climate': return (p) => ({ sunny: '#f7d774', rainy: '#8fb8de', temperate: '#b9dba0', windy: '#c9c4e8' }[p.climate]);
+      case 'price': return (p) => {
+        const info = land.plots[p.id - 1];
         const v = info.price ?? info.value;
         return heatColor(1 - (v - range.min) / Math.max(1, range.max - range.min));
-      }
-      case 'growth': return heatColor(p.growth / LAND.maxGrowth);
-      case 'fit': return heatColor((envFactor(ui.industry, p.zone, p.climate) - 0.4) / 1.0);
-      default: return ZONES[p.zone].color;
+      };
+      case 'growth': return (p) => heatColor(p.growth / LAND.maxGrowth);
+      case 'fit': return (p) => heatColor((envFactor(ui.industry, p.zone, p.climate) - 0.4) / 1.0);
+      default: return () => null;
     }
   }
 
   function mapSvg() {
-    const infos = new Map(land.plots.map((x) => [x.id, x]));
     const values = land.plots.map((x) => x.price ?? x.value);
     const range = { min: Math.min(...values), max: Math.max(...values) };
-    const W = LAND.cols * TW + PAD * 2;
-    const H = LAND.rows * TH + PAD * 2;
-    // Sông: nối tâm các ô ven sông rồi đổ ra biển.
-    const river = Array.from({ length: 14 }, (_, c) => `${PAD + c * TW + TW / 2},${PAD + riverRow(c) * TH + TH / 2}`).join(' ');
-    const tiles = PLOTS.map((p) => {
-      const info = infos.get(p.id);
-      const x = PAD + p.col * TW;
-      const y = PAD + p.row * TH;
-      const sel = ui.plotId === p.id;
-      const owner = info.owner;
-      const building = owner && info.design.length
-        ? designSvg(info.design).replace('<svg ', '<svg x="3" y="2" width="42" height="35" ')
-        : owner ? `<text x="24" y="27" text-anchor="middle" font-size="16">${esc(owner.emblem)}</text>` : '';
-      const climate = ui.heat === 'climate' ? `<text x="44" y="37" text-anchor="end" font-size="11">${CLIMATES[p.climate].icon}</text>` : '';
-      return `<g class="plot ${owner ? 'taken' : 'free'} ${info.mine ? 'mine' : ''} ${sel ? 'sel' : ''}" data-plot="${p.id}" transform="translate(${x} ${y})">
-        <rect class="tile" width="${TW}" height="${TH}" fill="${plotFill(p, info, range)}"/>
-        ${ui.heat === 'zone' ? terrainDeco(p) : ''}
-        ${owner ? `<rect class="own" x="1.5" y="1.5" width="${TW - 3}" height="${TH - 3}" fill="#ffffff55" stroke="${esc(owner.color)}" stroke-width="3"/>` : ''}
-        ${building}${climate}
-        <text class="code" x="3" y="9">${p.code}</text>
-        ${sel ? `<rect x="0.5" y="0.5" width="${TW - 1}" height="${TH - 1}" fill="none" stroke="#2b2d33" stroke-width="2" stroke-dasharray="4 2"/>` : ''}
-      </g>`;
-    }).join('');
-    return `<svg class="land-svg" viewBox="0 0 ${W} ${H}" role="img" aria-label="Bản đồ 200 lô đất">
-      <rect width="${W}" height="${H}" rx="10" fill="#e9dcc6"/>
-      ${tiles}
-      ${ui.heat === 'zone' ? `<polyline points="${river}" fill="none" stroke="#5aa9d6" stroke-width="4" stroke-linejoin="round" opacity=".55" pointer-events="none"/>` : ''}
-    </svg>`;
+    // Giá thay đổi theo dữ liệu nên chế độ "giá" lấy cả khoảng giá vào khóa bộ nhớ đệm.
+    const key = ui.heat === 'fit' ? `fit:${ui.industry}` : ui.heat === 'price' ? `price:${values.join(',')}` : ui.heat;
+    return landMapSvg({
+      key,
+      fillFor: heatFill(range),
+      infos: new Map(land.plots.map((x) => [x.id, x])),
+      selected: ui.plotId,
+      showClimate: ui.heat === 'climate',
+    });
   }
 
   function legend() {
@@ -656,8 +622,13 @@ export function renderClans(root, ctx) {
       ui.tab = 'map';
       draw();
     } else if ((el = on('[data-plot]'))) {
+      // Chỉ đổi lô đang chọn và khung bên, không vẽ lại bản đồ.
       ui.plotId = Number(el.dataset.plot);
-      drawMap();
+      body.querySelectorAll('.land-svg .plot.sel').forEach((g) => g.classList.remove('sel'));
+      el.classList.add('sel');
+      el.parentNode.append(el);
+      body.querySelector('.land-panel').innerHTML = plotPanel();
+      loadPreview();
     } else if ((el = on('[data-buy]'))) {
       const p = PLOT_BY_ID.get(Number(el.dataset.buy));
       if (confirm(`Mua lô ${p.code} bằng quỹ gia tộc?`)) act(`/land/${p.id}/buy`);
