@@ -1,12 +1,13 @@
 // Khu công nghiệp: xây xưởng chế biến, bé đứng máy theo ca, gia công thuê cho người khác, tiền thuê đất mỗi đêm.
-import { db, getUser, skillsOf, transaction } from './db.js';
+import { db, getPet, getUser, listPets, savePet, skillsOf, transaction } from './db.js';
 import { indexedPrice } from './bank.js';
-import { dayKey, startOfDay } from './clock.js';
-import { DAY, GameError, HOUR } from './game.js';
+import { dayKey, nightKey, nightOpensAt, startOfDay } from './clock.js';
+import { DAY, GameError, HOUR, ageInfo, busyKind, rollSickness, stageRules, tick } from './game.js';
 import { post } from './ledger.js';
 import { addGoods, capacityOf, freeSpace, removeGoods, stock } from './market.js';
 import { LOT } from './rules/market.js';
-import { CREDIT, FACTORIES, FACTORY, batchesPerHour } from './rules/production.js';
+import { CHAIN_STOPS, CREDIT, FACTORIES, FACTORY, NIGHT_SHIFT, batchesPerHour } from './rules/production.js';
+import { shiftProblem } from './rules/careers.js';
 import { BUSINESS } from './rules/business.js';
 import { addCredit } from './credit.js';
 import { isElement } from './elements.js';
@@ -19,7 +20,22 @@ const q = {
   byId: db.prepare('SELECT * FROM factories WHERE id = ?'),
   openAll: db.prepare('SELECT * FROM factories WHERE closed_at IS NULL'),
   insert: db.prepare('INSERT INTO factories (owner_id, kind, sim_at, built_at) VALUES (?, ?, ?, ?)'),
-  save: db.prepare('UPDATE factories SET level = ?, toll_fee = ?, toll_open = ?, unpaid_days = ?, sim_at = ? WHERE id = ?'),
+  save: db.prepare('UPDATE factories SET level = ?, toll_fee = ?, toll_open = ?, unpaid_days = ?, sim_at = ?, auto_run = ? WHERE id = ?'),
+  autoMine: db.prepare('SELECT * FROM factories WHERE owner_id = ? AND auto_run = 1 AND closed_at IS NULL ORDER BY id'),
+  // Ca của bé nhà chủ đã hết giờ mà chưa xét nối ca (ca đêm không tự nối).
+  chainDue: db.prepare(`
+    SELECT * FROM shifts WHERE factory_id = ? AND user_id = ? AND night IS NULL AND chain IS NULL AND ends_at <= ?
+    ORDER BY ends_at, id LIMIT 1`),
+  setChain: db.prepare('UPDATE shifts SET chain = ? WHERE id = ?'),
+  skipChains: db.prepare("UPDATE shifts SET chain = 'off' WHERE factory_id = ? AND user_id = ? AND chain IS NULL AND ends_at <= ?"),
+  lastStop: db.prepare(`
+    SELECT s.chain, s.ends_at, p.name FROM shifts s JOIN pets p ON p.id = s.pet_id
+    WHERE s.factory_id = ? AND s.user_id = ? AND s.chain IS NOT NULL AND s.chain NOT IN ('next', 'off') AND s.ends_at > ? ORDER BY s.ends_at DESC, s.id DESC LIMIT 1`),
+  hoursOn: db.prepare('SELECT COALESCE(SUM(hours), 0) AS h FROM shifts WHERE pet_id = ? AND day = ? AND night IS NULL'),
+  nightDone: db.prepare('SELECT 1 FROM shifts WHERE pet_id = ? AND night = ? LIMIT 1'),
+  insertShift: db.prepare(`
+    INSERT INTO shifts (user_id, pet_id, career, rank, hours, pay, day, starts_at, ends_at, business_id, wage, factory_id, night)
+    VALUES (?, ?, 'factory', 1, ?, 0, ?, ?, ?, NULL, 0, ?, NULL)`),
   close: db.prepare('UPDATE factories SET closed_at = ? WHERE id = ?'),
   addDay: db.prepare(`
     INSERT INTO factory_days (factory_id, day, batches, toll_batches, toll_income, rent, wages) VALUES (?, ?, ?, ?, ?, ?, ?)
@@ -51,7 +67,7 @@ const q = {
 };
 
 const tollAccount = (id) => `toll:${id}`;
-const persist = (f) => q.save.run(f.level, f.toll_fee, f.toll_open, f.unpaid_days, f.sim_at, f.id);
+const persist = (f) => q.save.run(f.level, f.toll_fee, f.toll_open, f.unpaid_days, f.sim_at, f.auto_run ?? 0, f.id);
 const stochasticRound = (x, rand) => Math.floor(x) + (rand() < x - Math.floor(x) ? 1 : 0);
 const lotsOf = (spec, n = 1) => Object.entries(spec).map(([c, lots]) => [c, lots * LOT * n]);
 
@@ -68,9 +84,12 @@ function mustOwn(userId, factoryId) {
 export function simulateFactory(f, to, rand = Math.random) {
   if (to <= f.sim_at) return 0;
   const def = FACTORIES[f.kind];
+  // Tốc độ của từng ca: theo cấp xưởng và kỹ năng bé; bé hành Kim chạy thêm 10% mẻ, ca đêm chạy 85% tốc độ.
   const shifts = q.duty.all(f.id, to, f.sim_at).map((s) => {
     const sk = skillsOf(s.pet_id);
-    return { ...s, strength: sk.strength ?? 0, craft: sk.craft ?? 0 };
+    const kim = isElement(s.pet_species, 'kim') ? 1 + ELEMENT_RULES.perks.kim.factory : 1;
+    const rate = batchesPerHour(f.kind, f.level, sk.strength ?? 0, sk.craft ?? 0) * kim * (s.night ? NIGHT_SHIFT.speed : 1);
+    return { ...s, rate };
   });
   const queue = q.tollQueue.all(f.id);
   const goods = stock(f.owner_id, to);
@@ -82,11 +101,15 @@ export function simulateFactory(f, to, rand = Math.random) {
     const end = Math.min(to, Math.floor(t / HOUR) * HOUR + HOUR);
     const onDuty = shifts.filter((s) => s.starts_at < end && s.ends_at > t);
     if (onDuty.length) {
-      const covered = Math.max(...onDuty.map((s) => (Math.min(end, s.ends_at) - Math.max(t, s.starts_at)) / HOUR));
-      const best = onDuty.reduce((a, s) => ((s.strength + s.craft) > (a.strength + a.craft) ? s : a));
-      // Bé hành Kim đứng máy: xưởng chạy thêm 10% mẻ.
-      const kim = isElement(best.pet_species, 'kim') ? 1 + ELEMENT_RULES.perks.kim.factory : 1;
-      let batches = stochasticRound(batchesPerHour(f.kind, f.level, best.strength, best.craft) * covered * kim, rand);
+      // Chia giờ này theo mốc vào/ra ca: mỗi đoạn chạy theo ca nhanh nhất đang đứng máy, nên hai ca nối nhau giữa giờ không mất phút nào.
+      const marks = onDuty.flatMap((s) => [s.starts_at, s.ends_at]).filter((x) => x > t && x < end);
+      const cuts = [...new Set([t, end, ...marks])].sort((a, b) => a - b);
+      let work = 0;
+      for (let i = 0; i + 1 < cuts.length; i += 1) {
+        const on = onDuty.filter((s) => s.starts_at < cuts[i + 1] && s.ends_at > cuts[i]);
+        if (on.length) work += Math.max(...on.map((s) => s.rate)) * ((cuts[i + 1] - cuts[i]) / HOUR);
+      }
+      let batches = stochasticRound(work, rand);
       const d = days.get(dayKey(t)) ?? { batches: 0, toll: 0, income: 0 };
       for (const order of queue) {
         if (!batches) break;
@@ -137,9 +160,97 @@ export function simulateFactory(f, to, rand = Math.random) {
   return ownDone;
 }
 
+/** Số mẻ còn làm được tại `t`: nguyên liệu trong kho chủ cộng phần đơn gia công chưa làm. */
+function batchesLeft(f, t) {
+  const goods = stock(f.owner_id, t);
+  const own = Math.min(...lotsOf(FACTORIES[f.kind].input).map(([c, need]) => Math.floor((goods[c] ?? 0) / need)));
+  return own + q.tollQueue.all(f.id).reduce((n, o) => n + o.batches - o.done, 0);
+}
+
+/** Mã lỗi nhận ca → lý do dừng chạy liên tục. */
+const STOP_OF = { hours: 'hours', busy: 'busy', sick: 'tired', energy: 'tired', hungry: 'tired', stage: 'tired' };
+
+/**
+ * Xét nối ca cho một ca đã hết giờ của bé nhà chủ: bé còn giờ làm trong ngày, không mệt/ốm/đói (đúng các kiểm tra
+ * như lúc nhận ca bằng tay) và kho còn đủ ít nhất một mẻ thì vào ca mới cùng độ dài, ngay lúc ca cũ kết thúc.
+ * Không thì ghi lý do dừng vào ca cũ (`shifts.chain`).
+ */
+function chainShift(f, s, rand) {
+  const stop = (code) => q.setChain.run(code, s.id);
+  const row = getPet(s.pet_id);
+  if (f.closed_at) return stop('closed');
+  if (!row || row.owner_id !== f.owner_id) return stop('busy');
+  // Bé đã được lưu sau lúc hết ca (việc khác chạm vào bé) thì ca kế bắt đầu từ lúc đó, để không tính chồng giờ.
+  const at = Math.max(s.ends_at, row.updated_at);
+  const pet = rollSickness(tick(row, at), Math.max(0, at - row.updated_at) / HOUR, rand);
+  const problem = shiftProblem({
+    pet,
+    stage: ageInfo(pet.born_at, at).stage,
+    careerId: 'factory',
+    hours: s.hours,
+    hoursToday: q.hoursOn.get(pet.id, dayKey(at)).h,
+    busy: busyKind(pet, at),
+    maxHours: stageRules(pet.born_at, at).maxHours ?? 8,
+  });
+  const reason = problem ? STOP_OF[problem.code] ?? 'tired' : batchesLeft(f, at) < 1 ? 'stock' : null;
+  if (reason) {
+    if (reason !== 'busy') savePet(pet);
+    return stop(reason);
+  }
+  const ends = at + s.hours * HOUR;
+  q.insertShift.run(f.owner_id, pet.id, s.hours, dayKey(at), at, ends, f.id);
+  savePet({ ...pet, busy_from: at, busy_until: ends, busy_kind: 'work' });
+  return stop('next');
+}
+
+/**
+ * Chạy bù xưởng tới `to`, xét nối ca dọc đường: lần lượt từng ca của bé nhà chủ đã hết giờ, chạy bù tới đúng lúc
+ * ca đó kết thúc rồi mới xem kho và sức bé, nên ca nối qua đêm vẫn đúng dù không ai online. Không hẹn giờ gì cả.
+ */
+export function advanceFactory(f, to, rand = Math.random) {
+  if (f.auto_run && !f.closed_at) {
+    for (let s = q.chainDue.get(f.id, f.owner_id, to); s; s = q.chainDue.get(f.id, f.owner_id, to)) {
+      if (s.ends_at > f.sim_at) simulateFactory(f, s.ends_at, rand);
+      chainShift(f, s, rand);
+    }
+  }
+  return simulateFactory(f, to, rand);
+}
+
+/** Gọi đầu mỗi lượt đọc của người chơi: nối các ca đã hết giờ ở xưởng đang bật chạy liên tục. Rẻ khi chưa có ca nào tới hạn. */
+export function resolveFactoryChains(userId, now = Date.now(), rand = Math.random) {
+  for (const f of q.autoMine.all(userId)) {
+    if (q.chainDue.get(f.id, f.owner_id, now)) transaction(() => advanceFactory(q.byId.get(f.id), now, rand));
+  }
+}
+
 export function syncFactories(userId, now = Date.now(), rand = Math.random) {
   transaction(() => {
-    for (const f of q.mine.all(userId)) simulateFactory(f, now, rand);
+    for (const f of q.mine.all(userId)) advanceFactory(f, now, rand);
+  });
+}
+
+/** Bật/tắt "Chạy liên tục". Lúc bật, các ca đã xong trước đó không được nối bù. */
+export function setFactoryAuto(userId, factoryId, on, now = Date.now()) {
+  return transaction(() => {
+    const f = mustOwn(userId, factoryId);
+    advanceFactory(f, now);
+    if (on && !f.auto_run) q.skipChains.run(f.id, f.owner_id, now);
+    f.auto_run = on ? 1 : 0;
+    persist(f);
+    return { message: on ? 'Đã bật chạy liên tục: ca của bé nhà mình xong sẽ tự vào ca kế.' : 'Đã tắt chạy liên tục.' };
+  });
+}
+
+const clockText = (h) => `${String(h).padStart(2, '0')}:00`;
+
+/** Lý do bé chưa vào ca đêm được lúc `now` (ngoài khung giờ, đã làm đêm nay, mệt, ốm...), hoặc null. `pet` đã tick tới `now`. */
+export function nightProblem(pet, now) {
+  const key = nightKey(now, NIGHT_SHIFT.from, NIGHT_SHIFT.until);
+  if (!key) return { code: 'window', message: `Ca đêm nhận từ ${clockText(NIGHT_SHIFT.from)} tới trước ${clockText(NIGHT_SHIFT.until)}.` };
+  if (q.nightDone.get(pet.id, key)) return { code: 'done', message: `${pet.name} đã làm ca đêm đêm nay rồi, mỗi đêm một ca thôi.` };
+  return shiftProblem({
+    pet, stage: ageInfo(pet.born_at, now).stage, careerId: 'factory', hours: NIGHT_SHIFT.hours, hoursToday: 0, busy: busyKind(pet, now), night: true,
   });
 }
 
@@ -157,7 +268,7 @@ export function buildFactory(userId, kind, now = Date.now()) {
 export function upgradeFactory(userId, factoryId, now = Date.now()) {
   return transaction(() => {
     const f = mustOwn(userId, factoryId);
-    simulateFactory(f, now);
+    advanceFactory(f, now);
     const cost = FACTORY.upgradeCosts[f.level];
     if (cost === undefined) throw new GameError('Xưởng đã nâng cấp tối đa.');
     post({ userId, delta: -indexedPrice(cost), kind: 'factory_upgrade', memo: `${FACTORIES[f.kind].name} lên cấp ${f.level + 2}`, now });
@@ -171,7 +282,7 @@ export function setToll(userId, factoryId, { fee, open }, now = Date.now()) {
   if (!Number.isInteger(fee) || fee < 0 || fee > FACTORY.maxTollFee) throw new GameError(`Phí gia công từ 0 đến ${FACTORY.maxTollFee} xu mỗi mẻ.`);
   return transaction(() => {
     const f = mustOwn(userId, factoryId);
-    simulateFactory(f, now);
+    advanceFactory(f, now);
     Object.assign(f, { toll_fee: fee, toll_open: open ? 1 : 0 });
     persist(f);
     return { message: open ? `Đã nhận gia công thuê: ${fee} 🪙/mẻ.` : 'Đã ngừng nhận gia công.' };
@@ -212,7 +323,7 @@ export function cancelToll(userId, orderId, now = Date.now()) {
     const o = q.toll.get(orderId);
     if (!o || o.user_id !== userId || o.status !== 'open') throw new GameError('Không tìm thấy đơn gia công.');
     const f = q.byId.get(o.factory_id);
-    simulateFactory(f, now);
+    advanceFactory(f, now);
     const fresh = q.toll.get(orderId);
     const left = fresh.batches - fresh.done;
     for (const [c, qty] of lotsOf(FACTORIES[f.kind].input, left)) addGoods(userId, c, qty, now, { allowPartial: true });
@@ -229,7 +340,7 @@ export function cancelToll(userId, orderId, now = Date.now()) {
 export function closeFactory(userId, factoryId, now = Date.now()) {
   return transaction(() => {
     const f = mustOwn(userId, factoryId);
-    simulateFactory(f, now);
+    advanceFactory(f, now);
     if (q.tollQueue.all(f.id).length) throw new GameError('Còn đơn gia công đang chờ, làm xong hoặc đợi khách hủy đã.');
     q.close.run(now, f.id);
     q.savePost.run(f.id, BUSINESS.wageMin, 1, 0);
@@ -256,11 +367,54 @@ export function factoryShiftTerms(userId, factoryId, now = Date.now()) {
 
 export const recordFactoryWages = (factoryId, amount, now) => q.addDay.run(factoryId, dayKey(now), 0, 0, 0, 0, amount);
 
+/**
+ * Đoán ca kế của một ca đang chạy ở xưởng bật chạy liên tục: tới lúc hết ca bé có còn giờ làm, còn sức không,
+ * và kho có còn hàng sau khi máy chạy hết ca này không (ước lượng theo tốc độ trung bình). Trả về mã dừng hoặc null.
+ */
+function chainForecast(f, s, now) {
+  const row = getPet(s.pet_id);
+  if (!row) return 'busy';
+  const at = Math.max(s.ends_at, row.updated_at);
+  const pet = tick(row, at);
+  const problem = shiftProblem({
+    pet,
+    stage: ageInfo(pet.born_at, at).stage,
+    careerId: 'factory',
+    hours: s.hours,
+    hoursToday: q.hoursOn.get(pet.id, dayKey(at)).h,
+    busy: busyKind(pet, at),
+    maxHours: stageRules(pet.born_at, at).maxHours ?? 8,
+  });
+  if (problem) return STOP_OF[problem.code] ?? 'tired';
+  const sk = skillsOf(s.pet_id);
+  const ahead = batchesPerHour(f.kind, f.level, sk.strength ?? 0, sk.craft ?? 0) * (Math.max(0, s.ends_at - Math.max(now, s.starts_at)) / HOUR);
+  return batchesLeft(f, now) - ahead < 1 ? 'stock' : null;
+}
+
+/** Bé nhà mình có vào ca đêm được lúc này không (khung giờ, mỗi đêm một ca, sức, ốm, đói). */
+function nightView(userId, now) {
+  const key = nightKey(now, NIGHT_SHIFT.from, NIGHT_SHIFT.until);
+  const opensAt = nightOpensAt(now, NIGHT_SHIFT.from, NIGHT_SHIFT.until);
+  return {
+    open: Boolean(key),
+    opensAt: key ? opensAt : opensAt > now ? opensAt : opensAt + DAY,
+    closesAt: (key ? startOfDay(key) : startOfDay(dayKey(now))) + (24 + NIGHT_SHIFT.until) * HOUR,
+    hours: NIGHT_SHIFT.hours,
+    speed: NIGHT_SHIFT.speed,
+    energyFactor: NIGHT_SHIFT.energy,
+    pets: listPets(userId).map((row) => {
+      const pet = tick(row, now);
+      const problem = nightProblem(pet, now);
+      return { id: pet.id, name: pet.name, energy: Math.round(pet.energy), ok: !problem, why: problem?.message ?? null };
+    }),
+  };
+}
+
 export function factoryView(userId, now = Date.now()) {
   syncFactories(userId, now);
   // Chạy bù cả các xưởng đang gia công cho mình, để tiến độ đơn hàng không đứng yên chờ chủ xưởng mở màn.
   transaction(() => {
-    for (const id of new Set(q.myTolls.all(userId).map((o) => o.factory_id))) simulateFactory(q.byId.get(id), now);
+    for (const id of new Set(q.myTolls.all(userId).map((o) => o.factory_id))) advanceFactory(q.byId.get(id), now);
   });
   const goods = stock(userId, now);
   const from = dayKey(now - 6 * DAY);
@@ -278,7 +432,23 @@ export function factoryView(userId, now = Date.now()) {
         unpaidDays: f.unpaid_days,
         rent: indexedPrice(FACTORY.landRent),
         canRun,
-        duty: q.duty.all(f.id, now + 365 * DAY, now).map((s) => ({ petName: s.pet_name, owner: s.username, own: s.user_id === userId, startsAt: s.starts_at, endsAt: s.ends_at })),
+        autoRun: Boolean(f.auto_run),
+        duty: q.duty.all(f.id, now + 365 * DAY, now).map((s) => {
+          const own = s.user_id === userId;
+          const chains = Boolean(f.auto_run) && own && !s.night;
+          const stop = chains ? chainForecast(f, s, now) : null;
+          return {
+            petName: s.pet_name, owner: s.username, own, startsAt: s.starts_at, endsAt: s.ends_at, hours: s.hours, night: Boolean(s.night),
+            // Ca kế (chạy liên tục): tự vào lúc `at`, hoặc đoán trước sẽ dừng vì `stop`.
+            next: chains ? { at: s.ends_at, hours: s.hours, stop: stop ? CHAIN_STOPS[stop] : null } : null,
+          };
+        }),
+        // Lần dừng chạy liên tục gần nhất, chỉ hiện khi không còn ca nào của bé nhà mình ở xưởng.
+        stop: (() => {
+          if (!f.auto_run || q.duty.all(f.id, now + 365 * DAY, now).some((s) => s.user_id === userId)) return null;
+          const last = q.lastStop.get(f.id, userId, now - DAY);
+          return last ? { reason: CHAIN_STOPS[last.chain] ?? last.chain, petName: last.name, at: last.ends_at } : null;
+        })(),
         queue: q.tollQueue.all(f.id).map((o) => ({ id: o.id, batches: o.batches, done: o.done, fee: o.fee, user: getUser(o.user_id)?.username })),
         jobPost: q.post.get(f.id) ?? null,
         days: q.days.all(f.id, from),
@@ -295,15 +465,20 @@ export function factoryView(userId, now = Date.now()) {
       return { capacity, used, reserved: Math.max(0, capacity - freeSpace(userId) - used) };
     })(),
     max: MAX_FACTORIES,
+    night: nightView(userId, now),
   };
 }
 
-/** Nửa đêm: chạy bù tới cuối ngày, thu tiền thuê đất; nợ 3 đêm liền thì xưởng đóng cửa. */
+/**
+ * Nửa đêm: chạy bù (kèm nối ca) tới đúng 00:00, thu tiền thuê đất; nợ 3 đêm liền thì xưởng đóng cửa.
+ * Ca vắt qua nửa đêm chỉ được tính tới 00:00 ở đây: mẻ trước nửa đêm vào ngày cũ, phần sau vào ngày mới ở lần chạy bù kế tiếp.
+ * Chạy trước phần chăm sóc và vòng đời trong `closeDay`, nên bé được nối ca xong rồi mới bị tick tới nửa đêm.
+ */
 export function settleFactoryDay(day, rand = Math.random) {
   const end = startOfDay(day) + DAY;
   transaction(() => {
     for (const f of q.openAll.all()) {
-      simulateFactory(f, end, rand);
+      advanceFactory(f, end, rand);
       const rent = indexedPrice(FACTORY.landRent);
       if (getUser(f.owner_id).coins >= rent) {
         post({ userId: f.owner_id, delta: -rent, kind: 'rent', memo: FACTORIES[f.kind].name, now: end - 1 });

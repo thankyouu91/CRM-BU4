@@ -7,7 +7,7 @@ import { acceptContract, breakContract, contractsView, declineContract, propose 
 import { borrow, creditView, repay } from './credit.js';
 import * as store from './db.js';
 import {
-  buildFactory, cancelToll, closeFactory, factoryView, orderToll, setFactoryJobs, setToll, upgradeFactory,
+  buildFactory, cancelToll, closeFactory, factoryView, orderToll, setFactoryAuto, setFactoryJobs, setToll, upgradeFactory,
 } from './factory.js';
 import {
   catchPests, cook, eatDish, expandGarden, gardenView, harvest, kitchenView, plant, sellDishToNpc, water,
@@ -100,6 +100,7 @@ productionApi.post('/factory/:id/jobs', (req, res) => {
     wage: Number(req.body?.wage), slots: Number(req.body?.slots), open: Boolean(req.body?.open),
   }));
 });
+productionApi.post('/factory/:id/auto', (req, res) => reply(res, uid(req), setFactoryAuto(uid(req), factoryOf(req), Boolean(req.body?.on))));
 productionApi.post('/factory/:id/close', (req, res) => reply(res, uid(req), closeFactory(uid(req), factoryOf(req))));
 productionApi.post('/factory/:id/order', (req, res) => {
   requireLevel(uid(req), UNLOCKS.market, 'Gia công');

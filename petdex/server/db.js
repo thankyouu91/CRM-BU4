@@ -460,7 +460,7 @@ function addColumn(table, column, definition) {
 }
 addColumn('pets', 'busy_from', 'INTEGER');
 addColumn('pets', 'busy_until', 'INTEGER');
-addColumn('pets', 'busy_kind', 'TEXT'); // bé bận việc gì: 'work' | 'school' | 'bath' (trống = ca làm cũ)
+addColumn('pets', 'busy_kind', 'TEXT'); // bé bận việc gì: 'work' | 'night' (ca đêm) | 'school' | 'bath' (trống = ca làm cũ)
 addColumn('pet_wear', 'gear_id', 'INTEGER'); // bản trang phục đang đeo (bảng gear)
 // Sàn: giá theo luật game (chưa tính lực mua bán của người chơi), áp lực mua bán, pha thị trường ẩn.
 addColumn('commodity_state', 'rule_price', 'REAL');
@@ -493,6 +493,9 @@ addColumn('users', 'tax_due', 'INTEGER NOT NULL DEFAULT 0');
 addColumn('shifts', 'business_id', 'INTEGER');
 addColumn('shifts', 'wage', 'INTEGER NOT NULL DEFAULT 0');
 addColumn('shifts', 'factory_id', 'INTEGER');
+addColumn('shifts', 'night', 'TEXT'); // ca đêm ở xưởng: ngày của đêm đó ('2026-10-29' = đêm 29 rạng 30), ca thường để trống
+addColumn('shifts', 'chain', 'TEXT'); // tự nối ca ở xưởng: trống = chưa xét, 'next' = đã nối, còn lại là lý do dừng (CHAIN_STOPS) hoặc 'off'
+addColumn('factories', 'auto_run', 'INTEGER NOT NULL DEFAULT 0'); // 1 = "Chạy liên tục": ca của bé nhà chủ xong thì tự vào ca kế
 addColumn('pets', 'hygiene', 'REAL NOT NULL DEFAULT 80');
 addColumn('pets', 'health', 'REAL NOT NULL DEFAULT 90');
 addColumn('pets', 'sick', 'TEXT');

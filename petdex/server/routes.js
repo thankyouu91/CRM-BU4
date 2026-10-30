@@ -18,7 +18,7 @@ import {
 } from './rules/town.js';
 import {
   BAZAAR, CLASSES, CLINIC, CONTRACTS, CREDIT, CROPS, DISHES, FACTORIES, FACTORY, GARDEN, HEALTH, ILLNESSES, INSURANCE,
-  KITCHEN, LOANS, QUALITY, SCHOOL, TIERS, TRAITS,
+  KITCHEN, LOANS, NIGHT_SHIFT, QUALITY, SCHOOL, TIERS, TRAITS,
 } from './rules/production.js';
 import { communityApi } from './routes-community.js';
 import { chatApi } from './routes-chat.js';
@@ -78,7 +78,7 @@ api.get('/catalog', (_req, res) => {
     stages: STAGES,
     skills: SKILLS,
     careers: CAREERS,
-    jobs: { shiftHours: SHIFT_HOURS, maxHoursPerDay: MAX_HOURS_PER_DAY, promotion: PROMOTION, rankTitles: RANK_TITLES },
+    jobs: { shiftHours: SHIFT_HOURS, maxHoursPerDay: MAX_HOURS_PER_DAY, promotion: PROMOTION, rankTitles: RANK_TITLES, night: NIGHT_SHIFT },
     commodities: COMMODITIES,
     market: {
       lot: LOT, fee: MARKET.fee, spread: MARKET.spread, band: MARKET.band, npcDailyLots: MARKET.npcDailyLots, townBaseLots: MARKET.townBaseLots, townLotsPerTrader: MARKET.townLotsPerTrader, warehouse: MARKET.warehouse,
@@ -98,7 +98,7 @@ api.get('/catalog', (_req, res) => {
     garden: { ...GARDEN, crops: CROPS },
     // Món ẩn không gửi xuống: người chơi phải tự khám phá trong Bếp.
     kitchen: { ...KITCHEN, quality: QUALITY, dishes: Object.fromEntries(Object.entries(DISHES).filter(([, d]) => !d.hidden)) },
-    factory: { ...FACTORY, kinds: FACTORIES },
+    factory: { ...FACTORY, kinds: FACTORIES, night: NIGHT_SHIFT },
     contracts: CONTRACTS,
     bazaar: BAZAAR,
     credit: { ...CREDIT, tiers: TIERS, loans: LOANS },

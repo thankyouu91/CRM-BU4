@@ -1,6 +1,6 @@
 // Trung tâm việc làm: nhận ca theo giờ thật, nhận lương, lên kỹ năng và thăng bậc.
 import { db, listPets, savePet, skillsOf, transaction } from './db.js';
-import { dayKey } from './clock.js';
+import { dayKey, nightKey } from './clock.js';
 import { GameError, HOUR, ageInfo, busyKind, isBusy, stageRules, tick } from './game.js';
 import { seniorityBonus } from '../../public/ta-tua/game/js/shared/pets.js';
 import { post } from './ledger.js';
@@ -8,8 +8,8 @@ import {
   CAREERS, RANK_TITLES, SKILL_PER_HOUR, XP_PER_HOUR, canPromote, checkShift, shiftPay, tipsFor,
 } from './rules/careers.js';
 import { businessOf, openJobs, recordWages, shiftTerms } from './business.js';
-import { factoryShiftTerms, openFactoryJobs, recordFactoryWages } from './factory.js';
-import { FACTORIES } from './rules/production.js';
+import { factoryShiftTerms, nightProblem, openFactoryJobs, recordFactoryWages, resolveFactoryChains } from './factory.js';
+import { FACTORIES, NIGHT_SHIFT } from './rules/production.js';
 import { track } from './quests.js';
 import { payFactor } from './rules/production.js';
 import { GUILD_UPGRADES } from './rules/town.js';
@@ -22,10 +22,11 @@ const q = {
   saveCareer: db.prepare(`
     INSERT INTO careers (pet_id, career, rank, hours) VALUES (?, ?, ?, ?)
     ON CONFLICT (pet_id, career) DO UPDATE SET rank = excluded.rank, hours = excluded.hours`),
-  hoursToday: db.prepare('SELECT COALESCE(SUM(hours), 0) AS h FROM shifts WHERE pet_id = ? AND day = ?'),
+  // Ca đêm không tính vào giờ làm trong ngày.
+  hoursToday: db.prepare('SELECT COALESCE(SUM(hours), 0) AS h FROM shifts WHERE pet_id = ? AND day = ? AND night IS NULL'),
   insertShift: db.prepare(`
-    INSERT INTO shifts (user_id, pet_id, career, rank, hours, pay, day, starts_at, ends_at, business_id, wage, factory_id)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`),
+    INSERT INTO shifts (user_id, pet_id, career, rank, hours, pay, day, starts_at, ends_at, business_id, wage, factory_id, night)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`),
   businessName: db.prepare('SELECT name FROM businesses WHERE id = ?'),
   factoryKind: db.prepare('SELECT kind FROM factories WHERE id = ?'),
   myFactories: db.prepare('SELECT id, kind FROM factories WHERE owner_id = ? AND closed_at IS NULL ORDER BY id'),
@@ -36,6 +37,7 @@ const q = {
 };
 
 export function jobsView(userId, now = Date.now()) {
+  resolveFactoryChains(userId, now);
   const day = dayKey(now);
   const pets = listPets(userId).map((row) => {
     const pet = tick(row, now);
@@ -65,6 +67,7 @@ export function jobsView(userId, now = Date.now()) {
     businessName: s.business_id ? q.businessName.get(s.business_id)?.name : s.factory_id ? factoryName(s.factory_id) : null,
     rank: s.rank,
     hours: s.hours,
+    night: Boolean(s.night),
     pay: s.pay,
     startsAt: s.starts_at,
     endsAt: s.ends_at,
@@ -93,13 +96,24 @@ function officeBonus(userId) {
 /**
  * Nhận ca: theo nghề (`career`), trực quầy (`businessId`) hoặc đứng máy ở xưởng (`factoryId`).
  * Làm cho mình thì không lương; làm thuê thì lương được giữ trước từ ví chủ quầy/chủ xưởng.
+ * `night`: ca đêm 8 giờ ở xưởng của mình (20:00 tới trước 02:00, mỗi bé một ca mỗi đêm, không tính vào giờ làm trong ngày).
  */
-export function startShift(userId, { petId, career, hours, businessId = null, factoryId = null }, now = Date.now()) {
+export function startShift(userId, { petId, career, hours, businessId = null, factoryId = null, night = false }, now = Date.now()) {
+  resolveFactoryChains(userId, now);
   return transaction(() => {
     const pet = tick(ownedPet(userId, petId), now);
     const day = dayKey(now);
     const terms = businessId ? shiftTerms(userId, businessId, now) : null;
     const plant = !terms && factoryId ? factoryShiftTerms(userId, factoryId, now) : null;
+    if (night) {
+      if (!plant?.ownShift) throw new GameError('Ca đêm chỉ dành cho bé nhà mình, ở xưởng của mình.');
+      const problem = nightProblem(pet, now);
+      if (problem) throw new GameError(problem.message);
+      const endsAt = now + NIGHT_SHIFT.hours * HOUR;
+      q.insertShift.run(userId, pet.id, 'factory', 1, NIGHT_SHIFT.hours, 0, day, now, endsAt, null, 0, plant.factory.id, nightKey(now, NIGHT_SHIFT.from, NIGHT_SHIFT.until));
+      savePet({ ...pet, busy_from: now, busy_until: endsAt, busy_kind: 'night' });
+      return { message: `🌙 ${pet.name} vào ca đêm ở ${plant.name} ${NIGHT_SHIFT.hours} giờ.`, endsAt };
+    }
     // Theo tuổi: nhí nhố làm nhẹ 2 giờ, thiếu niên bán thời gian 4 giờ, lão làng 4 giờ.
     const sr = stageRules(pet.born_at, now);
     checkShift({
@@ -124,7 +138,7 @@ export function startShift(userId, { petId, career, hours, businessId = null, fa
         }
         recordFactoryWages(plant.factory.id, pay, now);
       }
-      q.insertShift.run(userId, pet.id, 'factory', 1, hours, pay, day, now, endsAt, null, plant.wage, plant.factory.id);
+      q.insertShift.run(userId, pet.id, 'factory', 1, hours, pay, day, now, endsAt, null, plant.wage, plant.factory.id, null);
       message = plant.ownShift
         ? `${pet.name} vào ${plant.name} đứng máy ${hours} giờ.`
         : `${pet.name} làm công nhân ở ${plant.name} ${hours} giờ, xong ca nhận ${pay} 🪙.`;
@@ -139,7 +153,7 @@ export function startShift(userId, { petId, career, hours, businessId = null, fa
         }
         recordWages(terms.business.id, pay, now);
       }
-      q.insertShift.run(userId, pet.id, 'shop', 1, hours, pay, day, now, endsAt, terms.business.id, terms.wage, null);
+      q.insertShift.run(userId, pet.id, 'shop', 1, hours, pay, day, now, endsAt, terms.business.id, terms.wage, null, null);
       message = terms.ownShift
         ? `${pet.name} ra trực quầy "${terms.business.name}" ${hours} giờ.`
         : `${pet.name} làm thuê ở "${terms.business.name}" ${hours} giờ, xong ca nhận ${pay} 🪙.`;
@@ -148,7 +162,7 @@ export function startShift(userId, { petId, career, hours, businessId = null, fa
       const base = shiftPay(career, rank, skillsOf(pet.id)[CAREERS[career].skill] ?? 0, hours);
       const age = (sr.work ?? 1) * (1 + (sr.seniority ? seniorityBonus(done) : 0));
       const pay = Math.round(base * (1 + officeBonus(userId)) * payFactor(pet) * elementPay(pet, now, CAREERS[career].skill) * age);
-      q.insertShift.run(userId, pet.id, career, rank, hours, pay, day, now, endsAt, null, 0, null);
+      q.insertShift.run(userId, pet.id, career, rank, hours, pay, day, now, endsAt, null, 0, null, null);
       message = `${pet.name} bắt đầu ca ${CAREERS[career].name} ${hours} giờ, xong ca nhận ${pay} 🪙.`;
     }
     savePet({ ...pet, busy_from: now, busy_until: endsAt, busy_kind: 'work' });
@@ -219,6 +233,6 @@ function claimFactoryShift(userId, s, now) {
     gain: { coins: s.pay, xp: XP_PER_HOUR * s.hours },
     skill: { id: 'strength', gain: Math.round((after - before) * 10) / 10 },
     promoted: null,
-    message: s.pay ? `${outcome.pet.name} nhận ${s.pay} 🪙 lương đứng máy ở ${where}.` : `${outcome.pet.name} xong ca đứng máy ở ${where}.`,
+    message: s.pay ? `${outcome.pet.name} nhận ${s.pay} 🪙 lương đứng máy ở ${where}.` : `${outcome.pet.name} xong ca ${s.night ? 'đêm' : 'đứng máy'} ở ${where}.`,
   };
 }

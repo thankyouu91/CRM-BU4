@@ -66,6 +66,7 @@ export const modalOpen = () => closeCurrent !== null;
 /** Bé đang bận việc gì (busyKind từ máy chủ; thiếu thì là ca làm). `away`: bé rời nhà lúc đó. */
 export const BUSY = {
   work: { icon: '💼', text: 'đang đi làm', until: 'về lúc', away: true },
+  night: { icon: '🌙', text: 'đang làm ca đêm', until: 'về lúc', away: true },
   school: { icon: '📚', text: 'đang đi học', until: 'về lúc', away: true },
   bath: { icon: '🛁', text: 'đang tắm', until: 'xong lúc', away: false },
 };

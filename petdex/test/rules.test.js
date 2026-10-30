@@ -3,7 +3,7 @@ import test from 'node:test';
 import { fishSequence, judge, memoryDeck, pearlSchedule } from '../../public/ta-tua/game/js/shared/minigames.js';
 import { DAY, GameError } from '../server/game.js';
 import { BANK, accrue, depositPayout, policy } from '../server/rules/bank.js';
-import { canPromote, checkShift, gainSkill, shiftPay } from '../server/rules/careers.js';
+import { canPromote, checkShift, gainSkill, shiftEnergy, shiftPay } from '../server/rules/careers.js';
 import {
   COMMODITIES, MARKET, REGIMES, amountFor, blendPrice, decayPressure, fillPrice, impact, inBand, meanPrice, profitOf, pushPressure, quote,
   FRESHNESS, freshnessOf, rollJump, stepDrift, stepPrice, stepRegime, tradeFee,
@@ -38,6 +38,12 @@ test('nghề: kiểm tra trước khi nhận ca', () => {
   assert.throws(() => checkShift({ ...ok, hoursToday: 7 }), GameError);
   assert.throws(() => checkShift({ ...ok, busy: true }), GameError);
   assert.throws(() => checkShift({ ...ok, pet: { ...pet, energy: 15 } }), GameError);
+  // Ca đêm: 8 giờ, không tính vào giờ làm trong ngày, cần đầy sức (8 × 10 × 1,5 = 120, trần 100).
+  assert.doesNotThrow(() => checkShift({ ...ok, hours: 8, hoursToday: 8, night: true }));
+  assert.throws(() => checkShift({ ...ok, hours: 8, night: true, pet: { ...pet, energy: 95 } }), /100 năng lượng/);
+  assert.throws(() => checkShift({ ...ok, hours: 4, night: true }), GameError);
+  assert.equal(shiftEnergy(8, true), 100);
+  assert.equal(shiftEnergy(4), 40);
 });
 
 test('Sàn: báo giá, phí, thành tiền, biên giá', () => {

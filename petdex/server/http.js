@@ -2,6 +2,7 @@
 import * as store from './db.js';
 import { GameError, levelReward } from './game.js';
 import { snapshot } from './service.js';
+import { resolveFactoryChains } from './factory.js';
 
 export function auth(req, res, next) {
   const token = req.get('authorization')?.replace(/^Bearer\s+/i, '');
@@ -9,6 +10,12 @@ export function auth(req, res, next) {
   if (!user) return res.status(401).json({ error: 'Phiên đăng nhập đã hết, hãy đăng nhập lại.' });
   if (user.banned) return res.status(403).json({ error: 'Tài khoản này đã bị quản trị viên khóa.' });
   store.touchSeen(user.id);
+  // Nối các ca đứng máy đã hết giờ (xưởng bật chạy liên tục) trước khi đọc hay làm gì, để bé và kho đúng tới lúc này.
+  try {
+    resolveFactoryChains(user.id);
+  } catch (err) {
+    console.error('Lỗi nối ca xưởng:', err);
+  }
   req.user = user;
   req.token = token;
   next();
