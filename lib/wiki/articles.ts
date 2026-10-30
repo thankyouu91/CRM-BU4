@@ -20,7 +20,7 @@ import { article as A_dau_truong } from "./articles/dau-truong";
 import { CLAN, UNLOCKS } from "./rules";
 import { BAZAAR, SCHOOL } from "@/petdex/server/rules/production.js";
 import { MARKET } from "@/petdex/server/rules/market.js";
-import { DAILY_XP, EGG, LIFE_STAGES } from "@/public/ta-tua/game/js/shared/pets.js";
+import { DAILY_XP, EGG, LIFE_STAGES, UPKEEP } from "@/public/ta-tua/game/js/shared/pets.js";
 import { DEFAULT_GEAR_CONFIG, TIERS, nextTier } from "@/public/ta-tua/game/js/shared/gear.js";
 import {
   COMMODITY_COUNT, DESIGN_RULES, GOODS_COUNT, INDUSTRIAL_MARKET, LAND_RULES, LEGEND_ID, MASCOT_ID, SERVICE_COUNT,
@@ -562,6 +562,15 @@ export const ARTICLES: WikiArticle[] = [
           { pets: stagePets(MASCOT_ID) },
           { table: { head: ["Giai đoạn", "Từ tuần", "Giờ làm tối đa/ngày", "Lương", "XP", "Đặc điểm"], rows: stageRows() } },
           { p: "Từ **Trưởng thành**, bé có **lương thâm niên**: +1% cho mỗi 10 giờ đã làm ở nghề đó, tối đa +30%." },
+        ],
+      },
+      {
+        id: "tu-lon",
+        title: "Bé tự lớn và phí chăm nuôi",
+        blocks: [
+          { p: `Mỗi đêm lúc quyết toán, mọi bé còn sống tự được cộng **${DAILY_XP.share * 100}%** số XP cần để lên cấp hiện tại (ít nhất ${DAILY_XP.min} XP), kể cả khi bạn không vào game. Bé yếu (sức khỏe dưới ${DAILY_XP.weakBelow}) chỉ được một nửa. Đủ XP thì bé lên cấp và bạn nhận xu thưởng lên cấp như thường.` },
+          { p: `Nuôi bé cũng tốn **phí chăm nuôi** mỗi ngày: (${UPKEEP.base} + ${UPKEEP.perLevel} × cấp) xu mỗi bé, nhân chỉ số giá của Ngân hàng Trung ương. Cả ngày không quá **${UPKEEP.incomeShare * 100}% thu nhập hôm đó** của bạn (tối thiểu ${UPKEEP.base} xu mỗi bé), và chỉ tính khi bạn có vào game trong ${UPKEEP.activeDays} ngày qua. Ví không đủ thì trừ phần đang có, không ghi nợ.` },
+          { tip: "Phí chăm nuôi giữ cho lượng xu trong thị trấn không phình nhanh hơn hàng hóa, nhờ vậy giá cả và tiền tiết kiệm của bạn giữ được giá trị." },
         ],
       },
       {

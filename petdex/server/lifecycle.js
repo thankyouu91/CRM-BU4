@@ -2,16 +2,20 @@
 // kỷ vật cho bé kế tiếp, ô tưởng niệm và phí mở lại ô.
 import { db, getUser, listPets, setActivePet, transaction } from './db.js';
 import { bus } from './events.js';
-import { indexedPrice } from './bank.js';
+import { economy, indexedPrice } from './bank.js';
 import { startOfDay } from './clock.js';
 import { DAY, GameError, RULES, ageInfo, isBusy, lifeOf, settle, tick, xpToNext } from './game.js';
-import { post } from './ledger.js';
-import { LIFE, SPECIES, dailyXp, speciesOrGuest } from '../../public/ta-tua/game/js/shared/pets.js';
+import { KINDS, post } from './ledger.js';
+import { LIFE, SPECIES, UPKEEP, dailyXp, speciesOrGuest, upkeepOf } from '../../public/ta-tua/game/js/shared/pets.js';
 
 const q = {
   allPets: db.prepare('SELECT * FROM pets'),
   setHealthAvg: db.prepare('UPDATE pets SET health_avg = ?, health_days = ? WHERE id = ?'),
   setLevel: db.prepare('UPDATE pets SET level = ?, xp = ? WHERE id = ?'),
+  upkeepDue: db.prepare(`SELECT p.owner_id, GROUP_CONCAT(p.level) AS levels, u.coins FROM pets p JOIN users u ON u.id = p.owner_id
+    WHERE u.last_seen_at >= ? GROUP BY p.owner_id`),
+  incomeOf: db.prepare(`SELECT COALESCE(SUM(delta), 0) AS s FROM ledger
+    WHERE user_id = ? AND account = 'wallet' AND delta > 0 AND created_at >= ? AND created_at < ? AND kind IN (SELECT value FROM json_each(?))`),
   openShifts: db.prepare('SELECT * FROM shifts WHERE pet_id = ? AND claimed_at IS NULL'),
   claim: db.prepare('UPDATE shifts SET claimed_at = ? WHERE id = ?'),
   skills: db.prepare('SELECT skill, value FROM pet_skills WHERE pet_id = ?'),
@@ -117,6 +121,27 @@ export function settleLifeDay(day) {
       if (grown.coins) post({ userId: row.owner_id, delta: grown.coins, kind: 'level', memo: `${row.name} tự lớn lên cấp ${grown.pet.level}`, now: end - 1 });
     }
   });
+}
+
+const INCOME_KINDS = JSON.stringify(Object.keys(KINDS).filter((k) => KINDS[k].group === 'income'));
+
+/** Thu phí chăm nuôi ngày `day` của người chơi còn hoạt động (xem UPKEEP); trả về tổng đã thu. */
+export function settleUpkeepDay(day) {
+  const end = startOfDay(day) + DAY;
+  const { priceIndex } = economy();
+  let total = 0;
+  transaction(() => {
+    for (const row of q.upkeepDue.all(end - UPKEEP.activeDays * DAY)) {
+      const levels = String(row.levels).split(',').map(Number);
+      const full = levels.reduce((sum, lv) => sum + upkeepOf(lv, priceIndex), 0);
+      const income = q.incomeOf.get(row.owner_id, end - DAY, end, INCOME_KINDS).s;
+      const due = Math.min(full, Math.max(UPKEEP.base * levels.length, Math.floor(income * UPKEEP.incomeShare)));
+      const paid = Math.min(due, Math.max(0, row.coins));
+      if (paid > 0) post({ userId: row.owner_id, delta: -paid, kind: 'upkeep', memo: `Phí chăm nuôi ngày ${day}`, now: end - 1 });
+      total += paid;
+    }
+  });
+  return total;
 }
 
 /** Mở lại một ô tưởng niệm để nhận nuôi hoặc ấp trứng tiếp. */

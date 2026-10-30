@@ -44,7 +44,7 @@ test('Sàn: báo giá, phí, thành tiền, biên giá', () => {
   const { bid, ask } = quote(100);
   assert.equal(bid, 99);
   assert.equal(ask, 101);
-  assert.equal(tradeFee(250), 3);
+  assert.equal(tradeFee(250), 4); // 1,5%
   assert.equal(tradeFee(10), 1);
   assert.equal(amountFor(25, 40), 100);
   assert.ok(inBand(114, 100));
@@ -67,8 +67,8 @@ test('Sàn: giá = luật game × (1 + 45% áp lực người chơi); áp lực 
   near(blendPrice('milk', 30, pushPressure(0, MARKET.liquidity / 10, 'sell')), 30 * 0.955);
   near(decayPressure(1, MARKET.pressureHalfLifeMs), 0.5);
   assert.equal(pushPressure(1.95, MARKET.liquidity, 'buy'), MARKET.maxPressure);
-  // sàn 0,25 lần và trần 5 lần giá gốc
-  assert.equal(blendPrice('milk', 1, 0), 30 * 0.25);
+  // sàn (sữa tươi là hàng tươi: 0,4 lần) và trần 5 lần giá gốc
+  assert.equal(blendPrice('milk', 1, 0), 30 * MARKET.freshFloor);
   assert.equal(blendPrice('milk', 1000, 0), 30 * MARKET.ceiling);
 });
 
@@ -152,10 +152,10 @@ test('ngân hàng: kỳ hạn rút sớm mất lãi', () => {
 
 test('Ngân hàng Trung ương: xu tăng nhanh thì nâng giá NPC và hạ lãi tiết kiệm, có giới hạn', () => {
   const hot = policy({ growth: 0.6, priceIndex: 1 });
-  near(hot.priceIndex, 1.045);
+  near(hot.priceIndex, 1.15); // tối đa +15%/tuần
   near(hot.baseRate, 0.0005);
   const cold = policy({ growth: -0.2, priceIndex: 1 });
-  near(cold.priceIndex, 0.985);
+  near(cold.priceIndex, 0.97);
   near(cold.baseRate, 0.005);
   const steady = policy({ growth: BANK.targetGrowth, priceIndex: 1.2 });
   near(steady.priceIndex, 1.2);
@@ -185,4 +185,13 @@ test('mini-game: ghép hình có đủ 8 cặp và thưởng theo số lượt',
   assert.equal(judge('memory', 1, 30, { moves: 10, pairs: 8 }).coins, 8 * 3 + 12);
   assert.equal(judge('memory', 1, 3, { moves: 8, pairs: 8 }).ok, false);
   assert.equal(judge('memory', 1, 30, { moves: 4, pairs: 6 }).ok, false);
+});
+
+test('giá sàn: hàng tươi không xuống dưới 0,4 lần giá gốc, hàng để lâu được 0,25 lần', async () => {
+  const { blendPrice, stepPrice, floorOf } = await import('../server/rules/market.js');
+  assert.equal(floorOf('fish'), MARKET.freshFloor);
+  assert.equal(floorOf('sugar'), MARKET.floor);
+  assert.equal(blendPrice('fish', 1, -2), COMMODITIES.fish.base * MARKET.freshFloor);
+  assert.equal(blendPrice('sugar', 1, -2), COMMODITIES.sugar.base * MARKET.floor);
+  assert.equal(stepPrice('strawberry', COMMODITIES.strawberry.base * 0.41, 0, DAY, -5), COMMODITIES.strawberry.base * MARKET.freshFloor);
 });

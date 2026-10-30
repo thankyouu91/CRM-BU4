@@ -17,6 +17,7 @@ export const KINDS = {
   mail: { group: 'income', label: 'Quà trong hộp thư' },
   interest: { group: 'income', label: 'Lãi ngân hàng' },
   shop: { group: 'expense', label: 'Siêu thị' },
+  upkeep: { group: 'expense', label: 'Phí chăm nuôi' },
   adopt: { group: 'expense', label: 'Nhận nuôi' },
   market_buy: { group: 'expense', label: 'Mua trên Sàn' },
   fee: { group: 'expense', label: 'Phí giao dịch' },

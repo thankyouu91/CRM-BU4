@@ -32,7 +32,7 @@ import { createPetFigure } from './sprite.js';
 import { itemIcon } from './itemart.js';
 import {
   DAILY_XP, EGG, EGG_ODDS, ELEMENTS, ELEMENT_RULES, LEVEL_FORMS, LIFE, LIFE_STAGES, RARITIES, RELATIONS, SLOTS, WEAR_RULES, foodBonus, formIndex,
-  dailyXp, relation, setOf, wearBonus,
+  UPKEEP, dailyXp, relation, setOf, upkeepOf, wearBonus,
 } from './shared/pets.js';
 import { AFFIXES, AFFIX_ORDER, QUICK_SELL, SHOP_TIERS, STACKING, TIERS, TIER_ORDER, affixPool, affixText } from './shared/gear.js';
 import { ESSENTIALS, ESSENTIAL_CATS } from './shared/industry.js';
@@ -589,7 +589,8 @@ function renderHome(root) {
         <p class="age-line">🎂 ${ageText(pet.age.days)} · ${pet.age.label}${growNote}</p>
         ${lifeNotes(pet)}
         ${meter('xp', '⭐ Kinh nghiệm', pet.xp, pet.xpNext)}
-        <p class="muted small daily-xp" title="Bé yếu (sức khỏe dưới ${DAILY_XP.weakBelow}) chỉ được một nửa.">🌙 Mỗi đêm bé tự lớn thêm <b>+${dailyXp(pet.xpNext, pet.health)} XP</b>, kể cả khi bạn không vào game.</p>
+        <p class="muted small daily-xp" title="Bé yếu (sức khỏe dưới ${DAILY_XP.weakBelow}) chỉ được một nửa.">🌙 Mỗi đêm bé tự lớn thêm <b>+${dailyXp(pet.xpNext, pet.health)} XP</b>, kể cả khi bạn không vào game.
+          Phí chăm nuôi khoảng <b>${upkeepOf(pet.level, state.me.economy.priceIndex)} xu/ngày</b> (không quá ${UPKEEP.incomeShare * 100}% thu nhập trong ngày của bạn).</p>
         ${pet.sick ? `<div class="sick-note">${pet.sick.icon} ${esc(pet.name)} đang bị <b>${esc(pet.sick.name.toLowerCase())}</b>: chưa đi làm, đi học hay chơi mini-game được.
           <button class="btn small pink" data-go="clinic">🩺 Đưa đi khám</button></div>` : ''}
         ${['fullness', 'happiness', 'energy', 'hygiene', 'health'].map((s) => meter(s, `${STAT_ICONS[s]} ${STAT_LABELS[s]}`, pet[s], 100)).join('')}

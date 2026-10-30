@@ -98,6 +98,7 @@ export const AUDIT_ACTIONS = {
   "tatua.industry_unmerge": { label: "Gỡ gộp ngành gia tộc", group: "tatua" },
   "tatua.industry_merge": { label: "Gộp lại ngành gia tộc", group: "tatua" },
   "tatua.arena_cancel": { label: "Hủy trận Đấu trường", group: "tatua" },
+  "tatua.bots_config": { label: "Bật/tắt và đặt số cư dân tự động", group: "tatua" },
   "tatua.mail": { label: "Gửi thư trong game", group: "tatua" },
   "tatua.chat_delete": { label: "Xoá tin nhắn trong game", group: "tatua" },
   "tatua.chat_mute": { label: "Cấm chat người chơi", group: "tatua" },

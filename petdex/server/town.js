@@ -21,7 +21,7 @@ const q = {
   insertNews: db.prepare('INSERT INTO news (commodity, headline, effect, created_at, starts_at, ends_at) VALUES (?, ?, ?, ?, ?, ?)'),
   taxable: db.prepare(`
     SELECT kind, COALESCE(SUM(delta), 0) AS total FROM ledger
-    WHERE user_id = ? AND created_at >= ? AND created_at < ? AND kind IN ('salary', 'interest', 'toll_income') GROUP BY kind`),
+    WHERE user_id = ? AND created_at >= ? AND created_at < ? AND kind IN ('salary', 'interest', 'toll_income', 'minigame') GROUP BY kind`),
   gains: db.prepare('SELECT COALESCE(SUM(amount), 0) AS amount FROM gains WHERE user_id = ? AND day = ?'),
   profit: db.prepare(`
     SELECT COALESCE(SUM(revenue - cogs - rent - wages - tax), 0) AS profit FROM business_days d
@@ -137,7 +137,7 @@ export function settleTaxes(day, now = Date.now()) {
       const parts = Object.fromEntries(q.taxable.all(userId, from, to).map((r) => [r.kind, r.total]));
       parts.business = Math.max(0, q.profit.get(userId, day).profit);
       parts.trading = Math.max(0, q.gains.get(userId, day).amount);
-      const taxable = Math.max(0, (parts.salary ?? 0) + (parts.interest ?? 0) + (parts.toll_income ?? 0) + parts.business + parts.trading);
+      const taxable = Math.max(0, (parts.salary ?? 0) + (parts.interest ?? 0) + (parts.toll_income ?? 0) + (parts.minigame ?? 0) + parts.business + parts.trading);
       const tax = incomeTax(taxable, cut);
       const user = getUser(userId);
       const due = tax + user.tax_due;
