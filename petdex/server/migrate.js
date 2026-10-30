@@ -1,5 +1,5 @@
 // Chuyển dữ liệu cũ sang mô hình mới. Mỗi bước chạy đúng một lần (đánh dấu trong bảng meta).
-import { allPets, allUsers, db, getMeta, setBornAt, setMeta, setSkill, setTraits, setWear, skillsOf, transaction } from './db.js';
+import { adminLog, allPets, allUsers, db, getMeta, setBornAt, setMeta, setSkill, setTraits, setWear, skillsOf, transaction } from './db.js';
 import { HOUR, ITEMS, PET_DAY_MS } from './game.js';
 import { post } from './ledger.js';
 import { initialSkills } from './rules/careers.js';
@@ -113,6 +113,14 @@ const steps = {
       worn.sort(([, a], [, b]) => TIER_ORDER.indexOf(a.tier ?? 'blue') - TIER_ORDER.indexOf(b.tier ?? 'blue'));
       for (const [slot] of worn.slice(0, extra)) setWear(pet.id, slot, null);
     }
+  },
+  /**
+   * Gỡ kẹt: gia tộc giải tán vì không còn ai đủ quyền làm tộc trưởng từng để lại dòng thành viên của những người còn lại,
+   * khiến họ không vào, không lập, cũng không rời gia tộc được. Xóa các dòng trỏ vào gia tộc đã giải tán.
+   */
+  clan_members_dissolved_v1() {
+    const n = Number(db.prepare('DELETE FROM clan_members WHERE clan_id IN (SELECT id FROM clans WHERE dissolved_at IS NOT NULL)').run().changes);
+    if (n) adminLog('Hệ thống', 'clan_members_repair', null, { freed: n });
   },
 };
 

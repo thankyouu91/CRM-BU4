@@ -329,7 +329,7 @@ export function renderClans(root, ctx) {
         <section class="card clan-box">
           <h3>📈 Ngành đang nắm và tác động lên Sàn</h3>
           ${c.industries.length ? `<ul class="clan-impact">${c.industries.map((i) => `<li>${INDUSTRIES[i.id].icon} <b>${esc(INDUSTRIES[i.id].name)}</b><br>${marketLine(i.id) || '<small class="muted">Không tác động trực tiếp lên Sàn Nguyên Liệu.</small>'}</li>`).join('')}</ul>
-            <p class="muted small">Càng nhiều lô đất của ngành có công trình hoàn chỉnh, tác động càng mạnh (tối đa khi khoảng 8 lô). Ngành chưa gia tộc nào nắm thì hàng chạy bình thường.</p>`
+            <p class="muted small">Càng nhiều lô đất của ngành có công trình hoàn chỉnh, tác động càng mạnh (một gia tộc đạt tối đa khi có 7 lô; nhiều gia tộc cùng nắm thì ít lô hơn). Ngành chưa gia tộc nào nắm thì hàng chạy bình thường.</p>`
             : '<p class="muted">Gia tộc chưa thâu tóm ngành nào.</p>'}
         </section>
 

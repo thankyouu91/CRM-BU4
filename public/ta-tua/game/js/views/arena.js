@@ -49,7 +49,7 @@ export function renderArena(root, ctx) {
     body.innerHTML = `
       <section class="card arena-rules">
         <p class="muted small">Bên thách đấu đề xuất 1–${r.maxSlots} khung ${r.hours.map((h) => `${h}h`).join(' hoặc ')} (giờ Việt Nam) trong ${r.maxDaysAhead} ngày tới; bên bị thách chọn một khung trong ${r.confirmHours} giờ, không thì bị xử thua và nộp ${Math.round(r.forfeitPenalty * 100)}% quỹ.
-          Bên thua trận mất lô/ghế và ${Math.round(r.penalty * 100)}% quỹ gia tộc (một nửa cho bên thắng, một nửa vào ngân sách thị trấn). Sau trận, mọi trang phục đang đeo của người tham chiến hai bên hỏng hẳn (sửa ở Lò rèn).
+          Bên thua trận mất lô/ghế và ${Math.round(r.penalty * 100)}% tài sản gia tộc (quỹ cộng tiền gửi kỳ hạn; quỹ thiếu thì rút tiền gửi, mất lãi), một nửa cho bên thắng, một nửa vào ngân sách thị trấn. Bên nào không có ai ra sân thì tính như bỏ trận. Sau trận, trang phục đang đeo trên các bé ra sân của hai bên hỏng hẳn (sửa ở Lò rèn); bé ở nhà không sao. Mục tiêu đổi chủ trước giờ đấu thì trận bị hủy.
           Chiến lực = (100 + 20 × cấp bé) × độ hiếm × (1 + 5% mỗi điểm trang phục còn dùng được: Lam 1, Lục 2, Vàng 3, Đỏ 4).</p>
       </section>
       ${c ? rosterBox(c, r) : '<section class="card"><p class="muted">Vào một gia tộc để thách đấu và ra sân.</p></section>'}
@@ -243,7 +243,7 @@ export function renderArena(root, ctx) {
     const [defenderId, kind, ref] = String(fd.target).split('|');
     const slots = [{ day: fd.day1, hour: Number(fd.hour1) }];
     if (fd.day2) slots.push({ day: fd.day2, hour: Number(fd.hour2) });
-    if (!confirm('Gửi lời thách đấu? Thua trận thì gia tộc nộp 30% quỹ, và trang phục đang đeo của người ra sân sẽ hỏng.')) return;
+    if (!confirm('Gửi lời thách đấu? Thua trận thì gia tộc nộp 30% tài sản (quỹ + tiền gửi), và trang phục đang đeo trên các bé ra sân sẽ hỏng.')) return;
     ctx.act('/arena/challenge', { defenderId: Number(defenderId), kind, ref, slots });
   });
 
