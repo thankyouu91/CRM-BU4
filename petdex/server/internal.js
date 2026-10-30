@@ -5,6 +5,7 @@ import { economy } from './bank.js';
 import * as store from './db.js';
 import { digest, hashPassword, randomCode, verifyPassword } from './passwords.js';
 import { adminChat, adminDeleteMessage, adminMail, muteUser } from './chat.js';
+import { heavyStatus, setHeavyOpen } from './heavy-industry.js';
 import { mergeDone, remergeIndustries, unmergeIndustries, unmergePlan } from './industry-merge.js';
 import { createGear, createRandomGear, deleteGear, describeGear, gearConfig, getGear, listGear, setGearConfig, updateGear } from './gear.js';
 import { ANNOUNCEMENT, announcementById, createAnnouncement, listAnnouncements, removeAnnouncement } from './announcements.js';
@@ -642,6 +643,8 @@ internalApi.post('/admin/industries/unmerge', (req, res) => {
   res.json(unmergeIndustries(actorOf(req)));
 });
 internalApi.post('/admin/industries/merge', (req, res) => res.json(remergeIndustries(actorOf(req))));
+internalApi.get('/admin/industries/heavy', (_req, res) => res.json(heavyStatus()));
+internalApi.post('/admin/industries/heavy', (req, res) => res.json(setHeavyOpen(Boolean(req.body?.open), actorOf(req))));
 
 // ---- Trò chuyện và hộp thư ----
 internalApi.get('/admin/chat', (req, res) => res.json({ messages: adminChat({ channel: String(req.query?.channel ?? ''), limit: req.query?.limit }) }));

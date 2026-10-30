@@ -168,8 +168,11 @@ test('vĩ mô: ngày ghi từ trước khi có ngành mới được bổ sung c
 
 test('cân bằng ngành: mọi ngành chạy hết công suất thì mỗi mặt hàng lệch ròng không quá ±10%, Sàn vẫn còn ≥70% biến động', async () => {
   const { INDUSTRY_MARKET } = await import('../../public/ta-tua/game/js/shared/industry-market.js');
-  for (const plots of [8, 2]) {
-    const all = Object.fromEntries(Object.keys(INDUSTRY_MARKET).map((id) => [id, { clans: 1, plots }]));
+  const { HEAVY_INDUSTRIES } = await import('../../public/ta-tua/game/js/shared/industry.js');
+  // Cả khi công nghiệp nặng tạm đóng (không ai nắm được) lẫn khi mở lại.
+  for (const [plots, open] of [[8, false], [2, false], [8, true], [2, true]]) {
+    const ids = Object.keys(INDUSTRY_MARKET).filter((id) => open || !HEAVY_INDUSTRIES.includes(id));
+    const all = Object.fromEntries(ids.map((id) => [id, { clans: 1, plots }]));
     for (const [id, c] of Object.entries(industryInfluence(all))) {
       const net = c.sources.filter((s) => s.kind !== 'stabilize').reduce((m, s) => m * (1 + s.effect), 1);
       assert.ok(net >= 0.9 && net <= 1.1, `${id} lệch ${net.toFixed(3)} khi các ngành chạy ${plots} lô`);

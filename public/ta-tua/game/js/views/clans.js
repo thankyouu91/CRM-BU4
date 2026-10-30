@@ -35,6 +35,8 @@ const ui = {
   build: { plotId: null, design: null, family: 'base', piece: null, layer: null, color: '#e85d5d' },
 };
 
+/** Ngành đang mở (bỏ các ngành tạm đóng, ví dụ công nghiệp nặng). */
+const openIds = (cfg) => INDUSTRY_ORDER.filter((id) => !cfg?.closedIndustries?.includes(id));
 const pctInt = (v) => `${Math.round(v * 100)}%`;
 const signed = (v) => `${v > 0 ? '+' : ''}${Math.round(v * 100)}%`;
 const money = (n) => `${fmt(n)} 🪙`;
@@ -206,8 +208,9 @@ export function renderClans(root, ctx) {
           <p class="muted small">Ngành đầu tiên trả <b>tiền bồi thường thị trường</b> 20.000–50.000 xu tùy mô hình. Mở rộng sang ngành thứ hai, thứ ba phải trả
             <b>gấp ${cfg.expandMultiplier} lần</b> mức gốc và thuế doanh nghiệp tăng ${pctInt(cfg.extraTaxPerIndustry)} mỗi ngành.
             ${c.nextIndustryLevel ? `Ngành tiếp theo cần gia tộc cấp ${c.nextIndustryLevel}.` : ''}</p>
-          ${Object.entries(SECTORS).map(([sector, sec]) => `<h4 class="sector-head">${sec.icon} ${sec.name}</h4>
-          <div class="industry-grid">${INDUSTRY_ORDER.filter((id) => INDUSTRIES[id].sector === sector).map((id) => {
+          ${cfg.closedIndustries?.length ? `<p class="muted small">🏭 Công nghiệp nặng (${cfg.closedIndustries.map((id) => INDUSTRIES[id]?.name).join(', ')}) đang tạm đóng.</p>` : ''}
+          ${Object.entries(SECTORS).filter(([sector]) => openIds(cfg).some((id) => INDUSTRIES[id].sector === sector)).map(([sector, sec]) => `<h4 class="sector-head">${sec.icon} ${sec.name}</h4>
+          <div class="industry-grid">${openIds(cfg).filter((id) => INDUSTRIES[id].sector === sector).map((id) => {
             const ind = INDUSTRIES[id];
             const mine = owned.has(id);
             const rivals = (cfg.industryClans[id] ?? 0) - (mine ? 1 : 0);
@@ -492,7 +495,7 @@ export function renderClans(root, ctx) {
                 ${[['zone', 'Địa hình'], ['resource', 'Tài nguyên & mỏ'], ['climate', 'Khí hậu'], ['price', 'Giá đất'], ['growth', '% tăng giá'], ['fit', 'Độ hợp ngành']].map(([k, n]) => `<option value="${k}" ${ui.heat === k ? 'selected' : ''}>${n}</option>`).join('')}
               </select></label>
             <label ${ui.heat === 'fit' ? '' : 'hidden'}>Ngành
-              <select data-fit>${INDUSTRY_ORDER.map((id) => `<option value="${id}" ${ui.industry === id ? 'selected' : ''}>${INDUSTRIES[id].icon} ${esc(INDUSTRIES[id].name)}</option>`).join('')}</select></label>
+              <select data-fit>${openIds(data?.config).map((id) => `<option value="${id}" ${ui.industry === id ? 'selected' : ''}>${INDUSTRIES[id].icon} ${esc(INDUSTRIES[id].name)}</option>`).join('')}</select></label>
           </div>
           <div class="land-scroll">${mapSvg()}</div>
           <div class="land-legend">${legend()}</div>
@@ -539,7 +542,7 @@ export function renderClans(root, ctx) {
         }).join('')}</select></label>` : ''}
       ${info.owner && info.design.length ? `<div class="plot-building">${designSvg(info.design, { background: '#f7efe1' })}</div>` : ''}
       <label class="plot-industry">Xem trước với ngành
-        <select data-preview-industry>${INDUSTRY_ORDER.map((id) => `<option value="${id}" ${ui.industry === id ? 'selected' : ''}>${INDUSTRIES[id].icon} ${esc(INDUSTRIES[id].name)}${myIndustries.includes(id) ? ' ✓' : ''}</option>`).join('')}</select></label>
+        <select data-preview-industry>${openIds(data?.config).map((id) => `<option value="${id}" ${ui.industry === id ? 'selected' : ''}>${INDUSTRIES[id].icon} ${esc(INDUSTRIES[id].name)}${myIndustries.includes(id) ? ' ✓' : ''}</option>`).join('')}</select></label>
       <div class="plot-preview muted">Đang tính…</div>
       <div class="plot-actions">
         ${canBuy ? `<button class="btn primary" data-buy="${p.id}">Mua lô bằng quỹ · ${money(info.price)}</button>` : ''}
@@ -770,7 +773,7 @@ export function renderClans(root, ctx) {
   }).catch(ctx.fail);
 
   function chainDiagram() {
-    const col = (sector) => INDUSTRY_ORDER.filter((id) => INDUSTRIES[id].sector === sector).map((id) => `
+    const col = (sector) => openIds(data?.config).filter((id) => INDUSTRIES[id].sector === sector).map((id) => `
       <div class="chain-node ${data.clan?.industries.some((i) => i.id === id) ? 'held' : ''}"><b>${INDUSTRIES[id].icon} ${esc(INDUSTRIES[id].name)}</b>${recipeLine(id)}</div>`).join('');
     return `<div class="chain">
       ${['raw', 'energy', 'heavy', 'light'].map((sec) => `<div class="chain-col"><h4>${SECTORS[sec].icon} ${SECTORS[sec].name}</h4>${col(sec)}</div>`).join('<div class="chain-arrow">➜</div>')}
@@ -966,7 +969,7 @@ export function renderClans(root, ctx) {
           <section class="card clan-box wide">
             <h3>📦 Cầu từng ngành hôm nay</h3>
             ${Object.entries(SECTORS).map(([sector, sec]) => {
-              const ids = INDUSTRY_ORDER.filter((id) => INDUSTRIES[id].sector === sector);
+              const ids = openIds(data.config).filter((id) => INDUSTRIES[id].sector === sector);
               if (!ids.length) return '';
               const held = ids.filter((id) => data.config.industryClans?.[id]).length;
               // Khối dịch vụ (gần Sàn Nguyên Liệu nhất) mở sẵn; các khối khác gập lại cho gọn.

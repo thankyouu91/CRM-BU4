@@ -6,6 +6,7 @@ import { initialSkills } from './rules/careers.js';
 import { createGear, setGearListed, wearLimitOf, wornGear } from './gear.js';
 import { TIER_ORDER } from '../../public/ta-tua/game/js/shared/gear.js';
 import { mergeHeld, mergeIndustries } from './industry-merge.js';
+import { closeHeavyIndustries, heavyOpen } from './heavy-industry.js';
 import { rollTraits } from './rules/production.js';
 import { TREASURY_SEED } from './rules/town.js';
 
@@ -121,6 +122,16 @@ const steps = {
   clan_members_dissolved_v1() {
     const n = Number(db.prepare('DELETE FROM clan_members WHERE clan_id IN (SELECT id FROM clans WHERE dissolved_at IS NOT NULL)').run().changes);
     if (n) adminLog('Hệ thống', 'clan_members_repair', null, { freed: n });
+  },
+  /**
+   * Tạm đóng công nghiệp nặng (xem heavy-industry.js): hoàn phí thâu tóm, gỡ ngành, lô về chưa chọn ngành.
+   * Quản trị viên đã mở lại trước khi bước này chạy thì bỏ qua.
+   */
+  heavy_industry_close_v1(now) {
+    if (heavyOpen()) return SKIP;
+    const res = closeHeavyIndustries(now);
+    adminLog('Hệ thống', 'heavy_industry_close', null, res);
+    return undefined;
   },
 };
 

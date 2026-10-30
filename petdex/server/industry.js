@@ -6,9 +6,10 @@ import { dayKey } from './clock.js';
 import { DAY, GameError } from './game.js';
 import { antitrustTax, buyCapLeft, recordAntitrust } from './commerce.js';
 import { offerToShop } from './essentials.js';
+import { industryClosed } from './heavy-industry.js';
 import { post } from './ledger.js';
 import {
-  ESSENTIALS, ESSENTIAL_CATS, GOODS, GOOD_INDUSTRY, GOOD_ORDER, MARKET_RULES, PRODUCTION_INDUSTRIES, RUN_STEPS, batchesOf, depositsOf,
+  ESSENTIALS, ESSENTIAL_CATS, GOODS, landYield, GOOD_INDUSTRY, GOOD_ORDER, MARKET_RULES, PRODUCTION_INDUSTRIES, RUN_STEPS, batchesOf, depositsOf,
   extractable, lineOf, plantsFor, qualityScore, recipeOf, variantInfo, variantsFor,
 } from '../../public/ta-tua/game/js/shared/industry.js';
 import { PHASES, PLOTS, clanLevelOf, clanPerks, designBonus, designComplete, envFactor, weatherFactor } from '../../public/ta-tua/game/js/shared/clan.js';
@@ -115,7 +116,7 @@ function inputsNeeded(plots) {
 export function plotFactor(plot, row, { level, macro }) {
   const design = typeof row.design === 'string' ? JSON.parse(row.design) : row.design ?? [];
   return (1 + plot.prod) * envFactor(row.industry, plot.zone, plot.climate) * weatherFactor(macro.weather, plot.zone, plot.climate)
-    * (PHASES[macro.phase]?.factor ?? 1) * (1 + clanPerks(level).prodBonus) * (1 + designBonus(design));
+    * (PHASES[macro.phase]?.factor ?? 1) * (1 + clanPerks(level).prodBonus) * (1 + designBonus(design)) * landYield(plot);
 }
 
 /** Sản lượng dự kiến một đêm của một lô (để xem trước): đầu ra tối đa và nguyên liệu cần. */
@@ -168,7 +169,7 @@ export function runProduction(clan, plots, { day, macro, at, rand = Math.random,
   const wind = buffs.wind ?? 0;
   const extra = { irrigation: 0, wind: 0 };
   const level = clanLevelOf(clan.xp);
-  const rows = plots.filter((r) => PRODUCTION_INDUSTRIES[r.industry] && designComplete(JSON.parse(r.design)));
+  const rows = plots.filter((r) => PRODUCTION_INDUSTRIES[r.industry] && !industryClosed(r.industry) && designComplete(JSON.parse(r.design)));
   if (!rows.length && !q.goods.all(clan.id).length) return { revenue: 0, extra };
   const log = new Map();
   const note = (good, field, n) => {
