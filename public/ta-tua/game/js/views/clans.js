@@ -7,7 +7,7 @@ import {
   CLIMATES, DESIGN, INDUSTRIES, INDUSTRY_ORDER, LAND, PALETTE, PHASES, PIECES, PIECE_FAMILIES, PLOTS, WEATHER, ZONES,
   designBonus, designComplete, designCost, designSvg, envFactor, pieceById, pieceSvg,
 } from '../shared/clan.js';
-import { GOODS, GOOD_ORDER, PRODUCTION_INDUSTRIES, SECTORS, plantsFor } from '../shared/industry.js';
+import { GOODS, GOOD_ORDER, PRODUCTION_INDUSTRIES, SECTORS, STRATEGIC_INDUSTRIES, STRATEGIC_RULES, plantsFor } from '../shared/industry.js';
 
 const TABS = [
   { key: 'clan', label: '🏯 Gia tộc' },
@@ -45,6 +45,8 @@ const chips = (map) => Object.entries(map).map(([g, n]) => goodChip(g, Math.roun
 
 /** Một dòng tóm tắt ngành sản xuất: khai thác gì, hoặc công thức một mẻ. */
 function recipeLine(id) {
+  const st = STRATEGIC_INDUSTRIES[id];
+  if (st) return `<small class="recipe">${id === 'tax_office' ? 'Hoa hồng 10–40%' : 'Buff toàn server +10–40%'}: ${esc(st.effect)} · tối đa ${st.maxClans} gia tộc</small>`;
   const ind = PRODUCTION_INDUSTRIES[id];
   if (!ind) return '';
   if (ind.extracts) {
@@ -116,9 +118,11 @@ export function renderClans(root, ctx) {
     draw();
   });
 
-  Promise.all([api('/clans'), api('/land')]).then(([c, l]) => {
+  let strat = null;
+  Promise.all([api('/clans'), api('/land'), api('/clans/strategic')]).then(([c, l, st]) => {
     data = c;
     land = l;
+    strat = st;
     draw();
   }).catch(ctx.fail);
 
@@ -201,6 +205,7 @@ export function renderClans(root, ctx) {
           }).join('')}</div>`).join('')}
         </section>
 
+        ${strategicSection()}
         <section class="card clan-box wide">
           <h3>🏘️ Đất của gia tộc</h3>
           ${c.plots.length ? `<table class="clan-table"><thead><tr><th>Lô</th><th>Địa hình</th><th>Ngành</th><th>Công trình</th><th class="num">Giá mua</th><th class="num">Giá trị</th><th class="num">Doanh thu/ngày</th><th></th></tr></thead>
@@ -256,6 +261,59 @@ export function renderClans(root, ctx) {
             </li>`).join('')}</ul>` : '<p class="muted">Chưa có gia tộc nào. Hãy là người đầu tiên!</p>'}
         </section>
       </div>`;
+  }
+
+
+  // ================================================================ hạ tầng chiến lược
+
+  function strategicSection() {
+    if (!strat) return '';
+    const leader = data.clan?.role === 'leader';
+    const manage = data.clan && (data.clan.role === 'leader' || data.clan.role === 'elder');
+    const rows = Object.entries(strat.industries).map(([id, x]) => `<tr>
+      <td>${STRATEGIC_INDUSTRIES[id].icon} <b>${esc(STRATEGIC_INDUSTRIES[id].name)}</b><br><small class="muted">${esc(STRATEGIC_INDUSTRIES[id].effect)}</small></td>
+      <td class="num"><b class="${x.buff ? 'up' : ''}">+${pctInt(x.buff)}</b></td>
+      <td>${x.owners.length ? x.owners.map((o) => `<span class="owner-tag" style="--clan:${esc(o.color)}">${esc(o.emblem)} ${esc(o.name)} · cấp ${o.level}</span>`).join(' ') : '<span class="muted">Chưa ai vận hành</span>'}</td>
+      <td class="num">${x.mine.total ? `+${pctInt(x.mine.total)}${x.mine.paid ? ` <small class="muted">(trả phí ${pctInt(STRATEGIC_RULES.fee)} phần tăng)</small>` : ' <small class="ok">miễn phí</small>'}` : '–'}</td>
+    </tr>`).join('');
+    const m = strat.mine;
+    let mineBox = '';
+    if (m) {
+      const def = STRATEGIC_INDUSTRIES[m.industry];
+      const pets = (ctx.me.pets ?? []).map((pet) => {
+        const sp = ctx.catalog.species.find((x) => x.id === pet.species);
+        return `<option value="${pet.id}">${esc(pet.name)}${sp?.rarity === 'huyenthoai' ? ' ⭐ huyền thoại' : ''}</option>`;
+      }).join('');
+      const windPlots = (data.clan.plots ?? []).filter((p) => p.industry === 'wind_farm');
+      mineBox = `<div class="infra-mine">
+        <h4>${def.icon} Gia tộc đang nắm ${esc(def.name)} · cấp ${m.level}${m.operating ? '' : ' <span class="warn">(chưa vận hành: cần một lô làm ngành này với công trình hoàn chỉnh)</span>'}</h4>
+        <p>${m.industry === 'tax_office' ? 'Hoa hồng truy thu' : 'Buff tạo ra'}: <b>+${pctInt(STRATEGIC_RULES.levels[m.level - 1].buff)}</b>
+          ${m.next ? ` · cấp ${m.level + 1}: +${pctInt(m.next.buff)} (${money(m.next.cost)})` : ' · đã tối đa'}
+          · phí hạ tầng thu 7 ngày: <b>${money(m.feeWeek)}</b></p>
+        ${leader && m.next ? `<button class="btn primary small" data-infra-upgrade>Nâng cấp hạ tầng · ${money(m.next.cost)}</button>` : ''}
+        ${m.industry === 'wind_farm' ? `
+          <p class="muted small">Thành viên gia tộc được thêm +${pctInt(STRATEGIC_RULES.ownerMemberBonus)} và không trả phí. Pet huyền thoại đứng máy: Kim +30%, Hỏa +25%, Mộc +20%, Thủy +15%, Thổ +10%.
+            Hiện cộng thêm: <b>+${pctInt(m.operatorBonus)}</b></p>
+          ${m.operators.length ? `<ul class="refund-list">${m.operators.map((o) => `<li>Lô ${esc(o.code)}: ${esc(o.petName ?? '?')} của ${esc(o.username)}${o.legendary ? ' ⭐' : ''}
+            <button class="link-btn danger" data-op-remove="${o.plotId}">Cho nghỉ</button></li>`).join('')}</ul>` : ''}
+          ${windPlots.length && pets ? `<form class="row" data-form="operator">
+            <select name="plotId">${windPlots.map((p) => `<option value="${p.id}">Lô ${p.code}</option>`).join('')}</select>
+            <select name="petId">${pets}</select>
+            <button class="btn small">Cho bé đứng máy</button></form>` : ''}` : ''}
+        ${m.industry === 'tax_office' && strat.taxOffice ? `
+          <p class="muted small">Hồ sơ khai thiếu của các gia tộc khác. Truy thu = thuế trốn + phạt ${pctInt(strat.taxOffice.penalty)}, gia tộc hưởng hoa hồng ${pctInt(strat.taxOffice.rate)}, còn lại vào ngân sách.</p>
+          ${strat.taxOffice.cases.length ? `<table class="clan-table"><thead><tr><th>Gia tộc</th><th>Ngày</th><th class="num">Doanh thu</th><th class="num">Khai báo</th><th class="num">Thuế trốn</th><th></th></tr></thead><tbody>
+            ${strat.taxOffice.cases.map((c) => `<tr><td>${esc(c.emblem)} ${esc(c.clan)}</td><td>${c.day}</td><td class="num">${fmt(c.revenue)}</td><td class="num">${fmt(c.declared)}</td><td class="num warn">${fmt(c.evaded)}</td>
+              <td>${manage ? `<button class="btn small" data-tax-collect="${c.id}">Truy thu</button>` : ''}</td></tr>`).join('')}</tbody></table>` : '<p class="muted">Chưa có hồ sơ nào.</p>'}` : ''}
+      </div>`;
+    }
+    return `<section class="card clan-box wide">
+      <h3>🏛️ Hạ tầng chiến lược & ngành nhà nước</h3>
+      <p class="muted small">Buff áp cho toàn bộ thị trấn. Người chơi và gia tộc hưởng buff trả phí hạ tầng ${pctInt(STRATEGIC_RULES.fee)} phần tăng thêm cho gia tộc chủ; không đủ tiền trả phí thì không được buff.
+        Mỗi gia tộc chỉ nắm 1 ngành chiến lược. Gia tộc chủ nâng cấp hạ tầng để tăng buff từ +10% lên +40%.</p>
+      <table class="clan-table"><thead><tr><th>Ngành</th><th class="num">Buff toàn server</th><th>Gia tộc chủ</th><th class="num">Bạn được hưởng</th></tr></thead><tbody>${rows}</tbody></table>
+      ${mineBox}
+    </section>`;
   }
 
   // ================================================================ bản đồ đất
@@ -758,6 +816,11 @@ export function renderClans(root, ctx) {
     const on = (sel) => t.closest(sel);
     let el;
     if ((el = on('[data-cancel-listing]'))) act(`/industry/listings/${el.dataset.cancelListing}/cancel`);
+    else if (on('[data-infra-upgrade]')) act('/clans/strategic/upgrade');
+    else if ((el = on('[data-op-remove]'))) act('/clans/strategic/operator/remove', { plotId: Number(el.dataset.opRemove) });
+    else if ((el = on('[data-tax-collect]'))) {
+      if (confirm('Truy thu hồ sơ này? Tiền lấy từ quỹ gia tộc trốn thuế.')) act(`/clans/tax-office/${el.dataset.taxCollect}/collect`);
+    }
     else if ((el = on('[data-emblem]'))) {
       ui.emblem = el.dataset.emblem;
       body.querySelectorAll('[data-emblem]').forEach((b) => b.classList.toggle('current', b === el));
@@ -887,6 +950,7 @@ export function renderClans(root, ctx) {
       case 'dividend': return act('/clans/dividend', { amount: Number(fd.amount) });
       case 'declare': return act('/clans/declare', { ratio: Number(fd.ratio) / 100 });
       case 'import': return act('/industry/import', { good: fd.good, qty: Number(fd.qty) });
+      case 'operator': return act('/clans/strategic/operator', { plotId: Number(fd.plotId), petId: Number(fd.petId) });
       case 'buy': return act(`/industry/listings/${form.dataset.listing}/buy`, { qty: Number(fd.qty) });
       case 'goods': {
         const mode = e.submitter?.value === 'list' ? 'list' : 'sell';

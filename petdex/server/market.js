@@ -5,6 +5,7 @@ import { dayKey } from './clock.js';
 import { DAY, GameError, HOUR } from './game.js';
 import { chargeFee, post } from './ledger.js';
 import { tradeBonus } from './gear.js';
+import { windTradeBonus } from './strategic.js';
 import {
   COMMODITIES, LOT, MARKET, RAW_FIRST, amountFor, depthOf, fillPrice, gaussian, impact, inBand, meanPrice,
   quote, rollNews, shelfLife, stepDrift, stepPrice, tradeFee,
@@ -167,6 +168,7 @@ function settleResting(order, qty, price, now, goodsExpiry = null) {
   if (order.side === 'sell') {
     post({ userId: order.user_id, delta: amount, kind: 'market_sell', memo, now });
     tradeBonus(order.user_id, amount, `Bán trên Sàn: ${memo}`, now);
+    windTradeBonus(order.user_id, amount, `Bán trên Sàn: ${memo}`, now);
     chargeFee(order.user_id, Math.min(fee, amount), 'Phí bán trên Sàn', now);
     recordGain(order.user_id, amount - Math.min(fee, amount) - qty * order.goods_cost, now);
   } else {
@@ -259,6 +261,7 @@ export function placeOrder(userId, order, now = Date.now()) {
     } else if (filled) {
       post({ userId, delta: amount, kind: 'market_sell', memo, now });
       tradeBonus(userId, amount, `Bán trên Sàn: ${memo}`, now);
+      windTradeBonus(userId, amount, `Bán trên Sàn: ${memo}`, now);
       chargeFee(userId, Math.min(fee, amount), 'Phí bán trên Sàn', now);
       recordGain(userId, amount - Math.min(fee, amount) - filled * goodsCost, now);
     }

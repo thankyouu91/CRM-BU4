@@ -10,6 +10,8 @@ import { mutatePet } from './service.js';
 import { track } from './quests.js';
 import { isElement } from './elements.js';
 import { tradeBonus } from './gear.js';
+import { irrigationHarvest } from './strategic.js';
+import { COMMODITIES, LOT } from './rules/market.js';
 import { ELEMENT_RULES, elementOfSpecies, foodBonus } from '../../public/ta-tua/game/js/shared/pets.js';
 
 const q = {
@@ -131,9 +133,13 @@ export function harvest(userId, idx, now = Date.now(), rand = Math.random) {
       pests: Boolean(row.pests_at && !row.pests_cleared),
       rand,
     });
-    const qty = Math.max(1, Math.round(base * (mocBonus ? 1 + ELEMENT_RULES.perks.moc.harvest : 1)));
+    const grown = Math.max(1, Math.round(base * (mocBonus ? 1 + ELEMENT_RULES.perks.moc.harvest : 1)));
+    // Trị thủy (hạ tầng chiến lược): thêm sản lượng nếu trả được phí hạ tầng.
+    const irrigation = irrigationHarvest(userId, grown, (COMMODITIES[def.commodity].base * economy().priceIndex) / LOT, now);
+    const qty = grown + irrigation.extra;
     const stored = addGoods(userId, def.commodity, qty, now, { allowPartial: true, cost: row.seed_cost / qty });
-    const bonusNote = mocBonus ? ' (bé Mộc chăm vườn: +15%)' : '';
+    const bonusNote = (mocBonus ? ' (bé Mộc chăm vườn: +15%)' : '')
+      + (irrigation.extra ? ` (Trị thủy: +${irrigation.extra} phần${irrigation.fee ? `, phí ${irrigation.fee} xu` : ''})` : irrigation.unpaid ? ' (không đủ xu trả phí Trị thủy)' : '');
     q.clear.run(userId, idx);
     track(userId, 'harvest', 1, now);
     return {
