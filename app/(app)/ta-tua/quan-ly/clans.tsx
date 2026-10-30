@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Building2, CloudSun, Landmark, Map as MapIcon, Receipt, Scale } from "lucide-react";
+import { Building2, CloudSun, Factory, Landmark, Map as MapIcon, Receipt, Scale } from "lucide-react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -183,6 +183,7 @@ function ClansBoard({ data, reload }: { data: ClanAdmin; reload: () => void }) {
       <TaxOffice evasions={data.evasions} reload={reload} />
       <ConfigCard data={data} reload={reload} />
       <MacroCard data={data} reload={reload} />
+      <IndustryMergeCard />
       <ClanTable clans={data.clans} />
       <PlotTable plots={data.plots} reload={reload} />
     </div>
@@ -257,6 +258,69 @@ function TaxOffice({ evasions, reload }: { evasions: Evasion[]; reload: () => vo
         message={confirm ? (confirm.action === "collect"
           ? `Thu ${coins(Math.round(confirm.row.evaded * (1 + Number(penalty) / 100)))} (thuế trốn + ${penalty}% phạt) từ quỹ ${confirm.row.clan_name}, ngày ${confirm.row.day}.`
           : `Đóng hồ sơ ngày ${confirm.row.day} của ${confirm.row.clan_name} mà không thu.`) : ""}
+      />
+    </Card>
+  );
+}
+
+// ---------------------------------------------------------------------------------------------
+// Industry merge (41 → 26) and its reverse step, run right before rolling back to the old build
+// ---------------------------------------------------------------------------------------------
+
+interface MergePlan {
+  done: boolean;
+  held: boolean;
+  logged: number;
+  plots: { id: number; from: string; to: string }[];
+  industries: { clanId: number; from: string; rename: string; add: string[] }[];
+  restore: { clanId: number; industry: string; fee: number }[];
+  clawback: { clanId: number; industry: string; refunded: number; take: number }[];
+}
+
+function IndustryMergeCard() {
+  const { data, error, loading, reload } = useLoad<MergePlan>(`${ADMIN}/industries/status`);
+  const [confirm, setConfirm] = useState<"unmerge" | "merge" | null>(null);
+  const run = async () => {
+    if (!confirm) return;
+    try {
+      await api(`${ADMIN}/industries/${confirm}`, { method: "POST", body: confirm === "unmerge" ? { confirm: "UNMERGE" } : {} });
+      toast.success(confirm === "unmerge" ? "Đã gỡ gộp ngành. Deploy lại bản cũ ngay." : "Đã gộp lại các ngành");
+      setConfirm(null);
+      reload();
+    } catch (err) {
+      toast.error(errorText(err));
+    }
+  };
+  const take = data?.clawback.reduce((s, c) => s + c.take, 0) ?? 0;
+  const short = data?.clawback.reduce((s, c) => s + c.refunded - c.take, 0) ?? 0;
+  return (
+    <Card>
+      <CardHeader
+        title={<span className="flex items-center gap-2"><Factory className="h-4 w-4 text-muted-foreground" /> Gộp ngành gia tộc (41 → 26)</span>}
+        description="Gỡ gộp chỉ dùng khi phải quay lại bản trước khi gộp: chạy trên bản mới, NGAY TRƯỚC KHI deploy bản cũ. Lô đất và ngành đã thâu tóm về id cũ (theo dây chuyền đang chạy), ngành trùng bị xoá được khôi phục, tiền hoàn bị thu lại trong phạm vi quỹ. Sau khi gỡ, bản mới không tự gộp lại khi khởi động; bấm Gộp lại khi quay về bản mới."
+        action={data && (data.done
+          ? <Button size="sm" variant="danger" onClick={() => setConfirm("unmerge")}>Gỡ gộp</Button>
+          : <Button size="sm" onClick={() => setConfirm("merge")}>Gộp lại</Button>)}
+      />
+      <CardBody className="pt-3 text-sm">
+        {error ? <Failure error={error} onRetry={reload} /> : loading || !data ? <Skeleton className="h-10" /> : (
+          <p>
+            {data.done ? <Badge className="border bg-card">Đã gộp</Badge> : <Badge className="border bg-card">{data.held ? "Đã gỡ gộp, đang giữ" : "Chưa gộp"}</Badge>}{" "}
+            Gỡ gộp sẽ đổi {data.plots.length} lô, {data.industries.length} ngành đã thâu tóm, khôi phục {data.restore.length} ngành
+            {data.clawback.length ? `, thu lại ${coins(take)}${short ? ` (thiếu ${coins(short)} vì quỹ không đủ)` : ""}` : ""}.
+          </p>
+        )}
+      </CardBody>
+      <ConfirmDialog
+        open={Boolean(confirm)}
+        onClose={() => setConfirm(null)}
+        onConfirm={run}
+        danger={confirm === "unmerge"}
+        title={confirm === "unmerge" ? "Gỡ gộp ngành" : "Gộp lại các ngành"}
+        confirmLabel={confirm === "unmerge" ? "Gỡ gộp" : "Gộp lại"}
+        message={confirm === "unmerge"
+          ? "Đưa dữ liệu về 41 ngành cũ. Giao diện bản mới sẽ hiển thị sai cho tới khi deploy bản cũ, nên deploy bản cũ ngay sau bước này."
+          : "Gộp 41 ngành thành 26 ngay bây giờ, hoàn tiền ngành trùng vào quỹ gia tộc."}
       />
     </Card>
   );

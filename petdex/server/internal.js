@@ -4,6 +4,7 @@
 import { economy } from './bank.js';
 import * as store from './db.js';
 import { digest, hashPassword, randomCode, verifyPassword } from './passwords.js';
+import { mergeDone, remergeIndustries, unmergeIndustries, unmergePlan } from './industry-merge.js';
 import { createGear, createRandomGear, deleteGear, describeGear, gearConfig, getGear, listGear, setGearConfig, updateGear } from './gear.js';
 import { ANNOUNCEMENT, announcementById, createAnnouncement, listAnnouncements, removeAnnouncement } from './announcements.js';
 import { GIFT_CATEGORIES, createGiftCode, giftCodeById, giftRedemptions, giftView, listGiftCodes, revokeGiftCode } from './gifts.js';
@@ -599,6 +600,15 @@ internalApi.get('/admin/log', (req, res) => {
 // ---- Gia tộc, Sở Nhà Đất, vĩ mô và Sở thuế ----
 
 internalApi.get('/admin/clans', (_req, res) => res.json(adminClanView()));
+
+// ---- Gộp / gỡ gộp ngành (chuẩn bị quay lại bản cũ, xem industry-merge.js) ----
+internalApi.get('/admin/industries/status', (_req, res) => res.json(unmergePlan()));
+internalApi.post('/admin/industries/unmerge', (req, res) => {
+  if (!mergeDone()) throw new GameError('Các ngành đang không ở trạng thái gộp.');
+  if (req.body?.confirm !== 'UNMERGE') throw new GameError('Gõ đúng UNMERGE để xác nhận gỡ gộp ngành.');
+  res.json(unmergeIndustries(actorOf(req)));
+});
+internalApi.post('/admin/industries/merge', (req, res) => res.json(remergeIndustries(actorOf(req))));
 
 internalApi.post('/admin/clans/config', (req, res) => {
   const config = setClanConfig(req.body?.config ?? {});
