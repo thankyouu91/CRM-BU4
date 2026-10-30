@@ -20,7 +20,7 @@ aliases: [Limit order, Lệnh chờ]
 5. Còn dư: tạo lệnh `open`. Lệnh mua ký quỹ `thành tiền + phí` ở giá đặt (`escrow_lock`) (`petdex/server/market.js:266-270`). Chỗ trong kho cho lệnh mua được giữ trước (`reserved`, `petdex/server/market.js:32,82-84`).
 6. Sau **mỗi nhịp 10 phút**, mọi lệnh chờ chạm giá NPC được khớp với NPC (vẫn trong hạn mức ngày của chủ lệnh), giá bị tác động như lệnh thường (`matchRestingWithNpc`, `petdex/server/market.js:312-325`).
 7. Hủy: hoàn ký quỹ hoặc trả hàng về kho, báo "Đã hủy lệnh, ký quỹ và hàng đã trả về." (`petdex/server/market.js:285-302`).
-8. Quyết toán nửa đêm: lệnh có `day` trước hôm nay chuyển `expired`, hoàn như hủy (`petdex/server/market.js:305-309`, `petdex/server/scheduler.js:38`).
+8. Quyết toán nửa đêm: lệnh có `day` trước hôm nay chuyển `expired`, hoàn như hủy (`petdex/server/market.js:305-309`, `petdex/server/scheduler.js:39`).
 
 ## Trường hợp đặc biệt
 - Khi lệnh mua chờ khớp, phần ký quỹ thừa (do khớp ở giá thấp hơn giá đặt) được hoàn ngay khi lệnh đầy: "Hoàn ký quỹ thừa" (`petdex/server/market.js:183-186`).

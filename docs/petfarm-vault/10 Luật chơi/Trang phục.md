@@ -49,7 +49,7 @@ commit: e03a0db
 
 > [!warning] Lệch tài liệu
 > - Nút "🎀 Trang phục" ở màn Nhà vẫn ghi cứng "Đang đeo X/4 món" (`public/ta-tua/game/js/app.js:539`), trong khi giới hạn thật là 3/4/5.
-> - `README.md:174` (README gốc) ghi "46 món" và "mỗi loại tối đa 100%"; code hiện có 55 món và cộng dồn có giảm dần, trần 60% (`public/ta-tua/game/js/shared/gear.js:34`). Chú thích hàm `gearBonusLine` (`public/ta-tua/game/js/app.js:442`) cũng còn ghi "tối đa 100%".
+> - `README.md:174` (README gốc) ghi "46 món" và "mỗi loại tối đa 100%"; code hiện có 55 món và cộng dồn có giảm dần, trần 60% (`public/ta-tua/game/js/shared/gear.js:34`). Chú thích hàm `gearBonusLine` (`public/ta-tua/game/js/app.js:440`) cũng còn ghi "tối đa 100%".
 > - `petdex/README.md:49` còn ghi "đủ bộ 4 khe cùng hành +5% lương", luật cũ trước commit `152cd2e`.
 
 ## Mã nguồn
