@@ -134,7 +134,8 @@ export function npcAllowance(userId, cat, now = Date.now()) {
   if (isNewbie(user, now)) return Infinity;
   const pets = Math.max(1, listPets(userId).length);
   const d = currentD(cat, now);
-  const daily = Math.ceil(pets * ESSENTIALS.cats[cat].perPetDay * Math.max(ESSENTIALS.npcFloor, 1 - d)) + ESSENTIALS.npcSpare;
+  const { npcBoost, npcSpare } = essentialStage(d);
+  const daily = Math.ceil(pets * ESSENTIALS.cats[cat].perPetDay * Math.max(ESSENTIALS.npcFloor, 1 - d) * npcBoost) + npcSpare;
   return Math.max(0, daily - (q.buys.get(userId, dayKey(now))?.[BUY_COLS[cat][0]] ?? 0));
 }
 

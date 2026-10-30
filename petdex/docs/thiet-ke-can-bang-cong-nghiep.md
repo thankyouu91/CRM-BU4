@@ -231,7 +231,7 @@ Mở rộng `scripts/simulate-economy.js` với bot gia tộc (8 gia tộc, 60 n
 - **D** chốt mỗi nửa đêm cho ngày hôm sau = suất ăn gia tộc bán cho Siêu thị ÷ suất đồ ăn người chơi mua (7 ngày), kẹp 0–90%, mỗi ngày dịch tối đa 10 điểm.
 - **Siêu thị thu mua**: trong lúc chốt sổ đêm, Thực phẩm chế biến của gia tộc được Siêu thị mua **trước** theo giá tham chiếu (tính vào doanh thu chịu thuế), 1 đơn vị = 5 **Suất ăn gia tộc 🍱**. Siêu thị chỉ mua đủ kho cho khoảng 1,5 ngày phần người chơi; mỗi gia tộc tối đa 40% lượng thu mua của đêm. Phần thừa bán NPC như cũ.
 - **Suất ăn gia tộc**: +50 no, +12 vui, 22 XP (đủ XP, không giới hạn), giá = giá tham chiếu Thực phẩm chế biến ÷ 5 × 1,15; hết kho thì không mua được.
-- **Đồ ăn NPC** (người chơi cũ hơn 7 ngày): hạn mức mỗi ngày = ⌈số bé × 3 × max(10%, 1 − D)⌉ + 2 món; XP còn 50% (D < 20%) → 25% (D = 80%) → 10%; giá × (1 + 30% theo D từ 20% đến 80%).
+- **Đồ ăn NPC** (người chơi cũ hơn 7 ngày): hạn mức mỗi ngày = ⌈số bé × 3 × max(10%, 1 − D)⌉ + 2 món; XP còn 50% (D < 20%) → 25% (D = 80%) → 10%; giá × (1 + 30% theo D từ 20% đến 80%). Giai đoạn Khai hoang đã được nới, xem mục 4.5b.
 - **Tài khoản mới 7 ngày**: đồ ăn NPC không giới hạn, đủ XP, giá gốc.
 - Giao diện: Siêu thị hiện thanh "Tự chủ thực phẩm D%", hạn mức NPC còn lại, kho và giá suất ăn gia tộc.
 
@@ -242,6 +242,12 @@ Mở rộng `scripts/simulate-economy.js` với bot gia tộc (8 gia tộc, 60 n
 - **Điểm chất lượng** của gia tộc (0–1) = 40% cấp gia tộc + 30% nhà xưởng (số mảnh công trình của ngành chế biến ÷ 20) + 30% nếu gia tộc tự chạy một ngành đầu vào (Nông nghiệp hoặc Chăn nuôi cho thực phẩm; Hóa chất hoặc Nông nghiệp cho thuốc).
 - **Tỉ lệ hạng** mỗi đêm: Tuyệt hảo = 35% × điểm, Ngon = 20% + 40% × điểm, còn lại Thường. Gia tộc mới (điểm 0) ra 80% Thường, 20% Ngon; gia tộc tối đa ra 5% / 60% / 35%.
 - Siêu thị chỉ hiện thẻ hạng Ngon / Tuyệt hảo khi còn hàng; thanh tự chủ hiện kho từng hạng.
+
+### 4.5b Nới hạn mức giai đoạn Khai hoang (chủ game chốt 30/10/2026)
+
+- Hạn mức đồ NPC mỗi nhóm = ⌈số bé × nhu cầu/bé × max(10%, 1 − D) × **hệ số giai đoạn**⌉ + **phần thêm**: Khai hoang (D < 20%) ×2 và +4 món; Phát triển, Tự chủ ×1 và +2 món.
+- Người chơi cũ có 1 bé lúc mới mở: 10 món đồ ăn và 8 món đồ chăm sóc NPC mỗi ngày (trước là 5 và 4).
+- XP đồ NPC: Khai hoang 80% (trước 50%), Phát triển giảm dần 80% → 25%, Tự chủ 10%. Không có bước tụt ở mốc 20%.
 
 ### 4.6 Sổ chào giá thấp trước (đợt 6)
 

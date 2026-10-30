@@ -46,7 +46,8 @@ test('luật thuần: giai đoạn theo D, XP đồ NPC 50% → 25% → 10%, gi�
   assert.equal(rules.essentialStage(0).key, 'pioneer');
   assert.equal(rules.essentialStage(0.5).key, 'growing');
   assert.equal(rules.essentialStage(0.85).key, 'self');
-  assert.equal(rules.npcXpFactor(0), 0.5);
+  assert.equal(rules.npcXpFactor(0), 0.8);
+  assert.equal(rules.npcXpFactor(0.2), 0.8, 'không tụt XP đột ngột khi sang giai đoạn Phát triển');
   assert.ok(Math.abs(rules.npcXpFactor(0.8 - 1e-9) - 0.25) < 1e-6);
   assert.equal(rules.npcXpFactor(0.9), 0.1);
   assert.equal(rules.npcPriceFactor(0.1), 1);
@@ -70,25 +71,25 @@ test('luật thuần: điểm chất lượng theo cấp, nhà xưởng, ngành 
   assert.equal(ITEMS.clan_care_ngon.effect.health, Math.round(ITEMS.clan_care.effect.health * 1.2));
 });
 
-test('D = 0: người cũ được 1 bé × 3 suất + 2 = 5 món đồ ăn NPC/ngày, XP đồ NPC còn 50%; người mới không giới hạn', () => {
-  assert.equal(essentials.npcAllowance(veteran, 'food', T0), 5);
+test('D = 0 (Khai hoang): người cũ được 1 bé × 3 suất × 2 + 4 = 10 món đồ ăn NPC/ngày, XP đồ NPC 80%; người mới không giới hạn', () => {
+  assert.equal(essentials.npcAllowance(veteran, 'food', T0), 10);
   assert.equal(essentials.npcAllowance(newbie, 'food', T0), Infinity);
   const boba = ITEMS.boba;
-  assert.equal(essentials.essentialXpFactor(veteran, boba, T0), 0.5);
+  assert.equal(essentials.essentialXpFactor(veteran, boba, T0), 0.8);
   assert.equal(essentials.essentialXpFactor(newbie, boba, T0), 1);
   assert.equal(essentials.essentialXpFactor(veteran, ITEMS.clan_meal, T0), 1);
   assert.equal(essentials.essentialXpFactor(veteran, ITEMS.ball, T0), 1);
-  assert.equal(essentials.chargeEssential(veteran, boba, 5, 12, REFS, T0), 12);
+  assert.equal(essentials.chargeEssential(veteran, boba, 10, 12, REFS, T0), 12);
   assert.throws(() => essentials.chargeEssential(veteran, boba, 1, 12, REFS, T0), /Hết hạn mức đồ ăn NPC/);
   assert.throws(() => essentials.chargeEssential(veteran, ITEMS.cake, 1, 70, REFS, T0), /Hết hạn mức/, 'đồ ăn nào cũng tính hạn mức');
   assert.equal(essentials.chargeEssential(newbie, ITEMS.cake, 20, 70, REFS, T0), 70, 'người mới giữ giá gốc');
 });
 
-test('đồ chăm sóc có hạn mức riêng: 1 bé × 2 + 2 = 4 món/ngày, không ăn vào hạn mức đồ ăn', () => {
-  assert.equal(essentials.npcAllowance(veteran, 'care', T0), 4);
-  assert.equal(essentials.chargeEssential(veteran, ITEMS.bath, 4, 35, REFS, T0), 35);
+test('đồ chăm sóc có hạn mức riêng: Khai hoang 1 bé × 2 × 2 + 4 = 8 món/ngày, không ăn vào hạn mức đồ ăn', () => {
+  assert.equal(essentials.npcAllowance(veteran, 'care', T0), 8);
+  assert.equal(essentials.chargeEssential(veteran, ITEMS.bath, 8, 35, REFS, T0), 35);
   assert.throws(() => essentials.chargeEssential(veteran, ITEMS.juice, 1, 30, REFS, T0), /Hết hạn mức đồ chăm sóc NPC/);
-  assert.equal(essentials.essentialXpFactor(veteran, ITEMS.vitamin, T0), 0.5);
+  assert.equal(essentials.essentialXpFactor(veteran, ITEMS.vitamin, T0), 0.8);
   assert.equal(essentials.chargeEssential(veteran, { type: 'toy' }, 1, 10, REFS, T0), null);
 });
 
