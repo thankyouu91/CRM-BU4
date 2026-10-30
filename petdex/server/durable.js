@@ -64,6 +64,8 @@ export class PetdexPark extends DurableObject {
       if (request.headers.get('upgrade')?.toLowerCase() !== 'websocket') return new Response('Cần WebSocket.', { status: 426 });
       const pair = new WebSocketPair();
       const [client, server] = Object.values(pair);
+      // Chưa dùng Hibernation API (ctx.acceptWebSocket): object có alarm mỗi phút nên hiếm khi được ngủ, và hub giữ
+      // kênh, vị trí, cư dân trong bộ nhớ; muốn ngủ đông phải lưu chúng vào attachment của từng socket rồi dựng lại.
       server.accept();
       bindWebSocket(this.hub, server);
       return new Response(null, { status: 101, webSocket: client });

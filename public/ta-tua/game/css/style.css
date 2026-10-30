@@ -293,7 +293,8 @@ input:focus { border-color: var(--tea); box-shadow: 0 0 0 4px #c8915f33; }
   border-radius: var(--radius); border: 2px solid var(--line-strong); box-shadow: var(--shadow);
   background: #84c76a; user-select: none;
 }
-.park-world { position: absolute; left: 0; top: 0; width: 1000px; height: 600px; transform-origin: 0 0; cursor: pointer; }
+/* Thế giới rộng 2000 (park.js đặt lại theo máy chủ), khung chỉ thấy 1000: camera dịch ngang bằng transform. */
+.park-world { position: absolute; left: 0; top: 0; width: 2000px; height: 600px; transform-origin: 0 0; cursor: pointer; will-change: transform; }
 .park-world .scene-bg, .park-world .scene-amb { z-index: 0; }
 .park-world .scene-glow { z-index: 9000; }
 .park-world[data-time="dawn"] .sprite { filter: sepia(.08); }
@@ -342,7 +343,29 @@ input:focus { border-color: var(--tea); box-shadow: 0 0 0 4px #c8915f33; }
 .park-count { font-weight: 800; white-space: nowrap; }
 .emotes { display: flex; gap: 4px; }
 .emotes .btn { padding: 4px 9px; font-size: 1.05rem; box-shadow: none; }
-.hint { margin: 0; font-size: .8rem; color: var(--muted); text-align: center; }
+.park-hud .park-room { padding: 4px 10px; box-shadow: none; white-space: nowrap; font-weight: 800; }
+.park-hud .park-help { width: 30px; height: 30px; padding: 0; border-radius: 50%; box-shadow: none; font-weight: 900; }
+/* Bảng nhỏ bật ra dưới thanh công cụ: chọn kênh, hướng dẫn. */
+.park-pop {
+  position: absolute; left: 10px; top: 54px; z-index: 30; max-width: min(300px, calc(100% - 20px));
+  max-height: calc(100% - 64px); overflow: auto; padding: 10px 12px; border-radius: 16px;
+  background: #fffffff5; border: 2px solid var(--line-strong); box-shadow: var(--shadow);
+  font-size: .85rem; line-height: 1.4; cursor: default;
+}
+.park-pop[hidden] { display: none; }
+.park-pop h4 { margin: 0 0 6px; font-family: var(--font-display); font-size: 1rem; }
+.park-room-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(118px, 1fr)); gap: 6px; min-width: 250px; }
+.park-room-item {
+  position: relative; display: grid; gap: 1px; padding: 6px 8px 9px; text-align: left; overflow: hidden;
+  border: 2px solid var(--line); border-radius: 12px; background: #fff; font: inherit; cursor: pointer;
+}
+.park-room-item:hover:not(:disabled) { border-color: var(--tea); background: var(--surface-2); }
+.park-room-item:disabled { cursor: default; opacity: .65; }
+.park-room-item.current { opacity: 1; border-color: var(--mint); background: #eef9f5; }
+.park-room-item small { color: var(--muted); font-weight: 700; }
+.park-room-item i { position: absolute; left: 0; bottom: 0; height: 4px; width: var(--fill); background: var(--mint); }
+.park-tip { width: 280px; font-weight: 700; }
+@media (max-width: 480px) { .park-count-unit { display: none; } }
 .daily-xp { margin: -4px 0 6px; }
 
 /* ---------- Hộp thoại & thông báo ---------- */
@@ -390,6 +413,11 @@ input:focus { border-color: var(--tea); box-shadow: 0 0 0 4px #c8915f33; }
   .home { grid-template-columns: minmax(0, 1fr); }
   .park-hud { left: 6px; top: 6px; gap: 4px; padding: 2px 3px 2px 8px; font-size: .8rem; }
   .emotes .btn { padding: 2px 6px; font-size: .9rem; }
+  .park-hud .park-room { padding: 2px 7px; font-size: .8rem; }
+  .park-hud .park-help { width: 24px; height: 24px; font-size: .85rem; }
+  .park-pop { left: 6px; top: 40px; max-height: calc(100% - 46px); padding: 8px 10px; font-size: .78rem; }
+  .park-room-list { grid-template-columns: repeat(auto-fill, minmax(96px, 1fr)); min-width: 0; }
+  .park-room-item { padding: 4px 6px 7px; }
   .room { height: 380px; }
 }
 @media (max-width: 720px) {

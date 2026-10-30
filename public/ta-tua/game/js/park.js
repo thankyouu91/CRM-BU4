@@ -6,6 +6,9 @@ import { $, esc, toast } from './ui.js';
 const SPEED = 190; // đơn vị thế giới mỗi giây
 const BASE_SCALE = 0.6;
 const CUDDLE_GAP = 62; // đứng cách bạn bao xa khi vuốt ve
+const VIEW_W = 1000; // khung nhìn rộng bấy nhiêu đơn vị thế giới; thế giới rộng hơn thì cuộn ngang theo bé của mình
+const WORLD_W = 2000;
+const ROOMS_POLL_MS = 3000;
 
 const clamp = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
 
@@ -16,37 +19,67 @@ export function mountPark(root, ctx) {
       <div class="park-wrap" id="park-wrap">
         <div class="park-world" id="park-world"></div>
         <div class="park-hud">
-          <span class="park-count" title="Bấm lên bãi cỏ để đi tới đó. Bấm vào bé khác để vuốt ve 💖 hoặc tặng quà 🎁.">🌳 <span id="online-count">0</span> bé</span>
+          <button class="btn small park-room" id="park-room" aria-haspopup="true" aria-expanded="false" aria-controls="park-rooms" title="Đổi kênh">
+            <span id="park-room-name">Kênh</span> ▾
+          </button>
+          <span class="park-count" title="Số bé ở kênh này, kể cả bé của người đang vắng">🌳 <span id="online-count">0</span><span class="park-count-unit"> bé</span></span>
           <div class="emotes">
             <button class="btn small" data-emote="wave" title="Vẫy">👋</button>
             <button class="btn small" data-emote="jump" title="Nhảy">🦘</button>
             <button class="btn small" data-emote="spin" title="Xoay">🌀</button>
           </div>
+          <button class="btn small park-help" id="park-help" aria-expanded="false" aria-controls="park-tip" aria-label="Cách chơi ở công viên" title="Cách chơi">?</button>
+        </div>
+        <div class="park-pop park-rooms" id="park-rooms" hidden></div>
+        <div class="park-pop park-tip" id="park-tip" role="tooltip" hidden>
+          Bấm lên bãi cỏ để đi tới đó, khung hình đi theo bé của bạn. Bấm vào bé khác để vuốt ve 💖 hoặc tặng quà 🎁.
+          Công viên chia thành nhiều kênh; bấm nút Kênh để sang kênh khác còn chỗ. Trò chuyện ở tab 💬 Chat.
         </div>
         <div class="park-status" id="park-status">Đang vào công viên…</div>
       </div>
-      <p class="hint">Bấm lên bãi cỏ để đi tới đó. Bấm vào bé khác để vuốt ve 💖 hoặc tặng quà 🎁. Trò chuyện ở tab 💬 Chat.</p>
     </div>`;
 
   const wrap = $('#park-wrap', root);
   const worldEl = $('#park-world', root);
   const statusEl = $('#park-status', root);
-  const unmountScene = mountParkScene(worldEl);
+  const roomBtn = $('#park-room', root);
+  const roomsEl = $('#park-rooms', root);
+  const helpBtn = $('#park-help', root);
+  const tipEl = $('#park-tip', root);
+  const unmountScene = mountParkScene(worldEl, WORLD_W);
 
-  let world = { width: 1000, height: 600, minX: 50, maxX: 950, minY: 318, maxY: 585 };
+  let world = { width: WORLD_W, height: 600, minX: 50, maxX: WORLD_W - 50, minY: 318, maxY: 585 };
   let scale = 1;
+  let camX = 0; // mép trái khung nhìn, theo đơn vị thế giới
   let selfId = null;
   let menu = null;
+  let room = null; // kênh đang đứng
+  let cap = 60;
+  let rooms = [];
+  let roomsPoll = 0;
   const entities = new Map();
+  worldEl.style.width = `${world.width}px`;
 
   const speciesOf = (id) => ctx.catalog.species.find((s) => s.id === id) ?? ctx.catalog.species[0];
   const petHeight = (e) => e.figure.height;
   /** Điểm trên thân bé: 0 là chân, 1 là đỉnh khung hình. */
   const pointOn = (e, frac) => ({ x: e.x - 4, y: e.y - petHeight(e) * frac });
 
+  // ---- camera: cuộn ngang theo bé của mình ----
+
+  const maxCam = () => Math.max(0, world.width - VIEW_W);
+  function applyCamera() {
+    worldEl.style.transform = `translate3d(${-Math.round(camX * scale)}px, 0, 0) scale(${scale})`;
+  }
+  /** Mép trái khung nhìn để bé của mình nằm giữa (kẹp trong thế giới). */
+  function cameraGoal() {
+    const me = entities.get(selfId);
+    return me ? clamp(me.x - VIEW_W / 2, 0, maxCam()) : camX;
+  }
+
   const resize = new ResizeObserver(() => {
-    scale = wrap.clientWidth / world.width;
-    worldEl.style.transform = `scale(${scale})`;
+    scale = wrap.clientWidth / VIEW_W;
+    applyCamera();
     if (menu) positionMenu();
   });
   resize.observe(wrap);
@@ -163,6 +196,11 @@ export function mountPark(root, ctx) {
         }
       }
     }
+    const goal = cameraGoal();
+    if (goal !== camX) {
+      camX = Math.abs(goal - camX) < 0.5 ? goal : camX + (goal - camX) * Math.min(1, dt * 5);
+      applyCamera();
+    }
     if (menu) positionMenu();
     raf = requestAnimationFrame(step);
   }
@@ -203,7 +241,7 @@ export function mountPark(root, ctx) {
     const below = (e.y + 44) * scale;
     const above = (e.y - petHeight(e)) * scale - h - 8;
     const top = below + h + 8 > wrap.clientHeight ? above : below;
-    menu.el.style.left = `${clamp(e.x * scale - w / 2, 6, wrap.clientWidth - w - 6)}px`;
+    menu.el.style.left = `${clamp((e.x - camX) * scale - w / 2, 6, wrap.clientWidth - w - 6)}px`;
     menu.el.style.top = `${Math.max(6, top)}px`;
   }
 
@@ -240,6 +278,7 @@ export function mountPark(root, ctx) {
   // ---- thao tác của người chơi ----
 
   worldEl.addEventListener('click', (ev) => {
+    closePops();
     const petEl = ev.target.closest('.pg-pet');
     if (petEl) {
       if (petEl.dataset.id === selfId) socket.emit('pg:emote', { kind: 'jump' });
@@ -257,8 +296,77 @@ export function mountPark(root, ctx) {
     if (btn) socket.emit('pg:emote', { kind: btn.dataset.emote });
   });
 
+  // ---- kênh và hướng dẫn trên thanh công cụ ----
 
-  const onKey = (ev) => ev.key === 'Escape' && closeMenu();
+  function renderRoomName() {
+    $('#park-room-name', root).textContent = room ? `Kênh ${room}` : 'Kênh';
+  }
+
+  function renderRooms() {
+    roomsEl.innerHTML = `
+      <h4>Chọn kênh</h4>
+      <div class="park-room-list">
+        ${rooms.map(({ n, count }) => {
+          const full = count >= cap;
+          const here = n === room;
+          return `<button class="park-room-item${here ? ' current' : ''}" data-room="${n}" ${full || here ? 'disabled' : ''}
+              title="${here ? 'Bạn đang ở kênh này' : full ? 'Kênh đã đầy' : `Sang kênh ${n}`}">
+            <b>Kênh ${n}</b><small>${count}/${cap}${here ? ' · bạn ở đây' : full ? ' · đầy' : ''}</small>
+            <i style="--fill:${Math.min(100, Math.round((count / cap) * 100))}%"></i>
+          </button>`;
+        }).join('')}
+      </div>`;
+  }
+
+  function closePops() {
+    roomsEl.hidden = true;
+    tipEl.hidden = true;
+    roomBtn.setAttribute('aria-expanded', 'false');
+    helpBtn.setAttribute('aria-expanded', 'false');
+    clearInterval(roomsPoll);
+  }
+
+  roomBtn.addEventListener('click', (ev) => {
+    ev.stopPropagation();
+    const open = roomsEl.hidden;
+    closePops();
+    if (!open) return;
+    renderRooms();
+    roomsEl.hidden = false;
+    roomBtn.setAttribute('aria-expanded', 'true');
+    // Số người mỗi kênh cập nhật liên tục khi bảng đang mở.
+    socket.emit('pg:rooms');
+    roomsPoll = setInterval(() => socket.emit('pg:rooms'), ROOMS_POLL_MS);
+  });
+
+  roomsEl.addEventListener('click', (ev) => {
+    ev.stopPropagation();
+    const btn = ev.target.closest('[data-room]');
+    if (!btn || btn.disabled) return;
+    closePops();
+    setStatus(`Đang sang kênh ${btn.dataset.room}…`);
+    socket.emit('pg:room', { room: Number(btn.dataset.room) });
+  });
+
+  helpBtn.addEventListener('click', (ev) => {
+    ev.stopPropagation();
+    const open = tipEl.hidden;
+    closePops();
+    tipEl.hidden = !open;
+    helpBtn.setAttribute('aria-expanded', String(open));
+  });
+  tipEl.addEventListener('click', (ev) => ev.stopPropagation());
+
+  const onDocClick = (ev) => {
+    if (!wrap.contains(ev.target)) closePops();
+  };
+  document.addEventListener('click', onDocClick);
+
+  const onKey = (ev) => {
+    if (ev.key !== 'Escape') return;
+    closeMenu();
+    closePops();
+  };
   document.addEventListener('keydown', onKey);
 
   // ---- socket ----
@@ -267,18 +375,27 @@ export function mountPark(root, ctx) {
 
   socket.on('connect', () => {
     setStatus('Đang vào công viên…');
-    socket.emit('pg:join');
+    socket.emit('pg:join', room ? { room } : {}); // nối lại mạng thì về đúng kênh cũ
   });
   socket.on('connect_error', (err) => setStatus(`Không kết nối được: ${err.message}`));
   socket.on('disconnect', (reason) => {
     if (reason !== 'io client disconnect') setStatus('Mất kết nối, đang thử lại…');
   });
 
-  socket.on('pg:state', ({ selfId: id, world: w, players }) => {
+  socket.on('pg:state', ({ selfId: id, world: w, players, room: n, cap: c, rooms: list }) => {
     selfId = id;
     world = w;
+    worldEl.style.width = `${world.width}px`;
+    room = n ?? room;
+    cap = c ?? cap;
+    rooms = list ?? rooms;
+    renderRoomName();
+    if (!roomsEl.hidden) renderRooms();
+    closeMenu();
     for (const key of [...entities.keys()]) removePlayer(key);
     players.forEach(addPlayer);
+    camX = cameraGoal(); // vào kênh: đặt khung nhìn ngay chỗ bé của mình
+    applyCamera();
     setStatus(null);
     particles(selfId, 0.5, { icon: 'sparkle', count: 5, spread: 90, rise: 60 });
   });
@@ -347,7 +464,15 @@ export function mountPark(root, ctx) {
     }
     ctx.onMeChanged(payload);
   });
-  socket.on('pg:error', ({ message }) => toast(message, 'error'));
+  socket.on('pg:rooms', ({ rooms: list, cap: c }) => {
+    rooms = list;
+    cap = c ?? cap;
+    if (!roomsEl.hidden) renderRooms();
+  });
+  socket.on('pg:error', ({ message }) => {
+    if (statusEl.textContent.startsWith('Đang sang kênh')) setStatus(null);
+    toast(message, 'error');
+  });
   socket.on('pg:kicked', () => {
     setStatus('Bạn vừa vào công viên từ một tab khác.');
     socket.disconnect();
@@ -357,6 +482,8 @@ export function mountPark(root, ctx) {
     cancelAnimationFrame(raf);
     resize.disconnect();
     document.removeEventListener('keydown', onKey);
+    document.removeEventListener('click', onDocClick);
+    clearInterval(roomsPoll);
     socket.removeAllListeners();
     socket.disconnect();
     closeMenu();

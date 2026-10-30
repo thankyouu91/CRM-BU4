@@ -1,5 +1,5 @@
 // Hub thời gian thực cùng API với phần socket.io mà playground.js dùng (io.use, io.on('connection'),
-// io.to(room).emit, socket.on/emit/join/to/disconnect, io.sockets.sockets), chạy trên WebSocket thuần.
+// io.to(room).emit, socket.on/emit/join/leave/to/disconnect, io.sockets.sockets), chạy trên WebSocket thuần.
 // Khung tin là JSON `[event, payload]`. Kết nối mở xong phải gửi ['auth', { token }] trước; hub trả
 // ['connect', { id }] hoặc ['connect_error', { message }] rồi đóng. Transport (Node `ws` hoặc
 // WebSocketPair của Durable Object) chỉ cần { send(text), close() } và gọi lại message/closed.
@@ -13,18 +13,26 @@ export function createHub() {
   const middlewares = [];
   const connectionHandlers = [];
 
-  const sendTo = (id, event, payload) => {
+  const sendText = (id, text) => {
     const s = sockets.get(id);
     if (!s) return;
     try {
-      s.transport.send(JSON.stringify([event, payload ?? null]));
+      s.transport.send(text);
     } catch {
       // đường truyền vừa đứt: disconnect sẽ dọn
     }
   };
+  const encode = (event, payload) => JSON.stringify([event, payload ?? null]);
+  const sendTo = (id, event, payload) => sendText(id, encode(event, payload));
   const idsOf = (target) => (rooms.has(target) ? [...rooms.get(target)] : sockets.has(target) ? [target] : []);
+  /** Phát cho cả phòng: chỉ mã hóa JSON một lần dù phòng có bao nhiêu người. */
   const emitTo = (ids, event, payload, except) => {
-    for (const id of ids) if (id !== except) sendTo(id, event, payload);
+    let text = null;
+    for (const id of ids) {
+      if (id === except) continue;
+      text ??= encode(event, payload);
+      sendText(id, text);
+    }
   };
 
   function makeSocket(transport, auth) {
@@ -44,6 +52,12 @@ export function createHub() {
       join(room) {
         if (!rooms.has(room)) rooms.set(room, new Set());
         rooms.get(room).add(socket.id);
+      },
+      leave(room) {
+        const set = rooms.get(room);
+        if (!set) return;
+        set.delete(socket.id);
+        if (!set.size) rooms.delete(room);
       },
       to: (room) => ({ emit: (event, payload) => emitTo(idsOf(room), event, payload, socket.id) }),
       disconnect(close = true) {
@@ -117,7 +131,10 @@ export function createHub() {
       if (!socket?.connected) return;
       socket.connected = false;
       sockets.delete(socket.id);
-      for (const set of rooms.values()) set.delete(socket.id);
+      for (const [room, set] of rooms) {
+        set.delete(socket.id);
+        if (!set.size) rooms.delete(room);
+      }
       socket._dispatch('disconnect', 'transport close');
     },
 
