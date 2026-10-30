@@ -903,6 +903,23 @@ function renderShop(root) {
       ${ESSENTIAL_CATS.map(essLine).join('')}
       <span class="muted small">Hàng gia tộc do các gia tộc Chế biến thực phẩm / Dược phẩm bán cho Siêu thị, luôn đủ XP. Hạng Ngon ×1,2, Tuyệt hảo ×1,5 hiệu ứng và XP.</span>
     </div>` : '';
+  const shopCard = (item) => {
+    const owned = qtyOf(item.id);
+    const locked = item.minLevel && level < item.minLevel;
+    return `
+      <article class="card item-card ${locked ? 'locked' : ''}">
+        ${owned && isConsumable(item) ? `<span class="badge owned">Có ${owned}</span>` : ''}
+        <div class="icon">${itemIcon(item)}</div>
+        <span class="type-tag">${TYPE_LABELS[item.type]}${item.slot ? ` · ${SLOTS[item.slot].name}` : ''}${item.element ? ` · ${ELEMENTS[item.element].icon} ${ELEMENTS[item.element].name}` : ''}</span>
+        <h3>${esc(item.name)}</h3>
+        <p title="${esc(item.desc ?? '')}">${esc(item.desc ?? '')}</p>
+        <p class="effects">${esc(effectText(item))}</p>
+        ${item.type === 'accessory' ? poolLine(affixPool(item.slot, item.element), 'Mở hộp ra 1–2 dòng trong số') : ''}
+        ${item.type === 'accessory' && myGear().some((g) => g.itemId === item.id) ? `<p class="muted small">Đang có ${myGear().filter((g) => g.itemId === item.id).length} món</p>` : ''}
+        ${item.clanMade ? `<p class="muted small">Kho Siêu thị: ${fmt(clanStock(item))} ${ESSENTIALS.cats[item.type].unit}</p>` : ''}
+        <div class="foot"><span class="price">${priceOf(item)} 🪙</span>${buyArea(item)}</div>
+      </article>`;
+  };
   root.innerHTML = `
     ${viewHead('🏪 Siêu thị', `Đồ ăn và đồ chăm sóc dùng là hết. Đồ chơi mua một lần, dùng mãi. Phụ kiện mỗi lần mua là một hộp kín có 1–2 dòng +% ngẫu nhiên (${tierOdds()}), mở trong Túi đồ mới biết là dòng nào; May mắn của bé chính giúp ra 2 dòng.${indexNote}`)}
     ${essBanner}
@@ -910,25 +927,7 @@ function renderShop(root) {
       ${['all', ...TYPE_ORDER].map((t) => `
         <button class="btn small ${t === filter ? 'current' : ''}" data-filter="${t}">${t === 'all' ? 'Tất cả' : TYPE_LABELS[t]}</button>`).join('')}
     </div>
-    <div class="item-grid">
-      ${list.map((item) => {
-        const owned = qtyOf(item.id);
-        const locked = item.minLevel && level < item.minLevel;
-        return `
-          <article class="card item-card ${locked ? 'locked' : ''}">
-            ${owned && isConsumable(item) ? `<span class="badge owned">Có ${owned}</span>` : ''}
-            <div class="icon">${itemIcon(item)}</div>
-            <span class="type-tag">${TYPE_LABELS[item.type]}${item.slot ? ` · ${SLOTS[item.slot].name}` : ''}${item.element ? ` · ${ELEMENTS[item.element].icon} ${ELEMENTS[item.element].name}` : ''}</span>
-            <h3>${esc(item.name)}</h3>
-            <p title="${esc(item.desc ?? '')}">${esc(item.desc ?? '')}</p>
-            <p class="effects">${esc(effectText(item))}</p>
-            ${item.type === 'accessory' ? poolLine(affixPool(item.slot, item.element), 'Mở hộp ra 1–2 dòng trong số') : ''}
-            ${item.type === 'accessory' && myGear().some((g) => g.itemId === item.id) ? `<p class="muted small">Đang có ${myGear().filter((g) => g.itemId === item.id).length} món</p>` : ''}
-            ${item.clanMade ? `<p class="muted small">Kho Siêu thị: ${fmt(clanStock(item))} ${ESSENTIALS.cats[item.type].unit}</p>` : ''}
-            <div class="foot"><span class="price">${priceOf(item)} 🪙</span>${buyArea(item)}</div>
-          </article>`;
-      }).join('')}
-    </div>`;
+    ${shopSections(list, shopCard)}`;
 }
 
 // ---------------------------------------------------------------- Túi đồ
@@ -937,6 +936,40 @@ function renderShop(root) {
 function poolLine(pool, lead) {
   const chips = (pool ?? []).map((a) => `<span class="gear-bonus" title="${esc(AFFIXES[a].desc)}">${AFFIXES[a].icon} ${esc(AFFIXES[a].name)}</span>`).join('');
   return `<p class="gear-pool muted small">${lead}: ${chips}<br>Cấp và % chỉ biết khi mở hộp.</p>`;
+}
+
+/**
+ * Nhóm phụ kiện theo khe đeo (mỗi bé đeo một món mỗi khe), dùng chung cho Siêu thị và tủ trang phục:
+ * tiêu đề có số món, hàng nút nhảy nhanh tới từng nhóm.
+ */
+const GEAR_GROUPS = {
+  head: { title: 'Đội đầu', icon: '🎩', hint: 'mũ, nơ, vương miện, hào quang' },
+  face: { title: 'Đeo mặt', icon: '👓', hint: 'kính, mặt nạ' },
+  neck: { title: 'Đeo cổ', icon: '🧣', hint: 'khăn, vòng, cà vạt, huy chương' },
+  back: { title: 'Cánh & áo choàng', icon: '🦋', hint: 'cánh, áo choàng, ba lô' },
+  charm: { title: 'Cầm tay & bùa', icon: '🏮', hint: 'đèn lồng, quạt, sáo, bùa may' },
+};
+
+/** `list` chia theo khe (`slotOf`), mỗi nhóm một tiêu đề và một lưới thẻ (`card`); `scope` để đặt id cho nút nhảy. */
+function gearGroups(list, scope, slotOf, card) {
+  const groups = Object.keys(SLOTS).map((slot) => [slot, list.filter((x) => slotOf(x) === slot)]).filter(([, xs]) => xs.length);
+  if (!groups.length) return '';
+  const jump = groups.length > 1
+    ? `<div class="gear-jump">${groups.map(([slot, xs]) => `<button class="chip" data-gear-jump="${scope}-${slot}">${GEAR_GROUPS[slot].icon} ${GEAR_GROUPS[slot].title} <small>${xs.length}</small></button>`).join('')}</div>`
+    : '';
+  return `${jump}${groups.map(([slot, xs]) => `
+    <section class="gear-group" id="gear-${scope}-${slot}">
+      <h4 class="gear-group-title">${GEAR_GROUPS[slot].icon} ${GEAR_GROUPS[slot].title} <small class="muted">${xs.length} món · ${GEAR_GROUPS[slot].hint}</small></h4>
+      <div class="item-grid">${xs.map(card).join('')}</div>
+    </section>`).join('')}`;
+}
+
+/** Danh sách Siêu thị: hàng thường một lưới, phụ kiện chia nhóm theo khe (trong nhóm xếp theo cấp mở rồi giá). */
+function shopSections(list, card) {
+  const plain = list.filter((i) => i.type !== 'accessory');
+  const gear = list.filter((i) => i.type === 'accessory').sort((a, b) => (a.minLevel ?? 1) - (b.minLevel ?? 1) || a.price - b.price);
+  return `${plain.length ? `<div class="item-grid">${plain.map(card).join('')}</div>` : ''}
+    ${gear.length ? `${plain.length ? '<h3 class="section-title">🎀 Phụ kiện</h3>' : ''}${gearGroups(gear, 'shop', (i) => i.slot, card)}` : ''}`;
 }
 
 /** Tủ trang phục trong Túi đồ: mỗi món một thẻ có cấp, dòng chỉ số và nút đeo/tháo cho bé đang chọn. */
@@ -952,32 +985,31 @@ function gearShelf(pet) {
     if (pet.gear?.[g.slot]?.gearId === g.id) return `<button class="btn small" data-unequip-slot="${g.slot}">Tháo ra</button>`;
     return `<button class="btn small mint" data-equip-gear="${g.id}">Đeo cho ${esc(pet.name)}</button>`;
   };
+  const gearCard = (g) => {
+    const item = items()[g.itemId];
+    if (g.sealed) {
+      return `
+      <article class="card item-card gear-card sealed">
+        <div class="icon">🎁</div>
+        <span class="type-tag">${SLOTS[g.slot].name} · ${ELEMENTS[item.element].icon} ${ELEMENTS[item.element].name}</span>
+        <h3>${esc(item.name)} <span class="tier-chip">Hộp chưa mở</span></h3>
+        ${poolLine(g.pool, 'Bên trong có 1–2 dòng trong số')}
+        <div class="foot">${button(g)}${quickSellButton(g)}</div>
+      </article>`;
+    }
+    return `
+      <article class="card item-card gear-card tier-${g.tier}">
+        ${g.wornBy ? `<span class="badge star owned" title="Đang đeo · ${esc(petName(g.wornBy))}">Đang đeo · ${esc(petName(g.wornBy))}</span>` : ''}
+        <div class="icon">${itemIcon(item)}</div>
+        <span class="type-tag">${SLOTS[g.slot].name} · ${ELEMENTS[item.element].icon} ${ELEMENTS[item.element].name}</span>
+        <h3>${esc(item.name)} ${tierChip(g.tier)}</h3>
+        <ul class="gear-lines">${AFFIX_ORDER.filter((a) => g.affixes[a]).map((a) => `<li title="${esc(AFFIXES[a].desc)}">${affixText(a, g.affixes[a])}</li>`).join('')}</ul>
+        <div class="foot">${button(g)}${quickSellButton(g)}</div>
+      </article>`;
+  };
   return `
     <h3 class="section-title">🎀 Trang phục <small class="muted">${list.length} món${pet ? ` · ${esc(pet.name)} đeo ${wornIds(pet).length}/${pet.wearLimit ?? WEAR_RULES.base} món` : ''}</small></h3>
-    <div class="item-grid">
-      ${list.map((g) => {
-        const item = items()[g.itemId];
-        if (g.sealed) {
-          return `
-          <article class="card item-card gear-card sealed">
-            <div class="icon">🎁</div>
-            <span class="type-tag">${SLOTS[g.slot].name} · ${ELEMENTS[item.element].icon} ${ELEMENTS[item.element].name}</span>
-            <h3>${esc(item.name)} <span class="tier-chip">Hộp chưa mở</span></h3>
-            ${poolLine(g.pool, 'Bên trong có 1–2 dòng trong số')}
-            <div class="foot">${button(g)}${quickSellButton(g)}</div>
-          </article>`;
-        }
-        return `
-          <article class="card item-card gear-card tier-${g.tier}">
-            ${g.wornBy ? `<span class="badge star owned" title="Đang đeo · ${esc(petName(g.wornBy))}">Đang đeo · ${esc(petName(g.wornBy))}</span>` : ''}
-            <div class="icon">${itemIcon(item)}</div>
-            <span class="type-tag">${SLOTS[g.slot].name} · ${ELEMENTS[item.element].icon} ${ELEMENTS[item.element].name}</span>
-            <h3>${esc(item.name)} ${tierChip(g.tier)}</h3>
-            <ul class="gear-lines">${AFFIX_ORDER.filter((a) => g.affixes[a]).map((a) => `<li title="${esc(AFFIXES[a].desc)}">${affixText(a, g.affixes[a])}</li>`).join('')}</ul>
-            <div class="foot">${button(g)}${quickSellButton(g)}</div>
-          </article>`;
-      }).join('')}
-    </div>
+    ${gearGroups(list, 'bag', (g) => g.slot, gearCard)}
     ${Object.values(items()).some((i) => qtyOf(i.id) > 0 && i.type !== 'accessory') ? '<h3 class="section-title">🧺 Đồ dùng</h3>' : ''}`;
 }
 
@@ -1289,6 +1321,7 @@ $('#view').addEventListener('click', (e) => {
     return render();
   }
   if (d.ranksGo) state.ranksBy = d.ranksGo;
+  if (d.gearJump) return document.getElementById(`gear-${d.gearJump}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   if (d.go) return go(d.go, d.filter);
   if (d.filter) {
     state.shopFilter = d.filter;
