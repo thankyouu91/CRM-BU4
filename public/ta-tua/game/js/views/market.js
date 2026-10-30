@@ -107,7 +107,9 @@ export function renderMarket(root, ctx) {
           </label>
           <small class="muted">Trong khoảng ${fmtPrice(lo)}–${fmtPrice(hi)}. Lệnh chờ tới nửa đêm, ${ui.side === 'buy' ? 'xu được ký quỹ' : 'hàng được giữ'} trong lúc chờ.</small>` : ''}
         <p class="estimate">${estimate()}</p>
-        <p class="muted small">Hôm nay còn ${fmtLots(npc)} lô ${ui.side === 'buy' ? 'mua từ' : 'bán cho'} NPC · Kho của bạn: ${fmtLots(held)} lô</p>
+        <p class="muted small">Hôm nay còn ${fmtLots(npc)} lô ${ui.side === 'buy' ? 'mua từ' : 'bán cho'} NPC
+          (riêng bạn ${fmtLots(c.ownLeft[ui.side])} · cả thị trấn ${fmtLots(c.town[ui.side].left)}/${fmtLots(c.town[ui.side].total)}) · Kho của bạn: ${fmtLots(held)} lô</p>
+        ${c.town[ui.side].left <= 0 ? '<p class="warn small">NPC đã hết hạn mức chung của thị trấn hôm nay cho mặt hàng này: chỉ còn khớp được với lệnh của người chơi khác.</p>' : ''}
         <button class="btn ${ui.side === 'buy' ? 'mint' : 'pink'}">${ui.side === 'buy' ? 'Mua' : 'Bán'} ${def.name}</button>
       </form>` : `<p class="locked-note">🔒 Mở giao dịch khi có một bé đạt cấp ${ctx.catalog.unlocks.market}. Hàng câu được vẫn nằm an toàn trong kho.</p>`}`;
   }

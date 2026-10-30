@@ -8,7 +8,7 @@ import { tradeBonus } from './gear.js';
 import { windTradeBonus } from './strategic.js';
 import {
   COMMODITIES, LOT, MARKET, RAW_FIRST, REGIMES, amountFor, blendPrice, decayPressure, depthOf, fillPrice, freshnessOf, gaussian, inBand,
-  jumpHeadline, meanPrice, profitOf, pushPressure, quote, rollJump, rollNews, shelfLife, stepDrift, stepPrice, stepRegime, tradeFee,
+  jumpHeadline, meanPrice, profitOf, pushPressure, quote, rollJump, rollNews, shelfLife, stepDrift, stepPrice, stepRegime, townNpcLots, tradeFee,
 } from './rules/market.js';
 import { designComplete } from '../../public/ta-tua/game/js/shared/clan.js';
 import { industryInfluence } from '../../public/ta-tua/game/js/shared/industry-market.js';
@@ -65,6 +65,8 @@ const q = {
   updateOrder: db.prepare('UPDATE orders SET filled = ?, locked = ?, status = ? WHERE id = ?'),
 
   flow: db.prepare('SELECT bought, sold FROM npc_flow WHERE user_id = ? AND day = ? AND commodity = ?'),
+  townFlow: db.prepare('SELECT COALESCE(SUM(bought), 0) AS bought, COALESCE(SUM(sold), 0) AS sold FROM npc_flow WHERE day = ? AND commodity = ?'),
+  traders: db.prepare('SELECT COUNT(DISTINCT user_id) AS n FROM npc_flow WHERE day >= ?'),
   addFlow: db.prepare(`
     INSERT INTO npc_flow (user_id, day, commodity, bought, sold) VALUES (?, ?, ?, ?, ?)
     ON CONFLICT (user_id, day, commodity) DO UPDATE SET bought = bought + excluded.bought, sold = sold + excluded.sold`),
@@ -174,9 +176,32 @@ function npcQtyWithin(commodity, ref, limit, side) {
   return room <= 0 ? 0 : Math.floor((room * 2 * depthOf(commodity) * LOT) / MARKET.playerWeight);
 }
 
-function npcLeft(userId, day, commodity, side) {
+/** Hạn mức NPC còn lại của riêng người chơi hôm nay (phần). */
+function ownLeft(userId, day, commodity, side) {
   const flow = q.flow.get(userId, day, commodity) ?? { bought: 0, sold: 0 };
   return Math.max(0, MARKET.npcDailyLots * LOT - (side === 'buy' ? flow.bought : flow.sold));
+}
+
+/** Số người đã giao dịch với NPC trong 7 ngày tới hết `day` (đếm lại mỗi ngày một lần). */
+const traderCache = new Map();
+function tradersOf(day) {
+  if (!traderCache.has(day)) {
+    traderCache.clear();
+    traderCache.set(day, q.traders.get(dayKey(startOfDay(day) - 6 * DAY)).n);
+  }
+  return traderCache.get(day);
+}
+
+/** Hạn mức chung của thị trấn: tổng và phần còn lại hôm nay (phần) cho mặt hàng và chiều giao dịch. */
+export function townQuota(day, commodity, side) {
+  const total = townNpcLots(commodity, tradersOf(day)) * LOT;
+  const flow = q.townFlow.get(day, commodity);
+  return { total, left: Math.max(0, total - (side === 'buy' ? flow.bought : flow.sold)) };
+}
+
+/** NPC còn nhận bao nhiêu phần từ người này: không quá hạn mức riêng, cũng không quá phần chung còn lại của thị trấn. */
+function npcLeft(userId, day, commodity, side) {
+  return Math.min(ownLeft(userId, day, commodity, side), townQuota(day, commodity, side).left);
 }
 
 /** Thanh toán cho người đặt lệnh chờ khi lệnh của họ khớp `qty` phần ở giá `price`. */
@@ -297,7 +322,11 @@ export function placeOrder(userId, order, now = Date.now()) {
     } else if (remaining && side === 'sell') {
       q.addLot.run(userId, commodity, remaining, now, goodsExpiry, goodsCost);
     }
-    if (!filled && limit === null) throw new GameError('Hôm nay đã hết hạn mức giao dịch với NPC cho mặt hàng này.');
+    if (!filled && limit === null) {
+      throw new GameError(townQuota(day, commodity, side).left <= 0
+        ? `Hôm nay NPC đã ${side === 'buy' ? 'bán' : 'mua'} hết hạn mức chung của cả thị trấn cho ${COMMODITIES[commodity].name.toLowerCase()}. Đặt giá chờ hoặc mua bán với người chơi khác, mai mở lại.`
+        : 'Hôm nay bạn đã hết hạn mức giao dịch với NPC cho mặt hàng này.');
+    }
 
     const verb = side === 'buy' ? 'Mua' : 'Bán';
     const parts = [];
@@ -490,6 +519,8 @@ export function marketView(userId, now = Date.now()) {
       held: holdings[s.commodity]?.qty ?? 0,
       industry: influence[s.commodity] ?? null,
       npcLeft: { buy: npcLeft(userId, day, s.commodity, 'buy'), sell: npcLeft(userId, day, s.commodity, 'sell') },
+      ownLeft: { buy: ownLeft(userId, day, s.commodity, 'buy'), sell: ownLeft(userId, day, s.commodity, 'sell') },
+      town: { buy: townQuota(day, s.commodity, 'buy'), sell: townQuota(day, s.commodity, 'sell') },
     };
   });
   const smart = smartReader(userId);

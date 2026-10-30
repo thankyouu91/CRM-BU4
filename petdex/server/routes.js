@@ -76,7 +76,7 @@ api.get('/catalog', (_req, res) => {
     jobs: { shiftHours: SHIFT_HOURS, maxHoursPerDay: MAX_HOURS_PER_DAY, promotion: PROMOTION, rankTitles: RANK_TITLES },
     commodities: COMMODITIES,
     market: {
-      lot: LOT, fee: MARKET.fee, spread: MARKET.spread, band: MARKET.band, npcDailyLots: MARKET.npcDailyLots, warehouse: MARKET.warehouse,
+      lot: LOT, fee: MARKET.fee, spread: MARKET.spread, band: MARKET.band, npcDailyLots: MARKET.npcDailyLots, townBaseLots: MARKET.townBaseLots, townLotsPerTrader: MARKET.townLotsPerTrader, warehouse: MARKET.warehouse,
       liquidity: MARKET.liquidity, processedDepth: MARKET.processedDepth, playerWeight: MARKET.playerWeight,
     },
     games: GAMES,
