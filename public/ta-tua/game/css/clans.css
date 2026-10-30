@@ -39,7 +39,7 @@
 .emblem-row .emblem.current { border-color: var(--tea); box-shadow: 0 3px 0 var(--tea-deep); }
 .clan-intro ul { margin: 0; padding-left: 20px; display: grid; gap: 4px; }
 
-.industry-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 10px; }
+.industry-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(170px, 100%), 1fr)); gap: 10px; }
 .industry { display: grid; gap: 4px; justify-items: center; text-align: center; padding: 12px 8px; border-radius: 16px; border: 2px solid var(--line); background: #fff; font-size: .88rem; }
 .industry.held { border-color: var(--mint-deep); background: #eef9f5; }
 .industry-icon { font-size: 1.8rem; }
@@ -105,7 +105,7 @@
 .swatch.current { outline: 3px solid var(--ink); outline-offset: 1px; }
 .color-row input[type="color"] { width: 40px; height: 30px; padding: 0; border: 0; background: none; }
 .build-save { gap: 10px; flex-wrap: wrap; font-size: .9rem; }
-.build-layers ol { margin: 0; padding: 0; list-style: none; display: grid; gap: 4px; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); }
+.build-layers ol { margin: 0; padding: 0; list-style: none; display: grid; gap: 4px; grid-template-columns: repeat(auto-fill, minmax(min(260px, 100%), 1fr)); }
 .build-layers li { display: flex; align-items: center; gap: 8px; padding: 5px 8px; border-radius: 10px; background: var(--surface-2); font-size: .85rem; cursor: pointer; }
 .build-layers li > span:nth-child(2) { flex: 1; min-width: 0; }
 .build-layers li.current { outline: 2px solid var(--tea); }
@@ -118,7 +118,7 @@
 .macro-card { grid-template-columns: auto 1fr; align-items: center; }
 .macro-big { font-size: 3rem; }
 .macro-chart { width: 100%; height: 140px; background: var(--surface-2); border-radius: 12px; }
-.demand-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 8px 16px; }
+.demand-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(260px, 100%), 1fr)); gap: 8px 16px; }
 .demand { display: grid; grid-template-columns: 170px 1fr 48px; align-items: center; gap: 8px; font-size: .85rem; }
 .demand .bar { height: 10px; }
 .demand b { text-align: right; }

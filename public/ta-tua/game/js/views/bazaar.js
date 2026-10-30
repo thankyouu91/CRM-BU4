@@ -135,8 +135,8 @@ export function renderBazaar(root, ctx) {
   const startBandOf = (ref) => auctionRules().startBand.map((k) => Math.max(1, Math.round(ref * k)));
 
   function auctionCard(a) {
-    const price = a.topBid ? `<b>${fmt(a.topBid)} 🪙</b><small class="muted">${a.bids} lượt trả giá</small>`
-      : `<b>${fmt(a.startPrice)} 🪙</b><small class="muted">giá khởi điểm, chưa ai trả</small>`;
+    const price = a.topBid ? `<b>${fmt(a.topBid)} 🪙</b><small class="muted">${a.bids} lượt trả</small>`
+      : `<b>${fmt(a.startPrice)} 🪙</b><small class="muted">khởi điểm</small>`;
     let action;
     if (a.mine) action = a.bids ? '<small class="muted">Phiên của bạn</small>' : `<button class="btn small" data-au-cancel="${a.id}">Hủy phiên</button>`;
     else if (a.leading) action = '<span class="badge star">Bạn đang dẫn</span>';
@@ -144,12 +144,11 @@ export function renderBazaar(root, ctx) {
       const key = `bid:${a.id}`;
       const value = drafts[key] ?? String(a.minBid);
       action = `<form class="bazaar-bid" data-au-bid="${a.id}">
-          <input name="amount" type="number" min="${a.minBid}" step="1" value="${esc(value)}" aria-label="Giá trả" required />
+          <input name="amount" type="number" min="${a.minBid}" step="1" value="${esc(value)}" aria-label="Giá trả" title="Ít nhất ${fmt(a.minBid)} xu" required />
           <button class="btn small mint" ${ctx.me.user.coins < a.minBid ? 'disabled' : ''}>Trả giá</button>
-        </form>
-        <small class="muted">ít nhất ${fmt(a.minBid)} 🪙</small>`;
+        </form>`;
     }
-    return `<article class="card bazaar-card ${a.mine ? 'mine' : ''} ${a.leading ? 'leading' : ''}">
+    return `<article class="card bazaar-card auction ${a.mine ? 'mine' : ''} ${a.leading ? 'leading' : ''}">
       <span class="bazaar-icon">${a.icon}</span>
       <div class="bazaar-info">
         <b>${esc(a.name)}</b>

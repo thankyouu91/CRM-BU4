@@ -193,7 +193,7 @@
 
 /* ---------- Màn hẹp ---------- */
 @media (max-width: 960px) {
-  .garden-grid, .kitchen-grid, .clinic-grid, .school-grid { grid-template-columns: 1fr; }
+  .garden-grid, .kitchen-grid, .clinic-grid, .school-grid { grid-template-columns: minmax(0, 1fr); }
 }
 @media (max-width: 640px) {
   .garden-box, .kitchen-box, .school-box, .clinic-box { padding: 14px; }

@@ -840,7 +840,7 @@ function renderShop(root) {
             <div class="icon">${itemIcon(item)}</div>
             <span class="type-tag">${TYPE_LABELS[item.type]}${item.slot ? ` · ${SLOTS[item.slot].name}` : ''}${item.element ? ` · ${ELEMENTS[item.element].icon} ${ELEMENTS[item.element].name}` : ''}</span>
             <h3>${esc(item.name)}</h3>
-            <p>${esc(item.desc ?? '')}</p>
+            <p title="${esc(item.desc ?? '')}">${esc(item.desc ?? '')}</p>
             <p class="effects">${esc(effectText(item))}</p>
             ${item.type === 'accessory' ? poolLine(affixPool(item.slot, item.element), 'Mở hộp ra 1–2 dòng trong số') : ''}
             ${item.type === 'accessory' && myGear().some((g) => g.itemId === item.id) ? `<p class="muted small">Đang có ${myGear().filter((g) => g.itemId === item.id).length} món</p>` : ''}
@@ -888,7 +888,7 @@ function gearShelf(pet) {
         }
         return `
           <article class="card item-card gear-card tier-${g.tier}">
-            ${g.wornBy ? `<span class="badge star owned">Đang đeo · ${esc(petName(g.wornBy))}</span>` : ''}
+            ${g.wornBy ? `<span class="badge star owned" title="Đang đeo · ${esc(petName(g.wornBy))}">Đang đeo · ${esc(petName(g.wornBy))}</span>` : ''}
             <div class="icon">${itemIcon(item)}</div>
             <span class="type-tag">${SLOTS[g.slot].name} · ${ELEMENTS[item.element].icon} ${ELEMENTS[item.element].name}</span>
             <h3>${esc(item.name)} ${tierChip(g.tier)}</h3>

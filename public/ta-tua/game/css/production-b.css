@@ -53,7 +53,7 @@
 .factory-table { font-size: .82rem; }
 .factory-table th, .factory-table td { padding: 5px 6px; }
 
-.factory-kinds { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 12px; }
+.factory-kinds { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(220px, 100%), 1fr)); gap: 12px; }
 .factory-kind {
   display: grid; gap: 8px; justify-items: center; text-align: center; align-content: start;
   padding: 14px 12px; border-radius: 18px; background: #fff; border: 2px solid var(--line);
@@ -126,7 +126,7 @@
 .bazaar-chips { display: flex; gap: 6px; flex-wrap: wrap; }
 .bazaar-chips .chip { font-size: .85rem; padding: 5px 11px; }
 .bazaar-sort button { padding: 5px 10px; font-size: .85rem; }
-.bazaar-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 12px; }
+.bazaar-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(280px, 100%), 1fr)); gap: 12px; }
 .bazaar-card { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 10px; align-items: center; padding: 12px 14px; }
 .bazaar-card.mine { background: #fff6d8; border-color: var(--gold); }
 .bazaar-icon {
@@ -135,7 +135,7 @@
 }
 .bazaar-icon.small { font-size: 1.4rem; width: 40px; height: 40px; border-radius: 12px; }
 .bazaar-info { display: grid; gap: 2px; min-width: 0; }
-.bazaar-info b { font-size: 1.02rem; }
+.bazaar-info b { font-size: 1.02rem; text-wrap: balance; overflow-wrap: anywhere; }
 .bazaar-info small { font-size: .78rem; }
 .bazaar-price { display: grid; justify-items: end; gap: 4px; text-align: right; }
 .bazaar-price > b { font-family: var(--font-display); font-size: 1.3rem; line-height: 1; }
@@ -144,7 +144,7 @@
 .bazaar-box h3 { font-size: 1.2rem; }
 .bazaar-box p { margin: 0; }
 .pb-list > li.bazaar-mine { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 10px; }
-.bazaar-sell-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 8px; }
+.bazaar-sell-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(320px, 100%), 1fr)); gap: 8px; }
 .bazaar-sell {
   display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 4px 10px; align-items: center;
   padding: 10px 12px; border-radius: 14px; background: var(--surface-2);
@@ -159,6 +159,11 @@
 .bazaar-sell.auction .bazaar-sell-action { grid-column: 1 / -1; }
 .bazaar-sell.auction .bazaar-sell-action input { flex: 1; width: auto; }
 .bazaar-sell.auction .btn { white-space: nowrap; }
+.bazaar-sell.auction .bazaar-sell-action { flex-wrap: wrap; }
+.bazaar-sell.auction .bazaar-sell-action select { flex: 1; min-width: 0; }
+/* thẻ đấu giá: ô trả giá luôn nằm trọn một hàng dưới giá, không chen vào cột giá */
+.bazaar-card.auction .bazaar-price > small { max-width: 140px; }
+.bazaar-bid input { min-width: 0; }
 .tier-chip.sealed { background: #a55fd0; }
 .bazaar-bid { display: flex; gap: 6px; align-items: center; }
 .bazaar-bid input { width: 84px; padding: 6px 8px; border-radius: 10px; }
@@ -218,20 +223,22 @@
 
 /* ---------- Màn hẹp ---------- */
 @media (max-width: 960px) {
-  .factory-view, .contract-grid, .credit-grid { grid-template-columns: 1fr; }
+  .factory-view, .contract-grid, .credit-grid { grid-template-columns: minmax(0, 1fr); }
 }
 @media (max-width: 640px) {
+  .bazaar-card.auction .bazaar-price > .bazaar-bid { grid-column: 1 / -1; width: 100%; }
+  .bazaar-card.auction .bazaar-price > .bazaar-bid input { flex: 1; }
   .pb-help { padding: 10px 14px; }
   .factory-card, .factory-build, .factory-toll, .contract-box, .credit-box { padding: 14px; }
   .factory-head { grid-template-columns: auto minmax(0, 1fr); }
   .factory-head > .badge { grid-column: 1 / -1; justify-self: start; }
   .factory-offer-head { grid-template-columns: auto minmax(0, 1fr) auto; }
   .factory-offer-head > .btn { grid-column: 1 / -1; }
-  .factory-kinds { grid-template-columns: 1fr; }
+  .factory-kinds { grid-template-columns: minmax(0, 1fr); }
   .contract-terms { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .contract-head { grid-template-columns: auto minmax(0, 1fr); }
   .contract-head > .badge { grid-column: 1 / -1; justify-self: start; }
-  .bazaar-grid, .bazaar-sell-list { grid-template-columns: 1fr; }
+  .bazaar-grid, .bazaar-sell-list { grid-template-columns: minmax(0, 1fr); }
   .bazaar-card { grid-template-columns: auto minmax(0, 1fr); }
   .bazaar-price { grid-column: 1 / -1; grid-template-columns: auto 1fr auto; align-items: center; justify-items: start; text-align: left; }
   .bazaar-price > small { max-width: none; }

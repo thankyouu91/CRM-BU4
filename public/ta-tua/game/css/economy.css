@@ -20,7 +20,7 @@
 .seg button.current { background: var(--ink); color: #fff; }
 .seg button.current.buy { background: var(--mint-deep); }
 .seg button.current.sell { background: var(--pink-deep); }
-.cb-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); gap: 8px; margin: 10px 0; }
+.cb-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(110px, 100%), 1fr)); gap: 8px; margin: 10px 0; }
 .cb-stats > div { display: grid; gap: 2px; padding: 8px 12px; border-radius: 14px; background: var(--surface-2); border: 2px solid var(--line); }
 .cb-stats b { font-family: var(--font-display); font-size: 1.25rem; }
 .cb-stats span { font-size: .8rem; }
@@ -43,7 +43,7 @@
 .map-intro h2 { font-size: 2rem; }
 .map-intro p { margin: 4px 0 0; }
 .map-host { width: 100%; }
-.map-fallback { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 10px; }
+.map-fallback { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(170px, 100%), 1fr)); gap: 10px; }
 
 /* ---------- Nhà: kỹ năng & đi vắng ---------- */
 .skills-row { display: flex; gap: 6px; flex-wrap: wrap; }
@@ -74,7 +74,7 @@
 .skills-mini { display: flex; gap: 12px; flex-wrap: wrap; flex: 1; justify-content: flex-end; }
 .skills-mini > span { display: grid; grid-template-columns: auto 60px auto; gap: 4px; align-items: center; font-size: .85rem; }
 .skills-mini .bar { height: 8px; display: block; }
-.career-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 14px; }
+.career-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(250px, 100%), 1fr)); gap: 14px; }
 .career-card { padding: 16px; display: grid; gap: 8px; align-content: start; }
 .career-card header { display: flex; gap: 10px; align-items: center; }
 .career-card h3 { font-size: 1.25rem; }
@@ -88,13 +88,13 @@
 
 /* ---------- Ngân hàng ---------- */
 .bank-grid, .wallet-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
-.bank-box, .wallet-box { padding: 18px; display: grid; gap: 8px; align-content: start; }
+.bank-box, .wallet-box { padding: 18px; display: grid; grid-template-columns: minmax(0, 1fr); gap: 8px; align-content: start; min-width: 0; }
 .bank-box.wide, .wallet-box.wide { grid-column: 1 / -1; }
 .bank-box h3, .wallet-box h3 { font-size: 1.3rem; }
 .bank-box p { margin: 0; }
 .money-form { display: flex; gap: 8px; flex-wrap: wrap; }
 .money-form input { flex: 1 1 140px; width: auto; }
-.term-options { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.term-options { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
 .term {
   display: grid; gap: 2px; padding: 10px 6px; border-radius: 14px; text-align: center;
   border: 2px solid var(--line); background: #fff; font-weight: 700;
@@ -161,14 +161,14 @@ td { padding: 7px 8px; border-bottom: 1px dashed var(--line); vertical-align: to
 .mk-icon.big { font-size: 2.4rem; }
 .spark-cell { width: 90px; }
 .spark { width: 90px; }
-.mk-detail { padding: 16px; display: grid; gap: 10px; }
-.mk-head { display: grid; grid-template-columns: auto 1fr auto; gap: 10px; align-items: center; }
+.mk-detail { padding: 16px; display: grid; grid-template-columns: minmax(0, 1fr); gap: 10px; min-width: 0; }
+.mk-head { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 10px; align-items: center; }
 .mk-head h3 { font-size: 1.4rem; }
 .mk-price { display: grid; justify-items: end; }
 .mk-price b { font-family: var(--font-display); font-size: 1.7rem; line-height: 1; }
 .mk-price small { font-size: .78rem; }
 .mk-chart { min-height: 170px; border-radius: 12px; background: #fffdf8; border: 2px solid var(--line); }
-.trade { display: grid; gap: 8px; padding: 12px; border-radius: 16px; background: var(--surface-2); border: 2px solid var(--line); }
+.trade { display: grid; grid-template-columns: minmax(0, 1fr); gap: 8px; padding: 12px; border-radius: 16px; background: var(--surface-2); border: 2px solid var(--line); }
 .trade label { display: grid; gap: 4px; font-weight: 800; font-size: .88rem; }
 .trade .seg { width: 100%; }
 .trade .seg button { flex: 1; }
@@ -188,7 +188,7 @@ td { padding: 7px 8px; border-bottom: 1px dashed var(--line); vertical-align: to
 .caps { padding: 16px 18px; display: grid; gap: 8px; }
 .caps-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
 .caps p { margin: 0; }
-.game-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 16px; }
+.game-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(230px, 100%), 1fr)); gap: 16px; }
 .game-card { padding: 18px; display: grid; gap: 8px; text-align: center; justify-items: center; }
 .game-card p { margin: 0; }
 .game-art {
@@ -214,15 +214,20 @@ td { padding: 7px 8px; border-bottom: 1px dashed var(--line); vertical-align: to
 .rank-row.worth { grid-template-columns: 56px 1fr auto; }
 
 @media (max-width: 960px) {
-  .bank-grid, .wallet-grid, .market-grid { grid-template-columns: 1fr; }
+  .bank-grid, .wallet-grid, .market-grid { grid-template-columns: minmax(0, 1fr); }
   .mk-board { grid-row: auto; }
 }
 @media (max-width: 640px) {
-  .caps-grid, .flow-lists, .chart-pair, .legend { grid-template-columns: 1fr; }
-  .term-options { grid-template-columns: repeat(3, 1fr); }
+  .caps-grid, .flow-lists, .chart-pair, .legend { grid-template-columns: minmax(0, 1fr); }
+  .term-options { grid-template-columns: repeat(3, minmax(0, 1fr)); }
   .work-status { gap: 12px; }
   .skills-mini { justify-content: flex-start; }
   .spark-cell, .spark { width: 60px; }
   .mk-head { grid-template-columns: auto 1fr; }
   .mk-price { grid-column: 1 / -1; justify-items: start; }
 }
+
+/* Ví, Ngân hàng, Sàn trên màn hẹp: thẻ không giãn theo nội dung dài nhất */
+.bank-grid > *, .wallet-grid > *, .market-grid > * { min-width: 0; }
+.term-options > * { min-width: 0; overflow-wrap: anywhere; }
+.wallet-box select, .bank-box select { max-width: 100%; min-width: 0; }

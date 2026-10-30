@@ -133,6 +133,10 @@ input:focus { border-color: var(--tea); box-shadow: 0 0 0 4px #c8915f33; }
 .chip.daily.ready { background: var(--pink); border-color: var(--pink-deep); color: #fff; animation: wiggle 2.4s ease-in-out infinite; }
 .chip.daily:disabled { cursor: default; color: var(--muted); }
 
+/* tên người chơi dài thì rút gọn, không đẩy thanh trên tràn ngang */
+#logout-btn span { display: inline-block; max-width: 14ch; overflow: hidden; text-overflow: ellipsis; vertical-align: bottom; }
+.tabs { min-width: 0; }
+
 .view { max-width: 1180px; margin: 0 auto; padding: 22px 20px 60px; }
 .view-head { display: flex; align-items: end; justify-content: space-between; gap: 12px; margin-bottom: 16px; flex-wrap: wrap; }
 .view-head h2 { font-size: 2rem; }
@@ -230,7 +234,7 @@ input:focus { border-color: var(--tea); box-shadow: 0 0 0 4px #c8915f33; }
 
 /* ---------- Nhận nuôi ---------- */
 .adopt { padding: 26px; }
-.species-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 14px; margin: 18px 0; }
+.species-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(200px, 100%), 1fr)); gap: 14px; margin: 18px 0; }
 .species-card {
   display: grid; justify-items: center; gap: 6px; padding: 14px;
   border: 3px solid var(--line); border-radius: 18px; background: #fff; text-align: center;
@@ -243,7 +247,7 @@ input:focus { border-color: var(--tea); box-shadow: 0 0 0 4px #c8915f33; }
 /* ---------- Cửa hàng & túi đồ ---------- */
 .filters { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 16px; }
 .filters button.current { background: var(--ink); border-color: var(--ink); color: #fff; box-shadow: 0 4px 0 #2a1c14; }
-.item-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 16px; }
+.item-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(220px, 100%), 1fr)); gap: 16px; }
 .item-card { padding: 16px; display: flex; flex-direction: column; gap: 8px; position: relative; }
 .item-card .icon {
   font-size: 2.6rem; width: 72px; height: 72px; display: grid; place-items: center;
@@ -369,13 +373,13 @@ input:focus { border-color: var(--tea); box-shadow: 0 0 0 4px #c8915f33; }
 @keyframes toast-in { from { opacity: 0; transform: translateY(12px); } }
 @keyframes toast-out { to { opacity: 0; transform: translateX(30px); } }
 
-@media (max-width: 1080px) {
+@media (max-width: 1320px) {
   .topbar { flex-wrap: wrap; row-gap: 8px; }
   .wallet { margin-left: auto; }
   .tabs { order: 3; flex-basis: 100%; }
 }
 @media (max-width: 960px) {
-  .home, .park { grid-template-columns: 1fr; }
+  .home, .park { grid-template-columns: minmax(0, 1fr); }
   .room { height: 380px; }
 }
 @media (max-width: 720px) {
@@ -383,6 +387,7 @@ input:focus { border-color: var(--tea); box-shadow: 0 0 0 4px #c8915f33; }
   .tabs { justify-content: space-between; }
   .tabs button { flex-direction: column; gap: 0; padding: 4px 6px; font-size: .75rem; flex: 1; }
   .tabs button i { font-size: 1.3rem; }
+  .tabs button { min-width: 0; }
   .wallet { margin-left: auto; }
   #logout-btn span, .chip.daily .label { display: none; }
   .view { padding: 16px 16px 50px; }
@@ -434,7 +439,7 @@ input:focus { border-color: var(--tea); box-shadow: 0 0 0 4px #c8915f33; }
 .outfit-now .down { color: var(--pink-deep); }
 .egg-panel { margin: 14px 0; padding: 12px 14px; border-radius: 16px; background: var(--surface-2); border: 2px dashed var(--line-strong); }
 .egg-panel h3 { margin: 0 0 4px; font-family: var(--font-display); }
-.egg-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; margin-top: 8px; }
+.egg-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(150px, 100%), 1fr)); gap: 10px; margin-top: 8px; }
 .egg-card {
   display: grid; justify-items: center; gap: 4px; padding: 10px; border-radius: 14px; text-align: center;
   background: #fff; border: 2px solid var(--line); border-top: 5px solid var(--el);
@@ -503,3 +508,24 @@ input:focus { border-color: var(--tea); box-shadow: 0 0 0 4px #c8915f33; }
 .account-menu .gift-choice { margin-top: 8px; }
 .account-menu .gift-options { display: grid; gap: 8px; margin-top: 6px; }
 .account-menu .gift-options .btn { justify-content: flex-start; text-align: left; white-space: normal; }
+
+/* ---------- Chống vỡ khung thẻ món (Siêu thị, Túi đồ, trang phục) ----------
+ * Tên cân dòng, mô tả tối đa 2 dòng (đủ chữ trong title), dòng chỉ số và nút tự xuống hàng thay vì bị bóp. */
+.item-card { min-width: 0; }
+.item-card h3 { text-wrap: balance; overflow-wrap: anywhere; line-height: 1.2; }
+.item-card p { text-wrap: pretty; overflow-wrap: anywhere; }
+.item-card > p:not(.effects):not(.gear-pool):not(.muted) {
+  display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; overflow: hidden;
+}
+.item-card .type-tag { overflow-wrap: anywhere; }
+.item-card .foot { flex-wrap: wrap; row-gap: 8px; }
+.item-card .foot .btn { white-space: nowrap; }
+.gear-lines li, .gear-lines-inline { overflow-wrap: anywhere; }
+.gear-pool { line-height: 1.5; }
+.tier-chip { white-space: nowrap; }
+/* nhãn góc thẻ (Đang đeo · tên bé, Có N) không đè lên hình món */
+.item-card > .badge.owned { display: block; max-width: calc(100% - 104px); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+@media (max-width: 380px) {
+  .item-grid { grid-template-columns: minmax(0, 1fr); }
+  .tabs button { font-size: .68rem; padding: 4px 2px; white-space: normal; line-height: 1.1; text-align: center; }
+}
