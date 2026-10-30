@@ -25,11 +25,12 @@ const inputs = (m: Record<string, number>, unit = "") => Object.entries(m).map((
 const EFFECT: Record<string, string> = { fullness: "No bụng", happiness: "Vui vẻ", energy: "Năng lượng", hygiene: "Sạch sẽ", health: "Sức khỏe" };
 const effects = (e: Record<string, number> = {}) => Object.entries(e).map(([k, v]) => `${EFFECT[k]} +${v}`).join(", ");
 
-type Item = { id: string; name: string; icon: string; type: string; element?: string; price: number; minLevel?: number; xp?: number; slot?: string; effect?: Record<string, number>; play?: { happiness: number; xp: number } };
+type Item = { id: string; name: string; icon: string; type: string; element?: string; price: number; minLevel?: number; xp?: number; slot?: string; effect?: Record<string, number>; play?: { happiness: number; xp: number }; clanMade?: boolean };
 const items = Object.values(ITEMS as Record<string, Item>);
 
+/** NPC food and care only: clan-made goods are priced from the day's reference price (see vat-pham-thiet-yeu). */
 export const foodRows = (): Row[] =>
-  items.filter((i) => i.type === "food" || i.type === "care").map((i) => [`${i.icon} ${i.name}`, i.type === "food" ? "Đồ ăn" : "Chăm sóc", el(i.element), i.price, effects(i.effect), i.xp ?? 0, i.minLevel ?? 1]);
+  items.filter((i) => (i.type === "food" || i.type === "care") && !i.clanMade).map((i) => [`${i.icon} ${i.name}`, i.type === "food" ? "Đồ ăn" : "Chăm sóc", el(i.element), i.price, effects(i.effect), i.xp ?? 0, i.minLevel ?? 1]);
 
 export const toyRows = (): Row[] => items.filter((i) => i.type === "toy").map((i) => [`${i.icon} ${i.name}`, i.price, `Vui vẻ +${i.play!.happiness}, +${i.play!.xp} XP mỗi lần chơi`, i.minLevel ?? 1]);
 
