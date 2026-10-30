@@ -1,20 +1,17 @@
 import type { Metadata, Viewport } from "next";
 import Image from "next/image";
-import { Baloo_2, Nunito } from "next/font/google";
 import { ArrowRight, Briefcase, Clover, Gamepad2, Gift, KeyRound, Link2, Store, TrendingUp } from "lucide-react";
 import { MeadowCanvas } from "@/components/tatua/meadow";
 import { Reveal } from "@/components/petfarm/reveal";
 import { cn } from "@/lib/utils";
 import { PLAY_DESCRIPTION, SITE_ORIGIN, WIKI_ORIGIN, playUrl } from "@/lib/petdex-public";
 import * as gear from "@/public/ta-tua/game/js/shared/gear.js";
+import "../petfarm-fonts.css";
 
 // The Petfarm website (petfarm.online, rewritten to /petfarm by middleware.ts): one page about
 // the game, in the game's own type (Baloo 2, Nunito) and milk-tea colours. Every picture is a real
 // screenshot of the game (public/petfarm), and the hero is the live meadow of the sign-in page.
 // Shapes: pictures and panels 24px, buttons 14px, chips full round.
-
-const display = Baloo_2({ subsets: ["latin", "vietnamese"], weight: ["600", "700", "800"], variable: "--pf-display", display: "swap" });
-const body = Nunito({ subsets: ["latin", "vietnamese"], weight: ["500", "600", "700", "800"], variable: "--pf-body", display: "swap" });
 
 const TITLE = "Petfarm · Nuôi bé, đi làm, cùng cả phố làm giàu";
 const DESCRIPTION = "Game nuôi thú cưng nhiều người chơi trên trình duyệt: chăm bé, nhận ca làm, buôn bán trên Sàn và gặp bạn bè ở công viên.";
@@ -106,8 +103,7 @@ export default function PetfarmSite() {
   return (
     <div
       className={cn(
-        display.variable,
-        body.variable,
+        "pf-fonts",
         "min-h-dvh bg-[var(--pf-bg)] font-[family-name:var(--pf-body)] text-[var(--pf-ink)] antialiased",
         "[--pf-bg:#fbf4ea] [--pf-glass:rgba(255,250,243,0.9)] [--pf-surface:#fffaf3] [--pf-surface-2:#f4e8d6] [--pf-ink:#3b2a1e] [--pf-muted:#6f5a49] [--pf-line:#ead8c0]",
         "[--pf-accent:#9b6238] [--pf-button:#9b6238] [--pf-button-ink:#fffaf3] [--pf-button-edge:#6e4222] [--pf-ring:#c8915f66]",

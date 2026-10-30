@@ -1,17 +1,14 @@
 import type { Metadata, Viewport } from "next";
-import { Baloo_2, Nunito } from "next/font/google";
 import { ArrowRight } from "lucide-react";
 import { WikiSearch } from "@/components/petfarm/wiki/search";
 import { cn } from "@/lib/utils";
 import { PLAY_DESCRIPTION, SITE_ORIGIN, playUrl } from "@/lib/petdex-public";
 import { wikiBase, wikiHref } from "@/lib/wiki/base";
 import { searchEntries } from "@/lib/wiki";
+import "../petfarm-fonts.css";
 
 // The Petfarm wiki (wiki.petfarm.online, rewritten under /wiki by middleware.ts): the players'
 // guide, in the type (Baloo 2, Nunito) and milk-tea colours of the game and of petfarm.online.
-
-const display = Baloo_2({ subsets: ["latin", "vietnamese"], weight: ["600", "700", "800"], variable: "--pf-display", display: "swap" });
-const body = Nunito({ subsets: ["latin", "vietnamese"], weight: ["500", "600", "700", "800"], variable: "--pf-body", display: "swap" });
 
 /**
  * Defaults for every wiki page. Articles and the home set their own titles; the "not found" page
@@ -35,8 +32,7 @@ export default async function WikiLayout({ children }: { children: React.ReactNo
   return (
     <div
       className={cn(
-        display.variable,
-        body.variable,
+        "pf-fonts",
         "flex min-h-dvh flex-col bg-[var(--pf-bg)] font-[family-name:var(--pf-body)] text-[var(--pf-ink)] antialiased",
         "[--pf-bg:#fbf4ea] [--pf-glass:rgba(255,250,243,0.9)] [--pf-surface:#fffaf3] [--pf-surface-2:#f4e8d6] [--pf-ink:#3b2a1e] [--pf-muted:#6f5a49] [--pf-line:#ead8c0]",
         "[--pf-accent:#9b6238] [--pf-button:#9b6238] [--pf-button-ink:#fffaf3] [--pf-button-edge:#6e4222] [--pf-ring:#c8915f66]",
