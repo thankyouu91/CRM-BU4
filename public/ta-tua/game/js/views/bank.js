@@ -96,6 +96,14 @@ export function renderBank(root, ctx) {
 
         <section class="card bank-box wide row-between">
           <div>
+            <h3>📈 Sàn cổ phiếu gia tộc</h3>
+            <p class="muted">Mua cổ phần các gia tộc đã lên sàn, nhận cổ tức khi gia tộc có lãi. Giá chạy theo cung cầu, mỗi ngày tối đa ±15%.</p>
+          </div>
+          <button class="btn gold" data-go="shares">Xem</button>
+        </section>
+
+        <section class="card bank-box wide row-between">
+          <div>
             <h3>🤝 Vay ngang hàng & 🔄 Hụi</h3>
             <p class="muted">Cho người chơi khác vay qua ngân hàng trung gian (ngân hàng giữ 10–20% tiền lãi), hoặc góp hụi bỏ thăm với bạn bè và các gia tộc.</p>
           </div>

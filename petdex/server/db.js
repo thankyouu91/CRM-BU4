@@ -1138,6 +1138,61 @@ addColumn('users', 'locked_slots', 'INTEGER NOT NULL DEFAULT 0');
     at      INTEGER NOT NULL
   );
   CREATE INDEX IF NOT EXISTS clan_member_log_user ON clan_member_log(user_id, at);
+
+  -- Cổ phần gia tộc (clan-shares.js). status: 'subscribing' (đang bán IPO) | 'listed' (đang giao dịch) | 'delisted'.
+  -- Quỹ khớp lệnh: cổ phần ở pool_shares, xu ở tài khoản 'shares_pool:<clan_id>'; ref_price là giá đầu ngày ref_day.
+  CREATE TABLE IF NOT EXISTS clan_listings (
+    clan_id     INTEGER PRIMARY KEY,
+    status      TEXT NOT NULL,
+    ipo_shares  INTEGER NOT NULL,
+    ipo_price   INTEGER NOT NULL,
+    ipo_sold    INTEGER NOT NULL DEFAULT 0,
+    pool_shares INTEGER NOT NULL DEFAULT 0,
+    ref_price   REAL,
+    ref_day     TEXT,
+    opens_at    INTEGER NOT NULL,
+    closes_at   INTEGER NOT NULL,
+    listed_at   INTEGER,
+    controller  INTEGER
+  );
+  -- holder_kind: 'user' | 'clan' (quỹ gia tộc khác) | 'bank' (ngân hàng gia tộc bảo lãnh) | 'self' (gia tộc mua lại).
+  CREATE TABLE IF NOT EXISTS clan_shareholdings (
+    clan_id     INTEGER NOT NULL,
+    holder_kind TEXT NOT NULL,
+    holder_id   INTEGER NOT NULL,
+    qty         INTEGER NOT NULL DEFAULT 0,
+    pledged     INTEGER NOT NULL DEFAULT 0,
+    disclosed   INTEGER NOT NULL DEFAULT 0,
+    PRIMARY KEY (clan_id, holder_kind, holder_id)
+  );
+  CREATE INDEX IF NOT EXISTS clan_shareholdings_holder ON clan_shareholdings(holder_kind, holder_id);
+  CREATE TABLE IF NOT EXISTS clan_share_trades (
+    id          INTEGER PRIMARY KEY AUTOINCREMENT,
+    clan_id     INTEGER NOT NULL,
+    holder_kind TEXT NOT NULL,
+    holder_id   INTEGER NOT NULL,
+    side        TEXT NOT NULL, -- 'ipo' | 'buy' | 'sell' | 'underwrite' | 'liquidate'
+    qty         INTEGER NOT NULL,
+    value       INTEGER NOT NULL,
+    fee         INTEGER NOT NULL DEFAULT 0,
+    price       REAL NOT NULL,
+    at          INTEGER NOT NULL
+  );
+  CREATE INDEX IF NOT EXISTS clan_share_trades_clan ON clan_share_trades(clan_id, at);
+  -- Vay ký quỹ mua cổ phần. status: 'open' | 'repaid' | 'liquidated'.
+  CREATE TABLE IF NOT EXISTS clan_margin_loans (
+    id        INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id   INTEGER NOT NULL,
+    clan_id   INTEGER NOT NULL,
+    bank_id   INTEGER NOT NULL,
+    owed      INTEGER NOT NULL,
+    shares    INTEGER NOT NULL,
+    rate      REAL NOT NULL,
+    status    TEXT NOT NULL DEFAULT 'open',
+    opened_at INTEGER NOT NULL,
+    closed_at INTEGER
+  );
+  CREATE INDEX IF NOT EXISTS clan_margin_loans_open ON clan_margin_loans(status, user_id);
   `);
 }
 

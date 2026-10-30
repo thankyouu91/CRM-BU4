@@ -48,6 +48,7 @@ const ACTION: Record<string, string> = {
   clan_join: "Vào gia tộc", clan_create: "Lập gia tộc", clan_donate: "Góp quỹ", land_buy: "Mua đất", arena_confirm: "Chọn giờ Đấu trường",
   arena_challenge: "Thách đấu", chat: "Nói ở kênh chung", browse: "Xem quanh",
   cbank_deposit: "Gửi ngân hàng gia tộc", cbank_withdraw: "Rút ngân hàng gia tộc", cbank_open: "Mở ngân hàng gia tộc", cbank_terms: "Đặt lãi ngân hàng",
+  share_ipo: "Mua cổ phiếu IPO", share_buy: "Mua cổ phiếu", share_sell: "Bán cổ phiếu",
 };
 
 const STOPPED: Record<string, string> = { budget: "hết lượt nhịp", time: "hết thời gian nhịp", off: "đang tắt" };

@@ -24,6 +24,7 @@ import { commerceView } from './commerce.js';
 import { adminArenaView, adminCancelWar } from './arena.js';
 import { adminBotsView, setBotConfig } from './bots.js';
 import { adminClanBankView, setClanBankFrozen } from './clan-bank.js';
+import { adminSharesView } from './clan-shares.js';
 import { refPrice } from './industry.js';
 import { slotsOf } from './lifecycle.js';
 import { bus, snapshot } from './service.js';
@@ -627,7 +628,7 @@ internalApi.post('/admin/bots/config', (req, res) => {
 });
 
 // ---- Ngân hàng gia tộc: vốn, tiền gửi, khoản vay, vỡ nợ; phong tỏa khẩn cấp một ngân hàng hoặc toàn bộ ----
-internalApi.get('/admin/clan-bank', (_req, res) => res.json(adminClanBankView()));
+internalApi.get('/admin/clan-bank', (_req, res) => res.json({ ...adminClanBankView(), shares: adminSharesView() }));
 internalApi.post('/admin/clan-bank/freeze', (req, res) => {
   const b = req.body ?? {};
   const clanId = b.clanId == null ? null : Number(b.clanId);

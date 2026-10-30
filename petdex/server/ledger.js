@@ -122,6 +122,16 @@ export const KINDS = {
   cbank_repay: { group: 'transfer', label: 'Trả nợ ngân hàng gia tộc' },
   cbank_auction: { group: 'transfer', label: 'Đấu giá lô siết nợ' },
   cbank_seize_sale: { group: 'transfer', label: 'Sở Nhà Đất mua lại lô siết nợ' },
+  // Cổ phần gia tộc (clan-shares.js): quỹ khớp lệnh ở shares_pool:<id>.
+  share_pool: { group: 'transfer', label: 'Quỹ khớp lệnh cổ phiếu' },
+  share_ipo: { group: 'transfer', label: 'Bán cổ phần IPO' },
+  share_underwrite: { group: 'transfer', label: 'Ngân hàng bảo lãnh IPO' },
+  share_buy: { group: 'transfer', label: 'Mua cổ phiếu gia tộc' },
+  share_sell: { group: 'transfer', label: 'Bán cổ phiếu gia tộc' },
+  share_fee: { group: 'expense', label: 'Phí giao dịch cổ phiếu' },
+  share_dividend: { group: 'income', label: 'Cổ tức cổ phiếu gia tộc' },
+  margin_loan: { group: 'transfer', label: 'Vay ký quỹ mua cổ phiếu' },
+  margin_repay: { group: 'transfer', label: 'Trả vay ký quỹ' },
 };
 
 /** Thu thuế: một nửa vào ngân sách thị trấn, một nửa bị hủy (cùng tỉ lệ như phí). */

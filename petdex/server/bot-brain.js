@@ -418,6 +418,45 @@ async function clanBank(ctx) {
   return move && (await ctx.post(move.path, move.body ?? {})) ? move.action : null;
 }
 
+// ---------------------------------------------------------------- cổ phiếu gia tộc
+
+/**
+ * Bot là nhà đầu tư nhỏ: mua 1–3 cổ phần IPO hay cổ phiếu đang rẻ so với giá trị sổ sách, chốt lời khi giá lên 12%,
+ * cắt lỗ khi giá xuống 20% (người buôn kiên nhẫn hơn). Nhớ giá vốn trong state.sh. Trả về { path, body, action } hoặc null.
+ */
+export function sharesMove(ctx, view) {
+  const { rand, persona: p, state } = ctx;
+  if (!view) return null;
+  state.sh = state.sh ?? {};
+  const held = new Map((view.holdings ?? []).map((h) => [h.clanId, h]));
+  for (const id of Object.keys(state.sh)) if (!held.has(Number(id))) delete state.sh[id];
+  for (const l of view.listings ?? []) {
+    const h = held.get(l.clanId);
+    if (!h || l.status !== 'listed' || h.qty - h.pledged < 1) continue;
+    const cost = state.sh[l.clanId] ?? l.price;
+    const up = l.price >= cost * (1.12 + p.trader * 0.1);
+    const down = l.price <= cost * (0.8 - p.trader * 0.1);
+    if ((up || down) && rand() < 0.6) return { path: `/shares/${l.clanId}/sell`, body: { qty: Math.min(h.qty - h.pledged, 1 + Math.floor(rand() * 2)) }, action: 'share_sell' };
+  }
+  const budget = ctx.coins - 3 * ctx.reserve - ctx.goal;
+  const cap = view.rules?.playerCap ?? 100;
+  const picks = (view.listings ?? []).filter((l) => (held.get(l.clanId)?.qty ?? 0) < Math.min(cap, 6) && (l.status === 'subscribing' ? l.ipo.price <= l.book * 1.1 && l.ipo.sold < l.ipo.shares : l.price <= l.book * (1 + p.trader * 0.3)));
+  if (!picks.length || rand() > 0.25 + p.trader * 0.5) return null;
+  const l = picks[Math.floor(rand() * picks.length)];
+  const unit = l.status === 'subscribing' ? l.ipo.price : l.quote.buy1 * (1 + (view.rules?.fee ?? 0.01));
+  const qty = Math.min(1 + Math.floor(rand() * 3), Math.floor(budget / Math.max(1, unit)));
+  if (qty < 1) return null;
+  state.sh[l.clanId] = Math.round(((state.sh[l.clanId] ?? unit) + unit) / 2);
+  return l.status === 'subscribing'
+    ? { path: `/shares/${l.clanId}/subscribe`, body: { qty }, action: 'share_ipo' }
+    : { path: `/shares/${l.clanId}/buy`, body: { qty }, action: 'share_buy' };
+}
+
+async function shares(ctx) {
+  const move = sharesMove(ctx, await ctx.get('/shares'));
+  return move && (await ctx.post(move.path, move.body ?? {})) ? move.action : null;
+}
+
 /** Trang phục: mở hộp kín, đeo món còn trống khe. Trả về { path, body, action } hoặc null. */
 function gearMove(ctx) {
   const pet = ctx.pet;
@@ -985,6 +1024,7 @@ export function candidates(ctx) {
   if (ctx.unlocked('bank') && ctx.coins > 3 * ctx.reserve + 200 + ctx.goal) add('bank', 8 + p.zeal * 6, bank);
   // Ngân hàng gia tộc: người gửi nhỏ so lãi với NPC; đang có khoản gửi thì thỉnh thoảng xem lại uy tín ngân hàng.
   if (ctx.unlocked('bank') && (ctx.coins > 3 * ctx.reserve + 400 + ctx.goal || state.cbank || state.bankHolder)) add('clan_bank', 4 + p.trader * 8 + (state.cbank ? 3 : 0) + (state.bankHolder ? 6 : 0), clanBank);
+  if (ctx.unlocked('bank') && (ctx.coins > 3 * ctx.reserve + 600 + ctx.goal || Object.keys(state.sh ?? {}).length)) add('shares', 3 + p.trader * 8 + (Object.keys(state.sh ?? {}).length ? 3 : 0), shares);
   if (ctx.unlocked('bank') && ctx.goal && ctx.coins < ctx.goal + ctx.reserve && ctx.coins + (state.saved ?? 0) >= ctx.goal + ctx.reserve) add('bank_goal', 40, bank);
   if (ctx.unlocked('business')) {
     if (state.biz) add('stall', 16 + p.producer * 22 + (hour >= 10 && hour < 20 ? 6 : 0), stall);

@@ -11,6 +11,7 @@ const PARTS = [
   ['savings', 'Tiết kiệm', '#58b98d'],
   ['deposits', 'Kỳ hạn', '#3f8f6f'],
   ['clanBank', 'Ngân hàng gia tộc', '#2f7a8f'],
+  ['shares', 'Cổ phiếu gia tộc', '#b5651d'],
   ['locked', 'Ký quỹ lệnh', '#9aa6c9'],
   ['goods', 'Hàng trong kho', '#f2a65a'],
   ['items', 'Đồ đạc', '#ef8fa8'],

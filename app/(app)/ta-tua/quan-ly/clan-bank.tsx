@@ -27,7 +27,13 @@ interface LoanRow {
   status: string; lateNights: number; dueAt: number; openedAt: number;
 }
 interface AuctionRow { id: number; plotCode: string; bank: string; debtor: string; startPrice: number; topBid: number | null; topClan: string | null; endsAt: number }
-interface ClanBankAdmin { frozen: boolean; insurance: number; baseRate: number; banks: BankRow[]; loans: LoanRow[]; auctions: AuctionRow[] }
+interface ShareListing {
+  clanId: number; name: string; emblem: string; status: string; price: number; change: number; book: number; poolShares: number; volume24h: number;
+  ipo: { shares: number; sold: number; price: number; closesAt: number }; controller: { id: number; name: string } | null;
+  holders: { kind: string; name: string; qty: number }[];
+}
+interface SharesAdmin { listings: ShareListing[]; margins: { id: number; user: string; clan: string; bank: string; owed: number; shares: number }[] }
+interface ClanBankAdmin { frozen: boolean; insurance: number; baseRate: number; banks: BankRow[]; loans: LoanRow[]; auctions: AuctionRow[]; shares?: SharesAdmin }
 type Freeze = { clanId: number | null; clanName?: string; frozen: boolean };
 
 const xu = (n: number) => `${Math.round(n).toLocaleString("vi-VN")} xu`;
@@ -125,6 +131,39 @@ export function ClanBankTab() {
           )}
         </CardBody>
       </Card>
+      {data.shares && (
+        <Card>
+          <CardHeader title="Cổ phiếu gia tộc" description="Giá theo quỹ khớp lệnh, biên ±15%/ngày. Người kiểm soát là gia tộc nắm trên 50% cổ phần." />
+          <CardBody className="overflow-x-auto pt-3">
+            {data.shares.listings.length ? (
+              <table className="w-full min-w-[56rem] text-sm">
+                <thead className="border-b text-left text-xs text-muted-foreground">
+                  <tr>{["Gia tộc", "Trạng thái", "Giá", "Sổ sách", "Khớp 24 giờ", "Cổ đông lớn", "Kiểm soát"].map((h) => <th key={h} className="px-3 py-2 font-medium">{h}</th>)}</tr>
+                </thead>
+                <tbody className="divide-y tabular-nums">
+                  {data.shares.listings.map((l) => (
+                    <tr key={l.clanId}>
+                      <td className="px-3 py-2">{l.emblem} {l.name}</td>
+                      <td className="px-3 py-2">{l.status === "subscribing" ? `IPO ${l.ipo.sold}/${l.ipo.shares} · đóng ${when(l.ipo.closesAt)}` : "Đang giao dịch"}</td>
+                      <td className="px-3 py-2">{l.price.toLocaleString("vi-VN")} <span className={l.change >= 0 ? "text-success" : "text-danger"}>{(l.change * 100).toFixed(1)}%</span></td>
+                      <td className="px-3 py-2">{l.book.toLocaleString("vi-VN")}</td>
+                      <td className="px-3 py-2">{l.volume24h}</td>
+                      <td className="px-3 py-2 text-xs">{l.holders.slice(0, 4).map((h) => `${h.name} ${h.qty}`).join(" · ")}</td>
+                      <td className="px-3 py-2">{l.controller?.name ?? "Không"}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            ) : <p className="text-sm text-muted-foreground">Chưa có gia tộc nào lên sàn.</p>}
+            {data.shares.margins.length > 0 && (
+              <div className="mt-4 space-y-1 text-sm">
+                <p className="font-medium">Vay ký quỹ đang mở</p>
+                {data.shares.margins.map((m) => <p key={m.id}>{m.user}: {m.shares} cổ phần {m.clan}, nợ {xu(m.owed)} ngân hàng {m.bank}</p>)}
+              </div>
+            )}
+          </CardBody>
+        </Card>
+      )}
       <ConfirmDialog
         open={Boolean(confirm)}
         onClose={() => setConfirm(null)}

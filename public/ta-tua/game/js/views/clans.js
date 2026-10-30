@@ -103,7 +103,7 @@ function marketLine(id) {
 export function renderClans(root, ctx) {
   COMMODITY_NAMES = Object.fromEntries(Object.entries(ctx.catalog.commodities ?? {}).map(([id, c]) => [id, c.name]));
   root.innerHTML = `<div class="clan-page">
-    ${viewHead('🏯 Gia tộc & Sở Nhà Đất', 'Lập gia tộc, góp quỹ, thâu tóm tối đa 3 ngành, mua đất và tự lắp ghép công trình.', '<button class="btn" data-go="arena">⚔️ Đấu trường</button> <button class="btn" data-go="clanbank">🏦 Ngân hàng gia tộc</button>')}
+    ${viewHead('🏯 Gia tộc & Sở Nhà Đất', 'Lập gia tộc, góp quỹ, thâu tóm tối đa 3 ngành, mua đất và tự lắp ghép công trình.', '<button class="btn" data-go="arena">⚔️ Đấu trường</button> <button class="btn" data-go="clanbank">🏦 Ngân hàng gia tộc</button> <button class="btn" data-go="shares">📈 Cổ phiếu</button>')}
     <nav class="clan-tabs"></nav>
     <div class="clan-body"><div class="empty muted">Đang tải…</div></div></div>`;
   const tabsEl = root.querySelector('.clan-tabs');

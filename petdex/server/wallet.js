@@ -2,6 +2,7 @@
 import { allUsers, db, getUser, inventory } from './db.js';
 import { bankHoldings, indexedPrice } from './bank.js';
 import { clanBankDeposits } from './clan-bank.js';
+import { sharePositions } from './clan-shares.js';
 import { dayKey } from './clock.js';
 import { DAY, ITEMS } from './game.js';
 import { KINDS } from './ledger.js';
@@ -28,17 +29,19 @@ export function netWorth(userId, now = Date.now()) {
   const items = Object.entries(inventory(userId))
     .reduce((sum, [id, qty]) => sum + (ITEMS[id] ? Math.floor(indexedPrice(ITEMS[id].price) * 0.5) * qty : 0), 0);
   const p2p = p2pPositions(userId);
+  const shares = sharePositions(userId);
   const parts = {
     wallet: user.coins,
     savings: bank.savings,
     deposits: bank.deposits,
     clanBank: clanBankDeposits(userId), // gốc tiền gửi ở các ngân hàng gia tộc
+    shares: shares.value, // cổ phiếu gia tộc theo giá quỹ khớp lệnh hiện tại
     locked: lockedInOrders(userId),
     goods: goodsValue(userId, now),
     items,
     escrow: escrowOf(userId) + heldInAuctions(userId),
     lent: p2p.lent, // khoản cho vay ngang hàng chưa thu về (tính theo số phải thu, trước phí ngân hàng)
-    debt: -debtOf(userId) - p2p.debt,
+    debt: -debtOf(userId) - p2p.debt - shares.debt,
   };
   return { total: Object.values(parts).reduce((a, b) => a + b, 0), parts };
 }
