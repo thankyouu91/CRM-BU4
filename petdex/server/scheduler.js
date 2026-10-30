@@ -5,6 +5,7 @@ import { settleBusinessDay } from './business.js';
 import { settleClansDay } from './clans.js';
 import { settleClanGovDay } from './clan-gov.js';
 import { settleBankAuctions, settleClanBankDay } from './clan-bank.js';
+import { closeIpos, settleSharesDay } from './clan-shares.js';
 import { pruneChat } from './chat.js';
 import { settleP2PDay } from './p2p.js';
 import { settleHuiDay } from './hui.js';
@@ -44,6 +45,7 @@ export function closeDay(day, rand = Math.random) {
   settleBankDay(end);
   settleClanGovDay(end);
   settleClanBankDay(end);
+  settleSharesDay(end);
   settleLoansDay(day);
   settleP2PDay(day);
   settleHuiDay(day);
@@ -79,6 +81,7 @@ export function runDue(now = Date.now(), rand = Math.random) {
   // Phiên đấu giá đóng đúng giờ, không đợi nửa đêm.
   settleAuctions(now);
   settleBankAuctions(now);
+  closeIpos(now);
   // Đấu trường gia tộc: xử thua lời thách quá hạn, đánh các trận đã đến giờ (19h/20h).
   settleArena(now);
 

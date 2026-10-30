@@ -14,6 +14,9 @@ import { arenaView, challenge, confirmSlot, warReplay, withdraw } from './arena.
 import {
   bidSeizedPlot, borrowFromBank, clanBankView, depositAtBank, keepSeizedPlot, moveBankCapital, openBank, repayBankLoan, setBankTerms, withdrawFromBank,
 } from './clan-bank.js';
+import {
+  appointLeader, buyShares, clanTradeShares, mergeControlled, payShareDividend, repayMargin, sellShares, sharesView, startIpo, subscribeIpo,
+} from './clan-shares.js';
 import { castBallot, openClanDeposit, resolveVotes, startDepose, withdrawClanDeposit } from './clan-gov.js';
 
 export const clanApi = Router();
@@ -23,6 +26,7 @@ clanApi.use('/macro', auth);
 clanApi.use('/industry', auth);
 clanApi.use('/arena', auth);
 clanApi.use('/clan-bank', auth);
+clanApi.use('/shares', auth);
 
 const uid = (req) => req.user.id;
 const unlock = (req, what) => requireLevel(uid(req), clanConfig().unlockLevel, what);
@@ -57,6 +61,26 @@ clanApi.post('/clan-bank/:bankId/deposit', (req, res) => {
 clanApi.post('/clan-bank/:bankId/borrow', (req, res) => reply(res, uid(req), borrowFromBank(uid(req), {
   bankId: intField(req.params.bankId, 'Ngân hàng'), plotId: intField(req.body?.plotId, 'Lô đất'), amount: intField(req.body?.amount, 'Số tiền'), term: Number(req.body?.term),
 })));
+
+// ---- Cổ phần gia tộc: IPO, mua bán theo quỹ khớp lệnh, ký quỹ, cổ tức, quyền kiểm soát ----
+clanApi.get('/shares', (req, res) => res.json(sharesView(uid(req))));
+clanApi.post('/shares/ipo', (req, res) => reply(res, uid(req), startIpo(uid(req), { shares: intField(req.body?.shares, 'Số cổ phần'), price: intField(req.body?.price, 'Giá') })));
+clanApi.post('/shares/dividend', (req, res) => reply(res, uid(req), payShareDividend(uid(req), intField(req.body?.amount, 'Số tiền'))));
+clanApi.post('/shares/margin/:id/repay', (req, res) => reply(res, uid(req), repayMargin(uid(req), intField(req.params.id, 'Khoản vay'))));
+clanApi.post('/shares/:clanId/subscribe', (req, res) => {
+  requireLevel(uid(req), UNLOCKS.bank, 'Mua cổ phiếu');
+  reply(res, uid(req), subscribeIpo(uid(req), intField(req.params.clanId, 'Gia tộc'), intField(req.body?.qty, 'Số cổ phần')));
+});
+clanApi.post('/shares/:clanId/buy', (req, res) => {
+  requireLevel(uid(req), UNLOCKS.bank, 'Mua cổ phiếu');
+  reply(res, uid(req), buyShares(uid(req), intField(req.params.clanId, 'Gia tộc'), intField(req.body?.qty, 'Số cổ phần'), { margin: Boolean(req.body?.margin) }));
+});
+clanApi.post('/shares/:clanId/sell', (req, res) => reply(res, uid(req), sellShares(uid(req), intField(req.params.clanId, 'Gia tộc'), intField(req.body?.qty, 'Số cổ phần'))));
+clanApi.post('/shares/:clanId/clan-trade', (req, res) => reply(res, uid(req), clanTradeShares(
+  uid(req), intField(req.params.clanId, 'Gia tộc'), String(req.body?.side ?? ''), intField(req.body?.qty, 'Số cổ phần'), { asBank: Boolean(req.body?.asBank) },
+)));
+clanApi.post('/shares/:clanId/appoint', (req, res) => reply(res, uid(req), appointLeader(uid(req), intField(req.params.clanId, 'Gia tộc'), intField(req.body?.userId, 'Người được bổ nhiệm'))));
+clanApi.post('/shares/:clanId/merge', (req, res) => reply(res, uid(req), mergeControlled(uid(req), intField(req.params.clanId, 'Gia tộc'))));
 
 clanApi.get('/clans', (req, res) => {
   resolveVotes(); // phiếu hết giờ thì khép trước khi xem

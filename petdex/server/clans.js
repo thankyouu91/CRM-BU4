@@ -16,6 +16,7 @@ import { buffFor, chargeInfraFee, operatingOwners, strategicOf } from './strateg
 import { openShopBuying, settleEssentialsDay } from './essentials.js';
 import { memberPower } from './arena.js';
 import { clanBankDissolve, plotPledged } from './clan-bank.js';
+import { sharesDissolve } from './clan-shares.js';
 import { collateralOf } from '../../public/ta-tua/game/js/shared/clan-bank.js';
 import {
   CLAN_EMBLEMS, CLAN_LEVELS, INDUSTRIES, INDUSTRY_ORDER, LAND, PHASES, PLOTS, WEATHER, cleanDesign, clanLevelOf, clanPerks,
@@ -363,6 +364,8 @@ function dissolveClan(clan, now) {
   coverFromDeposits(clan.id, Infinity, now); // tiền gửi về quỹ trước khi quỹ về ngân sách
   // Ngân hàng gia tộc: ngân hàng của nó đổ vỡ, lô đang thế chấp về tay ngân hàng chủ nợ trước khi đất trả về Sở Nhà Đất.
   clanBankDissolve(clan.id, now);
+  // Cổ phiếu: rời sàn, quỹ khớp lệnh về quỹ gia tộc (rồi cùng quỹ về ngân sách).
+  sharesDissolve(clan.id, now);
   q.releaseClanPlots.run(clan.id);
   q.dropIndustries.run(clan.id);
   const left = clanBalance(clan.id);
