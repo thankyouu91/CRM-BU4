@@ -1,6 +1,6 @@
 import { beforeAll, describe, expect, it } from "vitest";
 import { CLAN } from "@/lib/wiki/rules";
-import { CLAN_XP, MACRO, antitrustTax, buyCapLeft, clanItemPrice, servicePlotRevenue } from "@/lib/wiki/rules-macro";
+import { CLAN_XP, HEAVY, MACRO, antitrustTax, buyCapLeft, clanItemPrice, servicePlotRevenue } from "@/lib/wiki/rules-macro";
 import { INDUSTRIES, INDUSTRY_ORDER, PHASES, PLOTS } from "@/public/ta-tua/game/js/shared/clan.js";
 
 // The macro economy, Sở Công Thương and clan articles copy numbers and formulas that live in modules
@@ -56,6 +56,13 @@ describe("Petfarm wiki macro economy stays in step with the game (lib/wiki/rules
       expect(next.phase, `phase ${p} stays`).toBe(p);
       expect(next.gdp, `MACRO.gdp.${p}`).toBeCloseTo(MACRO.gdp[p], 6);
     }
+  });
+
+  it("adds the wiki's random steps to the land index and the GDP shown (MACRO.land.noise, MACRO.gdpNoise)", () => {
+    const land = macro.rollMacro(flat("recovery"), { rand: seq([0.99, 0.25, ...calmIndustries(), ...ONE_SIGMA, ...ZERO]), baseRate: MACRO.land.neutralRate });
+    expect(land.landIndex, "MACRO.land.noise").toBeCloseTo(1 + PHASES.recovery.land + MACRO.land.noise, 4);
+    const gdp = macro.rollMacro(flat("recovery"), { rand: seq([0.99, 0.25, ...calmIndustries(), ...ZERO, ...ONE_SIGMA]), baseRate: MACRO.land.neutralRate });
+    expect(gdp.gdp, "MACRO.gdpNoise").toBeCloseTo(MACRO.gdp.recovery + MACRO.gdpNoise, 4);
   });
 
   it("pulls demand back toward 100% with the wiki's keep share and noise (MACRO.demand)", () => {
@@ -228,6 +235,41 @@ describe("Petfarm wiki Siêu thị prices stay in step with the game (clanItemPr
       for (const ref of [1, 97, 120, 450, 613]) {
         for (const quality of [0, 1, 2]) expect(clanItemPrice(cat, ref, quality), `${cat} ${ref} ${quality}`).toBe(essentials.clanItemPrice(cat, ref, quality));
       }
+    }
+  });
+});
+
+describe("Petfarm wiki heavy industry stays in step with the game (lib/wiki/rules-macro.ts HEAVY)", () => {
+  it("is closed by default, and closing refunds the fee and keeps the building", async () => {
+    const heavy = await import("@/petdex/server/heavy-industry.js");
+    expect(heavy.industryClosed("metallurgy"), "HEAVY.closedByDefault").toBe(HEAVY.closedByDefault);
+    const h = newPlayer("wiki_toc_h", 3_000_000);
+    clans.createClan(h, { name: "Wiki Gia Tộc H" }, T0);
+    const id = clans.clanView(h, T0).clan.id;
+    clans.donateClan(h, 2_000_000, T0);
+    expect(() => clans.enterIndustry(h, "metallurgy", T0)).toThrow(/tạm đóng/);
+    heavy.setHeavyOpen(true, "wiki test", T0);
+    try {
+      clans.enterIndustry(h, "metallurgy", T0);
+      const plot = PLOTS.filter((p) => !store.db.prepare("SELECT clan_id FROM land_plots WHERE id = ?").get(p.id)?.clan_id).sort((a, b) => a.basePrice - b.basePrice)[0];
+      clans.buyPlot(h, plot.id, T0);
+      clans.setPlotIndustry(h, plot.id, "metallurgy");
+      const design = [
+        { piece: "base-3", x: 2, y: 19, color: "#8b5e3c" },
+        { piece: "wall_brick-8", x: 2, y: 15, color: "#e85d5d" },
+        { piece: "roof_gable-5", x: 2, y: 11, color: "#4b8ff2" },
+      ];
+      clans.saveDesign(h, plot.id, design, T0);
+      const before = clans.clanBalance(id);
+      heavy.setHeavyOpen(false, "wiki test", T0);
+      const fee = (INDUSTRIES as Record<string, { comp: number }>).metallurgy.comp;
+      expect(clans.clanBalance(id) - before, "HEAVY.refundShare").toBe(Math.round(fee * HEAVY.refundShare));
+      const row = store.db.prepare("SELECT industry, design FROM land_plots WHERE id = ?").get(plot.id);
+      expect(row.industry).toBeNull();
+      expect(JSON.parse(row.design).length === design.length, "HEAVY.keepsBuilding").toBe(HEAVY.keepsBuilding);
+      expect(clans.clanView(h, T0).clan.industries.length).toBe(0);
+    } finally {
+      if (heavy.heavyOpen()) heavy.setHeavyOpen(false, "wiki test", T0);
     }
   });
 });

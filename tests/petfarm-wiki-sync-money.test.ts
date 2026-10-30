@@ -145,6 +145,15 @@ describe("Petfarm wiki money rules stay in step with the game", () => {
     expect(dry.paid).toBe(7);
   });
 
+  it("shows MONEY.bankHistoryWeeks Central Bank meetings on the bank screen", () => {
+    const id = player(0);
+    for (let w = 0; w < MONEY.bankHistoryWeeks + 3; w++) {
+      const at = T0 + (30 + 7 * w) * DAY;
+      bank.centralBankWeek(clock.dayKey(at), at);
+    }
+    expect(bank.bankView(id, T0 + 200 * DAY).history.length).toBe(MONEY.bankHistoryWeeks);
+  });
+
   it("names ledger lines the way the game does (KIND_LABELS)", () => {
     for (const [kind, label] of Object.entries(KIND_LABELS)) expect(ledger.KINDS[kind]?.label, kind).toBe(label);
   });
