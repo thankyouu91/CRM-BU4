@@ -14,6 +14,8 @@ import { article as A_ngan_hang_gia_toc } from "./articles/ngan-hang-gia-toc";
 import { article as A_vay_the_chap } from "./articles/vay-the-chap";
 import { article as A_co_phan_gia_toc } from "./articles/co-phan-gia-toc";
 import { article as A_thau_tom_gia_toc } from "./articles/thau-tom-gia-toc";
+import { article as A_trai_phieu } from "./articles/trai-phieu";
+import { article as A_lai_suat_co_ban } from "./articles/lai-suat-co-ban";
 import { article as A_thue_toa_thi_chinh } from "./articles/thue-toa-thi-chinh";
 import { article as A_gia_toc } from "./articles/gia-toc";
 import { article as A_kinh_te_vi_mo } from "./articles/kinh-te-vi-mo";
@@ -1018,6 +1020,8 @@ export const ARTICLES: WikiArticle[] = [
   A_vay_the_chap,
   A_co_phan_gia_toc,
   A_thau_tom_gia_toc,
+  A_trai_phieu,
+  A_lai_suat_co_ban,
   {
     slug: "quay-tra-sua",
     title: "Quầy trà sữa",

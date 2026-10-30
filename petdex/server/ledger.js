@@ -1,6 +1,9 @@
 // Sổ cái: nơi duy nhất được phép làm thay đổi xu. Mỗi dòng ghi số dư sau giao dịch để đối soát.
 import { db } from './db.js';
 import { GameError } from './game.js';
+import { FINANCE_TAX } from '../../public/ta-tua/game/js/shared/clan-bonds.js';
+
+const FINANCE_TAX_RATE = FINANCE_TAX.rate;
 
 /** Nhóm: income/expense được tính vào báo cáo thu chi; transfer chỉ là chuyển giữa các túi của cùng người chơi. */
 export const KINDS = {
@@ -132,7 +135,29 @@ export const KINDS = {
   share_dividend: { group: 'income', label: 'Cổ tức cổ phiếu gia tộc' },
   margin_loan: { group: 'transfer', label: 'Vay ký quỹ mua cổ phiếu' },
   margin_repay: { group: 'transfer', label: 'Trả vay ký quỹ' },
+  // Trái phiếu và quyền lãi suất (clan-bonds.js).
+  bond_issue: { group: 'transfer', label: 'Phát hành trái phiếu' },
+  bond_buy: { group: 'transfer', label: 'Mua trái phiếu' },
+  bond_sell: { group: 'transfer', label: 'Bán trái phiếu' },
+  bond_fee: { group: 'expense', label: 'Phí trái phiếu' },
+  bond_coupon: { group: 'income', label: 'Lãi trái phiếu' },
+  bond_redeem: { group: 'transfer', label: 'Trái phiếu đáo hạn' },
+  finance_tax: { group: 'expense', label: 'Thuế lợi nhuận tài chính' },
+  rate_penalty: { group: 'transfer', label: 'Phạt điều hành lãi suất' },
 };
+
+/**
+ * Thuế lợi nhuận tài chính (10%): khấu trừ ngay trên lãi tiền gửi ngân hàng gia tộc, cổ tức và lãi trái phiếu của người
+ * chơi. Một nửa vào ngân sách thị trấn, một nửa bị hủy (như thuế thu nhập). Trả về số thuế. Gọi sau khi đã cộng khoản gộp.
+ */
+export function chargeFinanceTax(userId, gross, memo, now = Date.now()) {
+  const tax = Math.floor(Math.max(0, gross) * FINANCE_TAX_RATE);
+  if (!userId || tax <= 0) return 0;
+  post({ userId, delta: -tax, kind: 'finance_tax', memo, now });
+  const half = Math.floor(tax / 2);
+  if (half > 0) post({ account: 'treasury', delta: half, kind: 'finance_tax', memo, now });
+  return tax;
+}
 
 /** Thu thuế: một nửa vào ngân sách thị trấn, một nửa bị hủy (cùng tỉ lệ như phí). */
 export function chargeTax(userId, amount, memo, now = Date.now()) {

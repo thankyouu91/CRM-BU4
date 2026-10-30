@@ -104,6 +104,14 @@ export function renderBank(root, ctx) {
 
         <section class="card bank-box wide row-between">
           <div>
+            <h3>📜 Trái phiếu</h3>
+            <p class="muted">Cho gia tộc hoặc kho bạc vay theo mệnh giá, nhận lãi cố định mỗi đêm và lấy lại gốc khi đáo hạn; mua bán lại trên sàn thứ cấp.</p>
+          </div>
+          <button class="btn gold" data-go="bonds">Xem</button>
+        </section>
+
+        <section class="card bank-box wide row-between">
+          <div>
             <h3>🤝 Vay ngang hàng & 🔄 Hụi</h3>
             <p class="muted">Cho người chơi khác vay qua ngân hàng trung gian (ngân hàng giữ 10–20% tiền lãi), hoặc góp hụi bỏ thăm với bạn bè và các gia tộc.</p>
           </div>
