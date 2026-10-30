@@ -56,7 +56,21 @@ function attempt(fn) {
   }
 }
 
-export function simulate({ bots = 60, days = 30, seed = 1, elements = true } = {}) {
+export function simulate(opts = {}) {
+  // Game rules also call Math.random (mini-game drops, sickness...): seed it too while the run lasts,
+  // so the same seed always gives the same economy.
+  const real = Math.random;
+  Math.random = seeded((opts.seed ?? 1) + 7919);
+  try {
+    return run(opts);
+  } finally {
+    Math.random = real;
+  }
+}
+
+const reseedGame = store.db.prepare('UPDATE minigame_sessions SET seed = ? WHERE id = ?');
+
+function run({ bots = 60, days = 30, seed = 1, elements = true } = {}) {
   const rand = seeded(seed);
   const players = [];
   for (let i = 0; i < bots; i++) {
@@ -94,6 +108,9 @@ export function simulate({ bots = 60, days = 30, seed = 1, elements = true } = {
     const game = ['fishing', 'pearls', 'memory'][Math.floor(rand() * 3)];
     const session = attempt(() => games.startGame(p.id, game, now));
     if (!session) return;
+    // The server draws a session seed from node:crypto; replace it with one from this run's generator.
+    session.seed = Math.floor(rand() * 2 ** 31);
+    reseedGame.run(session.seed, session.id);
     let result;
     if (game === 'fishing') result = { caught: fishSequence(session.seed).slice(0, 20).map(() => rand() < 0.6) };
     else if (game === 'pearls') {
