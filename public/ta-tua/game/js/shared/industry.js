@@ -455,13 +455,15 @@ export const ESSENTIALS = {
    */
   askMin: 0.7,
   askMax: 1,
-  /** Mỗi người còn được mua thêm chừng này món NPC mỗi nhóm mỗi ngày, ngoài phần theo số bé. */
-  npcSpare: 2,
   newbieDays: 7,
+  /**
+   * Hạn mức đồ NPC mỗi nhóm mỗi ngày = ⌈số bé × nhu cầu/bé × max(10%, 1 − D) × npcBoost⌉ + npcSpare.
+   * Khai hoang (chưa có đủ hàng gia tộc) nới gấp đôi và thêm 4 món, để người chơi cũ không bị thiếu đồ lúc mới mở.
+   */
   stages: [
-    { key: 'pioneer', name: 'Khai hoang', icon: '🌱', from: 0 },
-    { key: 'growing', name: 'Phát triển', icon: '🏗️', from: 0.2 },
-    { key: 'self', name: 'Tự chủ', icon: '🏆', from: 0.8 },
+    { key: 'pioneer', name: 'Khai hoang', icon: '🌱', from: 0, npcBoost: 2, npcSpare: 4 },
+    { key: 'growing', name: 'Phát triển', icon: '🏗️', from: 0.2, npcBoost: 1, npcSpare: 2 },
+    { key: 'self', name: 'Tự chủ', icon: '🏆', from: 0.8, npcBoost: 1, npcSpare: 2 },
   ],
   /** Giá đồ NPC tăng tới +30% khi D đi từ 20% lên 80%. */
   npcPriceUp: 0.3,
@@ -512,10 +514,10 @@ export function qualitySplit(score) {
 
 export const essentialStage = (d) => ESSENTIALS.stages.findLast((s) => d >= s.from);
 
-/** Hệ số XP của đồ NPC theo D: khai hoang 50%, phát triển giảm dần về 25%, tự chủ 10%. */
+/** Hệ số XP của đồ NPC theo D: khai hoang 80%, phát triển giảm dần về 25%, tự chủ 10%. */
 export function npcXpFactor(d) {
-  if (d < 0.2) return 0.5;
-  if (d < 0.8) return 0.5 - ((d - 0.2) / 0.6) * 0.25;
+  if (d < 0.2) return 0.8;
+  if (d < 0.8) return 0.8 - ((d - 0.2) / 0.6) * 0.55;
   return 0.1;
 }
 export const npcPriceFactor = (d) => 1 + ESSENTIALS.npcPriceUp * Math.min(1, Math.max(0, (d - 0.2) / 0.6));
