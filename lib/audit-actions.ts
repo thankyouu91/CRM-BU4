@@ -95,6 +95,8 @@ export const AUDIT_ACTIONS = {
   "tatua.macro": { label: "Chỉnh kinh tế vĩ mô", group: "tatua" },
   "tatua.tax_collect": { label: "Truy thu thuế gia tộc", group: "tatua" },
   "tatua.tax_dismiss": { label: "Bỏ qua hồ sơ thuế", group: "tatua" },
+  "tatua.industry_unmerge": { label: "Gỡ gộp ngành gia tộc", group: "tatua" },
+  "tatua.industry_merge": { label: "Gộp lại ngành gia tộc", group: "tatua" },
 } as const satisfies Record<string, { label: string; group: AuditGroup }>;
 
 export type AuditAction = keyof typeof AUDIT_ACTIONS;
