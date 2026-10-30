@@ -5,10 +5,10 @@ import { ArrowRight, Briefcase, Clover, Gamepad2, Gift, KeyRound, Link2, Store, 
 import { MeadowCanvas } from "@/components/tatua/meadow";
 import { Reveal } from "@/components/petfarm/reveal";
 import { cn } from "@/lib/utils";
-import { PLAY_DESCRIPTION, SITE_ORIGIN, playUrl } from "@/lib/petdex-public";
+import { PLAY_DESCRIPTION, SITE_ORIGIN, WIKI_ORIGIN, playUrl } from "@/lib/petdex-public";
 import * as gear from "@/public/ta-tua/game/js/shared/gear.js";
 
-// The Petfarm website (www.petfarm.online, rewritten to /petfarm by middleware.ts): one page about
+// The Petfarm website (petfarm.online, rewritten to /petfarm by middleware.ts): one page about
 // the game, in the game's own type (Baloo 2, Nunito) and milk-tea colours. Every picture is a real
 // screenshot of the game (public/petfarm), and the hero is the live meadow of the sign-in page.
 // Shapes: pictures and panels 24px, buttons 14px, chips full round.
@@ -128,6 +128,7 @@ export default function PetfarmSite() {
             <a href="#cach-choi" className="hover:text-[var(--pf-ink)]">Cách chơi</a>
             <a href="#trang-phuc" className="hover:text-[var(--pf-ink)]">Trang phục</a>
             <a href="#hoi-dap" className="hover:text-[var(--pf-ink)]">Hỏi đáp</a>
+            <a href={WIKI_ORIGIN} className="hover:text-[var(--pf-ink)]">Wiki</a>
           </div>
           <PlayButton className="ml-auto h-10 px-4 text-base md:ml-0" />
         </nav>
@@ -351,6 +352,7 @@ export default function PetfarmSite() {
             <a href={playUrl()} className="hover:text-[var(--pf-ink)]">Vào chơi</a>
             <a href="#cach-choi" className="hover:text-[var(--pf-ink)]">Cách chơi</a>
             <a href="#hoi-dap" className="hover:text-[var(--pf-ink)]">Hỏi đáp</a>
+            <a href={WIKI_ORIGIN} className="hover:text-[var(--pf-ink)]">Wiki</a>
           </nav>
         </div>
       </footer>

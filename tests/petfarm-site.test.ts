@@ -1,16 +1,16 @@
 import { describe, expect, it } from "vitest";
 import { NextRequest } from "next/server";
-import { SITE_APEX, SITE_HOST, SITE_PATH, playHostRedirect, siteHostRoute } from "@/lib/petdex-public";
+import { SITE_ALIAS, SITE_HOST, SITE_PATH, playHostRedirect, siteHostRoute } from "@/lib/petdex-public";
 import { middleware } from "@/middleware";
 
-// www.petfarm.online shows the Petfarm landing page only; the game's own pages live on play.petfarm.online.
+// petfarm.online shows the Petfarm landing page only; the game's own pages live on play.petfarm.online.
 
 const on = (host: string, path: string) => middleware(new NextRequest(`https://${host}${path}`, { headers: { host } }));
 
 describe("Petfarm website routing", () => {
   it("maps paths on the website's domain", () => {
-    expect(SITE_HOST).toBe("www.petfarm.online");
-    expect(SITE_APEX).toBe("petfarm.online");
+    expect(SITE_HOST).toBe("petfarm.online");
+    expect(SITE_ALIAS).toBe("www.petfarm.online");
     expect(siteHostRoute("/")).toEqual({ rewrite: SITE_PATH });
     expect(siteHostRoute("/server1")).toEqual({ redirect: "https://play.petfarm.online/server1" });
     expect(siteHostRoute("/invitation/abc123")).toEqual({ redirect: "https://play.petfarm.online/invitation/abc123" });
@@ -28,8 +28,8 @@ describe("Petfarm website routing", () => {
     expect((await on(SITE_HOST, "/invitation/x1")).headers.get("location")).toBe("https://play.petfarm.online/invitation/x1");
   });
 
-  it("moves the bare domain to www, keeping the path", async () => {
-    const res = await on(SITE_APEX, "/abc?x=1");
+  it("moves www to the bare domain, keeping the path", async () => {
+    const res = await on(SITE_ALIAS, "/abc?x=1");
     expect(res.status).toBe(308);
     expect(res.headers.get("location")).toBe(`https://${SITE_HOST}/abc?x=1`);
   });
