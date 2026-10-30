@@ -363,6 +363,22 @@ export const MARKET_RULES = {
   warehousePerLevel: 500,
   maxListings: 10,
   listingDays: 3,
+  /**
+   * Chống thao túng sàn (Sở Công Thương), tính trên giao dịch giữa các gia tộc trong `windowDays` ngày:
+   * - M6 thuế chống độc quyền: phần bán khiến một gia tộc vượt `antitrustShare` khối lượng của một mặt hàng
+   *   chịu thêm `antitrustRate` tiền hàng (vào ngân khố), khi tổng khối lượng từ `antitrustMinVolume` đơn vị.
+   * - M8 giới hạn mua gom: trong 24 giờ một gia tộc mua tối đa `buyCapShare` số hàng đang niêm yết của một mặt hàng
+   *   (cộng phần đã mua), luôn được mua ít nhất `buyCapMin` đơn vị.
+   */
+  windowDays: 7,
+  antitrustShare: 0.4,
+  antitrustRate: 0.1,
+  antitrustMinVolume: 50,
+  buyCapShare: 0.3,
+  buyCapMin: 20,
+  /** Ngưỡng cảnh báo HHI (0–10.000) trên bảng quản trị. */
+  hhiWarn: 2_500,
+  hhiAlert: 4_000,
 };
 
 // ---------------------------------------------------------------- hạ tầng chiến lược & ngành nhà nước

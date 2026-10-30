@@ -40,7 +40,7 @@ const q = {
 const clamp = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
 
 /** Kho hàng gia tộc của Siêu thị theo hạng. Bản cũ lưu một số (toàn hạng Thường). */
-function stockOf(cat) {
+export function stockOf(cat) {
   const raw = getMeta(STOCK_KEYS[cat]);
   if (raw == null) return Array(QN).fill(0);
   const v = JSON.parse(raw);

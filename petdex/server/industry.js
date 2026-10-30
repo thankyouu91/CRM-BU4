@@ -4,6 +4,7 @@
 import { db, transaction } from './db.js';
 import { dayKey } from './clock.js';
 import { DAY, GameError } from './game.js';
+import { antitrustTax, buyCapLeft, recordAntitrust } from './commerce.js';
 import { offerToShop } from './essentials.js';
 import { post } from './ledger.js';
 import {
@@ -425,6 +426,8 @@ export function industryView(userId, macro, now = Date.now()) {
     listings,
     rules: MARKET_RULES,
     shopBook: shopBookView(clan.id, macro),
+    // Sở Công Thương (M8): số đơn vị gia tộc còn được mua của mỗi mặt hàng đang có tin bán, trong 24 giờ.
+    buyLeft: Object.fromEntries([...new Set(listings.filter((l) => !l.mine).map((l) => l.good))].map((g) => [g, buyCapLeft(clan.id, g, now)])),
   };
 }
 
@@ -470,18 +473,33 @@ export function buyListing(userId, id, qty, now = Date.now()) {
     if (!l || l.closed_at || l.expires_at <= now) throw new GameError('Tin này đã hết.');
     if (l.clan_id === clan.id) throw new GameError('Không mua hàng của chính gia tộc mình.');
     const n = Math.min(intQty(qty), l.qty);
+    // M8: không gom quá 30% hàng đang niêm yết của một mặt hàng trong 24 giờ.
+    const left = buyCapLeft(clan.id, l.good, now);
+    if (n > left) {
+      throw new GameError(left > 0
+        ? `Sở Công Thương: 24 giờ này gia tộc chỉ được mua thêm ${fmt(left)} ${GOODS[l.good].name} (tối đa ${Math.round(MARKET_RULES.buyCapShare * 100)}% hàng đang niêm yết).`
+        : `Sở Công Thương: gia tộc đã mua đủ hạn mức ${GOODS[l.good].name} trong 24 giờ.`);
+    }
     const level = clanLevelOf(clan.xp);
     if (used(clan.id) + n > warehouseCap(level)) throw new GameError('Kho gia tộc không đủ chỗ.');
     const total = n * l.price;
     if (balance(clan.id) < total) throw new GameError(`Quỹ gia tộc không đủ ${fmt(total)} xu.`);
     const fee = Math.ceil(total * MARKET_RULES.fee);
+    // M6: người bán vượt 40% khối lượng 7 ngày của mặt hàng thì phần vượt chịu thêm 10% (vào ngân khố).
+    const anti = antitrustTax(l.clan_id, l.good, n, l.price, now);
     post({ account: clanAccount(clan.id), delta: -total, kind: 'goods_trade', memo: `Mua ${n} ${GOODS[l.good].name}`, now });
     post({ account: clanAccount(l.clan_id), delta: total - fee, kind: 'goods_trade', memo: `Bán ${n} ${GOODS[l.good].name}`, now });
     if (fee > 0) post({ account: 'treasury', delta: Math.floor(fee / 2), kind: 'goods_trade', memo: 'Phí sàn công nghiệp', now });
+    if (anti.tax > 0) {
+      const memo = `Thuế chống độc quyền ${anti.taxedQty} ${GOODS[l.good].name}`;
+      post({ account: clanAccount(l.clan_id), delta: -anti.tax, kind: 'antitrust_tax', memo, now });
+      post({ account: 'treasury', delta: anti.tax, kind: 'antitrust_tax', memo, now });
+      recordAntitrust(l.clan_id, l.good, anti.taxedQty, anti.tax, anti.share, now);
+    }
     addGoods(clan.id, l.good, n);
     if (n === l.qty) q.closeListing.run(now, l.id);
     else q.setListingQty.run(l.qty - n, l.id);
-    q.insertTrade.run(l.clan_id, clan.id, l.good, n, l.price, total - fee, dayKey(now), now);
+    q.insertTrade.run(l.clan_id, clan.id, l.good, n, l.price, total - fee - anti.tax, dayKey(now), now);
     return { message: `Đã mua ${fmt(n)} ${GOODS[l.good].name} với giá ${fmt(total)} xu.` };
   });
 }

@@ -16,6 +16,7 @@ import { cn } from "@/lib/utils";
 import { inviteUrl, passwordUrl, playUrl } from "@/lib/petdex-public";
 import { AnnouncementsTab } from "./announcements";
 import { ClansTab } from "./clans";
+import { CommerceTab } from "./commerce";
 import { GearConfigTab, GiftCodesTab, PlayerGear, type GearView, type Wearable } from "./gear";
 import { ADMIN, errorText, Failure, useLoad, when } from "./shared";
 
@@ -32,6 +33,7 @@ const TABS = [
   { key: "gifts", label: "Mã quà" },
   { key: "announcements", label: "Thông báo" },
   { key: "clans", label: "Gia tộc & Đất" },
+  { key: "commerce", label: "Sở Công Thương" },
   { key: "invites", label: "Link mời khách" },
   { key: "log", label: "Nhật ký" },
 ] as const;
@@ -132,7 +134,7 @@ export function Board() {
     <div>
       <PageHeader
         title="Quản lý Pet Town"
-        description="Người chơi, xu, chỉ số thú cưng, trang phục, mã quà, gia tộc và đất, link mời khách và nhật ký. Mọi thay đổi đều ghi vào nhật ký hệ thống."
+        description="Người chơi, xu, chỉ số thú cưng, trang phục, mã quà, gia tộc và đất, Sở Công Thương, link mời khách và nhật ký. Mọi thay đổi đều ghi vào nhật ký hệ thống."
         actions={
           <Link href="/ta-tua" className="inline-flex h-8 items-center gap-1.5 rounded-md border bg-card px-2.5 text-xs font-medium hover:bg-muted">
             <Gamepad2 className="h-4 w-4" /> Vào chơi
@@ -158,6 +160,7 @@ export function Board() {
       {tab === "gifts" && <GiftCodesTab />}
       {tab === "announcements" && <AnnouncementsTab />}
       {tab === "clans" && <ClansTab />}
+      {tab === "commerce" && <CommerceTab />}
       {tab === "invites" && <InvitesTab />}
       {tab === "log" && <LogTab />}
     </div>

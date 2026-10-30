@@ -226,6 +226,13 @@ Mở rộng `scripts/simulate-economy.js` với bot gia tộc (8 gia tộc, 60 n
 - Lượng xu tăng mỗi tuần nằm trong mục tiêu 10% ±3 điểm, ở mọi kịch bản có M9.
 - Thời gian để D đạt 50% nằm trong khoảng 14–30 ngày với 60 người chơi.
 
+### 3.5 Bản đã làm: Sở Công Thương (đợt 3 và 5)
+
+- **M6 thuế chống độc quyền** (`server/commerce.js`): khi một gia tộc bán trên sàn công nghiệp khiến thị phần 7 ngày của nó ở mặt hàng đó vượt 40% (và tổng khối lượng từ 50 đơn vị), phần vượt chịu thêm 10% tiền hàng, trừ ngay vào tiền bán và vào ngân sách thị trấn (loại sổ cái `antitrust_tax`, bảng `antitrust_taxes`). Khoản thuế này cũng giảm doanh thu chịu thuế doanh nghiệp đêm đó. Chưa làm phần "khóa giá tham chiếu 3 ngày".
+- **M8 giới hạn mua gom**: trong 24 giờ một gia tộc mua tối đa 30% số hàng đang niêm yết của một mặt hàng (tính cả phần đã mua), luôn được ít nhất 20 đơn vị. Ô mua trên sàn tự giới hạn theo hạn mức còn lại.
+- **Thẻ "Sở Công Thương" trên bảng quản trị** (chỉ xem): HHI theo mặt hàng trên sàn 7 ngày (cảnh báo > 2.500, độc quyền > 4.000), gia tộc bán nhiều nhất, giá bình quân so với tham chiếu (đỏ khi lệch > 25%); hàng thiết yếu (D, kho theo hạng, gia tộc bán cho Siêu thị); thuế chống độc quyền đã thu; cờ tài khoản liên kết (M11) theo link mời chung giữa các gia tộc nắm ngành chiến lược.
+- Tham số ở `MARKET_RULES` (`shared/industry.js`). Chưa làm: Quỹ năng lượng (M9, M10), suy giảm buff khi ngừng (M5), nút khóa giá / tạm dừng buff trên bảng quản trị.
+
 ### 4.4 Bản đã làm (đợt 4)
 
 - **D** chốt mỗi nửa đêm cho ngày hôm sau = suất ăn gia tộc bán cho Siêu thị ÷ suất đồ ăn người chơi mua (7 ngày), kẹp 0–90%, mỗi ngày dịch tối đa 10 điểm.
