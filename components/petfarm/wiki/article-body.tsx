@@ -1,6 +1,7 @@
 import Image from "next/image";
 import { Lightbulb, TriangleAlert } from "lucide-react";
 import type { WikiBlock, WikiSection } from "@/lib/wiki/types";
+import { cn } from "@/lib/utils";
 import { Inline } from "./inline";
 import { PetGallery, PetRow } from "./pet-gallery";
 
@@ -23,9 +24,32 @@ function Block({ block, base }: { block: WikiBlock; base: string }) {
         ))}
       </ol>
     );
-  if ("table" in block)
+  if ("table" in block) {
+    // A table with sentences in its cells is unreadable squeezed onto a phone: there each row becomes
+    // a card (first cell as its title, the others labelled by their column), and the table shows from sm up.
+    const prose = block.table.rows.some((row) => row.slice(1).some((cell) => String(cell).length > 50));
+    const cell = (v: string | number) => (typeof v === "number" ? v.toLocaleString("vi-VN") : <Inline text={v} base={base} />);
+    const cards = prose && (
+      <ul className="space-y-3 sm:hidden">
+        {block.table.rows.map((row, r) => (
+          <li key={r} className="rounded-[18px] border-2 border-[var(--pf-line)] p-4">
+            <p className="font-[family-name:var(--pf-display)] font-bold">{cell(row[0])}</p>
+            <dl className="mt-1.5 space-y-1.5 text-[15px]">
+              {row.slice(1).map((v, c) => (
+                <div key={c}>
+                  <dt className="text-sm font-bold text-[var(--pf-muted)]">{block.table.head[c + 1]}</dt>
+                  <dd className="tabular-nums">{cell(v)}</dd>
+                </div>
+              ))}
+            </dl>
+          </li>
+        ))}
+      </ul>
+    );
     return (
-      <div className="overflow-x-auto rounded-[18px] border-2 border-[var(--pf-line)]">
+      <>
+      {cards}
+      <div className={cn("overflow-x-auto rounded-[18px] border-2 border-[var(--pf-line)]", prose && "hidden sm:block")}>
         <table className="w-full min-w-[28rem] border-collapse text-left text-[15px]">
           <thead className="bg-[var(--pf-surface-2)] font-[family-name:var(--pf-display)]">
             <tr>{block.table.head.map((h) => <th key={h} scope="col" className="px-4 py-2.5 font-bold">{h}</th>)}</tr>
@@ -39,7 +63,9 @@ function Block({ block, base }: { block: WikiBlock; base: string }) {
           </tbody>
         </table>
       </div>
+      </>
     );
+  }
   if ("tip" in block || "warn" in block) {
     const tip = "tip" in block;
     const Icon = tip ? Lightbulb : TriangleAlert;
