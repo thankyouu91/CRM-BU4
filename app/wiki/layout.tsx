@@ -1,4 +1,4 @@
-import type { Viewport } from "next";
+import type { Metadata, Viewport } from "next";
 import { Baloo_2, Nunito } from "next/font/google";
 import { ArrowRight } from "lucide-react";
 import { WikiSearch } from "@/components/petfarm/wiki/search";
@@ -12,6 +12,16 @@ import { searchEntries } from "@/lib/wiki";
 
 const display = Baloo_2({ subsets: ["latin", "vietnamese"], weight: ["600", "700", "800"], variable: "--pf-display", display: "swap" });
 const body = Nunito({ subsets: ["latin", "vietnamese"], weight: ["500", "600", "700", "800"], variable: "--pf-body", display: "swap" });
+
+/**
+ * Defaults for every wiki page. Articles and the home set their own titles; the "not found" page
+ * cannot (only the root not-found may export metadata), so it takes these instead of WorkHub's.
+ */
+export const metadata: Metadata = {
+  title: { absolute: "Không tìm thấy trang · Petfarm Wiki" },
+  description: "Thư viện hướng dẫn người chơi Petfarm.",
+  applicationName: "Petfarm Wiki",
+};
 
 export const viewport: Viewport = {
   themeColor: [
