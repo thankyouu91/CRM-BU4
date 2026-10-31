@@ -186,8 +186,12 @@
 .good-cell { display: inline-flex; align-items: center; gap: 6px; vertical-align: middle; }
 .good-chip.art { gap: 0; padding: 0 6px 0 0; border-radius: 10px; }
 .good-chip.art:not(:has(b)) { padding: 0; background: none; }
-.recipe-line { display: flex; flex-wrap: wrap; align-items: center; gap: 2px; width: 100%; }
-.recipe-name { width: 100%; }
+/* Một dây chuyền của nhà máy gộp: một dòng riêng, căn như .recipe chứa nó (giữa ở thẻ ngành, trái ở chuỗi ngành).
+   Chuỗi ngành (cột rộng, icon 32 điểm) cho tên dây chuyền một dòng riêng; thẻ ngành hẹp để tên chảy cùng chip emoji. */
+.recipe-line { display: flex; flex-wrap: wrap; justify-content: inherit; align-items: center; gap: 2px; width: 100%; }
+.chain .recipe-name { width: 100%; }
+/* "→ thành phẩm" của một công thức là một khối không ngắt: dòng dài xuống dòng thì mũi tên đi cùng thành phẩm (recipeOut). */
+.recipe-out { display: inline-flex; align-items: center; gap: 2px; white-space: nowrap; }
 .good-row { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; }
 .trade-list li { display: flex; flex-wrap: wrap; align-items: center; gap: 0 4px; }
 /* Dòng bảng có icon hàng cao 32 điểm: số liệu các cột khác căn giữa theo icon, không treo ở mép trên. */
@@ -207,6 +211,12 @@
 .chain-node .recipe { justify-content: flex-start; }
 .price-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(170px, 100%), 1fr)); gap: 4px 12px; font-size: .85rem; }
 .price-grid > span { display: flex; justify-content: space-between; align-items: center; gap: 6px; }
+/* Màn vừa (máy tính bảng ngang, cửa sổ hẹp): 4 cột chỉ còn ~210 điểm, công thức ngành nặng 4-5 nguyên liệu gãy 2-3 dòng.
+   Xếp 2x2: Khai thác ➜ Năng lượng, mũi tên xuống, Công nghiệp nặng ➜ Công nghiệp nhẹ (con thứ 4 là mũi tên giữa). */
+@media (min-width: 901px) and (max-width: 1100px) {
+  .chain { grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); }
+  .chain > .chain-arrow:nth-child(4) { grid-column: 1 / -1; transform: rotate(90deg); justify-self: center; }
+}
 @media (max-width: 900px) { .chain { grid-template-columns: minmax(0, 1fr); } .chain-arrow { transform: rotate(90deg); justify-self: center; } }
 .infra-mine { display: grid; gap: 6px; margin-top: 8px; padding: 12px; border-radius: 14px; background: #eef9f5; border: 2px solid var(--mint-deep); }
 .infra-mine h4, .infra-mine p { margin: 0; }

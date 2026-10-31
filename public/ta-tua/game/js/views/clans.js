@@ -68,6 +68,9 @@ const goodChip = (g, n, art = false) => {
   return `<span class="good-chip" title="${name}">${GOODS[g].icon}${count}</span>`;
 };
 const chips = (map, art = false) => Object.entries(map).map(([g, n]) => goodChip(g, Math.round(n * 10) / 10, art)).join('');
+/** Mũi tên và thành phẩm của một công thức, gói chung một khối không ngắt dòng: dòng công thức dài (cột chuỗi ngành
+ *  hẹp, ngành nặng 4-5 nguyên liệu) xuống dòng thì cả "→ thành phẩm" sang dòng mới, không để mũi tên treo cuối dòng trên. */
+const recipeOut = (outHtml) => `<span class="recipe-out">→ ${outHtml}</span>`;
 /** Emoji của dây chuyền (hay nhà máy điện) đứng cạnh icon 16-bit của thành phẩm: dây chuyền lấy chính emoji cũ của thành
  *  phẩm (🥫 Thực phẩm chế biến, 🔗 Luyện thép), nên thành phẩm có icon 16-bit thì bỏ emoji, để một hàng không ra hai hình. */
 const lineGlyph = (l) => (Object.keys(l.recipe?.out ?? l.out ?? {}).some((g) => GOODS[g]?.icon === l.icon && hasAtlasIcon(g)) ? '' : `${l.icon} `);
@@ -85,15 +88,13 @@ function recipeLine(id, art = false) {
     const goods = GOOD_ORDER.filter((g) => ind.extracts.includes(extractKindOf(g)));
     return `<small class="recipe">Khai thác ${goods.map((g) => (art ? goodChip(g, null, true) : GOODS[g].icon)).join('')}</small>`;
   }
-  if (id === 'power') return `<small class="recipe">${Object.values(ind.plants).map((pl) => pl.icon).join('')} → ${art ? goodChip('power', null, true) : '⚡'}</small>`;
-  // Nhà máy gộp: mỗi dây chuyền một dòng, mỗi lô chọn một dây chuyền.
+  if (id === 'power') return `<small class="recipe">${Object.values(ind.plants).map((pl) => pl.icon).join('')} ${recipeOut(art ? goodChip('power', null, true) : '⚡')}</small>`;
+  // Nhà máy gộp: mỗi dây chuyền một dòng (.recipe-line rộng 100%; <br> không ngắt dòng trong .recipe vì là flex),
+  // mỗi lô chọn một dây chuyền. Đường emoji giữ emoji của dây chuyền, đường icon 16-bit bỏ nếu trùng thành phẩm (lineGlyph).
   if (ind.lines) {
-    if (art) {
-      return `<small class="recipe">${Object.values(ind.lines).map((l) => `<span class="recipe-line"><span class="recipe-name">${lineGlyph(l)}${esc(l.name)}:</span> ${chips(l.recipe.in, true)} → ${chips(l.recipe.out, true)}</span>`).join('')}</small>`;
-    }
-    return `<small class="recipe">${Object.values(ind.lines).map((l) => `${l.icon} ${esc(l.name)}: ${chips(l.recipe.in)} → ${chips(l.recipe.out)}`).join('<br>')}</small>`;
+    return `<small class="recipe">${Object.values(ind.lines).map((l) => `<span class="recipe-line"><span class="recipe-name">${art ? lineGlyph(l) : `${l.icon} `}${esc(l.name)}:</span> ${chips(l.recipe.in, art)} ${recipeOut(chips(l.recipe.out, art))}</span>`).join('')}</small>`;
   }
-  return `<small class="recipe">${chips(ind.recipe.in, art)} → ${chips(ind.recipe.out, art)}</small>`;
+  return `<small class="recipe">${chips(ind.recipe.in, art)} ${recipeOut(chips(ind.recipe.out, art))}</small>`;
 }
 
 /** 2 tài nguyên nhiều nhất của lô, để hiện trên bản đồ (chữ <text> trong SVG cỡ 9-13 điểm, nên giữ emoji). */
@@ -877,7 +878,7 @@ export function renderClans(root, ctx) {
         : '<p class="muted small">Chưa có lệnh nào.</p>';
       return `
         <div class="shop-book">
-          <h4>${goodIcon(b.good)} ${esc(g.name)} → ${meta.icon} ${esc(meta.name)} <small class="muted">giá tham chiếu ${fmt(b.ref)} · trong kho ${fmt(b.have)}</small></h4>
+          <h4>${goodIcon(b.good)} ${esc(g.name)} → ${itemIcon({ id: meta.item, icon: meta.icon }, 3, 1)} ${esc(meta.name)} <small class="muted">giá tham chiếu ${fmt(b.ref)} · trong kho ${fmt(b.have)}</small></h4>
           ${b.ask ? `<p>Lệnh của gia tộc: <b>${fmt(b.ask.qty)}</b> đv ở <b>${b.ask.pct}%</b> (${fmt(Math.round((b.ref * b.ask.pct) / 100))} xu/đv).</p>` : ''}
           ${manage ? `<form class="row trade-form" data-form="shop-ask" data-cat="${c}">
             <label>Số lượng <input name="qty" type="number" min="0" value="${b.ask?.qty ?? (b.have || 10)}" title="Số đơn vị chào bán tối đa (0 = hủy lệnh)" /></label>
@@ -934,7 +935,7 @@ export function renderClans(root, ctx) {
           ${ind.production?.rows.length ? `<table class="clan-table"><thead><tr><th>Hàng</th><th class="num">Làm ra</th><th class="num">Dùng</th><th class="num">Bán NPC</th><th class="num">Tiền</th></tr></thead><tbody>
             ${ind.production.rows.map((r) => `<tr><td>${goodCell(r.good)}</td><td class="num">${fmt(r.produced)}</td><td class="num">${fmt(r.used)}</td><td class="num">${fmt(r.sold)}</td><td class="num">${fmt(r.revenue)}</td></tr>`).join('')}
           </tbody></table>` : '<p class="muted">Chưa có đêm sản xuất nào.</p>'}
-          ${ind.trades.length ? `<h4>Giao dịch gần đây</h4><ul class="refund-list trade-list">${ind.trades.map((t) => `<li>${t.side === 'sell' ? '📤 Bán' : '📥 Mua'} ${fmt(t.qty)} ${goodChip(t.good, null, true)} ${t.side === 'sell' ? 'cho' : 'của'} ${esc(t.other)} · ${fmt(t.price)}/đv</li>`).join('')}</ul>` : ''}
+          ${ind.trades.length ? `<h4>Giao dịch gần đây</h4><ul class="refund-list trade-list">${ind.trades.map((t) => `<li>${t.side === 'sell' ? '📤 Bán' : '📥 Mua'} ${fmt(t.qty)} ${goodCell(t.good)} ${t.side === 'sell' ? 'cho' : 'của'} ${esc(t.other)} · ${fmt(t.price)}/đv</li>`).join('')}</ul>` : ''}
         </section>
         <section class="card clan-box wide">
           <h3>🔗 Chuỗi ngành</h3>

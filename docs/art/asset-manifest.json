@@ -10667,7 +10667,7 @@
     "anchor": "centre (icon, content centred in canvas)",
     "frames": 1,
     "filtering": "nearest",
-    "scale": "integer: 2x (64 px) shop/bag cards and eggs, 1x (32 px) lists; html zoom compensated",
+    "scale": "integer: 1x (32 px) clan warehouse and production tables, price grid, trades, industry chain, plot panel, shop ask book; html zoom compensated",
     "atlas_frame": [
      "items-0.webp",
      364,
@@ -10733,7 +10733,7 @@
     "anchor": "centre (icon, content centred in canvas)",
     "frames": 1,
     "filtering": "nearest",
-    "scale": "integer: 2x (64 px) shop/bag cards and eggs, 1x (32 px) lists; html zoom compensated",
+    "scale": "integer: 1x (32 px) clan warehouse and production tables, price grid, trades, industry chain, plot panel, shop ask book; html zoom compensated",
     "atlas_frame": [
      "items-0.webp",
      397,
@@ -10799,7 +10799,7 @@
     "anchor": "centre (icon, content centred in canvas)",
     "frames": 1,
     "filtering": "nearest",
-    "scale": "integer: 2x (64 px) shop/bag cards and eggs, 1x (32 px) lists; html zoom compensated",
+    "scale": "integer: 1x (32 px) clan warehouse and production tables, price grid, trades, industry chain, plot panel, shop ask book; html zoom compensated",
     "atlas_frame": [
      "items-0.webp",
      430,
@@ -10865,7 +10865,7 @@
     "anchor": "centre (icon, content centred in canvas)",
     "frames": 1,
     "filtering": "nearest",
-    "scale": "integer: 2x (64 px) shop/bag cards and eggs, 1x (32 px) lists; html zoom compensated",
+    "scale": "integer: 1x (32 px) clan warehouse and production tables, price grid, trades, industry chain, plot panel, shop ask book; html zoom compensated",
     "atlas_frame": [
      "items-0.webp",
      463,
@@ -10928,7 +10928,7 @@
     "anchor": "centre (icon, content centred in canvas)",
     "frames": 1,
     "filtering": "nearest",
-    "scale": "integer: 2x (64 px) shop/bag cards and eggs, 1x (32 px) lists; html zoom compensated",
+    "scale": "integer: 1x (32 px) clan warehouse and production tables, price grid, trades, industry chain, plot panel, shop ask book; html zoom compensated",
     "atlas_frame": [
      "items-0.webp",
      496,
@@ -10994,7 +10994,7 @@
     "anchor": "centre (icon, content centred in canvas)",
     "frames": 1,
     "filtering": "nearest",
-    "scale": "integer: 2x (64 px) shop/bag cards and eggs, 1x (32 px) lists; html zoom compensated",
+    "scale": "integer: 1x (32 px) clan warehouse and production tables, price grid, trades, industry chain, plot panel, shop ask book; html zoom compensated",
     "atlas_frame": [
      "items-0.webp",
      1,
@@ -11060,7 +11060,7 @@
     "anchor": "centre (icon, content centred in canvas)",
     "frames": 1,
     "filtering": "nearest",
-    "scale": "integer: 2x (64 px) shop/bag cards and eggs, 1x (32 px) lists; html zoom compensated",
+    "scale": "integer: 1x (32 px) clan warehouse and production tables, price grid, trades, industry chain, plot panel, shop ask book; html zoom compensated",
     "atlas_frame": [
      "items-0.webp",
      34,
@@ -11125,7 +11125,7 @@
     "anchor": "centre (icon, content centred in canvas)",
     "frames": 1,
     "filtering": "nearest",
-    "scale": "integer: 2x (64 px) shop/bag cards and eggs, 1x (32 px) lists; html zoom compensated",
+    "scale": "integer: 1x (32 px) clan warehouse and production tables, price grid, trades, industry chain, plot panel, shop ask book; html zoom compensated",
     "atlas_frame": [
      "items-0.webp",
      67,
@@ -11191,7 +11191,7 @@
     "anchor": "centre (icon, content centred in canvas)",
     "frames": 1,
     "filtering": "nearest",
-    "scale": "integer: 2x (64 px) shop/bag cards and eggs, 1x (32 px) lists; html zoom compensated",
+    "scale": "integer: 1x (32 px) clan warehouse and production tables, price grid, trades, industry chain, plot panel, shop ask book; html zoom compensated",
     "atlas_frame": [
      "items-0.webp",
      100,
@@ -11257,7 +11257,7 @@
     "anchor": "centre (icon, content centred in canvas)",
     "frames": 1,
     "filtering": "nearest",
-    "scale": "integer: 2x (64 px) shop/bag cards and eggs, 1x (32 px) lists; html zoom compensated",
+    "scale": "integer: 1x (32 px) clan warehouse and production tables, price grid, trades, industry chain, plot panel, shop ask book; html zoom compensated",
     "atlas_frame": [
      "items-0.webp",
      133,
@@ -11323,7 +11323,7 @@
     "anchor": "centre (icon, content centred in canvas)",
     "frames": 1,
     "filtering": "nearest",
-    "scale": "integer: 2x (64 px) shop/bag cards and eggs, 1x (32 px) lists; html zoom compensated",
+    "scale": "integer: 1x (32 px) clan warehouse and production tables, price grid, trades, industry chain, plot panel, shop ask book; html zoom compensated",
     "atlas_frame": [
      "items-0.webp",
      166,
@@ -11389,7 +11389,7 @@
     "anchor": "centre (icon, content centred in canvas)",
     "frames": 1,
     "filtering": "nearest",
-    "scale": "integer: 2x (64 px) shop/bag cards and eggs, 1x (32 px) lists; html zoom compensated",
+    "scale": "integer: 1x (32 px) clan warehouse and production tables, price grid, trades, industry chain, plot panel, shop ask book; html zoom compensated",
     "atlas_frame": [
      "items-0.webp",
      199,
@@ -11455,7 +11455,7 @@
     "anchor": "centre (icon, content centred in canvas)",
     "frames": 1,
     "filtering": "nearest",
-    "scale": "integer: 2x (64 px) shop/bag cards and eggs, 1x (32 px) lists; html zoom compensated",
+    "scale": "integer: 1x (32 px) clan warehouse and production tables, price grid, trades, industry chain, plot panel, shop ask book; html zoom compensated",
     "atlas_frame": [
      "items-0.webp",
      232,
@@ -11521,7 +11521,7 @@
     "anchor": "centre (icon, content centred in canvas)",
     "frames": 1,
     "filtering": "nearest",
-    "scale": "integer: 2x (64 px) shop/bag cards and eggs, 1x (32 px) lists; html zoom compensated",
+    "scale": "integer: 1x (32 px) clan warehouse and production tables, price grid, trades, industry chain, plot panel, shop ask book; html zoom compensated",
     "atlas_frame": [
      "items-0.webp",
      265,
@@ -11593,7 +11593,7 @@
     "anchor": "centre (icon, content centred in canvas)",
     "frames": 1,
     "filtering": "nearest",
-    "scale": "integer: 2x (64 px) shop/bag cards and eggs, 1x (32 px) lists; html zoom compensated",
+    "scale": "integer: 1x (32 px) clan warehouse and production tables, price grid, trades, industry chain, plot panel, shop ask book; html zoom compensated",
     "atlas_frame": [
      "items-0.webp",
      298,
@@ -11665,7 +11665,7 @@
     "anchor": "centre (icon, content centred in canvas)",
     "frames": 1,
     "filtering": "nearest",
-    "scale": "integer: 2x (64 px) shop/bag cards and eggs, 1x (32 px) lists; html zoom compensated",
+    "scale": "integer: 1x (32 px) clan warehouse and production tables, price grid, trades, industry chain, plot panel, shop ask book; html zoom compensated",
     "atlas_frame": [
      "items-0.webp",
      331,
@@ -11731,7 +11731,7 @@
     "anchor": "centre (icon, content centred in canvas)",
     "frames": 1,
     "filtering": "nearest",
-    "scale": "integer: 2x (64 px) shop/bag cards and eggs, 1x (32 px) lists; html zoom compensated",
+    "scale": "integer: 1x (32 px) clan warehouse and production tables, price grid, trades, industry chain, plot panel, shop ask book; html zoom compensated",
     "atlas_frame": [
      "items-0.webp",
      364,
@@ -11797,7 +11797,7 @@
     "anchor": "centre (icon, content centred in canvas)",
     "frames": 1,
     "filtering": "nearest",
-    "scale": "integer: 2x (64 px) shop/bag cards and eggs, 1x (32 px) lists; html zoom compensated",
+    "scale": "integer: 1x (32 px) clan warehouse and production tables, price grid, trades, industry chain, plot panel, shop ask book; html zoom compensated",
     "atlas_frame": [
      "items-0.webp",
      397,
@@ -11863,7 +11863,7 @@
     "anchor": "centre (icon, content centred in canvas)",
     "frames": 1,
     "filtering": "nearest",
-    "scale": "integer: 2x (64 px) shop/bag cards and eggs, 1x (32 px) lists; html zoom compensated",
+    "scale": "integer: 1x (32 px) clan warehouse and production tables, price grid, trades, industry chain, plot panel, shop ask book; html zoom compensated",
     "atlas_frame": [
      "items-0.webp",
      430,
@@ -11929,7 +11929,7 @@
     "anchor": "centre (icon, content centred in canvas)",
     "frames": 1,
     "filtering": "nearest",
-    "scale": "integer: 2x (64 px) shop/bag cards and eggs, 1x (32 px) lists; html zoom compensated",
+    "scale": "integer: 1x (32 px) clan warehouse and production tables, price grid, trades, industry chain, plot panel, shop ask book; html zoom compensated",
     "atlas_frame": [
      "items-0.webp",
      463,
@@ -11994,7 +11994,7 @@
     "anchor": "centre (icon, content centred in canvas)",
     "frames": 1,
     "filtering": "nearest",
-    "scale": "integer: 2x (64 px) shop/bag cards and eggs, 1x (32 px) lists; html zoom compensated",
+    "scale": "integer: 1x (32 px) clan warehouse and production tables, price grid, trades, industry chain, plot panel, shop ask book; html zoom compensated",
     "atlas_frame": [
      "items-0.webp",
      496,
@@ -12060,7 +12060,7 @@
     "anchor": "centre (icon, content centred in canvas)",
     "frames": 1,
     "filtering": "nearest",
-    "scale": "integer: 2x (64 px) shop/bag cards and eggs, 1x (32 px) lists; html zoom compensated",
+    "scale": "integer: 1x (32 px) clan warehouse and production tables, price grid, trades, industry chain, plot panel, shop ask book; html zoom compensated",
     "atlas_frame": [
      "items-0.webp",
      1,
@@ -12126,7 +12126,7 @@
     "anchor": "centre (icon, content centred in canvas)",
     "frames": 1,
     "filtering": "nearest",
-    "scale": "integer: 2x (64 px) shop/bag cards and eggs, 1x (32 px) lists; html zoom compensated",
+    "scale": "integer: 1x (32 px) clan warehouse and production tables, price grid, trades, industry chain, plot panel, shop ask book; html zoom compensated",
     "atlas_frame": [
      "items-0.webp",
      34,
@@ -12192,7 +12192,7 @@
     "anchor": "centre (icon, content centred in canvas)",
     "frames": 1,
     "filtering": "nearest",
-    "scale": "integer: 2x (64 px) shop/bag cards and eggs, 1x (32 px) lists; html zoom compensated",
+    "scale": "integer: 1x (32 px) clan warehouse and production tables, price grid, trades, industry chain, plot panel, shop ask book; html zoom compensated",
     "atlas_frame": [
      "items-0.webp",
      67,
@@ -12258,7 +12258,7 @@
     "anchor": "centre (icon, content centred in canvas)",
     "frames": 1,
     "filtering": "nearest",
-    "scale": "integer: 2x (64 px) shop/bag cards and eggs, 1x (32 px) lists; html zoom compensated",
+    "scale": "integer: 1x (32 px) clan warehouse and production tables, price grid, trades, industry chain, plot panel, shop ask book; html zoom compensated",
     "atlas_frame": [
      "items-0.webp",
      100,
@@ -12324,7 +12324,7 @@
     "anchor": "centre (icon, content centred in canvas)",
     "frames": 1,
     "filtering": "nearest",
-    "scale": "integer: 2x (64 px) shop/bag cards and eggs, 1x (32 px) lists; html zoom compensated",
+    "scale": "integer: 1x (32 px) clan warehouse and production tables, price grid, trades, industry chain, plot panel, shop ask book; html zoom compensated",
     "atlas_frame": [
      "items-0.webp",
      133,
@@ -12390,7 +12390,7 @@
     "anchor": "centre (icon, content centred in canvas)",
     "frames": 1,
     "filtering": "nearest",
-    "scale": "integer: 2x (64 px) shop/bag cards and eggs, 1x (32 px) lists; html zoom compensated",
+    "scale": "integer: 1x (32 px) clan warehouse and production tables, price grid, trades, industry chain, plot panel, shop ask book; html zoom compensated",
     "atlas_frame": [
      "items-0.webp",
      166,
@@ -12452,7 +12452,7 @@
     "anchor": "centre (icon, content centred in canvas)",
     "frames": 1,
     "filtering": "nearest",
-    "scale": "integer: 2x (64 px) shop/bag cards and eggs, 1x (32 px) lists; html zoom compensated",
+    "scale": "integer: 1x (32 px) clan warehouse and production tables, price grid, trades, industry chain, plot panel, shop ask book; html zoom compensated",
     "atlas_frame": [
      "items-0.webp",
      199,
@@ -12514,7 +12514,7 @@
     "anchor": "centre (icon, content centred in canvas)",
     "frames": 1,
     "filtering": "nearest",
-    "scale": "integer: 2x (64 px) shop/bag cards and eggs, 1x (32 px) lists; html zoom compensated",
+    "scale": "integer: 1x (32 px) clan warehouse and production tables, price grid, trades, industry chain, plot panel, shop ask book; html zoom compensated",
     "atlas_frame": [
      "items-0.webp",
      232,
@@ -12580,7 +12580,7 @@
     "anchor": "centre (icon, content centred in canvas)",
     "frames": 1,
     "filtering": "nearest",
-    "scale": "integer: 2x (64 px) shop/bag cards and eggs, 1x (32 px) lists; html zoom compensated",
+    "scale": "integer: 1x (32 px) clan warehouse and production tables, price grid, trades, industry chain, plot panel, shop ask book; html zoom compensated",
     "atlas_frame": [
      "items-0.webp",
      265,
@@ -12646,7 +12646,7 @@
     "anchor": "centre (icon, content centred in canvas)",
     "frames": 1,
     "filtering": "nearest",
-    "scale": "integer: 2x (64 px) shop/bag cards and eggs, 1x (32 px) lists; html zoom compensated",
+    "scale": "integer: 1x (32 px) clan warehouse and production tables, price grid, trades, industry chain, plot panel, shop ask book; html zoom compensated",
     "atlas_frame": [
      "items-0.webp",
      298,
@@ -12708,7 +12708,7 @@
     "anchor": "centre (icon, content centred in canvas)",
     "frames": 1,
     "filtering": "nearest",
-    "scale": "integer: 2x (64 px) shop/bag cards and eggs, 1x (32 px) lists; html zoom compensated",
+    "scale": "integer: 1x (32 px) clan warehouse and production tables, price grid, trades, industry chain, plot panel, shop ask book; html zoom compensated",
     "atlas_frame": [
      "items-0.webp",
      331,
@@ -12774,7 +12774,7 @@
     "anchor": "centre (icon, content centred in canvas)",
     "frames": 1,
     "filtering": "nearest",
-    "scale": "integer: 2x (64 px) shop/bag cards and eggs, 1x (32 px) lists; html zoom compensated",
+    "scale": "integer: 1x (32 px) clan warehouse and production tables, price grid, trades, industry chain, plot panel, shop ask book; html zoom compensated",
     "atlas_frame": [
      "items-0.webp",
      364,
@@ -12840,7 +12840,7 @@
     "anchor": "centre (icon, content centred in canvas)",
     "frames": 1,
     "filtering": "nearest",
-    "scale": "integer: 2x (64 px) shop/bag cards and eggs, 1x (32 px) lists; html zoom compensated",
+    "scale": "integer: 1x (32 px) clan warehouse and production tables, price grid, trades, industry chain, plot panel, shop ask book; html zoom compensated",
     "atlas_frame": [
      "items-0.webp",
      397,
@@ -12906,7 +12906,7 @@
     "anchor": "centre (icon, content centred in canvas)",
     "frames": 1,
     "filtering": "nearest",
-    "scale": "integer: 2x (64 px) shop/bag cards and eggs, 1x (32 px) lists; html zoom compensated",
+    "scale": "integer: 1x (32 px) clan warehouse and production tables, price grid, trades, industry chain, plot panel, shop ask book; html zoom compensated",
     "atlas_frame": [
      "items-0.webp",
      430,
@@ -12972,7 +12972,7 @@
     "anchor": "centre (icon, content centred in canvas)",
     "frames": 1,
     "filtering": "nearest",
-    "scale": "integer: 2x (64 px) shop/bag cards and eggs, 1x (32 px) lists; html zoom compensated",
+    "scale": "integer: 1x (32 px) clan warehouse and production tables, price grid, trades, industry chain, plot panel, shop ask book; html zoom compensated",
     "atlas_frame": [
      "items-0.webp",
      463,
@@ -13034,7 +13034,7 @@
     "anchor": "centre (icon, content centred in canvas)",
     "frames": 1,
     "filtering": "nearest",
-    "scale": "integer: 2x (64 px) shop/bag cards and eggs, 1x (32 px) lists; html zoom compensated",
+    "scale": "integer: 1x (32 px) clan warehouse and production tables, price grid, trades, industry chain, plot panel, shop ask book; html zoom compensated",
     "atlas_frame": [
      "items-0.webp",
      496,
@@ -13096,7 +13096,7 @@
     "anchor": "centre (icon, content centred in canvas)",
     "frames": 1,
     "filtering": "nearest",
-    "scale": "integer: 2x (64 px) shop/bag cards and eggs, 1x (32 px) lists; html zoom compensated",
+    "scale": "integer: 1x (32 px) clan warehouse and production tables, price grid, trades, industry chain, plot panel, shop ask book; html zoom compensated",
     "atlas_frame": [
      "items-0.webp",
      1,
@@ -13162,7 +13162,7 @@
     "anchor": "centre (icon, content centred in canvas)",
     "frames": 1,
     "filtering": "nearest",
-    "scale": "integer: 2x (64 px) shop/bag cards and eggs, 1x (32 px) lists; html zoom compensated",
+    "scale": "integer: 1x (32 px) clan warehouse and production tables, price grid, trades, industry chain, plot panel, shop ask book; html zoom compensated",
     "atlas_frame": [
      "items-0.webp",
      34,
@@ -13228,7 +13228,7 @@
     "anchor": "centre (icon, content centred in canvas)",
     "frames": 1,
     "filtering": "nearest",
-    "scale": "integer: 2x (64 px) shop/bag cards and eggs, 1x (32 px) lists; html zoom compensated",
+    "scale": "integer: 1x (32 px) clan warehouse and production tables, price grid, trades, industry chain, plot panel, shop ask book; html zoom compensated",
     "atlas_frame": [
      "items-0.webp",
      67,
@@ -13290,7 +13290,7 @@
     "anchor": "centre (icon, content centred in canvas)",
     "frames": 1,
     "filtering": "nearest",
-    "scale": "integer: 2x (64 px) shop/bag cards and eggs, 1x (32 px) lists; html zoom compensated",
+    "scale": "integer: 1x (32 px) clan warehouse and production tables, price grid, trades, industry chain, plot panel, shop ask book; html zoom compensated",
     "atlas_frame": [
      "items-0.webp",
      100,

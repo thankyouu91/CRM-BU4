@@ -11,8 +11,9 @@ Mỗi icon phải qua đủ các bước kiểm sau; sai một chỗ là script 
   - đúng 32x32, tên tệp là id (a-z, 0-9, _), id không trùng giữa các gói;
   - có đúng một mục trong manifest.json của gói (icon chỉ có mục rejected thì bị bỏ qua), status sample hoặc approved,
     và content_bbox của mục khớp với ảnh (ảnh bị sửa sau khi ghi manifest, hay còn đang vẽ dở, thì không khớp);
-  - có nguồn gốc: pixellab_id (uuid, hay danh sách uuid khi icon ghép từ nhiều lần sinh) + prompt (ảnh PixelLab, ghi dòng
-    giấy phép PixelLab), hoặc kind hand-built có tool (giữ dòng giấy phép của mục, không gắn giấy phép PixelLab);
+  - có nguồn gốc: pixellab_id (uuid, hay danh sách uuid khi icon ghép từ nhiều lần sinh) + prompt (một câu, hay danh
+    sách câu cùng độ dài với danh sách uuid; ảnh PixelLab, ghi dòng giấy phép PixelLab), hoặc kind hand-built có tool
+    (giữ dòng giấy phép của mục, không gắn giấy phép PixelLab); cùng luật mà petdex/test/item-atlas.test.js kiểm lại;
   - status lấy từ mục của gói. Icon chỉ thành approved khi mục đã approved (có approved_by), hoặc khi gói có bản ghi
     duyệt trong PACKAGES và inputs_sha1 của bản ghi khớp đúng bộ tệp đang có: sửa hay thêm một icon sau khi duyệt
     là phải duyệt lại.
@@ -53,6 +54,12 @@ COLS = 16          # 16 khung một hàng: trang rộng 16 * 33 + 1 = 529 px
 MAX_FILE = 200 * 1024
 ID_RE = re.compile(r'^[a-z0-9_]+$')
 UUID_RE = re.compile(r'^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$')
+# Cỡ hiển thị ghi vào technical.scale của manifest, theo đúng chỗ game vẽ: đồ catalog có thẻ 64 điểm; hàng gia tộc chỉ
+# hiện ở màn Gia tộc và chỉ vẽ 1x (goodIcon = itemIcon(..., 3, 1) trong js/views/clans.js).
+SCALE = {
+    'item': 'integer: 2x (64 px) shop/bag cards and eggs, 1x (32 px) lists; html zoom compensated',
+    'good': 'integer: 1x (32 px) clan warehouse and production tables, price grid, trades, industry chain, plot panel, shop ask book; html zoom compensated',
+}
 
 # Gói được xếp vào atlas, theo đúng thứ tự này. Gói không có ở đây thì không được đọc, dù thư mục đã có trong S.
 #   name:     thư mục S/phase1/<name>/ (có pal/ và manifest.json)
@@ -139,20 +146,23 @@ def entry_matches(e, stem):
 def provenance_of(entry, where):
     """(provenance đã kèm giấy phép, lỗi hoặc None). PixelLab cần pixellab_id + prompt; tự vẽ cần kind hand-built + tool.
     Icon ghép từ nhiều lần sinh (vd titan, urani: một khối đá + một chùm tinh thể) ghi pixellab_id là danh sách mã,
-    prompt là danh sách cùng độ dài, theo đúng thứ tự."""
+    prompt là danh sách cùng độ dài, theo đúng thứ tự (hoặc một câu prompt chung cho cả danh sách).
+    Kiểm đúng như petdex/test/item-atlas.test.js, để bản dựng không ghi ra atlas mà test sẽ chặn: uuid khớp trọn chuỗi
+    (fullmatch, không nhận dấu xuống dòng ở cuối như `$` của re.match), prompt là chuỗi không rỗng hay danh sách chuỗi."""
     prov = entry.get('provenance')
     if not isinstance(prov, dict):
         return None, f'{where}: mục trong manifest.json không có provenance'
     prov = dict(prov)
     if prov.get('pixellab_id'):
         ids = prov['pixellab_id'] if isinstance(prov['pixellab_id'], list) else [prov['pixellab_id']]
-        if not all(isinstance(i, str) and UUID_RE.match(i) for i in ids):
+        if not all(isinstance(i, str) and UUID_RE.fullmatch(i) for i in ids):
             return None, f'{where}: pixellab_id phải là mã PixelLab (uuid), hay danh sách mã khi icon ghép từ nhiều lần sinh'
         prompt = prov.get('prompt')
-        if isinstance(prompt, list) and (len(prompt) != len(ids) or not all(isinstance(t, str) and t for t in prompt)):
-            return None, f'{where}: prompt là danh sách thì phải có đúng {len(ids)} câu, mỗi pixellab_id một câu'
-        if not prompt:
-            return None, f'{where}: có pixellab_id nhưng thiếu prompt'
+        if isinstance(prompt, list):
+            if len(prompt) != len(ids) or not all(isinstance(t, str) and t for t in prompt):
+                return None, f'{where}: prompt là danh sách thì phải có đúng {len(ids)} câu (chuỗi không rỗng), mỗi pixellab_id một câu'
+        elif not (isinstance(prompt, str) and prompt):
+            return None, f'{where}: có pixellab_id nhưng thiếu prompt (cần một câu, hay danh sách câu)'
         prov['license'] = LICENSE
         return prov, None
     if str(prov.get('kind', '')).startswith('hand-built') and prov.get('tool'):
@@ -183,7 +193,7 @@ for pk in PACKAGES:
         path = os.path.join(pal, fn)
         stem = fn[:-4]
         where = rel(path)
-        if not ID_RE.match(stem):
+        if not ID_RE.fullmatch(stem):
             fail(f'{where}: tên tệp không phải id catalog (a-z, 0-9, _)')
             continue
         live = [e for e in entries if e.get('status') != 'rejected' and entry_matches(e, stem)]
@@ -375,8 +385,7 @@ for it in icons:
     prov = it['prov']
     prov.update(package=it['pkg'], source=rel(it['src']))
     technical = dict(src.get('technical') or {})
-    technical.update(dimensions=f'{SIZE}x{SIZE}', alpha=True, filtering='nearest',
-                     scale='integer: 2x (64 px) shop/bag cards and eggs, 1x (32 px) lists; html zoom compensated')
+    technical.update(dimensions=f'{SIZE}x{SIZE}', alpha=True, filtering='nearest', scale=SCALE[it['prefix']])
     technical.setdefault('anchor', 'centre (icon, content centred in canvas)')
     technical['atlas_frame'] = [fn, x, y, SIZE, SIZE]
     entries.append({
