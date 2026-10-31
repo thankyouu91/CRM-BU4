@@ -4,7 +4,7 @@
   "provenance": "tool, mode, pixellab_id, prompt, params, created_at, generation_cost, postprocess[], license",
   "status": "planned | sample | approved | rejected",
   "path": "proposed runtime path; '#name' = atlas frame",
-  "area": "town | park | scenes — each build script replaces only its own area"
+  "area": "town | park | scenes | landmap — each build script replaces only its own area"
  },
  "art_direction_brief": "docs/art/style-bible.md",
  "palette": "phase0/palette.json (48 colours, listed in style-bible.md §1)",
@@ -13336,6 +13336,4511 @@
     "technical_checks_passed": true,
     "approved_by": "owner (design session, 2026-10-31)",
     "notes": "packed by scripts/art/build-items.py"
+   }
+  },
+  {
+   "id": "lm-map",
+   "area": "landmap",
+   "role": "clan land map picture (16-bit, under the plot grid)",
+   "path": "public/ta-tua/game/assets/landmap/map.webp",
+   "status": "approved",
+   "technical": {
+    "dimensions": "702x332",
+    "alpha": false,
+    "anchor": "top-left = SVG (0,0); 1 px = 1.5 SVG units",
+    "frames": 1,
+    "filtering": "nearest",
+    "scale": "integer 1x / 2x / 3x (desktop default 1x, phone default 2x)",
+    "bytes": 67572,
+    "plots_hash": "1e6b4a16acca81"
+   },
+   "visual_locks": [
+    "palette.json",
+    "view: low top-down",
+    "light: top-left",
+    "outline: #2e1d14 outer"
+   ],
+   "provenance": {
+    "kind": "composited",
+    "tool": "scripts/art/build-landmap.py",
+    "mode": "production",
+    "pixellab_id": "",
+    "prompt": "",
+    "params": {
+     "sources": [
+      "phase1/ambient-1/pal/fx-chimney-smoke/0.png",
+      "phase1/ambient-1/pal/fx-chimney-smoke/1.png",
+      "phase1/ambient-1/pal/fx-chimney-smoke/2.png",
+      "phase1/ambient-1/pal/fx-chimney-smoke/3.png",
+      "phase1/ambient-1/pal/fx-chimney-smoke/4.png",
+      "phase1/ambient-1/pal/fx-chimney-smoke/5.png",
+      "phase1/ambient-1/pal/fx-chimney-smoke/6.png",
+      "phase1/ambient-1/pal/fx-chimney-smoke/7.png",
+      "phase1/ambient-1/pal/fx-pond-sparkle/0.png",
+      "phase1/ambient-1/pal/fx-pond-sparkle/1.png",
+      "phase1/ambient-1/pal/fx-pond-sparkle/2.png",
+      "phase1/ambient-1/pal/fx-pond-sparkle/3.png",
+      "phase1/ambient-1/pal/fx-pond-sparkle/4.png",
+      "phase1/ambient-1/pal/fx-pond-sparkle/5.png",
+      "phase1/ambient-1/pal/fx-pond-sparkle/6.png",
+      "phase1/ambient-1/pal/fx-pond-sparkle/7.png",
+      "phase3/landmap-concept/pal/cherry-02.png",
+      "phase3/landmap-concept/pal/cherry-03.png",
+      "phase3/landmap-concept/pal/cherry-04.png",
+      "phase3/landmap-concept/pal/cherry-05.png",
+      "phase3/landmap-concept/pal/harbour.png",
+      "phase3/landmap-concept/pal/lighthouse.png",
+      "phase3/landmap-concept/pal/pagoda.png",
+      "phase3/landmap-concept/pal/sawmill.png",
+      "phase3/landmap-concept/pal/sea-props-sheet-00.png",
+      "phase3/landmap-concept/pal/sea-props-sheet-01.png",
+      "phase3/landmap-concept/pal/sea-props-sheet-02.png",
+      "phase3/landmap-concept/pal/sea-props-sheet-04.png",
+      "phase3/landmap-concept/pal/sea-props-sheet-08.png",
+      "phase3/landmap-concept/pal/ship.png",
+      "phase3/landmap-concept/pal/townhall-front.png",
+      "phase3/landmap-concept/pal/trees-sheet-02.png",
+      "phase3/landmap-concept/pal/trees-sheet-03.png",
+      "phase3/landmap-concept/pal/trees-sheet-04.png",
+      "phase3/landmap-concept/pal/trees-sheet-05.png",
+      "phase3/landmap-concept/pal/trees-sheet-06.png",
+      "phase3/landmap-concept/pal/trees-sheet-07.png",
+      "phase3/landmap-concept/pal/trees-sheet-08.png",
+      "phase3/landmap-concept/pal/trees-sheet-09.png",
+      "phase3/landmap-concept/pal/trees-sheet-10.png",
+      "phase3/landmap-concept/pal/trees-sheet-11.png",
+      "phase3/lm-landmarks/pal/bridge-stone-ns.png",
+      "phase3/lm-landmarks/pal/bridge-wood-ew.png",
+      "phase3/lm-landmarks/pal/fishing-village.png",
+      "phase3/lm-landmarks/pal/lily-a.png",
+      "phase3/lm-landmarks/pal/lily-b.png",
+      "phase3/lm-landmarks/pal/mine-rock.png",
+      "phase3/lm-landmarks/pal/reeds-a.png",
+      "phase3/lm-landmarks/pal/reeds-b.png",
+      "phase3/lm-landmarks/pal/reeds-c.png",
+      "phase3/lm-landmarks/pal/river-stones-a.png",
+      "phase3/lm-landmarks/pal/river-stones-b.png",
+      "phase3/lm-landmarks/pal/waterfall-00.png",
+      "phase3/lm-landmarks/pal/waterfall-01.png",
+      "phase3/lm-landmarks/pal/waterfall-02.png",
+      "phase3/lm-landmarks/pal/waterfall-03.png",
+      "phase3/lm-landmarks/pal/waterfall-04.png",
+      "phase3/lm-landmarks/pal/waterfall-05.png",
+      "phase3/lm-landmarks/pal/waterfall-06.png",
+      "phase3/lm-landmarks/pal/windmill-sails-00.png",
+      "phase3/lm-landmarks/pal/windmill-sails-01.png",
+      "phase3/lm-landmarks/pal/windmill-sails-02.png",
+      "phase3/lm-landmarks/pal/windmill-sails-03.png",
+      "phase3/lm-life/pal/barn-front-00.png",
+      "phase3/lm-life/pal/barn-front-01.png",
+      "phase3/lm-life/pal/beach-net.png",
+      "phase3/lm-life/pal/beach-rock-00.png",
+      "phase3/lm-life/pal/beach-rock-01.png",
+      "phase3/lm-life/pal/beach-rowboat.png",
+      "phase3/lm-life/pal/beach-umbrella-pink.png",
+      "phase3/lm-life/pal/beach-umbrella-red-00.png",
+      "phase3/lm-life/pal/beach-umbrella-red-01.png",
+      "phase3/lm-life/pal/cloud-a.png",
+      "phase3/lm-life/pal/cloud-b.png",
+      "phase3/lm-life/pal/cloud-c.png",
+      "phase3/lm-life/pal/farm-bale-round.png",
+      "phase3/lm-life/pal/farm-haystack.png",
+      "phase3/lm-life/pal/farm-orchard-00.png",
+      "phase3/lm-life/pal/farm-orchard-01.png",
+      "phase3/lm-life/pal/farm-silo.png",
+      "phase3/lm-life/pal/fx-gull/0.png",
+      "phase3/lm-life/pal/fx-gull/1.png",
+      "phase3/lm-life/pal/fx-gull/2.png",
+      "phase3/lm-life/pal/fx-gull/3.png",
+      "phase3/lm-life/pal/fx-house-smoke/0.png",
+      "phase3/lm-life/pal/fx-house-smoke/1.png",
+      "phase3/lm-life/pal/fx-house-smoke/2.png",
+      "phase3/lm-life/pal/fx-house-smoke/3.png",
+      "phase3/lm-life/pal/fx-pennant/0.png",
+      "phase3/lm-life/pal/fx-pennant/1.png",
+      "phase3/lm-life/pal/fx-pennant/2.png",
+      "phase3/lm-life/pal/house-cottage-00.png",
+      "phase3/lm-life/pal/house-cottage-01.png",
+      "phase3/lm-life/pal/house-cottage-02.png",
+      "phase3/lm-life/pal/house-cottage-04.png",
+      "phase3/lm-life/pal/house-cottage-06.png",
+      "phase3/lm-life/pal/house-cottage-07.png",
+      "phase3/lm-life/pal/house-cottage-08.png",
+      "phase3/lm-life/pal/house-cottage-09.png",
+      "phase3/lm-life/pal/house-cottage-orange-00.png",
+      "phase3/lm-life/pal/house-cottage-pink-00.png",
+      "phase3/lm-life/pal/house-cottage-pink-01.png",
+      "phase3/lm-life/pal/house-small-00.png",
+      "phase3/lm-life/pal/house-small-01.png",
+      "phase3/lm-life/pal/house-small-02.png",
+      "phase3/lm-life/pal/house-small-03.png",
+      "phase3/lm-life/pal/house-small-pink-00.png",
+      "phase3/lm-life/pal/house-town-00.png",
+      "phase3/lm-life/pal/house-town-05.png",
+      "phase3/lm-life/pal/house-town-06.png",
+      "phase3/lm-life/pal/house-town-pink-00.png",
+      "phase3/lm-life/pal/islet-00.png",
+      "phase3/lm-life/pal/islet-04.png",
+      "phase3/lm-life/pal/islet-05.png",
+      "phase3/lm-life/pal/tree2-00.png",
+      "phase3/lm-life/pal/tree2-01.png",
+      "phase3/lm-life/pal/tree2-03.png",
+      "phase3/lm-life/pal/tree2-04.png",
+      "phase3/lm-terrain/pal/cliff-stone-a.png",
+      "phase3/lm-terrain/pal/far-ridge.png",
+      "phase3/lm-terrain/pal/knoll-sm-earth-a.png",
+      "phase3/lm-terrain/pal/knoll-sm-earth-b.png",
+      "phase3/lm-terrain/pal/knoll-sm-rock-a.png",
+      "phase3/lm-terrain/pal/knoll-sm-rock-b.png",
+      "phase3/lm-terrain/pal/mountain-a.png",
+      "phase3/lm-terrain/pal/mountain-b.png",
+      "phase3/lm-terrain/pal/mountain-c.png",
+      "phase3/lm-terrain/pal/mountain-d.png",
+      "phase3/lm-terrain/pal/peak-a.png",
+      "phase3/lm-terrain/pal/peak-b.png",
+      "phase3/lm-terrain/pal/tex-highland.png",
+      "phase3/lm-terrain/pal/tex-paddy.png",
+      "phase3/lm-terrain/pal/tex-rice.png",
+      "phase3/lm-terrain/pal/tex-ripe.png",
+      "phase3/lm-terrain/pal/tex-snow.png",
+      "phase3/lm-terrain/pal/tex-tea.png",
+      "phase3/lm-terrain/pal/tex-wheat.png"
+     ],
+     "packages": [
+      "lm-landmarks",
+      "lm-life",
+      "lm-terrain"
+     ]
+    },
+    "created_at": "2026-10-31",
+    "generation_cost": 0,
+    "postprocess": [
+     "zones from PLOTS via node (dump-plots.mjs)",
+     "Wang terrain + pond_decal shores",
+     "sprites placed by foot",
+     "shadows one palette step darker",
+     "WebP lossless (exact)"
+    ],
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)"
+   },
+   "verification": {
+    "native_scale_reviewed": true,
+    "in_engine_reviewed": true,
+    "technical_checks_passed": true,
+    "approved_by": "owner (design session, 2026-10-31)",
+    "notes": "gates (a)(b)(c) passed; off-palette=0 colours=48"
+   }
+  },
+  {
+   "id": "lm-fx",
+   "area": "landmap",
+   "role": "clan land map effects atlas (water, windmill, lighthouse, boats, waves, smoke, sparkle, clouds, gulls)",
+   "path": "public/ta-tua/game/assets/landmap/fx.webp",
+   "status": "approved",
+   "technical": {
+    "dimensions": "346x289",
+    "alpha": true,
+    "anchor": "see landmap.json",
+    "frames": 66,
+    "filtering": "nearest",
+    "scale": "same as lm-map",
+    "bytes": 5490
+   },
+   "visual_locks": [
+    "palette.json",
+    "view: low top-down",
+    "light: top-left",
+    "outline: #2e1d14 outer"
+   ],
+   "provenance": {
+    "kind": "composited",
+    "tool": "scripts/art/build-landmap.py",
+    "mode": "production",
+    "pixellab_id": "",
+    "prompt": "",
+    "params": {
+     "effects": [
+      "waves",
+      "waterfall",
+      "windmill",
+      "lighthouse",
+      "boat-0",
+      "boat-1",
+      "boat-2",
+      "boat-3",
+      "boat-4",
+      "boat-5",
+      "boat-6",
+      "boat-7",
+      "boat-8",
+      "smoke",
+      "sparkle-0",
+      "sparkle-1",
+      "sparkle-2",
+      "wisp",
+      "pennant",
+      "clouds",
+      "gulls"
+     ]
+    },
+    "created_at": "2026-10-31",
+    "generation_cost": 0,
+    "postprocess": [
+     "frames re-composited from the map",
+     "shelf-packed, 1 px padding",
+     "WebP lossless (exact)"
+    ],
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)"
+   },
+   "verification": {
+    "native_scale_reviewed": true,
+    "in_engine_reviewed": true,
+    "technical_checks_passed": true,
+    "approved_by": "owner (design session, 2026-10-31)",
+    "notes": "off-palette=0 semi-alpha=0"
+   }
+  },
+  {
+   "id": "lm-bridges",
+   "area": "landmap",
+   "role": "land map source: bridges where roads cross the river: stone in the city, wood in the fields",
+   "path": "public/ta-tua/game/assets/landmap/map.webp#bridges",
+   "status": "approved",
+   "technical": {
+    "dimensions": "9x10, 9x15, 17x11, 19x11",
+    "alpha": true,
+    "anchor": "bottom-center; deck centre about 45% down the sprite, centred on the river centroid at the crossing",
+    "frames": 1,
+    "filtering": "nearest",
+    "scale": "integer 1x / 2x / 3x (map picture)"
+   },
+   "visual_locks": [
+    "palette.json (48)",
+    "view: low top-down",
+    "light: top-left",
+    "outline: #2e1d14 outer (objects); lily pads flat"
+   ],
+   "provenance": {
+    "kind": "hand-made (code, locked palette)",
+    "tool": "scripts/handdraw.py",
+    "mode": "-",
+    "pixellab_id": null,
+    "prompt": null,
+    "params": {
+     "art_root_files": [
+      "phase3/lm-landmarks/pal/bridge-stone-ns.png",
+      "phase3/lm-landmarks/pal/bridge-wood-ew.png"
+     ]
+    },
+    "created_at": "2026-10-31",
+    "generation_cost": 0,
+    "postprocess": [
+     "character-grid pixel art",
+     "ink outline, open at deck ends that meet the road"
+    ],
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)"
+   },
+   "verification": {
+    "native_scale_reviewed": true,
+    "in_engine_reviewed": true,
+    "technical_checks_passed": true,
+    "approved_by": "owner (design session, 2026-10-31)",
+    "notes": "composited into map.webp by scripts/art/build-landmap.py"
+   }
+  },
+  {
+   "id": "lm-cherry",
+   "area": "landmap",
+   "role": "land map source: cherry trees (pink ramp), LM-06",
+   "path": "public/ta-tua/game/assets/landmap/map.webp#cherry",
+   "status": "approved",
+   "technical": {
+    "alpha": true,
+    "anchor": "bottom-center (foot line)",
+    "frames": 1,
+    "filtering": "nearest",
+    "scale": "integer 1x / 2x / 3x (map picture)"
+   },
+   "visual_locks": [
+    "palette.json (48)",
+    "light: top-left",
+    "outline: #2e1d14 outer"
+   ],
+   "provenance": {
+    "kind": "derived",
+    "tool": "phase3/landmap-concept/scripts/prep2.py",
+    "sources": [
+     "lm-trees-sheet"
+    ],
+    "postprocess": [
+     "swap greens to #ffd1dc #f4a3b4 #d9708a #a84848"
+    ],
+    "generation_cost": 0,
+    "created_at": "2026-10-31",
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)",
+    "params": {
+     "art_root_files": [
+      "phase3/landmap-concept/pal/cherry-02.png",
+      "phase3/landmap-concept/pal/cherry-03.png",
+      "phase3/landmap-concept/pal/cherry-04.png",
+      "phase3/landmap-concept/pal/cherry-05.png"
+     ]
+    }
+   },
+   "verification": {
+    "native_scale_reviewed": true,
+    "in_engine_reviewed": true,
+    "technical_checks_passed": true,
+    "approved_by": "owner (design session, 2026-10-31)",
+    "notes": "composited into map.webp by scripts/art/build-landmap.py"
+   }
+  },
+  {
+   "id": "lm-fishing-village",
+   "area": "landmap",
+   "role": "land map source: Tren bien: floating fishing village (sea plot I17)",
+   "path": "public/ta-tua/game/assets/landmap/map.webp#fishing-village",
+   "status": "approved",
+   "technical": {
+    "dimensions": "51x36",
+    "alpha": true,
+    "anchor": "bottom-center; draw without ground shadow (on water)",
+    "frames": 1,
+    "filtering": "nearest",
+    "scale": "integer 1x / 2x / 3x (map picture)"
+   },
+   "visual_locks": [
+    "palette.json (48)",
+    "view: low top-down",
+    "light: top-left",
+    "outline: #2e1d14 outer (objects); lily pads flat"
+   ],
+   "provenance": {
+    "kind": "generated",
+    "tool": "PixelLab MCP create_map_object",
+    "mode": "basic",
+    "pixellab_id": "9cdd2732-74b5-4d50-aaba-0802d404cb7d",
+    "prompt": "cute cozy floating fishing village seen from the front: a row of three tiny wooden fishermen huts with red and teal roofs on one flat log raft floating on the sea, a plank walkway in front, a fishing net drying on a pole, front facade facing the viewer, not isometric, no base platform, chunky simple shapes, soft light from top-left, dark brown outline, no text",
+    "params": {
+     "view": "side",
+     "outline": "single color outline",
+     "shading": "medium shading",
+     "detail": "medium detail",
+     "size": "64x48",
+     "art_root_files": [
+      "phase3/lm-landmarks/pal/fishing-village.png"
+     ]
+    },
+    "created_at": "2026-10-31",
+    "generation_cost": 1,
+    "postprocess": [
+     "crop",
+     "remap.py --outline",
+     "prep_colors.py raft-wood (gold raft -> wood ramp)"
+    ],
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)"
+   },
+   "verification": {
+    "native_scale_reviewed": true,
+    "in_engine_reviewed": true,
+    "technical_checks_passed": true,
+    "approved_by": "owner (design session, 2026-10-31)",
+    "notes": "composited into map.webp by scripts/art/build-landmap.py"
+   }
+  },
+  {
+   "id": "lm-harbour",
+   "area": "landmap",
+   "role": "land map source: landmark Ven biển: fishing harbour (between H14 and H15)",
+   "path": "public/ta-tua/game/assets/landmap/map.webp#harbour",
+   "status": "approved",
+   "technical": {
+    "dimensions": "64x48 canvas",
+    "alpha": true,
+    "anchor": "bottom-center (foot line)",
+    "frames": 1,
+    "filtering": "nearest",
+    "scale": "integer 1x / 2x / 3x (map picture)"
+   },
+   "visual_locks": [
+    "palette.json (48)",
+    "view: low top-down (foothill: side)",
+    "light: top-left",
+    "outline: #2e1d14 outer"
+   ],
+   "provenance": {
+    "kind": "generated",
+    "tool": "PixelLab MCP create_map_object",
+    "mode": "basic",
+    "pixellab_id": "7e2204d3-e0f9-4d24-b1ef-e44650cb3003",
+    "prompt": "small cozy fishing harbour: a long wooden pier on posts with a little cream warehouse with a red tiled roof, stacked wooden crates, barrels and a small wooden crane, front view facing the viewer, no water, no base platform, chunky simple shapes, soft light from top-left, dark brown outline, no text",
+    "params": {
+     "view": "low top-down",
+     "outline": "single color outline",
+     "shading": "medium shading",
+     "detail": "medium detail",
+     "size": "64x48",
+     "art_root_files": [
+      "phase3/landmap-concept/pal/harbour.png"
+     ]
+    },
+    "created_at": "2026-10-31",
+    "generation_cost": 1,
+    "postprocess": [
+     "remap.py --outline"
+    ],
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)"
+   },
+   "verification": {
+    "native_scale_reviewed": true,
+    "in_engine_reviewed": true,
+    "technical_checks_passed": true,
+    "approved_by": "owner (design session, 2026-10-31)",
+    "notes": "composited into map.webp by scripts/art/build-landmap.py"
+   }
+  },
+  {
+   "id": "lm-life-barn-front-00",
+   "area": "landmap",
+   "role": "land map source: front-facade red barn (21-22 x 25): farmsteads",
+   "path": "public/ta-tua/game/assets/landmap/map.webp#life-barn-front-00",
+   "status": "approved",
+   "technical": {
+    "dimensions": "22x25",
+    "alpha": true,
+    "anchor": "bottom-center (foot line)",
+    "frames": 1,
+    "filtering": "nearest",
+    "scale": "integer 1x / 2x / 3x (map picture)",
+    "zone": "plain"
+   },
+   "visual_locks": [
+    "palette.json (48)",
+    "front facade (houses, barns)",
+    "light: top-left",
+    "outline: #2e1d14 outer"
+   ],
+   "provenance": {
+    "kind": "generated",
+    "tool": "PixelLab MCP create_image_pixen",
+    "mode": "pixen (no_background)",
+    "pixellab_id": "b55b6215-0299-40fe-9373-8e641bff5aae",
+    "prompt": "sprite sheet row of 8 very tiny cute village buildings, each seen straight from the front, flat front facade facing the viewer, symmetric gable roof: five tiny cottages with cream walls and pink, red, teal and orange roofs, and three tiny red barns with white cross doors and grey roofs, every building separate with empty space between, chunky simple shapes, soft light from top-left, dark brown outline, no text, no letters",
+    "params": {
+     "view": "side",
+     "outline": "single color outline",
+     "detail": "low detail",
+     "size": "128x32",
+     "art_root_files": [
+      "phase3/lm-life/pal/barn-front-00.png"
+     ]
+    },
+    "created_at": "2026-10-31",
+    "generation_cost": 0,
+    "cost_note": "sheet cost 1 generation, counted once on ledger row 9 (houses-c)",
+    "postprocess": [
+     "split.py",
+     "proc.py --crop-bottom 3 (grass slab cut)",
+     "remap.py --outline"
+    ],
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)"
+   },
+   "verification": {
+    "native_scale_reviewed": true,
+    "in_engine_reviewed": true,
+    "technical_checks_passed": true,
+    "approved_by": "owner (design session, 2026-10-31)",
+    "notes": "composited into map.webp by scripts/art/build-landmap.py"
+   }
+  },
+  {
+   "id": "lm-life-barn-front-01",
+   "area": "landmap",
+   "role": "land map source: front-facade red barn (21-22 x 25): farmsteads",
+   "path": "public/ta-tua/game/assets/landmap/map.webp#life-barn-front-01",
+   "status": "approved",
+   "technical": {
+    "dimensions": "21x25",
+    "alpha": true,
+    "anchor": "bottom-center (foot line)",
+    "frames": 1,
+    "filtering": "nearest",
+    "scale": "integer 1x / 2x / 3x (map picture)",
+    "zone": "plain"
+   },
+   "visual_locks": [
+    "palette.json (48)",
+    "front facade (houses, barns)",
+    "light: top-left",
+    "outline: #2e1d14 outer"
+   ],
+   "provenance": {
+    "kind": "generated",
+    "tool": "PixelLab MCP create_image_pixen",
+    "mode": "pixen (no_background)",
+    "pixellab_id": "b55b6215-0299-40fe-9373-8e641bff5aae",
+    "prompt": "sprite sheet row of 8 very tiny cute village buildings, each seen straight from the front, flat front facade facing the viewer, symmetric gable roof: five tiny cottages with cream walls and pink, red, teal and orange roofs, and three tiny red barns with white cross doors and grey roofs, every building separate with empty space between, chunky simple shapes, soft light from top-left, dark brown outline, no text, no letters",
+    "params": {
+     "view": "side",
+     "outline": "single color outline",
+     "detail": "low detail",
+     "size": "128x32",
+     "art_root_files": [
+      "phase3/lm-life/pal/barn-front-01.png"
+     ]
+    },
+    "created_at": "2026-10-31",
+    "generation_cost": 0,
+    "cost_note": "sheet cost 1 generation, counted once on ledger row 9 (houses-c)",
+    "postprocess": [
+     "split.py",
+     "proc.py --crop-bottom 3 (grass slab cut)",
+     "remap.py --outline"
+    ],
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)"
+   },
+   "verification": {
+    "native_scale_reviewed": true,
+    "in_engine_reviewed": true,
+    "technical_checks_passed": true,
+    "approved_by": "owner (design session, 2026-10-31)",
+    "notes": "composited into map.webp by scripts/art/build-landmap.py"
+   }
+  },
+  {
+   "id": "lm-life-beach-net",
+   "area": "landmap",
+   "role": "land map source: beach prop on sand (umbrellas, rowboat, rocks, driftwood, net)",
+   "path": "public/ta-tua/game/assets/landmap/map.webp#life-beach-net",
+   "status": "approved",
+   "technical": {
+    "dimensions": "14x11",
+    "alpha": true,
+    "anchor": "bottom-center (foot line)",
+    "frames": 1,
+    "filtering": "nearest",
+    "scale": "integer 1x / 2x / 3x (map picture)",
+    "zone": "coast"
+   },
+   "visual_locks": [
+    "palette.json (48)",
+    "front facade (houses, barns)",
+    "light: top-left",
+    "outline: #2e1d14 outer"
+   ],
+   "provenance": {
+    "kind": "generated",
+    "tool": "PixelLab MCP create_image_pixen",
+    "mode": "pixen (no_background)",
+    "pixellab_id": "054482b8-895e-4946-ab52-743a511e4937",
+    "prompt": "sprite sheet of tiny cute beach props for a world map, each separate with empty space between: red and white striped beach umbrella, pink beach umbrella, small wooden beach hut, small rowing boat pulled up on sand, little grey rocks, driftwood log, small sand castle, fishing net drying on poles, wooden lifeguard chair, chunky simple shapes, soft light from top-left, dark brown outline, no text, no letters",
+    "params": {
+     "view": "low top-down",
+     "outline": "single color outline",
+     "detail": "low detail",
+     "size": "128x64",
+     "art_root_files": [
+      "phase3/lm-life/pal/beach-net.png"
+     ]
+    },
+    "created_at": "2026-10-31",
+    "generation_cost": 0,
+    "cost_note": "sheet cost 1 generation, counted once on ledger row 5 (beach-sheet)",
+    "postprocess": [
+     "split.py",
+     "proc.py --half",
+     "remap.py --outline"
+    ],
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)"
+   },
+   "verification": {
+    "native_scale_reviewed": true,
+    "in_engine_reviewed": true,
+    "technical_checks_passed": true,
+    "approved_by": "owner (design session, 2026-10-31)",
+    "notes": "composited into map.webp by scripts/art/build-landmap.py"
+   }
+  },
+  {
+   "id": "lm-life-beach-rock-00",
+   "area": "landmap",
+   "role": "land map source: beach prop on sand (umbrellas, rowboat, rocks, driftwood, net)",
+   "path": "public/ta-tua/game/assets/landmap/map.webp#life-beach-rock-00",
+   "status": "approved",
+   "technical": {
+    "dimensions": "7x6",
+    "alpha": true,
+    "anchor": "bottom-center (foot line)",
+    "frames": 1,
+    "filtering": "nearest",
+    "scale": "integer 1x / 2x / 3x (map picture)",
+    "zone": "coast"
+   },
+   "visual_locks": [
+    "palette.json (48)",
+    "front facade (houses, barns)",
+    "light: top-left",
+    "outline: #2e1d14 outer"
+   ],
+   "provenance": {
+    "kind": "generated",
+    "tool": "PixelLab MCP create_image_pixen",
+    "mode": "pixen (no_background)",
+    "pixellab_id": "054482b8-895e-4946-ab52-743a511e4937",
+    "prompt": "sprite sheet of tiny cute beach props for a world map, each separate with empty space between: red and white striped beach umbrella, pink beach umbrella, small wooden beach hut, small rowing boat pulled up on sand, little grey rocks, driftwood log, small sand castle, fishing net drying on poles, wooden lifeguard chair, chunky simple shapes, soft light from top-left, dark brown outline, no text, no letters",
+    "params": {
+     "view": "low top-down",
+     "outline": "single color outline",
+     "detail": "low detail",
+     "size": "128x64",
+     "art_root_files": [
+      "phase3/lm-life/pal/beach-rock-00.png"
+     ]
+    },
+    "created_at": "2026-10-31",
+    "generation_cost": 0,
+    "cost_note": "sheet cost 1 generation, counted once on ledger row 5 (beach-sheet)",
+    "postprocess": [
+     "split.py",
+     "proc.py --half",
+     "remap.py --outline"
+    ],
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)"
+   },
+   "verification": {
+    "native_scale_reviewed": true,
+    "in_engine_reviewed": true,
+    "technical_checks_passed": true,
+    "approved_by": "owner (design session, 2026-10-31)",
+    "notes": "composited into map.webp by scripts/art/build-landmap.py"
+   }
+  },
+  {
+   "id": "lm-life-beach-rock-01",
+   "area": "landmap",
+   "role": "land map source: beach prop on sand (umbrellas, rowboat, rocks, driftwood, net)",
+   "path": "public/ta-tua/game/assets/landmap/map.webp#life-beach-rock-01",
+   "status": "approved",
+   "technical": {
+    "dimensions": "5x4",
+    "alpha": true,
+    "anchor": "bottom-center (foot line)",
+    "frames": 1,
+    "filtering": "nearest",
+    "scale": "integer 1x / 2x / 3x (map picture)",
+    "zone": "coast"
+   },
+   "visual_locks": [
+    "palette.json (48)",
+    "front facade (houses, barns)",
+    "light: top-left",
+    "outline: #2e1d14 outer"
+   ],
+   "provenance": {
+    "kind": "generated",
+    "tool": "PixelLab MCP create_image_pixen",
+    "mode": "pixen (no_background)",
+    "pixellab_id": "054482b8-895e-4946-ab52-743a511e4937",
+    "prompt": "sprite sheet of tiny cute beach props for a world map, each separate with empty space between: red and white striped beach umbrella, pink beach umbrella, small wooden beach hut, small rowing boat pulled up on sand, little grey rocks, driftwood log, small sand castle, fishing net drying on poles, wooden lifeguard chair, chunky simple shapes, soft light from top-left, dark brown outline, no text, no letters",
+    "params": {
+     "view": "low top-down",
+     "outline": "single color outline",
+     "detail": "low detail",
+     "size": "128x64",
+     "art_root_files": [
+      "phase3/lm-life/pal/beach-rock-01.png"
+     ]
+    },
+    "created_at": "2026-10-31",
+    "generation_cost": 0,
+    "cost_note": "sheet cost 1 generation, counted once on ledger row 5 (beach-sheet)",
+    "postprocess": [
+     "split.py",
+     "proc.py --half",
+     "remap.py --outline"
+    ],
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)"
+   },
+   "verification": {
+    "native_scale_reviewed": true,
+    "in_engine_reviewed": true,
+    "technical_checks_passed": true,
+    "approved_by": "owner (design session, 2026-10-31)",
+    "notes": "composited into map.webp by scripts/art/build-landmap.py"
+   }
+  },
+  {
+   "id": "lm-life-beach-rowboat",
+   "area": "landmap",
+   "role": "land map source: beach prop on sand (umbrellas, rowboat, rocks, driftwood, net)",
+   "path": "public/ta-tua/game/assets/landmap/map.webp#life-beach-rowboat",
+   "status": "approved",
+   "technical": {
+    "dimensions": "16x9",
+    "alpha": true,
+    "anchor": "bottom-center (foot line)",
+    "frames": 1,
+    "filtering": "nearest",
+    "scale": "integer 1x / 2x / 3x (map picture)",
+    "zone": "coast"
+   },
+   "visual_locks": [
+    "palette.json (48)",
+    "front facade (houses, barns)",
+    "light: top-left",
+    "outline: #2e1d14 outer"
+   ],
+   "provenance": {
+    "kind": "generated",
+    "tool": "PixelLab MCP create_image_pixen",
+    "mode": "pixen (no_background)",
+    "pixellab_id": "054482b8-895e-4946-ab52-743a511e4937",
+    "prompt": "sprite sheet of tiny cute beach props for a world map, each separate with empty space between: red and white striped beach umbrella, pink beach umbrella, small wooden beach hut, small rowing boat pulled up on sand, little grey rocks, driftwood log, small sand castle, fishing net drying on poles, wooden lifeguard chair, chunky simple shapes, soft light from top-left, dark brown outline, no text, no letters",
+    "params": {
+     "view": "low top-down",
+     "outline": "single color outline",
+     "detail": "low detail",
+     "size": "128x64",
+     "art_root_files": [
+      "phase3/lm-life/pal/beach-rowboat.png"
+     ]
+    },
+    "created_at": "2026-10-31",
+    "generation_cost": 0,
+    "cost_note": "sheet cost 1 generation, counted once on ledger row 5 (beach-sheet)",
+    "postprocess": [
+     "split.py",
+     "proc.py --half",
+     "remap.py --outline"
+    ],
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)"
+   },
+   "verification": {
+    "native_scale_reviewed": true,
+    "in_engine_reviewed": true,
+    "technical_checks_passed": true,
+    "approved_by": "owner (design session, 2026-10-31)",
+    "notes": "composited into map.webp by scripts/art/build-landmap.py"
+   }
+  },
+  {
+   "id": "lm-life-beach-umbrella-pink",
+   "area": "landmap",
+   "role": "land map source: beach prop on sand (umbrellas, rowboat, rocks, driftwood, net)",
+   "path": "public/ta-tua/game/assets/landmap/map.webp#life-beach-umbrella-pink",
+   "status": "approved",
+   "technical": {
+    "dimensions": "11x10",
+    "alpha": true,
+    "anchor": "bottom-center (foot line)",
+    "frames": 1,
+    "filtering": "nearest",
+    "scale": "integer 1x / 2x / 3x (map picture)",
+    "zone": "coast"
+   },
+   "visual_locks": [
+    "palette.json (48)",
+    "front facade (houses, barns)",
+    "light: top-left",
+    "outline: #2e1d14 outer"
+   ],
+   "provenance": {
+    "kind": "generated",
+    "tool": "PixelLab MCP create_image_pixen",
+    "mode": "pixen (no_background)",
+    "pixellab_id": "054482b8-895e-4946-ab52-743a511e4937",
+    "prompt": "sprite sheet of tiny cute beach props for a world map, each separate with empty space between: red and white striped beach umbrella, pink beach umbrella, small wooden beach hut, small rowing boat pulled up on sand, little grey rocks, driftwood log, small sand castle, fishing net drying on poles, wooden lifeguard chair, chunky simple shapes, soft light from top-left, dark brown outline, no text, no letters",
+    "params": {
+     "view": "low top-down",
+     "outline": "single color outline",
+     "detail": "low detail",
+     "size": "128x64",
+     "art_root_files": [
+      "phase3/lm-life/pal/beach-umbrella-pink.png"
+     ]
+    },
+    "created_at": "2026-10-31",
+    "generation_cost": 0,
+    "cost_note": "sheet cost 1 generation, counted once on ledger row 5 (beach-sheet)",
+    "postprocess": [
+     "split.py",
+     "proc.py --half",
+     "remap.py --outline"
+    ],
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)"
+   },
+   "verification": {
+    "native_scale_reviewed": true,
+    "in_engine_reviewed": true,
+    "technical_checks_passed": true,
+    "approved_by": "owner (design session, 2026-10-31)",
+    "notes": "composited into map.webp by scripts/art/build-landmap.py"
+   }
+  },
+  {
+   "id": "lm-life-beach-umbrella-red-00",
+   "area": "landmap",
+   "role": "land map source: beach prop on sand (umbrellas, rowboat, rocks, driftwood, net)",
+   "path": "public/ta-tua/game/assets/landmap/map.webp#life-beach-umbrella-red-00",
+   "status": "approved",
+   "technical": {
+    "dimensions": "12x12",
+    "alpha": true,
+    "anchor": "bottom-center (foot line)",
+    "frames": 1,
+    "filtering": "nearest",
+    "scale": "integer 1x / 2x / 3x (map picture)",
+    "zone": "coast"
+   },
+   "visual_locks": [
+    "palette.json (48)",
+    "front facade (houses, barns)",
+    "light: top-left",
+    "outline: #2e1d14 outer"
+   ],
+   "provenance": {
+    "kind": "generated",
+    "tool": "PixelLab MCP create_image_pixen",
+    "mode": "pixen (no_background)",
+    "pixellab_id": "054482b8-895e-4946-ab52-743a511e4937",
+    "prompt": "sprite sheet of tiny cute beach props for a world map, each separate with empty space between: red and white striped beach umbrella, pink beach umbrella, small wooden beach hut, small rowing boat pulled up on sand, little grey rocks, driftwood log, small sand castle, fishing net drying on poles, wooden lifeguard chair, chunky simple shapes, soft light from top-left, dark brown outline, no text, no letters",
+    "params": {
+     "view": "low top-down",
+     "outline": "single color outline",
+     "detail": "low detail",
+     "size": "128x64",
+     "art_root_files": [
+      "phase3/lm-life/pal/beach-umbrella-red-00.png"
+     ]
+    },
+    "created_at": "2026-10-31",
+    "generation_cost": 0,
+    "cost_note": "sheet cost 1 generation, counted once on ledger row 5 (beach-sheet)",
+    "postprocess": [
+     "split.py",
+     "proc.py --half",
+     "remap.py --outline"
+    ],
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)"
+   },
+   "verification": {
+    "native_scale_reviewed": true,
+    "in_engine_reviewed": true,
+    "technical_checks_passed": true,
+    "approved_by": "owner (design session, 2026-10-31)",
+    "notes": "composited into map.webp by scripts/art/build-landmap.py"
+   }
+  },
+  {
+   "id": "lm-life-beach-umbrella-red-01",
+   "area": "landmap",
+   "role": "land map source: beach prop on sand (umbrellas, rowboat, rocks, driftwood, net)",
+   "path": "public/ta-tua/game/assets/landmap/map.webp#life-beach-umbrella-red-01",
+   "status": "approved",
+   "technical": {
+    "dimensions": "11x12",
+    "alpha": true,
+    "anchor": "bottom-center (foot line)",
+    "frames": 1,
+    "filtering": "nearest",
+    "scale": "integer 1x / 2x / 3x (map picture)",
+    "zone": "coast"
+   },
+   "visual_locks": [
+    "palette.json (48)",
+    "front facade (houses, barns)",
+    "light: top-left",
+    "outline: #2e1d14 outer"
+   ],
+   "provenance": {
+    "kind": "generated",
+    "tool": "PixelLab MCP create_image_pixen",
+    "mode": "pixen (no_background)",
+    "pixellab_id": "054482b8-895e-4946-ab52-743a511e4937",
+    "prompt": "sprite sheet of tiny cute beach props for a world map, each separate with empty space between: red and white striped beach umbrella, pink beach umbrella, small wooden beach hut, small rowing boat pulled up on sand, little grey rocks, driftwood log, small sand castle, fishing net drying on poles, wooden lifeguard chair, chunky simple shapes, soft light from top-left, dark brown outline, no text, no letters",
+    "params": {
+     "view": "low top-down",
+     "outline": "single color outline",
+     "detail": "low detail",
+     "size": "128x64",
+     "art_root_files": [
+      "phase3/lm-life/pal/beach-umbrella-red-01.png"
+     ]
+    },
+    "created_at": "2026-10-31",
+    "generation_cost": 0,
+    "cost_note": "sheet cost 1 generation, counted once on ledger row 5 (beach-sheet)",
+    "postprocess": [
+     "split.py",
+     "proc.py --half",
+     "remap.py --outline"
+    ],
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)"
+   },
+   "verification": {
+    "native_scale_reviewed": true,
+    "in_engine_reviewed": true,
+    "technical_checks_passed": true,
+    "approved_by": "owner (design session, 2026-10-31)",
+    "notes": "composited into map.webp by scripts/art/build-landmap.py"
+   }
+  },
+  {
+   "id": "lm-life-cloud-a",
+   "area": "landmap",
+   "role": "land map source: drifting cloud, sky layer above the plot grid (runtime: 30% while a plot is selected)",
+   "path": "public/ta-tua/game/assets/landmap/map.webp#life-cloud-a",
+   "status": "approved",
+   "technical": {
+    "dimensions": "54x47",
+    "alpha": true,
+    "anchor": "top-left (sky layer)",
+    "frames": 1,
+    "filtering": "nearest",
+    "scale": "integer 1x / 2x / 3x (map picture)",
+    "zone": "sky"
+   },
+   "visual_locks": [
+    "palette.json (48)",
+    "front facade (houses, barns)",
+    "light: top-left",
+    "no ink outline (terrain / sky)"
+   ],
+   "provenance": {
+    "kind": "generated",
+    "tool": "PixelLab MCP create_image_pixen",
+    "mode": "pixen (no_background)",
+    "pixellab_id": "592d487e-e5d7-44cf-8437-f23723a79de0",
+    "prompt": "sprite sheet of 3 soft fluffy white cumulus clouds for a sky over a world map, each separate with empty space between, wide and flat bottomed, round puffy tops, bright white lit tops, pale blue-grey shaded undersides, chunky simple shapes, soft light from top-left, thin warm grey outline",
+    "params": {
+     "view": "side",
+     "outline": "single color outline",
+     "detail": "low detail",
+     "size": "192x64",
+     "art_root_files": [
+      "phase3/lm-life/pal/cloud-a.png"
+     ]
+    },
+    "created_at": "2026-10-31",
+    "generation_cost": 0,
+    "cost_note": "sheet cost 1 generation, counted once on ledger row 7 (clouds-sheet)",
+    "postprocess": [
+     "split.py",
+     "remap.py (no outline)",
+     "finalize.py: 1 px #9c948a rim; cloud-c = lower 2/3 with re-rounded puffs; cloud-b = two cloud-c overlapped"
+    ],
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)"
+   },
+   "verification": {
+    "native_scale_reviewed": true,
+    "in_engine_reviewed": true,
+    "technical_checks_passed": true,
+    "approved_by": "owner (design session, 2026-10-31)",
+    "notes": "composited into map.webp by scripts/art/build-landmap.py"
+   }
+  },
+  {
+   "id": "lm-life-cloud-b",
+   "area": "landmap",
+   "role": "land map source: drifting cloud, sky layer above the plot grid (runtime: 30% while a plot is selected)",
+   "path": "public/ta-tua/game/assets/landmap/map.webp#life-cloud-b",
+   "status": "approved",
+   "technical": {
+    "dimensions": "84x34",
+    "alpha": true,
+    "anchor": "top-left (sky layer)",
+    "frames": 1,
+    "filtering": "nearest",
+    "scale": "integer 1x / 2x / 3x (map picture)",
+    "zone": "sky"
+   },
+   "visual_locks": [
+    "palette.json (48)",
+    "front facade (houses, barns)",
+    "light: top-left",
+    "no ink outline (terrain / sky)"
+   ],
+   "provenance": {
+    "kind": "generated",
+    "tool": "PixelLab MCP create_image_pixen",
+    "mode": "pixen (no_background)",
+    "pixellab_id": "592d487e-e5d7-44cf-8437-f23723a79de0",
+    "prompt": "sprite sheet of 3 soft fluffy white cumulus clouds for a sky over a world map, each separate with empty space between, wide and flat bottomed, round puffy tops, bright white lit tops, pale blue-grey shaded undersides, chunky simple shapes, soft light from top-left, thin warm grey outline",
+    "params": {
+     "view": "side",
+     "outline": "single color outline",
+     "detail": "low detail",
+     "size": "192x64",
+     "art_root_files": [
+      "phase3/lm-life/pal/cloud-b.png"
+     ]
+    },
+    "created_at": "2026-10-31",
+    "generation_cost": 0,
+    "cost_note": "sheet cost 1 generation, counted once on ledger row 7 (clouds-sheet)",
+    "postprocess": [
+     "split.py",
+     "remap.py (no outline)",
+     "finalize.py: 1 px #9c948a rim; cloud-c = lower 2/3 with re-rounded puffs; cloud-b = two cloud-c overlapped"
+    ],
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)"
+   },
+   "verification": {
+    "native_scale_reviewed": true,
+    "in_engine_reviewed": true,
+    "technical_checks_passed": true,
+    "approved_by": "owner (design session, 2026-10-31)",
+    "notes": "composited into map.webp by scripts/art/build-landmap.py"
+   }
+  },
+  {
+   "id": "lm-life-cloud-c",
+   "area": "landmap",
+   "role": "land map source: drifting cloud, sky layer above the plot grid (runtime: 30% while a plot is selected)",
+   "path": "public/ta-tua/game/assets/landmap/map.webp#life-cloud-c",
+   "status": "approved",
+   "technical": {
+    "dimensions": "54x29",
+    "alpha": true,
+    "anchor": "top-left (sky layer)",
+    "frames": 1,
+    "filtering": "nearest",
+    "scale": "integer 1x / 2x / 3x (map picture)",
+    "zone": "sky"
+   },
+   "visual_locks": [
+    "palette.json (48)",
+    "front facade (houses, barns)",
+    "light: top-left",
+    "no ink outline (terrain / sky)"
+   ],
+   "provenance": {
+    "kind": "generated",
+    "tool": "PixelLab MCP create_image_pixen",
+    "mode": "pixen (no_background)",
+    "pixellab_id": "592d487e-e5d7-44cf-8437-f23723a79de0",
+    "prompt": "sprite sheet of 3 soft fluffy white cumulus clouds for a sky over a world map, each separate with empty space between, wide and flat bottomed, round puffy tops, bright white lit tops, pale blue-grey shaded undersides, chunky simple shapes, soft light from top-left, thin warm grey outline",
+    "params": {
+     "view": "side",
+     "outline": "single color outline",
+     "detail": "low detail",
+     "size": "192x64",
+     "art_root_files": [
+      "phase3/lm-life/pal/cloud-c.png"
+     ]
+    },
+    "created_at": "2026-10-31",
+    "generation_cost": 0,
+    "cost_note": "sheet cost 1 generation, counted once on ledger row 7 (clouds-sheet)",
+    "postprocess": [
+     "split.py",
+     "remap.py (no outline)",
+     "finalize.py: 1 px #9c948a rim; cloud-c = lower 2/3 with re-rounded puffs; cloud-b = two cloud-c overlapped"
+    ],
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)"
+   },
+   "verification": {
+    "native_scale_reviewed": true,
+    "in_engine_reviewed": true,
+    "technical_checks_passed": true,
+    "approved_by": "owner (design session, 2026-10-31)",
+    "notes": "composited into map.webp by scripts/art/build-landmap.py"
+   }
+  },
+  {
+   "id": "lm-life-farm-bale-round",
+   "area": "landmap",
+   "role": "land map source: farm prop at map scale (bales, haystack, silo, apple trees for orchard rows)",
+   "path": "public/ta-tua/game/assets/landmap/map.webp#life-farm-bale-round",
+   "status": "approved",
+   "technical": {
+    "dimensions": "11x10",
+    "alpha": true,
+    "anchor": "bottom-center (foot line)",
+    "frames": 1,
+    "filtering": "nearest",
+    "scale": "integer 1x / 2x / 3x (map picture)",
+    "zone": "plain"
+   },
+   "visual_locks": [
+    "palette.json (48)",
+    "front facade (houses, barns)",
+    "light: top-left",
+    "outline: #2e1d14 outer"
+   ],
+   "provenance": {
+    "kind": "generated",
+    "tool": "PixelLab MCP create_image_pixen",
+    "mode": "pixen (no_background)",
+    "pixellab_id": "c8a5e41e-40ce-4352-8dfc-56bd8f657e0a",
+    "prompt": "sprite sheet of tiny cute farm pieces for a world map, each separate with empty space between: a small red barn seen from the front with white cross doors and grey roof, a round golden haystack, a tall golden hay stack, a small wooden silo, two little fruit bushes with red apples, a short wooden fence piece, a small vegetable cart, chunky simple shapes, soft light from top-left, dark brown outline, no text, no letters",
+    "params": {
+     "view": "side",
+     "outline": "single color outline",
+     "detail": "low detail",
+     "size": "128x64",
+     "art_root_files": [
+      "phase3/lm-life/pal/farm-bale-round.png"
+     ]
+    },
+    "created_at": "2026-10-31",
+    "generation_cost": 0,
+    "cost_note": "sheet cost 1 generation, counted once on ledger row 3 (farm-sheet)",
+    "postprocess": [
+     "split.py",
+     "proc.py --half (2x majority downscale)",
+     "remap.py --outline"
+    ],
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)"
+   },
+   "verification": {
+    "native_scale_reviewed": true,
+    "in_engine_reviewed": true,
+    "technical_checks_passed": true,
+    "approved_by": "owner (design session, 2026-10-31)",
+    "notes": "composited into map.webp by scripts/art/build-landmap.py"
+   }
+  },
+  {
+   "id": "lm-life-farm-haystack",
+   "area": "landmap",
+   "role": "land map source: farm prop at map scale (bales, haystack, silo, apple trees for orchard rows)",
+   "path": "public/ta-tua/game/assets/landmap/map.webp#life-farm-haystack",
+   "status": "approved",
+   "technical": {
+    "dimensions": "13x16",
+    "alpha": true,
+    "anchor": "bottom-center (foot line)",
+    "frames": 1,
+    "filtering": "nearest",
+    "scale": "integer 1x / 2x / 3x (map picture)",
+    "zone": "plain"
+   },
+   "visual_locks": [
+    "palette.json (48)",
+    "front facade (houses, barns)",
+    "light: top-left",
+    "outline: #2e1d14 outer"
+   ],
+   "provenance": {
+    "kind": "generated",
+    "tool": "PixelLab MCP create_image_pixen",
+    "mode": "pixen (no_background)",
+    "pixellab_id": "c8a5e41e-40ce-4352-8dfc-56bd8f657e0a",
+    "prompt": "sprite sheet of tiny cute farm pieces for a world map, each separate with empty space between: a small red barn seen from the front with white cross doors and grey roof, a round golden haystack, a tall golden hay stack, a small wooden silo, two little fruit bushes with red apples, a short wooden fence piece, a small vegetable cart, chunky simple shapes, soft light from top-left, dark brown outline, no text, no letters",
+    "params": {
+     "view": "side",
+     "outline": "single color outline",
+     "detail": "low detail",
+     "size": "128x64",
+     "art_root_files": [
+      "phase3/lm-life/pal/farm-haystack.png"
+     ]
+    },
+    "created_at": "2026-10-31",
+    "generation_cost": 0,
+    "cost_note": "sheet cost 1 generation, counted once on ledger row 3 (farm-sheet)",
+    "postprocess": [
+     "split.py",
+     "proc.py --half (2x majority downscale)",
+     "remap.py --outline"
+    ],
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)"
+   },
+   "verification": {
+    "native_scale_reviewed": true,
+    "in_engine_reviewed": true,
+    "technical_checks_passed": true,
+    "approved_by": "owner (design session, 2026-10-31)",
+    "notes": "composited into map.webp by scripts/art/build-landmap.py"
+   }
+  },
+  {
+   "id": "lm-life-farm-orchard-00",
+   "area": "landmap",
+   "role": "land map source: farm prop at map scale (bales, haystack, silo, apple trees for orchard rows)",
+   "path": "public/ta-tua/game/assets/landmap/map.webp#life-farm-orchard-00",
+   "status": "approved",
+   "technical": {
+    "dimensions": "8x9",
+    "alpha": true,
+    "anchor": "bottom-center (foot line)",
+    "frames": 1,
+    "filtering": "nearest",
+    "scale": "integer 1x / 2x / 3x (map picture)",
+    "zone": "plain"
+   },
+   "visual_locks": [
+    "palette.json (48)",
+    "front facade (houses, barns)",
+    "light: top-left",
+    "outline: #2e1d14 outer"
+   ],
+   "provenance": {
+    "kind": "generated",
+    "tool": "PixelLab MCP create_image_pixen",
+    "mode": "pixen (no_background)",
+    "pixellab_id": "c8a5e41e-40ce-4352-8dfc-56bd8f657e0a",
+    "prompt": "sprite sheet of tiny cute farm pieces for a world map, each separate with empty space between: a small red barn seen from the front with white cross doors and grey roof, a round golden haystack, a tall golden hay stack, a small wooden silo, two little fruit bushes with red apples, a short wooden fence piece, a small vegetable cart, chunky simple shapes, soft light from top-left, dark brown outline, no text, no letters",
+    "params": {
+     "view": "side",
+     "outline": "single color outline",
+     "detail": "low detail",
+     "size": "128x64",
+     "art_root_files": [
+      "phase3/lm-life/pal/farm-orchard-00.png"
+     ]
+    },
+    "created_at": "2026-10-31",
+    "generation_cost": 0,
+    "cost_note": "sheet cost 1 generation, counted once on ledger row 3 (farm-sheet)",
+    "postprocess": [
+     "split.py",
+     "proc.py --half (2x majority downscale)",
+     "remap.py --outline"
+    ],
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)"
+   },
+   "verification": {
+    "native_scale_reviewed": true,
+    "in_engine_reviewed": true,
+    "technical_checks_passed": true,
+    "approved_by": "owner (design session, 2026-10-31)",
+    "notes": "composited into map.webp by scripts/art/build-landmap.py"
+   }
+  },
+  {
+   "id": "lm-life-farm-orchard-01",
+   "area": "landmap",
+   "role": "land map source: farm prop at map scale (bales, haystack, silo, apple trees for orchard rows)",
+   "path": "public/ta-tua/game/assets/landmap/map.webp#life-farm-orchard-01",
+   "status": "approved",
+   "technical": {
+    "dimensions": "9x9",
+    "alpha": true,
+    "anchor": "bottom-center (foot line)",
+    "frames": 1,
+    "filtering": "nearest",
+    "scale": "integer 1x / 2x / 3x (map picture)",
+    "zone": "plain"
+   },
+   "visual_locks": [
+    "palette.json (48)",
+    "front facade (houses, barns)",
+    "light: top-left",
+    "outline: #2e1d14 outer"
+   ],
+   "provenance": {
+    "kind": "generated",
+    "tool": "PixelLab MCP create_image_pixen",
+    "mode": "pixen (no_background)",
+    "pixellab_id": "c8a5e41e-40ce-4352-8dfc-56bd8f657e0a",
+    "prompt": "sprite sheet of tiny cute farm pieces for a world map, each separate with empty space between: a small red barn seen from the front with white cross doors and grey roof, a round golden haystack, a tall golden hay stack, a small wooden silo, two little fruit bushes with red apples, a short wooden fence piece, a small vegetable cart, chunky simple shapes, soft light from top-left, dark brown outline, no text, no letters",
+    "params": {
+     "view": "side",
+     "outline": "single color outline",
+     "detail": "low detail",
+     "size": "128x64",
+     "art_root_files": [
+      "phase3/lm-life/pal/farm-orchard-01.png"
+     ]
+    },
+    "created_at": "2026-10-31",
+    "generation_cost": 0,
+    "cost_note": "sheet cost 1 generation, counted once on ledger row 3 (farm-sheet)",
+    "postprocess": [
+     "split.py",
+     "proc.py --half (2x majority downscale)",
+     "remap.py --outline"
+    ],
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)"
+   },
+   "verification": {
+    "native_scale_reviewed": true,
+    "in_engine_reviewed": true,
+    "technical_checks_passed": true,
+    "approved_by": "owner (design session, 2026-10-31)",
+    "notes": "composited into map.webp by scripts/art/build-landmap.py"
+   }
+  },
+  {
+   "id": "lm-life-farm-silo",
+   "area": "landmap",
+   "role": "land map source: farm prop at map scale (bales, haystack, silo, apple trees for orchard rows)",
+   "path": "public/ta-tua/game/assets/landmap/map.webp#life-farm-silo",
+   "status": "approved",
+   "technical": {
+    "dimensions": "10x14",
+    "alpha": true,
+    "anchor": "bottom-center (foot line)",
+    "frames": 1,
+    "filtering": "nearest",
+    "scale": "integer 1x / 2x / 3x (map picture)",
+    "zone": "plain"
+   },
+   "visual_locks": [
+    "palette.json (48)",
+    "front facade (houses, barns)",
+    "light: top-left",
+    "outline: #2e1d14 outer"
+   ],
+   "provenance": {
+    "kind": "generated",
+    "tool": "PixelLab MCP create_image_pixen",
+    "mode": "pixen (no_background)",
+    "pixellab_id": "c8a5e41e-40ce-4352-8dfc-56bd8f657e0a",
+    "prompt": "sprite sheet of tiny cute farm pieces for a world map, each separate with empty space between: a small red barn seen from the front with white cross doors and grey roof, a round golden haystack, a tall golden hay stack, a small wooden silo, two little fruit bushes with red apples, a short wooden fence piece, a small vegetable cart, chunky simple shapes, soft light from top-left, dark brown outline, no text, no letters",
+    "params": {
+     "view": "side",
+     "outline": "single color outline",
+     "detail": "low detail",
+     "size": "128x64",
+     "art_root_files": [
+      "phase3/lm-life/pal/farm-silo.png"
+     ]
+    },
+    "created_at": "2026-10-31",
+    "generation_cost": 0,
+    "cost_note": "sheet cost 1 generation, counted once on ledger row 3 (farm-sheet)",
+    "postprocess": [
+     "split.py",
+     "proc.py --half (2x majority downscale)",
+     "remap.py --outline"
+    ],
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)"
+   },
+   "verification": {
+    "native_scale_reviewed": true,
+    "in_engine_reviewed": true,
+    "technical_checks_passed": true,
+    "approved_by": "owner (design session, 2026-10-31)",
+    "notes": "composited into map.webp by scripts/art/build-landmap.py"
+   }
+  },
+  {
+   "id": "lm-life-fx-gull",
+   "area": "landmap",
+   "role": "land map source: gull flap loop over the bay, 4 frames 9x5 (up, level, down, level), 8-10 fps, flies along landmap.json paths",
+   "path": "public/ta-tua/game/assets/landmap/map.webp#life-fx-gull",
+   "status": "approved",
+   "technical": {
+    "dimensions": "9x5",
+    "alpha": true,
+    "anchor": "bottom-center",
+    "frames": 4,
+    "loop": "forward loop; reduced motion: frame 0 only",
+    "filtering": "nearest",
+    "scale": "integer 1x / 2x / 3x (map picture)"
+   },
+   "visual_locks": [
+    "palette.json (48)",
+    "map scale (LM-16)"
+   ],
+   "provenance": {
+    "kind": "generated",
+    "tool": "PixelLab MCP create_image_pixen",
+    "mode": "pixen (no_background)",
+    "pixellab_id": "3412e79f-8b50-4881-b4ad-65e35dc2e5fa",
+    "prompt": "sprite sheet of tiny white seagulls flying seen from below and above, very small, simple, flapping wing poses in a row: wings up, wings level, wings down, gliding, each separate with empty space between, white body, grey wing tips, chunky simple shapes, dark brown outline",
+    "params": {
+     "view": "side",
+     "outline": "single color outline",
+     "detail": "low detail",
+     "size": "64x32",
+     "art_root_files": [
+      "phase3/lm-life/pal/fx-gull/0.png",
+      "phase3/lm-life/pal/fx-gull/1.png",
+      "phase3/lm-life/pal/fx-gull/2.png",
+      "phase3/lm-life/pal/fx-gull/3.png"
+     ]
+    },
+    "created_at": "2026-10-31",
+    "generation_cost": 0,
+    "cost_note": "sheet cost 1 generation, counted once on ledger row 8 (gulls-sheet)",
+    "postprocess": [
+     "split.py",
+     "proc.py --half",
+     "remap.py --outline",
+     "finalize.py: frames centred in one 9x5 box"
+    ],
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)"
+   },
+   "verification": {
+    "native_scale_reviewed": true,
+    "in_engine_reviewed": true,
+    "technical_checks_passed": true,
+    "approved_by": "owner (design session, 2026-10-31)",
+    "notes": "composited into map.webp by scripts/art/build-landmap.py"
+   }
+  },
+  {
+   "id": "lm-life-fx-house-smoke",
+   "area": "landmap",
+   "role": "land map source: chimney wisp for 16-22 px cottages, 4 frames 4x6, loop 8 fps; anchor = bottom-centre on the chimney top (layout chimneys)",
+   "path": "public/ta-tua/game/assets/landmap/map.webp#life-fx-house-smoke",
+   "status": "approved",
+   "technical": {
+    "dimensions": "4x6",
+    "alpha": true,
+    "anchor": "bottom-center",
+    "frames": 4,
+    "loop": "forward loop; reduced motion: frame 0 only",
+    "filtering": "nearest",
+    "scale": "integer 1x / 2x / 3x (map picture)"
+   },
+   "visual_locks": [
+    "palette.json (48)",
+    "map scale (LM-16)"
+   ],
+   "provenance": {
+    "kind": "hand-drawn",
+    "tool": "finalize.py (palette pixels)",
+    "generation_cost": 0,
+    "postprocess": [
+     "hand-drawn from palette"
+    ],
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)",
+    "params": {
+     "art_root_files": [
+      "phase3/lm-life/pal/fx-house-smoke/0.png",
+      "phase3/lm-life/pal/fx-house-smoke/1.png",
+      "phase3/lm-life/pal/fx-house-smoke/2.png",
+      "phase3/lm-life/pal/fx-house-smoke/3.png"
+     ]
+    }
+   },
+   "verification": {
+    "native_scale_reviewed": true,
+    "in_engine_reviewed": true,
+    "technical_checks_passed": true,
+    "approved_by": "owner (design session, 2026-10-31)",
+    "notes": "composited into map.webp by scripts/art/build-landmap.py"
+   }
+  },
+  {
+   "id": "lm-life-fx-pennant",
+   "area": "landmap",
+   "role": "land map source: town hall pennant, 3 frames 6x4, loop 8 fps, pole on column 0",
+   "path": "public/ta-tua/game/assets/landmap/map.webp#life-fx-pennant",
+   "status": "approved",
+   "technical": {
+    "dimensions": "6x4",
+    "alpha": true,
+    "anchor": "bottom-center",
+    "frames": 3,
+    "loop": "forward loop; reduced motion: frame 0 only",
+    "filtering": "nearest",
+    "scale": "integer 1x / 2x / 3x (map picture)"
+   },
+   "visual_locks": [
+    "palette.json (48)",
+    "map scale (LM-16)"
+   ],
+   "provenance": {
+    "kind": "hand-drawn",
+    "tool": "finalize.py (palette pixels)",
+    "generation_cost": 0,
+    "postprocess": [
+     "hand-drawn from palette"
+    ],
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)",
+    "params": {
+     "art_root_files": [
+      "phase3/lm-life/pal/fx-pennant/0.png",
+      "phase3/lm-life/pal/fx-pennant/1.png",
+      "phase3/lm-life/pal/fx-pennant/2.png"
+     ]
+    }
+   },
+   "verification": {
+    "native_scale_reviewed": true,
+    "in_engine_reviewed": true,
+    "technical_checks_passed": true,
+    "approved_by": "owner (design session, 2026-10-31)",
+    "notes": "composited into map.webp by scripts/art/build-landmap.py"
+   }
+  },
+  {
+   "id": "lm-life-house-cottage-00",
+   "area": "landmap",
+   "role": "land map source: front-facade cottage (22x22): city, farmsteads, river plots",
+   "path": "public/ta-tua/game/assets/landmap/map.webp#life-house-cottage-00",
+   "status": "approved",
+   "technical": {
+    "dimensions": "22x22",
+    "alpha": true,
+    "anchor": "bottom-center (foot line)",
+    "frames": 1,
+    "filtering": "nearest",
+    "scale": "integer 1x / 2x / 3x (map picture)",
+    "zone": "urban / plain / river"
+   },
+   "visual_locks": [
+    "palette.json (48)",
+    "front facade (houses, barns)",
+    "light: top-left",
+    "outline: #2e1d14 outer"
+   ],
+   "provenance": {
+    "kind": "generated",
+    "tool": "PixelLab MCP create_image_pixen",
+    "mode": "pixen (no_background)",
+    "pixellab_id": "fd726191-d3e3-4d5f-b802-79d0ce6603b2",
+    "prompt": "sprite sheet of 8 tiny cute cozy village cottages, each seen straight from the front, flat front facade facing the viewer, symmetric triangular gable roof, cream walls, one small brown door in the middle and two small square windows, roofs in pink, red, teal, orange, small chimney on some, every house separate with empty space between, chunky simple shapes, soft light from top-left, dark brown outline, no text, no letters",
+    "params": {
+     "view": "side",
+     "outline": "single color outline",
+     "detail": "low detail",
+     "size": "128x64",
+     "art_root_files": [
+      "phase3/lm-life/pal/house-cottage-00.png"
+     ]
+    },
+    "created_at": "2026-10-31",
+    "generation_cost": 0,
+    "cost_note": "sheet cost 1 generation, counted once on ledger row 1 (houses-a)",
+    "postprocess": [
+     "split.py",
+     "remap.py --outline"
+    ],
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)"
+   },
+   "verification": {
+    "native_scale_reviewed": true,
+    "in_engine_reviewed": true,
+    "technical_checks_passed": true,
+    "approved_by": "owner (design session, 2026-10-31)",
+    "notes": "composited into map.webp by scripts/art/build-landmap.py"
+   }
+  },
+  {
+   "id": "lm-life-house-cottage-01",
+   "area": "landmap",
+   "role": "land map source: front-facade cottage (22x22): city, farmsteads, river plots",
+   "path": "public/ta-tua/game/assets/landmap/map.webp#life-house-cottage-01",
+   "status": "approved",
+   "technical": {
+    "dimensions": "22x22",
+    "alpha": true,
+    "anchor": "bottom-center (foot line)",
+    "frames": 1,
+    "filtering": "nearest",
+    "scale": "integer 1x / 2x / 3x (map picture)",
+    "zone": "urban / plain / river"
+   },
+   "visual_locks": [
+    "palette.json (48)",
+    "front facade (houses, barns)",
+    "light: top-left",
+    "outline: #2e1d14 outer"
+   ],
+   "provenance": {
+    "kind": "generated",
+    "tool": "PixelLab MCP create_image_pixen",
+    "mode": "pixen (no_background)",
+    "pixellab_id": "fd726191-d3e3-4d5f-b802-79d0ce6603b2",
+    "prompt": "sprite sheet of 8 tiny cute cozy village cottages, each seen straight from the front, flat front facade facing the viewer, symmetric triangular gable roof, cream walls, one small brown door in the middle and two small square windows, roofs in pink, red, teal, orange, small chimney on some, every house separate with empty space between, chunky simple shapes, soft light from top-left, dark brown outline, no text, no letters",
+    "params": {
+     "view": "side",
+     "outline": "single color outline",
+     "detail": "low detail",
+     "size": "128x64",
+     "art_root_files": [
+      "phase3/lm-life/pal/house-cottage-01.png"
+     ]
+    },
+    "created_at": "2026-10-31",
+    "generation_cost": 0,
+    "cost_note": "sheet cost 1 generation, counted once on ledger row 1 (houses-a)",
+    "postprocess": [
+     "split.py",
+     "remap.py --outline"
+    ],
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)"
+   },
+   "verification": {
+    "native_scale_reviewed": true,
+    "in_engine_reviewed": true,
+    "technical_checks_passed": true,
+    "approved_by": "owner (design session, 2026-10-31)",
+    "notes": "composited into map.webp by scripts/art/build-landmap.py"
+   }
+  },
+  {
+   "id": "lm-life-house-cottage-02",
+   "area": "landmap",
+   "role": "land map source: front-facade cottage (22x22): city, farmsteads, river plots",
+   "path": "public/ta-tua/game/assets/landmap/map.webp#life-house-cottage-02",
+   "status": "approved",
+   "technical": {
+    "dimensions": "22x22",
+    "alpha": true,
+    "anchor": "bottom-center (foot line)",
+    "frames": 1,
+    "filtering": "nearest",
+    "scale": "integer 1x / 2x / 3x (map picture)",
+    "zone": "urban / plain / river"
+   },
+   "visual_locks": [
+    "palette.json (48)",
+    "front facade (houses, barns)",
+    "light: top-left",
+    "outline: #2e1d14 outer"
+   ],
+   "provenance": {
+    "kind": "generated",
+    "tool": "PixelLab MCP create_image_pixen",
+    "mode": "pixen (no_background)",
+    "pixellab_id": "fd726191-d3e3-4d5f-b802-79d0ce6603b2",
+    "prompt": "sprite sheet of 8 tiny cute cozy village cottages, each seen straight from the front, flat front facade facing the viewer, symmetric triangular gable roof, cream walls, one small brown door in the middle and two small square windows, roofs in pink, red, teal, orange, small chimney on some, every house separate with empty space between, chunky simple shapes, soft light from top-left, dark brown outline, no text, no letters",
+    "params": {
+     "view": "side",
+     "outline": "single color outline",
+     "detail": "low detail",
+     "size": "128x64",
+     "art_root_files": [
+      "phase3/lm-life/pal/house-cottage-02.png"
+     ]
+    },
+    "created_at": "2026-10-31",
+    "generation_cost": 0,
+    "cost_note": "sheet cost 1 generation, counted once on ledger row 1 (houses-a)",
+    "postprocess": [
+     "split.py",
+     "remap.py --outline"
+    ],
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)"
+   },
+   "verification": {
+    "native_scale_reviewed": true,
+    "in_engine_reviewed": true,
+    "technical_checks_passed": true,
+    "approved_by": "owner (design session, 2026-10-31)",
+    "notes": "composited into map.webp by scripts/art/build-landmap.py"
+   }
+  },
+  {
+   "id": "lm-life-house-cottage-04",
+   "area": "landmap",
+   "role": "land map source: front-facade cottage (22x22): city, farmsteads, river plots",
+   "path": "public/ta-tua/game/assets/landmap/map.webp#life-house-cottage-04",
+   "status": "approved",
+   "technical": {
+    "dimensions": "22x22",
+    "alpha": true,
+    "anchor": "bottom-center (foot line)",
+    "frames": 1,
+    "filtering": "nearest",
+    "scale": "integer 1x / 2x / 3x (map picture)",
+    "zone": "urban / plain / river"
+   },
+   "visual_locks": [
+    "palette.json (48)",
+    "front facade (houses, barns)",
+    "light: top-left",
+    "outline: #2e1d14 outer"
+   ],
+   "provenance": {
+    "kind": "generated",
+    "tool": "PixelLab MCP create_image_pixen",
+    "mode": "pixen (no_background)",
+    "pixellab_id": "fd726191-d3e3-4d5f-b802-79d0ce6603b2",
+    "prompt": "sprite sheet of 8 tiny cute cozy village cottages, each seen straight from the front, flat front facade facing the viewer, symmetric triangular gable roof, cream walls, one small brown door in the middle and two small square windows, roofs in pink, red, teal, orange, small chimney on some, every house separate with empty space between, chunky simple shapes, soft light from top-left, dark brown outline, no text, no letters",
+    "params": {
+     "view": "side",
+     "outline": "single color outline",
+     "detail": "low detail",
+     "size": "128x64",
+     "art_root_files": [
+      "phase3/lm-life/pal/house-cottage-04.png"
+     ]
+    },
+    "created_at": "2026-10-31",
+    "generation_cost": 0,
+    "cost_note": "sheet cost 1 generation, counted once on ledger row 1 (houses-a)",
+    "postprocess": [
+     "split.py",
+     "remap.py --outline"
+    ],
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)"
+   },
+   "verification": {
+    "native_scale_reviewed": true,
+    "in_engine_reviewed": true,
+    "technical_checks_passed": true,
+    "approved_by": "owner (design session, 2026-10-31)",
+    "notes": "composited into map.webp by scripts/art/build-landmap.py"
+   }
+  },
+  {
+   "id": "lm-life-house-cottage-06",
+   "area": "landmap",
+   "role": "land map source: front-facade cottage (22x22): city, farmsteads, river plots",
+   "path": "public/ta-tua/game/assets/landmap/map.webp#life-house-cottage-06",
+   "status": "approved",
+   "technical": {
+    "dimensions": "22x22",
+    "alpha": true,
+    "anchor": "bottom-center (foot line)",
+    "frames": 1,
+    "filtering": "nearest",
+    "scale": "integer 1x / 2x / 3x (map picture)",
+    "zone": "urban / plain / river"
+   },
+   "visual_locks": [
+    "palette.json (48)",
+    "front facade (houses, barns)",
+    "light: top-left",
+    "outline: #2e1d14 outer"
+   ],
+   "provenance": {
+    "kind": "generated",
+    "tool": "PixelLab MCP create_image_pixen",
+    "mode": "pixen (no_background)",
+    "pixellab_id": "fd726191-d3e3-4d5f-b802-79d0ce6603b2",
+    "prompt": "sprite sheet of 8 tiny cute cozy village cottages, each seen straight from the front, flat front facade facing the viewer, symmetric triangular gable roof, cream walls, one small brown door in the middle and two small square windows, roofs in pink, red, teal, orange, small chimney on some, every house separate with empty space between, chunky simple shapes, soft light from top-left, dark brown outline, no text, no letters",
+    "params": {
+     "view": "side",
+     "outline": "single color outline",
+     "detail": "low detail",
+     "size": "128x64",
+     "art_root_files": [
+      "phase3/lm-life/pal/house-cottage-06.png"
+     ]
+    },
+    "created_at": "2026-10-31",
+    "generation_cost": 0,
+    "cost_note": "sheet cost 1 generation, counted once on ledger row 1 (houses-a)",
+    "postprocess": [
+     "split.py",
+     "remap.py --outline"
+    ],
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)"
+   },
+   "verification": {
+    "native_scale_reviewed": true,
+    "in_engine_reviewed": true,
+    "technical_checks_passed": true,
+    "approved_by": "owner (design session, 2026-10-31)",
+    "notes": "composited into map.webp by scripts/art/build-landmap.py"
+   }
+  },
+  {
+   "id": "lm-life-house-cottage-07",
+   "area": "landmap",
+   "role": "land map source: front-facade cottage (22x22): city, farmsteads, river plots",
+   "path": "public/ta-tua/game/assets/landmap/map.webp#life-house-cottage-07",
+   "status": "approved",
+   "technical": {
+    "dimensions": "22x22",
+    "alpha": true,
+    "anchor": "bottom-center (foot line)",
+    "frames": 1,
+    "filtering": "nearest",
+    "scale": "integer 1x / 2x / 3x (map picture)",
+    "zone": "urban / plain / river"
+   },
+   "visual_locks": [
+    "palette.json (48)",
+    "front facade (houses, barns)",
+    "light: top-left",
+    "outline: #2e1d14 outer"
+   ],
+   "provenance": {
+    "kind": "generated",
+    "tool": "PixelLab MCP create_image_pixen",
+    "mode": "pixen (no_background)",
+    "pixellab_id": "fd726191-d3e3-4d5f-b802-79d0ce6603b2",
+    "prompt": "sprite sheet of 8 tiny cute cozy village cottages, each seen straight from the front, flat front facade facing the viewer, symmetric triangular gable roof, cream walls, one small brown door in the middle and two small square windows, roofs in pink, red, teal, orange, small chimney on some, every house separate with empty space between, chunky simple shapes, soft light from top-left, dark brown outline, no text, no letters",
+    "params": {
+     "view": "side",
+     "outline": "single color outline",
+     "detail": "low detail",
+     "size": "128x64",
+     "art_root_files": [
+      "phase3/lm-life/pal/house-cottage-07.png"
+     ]
+    },
+    "created_at": "2026-10-31",
+    "generation_cost": 0,
+    "cost_note": "sheet cost 1 generation, counted once on ledger row 1 (houses-a)",
+    "postprocess": [
+     "split.py",
+     "remap.py --outline"
+    ],
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)"
+   },
+   "verification": {
+    "native_scale_reviewed": true,
+    "in_engine_reviewed": true,
+    "technical_checks_passed": true,
+    "approved_by": "owner (design session, 2026-10-31)",
+    "notes": "composited into map.webp by scripts/art/build-landmap.py"
+   }
+  },
+  {
+   "id": "lm-life-house-cottage-08",
+   "area": "landmap",
+   "role": "land map source: front-facade cottage (22x22): city, farmsteads, river plots",
+   "path": "public/ta-tua/game/assets/landmap/map.webp#life-house-cottage-08",
+   "status": "approved",
+   "technical": {
+    "dimensions": "22x22",
+    "alpha": true,
+    "anchor": "bottom-center (foot line)",
+    "frames": 1,
+    "filtering": "nearest",
+    "scale": "integer 1x / 2x / 3x (map picture)",
+    "zone": "urban / plain / river"
+   },
+   "visual_locks": [
+    "palette.json (48)",
+    "front facade (houses, barns)",
+    "light: top-left",
+    "outline: #2e1d14 outer"
+   ],
+   "provenance": {
+    "kind": "generated",
+    "tool": "PixelLab MCP create_image_pixen",
+    "mode": "pixen (no_background)",
+    "pixellab_id": "fd726191-d3e3-4d5f-b802-79d0ce6603b2",
+    "prompt": "sprite sheet of 8 tiny cute cozy village cottages, each seen straight from the front, flat front facade facing the viewer, symmetric triangular gable roof, cream walls, one small brown door in the middle and two small square windows, roofs in pink, red, teal, orange, small chimney on some, every house separate with empty space between, chunky simple shapes, soft light from top-left, dark brown outline, no text, no letters",
+    "params": {
+     "view": "side",
+     "outline": "single color outline",
+     "detail": "low detail",
+     "size": "128x64",
+     "art_root_files": [
+      "phase3/lm-life/pal/house-cottage-08.png"
+     ]
+    },
+    "created_at": "2026-10-31",
+    "generation_cost": 0,
+    "cost_note": "sheet cost 1 generation, counted once on ledger row 1 (houses-a)",
+    "postprocess": [
+     "split.py",
+     "remap.py --outline"
+    ],
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)"
+   },
+   "verification": {
+    "native_scale_reviewed": true,
+    "in_engine_reviewed": true,
+    "technical_checks_passed": true,
+    "approved_by": "owner (design session, 2026-10-31)",
+    "notes": "composited into map.webp by scripts/art/build-landmap.py"
+   }
+  },
+  {
+   "id": "lm-life-house-cottage-09",
+   "area": "landmap",
+   "role": "land map source: front-facade cottage (22x22): city, farmsteads, river plots",
+   "path": "public/ta-tua/game/assets/landmap/map.webp#life-house-cottage-09",
+   "status": "approved",
+   "technical": {
+    "dimensions": "22x22",
+    "alpha": true,
+    "anchor": "bottom-center (foot line)",
+    "frames": 1,
+    "filtering": "nearest",
+    "scale": "integer 1x / 2x / 3x (map picture)",
+    "zone": "urban / plain / river"
+   },
+   "visual_locks": [
+    "palette.json (48)",
+    "front facade (houses, barns)",
+    "light: top-left",
+    "outline: #2e1d14 outer"
+   ],
+   "provenance": {
+    "kind": "generated",
+    "tool": "PixelLab MCP create_image_pixen",
+    "mode": "pixen (no_background)",
+    "pixellab_id": "fd726191-d3e3-4d5f-b802-79d0ce6603b2",
+    "prompt": "sprite sheet of 8 tiny cute cozy village cottages, each seen straight from the front, flat front facade facing the viewer, symmetric triangular gable roof, cream walls, one small brown door in the middle and two small square windows, roofs in pink, red, teal, orange, small chimney on some, every house separate with empty space between, chunky simple shapes, soft light from top-left, dark brown outline, no text, no letters",
+    "params": {
+     "view": "side",
+     "outline": "single color outline",
+     "detail": "low detail",
+     "size": "128x64",
+     "art_root_files": [
+      "phase3/lm-life/pal/house-cottage-09.png"
+     ]
+    },
+    "created_at": "2026-10-31",
+    "generation_cost": 0,
+    "cost_note": "sheet cost 1 generation, counted once on ledger row 1 (houses-a)",
+    "postprocess": [
+     "split.py",
+     "remap.py --outline"
+    ],
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)"
+   },
+   "verification": {
+    "native_scale_reviewed": true,
+    "in_engine_reviewed": true,
+    "technical_checks_passed": true,
+    "approved_by": "owner (design session, 2026-10-31)",
+    "notes": "composited into map.webp by scripts/art/build-landmap.py"
+   }
+  },
+  {
+   "id": "lm-life-house-cottage-orange-00",
+   "area": "landmap",
+   "role": "land map source: front-facade cottage (22x22): city, farmsteads, river plots (free recolour)",
+   "path": "public/ta-tua/game/assets/landmap/map.webp#life-house-cottage-orange-00",
+   "status": "approved",
+   "technical": {
+    "dimensions": "22x22",
+    "alpha": true,
+    "anchor": "bottom-center (foot line)",
+    "frames": 1,
+    "filtering": "nearest",
+    "scale": "integer 1x / 2x / 3x (map picture)",
+    "zone": "urban / plain / river"
+   },
+   "visual_locks": [
+    "palette.json (48)",
+    "front facade (houses, barns)",
+    "light: top-left",
+    "outline: #2e1d14 outer"
+   ],
+   "provenance": {
+    "kind": "generated",
+    "tool": "PixelLab MCP create_image_pixen",
+    "mode": "pixen (no_background)",
+    "pixellab_id": "fd726191-d3e3-4d5f-b802-79d0ce6603b2",
+    "prompt": "sprite sheet of 8 tiny cute cozy village cottages, each seen straight from the front, flat front facade facing the viewer, symmetric triangular gable roof, cream walls, one small brown door in the middle and two small square windows, roofs in pink, red, teal, orange, small chimney on some, every house separate with empty space between, chunky simple shapes, soft light from top-left, dark brown outline, no text, no letters",
+    "params": {
+     "view": "side",
+     "outline": "single color outline",
+     "detail": "low detail",
+     "size": "128x64",
+     "art_root_files": [
+      "phase3/lm-life/pal/house-cottage-orange-00.png"
+     ]
+    },
+    "created_at": "2026-10-31",
+    "generation_cost": 0,
+    "cost_note": "sheet cost 1 generation, counted once on ledger row 1 (houses-a)",
+    "postprocess": [
+     "split.py",
+     "remap.py --outline",
+     "palette swap from house-cottage-05 (roof ramp to pink/orange, palette roles only)"
+    ],
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)"
+   },
+   "verification": {
+    "native_scale_reviewed": true,
+    "in_engine_reviewed": true,
+    "technical_checks_passed": true,
+    "approved_by": "owner (design session, 2026-10-31)",
+    "notes": "composited into map.webp by scripts/art/build-landmap.py"
+   }
+  },
+  {
+   "id": "lm-life-house-cottage-pink-00",
+   "area": "landmap",
+   "role": "land map source: front-facade cottage (22x22): city, farmsteads, river plots (free recolour)",
+   "path": "public/ta-tua/game/assets/landmap/map.webp#life-house-cottage-pink-00",
+   "status": "approved",
+   "technical": {
+    "dimensions": "22x22",
+    "alpha": true,
+    "anchor": "bottom-center (foot line)",
+    "frames": 1,
+    "filtering": "nearest",
+    "scale": "integer 1x / 2x / 3x (map picture)",
+    "zone": "urban / plain / river"
+   },
+   "visual_locks": [
+    "palette.json (48)",
+    "front facade (houses, barns)",
+    "light: top-left",
+    "outline: #2e1d14 outer"
+   ],
+   "provenance": {
+    "kind": "generated",
+    "tool": "PixelLab MCP create_image_pixen",
+    "mode": "pixen (no_background)",
+    "pixellab_id": "fd726191-d3e3-4d5f-b802-79d0ce6603b2",
+    "prompt": "sprite sheet of 8 tiny cute cozy village cottages, each seen straight from the front, flat front facade facing the viewer, symmetric triangular gable roof, cream walls, one small brown door in the middle and two small square windows, roofs in pink, red, teal, orange, small chimney on some, every house separate with empty space between, chunky simple shapes, soft light from top-left, dark brown outline, no text, no letters",
+    "params": {
+     "view": "side",
+     "outline": "single color outline",
+     "detail": "low detail",
+     "size": "128x64",
+     "art_root_files": [
+      "phase3/lm-life/pal/house-cottage-pink-00.png"
+     ]
+    },
+    "created_at": "2026-10-31",
+    "generation_cost": 0,
+    "cost_note": "sheet cost 1 generation, counted once on ledger row 1 (houses-a)",
+    "postprocess": [
+     "split.py",
+     "remap.py --outline",
+     "palette swap from house-cottage-02 (roof ramp to pink/orange, palette roles only)"
+    ],
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)"
+   },
+   "verification": {
+    "native_scale_reviewed": true,
+    "in_engine_reviewed": true,
+    "technical_checks_passed": true,
+    "approved_by": "owner (design session, 2026-10-31)",
+    "notes": "composited into map.webp by scripts/art/build-landmap.py"
+   }
+  },
+  {
+   "id": "lm-life-house-cottage-pink-01",
+   "area": "landmap",
+   "role": "land map source: front-facade cottage (22x22): city, farmsteads, river plots (free recolour)",
+   "path": "public/ta-tua/game/assets/landmap/map.webp#life-house-cottage-pink-01",
+   "status": "approved",
+   "technical": {
+    "dimensions": "22x22",
+    "alpha": true,
+    "anchor": "bottom-center (foot line)",
+    "frames": 1,
+    "filtering": "nearest",
+    "scale": "integer 1x / 2x / 3x (map picture)",
+    "zone": "urban / plain / river"
+   },
+   "visual_locks": [
+    "palette.json (48)",
+    "front facade (houses, barns)",
+    "light: top-left",
+    "outline: #2e1d14 outer"
+   ],
+   "provenance": {
+    "kind": "generated",
+    "tool": "PixelLab MCP create_image_pixen",
+    "mode": "pixen (no_background)",
+    "pixellab_id": "fd726191-d3e3-4d5f-b802-79d0ce6603b2",
+    "prompt": "sprite sheet of 8 tiny cute cozy village cottages, each seen straight from the front, flat front facade facing the viewer, symmetric triangular gable roof, cream walls, one small brown door in the middle and two small square windows, roofs in pink, red, teal, orange, small chimney on some, every house separate with empty space between, chunky simple shapes, soft light from top-left, dark brown outline, no text, no letters",
+    "params": {
+     "view": "side",
+     "outline": "single color outline",
+     "detail": "low detail",
+     "size": "128x64",
+     "art_root_files": [
+      "phase3/lm-life/pal/house-cottage-pink-01.png"
+     ]
+    },
+    "created_at": "2026-10-31",
+    "generation_cost": 0,
+    "cost_note": "sheet cost 1 generation, counted once on ledger row 1 (houses-a)",
+    "postprocess": [
+     "split.py",
+     "remap.py --outline",
+     "palette swap from house-cottage-03 (roof ramp to pink/orange, palette roles only)"
+    ],
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)"
+   },
+   "verification": {
+    "native_scale_reviewed": true,
+    "in_engine_reviewed": true,
+    "technical_checks_passed": true,
+    "approved_by": "owner (design session, 2026-10-31)",
+    "notes": "composited into map.webp by scripts/art/build-landmap.py"
+   }
+  },
+  {
+   "id": "lm-life-house-small-00",
+   "area": "landmap",
+   "role": "land map source: small front-facade cottage (16-20 px): fills tight city spots",
+   "path": "public/ta-tua/game/assets/landmap/map.webp#life-house-small-00",
+   "status": "approved",
+   "technical": {
+    "dimensions": "20x25",
+    "alpha": true,
+    "anchor": "bottom-center (foot line)",
+    "frames": 1,
+    "filtering": "nearest",
+    "scale": "integer 1x / 2x / 3x (map picture)",
+    "zone": "urban"
+   },
+   "visual_locks": [
+    "palette.json (48)",
+    "front facade (houses, barns)",
+    "light: top-left",
+    "outline: #2e1d14 outer"
+   ],
+   "provenance": {
+    "kind": "generated",
+    "tool": "PixelLab MCP create_image_pixen",
+    "mode": "pixen (no_background)",
+    "pixellab_id": "b55b6215-0299-40fe-9373-8e641bff5aae",
+    "prompt": "sprite sheet row of 8 very tiny cute village buildings, each seen straight from the front, flat front facade facing the viewer, symmetric gable roof: five tiny cottages with cream walls and pink, red, teal and orange roofs, and three tiny red barns with white cross doors and grey roofs, every building separate with empty space between, chunky simple shapes, soft light from top-left, dark brown outline, no text, no letters",
+    "params": {
+     "view": "side",
+     "outline": "single color outline",
+     "detail": "low detail",
+     "size": "128x32",
+     "art_root_files": [
+      "phase3/lm-life/pal/house-small-00.png"
+     ]
+    },
+    "created_at": "2026-10-31",
+    "generation_cost": 0,
+    "cost_note": "sheet cost 1 generation, counted once on ledger row 9 (houses-c)",
+    "postprocess": [
+     "split.py",
+     "proc.py --crop-bottom 3 (grass slab cut)",
+     "remap.py --outline"
+    ],
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)"
+   },
+   "verification": {
+    "native_scale_reviewed": true,
+    "in_engine_reviewed": true,
+    "technical_checks_passed": true,
+    "approved_by": "owner (design session, 2026-10-31)",
+    "notes": "composited into map.webp by scripts/art/build-landmap.py"
+   }
+  },
+  {
+   "id": "lm-life-house-small-01",
+   "area": "landmap",
+   "role": "land map source: small front-facade cottage (16-20 px): fills tight city spots",
+   "path": "public/ta-tua/game/assets/landmap/map.webp#life-house-small-01",
+   "status": "approved",
+   "technical": {
+    "dimensions": "18x22",
+    "alpha": true,
+    "anchor": "bottom-center (foot line)",
+    "frames": 1,
+    "filtering": "nearest",
+    "scale": "integer 1x / 2x / 3x (map picture)",
+    "zone": "urban"
+   },
+   "visual_locks": [
+    "palette.json (48)",
+    "front facade (houses, barns)",
+    "light: top-left",
+    "outline: #2e1d14 outer"
+   ],
+   "provenance": {
+    "kind": "generated",
+    "tool": "PixelLab MCP create_image_pixen",
+    "mode": "pixen (no_background)",
+    "pixellab_id": "b55b6215-0299-40fe-9373-8e641bff5aae",
+    "prompt": "sprite sheet row of 8 very tiny cute village buildings, each seen straight from the front, flat front facade facing the viewer, symmetric gable roof: five tiny cottages with cream walls and pink, red, teal and orange roofs, and three tiny red barns with white cross doors and grey roofs, every building separate with empty space between, chunky simple shapes, soft light from top-left, dark brown outline, no text, no letters",
+    "params": {
+     "view": "side",
+     "outline": "single color outline",
+     "detail": "low detail",
+     "size": "128x32",
+     "art_root_files": [
+      "phase3/lm-life/pal/house-small-01.png"
+     ]
+    },
+    "created_at": "2026-10-31",
+    "generation_cost": 0,
+    "cost_note": "sheet cost 1 generation, counted once on ledger row 9 (houses-c)",
+    "postprocess": [
+     "split.py",
+     "proc.py --crop-bottom 3 (grass slab cut)",
+     "remap.py --outline"
+    ],
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)"
+   },
+   "verification": {
+    "native_scale_reviewed": true,
+    "in_engine_reviewed": true,
+    "technical_checks_passed": true,
+    "approved_by": "owner (design session, 2026-10-31)",
+    "notes": "composited into map.webp by scripts/art/build-landmap.py"
+   }
+  },
+  {
+   "id": "lm-life-house-small-02",
+   "area": "landmap",
+   "role": "land map source: small front-facade cottage (16-20 px): fills tight city spots",
+   "path": "public/ta-tua/game/assets/landmap/map.webp#life-house-small-02",
+   "status": "approved",
+   "technical": {
+    "dimensions": "16x22",
+    "alpha": true,
+    "anchor": "bottom-center (foot line)",
+    "frames": 1,
+    "filtering": "nearest",
+    "scale": "integer 1x / 2x / 3x (map picture)",
+    "zone": "urban"
+   },
+   "visual_locks": [
+    "palette.json (48)",
+    "front facade (houses, barns)",
+    "light: top-left",
+    "outline: #2e1d14 outer"
+   ],
+   "provenance": {
+    "kind": "generated",
+    "tool": "PixelLab MCP create_image_pixen",
+    "mode": "pixen (no_background)",
+    "pixellab_id": "b55b6215-0299-40fe-9373-8e641bff5aae",
+    "prompt": "sprite sheet row of 8 very tiny cute village buildings, each seen straight from the front, flat front facade facing the viewer, symmetric gable roof: five tiny cottages with cream walls and pink, red, teal and orange roofs, and three tiny red barns with white cross doors and grey roofs, every building separate with empty space between, chunky simple shapes, soft light from top-left, dark brown outline, no text, no letters",
+    "params": {
+     "view": "side",
+     "outline": "single color outline",
+     "detail": "low detail",
+     "size": "128x32",
+     "art_root_files": [
+      "phase3/lm-life/pal/house-small-02.png"
+     ]
+    },
+    "created_at": "2026-10-31",
+    "generation_cost": 0,
+    "cost_note": "sheet cost 1 generation, counted once on ledger row 9 (houses-c)",
+    "postprocess": [
+     "split.py",
+     "proc.py --crop-bottom 3 (grass slab cut)",
+     "remap.py --outline"
+    ],
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)"
+   },
+   "verification": {
+    "native_scale_reviewed": true,
+    "in_engine_reviewed": true,
+    "technical_checks_passed": true,
+    "approved_by": "owner (design session, 2026-10-31)",
+    "notes": "composited into map.webp by scripts/art/build-landmap.py"
+   }
+  },
+  {
+   "id": "lm-life-house-small-03",
+   "area": "landmap",
+   "role": "land map source: small front-facade cottage (16-20 px): fills tight city spots",
+   "path": "public/ta-tua/game/assets/landmap/map.webp#life-house-small-03",
+   "status": "approved",
+   "technical": {
+    "dimensions": "19x23",
+    "alpha": true,
+    "anchor": "bottom-center (foot line)",
+    "frames": 1,
+    "filtering": "nearest",
+    "scale": "integer 1x / 2x / 3x (map picture)",
+    "zone": "urban"
+   },
+   "visual_locks": [
+    "palette.json (48)",
+    "front facade (houses, barns)",
+    "light: top-left",
+    "outline: #2e1d14 outer"
+   ],
+   "provenance": {
+    "kind": "generated",
+    "tool": "PixelLab MCP create_image_pixen",
+    "mode": "pixen (no_background)",
+    "pixellab_id": "b55b6215-0299-40fe-9373-8e641bff5aae",
+    "prompt": "sprite sheet row of 8 very tiny cute village buildings, each seen straight from the front, flat front facade facing the viewer, symmetric gable roof: five tiny cottages with cream walls and pink, red, teal and orange roofs, and three tiny red barns with white cross doors and grey roofs, every building separate with empty space between, chunky simple shapes, soft light from top-left, dark brown outline, no text, no letters",
+    "params": {
+     "view": "side",
+     "outline": "single color outline",
+     "detail": "low detail",
+     "size": "128x32",
+     "art_root_files": [
+      "phase3/lm-life/pal/house-small-03.png"
+     ]
+    },
+    "created_at": "2026-10-31",
+    "generation_cost": 0,
+    "cost_note": "sheet cost 1 generation, counted once on ledger row 9 (houses-c)",
+    "postprocess": [
+     "split.py",
+     "proc.py --crop-bottom 3 (grass slab cut)",
+     "remap.py --outline"
+    ],
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)"
+   },
+   "verification": {
+    "native_scale_reviewed": true,
+    "in_engine_reviewed": true,
+    "technical_checks_passed": true,
+    "approved_by": "owner (design session, 2026-10-31)",
+    "notes": "composited into map.webp by scripts/art/build-landmap.py"
+   }
+  },
+  {
+   "id": "lm-life-house-small-pink-00",
+   "area": "landmap",
+   "role": "land map source: small front-facade cottage (16-20 px): fills tight city spots (free recolour)",
+   "path": "public/ta-tua/game/assets/landmap/map.webp#life-house-small-pink-00",
+   "status": "approved",
+   "technical": {
+    "dimensions": "19x23",
+    "alpha": true,
+    "anchor": "bottom-center (foot line)",
+    "frames": 1,
+    "filtering": "nearest",
+    "scale": "integer 1x / 2x / 3x (map picture)",
+    "zone": "urban"
+   },
+   "visual_locks": [
+    "palette.json (48)",
+    "front facade (houses, barns)",
+    "light: top-left",
+    "outline: #2e1d14 outer"
+   ],
+   "provenance": {
+    "kind": "generated",
+    "tool": "PixelLab MCP create_image_pixen",
+    "mode": "pixen (no_background)",
+    "pixellab_id": "b55b6215-0299-40fe-9373-8e641bff5aae",
+    "prompt": "sprite sheet row of 8 very tiny cute village buildings, each seen straight from the front, flat front facade facing the viewer, symmetric gable roof: five tiny cottages with cream walls and pink, red, teal and orange roofs, and three tiny red barns with white cross doors and grey roofs, every building separate with empty space between, chunky simple shapes, soft light from top-left, dark brown outline, no text, no letters",
+    "params": {
+     "view": "side",
+     "outline": "single color outline",
+     "detail": "low detail",
+     "size": "128x32",
+     "art_root_files": [
+      "phase3/lm-life/pal/house-small-pink-00.png"
+     ]
+    },
+    "created_at": "2026-10-31",
+    "generation_cost": 0,
+    "cost_note": "sheet cost 1 generation, counted once on ledger row 9 (houses-c)",
+    "postprocess": [
+     "split.py",
+     "proc.py --crop-bottom 3 (grass slab cut)",
+     "remap.py --outline",
+     "palette swap from house-small-03 (roof ramp to pink/orange, palette roles only)"
+    ],
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)"
+   },
+   "verification": {
+    "native_scale_reviewed": true,
+    "in_engine_reviewed": true,
+    "technical_checks_passed": true,
+    "approved_by": "owner (design session, 2026-10-31)",
+    "notes": "composited into map.webp by scripts/art/build-landmap.py"
+   }
+  },
+  {
+   "id": "lm-life-house-town-00",
+   "area": "landmap",
+   "role": "land map source: front-facade two-storey town house / shop (25-31 px): plots next to the town square only",
+   "path": "public/ta-tua/game/assets/landmap/map.webp#life-house-town-00",
+   "status": "approved",
+   "technical": {
+    "dimensions": "26x30",
+    "alpha": true,
+    "anchor": "bottom-center (foot line)",
+    "frames": 1,
+    "filtering": "nearest",
+    "scale": "integer 1x / 2x / 3x (map picture)",
+    "zone": "urban"
+   },
+   "visual_locks": [
+    "palette.json (48)",
+    "front facade (houses, barns)",
+    "light: top-left",
+    "outline: #2e1d14 outer"
+   ],
+   "provenance": {
+    "kind": "generated",
+    "tool": "PixelLab MCP create_image_pixen",
+    "mode": "pixen (no_background)",
+    "pixellab_id": "bcaa58db-c151-4511-b2f7-b8bc46f9416f",
+    "prompt": "sprite sheet of 6 tiny cute town houses and little shops, each seen straight from the front, flat rectangular front facade facing the viewer, symmetric roof, cream walls, two storeys with small windows, shop with striped awning, roofs in pink, red, teal and orange tiles, every building separate with empty space between, chunky simple shapes, soft light from top-left, dark brown outline, no text, no letters",
+    "params": {
+     "view": "side",
+     "outline": "single color outline",
+     "detail": "low detail",
+     "size": "128x64",
+     "art_root_files": [
+      "phase3/lm-life/pal/house-town-00.png"
+     ]
+    },
+    "created_at": "2026-10-31",
+    "generation_cost": 0,
+    "cost_note": "sheet cost 1 generation, counted once on ledger row 2 (houses-b)",
+    "postprocess": [
+     "split.py",
+     "remap.py --outline"
+    ],
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)"
+   },
+   "verification": {
+    "native_scale_reviewed": true,
+    "in_engine_reviewed": true,
+    "technical_checks_passed": true,
+    "approved_by": "owner (design session, 2026-10-31)",
+    "notes": "composited into map.webp by scripts/art/build-landmap.py"
+   }
+  },
+  {
+   "id": "lm-life-house-town-05",
+   "area": "landmap",
+   "role": "land map source: front-facade two-storey town house / shop (25-31 px): plots next to the town square only",
+   "path": "public/ta-tua/game/assets/landmap/map.webp#life-house-town-05",
+   "status": "approved",
+   "technical": {
+    "dimensions": "27x27",
+    "alpha": true,
+    "anchor": "bottom-center (foot line)",
+    "frames": 1,
+    "filtering": "nearest",
+    "scale": "integer 1x / 2x / 3x (map picture)",
+    "zone": "urban"
+   },
+   "visual_locks": [
+    "palette.json (48)",
+    "front facade (houses, barns)",
+    "light: top-left",
+    "outline: #2e1d14 outer"
+   ],
+   "provenance": {
+    "kind": "generated",
+    "tool": "PixelLab MCP create_image_pixen",
+    "mode": "pixen (no_background)",
+    "pixellab_id": "bcaa58db-c151-4511-b2f7-b8bc46f9416f",
+    "prompt": "sprite sheet of 6 tiny cute town houses and little shops, each seen straight from the front, flat rectangular front facade facing the viewer, symmetric roof, cream walls, two storeys with small windows, shop with striped awning, roofs in pink, red, teal and orange tiles, every building separate with empty space between, chunky simple shapes, soft light from top-left, dark brown outline, no text, no letters",
+    "params": {
+     "view": "side",
+     "outline": "single color outline",
+     "detail": "low detail",
+     "size": "128x64",
+     "art_root_files": [
+      "phase3/lm-life/pal/house-town-05.png"
+     ]
+    },
+    "created_at": "2026-10-31",
+    "generation_cost": 0,
+    "cost_note": "sheet cost 1 generation, counted once on ledger row 2 (houses-b)",
+    "postprocess": [
+     "split.py",
+     "remap.py --outline"
+    ],
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)"
+   },
+   "verification": {
+    "native_scale_reviewed": true,
+    "in_engine_reviewed": true,
+    "technical_checks_passed": true,
+    "approved_by": "owner (design session, 2026-10-31)",
+    "notes": "composited into map.webp by scripts/art/build-landmap.py"
+   }
+  },
+  {
+   "id": "lm-life-house-town-06",
+   "area": "landmap",
+   "role": "land map source: front-facade two-storey town house / shop (25-31 px): plots next to the town square only",
+   "path": "public/ta-tua/game/assets/landmap/map.webp#life-house-town-06",
+   "status": "approved",
+   "technical": {
+    "dimensions": "27x28",
+    "alpha": true,
+    "anchor": "bottom-center (foot line)",
+    "frames": 1,
+    "filtering": "nearest",
+    "scale": "integer 1x / 2x / 3x (map picture)",
+    "zone": "urban"
+   },
+   "visual_locks": [
+    "palette.json (48)",
+    "front facade (houses, barns)",
+    "light: top-left",
+    "outline: #2e1d14 outer"
+   ],
+   "provenance": {
+    "kind": "generated",
+    "tool": "PixelLab MCP create_image_pixen",
+    "mode": "pixen (no_background)",
+    "pixellab_id": "bcaa58db-c151-4511-b2f7-b8bc46f9416f",
+    "prompt": "sprite sheet of 6 tiny cute town houses and little shops, each seen straight from the front, flat rectangular front facade facing the viewer, symmetric roof, cream walls, two storeys with small windows, shop with striped awning, roofs in pink, red, teal and orange tiles, every building separate with empty space between, chunky simple shapes, soft light from top-left, dark brown outline, no text, no letters",
+    "params": {
+     "view": "side",
+     "outline": "single color outline",
+     "detail": "low detail",
+     "size": "128x64",
+     "art_root_files": [
+      "phase3/lm-life/pal/house-town-06.png"
+     ]
+    },
+    "created_at": "2026-10-31",
+    "generation_cost": 0,
+    "cost_note": "sheet cost 1 generation, counted once on ledger row 2 (houses-b)",
+    "postprocess": [
+     "split.py",
+     "remap.py --outline"
+    ],
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)"
+   },
+   "verification": {
+    "native_scale_reviewed": true,
+    "in_engine_reviewed": true,
+    "technical_checks_passed": true,
+    "approved_by": "owner (design session, 2026-10-31)",
+    "notes": "composited into map.webp by scripts/art/build-landmap.py"
+   }
+  },
+  {
+   "id": "lm-life-house-town-pink-00",
+   "area": "landmap",
+   "role": "land map source: front-facade two-storey town house / shop (25-31 px): plots next to the town square only (free recolour)",
+   "path": "public/ta-tua/game/assets/landmap/map.webp#life-house-town-pink-00",
+   "status": "approved",
+   "technical": {
+    "dimensions": "28x29",
+    "alpha": true,
+    "anchor": "bottom-center (foot line)",
+    "frames": 1,
+    "filtering": "nearest",
+    "scale": "integer 1x / 2x / 3x (map picture)",
+    "zone": "urban"
+   },
+   "visual_locks": [
+    "palette.json (48)",
+    "front facade (houses, barns)",
+    "light: top-left",
+    "outline: #2e1d14 outer"
+   ],
+   "provenance": {
+    "kind": "generated",
+    "tool": "PixelLab MCP create_image_pixen",
+    "mode": "pixen (no_background)",
+    "pixellab_id": "bcaa58db-c151-4511-b2f7-b8bc46f9416f",
+    "prompt": "sprite sheet of 6 tiny cute town houses and little shops, each seen straight from the front, flat rectangular front facade facing the viewer, symmetric roof, cream walls, two storeys with small windows, shop with striped awning, roofs in pink, red, teal and orange tiles, every building separate with empty space between, chunky simple shapes, soft light from top-left, dark brown outline, no text, no letters",
+    "params": {
+     "view": "side",
+     "outline": "single color outline",
+     "detail": "low detail",
+     "size": "128x64",
+     "art_root_files": [
+      "phase3/lm-life/pal/house-town-pink-00.png"
+     ]
+    },
+    "created_at": "2026-10-31",
+    "generation_cost": 0,
+    "cost_note": "sheet cost 1 generation, counted once on ledger row 2 (houses-b)",
+    "postprocess": [
+     "split.py",
+     "remap.py --outline",
+     "palette swap from house-town-02 (roof ramp to pink/orange, palette roles only)"
+    ],
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)"
+   },
+   "verification": {
+    "native_scale_reviewed": true,
+    "in_engine_reviewed": true,
+    "technical_checks_passed": true,
+    "approved_by": "owner (design session, 2026-10-31)",
+    "notes": "composited into map.webp by scripts/art/build-landmap.py"
+   }
+  },
+  {
+   "id": "lm-life-islet-00",
+   "area": "landmap",
+   "role": "land map source: islet with shallow-water ring, sea margin only",
+   "path": "public/ta-tua/game/assets/landmap/map.webp#life-islet-00",
+   "status": "approved",
+   "technical": {
+    "dimensions": "22x26",
+    "alpha": true,
+    "anchor": "bottom-center (foot line)",
+    "frames": 1,
+    "filtering": "nearest",
+    "scale": "integer 1x / 2x / 3x (map picture)",
+    "zone": "sea margin"
+   },
+   "visual_locks": [
+    "palette.json (48)",
+    "front facade (houses, barns)",
+    "light: top-left",
+    "no ink outline (terrain / sky)"
+   ],
+   "provenance": {
+    "kind": "generated",
+    "tool": "PixelLab MCP create_image_pixen",
+    "mode": "pixen (no_background)",
+    "pixellab_id": "6f5e82ef-c82c-4f62-b702-2df39c3558ed",
+    "prompt": "sprite sheet of 6 tiny cute islands for a sea world map, each separate with empty space between: small sandy islet with one palm tree, rocky grey islet with white foam ring, tiny green island with two round trees and a sand rim, tall rock sea stack with a bird nest, small flat sandbar, mossy rock with a little lighthouse-free shrub, each surrounded by a thin ring of light shallow water, chunky simple shapes, soft light from top-left, dark brown outline",
+    "params": {
+     "view": "low top-down",
+     "outline": "single color outline",
+     "detail": "low detail",
+     "size": "128x64",
+     "art_root_files": [
+      "phase3/lm-life/pal/islet-00.png"
+     ]
+    },
+    "created_at": "2026-10-31",
+    "generation_cost": 0,
+    "cost_note": "sheet cost 1 generation, counted once on ledger row 6 (islands-sheet)",
+    "postprocess": [
+     "split.py",
+     "remap.py (no outline)",
+     "proc.py --terrain: outer dark ring on the water erased (terrain rule: no outline)"
+    ],
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)"
+   },
+   "verification": {
+    "native_scale_reviewed": true,
+    "in_engine_reviewed": true,
+    "technical_checks_passed": true,
+    "approved_by": "owner (design session, 2026-10-31)",
+    "notes": "composited into map.webp by scripts/art/build-landmap.py"
+   }
+  },
+  {
+   "id": "lm-life-islet-04",
+   "area": "landmap",
+   "role": "land map source: islet with shallow-water ring, sea margin only",
+   "path": "public/ta-tua/game/assets/landmap/map.webp#life-islet-04",
+   "status": "approved",
+   "technical": {
+    "dimensions": "28x26",
+    "alpha": true,
+    "anchor": "bottom-center (foot line)",
+    "frames": 1,
+    "filtering": "nearest",
+    "scale": "integer 1x / 2x / 3x (map picture)",
+    "zone": "sea margin"
+   },
+   "visual_locks": [
+    "palette.json (48)",
+    "front facade (houses, barns)",
+    "light: top-left",
+    "no ink outline (terrain / sky)"
+   ],
+   "provenance": {
+    "kind": "generated",
+    "tool": "PixelLab MCP create_image_pixen",
+    "mode": "pixen (no_background)",
+    "pixellab_id": "6f5e82ef-c82c-4f62-b702-2df39c3558ed",
+    "prompt": "sprite sheet of 6 tiny cute islands for a sea world map, each separate with empty space between: small sandy islet with one palm tree, rocky grey islet with white foam ring, tiny green island with two round trees and a sand rim, tall rock sea stack with a bird nest, small flat sandbar, mossy rock with a little lighthouse-free shrub, each surrounded by a thin ring of light shallow water, chunky simple shapes, soft light from top-left, dark brown outline",
+    "params": {
+     "view": "low top-down",
+     "outline": "single color outline",
+     "detail": "low detail",
+     "size": "128x64",
+     "art_root_files": [
+      "phase3/lm-life/pal/islet-04.png"
+     ]
+    },
+    "created_at": "2026-10-31",
+    "generation_cost": 0,
+    "cost_note": "sheet cost 1 generation, counted once on ledger row 6 (islands-sheet)",
+    "postprocess": [
+     "split.py",
+     "remap.py (no outline)",
+     "proc.py --terrain: outer dark ring on the water erased (terrain rule: no outline)"
+    ],
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)"
+   },
+   "verification": {
+    "native_scale_reviewed": true,
+    "in_engine_reviewed": true,
+    "technical_checks_passed": true,
+    "approved_by": "owner (design session, 2026-10-31)",
+    "notes": "composited into map.webp by scripts/art/build-landmap.py"
+   }
+  },
+  {
+   "id": "lm-life-islet-05",
+   "area": "landmap",
+   "role": "land map source: islet with shallow-water ring, sea margin only",
+   "path": "public/ta-tua/game/assets/landmap/map.webp#life-islet-05",
+   "status": "approved",
+   "technical": {
+    "dimensions": "25x15",
+    "alpha": true,
+    "anchor": "bottom-center (foot line)",
+    "frames": 1,
+    "filtering": "nearest",
+    "scale": "integer 1x / 2x / 3x (map picture)",
+    "zone": "sea margin"
+   },
+   "visual_locks": [
+    "palette.json (48)",
+    "front facade (houses, barns)",
+    "light: top-left",
+    "no ink outline (terrain / sky)"
+   ],
+   "provenance": {
+    "kind": "generated",
+    "tool": "PixelLab MCP create_image_pixen",
+    "mode": "pixen (no_background)",
+    "pixellab_id": "6f5e82ef-c82c-4f62-b702-2df39c3558ed",
+    "prompt": "sprite sheet of 6 tiny cute islands for a sea world map, each separate with empty space between: small sandy islet with one palm tree, rocky grey islet with white foam ring, tiny green island with two round trees and a sand rim, tall rock sea stack with a bird nest, small flat sandbar, mossy rock with a little lighthouse-free shrub, each surrounded by a thin ring of light shallow water, chunky simple shapes, soft light from top-left, dark brown outline",
+    "params": {
+     "view": "low top-down",
+     "outline": "single color outline",
+     "detail": "low detail",
+     "size": "128x64",
+     "art_root_files": [
+      "phase3/lm-life/pal/islet-05.png"
+     ]
+    },
+    "created_at": "2026-10-31",
+    "generation_cost": 0,
+    "cost_note": "sheet cost 1 generation, counted once on ledger row 6 (islands-sheet)",
+    "postprocess": [
+     "split.py",
+     "remap.py (no outline)",
+     "proc.py --terrain: outer dark ring on the water erased (terrain rule: no outline)"
+    ],
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)"
+   },
+   "verification": {
+    "native_scale_reviewed": true,
+    "in_engine_reviewed": true,
+    "technical_checks_passed": true,
+    "approved_by": "owner (design session, 2026-10-31)",
+    "notes": "composited into map.webp by scripts/art/build-landmap.py"
+   }
+  },
+  {
+   "id": "lm-life-tree2-00",
+   "area": "landmap",
+   "role": "land map source: tree, second batch (round, birch, autumn, golden, fruit, poplar, bamboo, bush)",
+   "path": "public/ta-tua/game/assets/landmap/map.webp#life-tree2-00",
+   "status": "approved",
+   "technical": {
+    "dimensions": "22x22",
+    "alpha": true,
+    "anchor": "bottom-center (foot line)",
+    "frames": 1,
+    "filtering": "nearest",
+    "scale": "integer 1x / 2x / 3x (map picture)",
+    "zone": "plain / river / urban / hill / forest edge"
+   },
+   "visual_locks": [
+    "palette.json (48)",
+    "front facade (houses, barns)",
+    "light: top-left",
+    "outline: #2e1d14 outer"
+   ],
+   "provenance": {
+    "kind": "generated",
+    "tool": "PixelLab MCP create_image_pixen",
+    "mode": "pixen (no_background)",
+    "pixellab_id": "1aff9227-fbdc-4d3e-8734-c3c1ffa23cee",
+    "prompt": "sprite sheet of 12 tiny cute trees for a world map, each separate with empty space between, about the same small size: round leafy green trees, light green birch, autumn orange tree, golden yellow tree, small fruit tree with red dots, tall slim poplar, bamboo clump, round bush, chunky simple shapes, short brown trunks, soft light from top-left, dark brown outline",
+    "params": {
+     "view": "low top-down",
+     "outline": "single color outline",
+     "detail": "low detail",
+     "size": "128x64",
+     "art_root_files": [
+      "phase3/lm-life/pal/tree2-00.png"
+     ]
+    },
+    "created_at": "2026-10-31",
+    "generation_cost": 0,
+    "cost_note": "sheet cost 1 generation, counted once on ledger row 4 (trees2-sheet)",
+    "postprocess": [
+     "split.py",
+     "proc.py --strip-grey (baked #555555 shadow removed)",
+     "remap.py --outline"
+    ],
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)"
+   },
+   "verification": {
+    "native_scale_reviewed": true,
+    "in_engine_reviewed": true,
+    "technical_checks_passed": true,
+    "approved_by": "owner (design session, 2026-10-31)",
+    "notes": "composited into map.webp by scripts/art/build-landmap.py"
+   }
+  },
+  {
+   "id": "lm-life-tree2-01",
+   "area": "landmap",
+   "role": "land map source: tree, second batch (round, birch, autumn, golden, fruit, poplar, bamboo, bush)",
+   "path": "public/ta-tua/game/assets/landmap/map.webp#life-tree2-01",
+   "status": "approved",
+   "technical": {
+    "dimensions": "21x22",
+    "alpha": true,
+    "anchor": "bottom-center (foot line)",
+    "frames": 1,
+    "filtering": "nearest",
+    "scale": "integer 1x / 2x / 3x (map picture)",
+    "zone": "plain / river / urban / hill / forest edge"
+   },
+   "visual_locks": [
+    "palette.json (48)",
+    "front facade (houses, barns)",
+    "light: top-left",
+    "outline: #2e1d14 outer"
+   ],
+   "provenance": {
+    "kind": "generated",
+    "tool": "PixelLab MCP create_image_pixen",
+    "mode": "pixen (no_background)",
+    "pixellab_id": "1aff9227-fbdc-4d3e-8734-c3c1ffa23cee",
+    "prompt": "sprite sheet of 12 tiny cute trees for a world map, each separate with empty space between, about the same small size: round leafy green trees, light green birch, autumn orange tree, golden yellow tree, small fruit tree with red dots, tall slim poplar, bamboo clump, round bush, chunky simple shapes, short brown trunks, soft light from top-left, dark brown outline",
+    "params": {
+     "view": "low top-down",
+     "outline": "single color outline",
+     "detail": "low detail",
+     "size": "128x64",
+     "art_root_files": [
+      "phase3/lm-life/pal/tree2-01.png"
+     ]
+    },
+    "created_at": "2026-10-31",
+    "generation_cost": 0,
+    "cost_note": "sheet cost 1 generation, counted once on ledger row 4 (trees2-sheet)",
+    "postprocess": [
+     "split.py",
+     "proc.py --strip-grey (baked #555555 shadow removed)",
+     "remap.py --outline"
+    ],
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)"
+   },
+   "verification": {
+    "native_scale_reviewed": true,
+    "in_engine_reviewed": true,
+    "technical_checks_passed": true,
+    "approved_by": "owner (design session, 2026-10-31)",
+    "notes": "composited into map.webp by scripts/art/build-landmap.py"
+   }
+  },
+  {
+   "id": "lm-life-tree2-03",
+   "area": "landmap",
+   "role": "land map source: tree, second batch (round, birch, autumn, golden, fruit, poplar, bamboo, bush)",
+   "path": "public/ta-tua/game/assets/landmap/map.webp#life-tree2-03",
+   "status": "approved",
+   "technical": {
+    "dimensions": "22x22",
+    "alpha": true,
+    "anchor": "bottom-center (foot line)",
+    "frames": 1,
+    "filtering": "nearest",
+    "scale": "integer 1x / 2x / 3x (map picture)",
+    "zone": "plain / river / urban / hill / forest edge"
+   },
+   "visual_locks": [
+    "palette.json (48)",
+    "front facade (houses, barns)",
+    "light: top-left",
+    "outline: #2e1d14 outer"
+   ],
+   "provenance": {
+    "kind": "generated",
+    "tool": "PixelLab MCP create_image_pixen",
+    "mode": "pixen (no_background)",
+    "pixellab_id": "1aff9227-fbdc-4d3e-8734-c3c1ffa23cee",
+    "prompt": "sprite sheet of 12 tiny cute trees for a world map, each separate with empty space between, about the same small size: round leafy green trees, light green birch, autumn orange tree, golden yellow tree, small fruit tree with red dots, tall slim poplar, bamboo clump, round bush, chunky simple shapes, short brown trunks, soft light from top-left, dark brown outline",
+    "params": {
+     "view": "low top-down",
+     "outline": "single color outline",
+     "detail": "low detail",
+     "size": "128x64",
+     "art_root_files": [
+      "phase3/lm-life/pal/tree2-03.png"
+     ]
+    },
+    "created_at": "2026-10-31",
+    "generation_cost": 0,
+    "cost_note": "sheet cost 1 generation, counted once on ledger row 4 (trees2-sheet)",
+    "postprocess": [
+     "split.py",
+     "proc.py --strip-grey (baked #555555 shadow removed)",
+     "remap.py --outline"
+    ],
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)"
+   },
+   "verification": {
+    "native_scale_reviewed": true,
+    "in_engine_reviewed": true,
+    "technical_checks_passed": true,
+    "approved_by": "owner (design session, 2026-10-31)",
+    "notes": "composited into map.webp by scripts/art/build-landmap.py"
+   }
+  },
+  {
+   "id": "lm-life-tree2-04",
+   "area": "landmap",
+   "role": "land map source: tree, second batch (round, birch, autumn, golden, fruit, poplar, bamboo, bush)",
+   "path": "public/ta-tua/game/assets/landmap/map.webp#life-tree2-04",
+   "status": "approved",
+   "technical": {
+    "dimensions": "22x22",
+    "alpha": true,
+    "anchor": "bottom-center (foot line)",
+    "frames": 1,
+    "filtering": "nearest",
+    "scale": "integer 1x / 2x / 3x (map picture)",
+    "zone": "plain / river / urban / hill / forest edge"
+   },
+   "visual_locks": [
+    "palette.json (48)",
+    "front facade (houses, barns)",
+    "light: top-left",
+    "outline: #2e1d14 outer"
+   ],
+   "provenance": {
+    "kind": "generated",
+    "tool": "PixelLab MCP create_image_pixen",
+    "mode": "pixen (no_background)",
+    "pixellab_id": "1aff9227-fbdc-4d3e-8734-c3c1ffa23cee",
+    "prompt": "sprite sheet of 12 tiny cute trees for a world map, each separate with empty space between, about the same small size: round leafy green trees, light green birch, autumn orange tree, golden yellow tree, small fruit tree with red dots, tall slim poplar, bamboo clump, round bush, chunky simple shapes, short brown trunks, soft light from top-left, dark brown outline",
+    "params": {
+     "view": "low top-down",
+     "outline": "single color outline",
+     "detail": "low detail",
+     "size": "128x64",
+     "art_root_files": [
+      "phase3/lm-life/pal/tree2-04.png"
+     ]
+    },
+    "created_at": "2026-10-31",
+    "generation_cost": 0,
+    "cost_note": "sheet cost 1 generation, counted once on ledger row 4 (trees2-sheet)",
+    "postprocess": [
+     "split.py",
+     "proc.py --strip-grey (baked #555555 shadow removed)",
+     "remap.py --outline"
+    ],
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)"
+   },
+   "verification": {
+    "native_scale_reviewed": true,
+    "in_engine_reviewed": true,
+    "technical_checks_passed": true,
+    "approved_by": "owner (design session, 2026-10-31)",
+    "notes": "composited into map.webp by scripts/art/build-landmap.py"
+   }
+  },
+  {
+   "id": "lm-lighthouse",
+   "area": "landmap",
+   "role": "land map source: landmark Ven biển: lighthouse on the eastern cape (F20)",
+   "path": "public/ta-tua/game/assets/landmap/map.webp#lighthouse",
+   "status": "approved",
+   "technical": {
+    "dimensions": "32x64 canvas",
+    "alpha": true,
+    "anchor": "bottom-center (foot line)",
+    "frames": 1,
+    "filtering": "nearest",
+    "scale": "integer 1x / 2x / 3x (map picture)"
+   },
+   "visual_locks": [
+    "palette.json (48)",
+    "view: low top-down (foothill: side)",
+    "light: top-left",
+    "outline: #2e1d14 outer"
+   ],
+   "provenance": {
+    "kind": "generated",
+    "tool": "PixelLab MCP create_map_object",
+    "mode": "basic",
+    "pixellab_id": "eb132128-a654-4be5-9314-9a107e29e9fc",
+    "prompt": "cute cozy seaside lighthouse, round tower with red and cream stripes, glowing yellow lamp room with a small red dome roof, little cream keeper's hut at its foot, front view facing the viewer, standing directly on the ground, no base platform, no ground tile, chunky simple shapes, soft light from top-left, dark brown outline",
+    "params": {
+     "view": "low top-down",
+     "outline": "single color outline",
+     "shading": "medium shading",
+     "detail": "medium detail",
+     "size": "32x64",
+     "art_root_files": [
+      "phase3/landmap-concept/pal/lighthouse.png"
+     ]
+    },
+    "created_at": "2026-10-31",
+    "generation_cost": 1,
+    "postprocess": [
+     "remap.py --outline"
+    ],
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)"
+   },
+   "verification": {
+    "native_scale_reviewed": true,
+    "in_engine_reviewed": true,
+    "technical_checks_passed": true,
+    "approved_by": "owner (design session, 2026-10-31)",
+    "notes": "composited into map.webp by scripts/art/build-landmap.py"
+   }
+  },
+  {
+   "id": "lm-lmt-cliff-stone-a",
+   "area": "landmap",
+   "role": "land map source: cliff-face texture source for the south rim of the lower hills",
+   "path": "public/ta-tua/game/assets/landmap/map.webp#lmt-cliff-stone-a",
+   "status": "approved",
+   "technical": {
+    "dimensions": "121x20",
+    "alpha": true,
+    "anchor": "bottom-center (foot line)",
+    "frames": 1,
+    "filtering": "nearest",
+    "scale": "integer 1x / 2x / 3x (map picture)"
+   },
+   "visual_locks": [
+    "palette.json (48)",
+    "light: top-left",
+    "outline: #2e1d14 outer (objects); none (terrain, far ridge)"
+   ],
+   "provenance": {
+    "kind": "generated",
+    "tool": "PixelLab MCP create_image_pixen",
+    "mode": "no_background",
+    "pixellab_id": "a96a3ac4-7da0-48ed-b0d2-aab27fe12cf2",
+    "prompt": "sprite sheet of three separate short horizontal rocky cliff ledges seen from the front, spaced apart on transparent background: a thin strip of grass and brown earth on top, below it a low warm grey stone cliff face with cracks and a few small boulders at the foot, soft light from top-left, dark brown outline, chunky simple shapes",
+    "params": {
+     "size": "192x64",
+     "view": "no_background",
+     "outline": "single color outline",
+     "art_root_files": [
+      "phase3/lm-terrain/pal/cliff-stone-a.png"
+     ]
+    },
+    "created_at": "2026-10-31",
+    "generation_cost": 1,
+    "postprocess": [
+     "prep.py role ramps (OKLab hue class -> lightness-rank onto locked ramps)",
+     "remap.py --outline"
+    ],
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)"
+   },
+   "verification": {
+    "native_scale_reviewed": true,
+    "in_engine_reviewed": true,
+    "technical_checks_passed": true,
+    "approved_by": "owner (design session, 2026-10-31)",
+    "notes": "composited into map.webp by scripts/art/build-landmap.py"
+   }
+  },
+  {
+   "id": "lm-lmt-far-ridge",
+   "area": "landmap",
+   "role": "land map source: pale distant range strip behind the ridge (no ink outline; #6e6660 rim)",
+   "path": "public/ta-tua/game/assets/landmap/map.webp#lmt-far-ridge",
+   "status": "approved",
+   "technical": {
+    "dimensions": "320x37",
+    "alpha": true,
+    "anchor": "bottom-center (foot line)",
+    "frames": 1,
+    "filtering": "nearest",
+    "scale": "integer 1x / 2x / 3x (map picture)"
+   },
+   "visual_locks": [
+    "palette.json (48)",
+    "light: top-left",
+    "outline: #2e1d14 outer (objects); none (terrain, far ridge)"
+   ],
+   "provenance": {
+    "kind": "generated",
+    "tool": "PixelLab MCP create_image_pixen",
+    "mode": "no_background",
+    "pixellab_id": "6776786e-c456-4593-81e2-ade8a6a22f80",
+    "prompt": "distant pale mountain range silhouette on transparent background, a long horizontal row of soft hazy grey-blue snowy peaks of different heights, pale stone and light blue snow, faint atmospheric haze, simple flat shapes, no ground, no sky",
+    "params": {
+     "size": "320x96",
+     "view": "no_background",
+     "outline": "single color outline",
+     "art_root_files": [
+      "phase3/lm-terrain/pal/far-ridge.png"
+     ]
+    },
+    "created_at": "2026-10-31",
+    "generation_cost": 1,
+    "postprocess": [
+     "prep.py role ramps (OKLab hue class -> lightness-rank onto locked ramps)",
+     "remap.py --outline"
+    ],
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)"
+   },
+   "verification": {
+    "native_scale_reviewed": true,
+    "in_engine_reviewed": true,
+    "technical_checks_passed": true,
+    "approved_by": "owner (design session, 2026-10-31)",
+    "notes": "composited into map.webp by scripts/art/build-landmap.py"
+   }
+  },
+  {
+   "id": "lm-lmt-knoll-sm-earth-a",
+   "area": "landmap",
+   "role": "land map source: knoll, map scale (one per lower hill plot; rock-b behind the mine)",
+   "path": "public/ta-tua/game/assets/landmap/map.webp#lmt-knoll-sm-earth-a",
+   "status": "approved",
+   "technical": {
+    "dimensions": "40x19",
+    "alpha": true,
+    "anchor": "bottom-center (foot line)",
+    "frames": 1,
+    "filtering": "nearest",
+    "scale": "integer 1x / 2x / 3x (map picture)"
+   },
+   "visual_locks": [
+    "palette.json (48)",
+    "light: top-left",
+    "outline: #2e1d14 outer (objects); none (terrain, far ridge)"
+   ],
+   "provenance": {
+    "kind": "generated",
+    "tool": "PixelLab MCP create_image_pixen",
+    "mode": "no_background",
+    "pixellab_id": "63f81d02-8b53-4c8a-9e62-058ac6443663",
+    "prompt": "sprite sheet of four separate small low rounded hills seen from the side, spaced apart on transparent background: two warm brown earth mounds with a few grey pebbles and tiny grass tufts, two grey stone rocky knolls made of stacked boulders, soft light from top-left, dark brown outline, chunky simple shapes, no ground, no platform",
+    "params": {
+     "size": "192x64",
+     "view": "no_background",
+     "outline": "single color outline",
+     "art_root_files": [
+      "phase3/lm-terrain/pal/knoll-sm-earth-a.png"
+     ]
+    },
+    "created_at": "2026-10-31",
+    "generation_cost": 0,
+    "postprocess": [
+     "prep.py role ramps (OKLab hue class -> lightness-rank onto locked ramps)",
+     "remap.py --outline"
+    ],
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)"
+   },
+   "verification": {
+    "native_scale_reviewed": true,
+    "in_engine_reviewed": true,
+    "technical_checks_passed": true,
+    "approved_by": "owner (design session, 2026-10-31)",
+    "notes": "composited into map.webp by scripts/art/build-landmap.py"
+   }
+  },
+  {
+   "id": "lm-lmt-knoll-sm-earth-b",
+   "area": "landmap",
+   "role": "land map source: knoll, map scale (one per lower hill plot; rock-b behind the mine)",
+   "path": "public/ta-tua/game/assets/landmap/map.webp#lmt-knoll-sm-earth-b",
+   "status": "approved",
+   "technical": {
+    "dimensions": "41x23",
+    "alpha": true,
+    "anchor": "bottom-center (foot line)",
+    "frames": 1,
+    "filtering": "nearest",
+    "scale": "integer 1x / 2x / 3x (map picture)"
+   },
+   "visual_locks": [
+    "palette.json (48)",
+    "light: top-left",
+    "outline: #2e1d14 outer (objects); none (terrain, far ridge)"
+   ],
+   "provenance": {
+    "kind": "generated",
+    "tool": "PixelLab MCP create_image_pixen",
+    "mode": "no_background",
+    "pixellab_id": "63f81d02-8b53-4c8a-9e62-058ac6443663",
+    "prompt": "sprite sheet of four separate small low rounded hills seen from the side, spaced apart on transparent background: two warm brown earth mounds with a few grey pebbles and tiny grass tufts, two grey stone rocky knolls made of stacked boulders, soft light from top-left, dark brown outline, chunky simple shapes, no ground, no platform",
+    "params": {
+     "size": "192x64",
+     "view": "no_background",
+     "outline": "single color outline",
+     "art_root_files": [
+      "phase3/lm-terrain/pal/knoll-sm-earth-b.png"
+     ]
+    },
+    "created_at": "2026-10-31",
+    "generation_cost": 0,
+    "postprocess": [
+     "prep.py role ramps (OKLab hue class -> lightness-rank onto locked ramps)",
+     "remap.py --outline"
+    ],
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)"
+   },
+   "verification": {
+    "native_scale_reviewed": true,
+    "in_engine_reviewed": true,
+    "technical_checks_passed": true,
+    "approved_by": "owner (design session, 2026-10-31)",
+    "notes": "composited into map.webp by scripts/art/build-landmap.py"
+   }
+  },
+  {
+   "id": "lm-lmt-knoll-sm-rock-a",
+   "area": "landmap",
+   "role": "land map source: knoll, map scale (one per lower hill plot; rock-b behind the mine)",
+   "path": "public/ta-tua/game/assets/landmap/map.webp#lmt-knoll-sm-rock-a",
+   "status": "approved",
+   "technical": {
+    "dimensions": "40x19",
+    "alpha": true,
+    "anchor": "bottom-center (foot line)",
+    "frames": 1,
+    "filtering": "nearest",
+    "scale": "integer 1x / 2x / 3x (map picture)"
+   },
+   "visual_locks": [
+    "palette.json (48)",
+    "light: top-left",
+    "outline: #2e1d14 outer (objects); none (terrain, far ridge)"
+   ],
+   "provenance": {
+    "kind": "generated",
+    "tool": "PixelLab MCP create_image_pixen",
+    "mode": "no_background",
+    "pixellab_id": "63f81d02-8b53-4c8a-9e62-058ac6443663",
+    "prompt": "sprite sheet of four separate small low rounded hills seen from the side, spaced apart on transparent background: two warm brown earth mounds with a few grey pebbles and tiny grass tufts, two grey stone rocky knolls made of stacked boulders, soft light from top-left, dark brown outline, chunky simple shapes, no ground, no platform",
+    "params": {
+     "size": "192x64",
+     "view": "no_background",
+     "outline": "single color outline",
+     "art_root_files": [
+      "phase3/lm-terrain/pal/knoll-sm-rock-a.png"
+     ]
+    },
+    "created_at": "2026-10-31",
+    "generation_cost": 0,
+    "postprocess": [
+     "prep.py role ramps (OKLab hue class -> lightness-rank onto locked ramps)",
+     "remap.py --outline"
+    ],
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)"
+   },
+   "verification": {
+    "native_scale_reviewed": true,
+    "in_engine_reviewed": true,
+    "technical_checks_passed": true,
+    "approved_by": "owner (design session, 2026-10-31)",
+    "notes": "composited into map.webp by scripts/art/build-landmap.py"
+   }
+  },
+  {
+   "id": "lm-lmt-knoll-sm-rock-b",
+   "area": "landmap",
+   "role": "land map source: knoll, map scale (one per lower hill plot; rock-b behind the mine)",
+   "path": "public/ta-tua/game/assets/landmap/map.webp#lmt-knoll-sm-rock-b",
+   "status": "approved",
+   "technical": {
+    "dimensions": "37x20",
+    "alpha": true,
+    "anchor": "bottom-center (foot line)",
+    "frames": 1,
+    "filtering": "nearest",
+    "scale": "integer 1x / 2x / 3x (map picture)"
+   },
+   "visual_locks": [
+    "palette.json (48)",
+    "light: top-left",
+    "outline: #2e1d14 outer (objects); none (terrain, far ridge)"
+   ],
+   "provenance": {
+    "kind": "generated",
+    "tool": "PixelLab MCP create_image_pixen",
+    "mode": "no_background",
+    "pixellab_id": "63f81d02-8b53-4c8a-9e62-058ac6443663",
+    "prompt": "sprite sheet of four separate small low rounded hills seen from the side, spaced apart on transparent background: two warm brown earth mounds with a few grey pebbles and tiny grass tufts, two grey stone rocky knolls made of stacked boulders, soft light from top-left, dark brown outline, chunky simple shapes, no ground, no platform",
+    "params": {
+     "size": "192x64",
+     "view": "no_background",
+     "outline": "single color outline",
+     "art_root_files": [
+      "phase3/lm-terrain/pal/knoll-sm-rock-b.png"
+     ]
+    },
+    "created_at": "2026-10-31",
+    "generation_cost": 0,
+    "postprocess": [
+     "prep.py role ramps (OKLab hue class -> lightness-rank onto locked ramps)",
+     "remap.py --outline"
+    ],
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)"
+   },
+   "verification": {
+    "native_scale_reviewed": true,
+    "in_engine_reviewed": true,
+    "technical_checks_passed": true,
+    "approved_by": "owner (design session, 2026-10-31)",
+    "notes": "composited into map.webp by scripts/art/build-landmap.py"
+   }
+  },
+  {
+   "id": "lm-lmt-mountain-a",
+   "area": "landmap",
+   "role": "land map source: big snowy mountain, nearest ridge tier only",
+   "path": "public/ta-tua/game/assets/landmap/map.webp#lmt-mountain-a",
+   "status": "approved",
+   "technical": {
+    "dimensions": "86x73",
+    "alpha": true,
+    "anchor": "bottom-center (foot line)",
+    "frames": 1,
+    "filtering": "nearest",
+    "scale": "integer 1x / 2x / 3x (map picture)"
+   },
+   "visual_locks": [
+    "palette.json (48)",
+    "light: top-left",
+    "outline: #2e1d14 outer (objects); none (terrain, far ridge)"
+   ],
+   "provenance": {
+    "kind": "generated",
+    "tool": "PixelLab MCP create_map_object",
+    "mode": "basic low-top-down",
+    "pixellab_id": "221fc693-d1ce-46b5-89bf-af3bf213456f",
+    "prompt": "cute cozy big snow-capped mountain, front view, grey-brown rock slopes with thick white snow cap and soft blue snow shadows, rocky ridges, wide base, no ground, no base platform, chunky simple shapes, soft light from top-left, dark brown outline",
+    "params": {
+     "size": "96x96",
+     "view": "low-top-down",
+     "outline": "single color outline",
+     "art_root_files": [
+      "phase3/lm-terrain/pal/mountain-a.png"
+     ]
+    },
+    "created_at": "2026-10-31",
+    "generation_cost": 1,
+    "postprocess": [
+     "prep.py role ramps (OKLab hue class -> lightness-rank onto locked ramps)",
+     "remap.py --outline"
+    ],
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)"
+   },
+   "verification": {
+    "native_scale_reviewed": true,
+    "in_engine_reviewed": true,
+    "technical_checks_passed": true,
+    "approved_by": "owner (design session, 2026-10-31)",
+    "notes": "composited into map.webp by scripts/art/build-landmap.py"
+   }
+  },
+  {
+   "id": "lm-lmt-mountain-b",
+   "area": "landmap",
+   "role": "land map source: twin-peak mountain, ridge tiers 1-3",
+   "path": "public/ta-tua/game/assets/landmap/map.webp#lmt-mountain-b",
+   "status": "approved",
+   "technical": {
+    "dimensions": "73x54",
+    "alpha": true,
+    "anchor": "bottom-center (foot line)",
+    "frames": 1,
+    "filtering": "nearest",
+    "scale": "integer 1x / 2x / 3x (map picture)"
+   },
+   "visual_locks": [
+    "palette.json (48)",
+    "light: top-left",
+    "outline: #2e1d14 outer (objects); none (terrain, far ridge)"
+   ],
+   "provenance": {
+    "kind": "generated",
+    "tool": "PixelLab MCP create_map_object",
+    "mode": "basic side",
+    "pixellab_id": "76ffffcb-b587-4551-8567-93a652d08050",
+    "prompt": "cute cozy tall mountain with two snowy peaks, warm grey stone cliffs and brown earthy lower slopes, bright white snow on top with pale blue shadow side, wide base, no ground, no base platform, chunky simple shapes, soft light from top-left, dark brown outline",
+    "params": {
+     "size": "96x96",
+     "view": "side",
+     "outline": "single color outline",
+     "art_root_files": [
+      "phase3/lm-terrain/pal/mountain-b.png"
+     ]
+    },
+    "created_at": "2026-10-31",
+    "generation_cost": 1,
+    "postprocess": [
+     "prep.py role ramps (OKLab hue class -> lightness-rank onto locked ramps)",
+     "remap.py --outline"
+    ],
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)"
+   },
+   "verification": {
+    "native_scale_reviewed": true,
+    "in_engine_reviewed": true,
+    "technical_checks_passed": true,
+    "approved_by": "owner (design session, 2026-10-31)",
+    "notes": "composited into map.webp by scripts/art/build-landmap.py"
+   }
+  },
+  {
+   "id": "lm-lmt-mountain-c",
+   "area": "landmap",
+   "role": "land map source: broad three-summit massif, all tiers",
+   "path": "public/ta-tua/game/assets/landmap/map.webp#lmt-mountain-c",
+   "status": "approved",
+   "technical": {
+    "dimensions": "88x37",
+    "alpha": true,
+    "anchor": "bottom-center (foot line)",
+    "frames": 1,
+    "filtering": "nearest",
+    "scale": "integer 1x / 2x / 3x (map picture)"
+   },
+   "visual_locks": [
+    "palette.json (48)",
+    "light: top-left",
+    "outline: #2e1d14 outer (objects); none (terrain, far ridge)"
+   ],
+   "provenance": {
+    "kind": "generated",
+    "tool": "PixelLab MCP create_map_object",
+    "mode": "basic side",
+    "pixellab_id": "0cc37ce7-9853-421c-af22-09fc7e7c53f0",
+    "prompt": "cute cozy broad mountain massif with three rounded snowy summits, wide and lower than tall, warm grey stone ridges and brown earthy slopes, white snow caps with pale blue shadows, a few rocky ledges, no ground, no base platform, chunky simple shapes, soft light from top-left, dark brown outline",
+    "params": {
+     "size": "96x64",
+     "view": "side",
+     "outline": "single color outline",
+     "art_root_files": [
+      "phase3/lm-terrain/pal/mountain-c.png"
+     ]
+    },
+    "created_at": "2026-10-31",
+    "generation_cost": 1,
+    "postprocess": [
+     "prep.py role ramps (OKLab hue class -> lightness-rank onto locked ramps)",
+     "remap.py --outline"
+    ],
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)"
+   },
+   "verification": {
+    "native_scale_reviewed": true,
+    "in_engine_reviewed": true,
+    "technical_checks_passed": true,
+    "approved_by": "owner (design session, 2026-10-31)",
+    "notes": "composited into map.webp by scripts/art/build-landmap.py"
+   }
+  },
+  {
+   "id": "lm-lmt-mountain-d",
+   "area": "landmap",
+   "role": "land map source: huge rock-dominant mountain, tiers 2-4 (flat-cut base: keep it behind a nearer tier)",
+   "path": "public/ta-tua/game/assets/landmap/map.webp#lmt-mountain-d",
+   "status": "approved",
+   "technical": {
+    "dimensions": "127x73",
+    "alpha": true,
+    "anchor": "bottom-center (foot line)",
+    "frames": 1,
+    "filtering": "nearest",
+    "scale": "integer 1x / 2x / 3x (map picture)"
+   },
+   "visual_locks": [
+    "palette.json (48)",
+    "light: top-left",
+    "outline: #2e1d14 outer (objects); none (terrain, far ridge)"
+   ],
+   "provenance": {
+    "kind": "generated",
+    "tool": "PixelLab MCP create_map_object",
+    "mode": "basic side",
+    "pixellab_id": "2bec02c3-8190-4af7-be28-02933c3b12d7",
+    "prompt": "cute cozy huge massive mountain, broad wide base, mostly warm brown earth and grey stone rock faces with deep shadowed ravines, strong light on the left slopes, only a small white snow cap on the summit, rocky ledges and a few boulders, no ground, no base platform, chunky simple shapes, soft light from top-left, dark brown outline",
+    "params": {
+     "size": "128x96",
+     "view": "side",
+     "outline": "single color outline",
+     "art_root_files": [
+      "phase3/lm-terrain/pal/mountain-d.png"
+     ]
+    },
+    "created_at": "2026-10-31",
+    "generation_cost": 1,
+    "postprocess": [
+     "prep.py role ramps (OKLab hue class -> lightness-rank onto locked ramps)",
+     "remap.py --outline"
+    ],
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)"
+   },
+   "verification": {
+    "native_scale_reviewed": true,
+    "in_engine_reviewed": true,
+    "technical_checks_passed": true,
+    "approved_by": "owner (design session, 2026-10-31)",
+    "notes": "composited into map.webp by scripts/art/build-landmap.py"
+   }
+  },
+  {
+   "id": "lm-lmt-peak-a",
+   "area": "landmap",
+   "role": "land map source: small craggy peak, nearest tier (sparingly)",
+   "path": "public/ta-tua/game/assets/landmap/map.webp#lmt-peak-a",
+   "status": "approved",
+   "technical": {
+    "dimensions": "54x54",
+    "alpha": true,
+    "anchor": "bottom-center (foot line)",
+    "frames": 1,
+    "filtering": "nearest",
+    "scale": "integer 1x / 2x / 3x (map picture)"
+   },
+   "visual_locks": [
+    "palette.json (48)",
+    "light: top-left",
+    "outline: #2e1d14 outer (objects); none (terrain, far ridge)"
+   ],
+   "provenance": {
+    "kind": "generated",
+    "tool": "PixelLab MCP create_map_object",
+    "mode": "basic side",
+    "pixellab_id": "cdc4f384-ea3d-4352-bcae-289938297cc6",
+    "prompt": "cute cozy jagged rocky mountain peak, warm grey stone with brown earthy slopes, small white snow patch on the very tip, craggy ledges, no ground, no base platform, chunky simple shapes, soft light from top-left, dark brown outline",
+    "params": {
+     "size": "64x64",
+     "view": "side",
+     "outline": "single color outline",
+     "art_root_files": [
+      "phase3/lm-terrain/pal/peak-a.png"
+     ]
+    },
+    "created_at": "2026-10-31",
+    "generation_cost": 1,
+    "postprocess": [
+     "prep.py role ramps (OKLab hue class -> lightness-rank onto locked ramps)",
+     "remap.py --outline"
+    ],
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)"
+   },
+   "verification": {
+    "native_scale_reviewed": true,
+    "in_engine_reviewed": true,
+    "technical_checks_passed": true,
+    "approved_by": "owner (design session, 2026-10-31)",
+    "notes": "composited into map.webp by scripts/art/build-landmap.py"
+   }
+  },
+  {
+   "id": "lm-lmt-peak-b",
+   "area": "landmap",
+   "role": "land map source: clean single peak, all tiers",
+   "path": "public/ta-tua/game/assets/landmap/map.webp#lmt-peak-b",
+   "status": "approved",
+   "technical": {
+    "dimensions": "51x49",
+    "alpha": true,
+    "anchor": "bottom-center (foot line)",
+    "frames": 1,
+    "filtering": "nearest",
+    "scale": "integer 1x / 2x / 3x (map picture)"
+   },
+   "visual_locks": [
+    "palette.json (48)",
+    "light: top-left",
+    "outline: #2e1d14 outer (objects); none (terrain, far ridge)"
+   ],
+   "provenance": {
+    "kind": "generated",
+    "tool": "PixelLab MCP create_map_object",
+    "mode": "basic side",
+    "pixellab_id": "88ef7f74-6d8b-430e-b3aa-7cc4ed7c788a",
+    "prompt": "cute cozy single tall mountain peak, clean triangular silhouette, warm grey stone face on the right in shadow, brown earthy lit slope on the left, bright white snow cap with pale blue shadow, no ground, no base platform, chunky simple shapes, soft light from top-left, dark brown outline",
+    "params": {
+     "size": "64x64",
+     "view": "side",
+     "outline": "single color outline",
+     "art_root_files": [
+      "phase3/lm-terrain/pal/peak-b.png"
+     ]
+    },
+    "created_at": "2026-10-31",
+    "generation_cost": 1,
+    "postprocess": [
+     "prep.py role ramps (OKLab hue class -> lightness-rank onto locked ramps)",
+     "remap.py --outline"
+    ],
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)"
+   },
+   "verification": {
+    "native_scale_reviewed": true,
+    "in_engine_reviewed": true,
+    "technical_checks_passed": true,
+    "approved_by": "owner (design session, 2026-10-31)",
+    "notes": "composited into map.webp by scripts/art/build-landmap.py"
+   }
+  },
+  {
+   "id": "lm-lmt-tex-highland",
+   "area": "landmap",
+   "role": "land map source: highland earth texture, lone dark specks calmed",
+   "path": "public/ta-tua/game/assets/landmap/map.webp#lmt-tex-highland",
+   "status": "approved",
+   "technical": {
+    "dimensions": "16x16",
+    "alpha": false,
+    "anchor": "tile (repeat, world px mod 16)",
+    "frames": 1,
+    "filtering": "nearest",
+    "scale": "integer 1x / 2x / 3x (map picture)"
+   },
+   "visual_locks": [
+    "palette.json (48)",
+    "light: top-left",
+    "outline: #2e1d14 outer (objects); none (terrain, far ridge)"
+   ],
+   "provenance": {
+    "kind": "generated",
+    "tool": "PixelLab MCP create_topdown_tileset",
+    "mode": "standard",
+    "pixellab_id": "ef27b33a-fe68-4f6d-b441-af0b6b629b87",
+    "prompt": "lower: brown dirt path | upper: stony highland ground, warm brown earth scattered with small grey pebbles and gravel, a few flat grey rocks",
+    "params": {
+     "mode": "standard",
+     "tile_size": 16,
+     "detail": "medium detail",
+     "shading": "basic shading",
+     "view": "high top-down (standard)",
+     "art_root_files": [
+      "phase3/lm-terrain/pal/tex-highland.png"
+     ]
+    },
+    "created_at": "2026-10-31",
+    "generation_cost": 0,
+    "postprocess": [
+     "prep.py role ramps (OKLab hue class -> lightness-rank onto locked ramps)",
+     "remap.py --tile"
+    ],
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)"
+   },
+   "verification": {
+    "native_scale_reviewed": true,
+    "in_engine_reviewed": true,
+    "technical_checks_passed": true,
+    "approved_by": "owner (design session, 2026-10-31)",
+    "notes": "composited into map.webp by scripts/art/build-landmap.py"
+   }
+  },
+  {
+   "id": "lm-lmt-tex-paddy",
+   "area": "landmap",
+   "role": "land map source: flooded young-rice texture",
+   "path": "public/ta-tua/game/assets/landmap/map.webp#lmt-tex-paddy",
+   "status": "approved",
+   "technical": {
+    "dimensions": "16x16",
+    "alpha": false,
+    "anchor": "tile (repeat, world px mod 16)",
+    "frames": 1,
+    "filtering": "nearest",
+    "scale": "integer 1x / 2x / 3x (map picture)"
+   },
+   "visual_locks": [
+    "palette.json (48)",
+    "light: top-left",
+    "outline: #2e1d14 outer (objects); none (terrain, far ridge)"
+   ],
+   "provenance": {
+    "kind": "generated",
+    "tool": "PixelLab MCP create_topdown_tileset",
+    "mode": "standard",
+    "pixellab_id": "d69388d4-de5d-4923-80f2-96fc1c7bde13",
+    "prompt": "lower: soft green grass | upper: flooded rice paddy, shallow blue water with neat rows of bright green young rice shoots",
+    "params": {
+     "mode": "standard",
+     "tile_size": 16,
+     "detail": "medium detail",
+     "shading": "basic shading",
+     "view": "high top-down (standard)",
+     "art_root_files": [
+      "phase3/lm-terrain/pal/tex-paddy.png"
+     ]
+    },
+    "created_at": "2026-10-31",
+    "generation_cost": 0,
+    "postprocess": [
+     "prep.py role ramps (OKLab hue class -> lightness-rank onto locked ramps)",
+     "remap.py --tile"
+    ],
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)"
+   },
+   "verification": {
+    "native_scale_reviewed": true,
+    "in_engine_reviewed": true,
+    "technical_checks_passed": true,
+    "approved_by": "owner (design session, 2026-10-31)",
+    "notes": "composited into map.webp by scripts/art/build-landmap.py"
+   }
+  },
+  {
+   "id": "lm-lmt-tex-rice",
+   "area": "landmap",
+   "role": "land map source: green rice texture (free palette swap of tex-paddy)",
+   "path": "public/ta-tua/game/assets/landmap/map.webp#lmt-tex-rice",
+   "status": "approved",
+   "technical": {
+    "dimensions": "16x16",
+    "alpha": false,
+    "anchor": "tile (repeat, world px mod 16)",
+    "frames": 1,
+    "filtering": "nearest",
+    "scale": "integer 1x / 2x / 3x (map picture)"
+   },
+   "visual_locks": [
+    "palette.json (48)",
+    "light: top-left",
+    "outline: #2e1d14 outer (objects); none (terrain, far ridge)"
+   ],
+   "provenance": {
+    "kind": "derived",
+    "tool": "PixelLab MCP create_topdown_tileset",
+    "mode": "standard",
+    "pixellab_id": "d69388d4-de5d-4923-80f2-96fc1c7bde13",
+    "prompt": "lower: soft green grass | upper: flooded rice paddy, shallow blue water with neat rows of bright green young rice shoots",
+    "params": {
+     "mode": "standard",
+     "tile_size": 16,
+     "detail": "medium detail",
+     "shading": "basic shading",
+     "view": "high top-down (standard)",
+     "art_root_files": [
+      "phase3/lm-terrain/pal/tex-rice.png"
+     ]
+    },
+    "created_at": "2026-10-31",
+    "generation_cost": 0,
+    "postprocess": [
+     "prep.py role ramps (OKLab hue class -> lightness-rank onto locked ramps)",
+     "remap.py --tile"
+    ],
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)"
+   },
+   "verification": {
+    "native_scale_reviewed": true,
+    "in_engine_reviewed": true,
+    "technical_checks_passed": true,
+    "approved_by": "owner (design session, 2026-10-31)",
+    "notes": "composited into map.webp by scripts/art/build-landmap.py"
+   }
+  },
+  {
+   "id": "lm-lmt-tex-ripe",
+   "area": "landmap",
+   "role": "land map source: ripening rice texture (free swap)",
+   "path": "public/ta-tua/game/assets/landmap/map.webp#lmt-tex-ripe",
+   "status": "approved",
+   "technical": {
+    "dimensions": "16x16",
+    "alpha": false,
+    "anchor": "tile (repeat, world px mod 16)",
+    "frames": 1,
+    "filtering": "nearest",
+    "scale": "integer 1x / 2x / 3x (map picture)"
+   },
+   "visual_locks": [
+    "palette.json (48)",
+    "light: top-left",
+    "outline: #2e1d14 outer (objects); none (terrain, far ridge)"
+   ],
+   "provenance": {
+    "kind": "derived",
+    "tool": "PixelLab MCP create_topdown_tileset",
+    "mode": "standard",
+    "pixellab_id": "d69388d4-de5d-4923-80f2-96fc1c7bde13",
+    "prompt": "lower: soft green grass | upper: flooded rice paddy, shallow blue water with neat rows of bright green young rice shoots",
+    "params": {
+     "mode": "standard",
+     "tile_size": 16,
+     "detail": "medium detail",
+     "shading": "basic shading",
+     "view": "high top-down (standard)",
+     "art_root_files": [
+      "phase3/lm-terrain/pal/tex-ripe.png"
+     ]
+    },
+    "created_at": "2026-10-31",
+    "generation_cost": 0,
+    "postprocess": [
+     "prep.py role ramps (OKLab hue class -> lightness-rank onto locked ramps)",
+     "remap.py --tile"
+    ],
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)"
+   },
+   "verification": {
+    "native_scale_reviewed": true,
+    "in_engine_reviewed": true,
+    "technical_checks_passed": true,
+    "approved_by": "owner (design session, 2026-10-31)",
+    "notes": "composited into map.webp by scripts/art/build-landmap.py"
+   }
+  },
+  {
+   "id": "lm-lmt-tex-snow",
+   "area": "landmap",
+   "role": "land map source: snow ground texture (pure upper tile)",
+   "path": "public/ta-tua/game/assets/landmap/map.webp#lmt-tex-snow",
+   "status": "approved",
+   "technical": {
+    "dimensions": "16x16",
+    "alpha": false,
+    "anchor": "tile (repeat, world px mod 16)",
+    "frames": 1,
+    "filtering": "nearest",
+    "scale": "integer 1x / 2x / 3x (map picture)"
+   },
+   "visual_locks": [
+    "palette.json (48)",
+    "light: top-left",
+    "outline: #2e1d14 outer (objects); none (terrain, far ridge)"
+   ],
+   "provenance": {
+    "kind": "generated",
+    "tool": "PixelLab MCP create_topdown_tileset",
+    "mode": "standard",
+    "pixellab_id": "594c32c9-a35c-4220-b140-264afa2edd05",
+    "prompt": "lower: soft green grass | upper: deep mountain snowfield, soft pale blue shadows in drifts, small wind ripples, a few grey rocks poking through",
+    "params": {
+     "mode": "standard",
+     "tile_size": 16,
+     "detail": "medium detail",
+     "shading": "basic shading",
+     "view": "high top-down (standard)",
+     "art_root_files": [
+      "phase3/lm-terrain/pal/tex-snow.png"
+     ]
+    },
+    "created_at": "2026-10-31",
+    "generation_cost": 0,
+    "postprocess": [
+     "prep.py role ramps (OKLab hue class -> lightness-rank onto locked ramps)",
+     "remap.py --tile"
+    ],
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)"
+   },
+   "verification": {
+    "native_scale_reviewed": true,
+    "in_engine_reviewed": true,
+    "technical_checks_passed": true,
+    "approved_by": "owner (design session, 2026-10-31)",
+    "notes": "composited into map.webp by scripts/art/build-landmap.py"
+   }
+  },
+  {
+   "id": "lm-lmt-tex-tea",
+   "area": "landmap",
+   "role": "land map source: tea-row texture for the terraces",
+   "path": "public/ta-tua/game/assets/landmap/map.webp#lmt-tex-tea",
+   "status": "approved",
+   "technical": {
+    "dimensions": "16x16",
+    "alpha": false,
+    "anchor": "tile (repeat, world px mod 16)",
+    "frames": 1,
+    "filtering": "nearest",
+    "scale": "integer 1x / 2x / 3x (map picture)"
+   },
+   "visual_locks": [
+    "palette.json (48)",
+    "light: top-left",
+    "outline: #2e1d14 outer (objects); none (terrain, far ridge)"
+   ],
+   "provenance": {
+    "kind": "generated",
+    "tool": "PixelLab MCP create_topdown_tileset",
+    "mode": "standard",
+    "pixellab_id": "b9da19a9-9292-403a-a0fe-1493af530f74",
+    "prompt": "lower: soft green grass | upper: tea plantation, neat parallel rows of rounded teal-green tea bushes separated by thin brown earth paths",
+    "params": {
+     "mode": "standard",
+     "tile_size": 16,
+     "detail": "medium detail",
+     "shading": "basic shading",
+     "view": "high top-down (standard)",
+     "art_root_files": [
+      "phase3/lm-terrain/pal/tex-tea.png"
+     ]
+    },
+    "created_at": "2026-10-31",
+    "generation_cost": 0,
+    "postprocess": [
+     "prep.py role ramps (OKLab hue class -> lightness-rank onto locked ramps)",
+     "remap.py --tile"
+    ],
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)"
+   },
+   "verification": {
+    "native_scale_reviewed": true,
+    "in_engine_reviewed": true,
+    "technical_checks_passed": true,
+    "approved_by": "owner (design session, 2026-10-31)",
+    "notes": "composited into map.webp by scripts/art/build-landmap.py"
+   }
+  },
+  {
+   "id": "lm-lmt-tex-wheat",
+   "area": "landmap",
+   "role": "land map source: wheat field texture",
+   "path": "public/ta-tua/game/assets/landmap/map.webp#lmt-tex-wheat",
+   "status": "approved",
+   "technical": {
+    "dimensions": "16x16",
+    "alpha": false,
+    "anchor": "tile (repeat, world px mod 16)",
+    "frames": 1,
+    "filtering": "nearest",
+    "scale": "integer 1x / 2x / 3x (map picture)"
+   },
+   "visual_locks": [
+    "palette.json (48)",
+    "light: top-left",
+    "outline: #2e1d14 outer (objects); none (terrain, far ridge)"
+   ],
+   "provenance": {
+    "kind": "generated",
+    "tool": "PixelLab MCP create_topdown_tileset",
+    "mode": "standard",
+    "pixellab_id": "4be62411-64b9-46f7-a47c-42ba34af870c",
+    "prompt": "lower: soft green grass | upper: ripe golden wheat field, dense rows of yellow wheat ears, warm gold with darker ochre furrows",
+    "params": {
+     "mode": "standard",
+     "tile_size": 16,
+     "detail": "medium detail",
+     "shading": "basic shading",
+     "view": "high top-down (standard)",
+     "art_root_files": [
+      "phase3/lm-terrain/pal/tex-wheat.png"
+     ]
+    },
+    "created_at": "2026-10-31",
+    "generation_cost": 0,
+    "postprocess": [
+     "prep.py role ramps (OKLab hue class -> lightness-rank onto locked ramps)",
+     "remap.py --tile"
+    ],
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)"
+   },
+   "verification": {
+    "native_scale_reviewed": true,
+    "in_engine_reviewed": true,
+    "technical_checks_passed": true,
+    "approved_by": "owner (design session, 2026-10-31)",
+    "notes": "composited into map.webp by scripts/art/build-landmap.py"
+   }
+  },
+  {
+   "id": "lm-mine-rock",
+   "area": "landmap",
+   "role": "land map source: landmark Doi nui D06: mining station with its own rock face (replaces concept mine + knoll)",
+   "path": "public/ta-tua/game/assets/landmap/map.webp#mine-rock",
+   "status": "approved",
+   "technical": {
+    "dimensions": "44x42",
+    "alpha": true,
+    "anchor": "bottom-center (foot line)",
+    "frames": 1,
+    "filtering": "nearest",
+    "scale": "integer 1x / 2x / 3x (map picture)"
+   },
+   "visual_locks": [
+    "palette.json (48)",
+    "view: low top-down",
+    "light: top-left",
+    "outline: #2e1d14 outer (objects); lily pads flat"
+   ],
+   "provenance": {
+    "kind": "generated",
+    "tool": "PixelLab MCP create_map_object",
+    "mode": "basic",
+    "pixellab_id": "4d7e36b0-a8b3-4aa0-bd78-4d6f360bf9e6",
+    "prompt": "grey stone rock cliff outcrop with a dark mine tunnel entrance in its front face, the tunnel framed by thick wooden beams, small rail track leading out, front facing the viewer, no base platform, chunky simple shapes, soft light from top-left, dark brown outline",
+    "params": {
+     "view": "low top-down",
+     "outline": "single color outline",
+     "shading": "medium shading",
+     "detail": "medium detail",
+     "size": "44x44",
+     "art_root_files": [
+      "phase3/lm-landmarks/pal/mine-rock.png"
+     ]
+    },
+    "created_at": "2026-10-31",
+    "generation_cost": 1,
+    "postprocess": [
+     "crop",
+     "prep_colors.py grey-rock",
+     "remap.py --outline"
+    ],
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)"
+   },
+   "verification": {
+    "native_scale_reviewed": true,
+    "in_engine_reviewed": true,
+    "technical_checks_passed": true,
+    "approved_by": "owner (design session, 2026-10-31)",
+    "notes": "composited into map.webp by scripts/art/build-landmap.py"
+   }
+  },
+  {
+   "id": "lm-pagoda",
+   "area": "landmap",
+   "role": "land map source: landmark Đồi núi: hillside pagoda (C04), kept from today's map",
+   "path": "public/ta-tua/game/assets/landmap/map.webp#pagoda",
+   "status": "approved",
+   "technical": {
+    "dimensions": "48x48 canvas",
+    "alpha": true,
+    "anchor": "bottom-center (foot line)",
+    "frames": 1,
+    "filtering": "nearest",
+    "scale": "integer 1x / 2x / 3x (map picture)"
+   },
+   "visual_locks": [
+    "palette.json (48)",
+    "view: low top-down (foothill: side)",
+    "light: top-left",
+    "outline: #2e1d14 outer"
+   ],
+   "provenance": {
+    "kind": "generated",
+    "tool": "PixelLab MCP create_map_object",
+    "mode": "basic",
+    "pixellab_id": "60d8095f-8bfa-4c63-b737-3c86a73d727c",
+    "prompt": "small three-tiered hillside pagoda temple, curved upturned dark red tiled roofs with gold ridge tips, cream plaster walls, wooden pillars, tiny stone steps at the front, front view, no base platform, no ground, no grass, no text",
+    "params": {
+     "view": "low top-down",
+     "outline": "single color outline",
+     "shading": "medium shading",
+     "detail": "medium detail",
+     "size": "48x48",
+     "art_root_files": [
+      "phase3/landmap-concept/pal/pagoda.png"
+     ]
+    },
+    "created_at": "2026-10-31",
+    "generation_cost": 1,
+    "postprocess": [
+     "prep2.py: grass base cut (green below y 33), finial crossbar removed (2 px), loose rim pixels dropped",
+     "remap.py --outline"
+    ],
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)"
+   },
+   "verification": {
+    "native_scale_reviewed": true,
+    "in_engine_reviewed": true,
+    "technical_checks_passed": true,
+    "approved_by": "owner (design session, 2026-10-31)",
+    "notes": "composited into map.webp by scripts/art/build-landmap.py"
+   }
+  },
+  {
+   "id": "lm-river-decor",
+   "area": "landmap",
+   "role": "land map source: reeds, river stones, lily pads along the river outside the city",
+   "path": "public/ta-tua/game/assets/landmap/map.webp#river-decor",
+   "status": "approved",
+   "technical": {
+    "dimensions": "3x3, 4x4, 5x6, 7x5, 7x8, 9x9",
+    "alpha": true,
+    "anchor": "bottom-center",
+    "frames": 1,
+    "filtering": "nearest",
+    "scale": "integer 1x / 2x / 3x (map picture)"
+   },
+   "visual_locks": [
+    "palette.json (48)",
+    "view: low top-down",
+    "light: top-left",
+    "outline: #2e1d14 outer (objects); lily pads flat"
+   ],
+   "provenance": {
+    "kind": "hand-made (code, locked palette)",
+    "tool": "scripts/handdraw.py (colours and shapes after the pixen reeds sheet)",
+    "mode": "-",
+    "pixellab_id": null,
+    "prompt": null,
+    "params": {
+     "art_root_files": [
+      "phase3/lm-landmarks/pal/lily-a.png",
+      "phase3/lm-landmarks/pal/lily-b.png",
+      "phase3/lm-landmarks/pal/reeds-a.png",
+      "phase3/lm-landmarks/pal/reeds-b.png",
+      "phase3/lm-landmarks/pal/reeds-c.png",
+      "phase3/lm-landmarks/pal/river-stones-a.png",
+      "phase3/lm-landmarks/pal/river-stones-b.png"
+     ]
+    },
+    "created_at": "2026-10-31",
+    "generation_cost": 0,
+    "postprocess": [
+     "ink outline except lily pads"
+    ],
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)"
+   },
+   "verification": {
+    "native_scale_reviewed": true,
+    "in_engine_reviewed": true,
+    "technical_checks_passed": true,
+    "approved_by": "owner (design session, 2026-10-31)",
+    "notes": "composited into map.webp by scripts/art/build-landmap.py"
+   }
+  },
+  {
+   "id": "lm-sawmill",
+   "area": "landmap",
+   "role": "land map source: landmark Rừng: sawmill with water wheel (D15, by the river)",
+   "path": "public/ta-tua/game/assets/landmap/map.webp#sawmill",
+   "status": "approved",
+   "technical": {
+    "dimensions": "48x48 canvas",
+    "alpha": true,
+    "anchor": "bottom-center (foot line)",
+    "frames": 1,
+    "filtering": "nearest",
+    "scale": "integer 1x / 2x / 3x (map picture)"
+   },
+   "visual_locks": [
+    "palette.json (48)",
+    "view: low top-down (foothill: side)",
+    "light: top-left",
+    "outline: #2e1d14 outer"
+   ],
+   "provenance": {
+    "kind": "generated",
+    "tool": "PixelLab MCP create_map_object",
+    "mode": "basic",
+    "pixellab_id": "9e0b0b6a-fbfe-4803-957a-2f4d27225714",
+    "prompt": "cozy forest sawmill: small wooden cabin with a dark green roof and a big wooden water wheel on its side, stacked cut logs and a pile of planks in front, front view facing the viewer, no base platform, chunky simple shapes, soft light from top-left, dark brown outline",
+    "params": {
+     "view": "low top-down",
+     "outline": "single color outline",
+     "shading": "medium shading",
+     "detail": "medium detail",
+     "size": "48x48",
+     "art_root_files": [
+      "phase3/landmap-concept/pal/sawmill.png"
+     ]
+    },
+    "created_at": "2026-10-31",
+    "generation_cost": 1,
+    "postprocess": [
+     "prep.py: grass disc and earth rim removed",
+     "remap.py --outline"
+    ],
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)"
+   },
+   "verification": {
+    "native_scale_reviewed": true,
+    "in_engine_reviewed": true,
+    "technical_checks_passed": true,
+    "approved_by": "owner (design session, 2026-10-31)",
+    "notes": "composited into map.webp by scripts/art/build-landmap.py"
+   }
+  },
+  {
+   "id": "lm-sea-props-sheet",
+   "area": "landmap",
+   "role": "land map source: sea and beach props: 3 palms, 2 raft houses, 2 buoys, 2 rowboats, rocks, rock islet",
+   "path": "public/ta-tua/game/assets/landmap/map.webp#sea-props-sheet",
+   "status": "approved",
+   "technical": {
+    "dimensions": "128x96 canvas",
+    "alpha": true,
+    "anchor": "bottom-center (foot line)",
+    "frames": 1,
+    "filtering": "nearest",
+    "scale": "integer 1x / 2x / 3x (map picture)"
+   },
+   "visual_locks": [
+    "palette.json (48)",
+    "view: low top-down (foothill: side)",
+    "light: top-left",
+    "outline: #2e1d14 outer"
+   ],
+   "provenance": {
+    "kind": "generated",
+    "tool": "PixelLab MCP create_image_pixen",
+    "mode": "",
+    "pixellab_id": "54660181-890d-44b2-a475-ab4f52d40a28",
+    "prompt": "sprite sheet of twelve tiny separate seaside props on a transparent background, three rows: small palm trees, little floating wooden raft houses with red roofs, red and white buoys, tiny fishing rowboats, small grey sea rocks, overworld map, each about 16 pixels, empty space between them, chunky simple shapes, soft light from top-left, dark brown outline",
+    "params": {
+     "view": "low top-down",
+     "outline": "single color outline",
+     "detail": "medium detail",
+     "no_background": true,
+     "size": "128x96",
+     "art_root_files": [
+      "phase3/landmap-concept/pal/sea-props-sheet-00.png",
+      "phase3/landmap-concept/pal/sea-props-sheet-01.png",
+      "phase3/landmap-concept/pal/sea-props-sheet-02.png",
+      "phase3/landmap-concept/pal/sea-props-sheet-04.png",
+      "phase3/landmap-concept/pal/sea-props-sheet-08.png"
+     ]
+    },
+    "created_at": "2026-10-31",
+    "generation_cost": 1,
+    "postprocess": [
+     "remap.py --outline",
+     "sliced (12)",
+     "03 (map-like tile) and 06-07 (buoys) unused"
+    ],
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)"
+   },
+   "verification": {
+    "native_scale_reviewed": true,
+    "in_engine_reviewed": true,
+    "technical_checks_passed": true,
+    "approved_by": "owner (design session, 2026-10-31)",
+    "notes": "composited into map.webp by scripts/art/build-landmap.py"
+   }
+  },
+  {
+   "id": "lm-ship",
+   "area": "landmap",
+   "role": "land map source: sailing ship (sea plots, sea margin)",
+   "path": "public/ta-tua/game/assets/landmap/map.webp#ship",
+   "status": "approved",
+   "technical": {
+    "dimensions": "32x32 canvas",
+    "alpha": true,
+    "anchor": "bottom-center (foot line)",
+    "frames": 1,
+    "filtering": "nearest",
+    "scale": "integer 1x / 2x / 3x (map picture)"
+   },
+   "visual_locks": [
+    "palette.json (48)",
+    "view: low top-down (foothill: side)",
+    "light: top-left",
+    "outline: #2e1d14 outer"
+   ],
+   "provenance": {
+    "kind": "generated",
+    "tool": "PixelLab MCP create_map_object",
+    "mode": "basic",
+    "pixellab_id": "8a37ae28-cdb9-4707-8fe3-ff4a0ffc6b4f",
+    "prompt": "small cute wooden sailing ship with a brown hull, one big cream sail and a little red pennant flag, side facing the viewer, seen from slightly above, floating, no water around it, chunky simple shapes, soft light from top-left, dark brown outline",
+    "params": {
+     "view": "low top-down",
+     "outline": "single color outline",
+     "shading": "medium shading",
+     "detail": "medium detail",
+     "size": "32x32",
+     "art_root_files": [
+      "phase3/landmap-concept/pal/ship.png"
+     ]
+    },
+    "created_at": "2026-10-31",
+    "generation_cost": 1,
+    "postprocess": [
+     "remap.py --outline"
+    ],
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)"
+   },
+   "verification": {
+    "native_scale_reviewed": true,
+    "in_engine_reviewed": true,
+    "technical_checks_passed": true,
+    "approved_by": "owner (design session, 2026-10-31)",
+    "notes": "composited into map.webp by scripts/art/build-landmap.py"
+   }
+  },
+  {
+   "id": "lm-townhall-front",
+   "area": "landmap",
+   "role": "land map source: landmark Trung tâm: town hall with clock tower (E10, all six neighbours urban)",
+   "path": "public/ta-tua/game/assets/landmap/map.webp#townhall-front",
+   "status": "approved",
+   "technical": {
+    "dimensions": "64x64 canvas",
+    "alpha": true,
+    "anchor": "bottom-center (foot line)",
+    "frames": 1,
+    "filtering": "nearest",
+    "scale": "integer 1x / 2x / 3x (map picture)"
+   },
+   "visual_locks": [
+    "palette.json (48)",
+    "view: low top-down (foothill: side)",
+    "light: top-left",
+    "outline: #2e1d14 outer"
+   ],
+   "provenance": {
+    "kind": "generated",
+    "tool": "PixelLab MCP create_map_object",
+    "mode": "basic",
+    "pixellab_id": "e5582829-9d9a-45cc-a474-f26de8234f0a",
+    "prompt": "cute cozy town hall seen straight from the front, symmetrical cream facade with columns and a wide teal roof, a tall central clock tower with a plain round golden clock face with only two hands, little red flag on top, wide steps at the door, front facade facing the viewer, not isometric, standing directly on the ground, no base platform, chunky simple shapes, soft light from top-left, dark brown outline, no text, no letters, no numbers",
+    "params": {
+     "view": "low top-down",
+     "outline": "single color outline",
+     "shading": "medium shading",
+     "detail": "medium detail",
+     "size": "64x64",
+     "art_root_files": [
+      "phase3/landmap-concept/pal/townhall-front.png"
+     ]
+    },
+    "created_at": "2026-10-31",
+    "generation_cost": 1,
+    "postprocess": [
+     "remap.py --outline"
+    ],
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)"
+   },
+   "verification": {
+    "native_scale_reviewed": true,
+    "in_engine_reviewed": true,
+    "technical_checks_passed": true,
+    "approved_by": "owner (design session, 2026-10-31)",
+    "notes": "composited into map.webp by scripts/art/build-landmap.py"
+   }
+  },
+  {
+   "id": "lm-trees-sheet",
+   "area": "landmap",
+   "role": "land map source: trees: 6 broadleaf + 6 pines, 16-17 x 20-22 (forest, plains, city)",
+   "path": "public/ta-tua/game/assets/landmap/map.webp#trees-sheet",
+   "status": "approved",
+   "technical": {
+    "dimensions": "128x64 canvas",
+    "alpha": true,
+    "anchor": "bottom-center (foot line)",
+    "frames": 1,
+    "filtering": "nearest",
+    "scale": "integer 1x / 2x / 3x (map picture)"
+   },
+   "visual_locks": [
+    "palette.json (48)",
+    "view: low top-down (foothill: side)",
+    "light: top-left",
+    "outline: #2e1d14 outer"
+   ],
+   "provenance": {
+    "kind": "generated",
+    "tool": "PixelLab MCP create_image_pixen",
+    "mode": "",
+    "pixellab_id": "46200e34-748e-47cd-93cd-e3b4e58254fb",
+    "prompt": "sprite sheet of ten tiny separate overworld map trees on a transparent background, two rows: round leafy light green trees and dark green pine trees, each tree about 12 pixels wide with a short brown trunk, evenly spaced with empty space between them, chunky simple shapes, soft light from top-left, dark brown outline",
+    "params": {
+     "view": "low top-down",
+     "outline": "single color outline",
+     "detail": "medium detail",
+     "no_background": true,
+     "size": "128x64",
+     "art_root_files": [
+      "phase3/landmap-concept/pal/trees-sheet-02.png",
+      "phase3/landmap-concept/pal/trees-sheet-03.png",
+      "phase3/landmap-concept/pal/trees-sheet-04.png",
+      "phase3/landmap-concept/pal/trees-sheet-05.png",
+      "phase3/landmap-concept/pal/trees-sheet-06.png",
+      "phase3/landmap-concept/pal/trees-sheet-07.png",
+      "phase3/landmap-concept/pal/trees-sheet-08.png",
+      "phase3/landmap-concept/pal/trees-sheet-09.png",
+      "phase3/landmap-concept/pal/trees-sheet-10.png",
+      "phase3/landmap-concept/pal/trees-sheet-11.png"
+     ]
+    },
+    "created_at": "2026-10-31",
+    "generation_cost": 1,
+    "postprocess": [
+     "remap.py --outline on the sheet",
+     "prep.py: 8-connected slicing into 12 sprites",
+     "sprites 00-01 unused (grey crowns after remap)"
+    ],
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)"
+   },
+   "verification": {
+    "native_scale_reviewed": true,
+    "in_engine_reviewed": true,
+    "technical_checks_passed": true,
+    "approved_by": "owner (design session, 2026-10-31)",
+    "notes": "composited into map.webp by scripts/art/build-landmap.py"
+   }
+  },
+  {
+   "id": "lm-waterfall-anim",
+   "area": "landmap",
+   "role": "land map source: landmark Ven song E01: animated waterfall (water layer only moves)",
+   "path": "public/ta-tua/game/assets/landmap/map.webp#waterfall-anim",
+   "status": "approved",
+   "technical": {
+    "dimensions": "53x60",
+    "alpha": true,
+    "anchor": "bottom-center (foot line); same 53x60 canvas as the concept waterfall-stone",
+    "frames": 7,
+    "filtering": "nearest",
+    "scale": "integer 1x / 2x / 3x (map picture)",
+    "fps": 8,
+    "loop": "01-06 forward"
+   },
+   "visual_locks": [
+    "palette.json (48)",
+    "view: low top-down",
+    "light: top-left",
+    "outline: #2e1d14 outer (objects); lily pads flat"
+   ],
+   "provenance": {
+    "kind": "generated",
+    "tool": "PixelLab MCP animate_image",
+    "mode": "frame_count 6, no_background",
+    "pixellab_id": "80c21105-a79f-4020-8b40-6a515178cdeb",
+    "prompt": "water of the waterfall streaming down and splashing into the pool with foam ripples, looping; the grey rock cliff and moss stay perfectly still",
+    "params": {
+     "first_frame": "concept pal/waterfall-stone.png padded to 64x64 at (5,2)",
+     "size": "64x64x6",
+     "art_root_files": [
+      "phase3/lm-landmarks/pal/waterfall-00.png",
+      "phase3/lm-landmarks/pal/waterfall-01.png",
+      "phase3/lm-landmarks/pal/waterfall-02.png",
+      "phase3/lm-landmarks/pal/waterfall-03.png",
+      "phase3/lm-landmarks/pal/waterfall-04.png",
+      "phase3/lm-landmarks/pal/waterfall-05.png",
+      "phase3/lm-landmarks/pal/waterfall-06.png"
+     ]
+    },
+    "created_at": "2026-10-31",
+    "generation_cost": 1,
+    "postprocess": [
+     "remap.py --pad 0 per frame",
+     "water_merge.py: only base-water pixels take the frame colour; rock/moss/outline byte-identical",
+     "crop back to 53x60"
+    ],
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)"
+   },
+   "verification": {
+    "native_scale_reviewed": true,
+    "in_engine_reviewed": true,
+    "technical_checks_passed": true,
+    "approved_by": "owner (design session, 2026-10-31)",
+    "notes": "composited into map.webp by scripts/art/build-landmap.py"
+   }
+  },
+  {
+   "id": "lm-windmill-sails",
+   "area": "landmap",
+   "role": "land map source: landmark Dong bang I06: windmill with turning sails",
+   "path": "public/ta-tua/game/assets/landmap/map.webp#windmill-sails",
+   "status": "approved",
+   "technical": {
+    "dimensions": "36x60",
+    "alpha": true,
+    "anchor": "bottom-center; canvas 36x60 (concept windmill was 32x51; foot unchanged at the bottom row)",
+    "frames": 4,
+    "filtering": "nearest",
+    "scale": "integer 1x / 2x / 3x (map picture)",
+    "fps": 8,
+    "loop": "00-03 forward"
+   },
+   "visual_locks": [
+    "palette.json (48)",
+    "view: low top-down",
+    "light: top-left",
+    "outline: #2e1d14 outer (objects); lily pads flat"
+   ],
+   "provenance": {
+    "kind": "hand-made (code, locked palette)",
+    "tool": "scripts/windmill_frames.py over concept pal/windmill.png tower",
+    "mode": "-",
+    "pixellab_id": null,
+    "prompt": null,
+    "params": {
+     "art_root_files": [
+      "phase3/lm-landmarks/pal/windmill-sails-00.png",
+      "phase3/lm-landmarks/pal/windmill-sails-01.png",
+      "phase3/lm-landmarks/pal/windmill-sails-02.png",
+      "phase3/lm-landmarks/pal/windmill-sails-03.png"
+     ]
+    },
+    "created_at": "2026-10-31",
+    "generation_cost": 0,
+    "postprocess": [
+     "old sails and cap removed, tower wall rebuilt, dome cap and 4 blades drawn per frame, ink outline"
+    ],
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)"
+   },
+   "verification": {
+    "native_scale_reviewed": true,
+    "in_engine_reviewed": true,
+    "technical_checks_passed": true,
+    "approved_by": "owner (design session, 2026-10-31)",
+    "notes": "composited into map.webp by scripts/art/build-landmap.py"
    }
   }
  ],
