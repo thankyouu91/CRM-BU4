@@ -5247,39 +5247,6 @@
    }
   },
   {
-   "id": "npc-villager",
-   "area": "town",
-   "role": "NPC villager: idle south/east/north/west; walk south/east",
-   "path": "public/ta-tua/game/assets/town/town.json#npc-villager-*",
-   "status": "approved",
-   "technical": {
-    "dimensions": "",
-    "alpha": true,
-    "anchor": "bottom-center",
-    "frames": 20,
-    "filtering": "nearest",
-    "scale": "integer 3x desktop / 2x phone"
-   },
-   "visual_locks": [
-    "palette.json",
-    "view: low top-down",
-    "light: top-left",
-    "outline: #2e1d14 outer"
-   ],
-   "provenance": {
-    "kind": "generated",
-    "package": "npc-3",
-    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)"
-   },
-   "verification": {
-    "native_scale_reviewed": true,
-    "in_engine_reviewed": true,
-    "technical_checks_passed": true,
-    "approved_by": "owner (design session, 2026-10-31)",
-    "notes": "packed by scripts/art/build-town.py"
-   }
-  },
-  {
    "id": "fx-fountain",
    "area": "town",
    "role": "ambient: fountain loop (ping-pong)",
@@ -6483,6 +6450,1379 @@
     "technical_checks_passed": true,
     "approved_by": "owner (design session, 2026-10-31)",
     "notes": "off-palette=0 colours=40"
+   }
+  },
+  {
+   "id": "park-ground",
+   "role": "park background: base terrain plus flat ground-layer decals",
+   "path": "public/ta-tua/game/assets/park/ground.webp",
+   "status": "approved",
+   "technical": {
+    "dimensions": "672x200",
+    "bytes": 19142,
+    "filtering": "nearest",
+    "scale": "world = 3 units per art px; integer 3x desktop / 2x phone on screen"
+   },
+   "provenance": {
+    "kind": "composed",
+    "tool": "scripts/art/build-park.py",
+    "layout": "phase1/park-1/layout.json",
+    "sources": [
+     "phase1/park-1/park-base.png"
+    ],
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)"
+   },
+   "verification": {
+    "technical_checks_passed": true,
+    "in_engine_reviewed": true,
+    "approved_by": "owner (design session, 2026-10-31)"
+   }
+  },
+  {
+   "id": "park-bench",
+   "role": "park object, animation or visitor frames",
+   "path": "public/ta-tua/game/assets/park/objects.webp#bench",
+   "status": "approved",
+   "technical": {
+    "frames": 1,
+    "anchor": "foot centre (ax, ay in park.json)",
+    "filtering": "nearest"
+   },
+   "provenance": {
+    "kind": "derived",
+    "sources": [
+     "phase1/park-1/park-objects/bench.png"
+    ],
+    "source_id": "prop-bench",
+    "generation": {
+     "kind": "generated",
+     "tool": "PixelLab MCP create_map_object",
+     "mode": "basic",
+     "pixellab_id": "7f7c5055-ac24-4559-9294-1c3c9ad2a1e2",
+     "prompt": "cute cozy wooden park bench, warm brown planks, chunky simple shapes, soft light from top-left, dark brown outline",
+     "params": {
+      "view": "low top-down",
+      "outline": "single color outline",
+      "shading": "medium shading",
+      "detail": "medium detail",
+      "size": "48x32"
+     },
+     "created_at": "2026-10-31",
+     "generation_cost": 1,
+     "postprocess": [
+      "remap.py: OKLab nearest, chroma x2, palette.json (48)",
+      "alpha threshold 128",
+      "outer outline #2e1d14 + 1px pad"
+     ],
+     "license": "PixelLab ToS (subscription, commercial use per https://pixellab.ai/termsofservice) — verify before ship"
+    },
+    "postprocess": [
+     "cropped to the strip bbox",
+     "packed into objects.webp (lossless WebP)"
+    ],
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)"
+   },
+   "verification": {
+    "in_engine_reviewed": true,
+    "approved_by": "owner (design session, 2026-10-31)"
+   }
+  },
+  {
+   "id": "park-bush",
+   "role": "park object, animation or visitor frames",
+   "path": "public/ta-tua/game/assets/park/objects.webp#bush",
+   "status": "approved",
+   "technical": {
+    "frames": 1,
+    "anchor": "foot centre (ax, ay in park.json)",
+    "filtering": "nearest"
+   },
+   "provenance": {
+    "kind": "derived",
+    "sources": [
+     "phase1/park-1/park-objects/bush.png"
+    ],
+    "source_id": "prop-bush",
+    "generation": {
+     "kind": "reused",
+     "tool": "-",
+     "mode": "-",
+     "pixellab_id": "",
+     "prompt": "",
+     "params": {
+      "source": "S/phase1/props-2/pal/bush-small.png (sha1 4f4e25344e04)"
+     },
+     "created_at": "2026-10-31",
+     "generation_cost": 0,
+     "postprocess": [
+      "copied unchanged"
+     ],
+     "license": "see source manifest"
+    },
+    "postprocess": [
+     "cropped to the strip bbox",
+     "packed into objects.webp (lossless WebP)"
+    ],
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)"
+   },
+   "verification": {
+    "in_engine_reviewed": true,
+    "approved_by": "owner (design session, 2026-10-31)"
+   }
+  },
+  {
+   "id": "park-bush-large",
+   "role": "park object, animation or visitor frames",
+   "path": "public/ta-tua/game/assets/park/objects.webp#bush-large",
+   "status": "approved",
+   "technical": {
+    "frames": 1,
+    "anchor": "foot centre (ax, ay in park.json)",
+    "filtering": "nearest"
+   },
+   "provenance": {
+    "kind": "derived",
+    "sources": [
+     "phase1/park-1/park-objects/bush-large.png"
+    ],
+    "source_id": "prop-bush-large",
+    "generation": {
+     "kind": "reused",
+     "tool": "-",
+     "mode": "-",
+     "pixellab_id": "",
+     "prompt": "",
+     "params": {
+      "source": "S/phase1/props-2/pal/bush-large.png (sha1 b535eb668404)"
+     },
+     "created_at": "2026-10-31",
+     "generation_cost": 0,
+     "postprocess": [
+      "copied unchanged"
+     ],
+     "license": "see source manifest"
+    },
+    "postprocess": [
+     "cropped to the strip bbox",
+     "packed into objects.webp (lossless WebP)"
+    ],
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)"
+   },
+   "verification": {
+    "in_engine_reviewed": true,
+    "approved_by": "owner (design session, 2026-10-31)"
+   }
+  },
+  {
+   "id": "park-dock",
+   "role": "park object, animation or visitor frames",
+   "path": "public/ta-tua/game/assets/park/objects.webp#dock",
+   "status": "approved",
+   "technical": {
+    "frames": 1,
+    "anchor": "foot centre (ax, ay in park.json)",
+    "filtering": "nearest"
+   },
+   "provenance": {
+    "kind": "derived",
+    "sources": [
+     "phase1/park-1/park-objects/dock.png"
+    ],
+    "source_id": "prop-dock",
+    "generation": {
+     "kind": "hand-made",
+     "tool": "park-1/scripts/dock.py",
+     "mode": "-",
+     "pixellab_id": "",
+     "prompt": "",
+     "params": {
+      "size": "20x26"
+     },
+     "created_at": "2026-10-31",
+     "generation_cost": 0,
+     "postprocess": [
+      "palette wood ramp + #2e1d14 outline drawn directly"
+     ],
+     "license": "original"
+    },
+    "postprocess": [
+     "cropped to the strip bbox",
+     "packed into objects.webp (lossless WebP)"
+    ],
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)"
+   },
+   "verification": {
+    "in_engine_reviewed": true,
+    "approved_by": "owner (design session, 2026-10-31)"
+   }
+  },
+  {
+   "id": "park-fountain-lg-anim",
+   "role": "park object, animation or visitor frames",
+   "path": "public/ta-tua/game/assets/park/objects.webp#fountain-lg-anim",
+   "status": "approved",
+   "technical": {
+    "frames": 5,
+    "anchor": "foot centre (ax, ay in park.json)",
+    "filtering": "nearest"
+   },
+   "provenance": {
+    "kind": "derived",
+    "sources": [
+     "phase1/park-2/pal/fountain-lg-anim/0.png",
+     "phase1/park-2/pal/fountain-lg-anim/1.png",
+     "+3 more"
+    ],
+    "source_id": null,
+    "generation": "see the art package manifest.json / report.md",
+    "postprocess": [
+     "cropped to the strip bbox",
+     "packed into objects.webp (lossless WebP)"
+    ],
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)"
+   },
+   "verification": {
+    "in_engine_reviewed": true,
+    "approved_by": "owner (design session, 2026-10-31)"
+   }
+  },
+  {
+   "id": "park-fx-butterfly-blue",
+   "role": "park object, animation or visitor frames",
+   "path": "public/ta-tua/game/assets/park/objects.webp#fx-butterfly-blue",
+   "status": "approved",
+   "technical": {
+    "frames": 4,
+    "anchor": "foot centre (ax, ay in park.json)",
+    "filtering": "nearest"
+   },
+   "provenance": {
+    "kind": "derived",
+    "sources": [
+     "phase1/ambient-2/pal/fx-butterfly-blue/0.png",
+     "phase1/ambient-2/pal/fx-butterfly-blue/1.png",
+     "+2 more"
+    ],
+    "source_id": "fx-butterfly-blue",
+    "generation": {
+     "kind": "hand-drawn",
+     "tool": "local Python/PIL pixel grids (phase1/ambient-2/scripts/butterfly.py)",
+     "mode": "hand-drawn (0 PixelLab calls)",
+     "pixellab_id": null,
+     "prompt": "",
+     "params": {
+      "frame_w": 12,
+      "frame_h": 12,
+      "frames": 4,
+      "ms": [
+       80,
+       80,
+       80,
+       80
+      ]
+     },
+     "created_at": "2026-10-31",
+     "generation_cost": 0,
+     "postprocess": [
+      "hand-drawn grids in palette.json letters (scripts/common.py LEG asserts every colour is in palette.json)",
+      "outer 1px #2e1d14 outline drawn by scripts/common.py outline() (4-neighbour, outside)",
+      "phase0 remap.py palette.json in out --outline --pad 0 on every frame (verified no-op on all visible pixels)",
+      "phase0 audit.py: off-palette=0, semi-alpha=0"
+     ],
+     "license": "original pixel art drawn for Pet Farm in this session; no third-party or AI-generated source"
+    },
+    "postprocess": [
+     "cropped to the strip bbox",
+     "packed into objects.webp (lossless WebP)"
+    ],
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)"
+   },
+   "verification": {
+    "in_engine_reviewed": true,
+    "approved_by": "owner (design session, 2026-10-31)"
+   }
+  },
+  {
+   "id": "park-fx-butterfly-pink",
+   "role": "park object, animation or visitor frames",
+   "path": "public/ta-tua/game/assets/park/objects.webp#fx-butterfly-pink",
+   "status": "approved",
+   "technical": {
+    "frames": 4,
+    "anchor": "foot centre (ax, ay in park.json)",
+    "filtering": "nearest"
+   },
+   "provenance": {
+    "kind": "derived",
+    "sources": [
+     "phase1/ambient-2/pal/fx-butterfly-pink/0.png",
+     "phase1/ambient-2/pal/fx-butterfly-pink/1.png",
+     "+2 more"
+    ],
+    "source_id": "fx-butterfly-pink",
+    "generation": {
+     "kind": "hand-drawn",
+     "tool": "local Python/PIL pixel grids (phase1/ambient-2/scripts/butterfly.py)",
+     "mode": "hand-drawn (0 PixelLab calls)",
+     "pixellab_id": null,
+     "prompt": "",
+     "params": {
+      "frame_w": 12,
+      "frame_h": 12,
+      "frames": 4,
+      "ms": [
+       80,
+       80,
+       80,
+       80
+      ]
+     },
+     "created_at": "2026-10-31",
+     "generation_cost": 0,
+     "postprocess": [
+      "hand-drawn grids in palette.json letters (scripts/common.py LEG asserts every colour is in palette.json)",
+      "outer 1px #2e1d14 outline drawn by scripts/common.py outline() (4-neighbour, outside)",
+      "phase0 remap.py palette.json in out --outline --pad 0 on every frame (verified no-op on all visible pixels)",
+      "phase0 audit.py: off-palette=0, semi-alpha=0"
+     ],
+     "license": "original pixel art drawn for Pet Farm in this session; no third-party or AI-generated source"
+    },
+    "postprocess": [
+     "cropped to the strip bbox",
+     "packed into objects.webp (lossless WebP)"
+    ],
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)"
+   },
+   "verification": {
+    "in_engine_reviewed": true,
+    "approved_by": "owner (design session, 2026-10-31)"
+   }
+  },
+  {
+   "id": "park-fx-butterfly-yellow",
+   "role": "park object, animation or visitor frames",
+   "path": "public/ta-tua/game/assets/park/objects.webp#fx-butterfly-yellow",
+   "status": "approved",
+   "technical": {
+    "frames": 4,
+    "anchor": "foot centre (ax, ay in park.json)",
+    "filtering": "nearest"
+   },
+   "provenance": {
+    "kind": "derived",
+    "sources": [
+     "phase1/ambient-2/pal/fx-butterfly-yellow/0.png",
+     "phase1/ambient-2/pal/fx-butterfly-yellow/1.png",
+     "+2 more"
+    ],
+    "source_id": "fx-butterfly-yellow",
+    "generation": {
+     "kind": "hand-drawn",
+     "tool": "local Python/PIL pixel grids (phase1/ambient-2/scripts/butterfly.py)",
+     "mode": "hand-drawn (0 PixelLab calls)",
+     "pixellab_id": null,
+     "prompt": "",
+     "params": {
+      "frame_w": 12,
+      "frame_h": 12,
+      "frames": 4,
+      "ms": [
+       80,
+       80,
+       80,
+       80
+      ]
+     },
+     "created_at": "2026-10-31",
+     "generation_cost": 0,
+     "postprocess": [
+      "hand-drawn grids in palette.json letters (scripts/common.py LEG asserts every colour is in palette.json)",
+      "outer 1px #2e1d14 outline drawn by scripts/common.py outline() (4-neighbour, outside)",
+      "phase0 remap.py palette.json in out --outline --pad 0 on every frame (verified no-op on all visible pixels)",
+      "phase0 audit.py: off-palette=0, semi-alpha=0"
+     ],
+     "license": "original pixel art drawn for Pet Farm in this session; no third-party or AI-generated source"
+    },
+    "postprocess": [
+     "cropped to the strip bbox",
+     "packed into objects.webp (lossless WebP)"
+    ],
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)"
+   },
+   "verification": {
+    "in_engine_reviewed": true,
+    "approved_by": "owner (design session, 2026-10-31)"
+   }
+  },
+  {
+   "id": "park-fx-pond-ripple",
+   "role": "park object, animation or visitor frames",
+   "path": "public/ta-tua/game/assets/park/objects.webp#fx-pond-ripple",
+   "status": "approved",
+   "technical": {
+    "frames": 8,
+    "anchor": "foot centre (ax, ay in park.json)",
+    "filtering": "nearest"
+   },
+   "provenance": {
+    "kind": "derived",
+    "sources": [
+     "phase1/ambient-1/pal/fx-pond-ripple/0.png",
+     "phase1/ambient-1/pal/fx-pond-ripple/1.png",
+     "+6 more"
+    ],
+    "source_id": "fx-pond-ripple",
+    "generation": {
+     "kind": "hand-authored",
+     "tool": "Python/PIL script scripts/draw_ambient.py",
+     "mode": "hand-drawn, 0 generations",
+     "pixellab_id": null,
+     "prompt": "",
+     "params": {
+      "function": "pond_ripple",
+      "rings": "A rx 2.5..15.5, B rx 4.5..10.5, ry = rx/2",
+      "fade": "colour step-down + dashed break-up (10 segments)"
+     },
+     "created_at": "2026-10-31",
+     "generation_cost": 0,
+     "postprocess": [
+      "P0 scripts/remap.py palette.json (no --outline: FX painted onto water/glass/furnace/sky)",
+      "binary alpha (0/255)",
+      "P0 scripts/audit.py: off-palette=0 semi-alpha=0"
+     ],
+     "license": "original hand-authored pixel art for Pet Farm (procedural script, no third-party or AI source)"
+    },
+    "postprocess": [
+     "cropped to the strip bbox",
+     "packed into objects.webp (lossless WebP)"
+    ],
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)"
+   },
+   "verification": {
+    "in_engine_reviewed": true,
+    "approved_by": "owner (design session, 2026-10-31)"
+   }
+  },
+  {
+   "id": "park-fx-pond-sparkle",
+   "role": "park object, animation or visitor frames",
+   "path": "public/ta-tua/game/assets/park/objects.webp#fx-pond-sparkle",
+   "status": "approved",
+   "technical": {
+    "frames": 8,
+    "anchor": "foot centre (ax, ay in park.json)",
+    "filtering": "nearest"
+   },
+   "provenance": {
+    "kind": "derived",
+    "sources": [
+     "phase1/ambient-1/pal/fx-pond-sparkle/0.png",
+     "phase1/ambient-1/pal/fx-pond-sparkle/1.png",
+     "+6 more"
+    ],
+    "source_id": "fx-pond-sparkle",
+    "generation": {
+     "kind": "hand-authored",
+     "tool": "Python/PIL script scripts/draw_ambient.py",
+     "mode": "hand-drawn, 0 generations",
+     "pixellab_id": null,
+     "prompt": "",
+     "params": {
+      "function": "pond_sparkle",
+      "ramp": [
+       "#eef8fb",
+       "#bfe3f2",
+       "#8fd0e8",
+       "#58b9d6"
+      ],
+      "glints": "main (6,6) L1-4, twin (11,11) L1-3, speck (3,12)"
+     },
+     "created_at": "2026-10-31",
+     "generation_cost": 0,
+     "postprocess": [
+      "P0 scripts/remap.py palette.json (no --outline: FX painted onto water/glass/furnace/sky)",
+      "binary alpha (0/255)",
+      "P0 scripts/audit.py: off-palette=0 semi-alpha=0"
+     ],
+     "license": "original hand-authored pixel art for Pet Farm (procedural script, no third-party or AI source)"
+    },
+    "postprocess": [
+     "cropped to the strip bbox",
+     "packed into objects.webp (lossless WebP)"
+    ],
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)"
+   },
+   "verification": {
+    "in_engine_reviewed": true,
+    "approved_by": "owner (design session, 2026-10-31)"
+   }
+  },
+  {
+   "id": "park-gazebo",
+   "role": "park object, animation or visitor frames",
+   "path": "public/ta-tua/game/assets/park/objects.webp#gazebo",
+   "status": "approved",
+   "technical": {
+    "frames": 1,
+    "anchor": "foot centre (ax, ay in park.json)",
+    "filtering": "nearest"
+   },
+   "provenance": {
+    "kind": "derived",
+    "sources": [
+     "phase1/park-1/park-objects/gazebo.png"
+    ],
+    "source_id": "prop-gazebo",
+    "generation": {
+     "kind": "generated",
+     "tool": "PixelLab MCP create_map_object",
+     "mode": "basic",
+     "pixellab_id": "1e0f435e-b888-464e-8c40-c2543698cb1b",
+     "prompt": "cute cozy small wooden park gazebo pavilion, octagonal, cream white wooden posts and low railings, warm coral red shingled pointed roof with a little golden finial, open sides, wooden floor platform with two front steps facing the viewer, chunky simple shapes, soft light from top-left, dark brown outline",
+     "params": {
+      "view": "low top-down",
+      "outline": "single color outline",
+      "shading": "medium shading",
+      "detail": "medium detail",
+      "size": "96x96"
+     },
+     "created_at": "2026-10-31",
+     "generation_cost": 1,
+     "postprocess": [
+      "remap.py: OKLab nearest, chroma x2, palette.json (48)",
+      "alpha threshold 128",
+      "outer outline #2e1d14 + 1px pad"
+     ],
+     "license": "PixelLab ToS (subscription, commercial use per https://pixellab.ai/termsofservice) — verify before ship"
+    },
+    "postprocess": [
+     "cropped to the strip bbox",
+     "packed into objects.webp (lossless WebP)"
+    ],
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)"
+   },
+   "verification": {
+    "in_engine_reviewed": true,
+    "approved_by": "owner (design session, 2026-10-31)"
+   }
+  },
+  {
+   "id": "park-hedge-run2",
+   "role": "park object, animation or visitor frames",
+   "path": "public/ta-tua/game/assets/park/objects.webp#hedge-run2",
+   "status": "approved",
+   "technical": {
+    "frames": 1,
+    "anchor": "foot centre (ax, ay in park.json)",
+    "filtering": "nearest"
+   },
+   "provenance": {
+    "kind": "derived",
+    "sources": [
+     "phase1/park-1/park-objects/hedge-run2.png"
+    ],
+    "source_id": "prop-hedge-run2",
+    "generation": {
+     "kind": "reused",
+     "tool": "-",
+     "mode": "-",
+     "pixellab_id": "",
+     "prompt": "",
+     "params": {
+      "source": "S/phase1/props-1/pal/hedge-left|mid|right.png"
+     },
+     "created_at": "2026-10-31",
+     "generation_cost": 0,
+     "postprocess": [
+      "copied unchanged; joined left + 2 x mid + right (scripts/snapshot.py)"
+     ],
+     "license": "see source manifest"
+    },
+    "postprocess": [
+     "cropped to the strip bbox",
+     "packed into objects.webp (lossless WebP)"
+    ],
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)"
+   },
+   "verification": {
+    "in_engine_reviewed": true,
+    "approved_by": "owner (design session, 2026-10-31)"
+   }
+  },
+  {
+   "id": "park-icecream-cart",
+   "role": "park object, animation or visitor frames",
+   "path": "public/ta-tua/game/assets/park/objects.webp#icecream-cart",
+   "status": "approved",
+   "technical": {
+    "frames": 1,
+    "anchor": "foot centre (ax, ay in park.json)",
+    "filtering": "nearest"
+   },
+   "provenance": {
+    "kind": "derived",
+    "sources": [
+     "phase1/park-2/pal/icecream-cart.png"
+    ],
+    "source_id": "prop-icecream-cart",
+    "generation": {
+     "kind": "generated",
+     "tool": "PixelLab MCP create_map_object",
+     "mode": "basic",
+     "pixellab_id": "d3a2bad2-818c-4dd5-9d3d-06489d1371b9",
+     "prompt": "cute cozy ice cream cart, rounded cream cart body with a pastel pink stripe along the side, a big pink and white striped umbrella on top, two round brown wooden wheels and a push handle at the side, three ice cream cones with pink, mint and yellow scoops standing on the counter top, chunky simple shapes, soft light from top-left, dark brown outline, no text, no letters",
+     "params": {
+      "view": "low top-down",
+      "outline": "single color outline",
+      "shading": "medium shading",
+      "detail": "medium detail",
+      "size": "64x64"
+     },
+     "created_at": "2026-10-31",
+     "generation_cost": 1,
+     "postprocess": [
+      "remap.py: OKLab nearest, chroma x2, palette.json (48)",
+      "alpha threshold 128",
+      "outer outline #2e1d14 + 1px pad",
+      "swap.py c4bcb0>dcc0a0 (grey body shade -> warm cream wall ramp)"
+     ],
+     "license": "PixelLab ToS (subscription, commercial use per https://pixellab.ai/termsofservice) — verify before ship"
+    },
+    "postprocess": [
+     "cropped to the strip bbox",
+     "packed into objects.webp (lossless WebP)"
+    ],
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)"
+   },
+   "verification": {
+    "in_engine_reviewed": true,
+    "approved_by": "owner (design session, 2026-10-31)"
+   }
+  },
+  {
+   "id": "park-lamp",
+   "role": "park object, animation or visitor frames",
+   "path": "public/ta-tua/game/assets/park/objects.webp#lamp",
+   "status": "approved",
+   "technical": {
+    "frames": 1,
+    "anchor": "foot centre (ax, ay in park.json)",
+    "filtering": "nearest"
+   },
+   "provenance": {
+    "kind": "derived",
+    "sources": [
+     "phase1/park-1/park-objects/lamp.png"
+    ],
+    "source_id": "prop-lamp",
+    "generation": {
+     "kind": "generated",
+     "tool": "PixelLab MCP create_map_object",
+     "mode": "basic",
+     "pixellab_id": "320a74df-54e0-4073-9a68-1152d3861586",
+     "prompt": "cute cozy village street lamp, dark wooden post with a small warm glowing lantern on top, chunky simple shapes, soft light from top-left, dark brown outline",
+     "params": {
+      "view": "low top-down",
+      "outline": "single color outline",
+      "shading": "medium shading",
+      "detail": "medium detail",
+      "size": "32x64"
+     },
+     "created_at": "2026-10-31",
+     "generation_cost": 1,
+     "postprocess": [
+      "remap.py: OKLab nearest, chroma x2, palette.json (48)",
+      "alpha threshold 128",
+      "outer outline #2e1d14 + 1px pad"
+     ],
+     "license": "PixelLab ToS (subscription, commercial use per https://pixellab.ai/termsofservice) — verify before ship"
+    },
+    "postprocess": [
+     "cropped to the strip bbox",
+     "packed into objects.webp (lossless WebP)"
+    ],
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)"
+   },
+   "verification": {
+    "in_engine_reviewed": true,
+    "approved_by": "owner (design session, 2026-10-31)"
+   }
+  },
+  {
+   "id": "park-log",
+   "role": "park object, animation or visitor frames",
+   "path": "public/ta-tua/game/assets/park/objects.webp#log",
+   "status": "approved",
+   "technical": {
+    "frames": 1,
+    "anchor": "foot centre (ax, ay in park.json)",
+    "filtering": "nearest"
+   },
+   "provenance": {
+    "kind": "derived",
+    "sources": [
+     "phase1/park-1/park-objects/log.png"
+    ],
+    "source_id": "prop-log",
+    "generation": {
+     "kind": "reused",
+     "tool": "-",
+     "mode": "-",
+     "pixellab_id": "",
+     "prompt": "",
+     "params": {
+      "source": "S/phase1/props-2/pal/log.png (sha1 14a2181d556b)"
+     },
+     "created_at": "2026-10-31",
+     "generation_cost": 0,
+     "postprocess": [
+      "copied unchanged"
+     ],
+     "license": "see source manifest"
+    },
+    "postprocess": [
+     "cropped to the strip bbox",
+     "packed into objects.webp (lossless WebP)"
+    ],
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)"
+   },
+   "verification": {
+    "in_engine_reviewed": true,
+    "approved_by": "owner (design session, 2026-10-31)"
+   }
+  },
+  {
+   "id": "park-npc-boy",
+   "role": "park object, animation or visitor frames",
+   "path": "public/ta-tua/game/assets/park/objects.webp#npc-boy",
+   "status": "approved",
+   "technical": {
+    "frames": 13,
+    "anchor": "foot centre (ax, ay in park.json)",
+    "filtering": "nearest"
+   },
+   "provenance": {
+    "kind": "derived",
+    "sources": [
+     "phase1/park-2/pal/npc-boy-south.png",
+     "phase1/park-2/pal/npc-boy-walk/east-0.png",
+     "+11 more"
+    ],
+    "source_id": "npc-villager",
+    "generation": {
+     "kind": "generated",
+     "tool": "PixelLab MCP create_character",
+     "mode": "v3",
+     "pixellab_id": "28f27b60-1094-4b0e-a2f4-ab74abaa5aa8",
+     "prompt": "cute friendly young villager girl, short chestnut brown bob hair, mint green short-sleeve top, cream apron, brown skirt, little brown shoes, warm cozy farm town style, chunky readable shapes, dark brown outline",
+     "params": {
+      "size": 48,
+      "view": "low top-down",
+      "outline": "single color outline",
+      "detail": "medium detail"
+     },
+     "created_at": "2026-10-31",
+     "generation_cost": 2,
+     "postprocess": [
+      "remap.py --outline --pad 0"
+     ],
+     "license": "PixelLab ToS (subscription, commercial use per https://pixellab.ai/termsofservice) — verify before ship"
+    },
+    "postprocess": [
+     "cropped to the strip bbox",
+     "packed into objects.webp (lossless WebP)"
+    ],
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)"
+   },
+   "verification": {
+    "in_engine_reviewed": true,
+    "approved_by": "owner (design session, 2026-10-31)"
+   }
+  },
+  {
+   "id": "park-npc-woman",
+   "role": "park object, animation or visitor frames",
+   "path": "public/ta-tua/game/assets/park/objects.webp#npc-woman",
+   "status": "approved",
+   "technical": {
+    "frames": 13,
+    "anchor": "foot centre (ax, ay in park.json)",
+    "filtering": "nearest"
+   },
+   "provenance": {
+    "kind": "derived",
+    "sources": [
+     "phase1/park-2/pal/npc-woman-south.png",
+     "phase1/park-2/pal/npc-woman-walk/east-0.png",
+     "+11 more"
+    ],
+    "source_id": "npc-villager",
+    "generation": {
+     "kind": "generated",
+     "tool": "PixelLab MCP create_character",
+     "mode": "v3",
+     "pixellab_id": "28f27b60-1094-4b0e-a2f4-ab74abaa5aa8",
+     "prompt": "cute friendly young villager girl, short chestnut brown bob hair, mint green short-sleeve top, cream apron, brown skirt, little brown shoes, warm cozy farm town style, chunky readable shapes, dark brown outline",
+     "params": {
+      "size": 48,
+      "view": "low top-down",
+      "outline": "single color outline",
+      "detail": "medium detail"
+     },
+     "created_at": "2026-10-31",
+     "generation_cost": 2,
+     "postprocess": [
+      "remap.py --outline --pad 0"
+     ],
+     "license": "PixelLab ToS (subscription, commercial use per https://pixellab.ai/termsofservice) — verify before ship"
+    },
+    "postprocess": [
+     "cropped to the strip bbox",
+     "packed into objects.webp (lossless WebP)"
+    ],
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)"
+   },
+   "verification": {
+    "in_engine_reviewed": true,
+    "approved_by": "owner (design session, 2026-10-31)"
+   }
+  },
+  {
+   "id": "park-pet-ball",
+   "role": "park object, animation or visitor frames",
+   "path": "public/ta-tua/game/assets/park/objects.webp#pet-ball",
+   "status": "approved",
+   "technical": {
+    "frames": 1,
+    "anchor": "foot centre (ax, ay in park.json)",
+    "filtering": "nearest"
+   },
+   "provenance": {
+    "kind": "derived",
+    "sources": [
+     "phase1/park-2/pal/pet-ball.png"
+    ],
+    "source_id": "prop-pet-ball",
+    "generation": {
+     "kind": "generated",
+     "tool": "PixelLab MCP create_map_object",
+     "mode": "basic",
+     "pixellab_id": "7694b7e9-69a3-4c6a-be56-984d6614efe6",
+     "prompt": "one tiny rubber pet toy ball, two-tone: top half bright red and bottom half cream with a thin dividing line, small round ball sitting on the ground with lots of empty space around it, chunky simple shapes, soft light from top-left, dark brown outline",
+     "params": {
+      "view": "low top-down",
+      "outline": "single color outline",
+      "shading": "medium shading",
+      "detail": "low detail",
+      "size": "32x32"
+     },
+     "created_at": "2026-10-31",
+     "generation_cost": 1,
+     "postprocess": [
+      "remap.py: OKLab nearest, chroma x2, palette.json (48)",
+      "alpha threshold 128",
+      "outer outline #2e1d14 + 1px pad"
+     ],
+     "license": "PixelLab ToS (subscription, commercial use per https://pixellab.ai/termsofservice) — verify before ship"
+    },
+    "postprocess": [
+     "cropped to the strip bbox",
+     "packed into objects.webp (lossless WebP)"
+    ],
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)"
+   },
+   "verification": {
+    "in_engine_reviewed": true,
+    "approved_by": "owner (design session, 2026-10-31)"
+   }
+  },
+  {
+   "id": "park-pet-bowl",
+   "role": "park object, animation or visitor frames",
+   "path": "public/ta-tua/game/assets/park/objects.webp#pet-bowl",
+   "status": "approved",
+   "technical": {
+    "frames": 1,
+    "anchor": "foot centre (ax, ay in park.json)",
+    "filtering": "nearest"
+   },
+   "provenance": {
+    "kind": "derived",
+    "sources": [
+     "phase1/park-2/pal/pet-bowl.png"
+    ],
+    "source_id": "prop-pet-bowl",
+    "generation": {
+     "kind": "generated",
+     "tool": "PixelLab MCP create_map_object",
+     "mode": "basic",
+     "pixellab_id": "2fe8f132-cd0d-44ed-9c40-eaf128f2c185",
+     "prompt": "small round pet water bowl sitting on the ground, light blue ceramic bowl filled with clear water, chunky simple shapes, soft light from top-left, dark brown outline",
+     "params": {
+      "view": "low top-down",
+      "outline": "single color outline",
+      "shading": "medium shading",
+      "detail": "medium detail",
+      "size": "32x32"
+     },
+     "created_at": "2026-10-31",
+     "generation_cost": 1,
+     "postprocess": [
+      "remap.py: OKLab nearest, chroma x2, palette.json (48)",
+      "alpha threshold 128",
+      "outer outline #2e1d14 + 1px pad"
+     ],
+     "license": "PixelLab ToS (subscription, commercial use per https://pixellab.ai/termsofservice) — verify before ship"
+    },
+    "postprocess": [
+     "cropped to the strip bbox",
+     "packed into objects.webp (lossless WebP)"
+    ],
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)"
+   },
+   "verification": {
+    "in_engine_reviewed": true,
+    "approved_by": "owner (design session, 2026-10-31)"
+   }
+  },
+  {
+   "id": "park-pet-ramp",
+   "role": "park object, animation or visitor frames",
+   "path": "public/ta-tua/game/assets/park/objects.webp#pet-ramp",
+   "status": "approved",
+   "technical": {
+    "frames": 1,
+    "anchor": "foot centre (ax, ay in park.json)",
+    "filtering": "nearest"
+   },
+   "provenance": {
+    "kind": "derived",
+    "sources": [
+     "phase1/park-2/pal/pet-ramp.png"
+    ],
+    "source_id": "prop-pet-ramp",
+    "generation": {
+     "kind": "generated",
+     "tool": "PixelLab MCP create_map_object",
+     "mode": "basic",
+     "pixellab_id": "1b76657f-1869-4c9b-9cd5-98016d3c0021",
+     "prompt": "small wooden pet agility ramp, a short gentle sloped plank ramp rising from left to right onto a low flat wooden platform, little cross slats on the slope, warm brown wood, chunky simple shapes, soft light from top-left, dark brown outline",
+     "params": {
+      "view": "low top-down",
+      "outline": "single color outline",
+      "shading": "medium shading",
+      "detail": "medium detail",
+      "size": "48x32"
+     },
+     "created_at": "2026-10-31",
+     "generation_cost": 1,
+     "postprocess": [
+      "remap.py: OKLab nearest, chroma x2, palette.json (48)",
+      "alpha threshold 128",
+      "outer outline #2e1d14 + 1px pad",
+      "swap.py f39b4a>c8915f, f2c49b>dcb07c (calm orange mottling to P0 wood ramp)"
+     ],
+     "license": "PixelLab ToS (subscription, commercial use per https://pixellab.ai/termsofservice) — verify before ship"
+    },
+    "postprocess": [
+     "cropped to the strip bbox",
+     "packed into objects.webp (lossless WebP)"
+    ],
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)"
+   },
+   "verification": {
+    "in_engine_reviewed": true,
+    "approved_by": "owner (design session, 2026-10-31)"
+   }
+  },
+  {
+   "id": "park-pet-tunnel",
+   "role": "park object, animation or visitor frames",
+   "path": "public/ta-tua/game/assets/park/objects.webp#pet-tunnel",
+   "status": "approved",
+   "technical": {
+    "frames": 1,
+    "anchor": "foot centre (ax, ay in park.json)",
+    "filtering": "nearest"
+   },
+   "provenance": {
+    "kind": "derived",
+    "sources": [
+     "phase1/park-2/pal/pet-tunnel.png"
+    ],
+    "source_id": "prop-pet-tunnel",
+    "generation": {
+     "kind": "generated",
+     "tool": "PixelLab MCP create_map_object",
+     "mode": "basic",
+     "pixellab_id": "7d8733b4-8090-465f-831f-719d1a2b2d76",
+     "prompt": "small pet play tunnel, a short round fabric tube lying on its side on the ground, mint teal fabric with cream rings, round dark open entrance at the front end, chunky simple shapes, soft light from top-left, dark brown outline",
+     "params": {
+      "view": "low top-down",
+      "outline": "single color outline",
+      "shading": "medium shading",
+      "detail": "medium detail",
+      "size": "48x32"
+     },
+     "created_at": "2026-10-31",
+     "generation_cost": 1,
+     "postprocess": [
+      "remap.py: OKLab nearest, chroma x2, palette.json (48)",
+      "alpha threshold 128",
+      "outer outline #2e1d14 + 1px pad"
+     ],
+     "license": "PixelLab ToS (subscription, commercial use per https://pixellab.ai/termsofservice) — verify before ship"
+    },
+    "postprocess": [
+     "cropped to the strip bbox",
+     "packed into objects.webp (lossless WebP)"
+    ],
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)"
+   },
+   "verification": {
+    "in_engine_reviewed": true,
+    "approved_by": "owner (design session, 2026-10-31)"
+   }
+  },
+  {
+   "id": "park-picnic",
+   "role": "park object, animation or visitor frames",
+   "path": "public/ta-tua/game/assets/park/objects.webp#picnic",
+   "status": "approved",
+   "technical": {
+    "frames": 1,
+    "anchor": "foot centre (ax, ay in park.json)",
+    "filtering": "nearest"
+   },
+   "provenance": {
+    "kind": "derived",
+    "sources": [
+     "phase1/park-1/park-objects/picnic.png"
+    ],
+    "source_id": "prop-picnic",
+    "generation": {
+     "kind": "generated",
+     "tool": "PixelLab MCP create_map_object",
+     "mode": "basic",
+     "pixellab_id": "eb45aab4-ccce-4fc8-ab67-941dc00b860e",
+     "prompt": "cute picnic blanket spread flat on the grass, red and white checkered cloth with a small wicker picnic basket on one corner, seen from above at a slight angle, chunky simple shapes, soft light from top-left, dark brown outline",
+     "params": {
+      "view": "low top-down",
+      "outline": "single color outline",
+      "shading": "medium shading",
+      "detail": "medium detail",
+      "size": "64x48"
+     },
+     "created_at": "2026-10-31",
+     "generation_cost": 1,
+     "postprocess": [
+      "remap.py: OKLab nearest, chroma x2, palette.json (48)",
+      "alpha threshold 128",
+      "outer outline #2e1d14 + 1px pad"
+     ],
+     "license": "PixelLab ToS (subscription, commercial use per https://pixellab.ai/termsofservice) — verify before ship"
+    },
+    "postprocess": [
+     "cropped to the strip bbox",
+     "packed into objects.webp (lossless WebP)"
+    ],
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)"
+   },
+   "verification": {
+    "in_engine_reviewed": true,
+    "approved_by": "owner (design session, 2026-10-31)"
+   }
+  },
+  {
+   "id": "park-rock",
+   "role": "park object, animation or visitor frames",
+   "path": "public/ta-tua/game/assets/park/objects.webp#rock",
+   "status": "approved",
+   "technical": {
+    "frames": 1,
+    "anchor": "foot centre (ax, ay in park.json)",
+    "filtering": "nearest"
+   },
+   "provenance": {
+    "kind": "derived",
+    "sources": [
+     "phase1/park-1/park-objects/rock.png"
+    ],
+    "source_id": "prop-rock",
+    "generation": {
+     "kind": "reused",
+     "tool": "-",
+     "mode": "-",
+     "pixellab_id": "",
+     "prompt": "",
+     "params": {
+      "source": "S/phase1/props-2/pal/rock-small.png (sha1 60fc754b3e0e)"
+     },
+     "created_at": "2026-10-31",
+     "generation_cost": 0,
+     "postprocess": [
+      "copied unchanged"
+     ],
+     "license": "see source manifest"
+    },
+    "postprocess": [
+     "cropped to the strip bbox",
+     "packed into objects.webp (lossless WebP)"
+    ],
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)"
+   },
+   "verification": {
+    "in_engine_reviewed": true,
+    "approved_by": "owner (design session, 2026-10-31)"
+   }
+  },
+  {
+   "id": "park-swings",
+   "role": "park object, animation or visitor frames",
+   "path": "public/ta-tua/game/assets/park/objects.webp#swings",
+   "status": "approved",
+   "technical": {
+    "frames": 1,
+    "anchor": "foot centre (ax, ay in park.json)",
+    "filtering": "nearest"
+   },
+   "provenance": {
+    "kind": "derived",
+    "sources": [
+     "phase1/park-1/park-objects/swings.png"
+    ],
+    "source_id": "prop-swings",
+    "generation": {
+     "kind": "generated",
+     "tool": "PixelLab MCP create_map_object",
+     "mode": "basic",
+     "pixellab_id": "7ee6afe5-20d0-472d-8b09-99c6f5b90a21",
+     "prompt": "cute cozy wooden playground swing set, A-frame warm brown wooden posts with a top beam, two hanging swings on ropes with small red seats, seen from the front, chunky simple shapes, soft light from top-left, dark brown outline",
+     "params": {
+      "view": "low top-down",
+      "outline": "single color outline",
+      "shading": "medium shading",
+      "detail": "medium detail",
+      "size": "64x64"
+     },
+     "created_at": "2026-10-31",
+     "generation_cost": 1,
+     "postprocess": [
+      "clean.py pre --drop-green-below 47 (removed baked grass/shadow patch)",
+      "remap.py: OKLab nearest, chroma x2, palette.json (48)",
+      "alpha threshold 128",
+      "outer outline #2e1d14 + 1px pad",
+      "clean.py thin rows 10-44: 1 px ropes recoloured #5c3a24, side outline removed"
+     ],
+     "license": "PixelLab ToS (subscription, commercial use per https://pixellab.ai/termsofservice) — verify before ship"
+    },
+    "postprocess": [
+     "cropped to the strip bbox",
+     "packed into objects.webp (lossless WebP)"
+    ],
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)"
+   },
+   "verification": {
+    "in_engine_reviewed": true,
+    "approved_by": "owner (design session, 2026-10-31)"
+   }
+  },
+  {
+   "id": "park-tree",
+   "role": "park object, animation or visitor frames",
+   "path": "public/ta-tua/game/assets/park/objects.webp#tree",
+   "status": "approved",
+   "technical": {
+    "frames": 1,
+    "anchor": "foot centre (ax, ay in park.json)",
+    "filtering": "nearest"
+   },
+   "provenance": {
+    "kind": "derived",
+    "sources": [
+     "phase1/park-1/park-objects/tree.png"
+    ],
+    "source_id": "prop-tree",
+    "generation": {
+     "kind": "generated",
+     "tool": "PixelLab MCP create_map_object",
+     "mode": "basic",
+     "pixellab_id": "53283c51-db21-4543-9745-c1d6bb9040db",
+     "prompt": "cute round leafy green tree with a short brown trunk, fluffy bright green crown, chunky simple shapes, soft light from top-left, dark brown outline",
+     "params": {
+      "view": "low top-down",
+      "outline": "single color outline",
+      "shading": "medium shading",
+      "detail": "medium detail",
+      "size": "64x64"
+     },
+     "created_at": "2026-10-31",
+     "generation_cost": 1,
+     "postprocess": [
+      "remap.py: OKLab nearest, chroma x2, palette.json (48)",
+      "alpha threshold 128",
+      "outer outline #2e1d14 + 1px pad"
+     ],
+     "license": "PixelLab ToS (subscription, commercial use per https://pixellab.ai/termsofservice) — verify before ship"
+    },
+    "postprocess": [
+     "cropped to the strip bbox",
+     "packed into objects.webp (lossless WebP)"
+    ],
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)"
+   },
+   "verification": {
+    "in_engine_reviewed": true,
+    "approved_by": "owner (design session, 2026-10-31)"
+   }
+  },
+  {
+   "id": "park-tree-cherry",
+   "role": "park object, animation or visitor frames",
+   "path": "public/ta-tua/game/assets/park/objects.webp#tree-cherry",
+   "status": "approved",
+   "technical": {
+    "frames": 1,
+    "anchor": "foot centre (ax, ay in park.json)",
+    "filtering": "nearest"
+   },
+   "provenance": {
+    "kind": "derived",
+    "sources": [
+     "phase1/park-1/park-objects/tree-cherry.png"
+    ],
+    "source_id": "prop-tree-cherry",
+    "generation": {
+     "kind": "reused",
+     "tool": "-",
+     "mode": "-",
+     "pixellab_id": "",
+     "prompt": "",
+     "params": {
+      "source": "S/phase1/props-2/pal/tree-cherry.png (sha1 671761bf92fd)"
+     },
+     "created_at": "2026-10-31",
+     "generation_cost": 0,
+     "postprocess": [
+      "copied unchanged"
+     ],
+     "license": "see source manifest"
+    },
+    "postprocess": [
+     "cropped to the strip bbox",
+     "packed into objects.webp (lossless WebP)"
+    ],
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)"
+   },
+   "verification": {
+    "in_engine_reviewed": true,
+    "approved_by": "owner (design session, 2026-10-31)"
+   }
+  },
+  {
+   "id": "park-tree-orange",
+   "role": "park object, animation or visitor frames",
+   "path": "public/ta-tua/game/assets/park/objects.webp#tree-orange",
+   "status": "approved",
+   "technical": {
+    "frames": 1,
+    "anchor": "foot centre (ax, ay in park.json)",
+    "filtering": "nearest"
+   },
+   "provenance": {
+    "kind": "derived",
+    "sources": [
+     "phase1/park-1/park-objects/tree-orange.png"
+    ],
+    "source_id": "prop-tree-orange",
+    "generation": {
+     "kind": "reused",
+     "tool": "-",
+     "mode": "-",
+     "pixellab_id": "",
+     "prompt": "",
+     "params": {
+      "source": "S/phase1/props-2/pal/tree-orange.png (sha1 bd1278363463)"
+     },
+     "created_at": "2026-10-31",
+     "generation_cost": 0,
+     "postprocess": [
+      "copied unchanged"
+     ],
+     "license": "see source manifest"
+    },
+    "postprocess": [
+     "cropped to the strip bbox",
+     "packed into objects.webp (lossless WebP)"
+    ],
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)"
+   },
+   "verification": {
+    "in_engine_reviewed": true,
+    "approved_by": "owner (design session, 2026-10-31)"
+   }
+  },
+  {
+   "id": "park-tree-pine",
+   "role": "park object, animation or visitor frames",
+   "path": "public/ta-tua/game/assets/park/objects.webp#tree-pine",
+   "status": "approved",
+   "technical": {
+    "frames": 1,
+    "anchor": "foot centre (ax, ay in park.json)",
+    "filtering": "nearest"
+   },
+   "provenance": {
+    "kind": "derived",
+    "sources": [
+     "phase1/park-1/park-objects/tree-pine.png"
+    ],
+    "source_id": "prop-tree-pine",
+    "generation": {
+     "kind": "reused",
+     "tool": "-",
+     "mode": "-",
+     "pixellab_id": "",
+     "prompt": "",
+     "params": {
+      "source": "S/phase1/props-2/pal/tree-pine.png (sha1 80d887589162)"
+     },
+     "created_at": "2026-10-31",
+     "generation_cost": 0,
+     "postprocess": [
+      "copied unchanged"
+     ],
+     "license": "see source manifest"
+    },
+    "postprocess": [
+     "cropped to the strip bbox",
+     "packed into objects.webp (lossless WebP)"
+    ],
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)"
+   },
+   "verification": {
+    "in_engine_reviewed": true,
+    "approved_by": "owner (design session, 2026-10-31)"
+   }
+  },
+  {
+   "id": "park-atlas",
+   "role": "atlas of every park object, animation and visitor frame; frame map in park.json",
+   "path": "public/ta-tua/game/assets/park/objects.webp",
+   "status": "approved",
+   "technical": {
+    "dimensions": "510x239",
+    "bytes": 13512,
+    "frames": 78,
+    "padding": 1
+   },
+   "provenance": {
+    "kind": "packed",
+    "tool": "scripts/art/build-park.py",
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)"
+   },
+   "verification": {
+    "approved_by": "owner (design session, 2026-10-31)"
    }
   }
  ],

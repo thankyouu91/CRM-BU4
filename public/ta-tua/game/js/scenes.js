@@ -18,7 +18,7 @@ const SKIES = {
   night: ['#0f1433', '#1b2350', '#2c3770'],
 };
 /** Màu phủ (multiply) lên mọi thứ trừ bầu trời. */
-const TINTS = { dawn: '#fff0e4', day: null, dusk: '#ffcdb8', night: '#6670b8' };
+export const TINTS = { dawn: '#fff0e4', day: null, dusk: '#ffcdb8', night: '#6670b8' };
 const ROOM_TINTS = { dawn: '#fff4ea', day: null, dusk: '#ffe0cc', night: '#bfa2a8' };
 const CLOUD = {
   dawn: ['#fff4ee', '#f3cbd2'],
