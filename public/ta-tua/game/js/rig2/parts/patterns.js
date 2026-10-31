@@ -4,21 +4,24 @@
 //  - belly: vằn trán mèo (loài tai mèo), port nguyên từ pets-pilot (khớp từng điểm ảnh).
 //  - spots, stripes, mask, patch, scales, shell: Rig 2.0 (họa sĩ G), vẽ lại hết, ĐÃ XONG:
 //    spots   đốm theo loài: đốm hươu hai hàng dọc lưng, đốm rải (cá nóc, nhím), mảng đá (tê giác), mảng lớn cá chép
-//            (kohaku, đốm đỏ trên đỉnh đầu như tancho), đốm đen kỳ nhông;
-//    stripes vằn hổ đậm: vạch nhọn từ sống lưng xuống hông, chữ V trên lưng, ba vạch trán, vạch má;
-//    mask    mặt nạ quanh mắt: sói (mặt nạ sẫm + mũi tên trán + yên lưng), gấu mèo đỏ (mảng trắng mày và má),
-//            lân (mày đỏ rậm + má đỏ);
+//            (kohaku, đốm đỏ trên đỉnh đầu như tancho), đốm đen kỳ nhông; đốm đầu luôn cách viền đầu ≥ 1 điểm, nhìn sau
+//            thì lệch khỏi trục giữa (không xếp thành mặt);
+//    stripes vằn hổ đậm: vạch nhọn từ sống lưng xuống hông, chữ V liền qua sống lưng khi nhìn sau, ba vạch trán, vạch
+//            má; gáy chỉ có vạch dọc từ đỉnh đầu (bé, nhí nhố: ba vạch);
+//    mask    sói (dải mắt 2 điểm quét lên phía tai + mũi tên trán ▼ + yên lưng), gấu mèo đỏ (mảng trắng mày và má),
+//            lân (mày đầu lân vểnh cao ở đuôi mày, đỏ bậc 1-2);
 //    patch   gấu trúc: giữ nhận diện của bản sửa sau soát (hai mảng mắt to nghiêng ra ngoài, tai và tay chân đen), mảng
 //            nay hình giọt nước rủ xuống má, thêm đai đen vắt qua vai (nhìn sau, nhìn ngang) nối hai tay;
-//    scales  vảy lợp: tấm vảy so le, hàng trên đè hàng dưới nên mỗi tấm có một nét cong ở mép dưới (nét trong chọn
-//            lọc của colourise); tê tê có thêm vảy trên đầu; rồng có thêm khoanh bụng (vảy bụng);
+//    scales  vảy lợp: chỉ nét mép dưới lượn sóng của từng hàng tấm lớn (≈ 6 × 4), tối hơn lông tại chỗ một bậc, không
+//            có nét dọc; nhìn sau thưa hàng và chừa sống lưng; tê tê có thêm mũ vảy trên đầu; rồng có khoanh bụng,
+//            khoanh vuông góc với trục dài của mảng bụng;
 //    shell   mai rùa thật: mai vòm phủ lên lưng khi nhìn ngang, bầu dục khi nhìn sau, chia tấm bằng Voronoi (hàng tấm
 //            sống lưng, tấm sườn, viền tấm rìa), mỗi đường chia 1 điểm ảnh bậc tối của dải mai.
 // Cách dùng chung: hoa văn trên thân là bộ phận z 4.2 (nhóm riêng hoặc 'body'), cắt theo mặt nạ thân THẬT trong ctx.parts
 // (bộ phận tên 'body', trừ bụng 'belly'), nên dáng khung nào cũng khớp (round, serpent vẽ lại vẫn chạy); hoa văn trên đầu
 // là bộ phận z = ctx.zh + 0.15 cắt theo ctx.headMask, trừ các mảng mặt (z = ctx.zh + 0.1: mõm, mặt nạ mỏ...).
 // Tinh chỉnh theo loài: TUNE bên dưới.
-import { RAMPS, mAbove, mAnd, mAndNot, mAny, mBelow, mEllipse, mOr, mStamp, mTri, newMask, part, pyRound } from '../core.js';
+import { LIGHT, RAMPS, mAbove, mAnd, mAndNot, mAny, mChain, mEllipse, mOr, mStamp, mTri, newMask, part, pyRound } from '../core.js';
 
 const none = () => {};
 
@@ -58,6 +61,40 @@ const backMask = (ctx) => mAndNot(bodyMask(ctx), bellyMask(ctx));
 const headArea = (ctx) => (ctx.headMask ? mAndNot(ctx.headMask, faceMask(ctx)) : newMask());
 
 const clamp = (v, lo, hi) => (v < lo ? lo : v > hi ? hi : v);
+/** Co mặt nạ 1 điểm ảnh (4 hướng): hoa văn nằm trong đó luôn cách viền ngoài ít nhất 1 điểm màu lông. */
+function inset(m) {
+  const o = newMask();
+  for (let y = 1; y < 47; y++) {
+    for (let x = 1; x < 47; x++) {
+      const k = y * 48 + x;
+      if (m[k] && m[k - 1] && m[k + 1] && m[k - 48] && m[k + 48]) o[k] = 1;
+    }
+  }
+  return o;
+}
+/** Dời mặt nạ nguyên điểm (dx, dy). */
+function shift(m, dx, dy) {
+  const o = newMask();
+  for (let k = 0; k < NPX; k++) {
+    if (!m[k]) continue;
+    const x = (k % 48) + dx;
+    const y = Math.floor(k / 48) + dy;
+    if (x >= 0 && y >= 0 && x < 48 && y < 48) o[y * 48 + x] = 1;
+  }
+  return o;
+}
+/** Đẩy một đốm về phía (tx, ty) từng điểm một (tối đa `max`) tới khi nằm gọn trong `area`; còn lòi thì cắt theo `area`. */
+function nudgeInside(m, area, [cx, cy], [tx, ty], max = 3) {
+  const d = Math.hypot(tx - cx, ty - cy) || 1;
+  const [ux, uy] = [(tx - cx) / d, (ty - cy) / d];
+  let best = m;
+  for (let i = 0; i <= max; i++) {
+    const mm = i ? shift(m, Math.round(ux * i), Math.round(uy * i)) : m;
+    best = mm;
+    if (!mAny(mAndNot(mm, area))) break;
+  }
+  return mAnd(best, area);
+}
 /** Cỡ hoa văn theo giai đoạn (theo thân): sơ sinh ~0.7, trưởng thành 1. */
 const patSize = (sk) => clamp(0.45 + 0.5 * sk.bk, 0.68, 1.05);
 /** Khối sáng của thân (giống archetype), để hoa văn tô sáng liền với lông. */
@@ -91,6 +128,22 @@ function curvedWedge(a, mid, b, w) {
   const half = mTri([a[0] + nx, a[1] + ny], [a[0] - nx, a[1] - ny], [mid[0] + nx * 0.7, mid[1] + ny * 0.7]);
   const half2 = mTri([a[0] - nx, a[1] - ny], [mid[0] + nx * 0.7, mid[1] + ny * 0.7], [mid[0] - nx * 0.7, mid[1] - ny * 0.7]);
   return mOr(half, half2, wedge(mid, b, w * 0.7));
+}
+
+/** Nét bút: chuỗi đĩa bán kính r nối liền qua các điểm (nội suy từng 0.5 điểm ảnh). */
+function stroke(pts, r) {
+  const q = [];
+  for (let i = 0; i < pts.length; i++) {
+    if (!i) {
+      q.push(pts[0]);
+      continue;
+    }
+    const [x0, y0] = pts[i - 1];
+    const [x1, y1] = pts[i];
+    const n = Math.max(1, Math.ceil(Math.hypot(x1 - x0, y1 - y0) / 0.5));
+    for (let j = 1; j <= n; j++) q.push([x0 + ((x1 - x0) * j) / n, y0 + ((y1 - y0) * j) / n]);
+  }
+  return mChain(q, r);
 }
 
 // ================================================================ spots: đốm
@@ -128,7 +181,8 @@ const SPOT_LAYOUT = {
     E: [[-0.62, -0.5], [-0.12, -0.72], [0.36, -0.48], [-0.34, -0.06], [0.12, -0.18], [0.6, -0.05]],
     S: [[-0.72, -0.22], [0.72, -0.22], [-0.62, 0.32], [0.62, 0.32]],
     N: [[-0.42, -0.5], [0.42, -0.5], [0, -0.68], [-0.62, 0.08], [0.62, 0.08], [-0.2, 0.18], [0.24, -0.16]],
-    head: { S: [[-0.5, -0.66], [0.42, -0.74], [0.05, -0.85]], E: [[-0.42, -0.7], [0.12, -0.82]], N: [[-0.35, -0.55], [0.4, -0.4], [0, -0.1]] },
+    // nhìn sau: đốm lệch khỏi trục giữa, một gần đỉnh đầu, một thấp ở gáy bên kia (không xếp thành "hai mắt + miệng")
+    head: { S: [[-0.5, -0.62], [0.42, -0.7], [0.0, -0.84]], E: [[-0.42, -0.66], [0.12, -0.8]], N: [[-0.42, -0.6], [0.48, 0.42]] },
   },
   // mảng đá: tê giác
   rock: {
@@ -142,7 +196,7 @@ const SPOT_LAYOUT = {
     E: [[-0.42, -0.42], [0.36, -0.32]],
     S: [[0.62, -0.22], [-0.66, 0.28]],
     N: [[-0.32, -0.42], [0.38, 0.05]],
-    head: { S: [[0.34, -0.6], [-0.5, -0.66]], E: [[-0.42, -0.55]], N: [[0.2, -0.4], [-0.42, 0.15]] },
+    head: { S: [[0.34, -0.6], [-0.5, -0.66]], E: [[-0.42, -0.55]], N: [[0.3, -0.5], [-0.45, 0.3]] },
   },
 };
 
@@ -157,10 +211,16 @@ function spots(ctx) {
   const look = { ...(t.flat ? { flat: t.flat } : {}), ...(t.shade ? { shade: t.shade } : {}) };
   if (ms.length) onBody(ctx, 'spots', mAnd(backMask(ctx), mOr(...ms)), ramp, look);
   const hs = L.head?.[view];
-  if (hs) {
+  if (hs && ctx.headMask) {
+    // đốm đầu nằm gọn trong đầu, cách viền ít nhất 1 điểm (không thành vết cắn vào bóng đầu), đẩy dần về tâm đầu
     const [hcx, hcy, hrx, hry] = sk.head;
     const hsize = t.headSize ?? (t.size === 'big' ? 'blotch' : t.size === 'blotch' ? 'spot' : t.size);
-    onHead(ctx, 'headspots', mOr(...hs.map(([u, v], i) => spotShape(hcx + u * hrx, hcy + v * hry, hsize, k, i + 1))), ramp, look);
+    const area = inset(headArea(ctx));
+    const ms2 = hs.map(([u, v], i) => {
+      const [x, y] = [hcx + u * hrx, hcy + v * hry];
+      return nudgeInside(spotShape(x, y, hsize, k, i + 1), area, [x, y], [hcx, hcy]);
+    });
+    onHead(ctx, 'headspots', mOr(...ms2), ramp, look);
   }
 }
 
@@ -191,35 +251,38 @@ function stripes(ctx) {
       }
     }
   } else {
-    // nhìn sau: chữ V qua sống lưng, ba vạch
-    for (const v of [-0.62, -0.18, 0.26]) {
+    // nhìn sau: chữ V LIỀN qua sống lưng (đỉnh V ở sống lưng chỉ xuống), hai cánh nhọn dần ra hông; bé: hai chữ V
+    for (const v of sk.big ? [-0.4, 0.25] : [-0.6, -0.12, 0.36]) {
       const y = bcy + v * bry;
-      for (const s of [-1, 1]) ms.push(curvedWedge([bcx + 0.5 * s, y + 0.9], [bcx + s * brx * 0.5, y - 0.1], [bcx + s * (brx + 0.6), y - 0.6], w));
+      for (const s of [-1, 1]) ms.push(curvedWedge([bcx, y + 1.1], [bcx + s * brx * 0.5, y - 0.1], [bcx + s * (brx + 0.6), y - 0.7], w));
+      ms.push(mEllipse(bcx, y + 0.8, w * 0.55, w * 0.55));
     }
   }
   onBody(ctx, 'stripes', mAnd(backMask(ctx), mOr(...ms)), ramp);
-  // đầu
+  // đầu: cỡ theo đầu (bé con đầu to: vạch không bé tí theo thân)
   const hs = [];
-  const hw = Math.max(1.3, 1.8 * k);
+  const kh = clamp(sk.hk * 1.1, 0.85, 1.05);
+  const hw = Math.max(1.3, 1.8 * kh);
   const ht = sk.htop;
   if (view === 'S') {
     // ba vạch trán (giữa dài hơn) + hai vạch má mỗi bên
-    hs.push(wedge([hcx, ht - 0.5], [hcx, ht + 4.6 * k], hw * 1.15));
+    hs.push(wedge([hcx, ht - 0.5], [hcx, ht + 4.6 * kh], hw * 1.15));
     for (const s of [-1, 1]) {
-      hs.push(wedge([hcx + s * 2.9 * k, ht], [hcx + s * 2.4 * k, ht + 3.2 * k], hw));
-      for (const dy of [0.4, 2.4]) hs.push(wedge([hcx + s * (hrx + 0.5), sk.eyeY + dy - 0.3], [hcx + s * (hrx - 3.6 * k), sk.eyeY + dy + 0.5], hw));
+      hs.push(wedge([hcx + s * 2.9 * kh, ht], [hcx + s * 2.4 * kh, ht + 3.2 * kh], hw));
+      for (const dy of [0.4, 2.4]) hs.push(wedge([hcx + s * (hrx + 0.5), sk.eyeY + dy - 0.3], [hcx + s * (hrx - 3.6 * kh), sk.eyeY + dy + 0.5], hw));
     }
   } else if (view === 'E') {
     // vạch trán chéo, hai vạch má từ sau gáy chỉ về mắt
-    for (const dx of [-2.6, 0.2, 2.8]) hs.push(wedge([hcx + dx * k - 0.6, ht - 0.5], [hcx + dx * k + 0.2, ht + 3.4 * k], hw));
+    for (const dx of [-2.6, 0.2, 2.8]) hs.push(wedge([hcx + dx * kh - 0.6, ht - 0.5], [hcx + dx * kh + 0.2, ht + 3.4 * kh], hw));
     for (const dy of [0.2, 2.4]) hs.push(wedge([hcx - hrx - 0.5, sk.eyeY + dy - 0.6], [hcx - hrx * 0.25, sk.eyeY + dy + 0.4], hw));
   } else {
-    // gáy: ba cặp vạch từ hai bên vào giữa, vạch trên cùng ngang đỉnh đầu
-    for (const v of [-0.6, -0.15, 0.3]) {
-      const y = hcy + v * hry;
-      for (const s of [-1, 1]) hs.push(wedge([hcx + s * (hrx + 0.6), y - 0.5], [hcx + s * hrx * 0.28, y + 0.7], hw));
+    // gáy: vạch DỌC từ đỉnh đầu chỉ xuống gáy (không vạch ngang hai bên: trông như ria và mắt nhắm); bé, nhí nhố: chỉ ba
+    // vạch đỉnh đầu; lớn hơn: thêm hai nêm dọc hai bên đỉnh, chỉ xuống nửa trên gáy
+    hs.push(wedge([hcx, ht - 0.5], [hcx, ht + (sk.big ? 3.0 : 4.2) * kh], hw * 1.15));
+    for (const s of [-1, 1]) {
+      hs.push(wedge([hcx + s * 2.8 * kh, ht - 0.2], [hcx + s * 2.3 * kh, ht + (sk.big ? 2.4 : 3.2) * kh], hw));
+      if (!sk.big) hs.push(wedge([hcx + s * hrx * 0.64, hcy - hry * 0.7], [hcx + s * hrx * 0.5, hcy - hry * 0.15], hw));
     }
-    hs.push(wedge([hcx, ht - 0.5], [hcx, ht + 3.4 * k], hw * 1.1));
   }
   onHead(ctx, 'headstripes', mOr(...hs), ramp, { shade: -1 });
 }
@@ -234,29 +297,45 @@ function perEye(ctx, f) {
 }
 
 /**
- * Sói: hai mảng mắt sẫm xếch lên phía tai (không nối qua sống mũi, để không thành mặt nạ gấu mèo), một vệt trán hình
- * thoi; má và mõm giữ màu sáng. Nhìn ngang: mảng quanh mắt gần kéo xếch về phía tai. Thân: yên lưng sẫm (nhìn ngang,
- * nhìn sau). Nhìn sau không có mặt nạ.
+ * Sói: vệt mắt là dải 2 điểm (bậc 2 phẳng của dải điểm nhấn) từ đuôi mắt quét lên phía tai, cộng mũi tên trán chỉ xuống
+ * sống mũi; hai vệt KHÔNG nối qua sống mũi (tránh thành mặt nạ gấu mèo). Nhìn ngang: vệt mắt gần quét lên-ra sau về
+ * phía tai. Thân: yên lưng sẫm (nhìn sau: bầu dục cân giữa lưng; nhìn ngang: dải 2-3 điểm theo sống lưng từ vai tới mông).
  */
 function wolfMask(ctx, ramp) {
   const { sk, view } = ctx;
-  const k = patSize(sk);
+  const k = clamp(sk.hk * 1.1, 0.85, 1.05); // theo cỡ đầu: bé con đầu to vẫn rõ mặt nạ
   const [hcx] = sk.head;
   const { eyeY } = sk;
+  const ew = sk.big ? 1.5 : 1.0; // nửa bề ngang ô mắt
+  const look = { flat: 2 };
   if (view !== 'N') {
-    const streak = (x, s, d) => mOr(mEllipse(x + s * 0.4, eyeY + 0.1, 2.0 * k + 0.35, 1.8 * k + 0.25), wedge([x + s * 0.6, eyeY + 0.4], [x + d * (3.6 * k + 0.6), eyeY - 2.4 * k - 0.4], 2.4 * k));
+    const streak = (x, s) => stroke([[x + s * (ew + 0.3), eyeY + 0.4], [x + s * (ew + 1.3 * k), eyeY - 0.7 * k], [x + s * (ew + 2.1 * k), eyeY - 2.0 * k], [x + s * (ew + 2.5 * k), eyeY - 3.3 * k]], 0.95);
     let m;
     if (view === 'S') {
-      m = mOr(streak(hcx - sk.eyeDx, -1, -1), streak(hcx + sk.eyeDx, 1, 1), mTri([hcx - 1.2 * k, sk.htop + 3.8 * k], [hcx + 1.2 * k, sk.htop + 3.8 * k], [hcx, eyeY - 1.4]), mTri([hcx - 1.2 * k, sk.htop + 3.8 * k], [hcx + 1.2 * k, sk.htop + 3.8 * k], [hcx, sk.htop + 2.0]));
+      // mũi tên trán ▼: tam giác đáy trên rộng, mũi nhọn chỉ xuống sống mũi, khía chữ V ở đáy (không có cán: trông như chữ thập)
+      const top = sk.htop + 2.2 * k;
+      const arrow = mAndNot(mTri([hcx - 2.3 * k, top], [hcx + 2.3 * k, top], [hcx, eyeY - 1.2]), mTri([hcx - 1.0 * k, top - 0.5], [hcx + 1.0 * k, top - 0.5], [hcx, top + 1.3 * k]));
+      m = mOr(streak(hcx - sk.eyeDx, -1), streak(hcx + sk.eyeDx, 1), arrow);
     } else {
-      m = streak(sk.anchors.face[0], 1, -1);
+      m = streak(sk.anchors.face[0], -1);
     }
-    onHead(ctx, 'mask', m, ramp);
+    onHead(ctx, 'mask', m, ramp, look);
   }
-  // yên lưng sẫm (nhìn ngang, nhìn sau)
   const [bcx, bcy, brx, bry] = sk.body;
-  if (view === 'E') onBody(ctx, 'saddle', mAnd(backMask(ctx), mEllipse(bcx - brx * 0.1, bcy - bry * 0.7, brx * 0.72, bry * 0.55)), ramp);
-  if (view === 'N') onBody(ctx, 'saddle', mAnd(backMask(ctx), mEllipse(bcx, bcy - bry * 0.55, brx * 0.7, bry * 0.5)), ramp);
+  const back = backMask(ctx);
+  if (view === 'N') {
+    onBody(ctx, 'saddle', mAnd(back, mEllipse(bcx, bcy - bry * 0.15, brx * 0.55, bry * 0.62)), ramp, look);
+  } else if (view === 'E') {
+    // dải dọc sống lưng: 2-3 điểm dưới mép trên của thân, từ vai (sau đầu) tới mông
+    const band = newMask();
+    const th = Math.max(2, Math.round(2.6 * k));
+    for (let x = Math.floor(bcx - brx * 0.92); x <= Math.ceil(bcx + brx * 0.55); x++) {
+      let y = 0;
+      while (y < 48 && !back[y * 48 + x]) y++;
+      for (let j = 0; j < th && y + j < 48; j++) if (back[(y + j) * 48 + x]) band[(y + j) * 48 + x] = 1;
+    }
+    onBody(ctx, 'saddle', band, ramp, look);
+  }
 }
 
 /** Gấu mèo đỏ: mảng trắng trên mày và hai má (mặt gấu mèo đỏ), mõm giữ nguyên của parts/faces.js. */
@@ -270,15 +349,23 @@ function redPandaMask(ctx, ramp) {
   onHead(ctx, 'mask', mOr(brows, cheeks), ramp);
 }
 
-/** Lân: mày đỏ rậm (dày, cong lên ở đuôi mày) và má đỏ tròn, như đầu lân múa. Nhìn sau: không có (gáy trơn). */
+/**
+ * Lân: mày đầu lân múa: vòng cung dày 2 điểm vểnh cao ở đuôi mày (phía ngoài), đỏ bậc 1-2 của dải điểm nhấn (tô bóng lùi
+ * một bậc: không ngả hồng); không còn mảng má đỏ (trông như phấn trang điểm, má đã có má hồng chung). Nhìn sau: gáy trơn.
+ * Nhìn ngang: mày của mắt gần, đuôi mày vểnh về phía sau đầu.
+ */
 function lionMask(ctx, ramp) {
   const { sk, view } = ctx;
   if (view === 'N') return;
-  const k = patSize(sk);
+  const k = clamp(sk.hk * 1.1, 0.85, 1.05);
   const { eyeY } = sk;
-  const brows = perEye(ctx, (x, s) => mOr(mEllipse(x, eyeY - 2.6 * k, 2.1 * k + 0.3, 0.95 * k + 0.2, -s * 0.28), mEllipse(x + s * 1.6 * k, eyeY - 3.3 * k, 1.0 * k + 0.2, 0.8 * k + 0.2)));
-  const cheeks = perEye(ctx, (x, s) => mEllipse(x + s * (view === 'S' ? 1.4 : -0.9) * k, eyeY + 2.6 * k, 1.5 * k + 0.2, 1.2 * k + 0.2));
-  onHead(ctx, 'mask', mOr(brows, cheeks), ramp);
+  const ew = sk.big ? 1.5 : 1.0;
+  const brow = (x, s) => mOr(
+    stroke([[x - s * (ew + 0.2), eyeY - 2.3 * k], [x, eyeY - 2.9 * k], [x + s * (ew + 0.9 * k), eyeY - 3.5 * k], [x + s * (ew + 1.9 * k), eyeY - 4.6 * k]], 0.9),
+    mEllipse(x + s * (ew + 1.6 * k), eyeY - 4.2 * k, 1.1, 1.0),
+  );
+  const m = view === 'S' ? perEye(ctx, brow) : brow(sk.anchors.face[0], -1);
+  onHead(ctx, 'mask', m, ramp, { shade: -1 });
 }
 
 function mask(ctx) {
@@ -317,13 +404,32 @@ function pandaPatches(ctx) {
 
 // ================================================================ scales: vảy lợp
 
+/** Bậc sáng (1..4) của điểm (x, y) theo khối elip `normal` và ánh sáng trên-trái (cùng công thức với core.js colourise). */
+function bandAt(normal, x, y, head = false) {
+  const [cx, cy, rx, ry] = normal;
+  const nx = clamp((x + 0.5 - cx) / rx, -1, 1);
+  const ny = clamp((y + 0.5 - cy) / ry, -1, 1);
+  const nz = Math.sqrt(clamp(1 - nx * nx - ny * ny, 0, 1));
+  const I = nx * LIGHT[0] + ny * LIGHT[1] + nz * LIGHT[2];
+  const b = I < 0.16 ? 1 : I < 0.56 ? 2 : I < 0.92 ? 3 : 4;
+  return head ? b : Math.min(b, 3);
+}
+/** Một màu bảng phẳng: [tên dải, bậc 1..4] của một dải KHÁC `not` có màu `hex` (để nét vảy không bị dọn như điểm lẻ). */
+function flatOf(hex, not) {
+  for (const [key, r] of Object.entries(RAMPS)) {
+    if (key === not) continue;
+    const i = r.indexOf(hex, 1);
+    if (i >= 1) return [key, i];
+  }
+  return null;
+}
 /**
- * Hàng vảy lợp so le phủ `region`: tấm = elip tròn (rộng pw, hàng cách ph); hàng trên đè hàng dưới (z cao hơn) nên mép dưới
- * của mỗi hàng là một đường cong lượn sóng ⌣⌣⌣ (nét bậc 0 của dải vảy, colourise tự kẻ). Trong một hàng các tấm cùng
- * nhóm (không kẻ nét dọc: tránh trông như tường gạch). `keep(cx, cy)`: chỉ giữ tấm có tâm thỏa điều kiện, nên mép vùng vảy
- * cũng lượn theo tấm thay vì một đường thẳng.
+ * Vảy lợp: CHỈ vẽ mép dưới lượn sóng ⌣⌣⌣ của từng hàng tấm (mỗi cột một điểm), không có nét dọc giữa hai tấm trong
+ * một hàng (trông như tường gạch). Hàng tấm so le nửa tấm; tấm lớn (pw × ph). Nét vảy tối hơn lông tại chỗ đúng một bậc
+ * (sáng → giữa, giữa → tối, tối → nét), cùng nhóm với thân: không đổ bóng, không kẻ nét trong, nên thân vẫn tô dải như
+ * bản mẫu. `skip(x, y, band)`: bỏ nét ở đó (dải sáng sống lưng). `keep(cx, cy)`: chỉ giữ tấm có tâm thỏa điều kiện.
  */
-function platesOn(ctx, region, { pw, ph, ramp, z, prefix, normal, keep = () => true }) {
+function scallops(ctx, region, { pw, ph, ramp, z, prefix, group, normal, head = false, keep = () => true, skip = () => false }) {
   let [x0, y0, x1, y1] = [48, 48, -1, -1];
   for (let k = 0; k < NPX; k++) {
     if (!region[k]) continue;
@@ -335,46 +441,94 @@ function platesOn(ctx, region, { pw, ph, ramp, z, prefix, normal, keep = () => t
     y1 = Math.max(y1, y);
   }
   if (x1 < 0) return;
-  const rows = Math.ceil((y1 - y0 + 1) / ph) + 1;
-  const rx = pw * 0.56;
-  const ry = ph * 0.9 + 0.35;
-  for (let r = 0; r < rows; r++) {
+  const R = RAMPS[ramp];
+  // tấm nửa elip: rộng đúng pw (hai tấm kề chạm nhau ở mũi nhọn), mép dưới võng sâu ≈ 0.6 ph: nét ⌣ rõ, liền nhau
+  const rx = pw * 0.5 + 0.05;
+  const ry = ph * 0.62;
+  const byHex = new Map();
+  for (let r = 0; y0 + r * ph <= y1; r++) {
     const cy = y0 + r * ph;
     const off = r % 2 ? pw / 2 : 0;
     const ms = [];
     for (let cx = x0 - pw + off; cx <= x1 + pw; cx += pw) if (keep(cx + 0.5, cy + 0.5)) ms.push(mEllipse(cx + 0.5, cy + 0.5, rx, ry));
-    const m = ms.length ? mAnd(region, mOr(...ms)) : null;
-    if (m && mAny(m)) ctx.parts.push(part(`${prefix}${r}`, m, ramp, z + (rows - r) * 0.002, { normal }));
+    if (!ms.length) continue;
+    const row = mOr(...ms);
+    for (let x = x0; x <= x1; x++) {
+      // điểm thấp nhất của hàng tấm ở cột x (trong vùng, chưa chạm mép dưới vùng: mép vùng đã có viền)
+      let y = -1;
+      for (let yy = Math.min(47, Math.ceil(cy + ry + 1)); yy >= Math.max(0, Math.floor(cy - ry)); yy--) {
+        if (row[yy * 48 + x]) {
+          y = yy;
+          break;
+        }
+      }
+      if (y < 0 || y >= 47 || !region[y * 48 + x] || !region[(y + 1) * 48 + x]) continue;
+      const band = bandAt(normal, x, y, head);
+      if (skip(x, y, band)) continue;
+      // một bậc tối hơn lông tại chỗ, bỏ qua bậc trùng màu (fur_silver: bậc 2 = bậc 3)
+      let d = band - 1;
+      while (d > 0 && R[d] === R[band]) d--;
+      const hex = R[d];
+      if (!byHex.has(hex)) byHex.set(hex, newMask());
+      byHex.get(hex)[y * 48 + x] = 1;
+    }
+  }
+  let i = 0;
+  for (const [hex, m] of byHex) {
+    const fl = flatOf(hex, ramp);
+    if (fl) ctx.parts.push(part(`${prefix}${i++}`, m, fl[0], z, { group, flat: fl[1], line: false }));
   }
 }
 
-/** Khoanh bụng (vảy bụng rồng): dải ngang (S) hoặc dọc (E) trên phần bụng, mỗi dải có nét chia. */
+/**
+ * Khoanh bụng (vảy bụng rồng): dải VUÔNG GÓC với trục dài của mảng bụng (mô-men bậc hai), mỗi dải có nét chia: bụng
+ * dựng đứng (dáng đứng nhìn ngang hay nhìn trước) thì khoanh ngang, bụng dài nằm ngang (thân rắn) thì khoanh dọc theo thân.
+ */
 function bellyBands(ctx) {
   const { sk, view } = ctx;
   const belly = bellyMask(ctx);
   if (!mAny(belly) || view === 'N') return;
   const k = patSize(sk);
   const step = Math.max(2, Math.round(2.6 * k));
-  const [bcx, bcy] = sk.body;
-  const nrm = bodyNrm(sk);
-  let i = 0;
-  for (let d = -12; d <= 12; d += step) {
-    const band = view === 'S' ? mAnd(mBelow(bcy + d - 0.01), mAbove(bcy + d + step)) : mAnd(rightOf(bcx + d), leftOf(bcx + d + step));
-    const m = mAnd(belly, band);
-    if (!mAny(m)) continue;
-    ctx.parts.push(part(`bellyband${i}`, m, ctx.ramps.belly, 4.15 + (view === 'S' ? i : -i) * 0.001, { normal: nrm }));
-    i++;
+  let [n, sx, sy] = [0, 0, 0];
+  for (let q = 0; q < NPX; q++) {
+    if (!belly[q]) continue;
+    n++;
+    sx += q % 48;
+    sy += Math.floor(q / 48);
   }
-}
-function rightOf(x) {
-  const m = newMask();
-  for (let k = 0; k < NPX; k++) if ((k % 48) + 0.5 > x) m[k] = 1;
-  return m;
-}
-function leftOf(x) {
-  const m = newMask();
-  for (let k = 0; k < NPX; k++) if ((k % 48) + 0.5 < x) m[k] = 1;
-  return m;
+  const [mx, my] = [sx / n, sy / n];
+  let [cxx, cyy, cxy] = [0, 0, 0];
+  for (let q = 0; q < NPX; q++) {
+    if (!belly[q]) continue;
+    const dx = (q % 48) - mx;
+    const dy = Math.floor(q / 48) - my;
+    cxx += dx * dx;
+    cyy += dy * dy;
+    cxy += dx * dy;
+  }
+  // trục dài (vectơ riêng lớn nhất của ma trận hiệp phương sai); bụng tròn (dài/rộng < 1.6) thì coi như bụng đứng:
+  // trục dọc, khoanh ngang
+  const tr = cxx + cyy;
+  const det = cxx * cyy - cxy * cxy;
+  const l1 = tr / 2 + Math.sqrt(Math.max(0, (tr * tr) / 4 - det));
+  const l2 = Math.max(1e-6, tr - l1);
+  const th = l1 / l2 < 1.6 * 1.6 ? Math.PI / 2 : 0.5 * Math.atan2(2 * cxy, cxx - cyy);
+  const [ux, uy] = [Math.cos(th), Math.sin(th)];
+  const nrm = bodyNrm(sk);
+  const bands = new Map();
+  for (let q = 0; q < NPX; q++) {
+    if (!belly[q]) continue;
+    const t = ((q % 48) - mx) * ux + (Math.floor(q / 48) - my) * uy;
+    const i = Math.floor(t / step + 0.5);
+    if (!bands.has(i)) bands.set(i, newMask());
+    bands.get(i)[q] = 1;
+  }
+  // dải phía trên/trước đè dải sau: thứ tự theo hướng trục (đi xuống trong ô), nét chia nằm ở mép dải đứng trước
+  const down = uy > 0.2 || (Math.abs(uy) <= 0.2 && ux > 0) ? 1 : -1;
+  [...bands.keys()].sort((p, q) => p - q).forEach((i, j) => {
+    ctx.parts.push(part(`bellyband${j}`, bands.get(i), ctx.ramps.belly, 4.15 - down * j * 0.001, { normal: nrm }));
+  });
 }
 
 function scales(ctx) {
@@ -382,20 +536,24 @@ function scales(ctx) {
   const { sk, view } = ctx;
   const k = patSize(sk);
   const ramp = rampOf(ctx, t.ramp ?? 'main');
-  const pw = Math.max(4, Math.round(4.6 * k));
-  const ph = Math.max(2, Math.round(3.0 * k));
-  // thân: vảy trên lưng và hông (trừ bụng); rồng chừa một dải sống lưng cho gai/bờm của dáng khung
-  platesOn(ctx, backMask(ctx), { pw, ph, ramp, z: 4.2, prefix: 'scale', normal: bodyNrm(sk) });
+  // tấm lớn (≈ 6 × 4 ở tuổi trưởng thành); nhìn sau thưa hàng hơn
+  const pw = Math.max(4, Math.round(5.8 * k));
+  const ph = Math.max(3, Math.round((view === 'N' ? 4.8 : 3.8) * k));
+  const nrm = bodyNrm(sk);
+  const [bcx, , brx] = sk.body;
+  // thân: nhìn sau chừa cột sống lưng (đường gai/bờm, dải sáng của khối) để lưng không thành vải kẻ ô
+  const skip = (x) => view === 'N' && Math.abs(x + 0.5 - bcx) < Math.max(1.5, brx * 0.2);
+  scallops(ctx, backMask(ctx), { pw, ph, ramp, z: 4.2, prefix: 'scale', group: 'body', normal: nrm, skip });
   if (t.belly) bellyBands(ctx);
-  // đầu (tê tê): mũ vảy trên đỉnh và gáy, mép dưới lượn theo tấm vảy; chừa mắt và mặt
+  // đầu (tê tê): mũ vảy trên đỉnh và gáy; chừa mắt, mặt và vùng sáng nhất của đầu
   if (t.head && ctx.headMask) {
     const [, hcy, , hry] = sk.head;
-    const hpw = Math.max(4, Math.round(5.0 * k));
-    const hph = Math.max(3, Math.round(3.2 * k));
+    const hpw = Math.max(4, Math.round(5.6 * k));
+    const hph = Math.max(3, Math.round(3.6 * k));
     const lim = view === 'S' ? sk.eyeY - 2.6 * k - 0.6 : view === 'E' ? sk.eyeY - 2.0 : hcy + hry * 0.5;
     const fx = sk.anchors.face[0];
     const keep = view === 'E' ? (cx, cy) => cy < lim && cx < fx - 0.5 : (cx, cy) => cy < lim;
-    platesOn(ctx, headArea(ctx), { pw: hpw, ph: hph, ramp, z: ctx.zh + 0.15, prefix: 'headscale', normal: ctx.hnrm, keep });
+    scallops(ctx, headArea(ctx), { pw: hpw, ph: hph, ramp, z: ctx.zh + 0.15, prefix: 'headscale', group: 'head', normal: ctx.hnrm, head: true, keep, skip: (x, y, band) => band >= 4 });
   }
 }
 
