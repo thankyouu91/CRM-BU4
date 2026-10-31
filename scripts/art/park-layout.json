@@ -1,0 +1,626 @@
+{
+ "version": 1,
+ "comment": "Fallback park layout built from Phase 0 tiles/props (+ Phase 1 props when present). Coordinates are art pixels: x = centre, y = foot line. Replace with park-1/layout.json when it lands.",
+ "tile": 16,
+ "size": [
+  667,
+  200
+ ],
+ "world_px": 3,
+ "terrain": {
+  "legend": {
+   "g": "grass",
+   "p": "dirt",
+   "s": "stone",
+   "w": "water"
+  },
+  "cols": 42,
+  "rows": 13,
+  "base": "g",
+  "shapes": [
+   {
+    "t": "p",
+    "rect": [
+     0,
+     9,
+     42,
+     10
+    ],
+    "note": "main path"
+   },
+   {
+    "t": "p",
+    "rect": [
+     16,
+     3,
+     26,
+     10
+    ],
+    "note": "plaza dirt ring"
+   },
+   {
+    "t": "s",
+    "rect": [
+     17,
+     4,
+     25,
+     9
+    ],
+    "note": "stone plaza"
+   },
+   {
+    "t": "p",
+    "rect": [
+     33,
+     5,
+     34,
+     9
+    ],
+    "note": "branch path to the stage"
+   },
+   {
+    "t": "p",
+    "rect": [
+     30,
+     3,
+     38,
+     6
+    ],
+    "note": "stage clearing"
+   },
+   {
+    "t": "w",
+    "ellipse": [
+     6.6,
+     5.4,
+     4.4,
+     2.4
+    ],
+    "note": "pond"
+   }
+  ]
+ },
+ "objects": [
+  {
+   "sprite": "tree",
+   "x": 8,
+   "y": 18,
+   "foot": "none",
+   "group": "tree-wall"
+  },
+  {
+   "sprite": "pine|tree",
+   "x": 46,
+   "y": 20,
+   "foot": "none",
+   "group": "tree-wall"
+  },
+  {
+   "sprite": "tree",
+   "x": 84,
+   "y": 22,
+   "foot": "none",
+   "group": "tree-wall"
+  },
+  {
+   "sprite": "cherry-tree|tree",
+   "x": 122,
+   "y": 19,
+   "foot": "none",
+   "group": "tree-wall"
+  },
+  {
+   "sprite": "tree",
+   "x": 160,
+   "y": 21,
+   "foot": "none",
+   "group": "tree-wall"
+  },
+  {
+   "sprite": "pine-v2|pine|tree",
+   "x": 198,
+   "y": 18,
+   "foot": "none",
+   "group": "tree-wall"
+  },
+  {
+   "sprite": "orange-tree|tree",
+   "x": 236,
+   "y": 20,
+   "foot": "none",
+   "group": "tree-wall"
+  },
+  {
+   "sprite": "tree",
+   "x": 274,
+   "y": 22,
+   "foot": "none",
+   "group": "tree-wall"
+  },
+  {
+   "sprite": "pine|tree",
+   "x": 312,
+   "y": 19,
+   "foot": "none",
+   "group": "tree-wall"
+  },
+  {
+   "sprite": "tree",
+   "x": 350,
+   "y": 21,
+   "foot": "none",
+   "group": "tree-wall"
+  },
+  {
+   "sprite": "cherry-tree|tree",
+   "x": 388,
+   "y": 18,
+   "foot": "none",
+   "group": "tree-wall"
+  },
+  {
+   "sprite": "tree",
+   "x": 426,
+   "y": 20,
+   "foot": "none",
+   "group": "tree-wall"
+  },
+  {
+   "sprite": "pine-v2|pine|tree",
+   "x": 464,
+   "y": 22,
+   "foot": "none",
+   "group": "tree-wall"
+  },
+  {
+   "sprite": "orange-tree|tree",
+   "x": 502,
+   "y": 19,
+   "foot": "none",
+   "group": "tree-wall"
+  },
+  {
+   "sprite": "tree",
+   "x": 540,
+   "y": 21,
+   "foot": "none",
+   "group": "tree-wall"
+  },
+  {
+   "sprite": "pine|tree",
+   "x": 578,
+   "y": 18,
+   "foot": "none",
+   "group": "tree-wall"
+  },
+  {
+   "sprite": "tree",
+   "x": 616,
+   "y": 20,
+   "foot": "none",
+   "group": "tree-wall"
+  },
+  {
+   "sprite": "cherry-tree|tree",
+   "x": 654,
+   "y": 22,
+   "foot": "none",
+   "group": "tree-wall"
+  },
+  {
+   "sprite": "cherry-tree|tree",
+   "x": 205,
+   "y": 42,
+   "foot": "trunk",
+   "group": "tree-wall"
+  },
+  {
+   "sprite": "tree",
+   "x": 252,
+   "y": 45,
+   "foot": "trunk",
+   "group": "tree-wall"
+  },
+  {
+   "sprite": "tree",
+   "x": 290,
+   "y": 42,
+   "foot": "trunk",
+   "group": "tree-wall"
+  },
+  {
+   "sprite": "tree",
+   "x": 337,
+   "y": 45,
+   "foot": "trunk",
+   "group": "tree-wall"
+  },
+  {
+   "sprite": "pine|tree",
+   "x": 384,
+   "y": 42,
+   "foot": "trunk",
+   "group": "tree-wall"
+  },
+  {
+   "sprite": "tree",
+   "x": 422,
+   "y": 45,
+   "foot": "trunk",
+   "group": "tree-wall"
+  },
+  {
+   "sprite": "cherry-tree|tree",
+   "x": 469,
+   "y": 42,
+   "foot": "trunk",
+   "group": "tree-wall"
+  },
+  {
+   "sprite": "tree",
+   "x": 516,
+   "y": 45,
+   "foot": "trunk",
+   "group": "tree-wall"
+  },
+  {
+   "sprite": "tree",
+   "x": 601,
+   "y": 45,
+   "foot": "trunk",
+   "group": "tree-wall"
+  },
+  {
+   "sprite": "pine|tree",
+   "x": 648,
+   "y": 42,
+   "foot": "trunk",
+   "group": "tree-wall"
+  },
+  {
+   "sprite": "rock-large|crate",
+   "x": 186,
+   "y": 70,
+   "foot": "base"
+  },
+  {
+   "sprite": "rock-small",
+   "x": 26,
+   "y": 112,
+   "foot": "base"
+  },
+  {
+   "sprite": "bush-small",
+   "x": 12,
+   "y": 74,
+   "foot": "base"
+  },
+  {
+   "sprite": "grass-tuft",
+   "x": 172,
+   "y": 112,
+   "layer": "ground"
+  },
+  {
+   "sprite": "grass-tuft",
+   "x": 40,
+   "y": 122,
+   "layer": "ground"
+  },
+  {
+   "sprite": "flowers",
+   "x": 120,
+   "y": 124,
+   "layer": "ground"
+  },
+  {
+   "sprite": "bench",
+   "x": 96,
+   "y": 140,
+   "foot": "base"
+  },
+  {
+   "sprite": "tree",
+   "x": 222,
+   "y": 104,
+   "foot": "trunk"
+  },
+  {
+   "sprite": "lamp2|lamp",
+   "x": 150,
+   "y": 146,
+   "foot": "post"
+  },
+  {
+   "sprite": "grandpa/rot-south",
+   "x": 196,
+   "y": 116,
+   "foot": "none",
+   "figure": true,
+   "optional": true
+  },
+  {
+   "sprite": "fountain-lg-anim|fountain-lg|fountain-anim|fountain",
+   "x": 336,
+   "y": 114,
+   "foot": "basin",
+   "anim": {
+    "fps": 8,
+    "mode": "pingpong"
+   }
+  },
+  {
+   "sprite": "bench",
+   "x": 300,
+   "y": 74,
+   "foot": "base"
+  },
+  {
+   "sprite": "bench",
+   "x": 372,
+   "y": 74,
+   "foot": "base"
+  },
+  {
+   "sprite": "lamp",
+   "x": 266,
+   "y": 66,
+   "foot": "post"
+  },
+  {
+   "sprite": "lamp",
+   "x": 406,
+   "y": 66,
+   "foot": "post"
+  },
+  {
+   "sprite": "lamp",
+   "x": 266,
+   "y": 150,
+   "foot": "post"
+  },
+  {
+   "sprite": "lamp",
+   "x": 406,
+   "y": 150,
+   "foot": "post"
+  },
+  {
+   "sprite": "flowerbed",
+   "x": 246,
+   "y": 132,
+   "foot": "base"
+  },
+  {
+   "sprite": "flowerbed",
+   "x": 426,
+   "y": 132,
+   "foot": "base"
+  },
+  {
+   "sprite": "stage|log",
+   "x": 548,
+   "y": 84,
+   "foot": "base"
+  },
+  {
+   "sprite": "ball",
+   "x": 600,
+   "y": 120,
+   "foot": "none",
+   "optional": true
+  },
+  {
+   "sprite": "ramp",
+   "x": 628,
+   "y": 126,
+   "foot": "base",
+   "optional": true
+  },
+  {
+   "sprite": "cherry-tree|tree",
+   "x": 468,
+   "y": 104,
+   "foot": "trunk"
+  },
+  {
+   "sprite": "cherry-tree|tree",
+   "x": 646,
+   "y": 100,
+   "foot": "trunk"
+  },
+  {
+   "sprite": "flowerbed",
+   "x": 506,
+   "y": 132,
+   "foot": "base"
+  },
+  {
+   "sprite": "flowerbed",
+   "x": 588,
+   "y": 134,
+   "foot": "base"
+  },
+  {
+   "sprite": "bush-large",
+   "x": 470,
+   "y": 60,
+   "foot": "base"
+  },
+  {
+   "sprite": "child/rot-south",
+   "x": 520,
+   "y": 112,
+   "foot": "none",
+   "figure": true,
+   "optional": true
+  },
+  {
+   "sprite": "flowers",
+   "x": 448,
+   "y": 70,
+   "layer": "ground"
+  },
+  {
+   "sprite": "grass-tuft",
+   "x": 612,
+   "y": 76,
+   "layer": "ground"
+  },
+  {
+   "sprite": "flowers",
+   "x": 18,
+   "y": 199,
+   "layer": "ground",
+   "foot": "none"
+  },
+  {
+   "sprite": "grass-tuft",
+   "x": 85,
+   "y": 199,
+   "layer": "ground",
+   "foot": "none"
+  },
+  {
+   "sprite": "flowers",
+   "x": 134,
+   "y": 199,
+   "layer": "ground",
+   "foot": "none"
+  },
+  {
+   "sprite": "bush-small",
+   "x": 201,
+   "y": 199,
+   "layer": "sort",
+   "foot": "none"
+  },
+  {
+   "sprite": "flowers",
+   "x": 250,
+   "y": 199,
+   "layer": "ground",
+   "foot": "none"
+  },
+  {
+   "sprite": "grass-tuft",
+   "x": 317,
+   "y": 199,
+   "layer": "ground",
+   "foot": "none"
+  },
+  {
+   "sprite": "flowers",
+   "x": 366,
+   "y": 199,
+   "layer": "ground",
+   "foot": "none"
+  },
+  {
+   "sprite": "bush-small",
+   "x": 433,
+   "y": 199,
+   "layer": "sort",
+   "foot": "none"
+  },
+  {
+   "sprite": "flowers",
+   "x": 482,
+   "y": 199,
+   "layer": "ground",
+   "foot": "none"
+  },
+  {
+   "sprite": "grass-tuft",
+   "x": 549,
+   "y": 199,
+   "layer": "ground",
+   "foot": "none"
+  },
+  {
+   "sprite": "flowers",
+   "x": 598,
+   "y": 199,
+   "layer": "ground",
+   "foot": "none"
+  },
+  {
+   "sprite": "bush-small",
+   "x": 665,
+   "y": 199,
+   "layer": "sort",
+   "foot": "none"
+  }
+ ],
+ "npcs": [
+  {
+   "id": "visitor-a",
+   "sprite": "npc-girl|npc-visitor-a|npc",
+   "route": [
+    [
+     30,
+     152
+    ],
+    [
+     640,
+     152
+    ]
+   ],
+   "speed": 16,
+   "pause": [
+    2,
+    6
+   ]
+  },
+  {
+   "id": "visitor-b",
+   "sprite": "npc-boy|npc-visitor-b|shopkeeper",
+   "route": [
+    [
+     610,
+     160
+    ],
+    [
+     200,
+     160
+    ]
+   ],
+   "speed": 14,
+   "pause": [
+    3,
+    7
+   ],
+   "start": 0.4
+  }
+ ],
+ "fx": [
+  {
+   "sprite": "fx-pond-sparkle",
+   "count": 3,
+   "area": "water"
+  },
+  {
+   "sprite": "fx-pond-ripple",
+   "count": 1,
+   "area": "water"
+  }
+ ],
+ "walkable": [
+  [
+   12,
+   56
+  ],
+  [
+   655,
+   56
+  ],
+  [
+   655,
+   178
+  ],
+  [
+   12,
+   178
+  ]
+ ]
+}

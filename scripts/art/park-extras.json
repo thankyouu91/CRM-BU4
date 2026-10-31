@@ -1,0 +1,16 @@
+{
+ "comment": "Added on top of park-1/layout.json by build-park.py: park-2's fountain centrepiece and visitors, pet toys, ambient-1's pond fx. Art px, x = centre, y = foot line. Every entry is skipped while its art is missing; 'a|b' falls back to b (Phase 0).",
+ "objects": [
+  {"sprite": "fountain-lg-anim|fountain-lg|fountain-anim|fountain", "x": 336, "y": 170, "foot": "basin", "anim": {"fps": 8, "mode": "pingpong"}},
+  {"sprite": "ball|toy-ball|pet-ball", "x": 572, "y": 186, "foot": "none", "optional": true},
+  {"sprite": "ramp|toy-ramp|pet-ramp", "x": 120, "y": 188, "foot": "base", "optional": true}
+ ],
+ "npcs": [
+  {"id": "visitor-a", "sprite": "npc-girl|npc-visitor-girl|npc", "route": [[20, 150], [80, 137], [130, 127], [185, 129], [240, 141], [282, 126], [390, 126], [432, 142], [476, 156], [526, 166], [586, 158], [646, 145]], "speed": 15, "pause": [3, 7]},
+  {"id": "visitor-b", "sprite": "npc-boy|npc-visitor-boy|shopkeeper", "route": [[628, 146], [586, 159], [526, 167], [476, 157], [440, 146]], "speed": 13, "pause": [4, 9], "start": 0.5}
+ ],
+ "fx": [
+  {"sprite": "fx-pond-sparkle", "count": 3},
+  {"sprite": "fx-pond-ripple", "count": 1}
+ ]
+}
