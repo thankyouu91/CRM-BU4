@@ -20,10 +20,8 @@
     "frames": 1,
     "filtering": "nearest",
     "scale": "integer 3x desktop (2x when the column is under 960 px) / 2x phone",
-    "bytes": 4008,
-    "fx": [
-     "fx-chimney-smoke-lg"
-    ]
+    "bytes": 4992,
+    "fx": []
    },
    "visual_locks": [
     "palette.json",
@@ -32,28 +30,21 @@
     "outline: #2e1d14 outer"
    ],
    "provenance": {
-    "kind": "composited",
-    "tool": "scripts/art/build-scenes.py (placeholder compositor)",
-    "mode": "placeholder",
+    "kind": "generated",
+    "tool": "scripts/art/build-scenes.py <- headers package (compose.py)",
+    "mode": "art",
     "pixellab_id": "",
     "prompt": "",
     "params": {
      "sources": [
-      "phase0/dl/pal/crate.png",
-      "phase0/dl/pal/fence.png",
-      "phase0/dl/pal/lamp.png",
-      "phase0/dl/pal/tree.png",
-      "phase1/bldg-5/pal/factory-v2.png",
-      "phase1/npc-2/pal/farmer/idle-south.png"
+      "phase1/headers/factory-1x.png"
      ]
     },
     "created_at": "",
     "generation_cost": 0,
     "postprocess": [
      "opaque on #fbf1e3",
-     "WebP lossless (exact)",
-     "Wang terrain + sprites placed by bottom-centre",
-     "shadow 28% #2e1d14 snapped to palette"
+     "WebP lossless (exact)"
     ],
     "license": "derived from PixelLab assets listed in sources (PixelLab ToS) — verify before ship"
    },
@@ -62,7 +53,7 @@
     "in_engine_reviewed": true,
     "technical_checks_passed": true,
     "approved_by": "",
-    "notes": "off-palette=0 colours=32; placeholder until the headers package lands"
+    "notes": "off-palette=0 colours=33"
    }
   },
   {
@@ -77,7 +68,7 @@
     "frames": 1,
     "filtering": "nearest",
     "scale": "integer 3x desktop (2x when the column is under 960 px) / 2x phone",
-    "bytes": 4044,
+    "bytes": 4212,
     "fx": []
    },
    "visual_locks": [
@@ -110,7 +101,7 @@
     "in_engine_reviewed": true,
     "technical_checks_passed": true,
     "approved_by": "",
-    "notes": "off-palette=0 colours=37"
+    "notes": "off-palette=0 colours=40"
    }
   },
   {
@@ -125,7 +116,7 @@
     "frames": 1,
     "filtering": "nearest",
     "scale": "integer 3x desktop (2x when the column is under 960 px) / 2x phone",
-    "bytes": 4234,
+    "bytes": 4404,
     "fx": []
    },
    "visual_locks": [
@@ -135,30 +126,21 @@
     "outline: #2e1d14 outer"
    ],
    "provenance": {
-    "kind": "composited",
-    "tool": "scripts/art/build-scenes.py (placeholder compositor)",
-    "mode": "placeholder",
+    "kind": "generated",
+    "tool": "scripts/art/build-scenes.py <- headers package (compose.py)",
+    "mode": "art",
     "pixellab_id": "",
     "prompt": "",
     "params": {
      "sources": [
-      "phase0/dl/pal/bench.png",
-      "phase0/dl/pal/crate.png",
-      "phase0/dl/pal/flowerbed.png",
-      "phase0/dl/pal/home.png",
-      "phase0/dl/pal/lamp.png",
-      "phase0/dl/pal/shop.png",
-      "phase0/dl/pal/tree.png",
-      "phase1/npc-1/pal/shopkeeper/rot-south.png"
+      "phase1/headers/shop-1x.png"
      ]
     },
     "created_at": "",
     "generation_cost": 0,
     "postprocess": [
      "opaque on #fbf1e3",
-     "WebP lossless (exact)",
-     "Wang terrain + sprites placed by bottom-centre",
-     "shadow 28% #2e1d14 snapped to palette"
+     "WebP lossless (exact)"
     ],
     "license": "derived from PixelLab assets listed in sources (PixelLab ToS) — verify before ship"
    },
@@ -167,7 +149,7 @@
     "in_engine_reviewed": true,
     "technical_checks_passed": true,
     "approved_by": "",
-    "notes": "off-palette=0 colours=37; placeholder until the headers package lands"
+    "notes": "off-palette=0 colours=40"
    }
   },
   {
@@ -182,8 +164,10 @@
     "frames": 1,
     "filtering": "nearest",
     "scale": "integer 3x desktop (2x when the column is under 960 px) / 2x phone",
-    "bytes": 4310,
-    "fx": []
+    "bytes": 2446,
+    "fx": [
+     "fx-chimney-smoke"
+    ]
    },
    "visual_locks": [
     "palette.json",
@@ -192,29 +176,21 @@
     "outline: #2e1d14 outer"
    ],
    "provenance": {
-    "kind": "composited",
-    "tool": "scripts/art/build-scenes.py (placeholder compositor)",
-    "mode": "placeholder",
+    "kind": "generated",
+    "tool": "scripts/art/build-scenes.py <- headers package (compose.py)",
+    "mode": "art",
     "pixellab_id": "",
     "prompt": "",
     "params": {
      "sources": [
-      "phase0/dl/pal/bench.png",
-      "phase0/dl/pal/crate.png",
-      "phase0/dl/pal/flowerbed.png",
-      "phase0/dl/pal/lamp.png",
-      "phase0/dl/pal/tree.png",
-      "phase1/bldg-3/pal/kitchen.png",
-      "phase1/npc-3/pal/chef/south.png"
+      "phase1/headers/kitchen-1x.png"
      ]
     },
     "created_at": "",
     "generation_cost": 0,
     "postprocess": [
      "opaque on #fbf1e3",
-     "WebP lossless (exact)",
-     "Wang terrain + sprites placed by bottom-centre",
-     "shadow 28% #2e1d14 snapped to palette"
+     "WebP lossless (exact)"
     ],
     "license": "derived from PixelLab assets listed in sources (PixelLab ToS) — verify before ship"
    },
@@ -223,7 +199,7 @@
     "in_engine_reviewed": true,
     "technical_checks_passed": true,
     "approved_by": "",
-    "notes": "off-palette=0 colours=36; placeholder until the headers package lands"
+    "notes": "off-palette=0 colours=39"
    }
   },
   {
@@ -238,7 +214,7 @@
     "frames": 1,
     "filtering": "nearest",
     "scale": "integer 3x desktop (2x when the column is under 960 px) / 2x phone",
-    "bytes": 3498,
+    "bytes": 3730,
     "fx": []
    },
    "visual_locks": [
@@ -256,8 +232,8 @@
     "params": {
      "sources": [
       "phase0/dl/pal/flowerbed.png",
-      "phase0/dl/pal/home.png",
       "phase0/dl/pal/tree.png",
+      "phase1/bldg-4/pal/garden.png",
       "phase1/npc-2/pal/farmer/idle-south.png"
      ]
     },
@@ -276,7 +252,7 @@
     "in_engine_reviewed": true,
     "technical_checks_passed": true,
     "approved_by": "",
-    "notes": "off-palette=0 colours=36; placeholder until the headers package lands"
+    "notes": "off-palette=0 colours=38; placeholder until the headers package lands"
    }
   },
   {
@@ -291,7 +267,7 @@
     "frames": 1,
     "filtering": "nearest",
     "scale": "integer 3x desktop (2x when the column is under 960 px) / 2x phone",
-    "bytes": 3986,
+    "bytes": 4638,
     "fx": []
    },
    "visual_locks": [
@@ -301,28 +277,21 @@
     "outline: #2e1d14 outer"
    ],
    "provenance": {
-    "kind": "composited",
-    "tool": "scripts/art/build-scenes.py (placeholder compositor)",
-    "mode": "placeholder",
+    "kind": "generated",
+    "tool": "scripts/art/build-scenes.py <- headers package (compose.py)",
+    "mode": "art",
     "pixellab_id": "",
     "prompt": "",
     "params": {
      "sources": [
-      "phase0/dl/pal/bench.png",
-      "phase0/dl/pal/lamp.png",
-      "phase0/dl/pal/tree.png",
-      "phase1/headers/pal/school-v2.png",
-      "phase1/npc-2/pal/student/idle-south.png",
-      "phase1/props-2/pal/bush-large.png"
+      "phase1/headers/school-1x.png"
      ]
     },
     "created_at": "",
     "generation_cost": 0,
     "postprocess": [
      "opaque on #fbf1e3",
-     "WebP lossless (exact)",
-     "Wang terrain + sprites placed by bottom-centre",
-     "shadow 28% #2e1d14 snapped to palette"
+     "WebP lossless (exact)"
     ],
     "license": "derived from PixelLab assets listed in sources (PixelLab ToS) — verify before ship"
    },
@@ -331,7 +300,7 @@
     "in_engine_reviewed": true,
     "technical_checks_passed": true,
     "approved_by": "",
-    "notes": "off-palette=0 colours=40; placeholder until the headers package lands"
+    "notes": "off-palette=0 colours=43"
    }
   },
   {
@@ -346,7 +315,7 @@
     "frames": 1,
     "filtering": "nearest",
     "scale": "integer 3x desktop (2x when the column is under 960 px) / 2x phone",
-    "bytes": 3830,
+    "bytes": 3850,
     "fx": []
    },
    "visual_locks": [
@@ -356,28 +325,21 @@
     "outline: #2e1d14 outer"
    ],
    "provenance": {
-    "kind": "composited",
-    "tool": "scripts/art/build-scenes.py (placeholder compositor)",
-    "mode": "placeholder",
+    "kind": "generated",
+    "tool": "scripts/art/build-scenes.py <- headers package (compose.py)",
+    "mode": "art",
     "pixellab_id": "",
     "prompt": "",
     "params": {
      "sources": [
-      "phase0/dl/pal/bench.png",
-      "phase0/dl/pal/flowerbed.png",
-      "phase0/dl/pal/lamp.png",
-      "phase0/dl/pal/tree.png",
-      "phase1/headers/pal/clinic-v3.png",
-      "phase1/npc-1/pal/grandpa/rot-south.png"
+      "phase1/headers/clinic-1x.png"
      ]
     },
     "created_at": "",
     "generation_cost": 0,
     "postprocess": [
      "opaque on #fbf1e3",
-     "WebP lossless (exact)",
-     "Wang terrain + sprites placed by bottom-centre",
-     "shadow 28% #2e1d14 snapped to palette"
+     "WebP lossless (exact)"
     ],
     "license": "derived from PixelLab assets listed in sources (PixelLab ToS) — verify before ship"
    },
@@ -386,7 +348,7 @@
     "in_engine_reviewed": true,
     "technical_checks_passed": true,
     "approved_by": "",
-    "notes": "off-palette=0 colours=40; placeholder until the headers package lands"
+    "notes": "off-palette=0 colours=40"
    }
   }
  ]

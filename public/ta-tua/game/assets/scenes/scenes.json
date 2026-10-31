@@ -14,19 +14,8 @@
    "src": "factory.webp",
    "w": 320,
    "h": 80,
-   "status": "placeholder",
-   "fx": [
-    {
-     "id": "fx-chimney-smoke-lg",
-     "src": "fx-chimney-smoke-lg.webp",
-     "x": 194,
-     "y": -31,
-     "w": 24,
-     "h": 48,
-     "frames": 8,
-     "ms": 140
-    }
-   ]
+   "status": "art",
+   "fx": []
   },
   "bank": {
    "src": "bank.webp",
@@ -39,15 +28,26 @@
    "src": "shop.webp",
    "w": 320,
    "h": 80,
-   "status": "placeholder",
+   "status": "art",
    "fx": []
   },
   "kitchen": {
    "src": "kitchen.webp",
    "w": 320,
    "h": 80,
-   "status": "placeholder",
-   "fx": []
+   "status": "art",
+   "fx": [
+    {
+     "id": "fx-chimney-smoke",
+     "src": "fx-chimney-smoke.webp",
+     "x": 146,
+     "y": -12,
+     "w": 16,
+     "h": 32,
+     "frames": 8,
+     "ms": 130
+    }
+   ]
   },
   "garden": {
    "src": "garden.webp",
@@ -60,14 +60,14 @@
    "src": "school.webp",
    "w": 320,
    "h": 80,
-   "status": "placeholder",
+   "status": "art",
    "fx": []
   },
   "clinic": {
    "src": "clinic.webp",
    "w": 320,
    "h": 80,
-   "status": "placeholder",
+   "status": "art",
    "fx": []
   }
  }

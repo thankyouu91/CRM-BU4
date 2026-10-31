@@ -421,8 +421,12 @@ def audit(im):
             'semi_alpha': sum(1 for p in px if 0 < p[3] < 255), 'colours': len({p[:3] for p in px if p[3]})}
 
 
-# Hình nhà trong tranh cuối có ống khói -> hoạt cảnh khói (tìm theo id/tên hình trong layers.json của gói headers).
-FX_HINTS = {'factory': [('factory', 'fx-chimney-smoke-lg')], 'kitchen': [('kitchen', 'fx-chimney-smoke')]}
+# Hình trong tranh cuối có khói/hơi -> hoạt cảnh (tìm theo id/tên hình trong layers.json của gói headers).
+# Neo 'chimney' = dải điểm ảnh cao nhất của hình; (x, y) = điểm trong hình gốc (vd. miệng nồi trên bếp lò).
+FX_HINTS = {
+    'factory': [('factory', 'fx-chimney-smoke-lg', 'chimney')],
+    'kitchen': [('kitchen', 'fx-chimney-smoke', 'chimney'), ('kit-stove', 'fx-chimney-smoke', (20, 13))],
+}
 
 
 def final_fx(name, art_path):
@@ -437,7 +441,7 @@ def final_fx(name, art_path):
         objects = json.load(open(layers)).get('objects', [])
     except (OSError, ValueError):
         return out
-    for key, fid in FX_HINTS.get(name, []):
+    for key, fid, anchor in FX_HINTS.get(name, []):
         for o in objects:
             if key not in (o.get('id', '') + ' ' + os.path.basename(o.get('src', ''))) or o.get('frame'):
                 continue
@@ -447,7 +451,10 @@ def final_fx(name, art_path):
             sp = sprite(path, o.get('flip', False))
             left = round(o['x'] - (sp.bbox[0] + sp.w / 2))
             top = round(o['y'] - sp.bbox[3])
-            mx, my = sp.chimney()
+            if anchor == 'chimney':
+                mx, my = sp.chimney()
+            else:
+                mx, my = (sp.im.width - 1 - anchor[0] if o.get('flip') else anchor[0]), anchor[1]
             out.append((fid, left + mx, top + my))
     return out
 
