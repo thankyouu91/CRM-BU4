@@ -391,10 +391,14 @@ export function clanBankMove(ctx, view) {
   const scared = live.find((d) => !d.matured && (banks.get(d.bankId)?.reputation ?? 100) < 60 && !banks.get(d.bankId)?.frozen);
   if (scared && rand() < 0.7 - p.trader * 0.3) return { path: `/clan-bank/deposits/${scared.id}/withdraw`, action: 'cbank_withdraw' };
   const mine = view.clan;
-  if (mine?.leader && mine.holder) {
+  if (mine?.leader && (mine.canOpen || mine.bank?.status === 'open')) {
     const minCapital = rules.minCapital ?? 50_000;
+    const fee = view.licenses?.fee ?? 0;
     if (mine.bank?.status !== 'open') {
-      if (mine.fund >= minCapital * 3 && rand() < 0.5) return { path: '/clan-bank/open', body: { capital: Math.floor(mine.fund * 0.4) }, action: 'cbank_open' };
+      // Bot chỉ mua giấy phép khi Phố Ngân hàng còn ít nhất 2 suất, chừa chỗ cho người chơi thật.
+      if ((view.licenses?.free ?? 0) >= 2 && mine.fund >= fee + minCapital * 3 && rand() < 0.5) {
+        return { path: '/clan-bank/open', body: { capital: Math.floor((mine.fund - fee) * 0.4) }, action: 'cbank_open' };
+      }
     } else if ((mine.bank.rates?.[7] ?? 0) <= view.baseRate * 1.01) {
       const k = 1.5 + p.trader;
       const rates = Object.fromEntries((rules.terms ?? [7, 14, 30]).map((t, i) => [t, Math.min(view.maxDepositRate, view.baseRate * (k + i * 0.25))]));

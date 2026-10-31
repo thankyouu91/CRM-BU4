@@ -1,4 +1,4 @@
-// Ngân hàng gia tộc: gia tộc nắm ngành Ngân hàng nhà nước (state_bank) mở ngân hàng riêng.
+// Ngân hàng gia tộc: gia tộc mua giấy phép một suất ngân hàng tư ở Phố Ngân hàng để mở ngân hàng riêng.
 // - Tiền gửi kỳ hạn 7/14/30 ngày của người chơi, lãi do tộc trưởng đặt (tối đa 3 × lãi tiết kiệm NPC). Tiền nằm ở tài khoản
 //   vốn 'bank:<clanId>', không lẫn với quỹ gia tộc; luôn giữ tối thiểu 20% tiền gửi làm tiền mặt khi cho vay hay rút vốn.
 // - Rút tiền khi tiền mặt không đủ: lệnh rút xếp hàng, lên báo, uy tín ngân hàng giảm. Xếp hàng quá 3 đêm: ngân hàng đổ vỡ,
@@ -31,6 +31,8 @@ const q = {
   clan: db.prepare('SELECT * FROM clans WHERE id = ?'),
   member: db.prepare('SELECT * FROM clan_members WHERE user_id = ?'),
   isHolder: db.prepare("SELECT 1 FROM clan_industries WHERE clan_id = ? AND industry = 'state_bank'"),
+  // Suất ngân hàng tư đang dùng: ngân hàng đang mở của gia tộc chưa giải tán.
+  openCount: db.prepare("SELECT COUNT(*) AS n FROM cbank_banks b JOIN clans c ON c.id = b.clan_id WHERE b.status = 'open' AND c.dissolved_at IS NULL"),
 
   bank: db.prepare('SELECT * FROM cbank_banks WHERE clan_id = ?'),
   banks: db.prepare('SELECT b.*, c.name, c.emblem, c.color, c.dissolved_at FROM cbank_banks b JOIN clans c ON c.id = b.clan_id ORDER BY b.opened_at'),
@@ -173,7 +175,6 @@ function myBank(userId, what) {
 function bankState(bank) {
   if (!bank || bank.status !== 'open') return { ok: false, why: 'Ngân hàng đã đóng cửa.' };
   if (globalFrozen() || bank.frozen) return { ok: false, frozen: true, why: 'Ngân hàng đang bị phong tỏa khẩn cấp.' };
-  if (!q.isHolder.get(bank.clan_id)) return { ok: false, runoff: true, why: 'Gia tộc không còn nắm Ngân hàng nhà nước: chỉ trả tiền gửi và thu nợ cũ.' };
   return { ok: true };
 }
 
@@ -188,18 +189,29 @@ function mustNotFrozen(bank) {
 
 // ---------------------------------------------------------------- quản lý ngân hàng (tộc trưởng gia tộc chủ)
 
-/** Mở ngân hàng: chuyển vốn chủ từ quỹ gia tộc vào tài khoản vốn, lãi mặc định bằng lãi tiết kiệm NPC. */
+/** Suất ngân hàng tư còn trống ở Phố Ngân hàng. */
+export const freeLicenses = () => Math.max(0, CBANK.license.slots - q.openCount.get().n);
+
+/**
+ * Mở ngân hàng: mua giấy phép một suất ngân hàng tư (phí vào ngân sách) và chuyển vốn chủ từ quỹ gia tộc vào tài khoản vốn,
+ * lãi mặc định bằng lãi tiết kiệm NPC. Phố đủ suất thì phải chờ một ngân hàng đóng cửa hoặc đổ vỡ.
+ */
 export function openBank(userId, capital, now = Date.now()) {
   return transaction(() => {
     const { clan } = mustLeader(userId, 'mở ngân hàng');
-    if (!q.isHolder.get(clan.id)) throw new GameError('Chỉ gia tộc nắm ngành Ngân hàng nhà nước mới mở được ngân hàng.');
     const old = q.bank.get(clan.id);
     if (old?.status === 'open') throw new GameError('Gia tộc đã có ngân hàng.');
     if (old && (q.liveDeposits.all(clan.id).length || q.loanOutstanding.get(clan.id).total)) throw new GameError('Ngân hàng cũ còn khoản gửi hoặc khoản vay chưa xong.');
+    if (!freeLicenses()) throw new GameError(`Phố Ngân hàng đã đủ ${CBANK.license.slots} ngân hàng tư, chờ một suất trống nhé.`);
     if (!Number.isInteger(capital) || capital < CBANK.minCapital) throw new GameError(`Vốn mở ngân hàng tối thiểu ${fmt(CBANK.minCapital)} xu.`);
-    if (balanceOf(clanAccount(clan.id)) < capital) throw new GameError(`Quỹ gia tộc chỉ còn ${fmt(balanceOf(clanAccount(clan.id)))} xu.`);
+    const fee = CBANK.license.fee;
+    if (balanceOf(clanAccount(clan.id)) < capital + fee) {
+      throw new GameError(`Cần ${fmt(fee)} xu giấy phép và ${fmt(capital)} xu vốn chủ, quỹ gia tộc chỉ còn ${fmt(balanceOf(clanAccount(clan.id)))} xu.`);
+    }
     const base = economy().baseRate;
     const rates = Object.fromEntries(CBANK.terms.map((t) => [t, base]));
+    post({ account: clanAccount(clan.id), delta: -fee, kind: 'cbank_license', memo: 'Giấy phép ngân hàng tư', now });
+    post({ account: 'treasury', delta: fee, kind: 'cbank_license', memo: `Giấy phép ngân hàng ${clan.name}`, now });
     post({ account: clanAccount(clan.id), delta: -capital, kind: 'cbank_capital_in', memo: 'Mở ngân hàng gia tộc', now });
     post({ account: bankAccount(clan.id), delta: capital, kind: 'cbank_capital_in', memo: 'Vốn chủ ban đầu', now });
     // Mở lại sau khi đổ vỡ: uy tín chỉ còn một nửa.
@@ -677,6 +689,7 @@ export function clanBankView(userId, now = Date.now()) {
     mine = {
       id: clan.id, name: clan.name, role: m.role, leader,
       holder: Boolean(q.isHolder.get(clan.id)), fund: balanceOf(clanAccount(clan.id)),
+      canOpen: leader && bank?.status !== 'open' && freeLicenses() > 0,
       loans: q.clanLoans.all(clan.id, now - 7 * DAY).map(loanRow),
       plots,
       related: banks.filter((b) => clansRelated(clan.id, b.clanId, now)).map((b) => b.clanId),
@@ -693,6 +706,7 @@ export function clanBankView(userId, now = Date.now()) {
     maxDepositRate: maxDepositRate(base),
     loanRange: loanRateRange(base),
     rules: CBANK,
+    licenses: { slots: CBANK.license.slots, fee: CBANK.license.fee, free: freeLicenses() },
     insurance: insuranceFund(),
     frozen: globalFrozen(),
     banks,

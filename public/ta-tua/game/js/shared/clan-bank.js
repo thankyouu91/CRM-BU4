@@ -1,9 +1,11 @@
 // Ngân hàng gia tộc: luật chung cho server, giao diện và wiki (hàm thuần, không đụng cơ sở dữ liệu).
-// Gia tộc nắm ngành Ngân hàng nhà nước (state_bank) mở ngân hàng riêng: nhận tiền gửi kỳ hạn của người chơi (cạnh tranh
+// Gia tộc mua một trong các giấy phép ngân hàng tư ở Phố Ngân hàng để mở ngân hàng riêng: nhận tiền gửi kỳ hạn của người chơi (cạnh tranh
 // với tiết kiệm NPC của Ngân hàng Trân Châu) và cho các gia tộc khác vay có thế chấp lô đất. Tiền gửi nằm ở tài khoản vốn
 // riêng `bank:<clanId>`, không lẫn với quỹ gia tộc. Mọi con số ở đây được wiki đọc thẳng và có test đối chiếu.
 
 export const CBANK = {
+  /** Phố Ngân hàng có chừng này suất ngân hàng tư; mở ngân hàng là mua giấy phép một suất, trả từ quỹ gia tộc vào ngân sách. */
+  license: { slots: 4, fee: 100_000 },
   /** Vốn chủ tối thiểu tộc trưởng chuyển từ quỹ gia tộc để mở ngân hàng. */
   minCapital: 50_000,
   /** Kỳ hạn gửi tiết kiệm (ngày). */

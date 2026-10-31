@@ -4,7 +4,7 @@ import { BANK } from "@/petdex/server/rules/bank.js";
 import { CBANK, balanceSheet, failurePayout, maxDepositRate, simpleInterest } from "@/public/ta-tua/game/js/shared/clan-bank.js";
 import { FINANCE_TAX, financeTax } from "@/public/ta-tua/game/js/shared/clan-bonds.js";
 
-// Ngân hàng gia tộc: tiền gửi của người chơi ở ngân hàng do gia tộc nắm Ngân hàng nhà nước điều hành
+// Ngân hàng gia tộc: tiền gửi của người chơi ở các ngân hàng tư do gia tộc mua giấy phép điều hành
 // (petdex/server/clan-bank.js). Mọi con số đọc thẳng từ public/ta-tua/game/js/shared/clan-bank.js;
 // tests/petfarm-wiki-sync-clan-bank.test.ts chạy code của game và báo khi một con số lệch.
 
@@ -30,16 +30,16 @@ export const article: WikiArticle = {
   title: "Ngân hàng gia tộc",
   category: "kinh-te",
   emoji: "🏯",
-  summary: `Gia tộc nắm Ngân hàng nhà nước mở ngân hàng riêng, nhận tiền gửi ${terms} ngày với lãi tối đa ${CBANK.maxRateMultiple} lần lãi tiết kiệm NPC. Lãi cao hơn đi kèm rủi ro: ngân hàng thiếu tiền mặt thì phải xếp hàng rút, đổ vỡ thì bảo hiểm chỉ bù một phần.`,
-  keywords: ["ngân hàng gia tộc", "tiền gửi", "gửi kỳ hạn", "lãi suất", "bảo hiểm tiền gửi", "rút tiền", "xếp hàng", "đổ vỡ", "uy tín", "thanh khoản", "vốn chủ", "state_bank", "ngân hàng nhà nước"],
+  summary: `Phố Ngân hàng có ${CBANK.license.slots} suất ngân hàng tư cho gia tộc mua giấy phép mở ngân hàng riêng, nhận tiền gửi ${terms} ngày với lãi tối đa ${CBANK.maxRateMultiple} lần lãi tiết kiệm NPC. Lãi cao hơn đi kèm rủi ro: ngân hàng thiếu tiền mặt thì phải xếp hàng rút, đổ vỡ thì bảo hiểm chỉ bù một phần.`,
+  keywords: ["ngân hàng gia tộc", "tiền gửi", "gửi kỳ hạn", "lãi suất", "bảo hiểm tiền gửi", "rút tiền", "xếp hàng", "đổ vỡ", "uy tín", "thanh khoản", "vốn chủ", "giấy phép", "phố ngân hàng"],
   related: ["vay-the-chap", "ngan-hang", "gia-toc", "so-cong-thuong"],
   sections: [
     {
       id: "day-la-gi",
       title: "Đây là gì",
       blocks: [
-        { p: `Ngoài [Ngân hàng Trân Châu](ngan-hang) của NPC, gia tộc đang nắm ngành chiến lược **🏦 Ngân hàng nhà nước** được mở một ngân hàng của riêng mình. Ngân hàng này nhận tiền gửi kỳ hạn của mọi người chơi và đem tiền đó [cho các gia tộc khác vay thế chấp](vay-the-chap).` },
-        { p: `Tiền gửi nằm ở **tài khoản vốn riêng của ngân hàng**, tách khỏi quỹ gia tộc. Tộc trưởng tự đặt lãi; gửi ở đâu là do người gửi chọn. Mở ở màn **🏦 Ngân hàng → 🏯 Ngân hàng gia tộc** từ **cấp ${UNLOCKS.bank}**.` },
+        { p: `Vào **🏦 Ngân hàng** là vào **Phố Ngân hàng**: chính giữa là [Ngân hàng Trân Châu](ngan-hang) của nhà nước, hai bên là **${CBANK.license.slots} suất ngân hàng tư**. Gia tộc mua giấy phép một suất để mở ngân hàng của riêng mình; suất chưa có ai mua thì cửa hàng đóng. Ngân hàng tư nhận tiền gửi kỳ hạn của mọi người chơi và đem tiền đó [cho các gia tộc khác vay thế chấp](vay-the-chap).` },
+        { p: `Tiền gửi nằm ở **tài khoản vốn riêng của ngân hàng**, tách khỏi quỹ gia tộc. Tộc trưởng tự đặt lãi; gửi ở đâu là do người gửi chọn. Bấm vào cửa hàng ngân hàng tư trên phố (từ **cấp ${UNLOCKS.bank}**) để gửi tiền hoặc vay.` },
       ],
     },
     {
@@ -47,7 +47,7 @@ export const article: WikiArticle = {
       title: "Chức năng",
       blocks: [
         { table: { head: ["Việc", "Ai làm", "Con số"], rows: [
-          ["Mở ngân hàng", "Tộc trưởng gia tộc nắm Ngân hàng nhà nước", `Chuyển vốn chủ tối thiểu ${xu(CBANK.minCapital)} từ quỹ gia tộc`],
+          ["Mở ngân hàng", "Tộc trưởng, khi phố còn suất trống", `Giấy phép ${xu(CBANK.license.fee)} từ quỹ gia tộc vào ngân sách, cộng vốn chủ tối thiểu ${xu(CBANK.minCapital)}. Mỗi gia tộc một ngân hàng; tối đa ${CBANK.license.slots} ngân hàng tư cùng lúc`],
           ["Đặt lãi tiền gửi", "Tộc trưởng", `Mỗi kỳ hạn ${terms} ngày một mức, từ 0 tới ${CBANK.maxRateMultiple} × lãi suất cơ bản mỗi ngày`],
           ["Góp vốn / rút vốn", "Tộc trưởng", `Rút vốn phải giữ tiền mặt ≥ ${pct(CBANK.liquidityFloor)} tiền gửi, tiền gửi ≤ ${CBANK.leverage} × vốn chủ, và không ai đang xếp hàng`],
           ["Gửi tiền", "Mọi người chơi", `Mỗi khoản ≥ ${xu(CBANK.minDeposit)}; một người tối đa ${xu(CBANK.maxPerDepositor)} ở một ngân hàng. Lãi chốt lúc gửi`],
@@ -65,7 +65,7 @@ export const article: WikiArticle = {
         ] } },
         { p: `**Xếp hàng rút:** khi tiền mặt không đủ trả, lệnh rút (kể cả khoản tự đáo hạn lúc nửa đêm) vào hàng chờ, trả theo thứ tự trước sau ngay khi ngân hàng có tiền (thu nợ, góp vốn). Trong lúc còn người xếp hàng, ngân hàng không nhận tiền gửi mới, không cho vay, không rút vốn.` },
         { p: `**Đổ vỡ:** còn lệnh rút xếp hàng quá **${CBANK.failNights} đêm**, hoặc gia tộc chủ giải tán. Tiền mặt còn lại chia cho mọi người gửi theo tỉ lệ gốc, rồi quỹ bảo hiểm bù tới **${pct(CBANK.insuranceCover)}** phần gốc còn thiếu (trong phạm vi quỹ đang có). Ví dụ hai người gửi ${xu(30_000)} và ${xu(10_000)}, ngân hàng còn ${xu(8_000)}: nhận từ tiền mặt ${xu(fail.paid[0])} và ${xu(fail.paid[1])}, bảo hiểm bù thêm ${xu(fail.insured[0])} và ${xu(fail.insured[1])}. Tiền lãi không được bù.` },
-        { p: "**Mất Ngân hàng nhà nước** (bị thâu tóm qua [Đấu trường](dau-truong)): ngân hàng không nhận tiền gửi, không cho vay mới, nhưng vẫn trả các khoản cũ và thu nợ cũ." },
+        { p: "**Suất trống lại** khi một ngân hàng tư đổ vỡ hoặc gia tộc chủ giải tán; gia tộc khác mua giấy phép mới để vào suất đó. Mở lại sau khi đổ vỡ phải trả giấy phép lần nữa." },
         { p: "**Phong tỏa khẩn cấp:** quản trị viên có thể tạm dừng một hoặc mọi ngân hàng gia tộc; khi đó không gửi, rút, vay được và khoản đáo hạn chờ tới khi gỡ phong tỏa (vẫn thu nợ)." },
       ],
     },

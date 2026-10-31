@@ -59,13 +59,15 @@ const borrower = makeClan('Thợ Gốm');
 const saver = player();
 const saver2 = player();
 
-test('chỉ gia tộc nắm Ngân hàng nhà nước mới mở được ngân hàng, vốn tối thiểu và tách khỏi quỹ', () => {
-  assert.throws(() => cb.openBank(bankClan.leader, 100_000, T0), /Ngân hàng nhà nước/);
-  giveStateBank(bankClan.id);
+test('mở ngân hàng: mua giấy phép một suất (phí vào ngân sách), vốn tối thiểu, tách khỏi quỹ', () => {
   assert.throws(() => cb.openBank(bankClan.leader, CBANK.minCapital - 1, T0), /tối thiểu/);
   const before = fundOf(bankClan.id);
+  const treasury = balance('treasury');
+  const free = cb.freeLicenses();
   cb.openBank(bankClan.leader, 300_000, T0);
-  assert.equal(fundOf(bankClan.id), before - 300_000);
+  assert.equal(fundOf(bankClan.id), before - 300_000 - CBANK.license.fee);
+  assert.equal(balance('treasury'), treasury + CBANK.license.fee);
+  assert.equal(cb.freeLicenses(), free - 1);
   assert.equal(balance(`bank:${bankClan.id}`), 300_000);
   assert.equal(bankRow(bankClan.id).reputation, CBANK.reputation.start);
   assert.throws(() => cb.openBank(bankClan.leader, 100_000, T0), /đã có ngân hàng/);
@@ -314,6 +316,24 @@ test('gia tộc vay giải tán: lô đang thế chấp về tay ngân hàng ch�
   clans.leaveClan(gone.leader, now + HOUR);
   assert.equal(store.db.prepare('SELECT clan_id FROM land_plots WHERE id = ?').get(plotId).clan_id, bankClan.id);
   assert.equal(lastLoan().status, 'defaulted');
+});
+
+test('Phố Ngân hàng chỉ có CBANK.license.slots suất: đủ suất thì không mở thêm, ngân hàng đổ vỡ trả lại suất', () => {
+  const now = T0 + 90 * DAY;
+  const extra = [];
+  while (cb.freeLicenses() > 0) {
+    const c = makeClan(`Suất ${extra.length}`);
+    cb.openBank(c.leader, CBANK.minCapital, now);
+    extra.push(c);
+  }
+  const late = makeClan('Đến Muộn');
+  assert.throws(() => cb.openBank(late.leader, CBANK.minCapital, now), /đủ/);
+  assert.equal(cb.clanBankView(late.leader, now).clan.canOpen, false);
+  cb.failBank(extra[0].id, now, 'thử');
+  assert.equal(cb.freeLicenses(), 1);
+  assert.equal(cb.clanBankView(late.leader, now).clan.canOpen, true);
+  cb.openBank(late.leader, CBANK.minCapital, now);
+  assert.equal(cb.freeLicenses(), 0);
 });
 
 test('sổ cái khớp: mọi tài khoản chung và ví người chơi bằng tổng các dòng sổ cái', () => {

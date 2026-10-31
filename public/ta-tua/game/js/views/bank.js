@@ -2,11 +2,62 @@
 import { api } from '../api.js';
 import { lineChart } from '../charts.js';
 import { countdown, esc, fmt, pct, viewHead } from '../ui.js';
+import { focusClanBank } from './clan-bank.js';
 
 let term = 7;
 
+const ratePct = (r) => `${(r * 100).toLocaleString('vi-VN', { maximumFractionDigits: 2 })}%`;
+
+/**
+ * Phố Ngân hàng: chính giữa là Ngân hàng Trân Châu (nhà nước, NPC), hai bên là các suất ngân hàng tư của gia tộc.
+ * Suất đã có gia tộc mua giấy phép thì mở cửa (bấm vào để gửi tiền / vay), suất chưa ai mua thì kéo cửa cuốn khóa lại.
+ */
+function streetHtml(cb, ctx) {
+  const slots = cb?.licenses?.slots ?? 4;
+  const banks = (cb?.banks ?? []).slice(0, slots);
+  const store = (i) => {
+    const b = banks[i];
+    if (!b) {
+      const lic = cb?.licenses;
+      const mine = cb?.clan;
+      return `<div class="bank-store locked" aria-label="Suất ngân hàng tư còn trống">
+        <div class="store-awning"></div>
+        <div class="store-shutter"><span>🔒</span></div>
+        <div class="store-sign"><b>Ngân hàng tư #${i + 1}</b><small>Chờ gia tộc mua giấy phép${lic ? ` · ${fmt(lic.fee)} xu` : ''}</small></div>
+        ${mine?.canOpen ? '<button class="btn small gold" data-go="clanbank">Mua giấy phép</button>' : ''}
+      </div>`;
+    }
+    const best = Math.max(...b.rates.map((r) => r.rate));
+    const color = /^#[0-9a-f]{6}$/i.test(b.color ?? '') ? b.color : '#8a5a3b';
+    return `<button class="bank-store open ${b.accepting ? '' : 'paused'}" data-go="clanbank" data-bank="${b.clanId}" style="--store:${color}" title="Vào ${esc(b.name)}">
+      <div class="store-awning"></div>
+      <div class="store-front"><span class="store-emblem">${esc(b.emblem)}</span></div>
+      <div class="store-sign"><b>${esc(b.name)}</b>
+        <small>lãi tới <b class="up">${ratePct(best)}</b>/ngày · uy tín ${b.reputation}</small>
+        <small class="${b.accepting ? 'muted' : 'down'}">${b.frozen ? '⛔ Đang phong tỏa' : b.accepting ? '🟢 Đang nhận tiền gửi' : '⏸ Tạm ngừng nhận gửi'}</small>
+      </div>
+    </button>`;
+  };
+  const half = Math.ceil(slots / 2);
+  const left = Array.from({ length: half }, (_, i) => store(i)).join('');
+  const right = Array.from({ length: slots - half }, (_, i) => store(half + i)).join('');
+  return `<section class="bank-street" aria-label="Phố Ngân hàng">
+    <div class="street-gate">🏦 Phố Ngân hàng <small>${banks.length}/${slots} ngân hàng tư đang mở</small></div>
+    <div class="street-row">
+      <div class="street-side">${left}</div>
+      <a class="bank-store national" href="#bank-national" data-scroll="bank-national">
+        <div class="store-awning"></div>
+        <div class="store-front"><span class="store-emblem">🏛️</span></div>
+        <div class="store-sign"><b>Ngân hàng Trân Châu</b><small>Ngân hàng nhà nước · tiết kiệm, kỳ hạn, tín dụng</small></div>
+      </a>
+      <div class="street-side">${right}</div>
+    </div>
+    <div class="street-road"></div>
+  </section>`;
+}
+
 export function renderBank(root, ctx) {
-  root.innerHTML = `${viewHead('🏦 Ngân hàng Trân Châu', 'Để tiền sinh lời: tiết kiệm rút lúc nào cũng được, gửi kỳ hạn lãi cao hơn.')}
+  root.innerHTML = `${viewHead('🏦 Phố Ngân hàng', 'Giữa phố là Ngân hàng Trân Châu của nhà nước; hai bên là ngân hàng tư của các gia tộc, lãi cao hơn nhưng rủi ro hơn.')}
     <div class="bank-view"><div class="empty muted">Đang tải…</div></div>`;
   const view = root.querySelector('.bank-view');
   const need = ctx.catalog.unlocks.bank;
@@ -16,10 +67,12 @@ export function renderBank(root, ctx) {
     return;
   }
 
-  function draw(b) {
+  function draw(b, cb) {
     const latest = b.history.at(-1);
     const termInfo = b.terms.find((t) => t.days === term) ?? b.terms[0];
     view.innerHTML = `
+      ${streetHtml(cb, ctx)}
+      <h2 class="bank-section-title" id="bank-national">🏛️ Ngân hàng Trân Châu <small class="muted">ngân hàng nhà nước</small></h2>
       <div class="bank-grid">
         <section class="card bank-box">
           <h3>🐷 Tiết kiệm không kỳ hạn</h3>
@@ -86,14 +139,10 @@ export function renderBank(root, ctx) {
           <button class="btn gold" data-go="credit">Xem điểm tín dụng</button>
         </section>
 
-        <section class="card bank-box wide row-between">
-          <div>
-            <h3>🏯 Ngân hàng gia tộc</h3>
-            <p class="muted">Gửi kỳ hạn ở ngân hàng do gia tộc nắm Ngân hàng nhà nước điều hành: lãi có thể cao hơn ở đây (tối đa 3 lần), đổi lại rủi ro ngân hàng thiếu tiền mặt hay đổ vỡ.</p>
-          </div>
-          <button class="btn gold" data-go="clanbank">Xem</button>
-        </section>
 
+      </div>
+      <h2 class="bank-section-title">🏪 Dịch vụ tài chính khác</h2>
+      <div class="bank-grid">
         <section class="card bank-box wide row-between">
           <div>
             <h3>📈 Sàn cổ phiếu gia tộc</h3>
@@ -125,8 +174,15 @@ export function renderBank(root, ctx) {
   }
 
   view.addEventListener('click', (e) => {
+    const link = e.target.closest('[data-scroll]');
+    if (link) {
+      e.preventDefault();
+      view.querySelector(`#${link.dataset.scroll}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      return;
+    }
     const btn = e.target.closest('button');
     if (!btn) return;
+    if (btn.dataset.bank) focusClanBank(Number(btn.dataset.bank));
     if (btn.dataset.term) {
       term = Number(btn.dataset.term);
       ctx.refresh();
@@ -146,5 +202,7 @@ export function renderBank(root, ctx) {
     else ctx.act('/bank/deposits', { amount, term });
   });
 
-  api('/bank').then((b) => view.isConnected && draw(b)).catch(ctx.fail);
+  // Ngân hàng tư chỉ để vẽ phố: lỗi thì vẫn hiện Ngân hàng Trân Châu, phố toàn suất khóa.
+  Promise.all([api('/bank'), api('/clan-bank').catch(() => null)])
+    .then(([b, cb]) => view.isConnected && draw(b, cb)).catch(ctx.fail);
 }

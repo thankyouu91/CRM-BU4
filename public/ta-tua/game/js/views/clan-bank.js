@@ -1,4 +1,4 @@
-// Ngân hàng gia tộc: gửi tiền ở ngân hàng của gia tộc nắm Ngân hàng nhà nước, vay thế chấp lô đất, đấu giá lô siết nợ.
+// Ngân hàng tư của gia tộc (Phố Ngân hàng): gửi tiền, mua giấy phép mở ngân hàng, vay thế chấp lô đất, đấu giá lô siết nợ.
 // Luật ở shared/clan-bank.js; server ở petdex/server/clan-bank.js.
 import { api } from '../api.js';
 import { countdown, esc, fmt, viewHead } from '../ui.js';
@@ -7,8 +7,12 @@ const ratePct = (r) => `${(r * 100).toLocaleString('vi-VN', { maximumFractionDig
 const STATUS = { open: 'Đang gửi', queued: 'Đang xếp hàng rút', closed: 'Đã tất toán', failed: 'Ngân hàng đổ vỡ' };
 const LOAN_STATUS = { active: 'Đang nợ', late: 'Quá hạn', repaid: 'Đã trả xong', defaulted: 'Vỡ nợ, đã siết lô', written_off: 'Vỡ nợ, mất trắng' };
 
+/** Ngân hàng tư vừa bấm trên Phố Ngân hàng: màn này cuộn tới đúng ngân hàng đó một lần. */
+let focusId = null;
+export const focusClanBank = (clanId) => { focusId = clanId; };
+
 export function renderClanBank(root, ctx) {
-  root.innerHTML = `${viewHead('🏯 Ngân hàng gia tộc', 'Gửi tiền ở ngân hàng do gia tộc nắm Ngân hàng nhà nước điều hành, hoặc vay thế chấp lô đất.')}
+  root.innerHTML = `${viewHead('🏯 Ngân hàng tư', 'Gửi tiền ở ngân hàng của các gia tộc trên Phố Ngân hàng, hoặc vay thế chấp lô đất.', '<button class="btn small" data-go="bank">← Phố Ngân hàng</button>')}
     <div class="bank-view"><div class="empty muted">Đang tải…</div></div>`;
   const view = root.querySelector('.bank-view');
   const need = ctx.catalog.unlocks.bank;
@@ -18,7 +22,7 @@ export function renderClanBank(root, ctx) {
   }
 
   function bankCard(b, v) {
-    return `<section class="card bank-box">
+    return `<section class="card bank-box" data-bank-card="${b.clanId}">
       <h3>${esc(b.emblem)} ${esc(b.name)}</h3>
       <p class="muted small">Uy tín <b>${b.reputation}</b>/100 · tiền mặt ${b.liquidity >= 1 ? 'đủ trả mọi khoản gửi' : `đủ trả ${Math.round(b.liquidity * 100)}% tiền gửi`}${b.queuedCount ? ` · <b class="down">${b.queuedCount} lệnh rút đang xếp hàng</b>` : ''}${b.frozen ? ' · <b class="down">đang phong tỏa</b>' : ''}</p>
       <div class="term-options">${b.rates.map((r) => `<div class="term"><b>${r.days} ngày</b><span>${ratePct(r.rate)}</span><small>${r.rate > v.baseRate ? `gấp ${(r.rate / v.baseRate).toLocaleString('vi-VN', { maximumFractionDigits: 1 })} lãi NPC` : 'bằng lãi NPC'}</small></div>`).join('')}</div>
@@ -42,12 +46,16 @@ export function renderClanBank(root, ctx) {
 
   function manage(v) {
     const c = v.clan;
-    if (!c?.leader || (!c.holder && !c.bank)) return '';
+    if (!c?.leader) return '';
     if (!c.bank || c.bank.status !== 'open') {
-      if (!c.holder) return '';
-      return `<section class="card bank-box wide"><h3>🏦 Mở ngân hàng của gia tộc</h3>
-        <p class="muted">Gia tộc đang nắm Ngân hàng nhà nước. Vốn chủ tối thiểu ${fmt(v.rules.minCapital)} xu, chuyển từ quỹ gia tộc (quỹ đang có ${fmt(c.fund)} xu).</p>
-        <form class="money-form" data-form="open"><input name="capital" type="number" min="${v.rules.minCapital}" step="1000" required placeholder="Vốn chủ" /><button class="btn primary">Mở ngân hàng</button></form></section>`;
+      const lic = v.licenses;
+      if (!c.canOpen) {
+        return lic && !lic.free ? `<section class="card bank-box wide"><h3>🏦 Mở ngân hàng của gia tộc</h3>
+          <p class="muted">Phố Ngân hàng đã đủ ${lic.slots} ngân hàng tư. Một suất trống lại khi có ngân hàng đổ vỡ hoặc gia tộc chủ giải tán.</p></section>` : '';
+      }
+      return `<section class="card bank-box wide"><h3>🏦 Mua giấy phép ngân hàng tư</h3>
+        <p class="muted">Phố Ngân hàng còn <b>${lic.free}/${lic.slots}</b> suất. Giấy phép <b>${fmt(lic.fee)} xu</b> (vào ngân sách) cộng vốn chủ tối thiểu ${fmt(v.rules.minCapital)} xu, đều lấy từ quỹ gia tộc (quỹ đang có ${fmt(c.fund)} xu).</p>
+        <form class="money-form" data-form="open"><input name="capital" type="number" min="${v.rules.minCapital}" step="1000" required placeholder="Vốn chủ" /><button class="btn primary">Mua giấy phép & mở ngân hàng</button></form></section>`;
     }
     const b = c.bank;
     return `<section class="card bank-box wide"><h3>🏦 Quản lý ngân hàng ${esc(c.name)}</h3>
@@ -107,7 +115,7 @@ export function renderClanBank(root, ctx) {
       ${v.frozen ? '<section class="card"><b class="down">⛔ Ngân hàng gia tộc đang bị phong tỏa khẩn cấp: tạm dừng gửi, rút và vay.</b></section>' : ''}
       <p class="muted">Lãi tiết kiệm NPC hiện tại ${ratePct(v.baseRate)}. Ngân hàng gia tộc được trả tối đa ${ratePct(v.maxDepositRate)}. Quỹ bảo hiểm tiền gửi đang có ${fmt(v.insurance)} xu. <a href="https://wiki.petfarm.online/ngan-hang-gia-toc" target="_blank" rel="noopener">Đọc luật trong wiki</a>.</p>
       <div class="bank-grid">
-        ${v.banks.length ? v.banks.map((b) => bankCard(b, v)).join('') : '<section class="card bank-box"><p class="muted">Chưa có gia tộc nào mở ngân hàng.</p></section>'}
+        ${v.banks.length ? v.banks.map((b) => bankCard(b, v)).join('') : '<section class="card bank-box"><p class="muted">Chưa có gia tộc nào mở ngân hàng tư.</p></section>'}
         <section class="card bank-box wide"><h3>📒 Khoản gửi của bạn</h3>${depositList(v)}</section>
         ${manage(v)}
         ${borrow(v)}
@@ -143,5 +151,16 @@ export function renderClanBank(root, ctx) {
     }
   });
 
-  api('/clan-bank').then((v) => view.isConnected && draw(v)).catch(ctx.fail);
+  api('/clan-bank').then((v) => {
+    if (!view.isConnected) return;
+    draw(v);
+    if (focusId != null) {
+      const card = view.querySelector(`[data-bank-card="${focusId}"]`);
+      focusId = null;
+      if (card) {
+        card.classList.add('focus');
+        card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+    }
+  }).catch(ctx.fail);
 }

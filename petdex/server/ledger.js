@@ -114,6 +114,7 @@ export const KINDS = {
   hui_share: { group: 'income', label: 'Chia tiền thăm hụi' },
   // Ngân hàng gia tộc (clan-bank.js): vốn và tiền gửi ở bank:<id>, quỹ bảo hiểm tiền gửi cbank_insurance, ký quỹ đấu giá cbank_escrow:<id>.
   cbank_capital_in: { group: 'transfer', label: 'Góp vốn ngân hàng gia tộc' },
+  cbank_license: { group: 'expense', label: 'Giấy phép ngân hàng gia tộc' },
   cbank_capital_out: { group: 'transfer', label: 'Rút vốn ngân hàng gia tộc' },
   cbank_deposit: { group: 'transfer', label: 'Gửi ngân hàng gia tộc' },
   cbank_withdraw: { group: 'transfer', label: 'Rút tiền gửi ngân hàng gia tộc' },

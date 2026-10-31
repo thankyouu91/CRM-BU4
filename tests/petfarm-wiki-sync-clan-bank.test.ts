@@ -68,6 +68,13 @@ describe("Petfarm wiki stays in step with the clan bank", () => {
     }
   });
 
+  it("states the Phố Ngân hàng licence: CBANK.license.slots private banks, CBANK.license.fee from the clan fund", () => {
+    const text = JSON.stringify(getArticle("ngan-hang-gia-toc"));
+    expect(text).toContain(`${CBANK.license.slots} suất ngân hàng tư`);
+    expect(text).toContain(`Giấy phép ${CBANK.license.fee.toLocaleString("vi-VN")} xu`);
+    expect(cb.freeLicenses()).toBe(CBANK.license.slots);
+  });
+
   it("opens a bank at CBANK.minCapital and caps deposit rates at CBANK.maxRateMultiple × the NPC rate", () => {
     expect(() => cb.openBank(bankClan.leader, CBANK.minCapital - 1, T0), "minCapital").toThrow();
     cb.openBank(bankClan.leader, 400_000, T0);
