@@ -1,4 +1,5 @@
 import { burst, flyTo, floatText } from './fx.js';
+import { loadParkArt, mountPark16, rectNav } from './parkscene.js';
 import { PARK_PX, mountParkScene } from './scenes.js';
 import { createPetFigure } from './sprite.js';
 import { $, esc, toast } from './ui.js';
@@ -6,11 +7,19 @@ import { $, esc, toast } from './ui.js';
 const SPEED = 190; // đơn vị thế giới mỗi giây
 const BASE_SCALE = 0.6;
 const CUDDLE_GAP = 62; // đứng cách bạn bao xa khi vuốt ve
-const VIEW_W = 1000; // khung nhìn rộng bấy nhiêu đơn vị thế giới; thế giới rộng hơn thì cuộn ngang theo bé của mình
 const WORLD_W = 2000;
 const ROOMS_POLL_MS = 3000;
+/** Bé cao chừng này trên chân: camera canh giữa thân bé chứ không canh chân. */
+const BODY_MID = 36;
 
 const clamp = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
+/** Mỗi điểm ảnh gốc hiện ra bấy nhiêu điểm ảnh màn hình: 3 trên máy tính, 2 trên điện thoại (số nguyên cho sắc nét). */
+const pixelTarget = () => (innerWidth < 768 ? 2 : 3);
+/** Cả game thu nhỏ bằng `zoom` trên <html> (css/style.css); bù lại để điểm ảnh vẫn tròn số. */
+function pageZoom() {
+  const z = parseFloat(getComputedStyle(document.documentElement).zoom);
+  return z > 0 ? z : 1;
+}
 
 /** Vẽ công viên và nối socket; trả về hàm dọn dẹp khi rời màn. */
 export function mountPark(root, ctx) {
@@ -46,11 +55,12 @@ export function mountPark(root, ctx) {
   const roomsEl = $('#park-rooms', root);
   const helpBtn = $('#park-help', root);
   const tipEl = $('#park-tip', root);
-  const unmountScene = mountParkScene(worldEl, WORLD_W);
 
   let world = { width: WORLD_W, height: 600, minX: 50, maxX: WORLD_W - 50, minY: 318, maxY: 585 };
   let scale = 1;
-  let camX = 0; // mép trái khung nhìn, theo đơn vị thế giới
+  let camX = 0; // mép trái / mép trên khung nhìn, theo đơn vị thế giới
+  let camY = 0;
+  let shownCam = { x: 0, y: 0 }; // camera đã làm tròn theo điểm ảnh gốc, đúng như đang hiện
   let selfId = null;
   let menu = null;
   let room = null; // kênh đang đứng
@@ -60,28 +70,66 @@ export function mountPark(root, ctx) {
   const entities = new Map();
   worldEl.style.width = `${world.width}px`;
 
+  // ---- cảnh: công viên 16-bit (assets/park), tải không được thì về cảnh vẽ tay cũ ----
+  // Tọa độ trên máy chủ là một khung chữ nhật; `nav` ánh xạ nó vào bãi cỏ đi được của cảnh, tránh ao và đồ vật.
+  let nav = rectNav(world);
+  let scene = null;
+  let unmountScene = null;
+  let alive = true;
+  loadParkArt().then((art) => {
+    if (!alive) return;
+    if (art) {
+      scene = mountPark16(worldEl, art);
+      nav = scene.nav;
+      nav.setLogical(world);
+      wrap.classList.add('px16');
+    } else {
+      unmountScene = mountParkScene(worldEl, WORLD_W);
+    }
+    remap();
+  });
+
   const speciesOf = (id) => ctx.catalog.species.find((s) => s.id === id) ?? ctx.catalog.species[0];
   const petHeight = (e) => e.figure.height;
   /** Điểm trên thân bé: 0 là chân, 1 là đỉnh khung hình. */
   const pointOn = (e, frac) => ({ x: e.x - 4, y: e.y - petHeight(e) * frac });
 
-  // ---- camera: cuộn ngang theo bé của mình ----
+  // ---- camera: điểm ảnh gốc phóng số nguyên lần, khung nhìn đi theo bé của mình cả ngang lẫn dọc ----
 
-  const maxCam = () => Math.max(0, world.width - VIEW_W);
-  function applyCamera() {
-    worldEl.style.transform = `translate3d(${-Math.round(camX * scale)}px, 0, 0) scale(${scale})`;
+  function measure() {
+    scale = pixelTarget() / pageZoom() / PARK_PX;
+    wrap.style.setProperty('--park-scale', String(scale));
+    wrap.style.setProperty('--park-h', `${Math.round(world.height * scale)}px`);
   }
-  /** Mép trái khung nhìn để bé của mình nằm giữa (kẹp trong thế giới). */
+  const viewW = () => wrap.clientWidth / scale;
+  const viewH = () => wrap.clientHeight / scale;
+  function applyCamera() {
+    // Camera bước theo từng điểm ảnh gốc để cảnh không nhòe, không rung mép.
+    shownCam = { x: Math.round(camX / PARK_PX) * PARK_PX, y: Math.round(camY / PARK_PX) * PARK_PX };
+    worldEl.style.transform = `translate3d(${-shownCam.x * scale}px, ${-shownCam.y * scale}px, 0) scale(${scale})`;
+  }
+  /** Góc trên-trái khung nhìn để bé của mình nằm giữa (kẹp trong thế giới); chưa có bé thì nhìn giữa bãi cỏ. */
   function cameraGoal() {
     const me = entities.get(selfId);
-    return me ? clamp(me.x - VIEW_W / 2, 0, maxCam()) : camX;
+    const { box } = nav;
+    const fx = me ? me.x : (box.x0 + box.x1) / 2;
+    const fy = me ? me.y - BODY_MID : (box.y0 + box.y1) / 2;
+    return {
+      x: clamp(fx - viewW() / 2, 0, Math.max(0, world.width - viewW())),
+      y: clamp(fy - viewH() / 2, 0, Math.max(0, world.height - viewH())),
+    };
+  }
+  function snapCamera() {
+    ({ x: camX, y: camY } = cameraGoal());
+    applyCamera();
   }
 
   const resize = new ResizeObserver(() => {
-    scale = wrap.clientWidth / VIEW_W;
-    applyCamera();
+    measure();
+    snapCamera();
     if (menu) positionMenu();
   });
+  measure();
   resize.observe(wrap);
 
   function setStatus(text) {
@@ -107,8 +155,26 @@ export function mountPark(root, ctx) {
     e.el.title = player.offline ? `${player.username} đang vắng, bé vẫn dạo công viên` : '';
   }
 
+  /** Đi tới (x, y) trên cảnh, vòng qua ao và đồ vật. */
+  function walkTo(e, x, y) {
+    e.tx = x;
+    e.ty = y;
+    e.path = nav.route(e.x, e.y, x, y);
+  }
+
+  /** Cảnh vừa tải xong (bản đồ đi lại đổi): đặt lại mọi bé theo tọa độ máy chủ. */
+  function remap() {
+    for (const e of entities.values()) {
+      const p = nav.toDisplay(e.lx, e.ly);
+      Object.assign(e, { x: p.x, y: p.y, tx: p.x, ty: p.y, path: [], home: p });
+      place(e);
+    }
+    snapCamera();
+  }
+
   function addPlayer(player) {
     removePlayer(player.id);
+    const at = nav.toDisplay(player.x, player.y);
     const el = document.createElement('div');
     el.className = `pg-pet${player.id === selfId ? ' self' : ''}`;
     el.dataset.id = player.id;
@@ -118,13 +184,14 @@ export function mountPark(root, ctx) {
       el,
       nameEl: el.querySelector('.pg-name'),
       bubbleEl: el.querySelector('.pg-bubble'),
-      x: player.x, y: player.y, tx: player.x, ty: player.y,
+      x: at.x, y: at.y, tx: at.x, ty: at.y, path: [],
+      lx: player.x, ly: player.y, // vị trí trên máy chủ (đích mới nhất)
       facing: 'runRight',
       dustAt: 0,
       onArrive: null,
       bubbleTimer: 0,
       // Cư dân (chủ đang vắng) tự đi dạo quanh chỗ của mình; mỗi máy thấy một kiểu, không gửi lên máy chủ.
-      home: { x: player.x, y: player.y },
+      home: at,
       wanderAt: performance.now() + 1500 + Math.random() * 6000,
     };
     setPet(e, player);
@@ -160,20 +227,39 @@ export function mountPark(root, ctx) {
 
   let last = performance.now();
   let raf = requestAnimationFrame(step);
+  let occludedAt = 0;
+
+  /** Đi dọc các điểm dừng của đường; trả về true nếu bé có nhích. */
+  function advance(e, dt) {
+    let budget = SPEED * dt;
+    let moved = false;
+    while (budget > 0 && e.path.length) {
+      const wp = e.path[0];
+      const dx = wp.x - e.x;
+      const dy = wp.y - e.y;
+      const dist = Math.hypot(dx, dy);
+      if (Math.abs(dx) > dist * 0.2) e.facing = dx > 0 ? 'runRight' : 'runLeft';
+      if (dist <= budget) {
+        e.x = wp.x;
+        e.y = wp.y;
+        e.path.shift();
+        budget -= dist;
+      } else {
+        e.x += (dx / dist) * budget;
+        e.y += (dy / dist) * budget;
+        budget = 0;
+      }
+      moved = true;
+    }
+    return moved;
+  }
 
   function step(now) {
     const dt = Math.min(0.05, (now - last) / 1000);
     last = now;
     for (const e of entities.values()) {
-      const dx = e.tx - e.x;
-      const dy = e.ty - e.y;
-      const dist = Math.hypot(dx, dy);
       const sprite = e.figure.sprite;
-      if (dist > 0.5) {
-        const k = Math.min(1, (SPEED * dt) / dist);
-        e.x += dx * k;
-        e.y += dy * k;
-        if (Math.abs(dx) > dist * 0.2) e.facing = dx > 0 ? 'runRight' : 'runLeft';
+      if (advance(e, dt)) {
         if (!sprite.busy) sprite.play(e.facing);
         e.figure.body.style.transform = `translateY(${-Math.abs(Math.sin(now / 85)) * 5}px)`;
         if (now - e.dustAt > 170) {
@@ -191,27 +277,43 @@ export function mountPark(root, ctx) {
           done();
         } else if (e.data.offline && now > e.wanderAt) {
           e.wanderAt = now + 4000 + Math.random() * 8000;
-          e.tx = clamp(e.home.x + (Math.random() - 0.5) * 220, world.minX, world.maxX);
-          e.ty = clamp(e.home.y + (Math.random() - 0.5) * 90, world.minY, world.maxY);
+          const { box } = nav;
+          const spot = nav.snap(
+            clamp(e.home.x + (Math.random() - 0.5) * 220, box.x0, box.x1),
+            clamp(e.home.y + (Math.random() - 0.5) * 90, box.y0, box.y1),
+          );
+          walkTo(e, spot.x, spot.y);
         }
       }
     }
     const goal = cameraGoal();
-    if (goal !== camX) {
-      camX = Math.abs(goal - camX) < 0.5 ? goal : camX + (goal - camX) * Math.min(1, dt * 5);
+    if (goal.x !== camX || goal.y !== camY) {
+      const k = Math.min(1, dt * 5);
+      camX = Math.abs(goal.x - camX) < 0.5 ? goal.x : camX + (goal.x - camX) * k;
+      camY = Math.abs(goal.y - camY) < 0.5 ? goal.y : camY + (goal.y - camY) * k;
       applyCamera();
     }
     if (menu) positionMenu();
+    // Đồ vật che bé đứng sau nó thì mờ đi, để vẫn thấy bé và tên.
+    if (scene && now - occludedAt > 120) {
+      occludedAt = now;
+      scene.update([...entities.values()].map((e) => ({ x: e.x, y: e.y, h: petHeight(e) })));
+    }
     raf = requestAnimationFrame(step);
   }
 
   function moveSelf(x, y, onArrive = null) {
     const me = entities.get(selfId);
     if (!me) return;
-    me.tx = clamp(x, world.minX, world.maxX);
-    me.ty = clamp(y, world.minY, world.maxY);
+    // Đi đúng chỗ máy khác sẽ thấy: điểm trên cảnh -> tọa độ máy chủ (số nguyên) -> lại lên cảnh.
+    const spot = nav.snap(x, y);
+    const to = nav.toLogical(spot.x, spot.y);
+    const at = nav.toDisplay(to.x, to.y);
+    me.lx = to.x;
+    me.ly = to.y;
+    walkTo(me, at.x, at.y);
     me.onArrive = onArrive;
-    socket.emit('pg:move', { x: me.tx, y: me.ty });
+    socket.emit('pg:move', to);
   }
 
   /** Chạy tới cạnh bé kia rồi mới vuốt ve. */
@@ -221,7 +323,7 @@ export function mountPark(root, ctx) {
     if (!me || !target) return;
     const side = me.x < target.x ? -1 : 1;
     let x = target.x + side * CUDDLE_GAP;
-    if (x < world.minX || x > world.maxX) x = target.x - side * CUDDLE_GAP;
+    if (!nav.isOpen(x, target.y)) x = target.x - side * CUDDLE_GAP;
     if (Math.hypot(me.x - x, me.y - target.y) < 12) return action();
     moveSelf(x, target.y + 2, action);
   }
@@ -238,10 +340,10 @@ export function mountPark(root, ctx) {
     if (!e) return closeMenu();
     const w = menu.el.offsetWidth;
     const h = menu.el.offsetHeight;
-    const below = (e.y + 44) * scale;
-    const above = (e.y - petHeight(e)) * scale - h - 8;
+    const below = (e.y + 44 - shownCam.y) * scale;
+    const above = (e.y - petHeight(e) - shownCam.y) * scale - h - 8;
     const top = below + h + 8 > wrap.clientHeight ? above : below;
-    menu.el.style.left = `${clamp((e.x - camX) * scale - w / 2, 6, wrap.clientWidth - w - 6)}px`;
+    menu.el.style.left = `${clamp((e.x - shownCam.x) * scale - w / 2, 6, wrap.clientWidth - w - 6)}px`;
     menu.el.style.top = `${Math.max(6, top)}px`;
   }
 
@@ -386,6 +488,10 @@ export function mountPark(root, ctx) {
     selfId = id;
     world = w;
     worldEl.style.width = `${world.width}px`;
+    worldEl.style.height = `${world.height}px`;
+    if (scene) nav.setLogical(world);
+    else nav = rectNav(world);
+    measure();
     room = n ?? room;
     cap = c ?? cap;
     rooms = list ?? rooms;
@@ -394,8 +500,7 @@ export function mountPark(root, ctx) {
     closeMenu();
     for (const key of [...entities.keys()]) removePlayer(key);
     players.forEach(addPlayer);
-    camX = cameraGoal(); // vào kênh: đặt khung nhìn ngay chỗ bé của mình
-    applyCamera();
+    snapCamera(); // vào kênh: đặt khung nhìn ngay chỗ bé của mình
     setStatus(null);
     particles(selfId, 0.5, { icon: 'sparkle', count: 5, spread: 90, rise: 60 });
   });
@@ -416,7 +521,11 @@ export function mountPark(root, ctx) {
 
   socket.on('pg:moved', ({ id, x, y }) => {
     const e = entities.get(id);
-    if (e) Object.assign(e, { tx: x, ty: y });
+    if (!e) return;
+    e.lx = x;
+    e.ly = y;
+    const at = nav.toDisplay(x, y);
+    walkTo(e, at.x, at.y);
   });
 
   socket.on('pg:player', (player) => {
@@ -479,6 +588,7 @@ export function mountPark(root, ctx) {
   });
 
   return () => {
+    alive = false;
     cancelAnimationFrame(raf);
     resize.disconnect();
     document.removeEventListener('keydown', onKey);
@@ -488,6 +598,7 @@ export function mountPark(root, ctx) {
     socket.disconnect();
     closeMenu();
     for (const id of [...entities.keys()]) removePlayer(id);
-    unmountScene();
+    scene?.destroy();
+    unmountScene?.();
   };
 }

@@ -66,9 +66,15 @@
   .mail-open .mail-subject { grid-column: 1 / -1; }
 }
 
-/* Khung chat dưới công viên (tab Công viên): công viên thấp lại để thấy chat mà không phải cuộn nhiều. */
+/* Khung chat dưới công viên (tab Công viên). Ô nhập dính đáy màn hình (sticky) để luôn thấy, kể cả khi công viên
+   chiếm gần hết màn; overflow: clip (khác hidden) không tạo khung cuộn riêng nên sticky bám theo trang. */
 .park-chat { display: grid; gap: 14px; }
-.park-chat .park-wrap { width: min(100%, calc(58 * var(--vh) * 1000 / 600)); }
+.park-chat .chat-room { overflow: clip; }
+.park-chat .chat-send { position: sticky; bottom: 0; z-index: 5; background: var(--surface); border-radius: 0 0 var(--radius) var(--radius); }
+@media (max-width: 720px) {
+  .park-chat { gap: 10px; }
+  .chat-page.compact .chat-room { height: max(260px, calc(34 * var(--vh))); }
+}
 .chat-page.compact { display: grid; gap: 10px; }
 .chat-title { margin: 0; font-size: 1.2rem; display: flex; flex-wrap: wrap; align-items: baseline; gap: 8px; }
 .chat-title small { font-size: .82rem; font-weight: 600; }
