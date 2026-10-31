@@ -1,5 +1,36 @@
-// Dáng RỒNG / BÒ SÁT (serpent): Thanh Long, Cá Chép Rồng, Kỳ Nhông Lửa, Rồng Lửa Nhí, Hoàng Long (5 loài).
-// Chủ sở hữu: họa sĩ dáng serpent. TRẠNG THÁI: bản vẽ thật, lượt 1b.
+// Dáng RỒNG / BÒ SÁT (serpent): Thanh Long, Hoàng Long, Rồng Lửa Nhí, Kỳ Nhông Lửa, Cá Chép Rồng (5 loài).
+// Chủ sở hữu: họa sĩ dáng serpent. TRẠNG THÁI: ĐÃ VẼ (hết stub), soát 2 lượt trên contact sheet (6 giai đoạn × S/E/N/W,
+// đi, đứng, cảm xúc, cấp 1/30/50, đồ đeo).
+//
+// Dáng chibi rồng phương Đông: đầu to, ngực nhỏ (đúng elip sk.body), thân uốn lượn vài đốt, bốn chân ngắn, đuôi dài cuộn.
+//  - S (nhìn trước): ngồi trên khoanh thân; khoanh nằm trên đất vòng sang PHẢI người xem rồi luồn ra sau ngực, đuôi ló ra
+//    bên TRÁI người xem (bên phải của bé), uốn chữ S vươn lên rồi cuộn ra ngoài, có gai dọc mép ngoài. Hai vuốt nhỏ khoanh
+//    trước ngực (để hai bên sườn trống, đuôi không bị đọc nhầm là tay); giơ tay (wave, jump, busy) thì cánh tay chĩa chéo ra
+//    ngoài, dưới râu. Bụng có vạch vảy ngang. Không vẽ chân sau (giấu trong khoanh: vẽ chân ra trông như gấu ngồi).
+//  - E (nhìn ngang, quay phải): ngực dưới gáy, đốt 1 thấp, đốt 2 gù lên, đuôi vươn lên cuộn như dấu hỏi; mỗi đốt có
+//    bụng sáng, nét trong giữa các đốt (z giảm dần về sau). Gai lưng dọc ngực, đốt và đuôi. Bốn chân ngắn bước chéo như quad.
+//    Đi bộ: sóng chạy dọc thân (đốt 1 xuống thì đốt 2 lên, 0.6 px). Đầu có mõm nhô (headMask gồm cả mõm).
+//  - N (nhìn sau): gai dọc sống lưng, khoanh bên TRÁI người xem, đuôi có gai bên PHẢI; tay chỉ hiện khi giơ.
+//  - W = lật E (pipeline). Đi bộ S/N: thân lắc ngang 1 px (walkPose, như dáng chim).
+// Đầu: siêu elip như biped. Râu rồng (Thanh Long, Hoàng Long, Cá Chép): sợi 1 px màu bụng từ hai bên mõm vểnh ra rồi cong
+// lên (S), lộ đầu râu hai bên đầu (N), một sợi rủ dưới hàm uốn về sau (E). Mang má: gai sau hàm (E: rồng; S/N: Rồng Lửa).
+//
+// ĐUÔI: dáng này TỰ VẼ đuôi (thân nối liền thành đuôi), `sp.tail` chỉ chọn CHÓP: 'dragon' → túm lông màu điểm nhấn
+// (Rồng Lửa: ngọn lửa; Kỳ Nhông: đốm lửa nhỏ vàng), 'fish' → vây đuôi cá chép xòe hai thùy. Bộ phận do parts/tails.js đẩy
+// vào trước (nhóm bắt đầu bằng 'tail') bị bỏ đi (dropForeignTail), nên TAILS.dragon / TAILS.fish (chỉ 5 loài này dùng)
+// không hiện trên dáng serpent. Họa sĩ đuôi muốn đổi kiểu chóp thì sửa tailTip() ở đây (cùng chủ dáng serpent).
+//
+// Tinh chỉnh theo loài (TUNE): ridge 'spikes' | 'fin' | 'none' (gờ lưng), tip (chóp đuôi), legs (0 = không chân, vây ngực;
+// > 1 = chân to hơn), stance 'coil' | 'lizard' (Kỳ Nhông: chân trước dạng ngang chống đất, đuôi duỗi trên đất rồi vểnh,
+// lưng thẳng khi nhìn ngang), frill 'E' | 'all', whiskers, koi (mảng đỏ cam trên các đốt thân, khoanh và đuôi: hoa văn
+// 'spots' chỉ phủ elip ngực).
+//
+// Điểm neo: dims giữ đầu cỡ biped, ngực = sk.body, nên neo đầu/mặt/cổ/lưng/bùa của skeleton.js vẫn đúng; hoa văn (vảy, đốm),
+// dấu hiệu cấp (vằn hông), gậy lão làng, đồ cổ/lưng đều rơi lên ngực. Nhìn ngang, bùa (sau thân) nằm trên đốt sau.
+// Phụ thuộc còn là hình tạm của người khác: sừng/gạc/vây tai (parts/ears.js), mào/lửa/giọt/than hồng (parts/features.js),
+// vảy/đốm (parts/patterns.js). Màu: ramps.js (dải 'aqua' của Thanh Long có bậc sáng gần trắng, dải 'flame' của Rồng Lửa,
+// Kỳ Nhông tạo vệt hồng ngang đầu: việc của họa sĩ màu).
+// Hợp đồng (ARTIST-GUIDE mục 9): dims, headZ(view), body { S, E, N }(ctx), head { S, E, N }(ctx), walkPose(i, view).
 import { RAMPS, gait, mAnd, mAndNot, mBelow, mEllipse, mOr, mOrInto, mTri, newMask, part } from '../core.js';
 
 const lerp = (a, b, t) => a + (b - a) * t;
@@ -10,7 +41,7 @@ const TUNE = {
   thanh_long: { frill: 'E', whiskers: true },
   hoang_long: { frill: 'E', whiskers: true },
   rong_lua: { frill: 'all', tip: 'flame' },
-  ky_nhong: { ridge: 'none', tip: 'point', legs: 1.15, stance: 'lizard' },
+  ky_nhong: { ridge: 'none', tip: 'ember', legs: 1.15, stance: 'lizard' },
   ca_chep_rong: { ridge: 'fin', legs: 0, tip: 'koi', whiskers: true, koi: true },
 };
 function lookOf(ctx) {
@@ -69,9 +100,10 @@ function tailTip(ctx, look, x, y, dx, dy, z, k) {
   } else if (look.tip === 'tuft') {
     const m = mOr(mTri(at(-0.6, 1.5 * k), at(-0.6, -1.5 * k), at(3.8 * k, 0)), mTri(at(0, 0.4), at(1.2 * k, 2.4 * k), at(3.0 * k, 1.6 * k)), mTri(at(0, -0.4), at(1.2 * k, -2.4 * k), at(3.0 * k, -1.6 * k)));
     ctx.parts.push(part('tuft', m, A, z, { normal: [x - 1, y - 2, 4, 4] }));
-  } else if (look.tip === 'flame') {
-    const m = mOr(mTri(at(-0.6, 1.6 * k), at(-0.6, -1.6 * k), at(4.2 * k, 0.6)), mTri(at(0.6, 0.6), at(1.4 * k, 2.6 * k), at(3.0 * k, 1.2 * k)));
-    ctx.parts.push(part('flame', m, 'orange', z, { normal: [x - 1, y - 2, 4, 4] }));
+  } else if (look.tip === 'flame' || look.tip === 'ember') {
+    const f = look.tip === 'ember' ? 0.8 : 1; // kỳ nhông: đốm lửa nhỏ ở chóp đuôi
+    const m = mOr(mTri(at(-0.6, 1.6 * k * f), at(-0.6, -1.6 * k * f), at(4.2 * k * f, 0.6 * f)), mTri(at(0.6 * f, 0.6 * f), at(1.4 * k * f, 2.6 * k * f), at(3.0 * k * f, 1.2 * k * f)));
+    ctx.parts.push(part('flame', m, f < 1 ? 'gold' : 'orange', z, { normal: [x - 1, y - 2, 4, 4] }));
   }
 }
 
@@ -121,9 +153,11 @@ function frontBody(ctx, back) {
     // kỳ nhông: thân sau nằm thấp sau ngực, đuôi duỗi trên đất rồi vểnh chóp (nhìn sau: đuôi chĩa về phía người xem)
     const rump = mEllipse(bcx, g - R(2.6) + 0.42, brx * 0.85, R(2.6));
     ctx.parts.push(part('coil', rump, ramps.main, 3, { normal: [bcx - 1, g - 4, brx + 1, 4] }));
-    const pts = back ? [[0, 2.2], [3.2, 2.0], [6.4, 1.8], [9.0, 2.6], [10.6 + sw * 0.4, 5.0]] : [[-3.0, 2.0], [-6.4, 1.8], [-9.4, 1.6], [-11.4, 2.8], [-12.2 + sw * 0.4, 5.2]];
-    tailPts = pts.map(([dx, dy], i) => [X(dx), g - (i < 3 ? R(dy) - 0.42 : dy * ky), R(dy > 2.5 ? 1.25 : dy)]);
-    tailPts[3][2] = R(1.45);
+    // [dx, độ cao (null = nằm sát đất), bán kính]
+    const pts = back
+      ? [[0, null, 2.2], [3.2, null, 2.0], [6.4, null, 1.8], [9.0, 2.6, 1.45], [10.6 + sw * 0.4, 5.0, 1.25]]
+      : [[-3.0, null, 2.0], [-6.4, null, 1.8], [-9.4, null, 1.6], [-11.4, 2.8, 1.45], [-12.2 + sw * 0.4, 5.2, 1.25]];
+    tailPts = pts.map(([dx, h, r]) => [X(dx), h === null ? g - R(r) + 0.42 : g - h * ky, R(r)]);
     tz = back ? 4.5 : 2;
   } else {
     // khoanh thân nằm trên đất, vòng sang một bên rồi luồn ra sau ngực
@@ -147,6 +181,16 @@ function frontBody(ctx, back) {
   const [tx, ty] = tailPts[tailPts.length - 1];
   const [ddx, ddy] = dirOf(tailPts);
   tailTip(ctx, look, tx, ty, ddx, ddy, tz - 0.05, lerp(0.7, 1, t));
+  // gai dọc mép ngoài của đuôi (rồng)
+  if (look.ridge === 'spikes' && look.stance === 'coil') {
+    for (const i of [2, 4]) {
+      const [x, y, r] = tailPts[i];
+      const ox = -sd; // phía ngoài (xa thân)
+      const h = lerp(1.4, 2.2, t);
+      const m = mTri([x + ox * (r - 0.6), y - 1.2], [x + ox * (r - 0.6), y + 1.2], [x + ox * (r + h), y - 1.0]);
+      ctx.parts.push(part(`tspike${i}`, m, ramps.accent, tz - 0.02, { normal: [x + ox * r, y - 1, 2, 2] }));
+    }
+  }
   // ngực
   const body = mEllipse(bcx, bcy, brx, bry);
   const nrm = [bcx - 0.5, bcy - 1, brx + 1, bry + 1.5];
@@ -154,13 +198,13 @@ function frontBody(ctx, back) {
   if (!back) {
     const belly = mAnd(body, mEllipse(bcx, bcy + bry * 0.25, brx * 0.62, bry * 1.05));
     ctx.parts.push(part('belly', belly, ramps.belly, 4.1, { group: 'body', normal: nrm }));
-    plates(ctx, belly, sk.btop + bry * 0.9, bcy + bry - 1.5, t > 0.5 ? 2 : 2);
+    plates(ctx, belly, sk.btop + bry * 0.9, bcy + bry - 1.5, 2);
   }
   // gờ lưng (nhìn sau): gai dọc sống lưng và dọc đuôi
   if (back && look.ridge === 'spikes') {
     for (let y = sk.btop + 3.2, i = 0; y < bcy + bry - 0.5; y += lerp(2.2, 2.6, t), i++) {
-      const w = lerp(1.2, 1.7, t);
-      ctx.parts.push(part(`ridge${i}`, mTri([bcx - w, y + 1.0], [bcx + w, y + 1.0], [bcx, y - lerp(1.6, 2.2, t)]), ramps.accent, 4.2, { group: `ridge${i}`, normal: [bcx - 0.5, y - 1, 2, 2] }));
+      const w = lerp(1.3, 1.9, t);
+      ctx.parts.push(part(`ridge${i}`, mTri([bcx - w, y + 1.0], [bcx + w, y + 1.0], [bcx, y - lerp(1.7, 2.5, t)]), ramps.accent, 4.2, { group: `ridge${i}`, normal: [bcx - 0.5, y - 1, 2, 2] }));
     }
   } else if (back && look.ridge === 'fin') {
     const fin = mAnd(body, mEllipse(bcx, bcy - 0.5, 1.2, bry));
@@ -223,6 +267,7 @@ function sideBody(ctx) {
   const nrm = [bcx - 0.5, bcy - 1, brx + 1, bry + 1.5];
   const belly = mAnd(body, mEllipse(bcx + brx * 0.55, bcy + bry * 0.45, brx * 0.72, bry * 0.9));
   ctx.parts.push(part('belly', belly, ramps.belly, 4.1, { group: 'body', normal: nrm }));
+  plates(ctx, belly, bcy - bry * 0.1, bcy + bry - 1.5, 2);
   // đốt 1 (thấp, sau ngực), đốt 2 (gù lên), đuôi cong. Kỳ nhông: lưng thẳng, đuôi kéo trên đất rồi vểnh chóp.
   const liz = look.stance === 'lizard';
   const r1x = lerp(2.8, 4.4, t);
