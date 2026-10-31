@@ -31,7 +31,7 @@ const PLOT_BY_ID = new Map(PLOTS.map((p) => [p.id, p]));
 
 /** Trạng thái giữ qua các lần vẽ lại (mỗi hành động thành công thì app vẽ lại cả màn). */
 const ui = {
-  tab: 'clan', plotId: null, industry: 'tea', heat: 'zone',
+  tab: 'clan', plotId: null, industry: 'tea', heat: 'zone', stripOpen: false,
   emblem: null, color: '#c0392b',
   build: { plotId: null, design: null, family: 'base', piece: null, layer: null, color: '#e85d5d' },
 };
@@ -508,7 +508,7 @@ export function renderClans(root, ctx) {
     body.innerHTML = `
       <div class="land-layout">
         <section class="card land-main">
-          ${myClanStrip(data.clan, mine, ui.plotId)}
+          ${myClanStrip(data.clan, mine, ui.plotId, ui.stripOpen)}
           <div class="land-stats">
             <span>🏘️ Còn <b>${s.free}</b>/${LAND.count} lô</span>
             <span>📈 Hệ số khan hiếm <b>×${s.scarcity.toFixed(2)}</b></span>
@@ -543,7 +543,7 @@ export function renderClans(root, ctx) {
     if (!biz) return '';
     const ind = INDUSTRIES[info.industry];
     return `<p class="biz-status st-${biz.state}" role="status"><b>${ind ? `${ind.icon} ${esc(ind.name)}` : '💤 Chưa chọn ngành'}</b>
-      <span>${biz.state === 'zero' ? '⚠️ ' : ''}${esc(biz.reason)}</span></p>`;
+      ${biz.reason ? `<span>${biz.state === 'zero' ? '⚠️ ' : ''}${esc(biz.reason)}</span>` : ''}</p>`;
   }
 
   /** Chọn một lô: đổi viền chọn, nút trong dải "Gia tộc của tôi" và khung bên, không vẽ lại bản đồ. */
@@ -1076,6 +1076,12 @@ export function renderClans(root, ctx) {
       ui.plotId = Number(el.dataset.openPlot);
       ui.tab = 'map';
       draw();
+    } else if ((el = on('[data-strip-toggle]'))) {
+      // Điện thoại: mở/thu dải "Gia tộc của tôi", giữ lựa chọn qua các lần vẽ lại bản đồ.
+      ui.stripOpen = !ui.stripOpen;
+      el.closest('.biz-strip').classList.toggle('collapsed', !ui.stripOpen);
+      el.setAttribute('aria-expanded', String(ui.stripOpen));
+      el.querySelector('span').textContent = ui.stripOpen ? 'Thu gọn' : 'Xem các lô';
     } else if ((el = on('[data-pick-plot]'))) {
       // Nút lô trong dải "Gia tộc của tôi": chọn lô như chạm trên bản đồ, cuộn bản đồ tới lô đó (điện thoại).
       selectPlot(Number(el.dataset.pickPlot));

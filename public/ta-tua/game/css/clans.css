@@ -302,6 +302,13 @@
 .land-svg .biz-mark.mine.warn .biz-ping { transform-box: fill-box; transform-origin: center; animation: biz-ping 1.8s ease-out infinite; }
 @keyframes biz-ping { from { transform: scale(1); opacity: .8; } to { transform: scale(2); opacity: 0; } }
 @media (prefers-reduced-motion: reduce) { .land-svg .biz-mark.mine.warn .biz-ping { animation: none; } }
+/* Nút mở/thu dải chỉ có trên điện thoại; máy tính luôn hiện danh sách lô. */
+.biz-strip-toggle { display: none; }
 @media (max-width: 720px) {
   .biz-chip { flex: 1 1 calc(50% - 8px); }
+  .biz-strip.collapsed .biz-chips { display: none; }
+  .biz-strip-toggle { display: inline-flex; align-items: center; gap: 8px; min-height: 46px; margin-left: auto; padding: 6px 14px; border: 2px solid var(--line-strong);
+    border-radius: 14px; background: #fff; box-shadow: 0 3px 0 var(--line-strong); font-weight: 800; color: var(--ink); }
+  .biz-strip-toggle i { width: 0; height: 0; border: 6px solid transparent; border-top-color: var(--pearl); transform: translateY(3px); }
+  .biz-strip-toggle[aria-expanded="true"] i { border-top-color: transparent; border-bottom-color: var(--pearl); transform: translateY(-3px); }
 }

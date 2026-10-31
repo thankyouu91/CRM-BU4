@@ -1,4 +1,5 @@
-// Kinh doanh trên bản đồ đất: mỗi lô có chủ đang làm ngành gì, có ra tiền không và vì sao không; màu theo ngành
+// Kinh doanh trên bản đồ đất: mỗi lô có chủ đang làm ngành gì; với lô của gia tộc mình, doanh thu ước tính và vì sao
+// bằng 0 (gia tộc khác không hiện cảnh báo); màu theo ngành
 // cho chế độ "Ngành đang kinh doanh"; dải "Gia tộc của tôi"; chữ chú thích khi rê chuột lên lô.
 // Chỉ dùng dữ liệu sẵn có (/land và /clans), luật giống máy chủ: lô chỉ chạy khi công trình hoàn chỉnh, ngành khai
 // thác cần mỏ đúng loại trên lô, ngành điện cần chọn loại nhà máy, ngành tạm đóng thì không chạy.
@@ -13,12 +14,14 @@ const esc = (v) => String(v ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '
  * Trạng thái kinh doanh của một lô có chủ (null nếu lô còn trống).
  * `info`: dòng của /land; `est`: { operating, estimate } của lô thuộc gia tộc mình (từ /clans), null với gia tộc khác;
  * `upkeep`: phí duy trì mỗi đêm chia đều cho mỗi lô; `closed`: các ngành đang tạm đóng.
- * state: 'idle' (chưa chọn ngành), 'zero' (sản lượng 0), 'low' (thu chưa đủ phí duy trì), 'ok' (đang có thu).
+ * state: 'idle' (chưa chọn ngành), 'zero' (sản lượng 0), 'low' (doanh thu chưa đủ phí duy trì), 'ok' (có doanh thu
+ * ước tính), 'other' (lô của gia tộc khác: chỉ biết ngành, không đánh giá, không cảnh báo).
  */
 export function plotBusiness(info, { est = null, upkeep = 0, closed = [] } = {}) {
   if (!info?.owner) return null;
   const ind = INDUSTRIES[info.industry];
-  if (!ind) return { state: 'idle', short: 'Chưa chọn ngành', reason: 'Lô chưa làm ngành nào nên chưa ra tiền.' };
+  if (!ind) return { state: 'idle', short: 'Chưa chọn ngành', reason: info.mine ? 'Lô chưa làm ngành nào nên chưa có doanh thu.' : '' };
+  if (!info.mine) return { state: 'other', short: '', reason: '' };
   const zero = (short, reason) => ({ state: 'zero', short, reason });
   if (closed.includes(info.industry)) return zero('Ngành tạm đóng', `Ngành ${ind.name} đang tạm đóng nên lô không chạy.`);
   const prod = PRODUCTION_INDUSTRIES[info.industry];
@@ -31,8 +34,8 @@ export function plotBusiness(info, { est = null, upkeep = 0, closed = [] } = {})
   if (ind.sector === 'strategic') return { state: 'ok', short: 'Hạ tầng', reason: 'Hạ tầng chiến lược: tạo hiệu ứng cho cả game thay vì doanh thu.' };
   if (est) {
     if (!est.operating || est.estimate <= 0) return zero('Sản lượng 0', 'Ước tính mỗi đêm lô này không làm ra gì.');
-    if (est.estimate < upkeep) return { state: 'low', short: `≈ ${num(est.estimate)}/đêm`, reason: `Thu ≈ ${num(est.estimate)} xu/đêm, chưa đủ phí duy trì ≈ ${num(upkeep)} xu của lô.`, estimate: est.estimate };
-    return { state: 'ok', short: `≈ ${num(est.estimate)}/đêm`, reason: `Đang có thu ≈ ${num(est.estimate)} xu/đêm.`, estimate: est.estimate };
+    if (est.estimate < upkeep) return { state: 'low', short: `≈ ${num(est.estimate)}/đêm`, reason: `Doanh thu ước tính ≈ ${num(est.estimate)} xu/đêm, chưa đủ phí duy trì ≈ ${num(upkeep)} xu của lô.`, estimate: est.estimate };
+    return { state: 'ok', short: `≈ ${num(est.estimate)}/đêm`, reason: `Doanh thu ước tính ≈ ${num(est.estimate)} xu/đêm.`, estimate: est.estimate };
   }
   return { state: 'ok', short: 'Đang kinh doanh', reason: 'Đang kinh doanh.' };
 }
@@ -65,10 +68,11 @@ export function bizLegend(plots) {
 }
 
 /**
- * Dải "Gia tộc của tôi" phía trên bản đồ: số lô, mỗi lô một nút (bấm để chọn trên bản đồ) và đếm lô có thu / chưa
- * ra tiền. `rows`: [{ plot, info, biz }] của gia tộc mình.
+ * Dải "Gia tộc của tôi" phía trên bản đồ: số lô, mỗi lô một nút (bấm để chọn trên bản đồ) và đếm lô có doanh thu
+ * ước tính / chưa có doanh thu. `rows`: [{ plot, info, biz }] của gia tộc mình. Điện thoại: `open` = false thì chỉ
+ * hiện dòng đầu, nút "Xem các lô" mở danh sách (máy tính luôn mở).
  */
-export function myClanStrip(clan, rows, selected = null) {
+export function myClanStrip(clan, rows, selected = null, open = false) {
   if (!clan) return '';
   const earning = rows.filter((r) => r.biz?.state === 'ok').length;
   const idle = rows.length - earning;
@@ -80,12 +84,14 @@ export function myClanStrip(clan, rows, selected = null) {
       <span class="biz-chip-icon">${ind ? ind.icon : '💤'}</span>
       <span class="biz-chip-text"><b>${plot.code}</b> ${ind ? esc(ind.name) : 'Chưa chọn ngành'}<small>${state === 'zero' ? '⚠️ ' : ''}${esc(biz?.short ?? '')}</small></span></button>`;
   };
-  return `<section class="biz-strip" aria-label="Gia tộc của tôi">
+  return `<section class="biz-strip${open ? '' : ' collapsed'}" aria-label="Gia tộc của tôi">
     <div class="biz-strip-head"><b>${esc(clan.emblem)} ${esc(clan.name)}</b>
       <span>${rows.length} lô</span>
-      <span class="biz-good">✅ ${earning} lô có thu${total ? ` ≈ ${num(total)}/đêm` : ''}</span>
-      ${idle ? `<span class="biz-bad">⚠️ ${idle} lô chưa ra tiền</span>` : ''}</div>
-    ${rows.length ? `<div class="biz-chips">${rows.map(chip).join('')}</div>` : '<p class="muted small">Gia tộc chưa có lô nào. Chọn một lô còn trống trên bản đồ để mua.</p>'}
+      <span class="biz-good">✅ ${earning} lô có doanh thu ước tính${total ? ` ≈ ${num(total)}/đêm` : ''}</span>
+      ${idle ? `<span class="biz-bad">⚠️ ${idle} lô chưa có doanh thu</span>` : ''}
+      ${rows.length ? `<button type="button" class="biz-strip-toggle" data-strip-toggle aria-expanded="${open}" aria-controls="biz-chips">
+        <span>${open ? 'Thu gọn' : 'Xem các lô'}</span><i aria-hidden="true"></i></button>` : ''}</div>
+    ${rows.length ? `<div class="biz-chips" id="biz-chips">${rows.map(chip).join('')}</div>` : '<p class="muted small">Gia tộc chưa có lô nào. Chọn một lô còn trống trên bản đồ để mua.</p>'}
   </section>`;
 }
 
@@ -100,6 +106,6 @@ export function plotTipHtml(plot, info, biz, { zoneName = '', money = num } = {}
   return `<b>${plot.code}</b> · ${esc(zoneName)}<br>
     <span class="tip-owner" style="--clan:${esc(info.owner.color)}">${esc(info.owner.emblem)} ${esc(info.owner.name)}${info.mine ? ' (của bạn)' : ''}</span><br>
     ${ind ? `${ind.icon} ${esc(ind.name)}` : 'Chưa chọn ngành'}<br>
-    ${pieces ? `🏗️ Công trình ${pieces} mảnh${designComplete(info.design) ? '' : ' (chưa xong)'}` : '🏗️ Chưa xây công trình'}<br>
-    <span class="tip-state st-${state}">${esc(biz?.reason ?? '')}</span>`;
+    ${pieces ? `🏗️ Công trình ${pieces} mảnh${designComplete(info.design) ? '' : ' (chưa xong)'}` : '🏗️ Chưa xây công trình'}${biz?.reason ? '<br>' : ''}
+    ${biz?.reason ? `<span class="tip-state st-${state}">${esc(biz.reason)}</span>` : ''}`;
 }
