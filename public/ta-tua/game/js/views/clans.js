@@ -2,7 +2,7 @@
 // xem trước sản lượng theo môi trường, lắp ghép công trình từ 200 mẫu (tối đa 20 mảnh), thuế doanh nghiệp và bản tin vĩ mô.
 import { api } from '../api.js';
 import { esc, fmt, pct, viewHead } from '../ui.js';
-import { landMapSvg } from '../landmap.js';
+import { bindMiniMap, landMapSvg, miniMapHtml } from '../landmap.js';
 import {
   CLIMATES, DESIGN, INDUSTRIES, INDUSTRY_ORDER, LAND, PALETTE, PHASES, PIECES, PIECE_FAMILIES, PLOTS, WEATHER, ZONES,
   designBonus, designComplete, designCost, designSvg, envFactor, pieceById, pieceSvg,
@@ -497,11 +497,12 @@ export function renderClans(root, ctx) {
             <label ${ui.heat === 'fit' ? '' : 'hidden'}>Ngành
               <select data-fit>${openIds(data?.config).map((id) => `<option value="${id}" ${ui.industry === id ? 'selected' : ''}>${INDUSTRIES[id].icon} ${esc(INDUSTRIES[id].name)}</option>`).join('')}</select></label>
           </div>
-          <div class="land-scroll">${mapSvg()}</div>
+          <div class="land-wrap"><div class="land-scroll">${mapSvg()}</div>${miniMapHtml()}</div>
           <div class="land-legend">${legend()}</div>
         </section>
         <aside class="card land-panel">${plotPanel()}</aside>
       </div>`;
+    bindMiniMap(body.querySelector('.land-wrap'));
     if (ui.plotId) loadPreview();
   }
 
