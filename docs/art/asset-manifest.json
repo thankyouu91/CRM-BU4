@@ -1,0 +1,393 @@
+{
+ "schema_version": 2,
+ "art_direction_brief": "style-bible.md",
+ "palette": "palette.json",
+ "schema_notes": {
+  "provenance": "tool, mode, pixellab_id, prompt, params, created_at, generation_cost, postprocess[], license",
+  "status": "planned | sample | approved | rejected",
+  "path": "proposed runtime path; '#name' = atlas frame"
+ },
+ "assets": [
+  {
+   "id": "scene-factory",
+   "role": "header scene: Khu công nghiệp (view factory)",
+   "path": "public/ta-tua/game/assets/scenes/factory.webp",
+   "status": "sample",
+   "technical": {
+    "dimensions": "320x80",
+    "alpha": false,
+    "anchor": "center (phone: center crop)",
+    "frames": 1,
+    "filtering": "nearest",
+    "scale": "integer 3x desktop (2x when the column is under 960 px) / 2x phone",
+    "bytes": 4008,
+    "fx": [
+     "fx-chimney-smoke-lg"
+    ]
+   },
+   "visual_locks": [
+    "palette.json",
+    "view: low top-down",
+    "light: top-left",
+    "outline: #2e1d14 outer"
+   ],
+   "provenance": {
+    "kind": "composited",
+    "tool": "scripts/art/build-scenes.py (placeholder compositor)",
+    "mode": "placeholder",
+    "pixellab_id": "",
+    "prompt": "",
+    "params": {
+     "sources": [
+      "phase0/dl/pal/crate.png",
+      "phase0/dl/pal/fence.png",
+      "phase0/dl/pal/lamp.png",
+      "phase0/dl/pal/tree.png",
+      "phase1/bldg-5/pal/factory-v2.png",
+      "phase1/npc-2/pal/farmer/idle-south.png"
+     ]
+    },
+    "created_at": "",
+    "generation_cost": 0,
+    "postprocess": [
+     "opaque on #fbf1e3",
+     "WebP lossless (exact)",
+     "Wang terrain + sprites placed by bottom-centre",
+     "shadow 28% #2e1d14 snapped to palette"
+    ],
+    "license": "derived from PixelLab assets listed in sources (PixelLab ToS) — verify before ship"
+   },
+   "verification": {
+    "native_scale_reviewed": true,
+    "in_engine_reviewed": true,
+    "technical_checks_passed": true,
+    "approved_by": "",
+    "notes": "off-palette=0 colours=32; placeholder until the headers package lands"
+   }
+  },
+  {
+   "id": "scene-bank",
+   "role": "header scene: Phố Ngân hàng (view bank)",
+   "path": "public/ta-tua/game/assets/scenes/bank.webp",
+   "status": "sample",
+   "technical": {
+    "dimensions": "320x80",
+    "alpha": false,
+    "anchor": "center (phone: center crop)",
+    "frames": 1,
+    "filtering": "nearest",
+    "scale": "integer 3x desktop (2x when the column is under 960 px) / 2x phone",
+    "bytes": 4044,
+    "fx": []
+   },
+   "visual_locks": [
+    "palette.json",
+    "view: low top-down",
+    "light: top-left",
+    "outline: #2e1d14 outer"
+   ],
+   "provenance": {
+    "kind": "generated",
+    "tool": "scripts/art/build-scenes.py <- headers package (compose.py)",
+    "mode": "art",
+    "pixellab_id": "",
+    "prompt": "",
+    "params": {
+     "sources": [
+      "phase1/headers/bank-1x.png"
+     ]
+    },
+    "created_at": "",
+    "generation_cost": 0,
+    "postprocess": [
+     "opaque on #fbf1e3",
+     "WebP lossless (exact)"
+    ],
+    "license": "derived from PixelLab assets listed in sources (PixelLab ToS) — verify before ship"
+   },
+   "verification": {
+    "native_scale_reviewed": true,
+    "in_engine_reviewed": true,
+    "technical_checks_passed": true,
+    "approved_by": "",
+    "notes": "off-palette=0 colours=37"
+   }
+  },
+  {
+   "id": "scene-shop",
+   "role": "header scene: Siêu thị (view shop)",
+   "path": "public/ta-tua/game/assets/scenes/shop.webp",
+   "status": "sample",
+   "technical": {
+    "dimensions": "320x80",
+    "alpha": false,
+    "anchor": "center (phone: center crop)",
+    "frames": 1,
+    "filtering": "nearest",
+    "scale": "integer 3x desktop (2x when the column is under 960 px) / 2x phone",
+    "bytes": 4234,
+    "fx": []
+   },
+   "visual_locks": [
+    "palette.json",
+    "view: low top-down",
+    "light: top-left",
+    "outline: #2e1d14 outer"
+   ],
+   "provenance": {
+    "kind": "composited",
+    "tool": "scripts/art/build-scenes.py (placeholder compositor)",
+    "mode": "placeholder",
+    "pixellab_id": "",
+    "prompt": "",
+    "params": {
+     "sources": [
+      "phase0/dl/pal/bench.png",
+      "phase0/dl/pal/crate.png",
+      "phase0/dl/pal/flowerbed.png",
+      "phase0/dl/pal/home.png",
+      "phase0/dl/pal/lamp.png",
+      "phase0/dl/pal/shop.png",
+      "phase0/dl/pal/tree.png",
+      "phase1/npc-1/pal/shopkeeper/rot-south.png"
+     ]
+    },
+    "created_at": "",
+    "generation_cost": 0,
+    "postprocess": [
+     "opaque on #fbf1e3",
+     "WebP lossless (exact)",
+     "Wang terrain + sprites placed by bottom-centre",
+     "shadow 28% #2e1d14 snapped to palette"
+    ],
+    "license": "derived from PixelLab assets listed in sources (PixelLab ToS) — verify before ship"
+   },
+   "verification": {
+    "native_scale_reviewed": true,
+    "in_engine_reviewed": true,
+    "technical_checks_passed": true,
+    "approved_by": "",
+    "notes": "off-palette=0 colours=37; placeholder until the headers package lands"
+   }
+  },
+  {
+   "id": "scene-kitchen",
+   "role": "header scene: Bếp (view kitchen)",
+   "path": "public/ta-tua/game/assets/scenes/kitchen.webp",
+   "status": "sample",
+   "technical": {
+    "dimensions": "320x80",
+    "alpha": false,
+    "anchor": "center (phone: center crop)",
+    "frames": 1,
+    "filtering": "nearest",
+    "scale": "integer 3x desktop (2x when the column is under 960 px) / 2x phone",
+    "bytes": 4310,
+    "fx": []
+   },
+   "visual_locks": [
+    "palette.json",
+    "view: low top-down",
+    "light: top-left",
+    "outline: #2e1d14 outer"
+   ],
+   "provenance": {
+    "kind": "composited",
+    "tool": "scripts/art/build-scenes.py (placeholder compositor)",
+    "mode": "placeholder",
+    "pixellab_id": "",
+    "prompt": "",
+    "params": {
+     "sources": [
+      "phase0/dl/pal/bench.png",
+      "phase0/dl/pal/crate.png",
+      "phase0/dl/pal/flowerbed.png",
+      "phase0/dl/pal/lamp.png",
+      "phase0/dl/pal/tree.png",
+      "phase1/bldg-3/pal/kitchen.png",
+      "phase1/npc-3/pal/chef/south.png"
+     ]
+    },
+    "created_at": "",
+    "generation_cost": 0,
+    "postprocess": [
+     "opaque on #fbf1e3",
+     "WebP lossless (exact)",
+     "Wang terrain + sprites placed by bottom-centre",
+     "shadow 28% #2e1d14 snapped to palette"
+    ],
+    "license": "derived from PixelLab assets listed in sources (PixelLab ToS) — verify before ship"
+   },
+   "verification": {
+    "native_scale_reviewed": true,
+    "in_engine_reviewed": true,
+    "technical_checks_passed": true,
+    "approved_by": "",
+    "notes": "off-palette=0 colours=36; placeholder until the headers package lands"
+   }
+  },
+  {
+   "id": "scene-garden",
+   "role": "header scene: Vườn (view garden)",
+   "path": "public/ta-tua/game/assets/scenes/garden.webp",
+   "status": "sample",
+   "technical": {
+    "dimensions": "320x80",
+    "alpha": false,
+    "anchor": "center (phone: center crop)",
+    "frames": 1,
+    "filtering": "nearest",
+    "scale": "integer 3x desktop (2x when the column is under 960 px) / 2x phone",
+    "bytes": 3498,
+    "fx": []
+   },
+   "visual_locks": [
+    "palette.json",
+    "view: low top-down",
+    "light: top-left",
+    "outline: #2e1d14 outer"
+   ],
+   "provenance": {
+    "kind": "composited",
+    "tool": "scripts/art/build-scenes.py (placeholder compositor)",
+    "mode": "placeholder",
+    "pixellab_id": "",
+    "prompt": "",
+    "params": {
+     "sources": [
+      "phase0/dl/pal/flowerbed.png",
+      "phase0/dl/pal/home.png",
+      "phase0/dl/pal/tree.png",
+      "phase1/npc-2/pal/farmer/idle-south.png"
+     ]
+    },
+    "created_at": "",
+    "generation_cost": 0,
+    "postprocess": [
+     "opaque on #fbf1e3",
+     "WebP lossless (exact)",
+     "Wang terrain + sprites placed by bottom-centre",
+     "shadow 28% #2e1d14 snapped to palette"
+    ],
+    "license": "derived from PixelLab assets listed in sources (PixelLab ToS) — verify before ship"
+   },
+   "verification": {
+    "native_scale_reviewed": true,
+    "in_engine_reviewed": true,
+    "technical_checks_passed": true,
+    "approved_by": "",
+    "notes": "off-palette=0 colours=36; placeholder until the headers package lands"
+   }
+  },
+  {
+   "id": "scene-school",
+   "role": "header scene: Trường học (view school)",
+   "path": "public/ta-tua/game/assets/scenes/school.webp",
+   "status": "sample",
+   "technical": {
+    "dimensions": "320x80",
+    "alpha": false,
+    "anchor": "center (phone: center crop)",
+    "frames": 1,
+    "filtering": "nearest",
+    "scale": "integer 3x desktop (2x when the column is under 960 px) / 2x phone",
+    "bytes": 3986,
+    "fx": []
+   },
+   "visual_locks": [
+    "palette.json",
+    "view: low top-down",
+    "light: top-left",
+    "outline: #2e1d14 outer"
+   ],
+   "provenance": {
+    "kind": "composited",
+    "tool": "scripts/art/build-scenes.py (placeholder compositor)",
+    "mode": "placeholder",
+    "pixellab_id": "",
+    "prompt": "",
+    "params": {
+     "sources": [
+      "phase0/dl/pal/bench.png",
+      "phase0/dl/pal/lamp.png",
+      "phase0/dl/pal/tree.png",
+      "phase1/headers/pal/school-v2.png",
+      "phase1/npc-2/pal/student/idle-south.png",
+      "phase1/props-2/pal/bush-large.png"
+     ]
+    },
+    "created_at": "",
+    "generation_cost": 0,
+    "postprocess": [
+     "opaque on #fbf1e3",
+     "WebP lossless (exact)",
+     "Wang terrain + sprites placed by bottom-centre",
+     "shadow 28% #2e1d14 snapped to palette"
+    ],
+    "license": "derived from PixelLab assets listed in sources (PixelLab ToS) — verify before ship"
+   },
+   "verification": {
+    "native_scale_reviewed": true,
+    "in_engine_reviewed": true,
+    "technical_checks_passed": true,
+    "approved_by": "",
+    "notes": "off-palette=0 colours=40; placeholder until the headers package lands"
+   }
+  },
+  {
+   "id": "scene-clinic",
+   "role": "header scene: Phòng khám (view clinic)",
+   "path": "public/ta-tua/game/assets/scenes/clinic.webp",
+   "status": "sample",
+   "technical": {
+    "dimensions": "320x80",
+    "alpha": false,
+    "anchor": "center (phone: center crop)",
+    "frames": 1,
+    "filtering": "nearest",
+    "scale": "integer 3x desktop (2x when the column is under 960 px) / 2x phone",
+    "bytes": 3830,
+    "fx": []
+   },
+   "visual_locks": [
+    "palette.json",
+    "view: low top-down",
+    "light: top-left",
+    "outline: #2e1d14 outer"
+   ],
+   "provenance": {
+    "kind": "composited",
+    "tool": "scripts/art/build-scenes.py (placeholder compositor)",
+    "mode": "placeholder",
+    "pixellab_id": "",
+    "prompt": "",
+    "params": {
+     "sources": [
+      "phase0/dl/pal/bench.png",
+      "phase0/dl/pal/flowerbed.png",
+      "phase0/dl/pal/lamp.png",
+      "phase0/dl/pal/tree.png",
+      "phase1/headers/pal/clinic-v3.png",
+      "phase1/npc-1/pal/grandpa/rot-south.png"
+     ]
+    },
+    "created_at": "",
+    "generation_cost": 0,
+    "postprocess": [
+     "opaque on #fbf1e3",
+     "WebP lossless (exact)",
+     "Wang terrain + sprites placed by bottom-centre",
+     "shadow 28% #2e1d14 snapped to palette"
+    ],
+    "license": "derived from PixelLab assets listed in sources (PixelLab ToS) — verify before ship"
+   },
+   "verification": {
+    "native_scale_reviewed": true,
+    "in_engine_reviewed": true,
+    "technical_checks_passed": true,
+    "approved_by": "",
+    "notes": "off-palette=0 colours=40; placeholder until the headers package lands"
+   }
+  }
+ ]
+}
