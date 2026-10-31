@@ -306,8 +306,8 @@ function layout(A, places, art) {
       const la = put(lamp, x0 * T + 6, roadTop + 4, { shadow: [5, 2] });
       const lb = put(lamp, x1 * T - 6, roadTop + 4, { shadow: [5, 2] });
       if (la && lb && fxDef('lantern')) {
-        const top = la.y - la.sprite.h + 12;
-        fx.push({ kind: 'festoon', def: fxDef('lantern'), x0: la.x + 4, x1: lb.x - 4, y: top, z: la.y + 1, n: 3 });
+        const top = la.y - la.sprite.h + 5;
+        fx.push({ kind: 'festoon', def: fxDef('lantern'), x0: la.x + 4, x1: lb.x - 4, y: top, z: la.y + 1, n: 2 });
       }
       if (fxDef('bird-hop')) fx.push({ kind: 'loop', def: fxDef('bird-hop'), x: it.cx + 34, y: fy + 6, z: fy + 6, flip: true });
       it.fountainY = fy;
@@ -868,17 +868,41 @@ function buildStreet(container, A, initialPlaces, onSelect, renderBuilding) {
   io.observe(scroller);
   const onVisibility = () => sync();
   document.addEventListener('visibilitychange', onVisibility);
+  /**
+   * Máy tính: phố tràn ra hai bên cột nội dung (cách mép cửa sổ 16 px) để thấy được nhiều nhà nhất,
+   * không rộng hơn chính con phố. Điện thoại giữ đúng bề ngang cột.
+   */
+  function bleed() {
+    root.style.marginLeft = '';
+    root.style.width = '';
+    if (phoneMq.matches || !L) return;
+    const z = root.currentCSSZoom || 1; // đổi px màn hình ra px của chính khối (khối đã bù zoom game)
+    const r = root.getBoundingClientRect();
+    const vw = document.documentElement.clientWidth;
+    const gutter = 16;
+    const roomL = Math.max(0, r.left - gutter);
+    const roomR = Math.max(0, vw - gutter - r.right);
+    const extra = Math.min(roomL + roomR, (L.W * scale + 4) * z - r.width);
+    if (extra < 8) return;
+    const left = Math.min(roomL, Math.max(extra / 2, extra - roomR)); // chia đều, bên nào hẹp thì bên kia bù
+    root.style.marginLeft = `${-left / z}px`;
+    root.style.width = `${(r.width + extra) / z}px`;
+    updateNav();
+  }
   const onMedia = () => {
     applyScale();
+    bleed();
     sync();
   };
   phoneMq.addEventListener('change', onMedia);
   motionMq.addEventListener('change', onMedia);
   const ro = new ResizeObserver(() => updateNav());
   ro.observe(scroller);
+  window.addEventListener('resize', bleed);
 
   container.replaceChildren(root);
   build();
+  bleed();
   document.fonts?.ready.then(() => root.isConnected && fitChips());
   sync();
 
@@ -894,6 +918,7 @@ function buildStreet(container, A, initialPlaces, onSelect, renderBuilding) {
       io.disconnect();
       ro.disconnect();
       document.removeEventListener('visibilitychange', onVisibility);
+      window.removeEventListener('resize', bleed);
       phoneMq.removeEventListener('change', onMedia);
       motionMq.removeEventListener('change', onMedia);
       ui.removeEventListener('click', onClick);
