@@ -89,7 +89,7 @@
    "group": "tree-wall"
   },
   {
-   "sprite": "pine|tree",
+   "sprite": "tree-pine|tree",
    "x": 46,
    "y": 20,
    "foot": "none",
@@ -103,7 +103,7 @@
    "group": "tree-wall"
   },
   {
-   "sprite": "cherry-tree|tree",
+   "sprite": "tree-cherry|tree",
    "x": 122,
    "y": 19,
    "foot": "none",
@@ -117,14 +117,14 @@
    "group": "tree-wall"
   },
   {
-   "sprite": "pine-v2|pine|tree",
+   "sprite": "tree-pine|tree",
    "x": 198,
    "y": 18,
    "foot": "none",
    "group": "tree-wall"
   },
   {
-   "sprite": "orange-tree|tree",
+   "sprite": "tree-orange|tree",
    "x": 236,
    "y": 20,
    "foot": "none",
@@ -138,7 +138,7 @@
    "group": "tree-wall"
   },
   {
-   "sprite": "pine|tree",
+   "sprite": "tree-pine|tree",
    "x": 312,
    "y": 19,
    "foot": "none",
@@ -152,7 +152,7 @@
    "group": "tree-wall"
   },
   {
-   "sprite": "cherry-tree|tree",
+   "sprite": "tree-cherry|tree",
    "x": 388,
    "y": 18,
    "foot": "none",
@@ -166,14 +166,14 @@
    "group": "tree-wall"
   },
   {
-   "sprite": "pine-v2|pine|tree",
+   "sprite": "tree-pine|tree",
    "x": 464,
    "y": 22,
    "foot": "none",
    "group": "tree-wall"
   },
   {
-   "sprite": "orange-tree|tree",
+   "sprite": "tree-orange|tree",
    "x": 502,
    "y": 19,
    "foot": "none",
@@ -187,7 +187,7 @@
    "group": "tree-wall"
   },
   {
-   "sprite": "pine|tree",
+   "sprite": "tree-pine|tree",
    "x": 578,
    "y": 18,
    "foot": "none",
@@ -201,14 +201,14 @@
    "group": "tree-wall"
   },
   {
-   "sprite": "cherry-tree|tree",
+   "sprite": "tree-cherry|tree",
    "x": 654,
    "y": 22,
    "foot": "none",
    "group": "tree-wall"
   },
   {
-   "sprite": "cherry-tree|tree",
+   "sprite": "tree-cherry|tree",
    "x": 205,
    "y": 42,
    "foot": "trunk",
@@ -236,7 +236,7 @@
    "group": "tree-wall"
   },
   {
-   "sprite": "pine|tree",
+   "sprite": "tree-pine|tree",
    "x": 384,
    "y": 42,
    "foot": "trunk",
@@ -250,7 +250,7 @@
    "group": "tree-wall"
   },
   {
-   "sprite": "cherry-tree|tree",
+   "sprite": "tree-cherry|tree",
    "x": 469,
    "y": 42,
    "foot": "trunk",
@@ -271,7 +271,7 @@
    "group": "tree-wall"
   },
   {
-   "sprite": "pine|tree",
+   "sprite": "tree-pine|tree",
    "x": 648,
    "y": 42,
    "foot": "trunk",
@@ -309,8 +309,8 @@
   },
   {
    "sprite": "flowers",
-   "x": 120,
-   "y": 124,
+   "x": 128,
+   "y": 134,
    "layer": "ground"
   },
   {
@@ -326,7 +326,7 @@
    "foot": "trunk"
   },
   {
-   "sprite": "lamp2|lamp",
+   "sprite": "lamp-park-b|lamp",
    "x": 150,
    "y": 146,
    "foot": "post"
@@ -340,50 +340,52 @@
    "optional": true
   },
   {
-   "sprite": "fountain-lg-anim|fountain-lg|fountain-anim|fountain",
+   "sprite": "fountain-lg-anim|fountain-anim",
    "x": 336,
-   "y": 114,
-   "foot": "basin",
+   "y": 122,
+   "foot": {
+    "ellipse": [
+     0,
+     -13,
+     38,
+     13
+    ]
+   },
    "anim": {
     "fps": 8,
     "mode": "pingpong"
    }
   },
   {
-   "sprite": "bench",
-   "x": 300,
-   "y": 74,
-   "foot": "base"
-  },
-  {
-   "sprite": "bench",
-   "x": 372,
-   "y": 74,
-   "foot": "base"
-  },
-  {
-   "sprite": "lamp",
+   "sprite": "lamp-park-a|lamp",
    "x": 266,
    "y": 66,
    "foot": "post"
   },
   {
-   "sprite": "lamp",
+   "sprite": "lamp-park-a|lamp",
    "x": 406,
    "y": 66,
    "foot": "post"
   },
   {
-   "sprite": "lamp",
+   "sprite": "lamp-park-a|lamp",
    "x": 266,
    "y": 150,
    "foot": "post"
   },
   {
-   "sprite": "lamp",
+   "sprite": "lamp-park-a|lamp",
    "x": 406,
    "y": 150,
    "foot": "post"
+  },
+  {
+   "sprite": "icecream-cart",
+   "x": 212,
+   "y": 140,
+   "foot": "base",
+   "optional": true
   },
   {
    "sprite": "flowerbed",
@@ -400,31 +402,48 @@
   {
    "sprite": "stage|log",
    "x": 548,
-   "y": 84,
+   "y": 92,
    "foot": "base"
   },
   {
-   "sprite": "ball",
-   "x": 600,
-   "y": 120,
+   "sprite": "pet-ball",
+   "x": 598,
+   "y": 118,
    "foot": "none",
    "optional": true
   },
   {
-   "sprite": "ramp",
-   "x": 628,
-   "y": 126,
+   "sprite": "pet-ramp",
+   "x": 624,
+   "y": 124,
    "foot": "base",
    "optional": true
   },
   {
-   "sprite": "cherry-tree|tree",
+   "sprite": "pet-tunnel",
+   "x": 560,
+   "y": 186,
+   "foot": "base",
+   "optional": true
+  },
+  {
+   "sprite": "pet-bowl",
+   "x": 494,
+   "y": 112,
+   "foot": [
+    16,
+    6
+   ],
+   "optional": true
+  },
+  {
+   "sprite": "tree-cherry|tree",
    "x": 468,
    "y": 104,
    "foot": "trunk"
   },
   {
-   "sprite": "cherry-tree|tree",
+   "sprite": "tree-cherry|tree",
    "x": 646,
    "y": 100,
    "foot": "trunk"
@@ -554,8 +573,8 @@
  ],
  "npcs": [
   {
-   "id": "visitor-a",
-   "sprite": "npc-girl|npc-visitor-a|npc",
+   "id": "visitor-woman",
+   "sprite": "npc-woman|npc",
    "route": [
     [
      30,
@@ -566,15 +585,15 @@
      152
     ]
    ],
-   "speed": 16,
+   "speed": 15,
    "pause": [
-    2,
-    6
+    3,
+    7
    ]
   },
   {
-   "id": "visitor-b",
-   "sprite": "npc-boy|npc-visitor-b|shopkeeper",
+   "id": "visitor-boy",
+   "sprite": "npc-boy|shopkeeper",
    "route": [
     [
      610,
@@ -585,10 +604,10 @@
      160
     ]
    ],
-   "speed": 14,
+   "speed": 18,
    "pause": [
-    3,
-    7
+    4,
+    9
    ],
    "start": 0.4
   }
@@ -603,6 +622,63 @@
    "sprite": "fx-pond-ripple",
    "count": 1,
    "area": "water"
+  },
+  {
+   "sprite": "fx-butterfly-pink",
+   "kind": "flutter",
+   "around": [
+    [
+     246,
+     132
+    ],
+    [
+     426,
+     132
+    ],
+    [
+     506,
+     132
+    ]
+   ],
+   "count": 1
+  },
+  {
+   "sprite": "fx-butterfly-yellow",
+   "kind": "flutter",
+   "around": [
+    [
+     426,
+     132
+    ],
+    [
+     506,
+     132
+    ],
+    [
+     246,
+     132
+    ]
+   ],
+   "count": 1
+  },
+  {
+   "sprite": "fx-butterfly-blue",
+   "kind": "flutter",
+   "around": [
+    [
+     506,
+     132
+    ],
+    [
+     246,
+     132
+    ],
+    [
+     426,
+     132
+    ]
+   ],
+   "count": 1
   }
  ],
  "walkable": [

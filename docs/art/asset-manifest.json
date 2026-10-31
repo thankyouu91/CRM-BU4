@@ -9,7 +9,7 @@
    "status": "sample",
    "technical": {
     "dimensions": "672x200",
-    "bytes": 17390,
+    "bytes": 19142,
     "filtering": "nearest",
     "scale": "world = 3 units per art px; integer 3x desktop / 2x phone on screen"
    },
@@ -90,8 +90,23 @@
     "sources": [
      "phase1/park-1/park-objects/bush.png"
     ],
-    "source_id": null,
-    "generation": "see the art package manifest.json / report.md",
+    "source_id": "prop-bush",
+    "generation": {
+     "kind": "reused",
+     "tool": "-",
+     "mode": "-",
+     "pixellab_id": "",
+     "prompt": "",
+     "params": {
+      "source": "S/phase1/props-2/pal/bush-small.png (sha1 4f4e25344e04)"
+     },
+     "created_at": "2026-10-31",
+     "generation_cost": 0,
+     "postprocess": [
+      "copied unchanged"
+     ],
+     "license": "see source manifest"
+    },
     "postprocess": [
      "cropped to the strip bbox",
      "packed into objects.webp (lossless WebP)"
@@ -119,27 +134,20 @@
     ],
     "source_id": "prop-bush-large",
     "generation": {
-     "kind": "generated",
-     "tool": "PixelLab MCP create_map_object",
-     "mode": "basic",
-     "pixellab_id": "4fdc8288-a99f-4533-a4f6-882f8835b78b",
-     "prompt": "cute round leafy bush made of soft rounded clumps of bright fresh green leaves, light green highlights on top, darker green underneath, chunky simple shapes, soft light from top-left, dark brown outline",
+     "kind": "reused",
+     "tool": "-",
+     "mode": "-",
+     "pixellab_id": "",
+     "prompt": "",
      "params": {
-      "view": "low top-down",
-      "outline": "single color outline",
-      "shading": "medium shading",
-      "detail": "medium detail",
-      "size": "48x32"
+      "source": "S/phase1/props-2/pal/bush-large.png (sha1 b535eb668404)"
      },
      "created_at": "2026-10-31",
-     "generation_cost": 1,
+     "generation_cost": 0,
      "postprocess": [
-      "remap.py: OKLab nearest, chroma x2, palette.json (48)",
-      "alpha threshold 128",
-      "outer outline #2e1d14 + 1px pad"
+      "copied unchanged"
      ],
-     "license": "PixelLab ToS (subscription, commercial use per https://pixellab.ai/termsofservice) — verify before ship",
-     "source_file": "phase1/props-2/pal/bush-large.png"
+     "license": "see source manifest"
     },
     "postprocess": [
      "cropped to the strip bbox",
@@ -152,45 +160,230 @@
    }
   },
   {
-   "id": "park-fountain-anim",
+   "id": "park-dock",
    "role": "park object, animation or visitor frames",
-   "path": "public/ta-tua/game/assets/park/objects.webp#fountain-anim",
+   "path": "public/ta-tua/game/assets/park/objects.webp#dock",
    "status": "sample",
    "technical": {
-    "frames": 9,
+    "frames": 1,
     "anchor": "foot centre (ax, ay in park.json)",
     "filtering": "nearest"
    },
    "provenance": {
     "kind": "derived",
     "sources": [
-     "phase0/dl/pal/fountain-anim/0.png",
-     "phase0/dl/pal/fountain-anim/1.png",
-     "+7 more"
+     "phase1/park-1/park-objects/dock.png"
     ],
-    "source_id": "fx-fountain",
+    "source_id": "prop-dock",
     "generation": {
-     "kind": "generated",
-     "tool": "PixelLab MCP create_map_object + animate_image",
-     "mode": "basic + animate_image",
-     "pixellab_id": "object 5875c30c-4fe7-4782-932a-719911dd6373; animate job afe8f0da-1908-4fcb-a459-5300dc3daadd",
-     "prompt": "object: cute small round two-tier stone village fountain, wide basin of clear blue water, small upper bowl in the centre with a water jet splashing up and falling into the basin, warm light grey stone rim, chunky simple shapes, soft light from top-left, dark brown outline | animation: water jet gently bubbling and splashing, water flowing down and rippling in the basin, looping, the stone fountain itself stays perfectly still",
+     "kind": "hand-made",
+     "tool": "park-1/scripts/dock.py",
+     "mode": "-",
+     "pixellab_id": "",
+     "prompt": "",
      "params": {
-      "view": "low top-down",
-      "outline": "single color outline",
-      "shading": "medium shading",
-      "detail": "medium detail",
-      "size": "64x64",
-      "frame_count": 8
+      "size": "20x26"
      },
      "created_at": "2026-10-31",
-     "generation_cost": 2,
+     "generation_cost": 0,
      "postprocess": [
-      "remap.py: OKLab nearest, chroma x2, palette.json (48)",
-      "alpha threshold 128",
-      "outer outline #2e1d14 + 1px pad"
+      "palette wood ramp + #2e1d14 outline drawn directly"
      ],
-     "license": "PixelLab ToS (subscription, commercial use per https://pixellab.ai/termsofservice) — verify before ship"
+     "license": "original"
+    },
+    "postprocess": [
+     "cropped to the strip bbox",
+     "packed into objects.webp (lossless WebP)"
+    ]
+   },
+   "verification": {
+    "in_engine_reviewed": true,
+    "approved_by": ""
+   }
+  },
+  {
+   "id": "park-fountain-lg-anim",
+   "role": "park object, animation or visitor frames",
+   "path": "public/ta-tua/game/assets/park/objects.webp#fountain-lg-anim",
+   "status": "sample",
+   "technical": {
+    "frames": 5,
+    "anchor": "foot centre (ax, ay in park.json)",
+    "filtering": "nearest"
+   },
+   "provenance": {
+    "kind": "derived",
+    "sources": [
+     "phase1/park-2/pal/fountain-lg-anim/0.png",
+     "phase1/park-2/pal/fountain-lg-anim/1.png",
+     "+3 more"
+    ],
+    "source_id": null,
+    "generation": "see the art package manifest.json / report.md",
+    "postprocess": [
+     "cropped to the strip bbox",
+     "packed into objects.webp (lossless WebP)"
+    ]
+   },
+   "verification": {
+    "in_engine_reviewed": true,
+    "approved_by": ""
+   }
+  },
+  {
+   "id": "park-fx-butterfly-blue",
+   "role": "park object, animation or visitor frames",
+   "path": "public/ta-tua/game/assets/park/objects.webp#fx-butterfly-blue",
+   "status": "sample",
+   "technical": {
+    "frames": 4,
+    "anchor": "foot centre (ax, ay in park.json)",
+    "filtering": "nearest"
+   },
+   "provenance": {
+    "kind": "derived",
+    "sources": [
+     "phase1/ambient-2/pal/fx-butterfly-blue/0.png",
+     "phase1/ambient-2/pal/fx-butterfly-blue/1.png",
+     "+2 more"
+    ],
+    "source_id": "fx-butterfly-blue",
+    "generation": {
+     "kind": "hand-drawn",
+     "tool": "local Python/PIL pixel grids (phase1/ambient-2/scripts/butterfly.py)",
+     "mode": "hand-drawn (0 PixelLab calls)",
+     "pixellab_id": null,
+     "prompt": "",
+     "params": {
+      "frame_w": 12,
+      "frame_h": 12,
+      "frames": 4,
+      "ms": [
+       80,
+       80,
+       80,
+       80
+      ]
+     },
+     "created_at": "2026-10-31",
+     "generation_cost": 0,
+     "postprocess": [
+      "hand-drawn grids in palette.json letters (scripts/common.py LEG asserts every colour is in palette.json)",
+      "outer 1px #2e1d14 outline drawn by scripts/common.py outline() (4-neighbour, outside)",
+      "phase0 remap.py palette.json in out --outline --pad 0 on every frame (verified no-op on all visible pixels)",
+      "phase0 audit.py: off-palette=0, semi-alpha=0"
+     ],
+     "license": "original pixel art drawn for Pet Farm in this session; no third-party or AI-generated source"
+    },
+    "postprocess": [
+     "cropped to the strip bbox",
+     "packed into objects.webp (lossless WebP)"
+    ]
+   },
+   "verification": {
+    "in_engine_reviewed": true,
+    "approved_by": ""
+   }
+  },
+  {
+   "id": "park-fx-butterfly-pink",
+   "role": "park object, animation or visitor frames",
+   "path": "public/ta-tua/game/assets/park/objects.webp#fx-butterfly-pink",
+   "status": "sample",
+   "technical": {
+    "frames": 4,
+    "anchor": "foot centre (ax, ay in park.json)",
+    "filtering": "nearest"
+   },
+   "provenance": {
+    "kind": "derived",
+    "sources": [
+     "phase1/ambient-2/pal/fx-butterfly-pink/0.png",
+     "phase1/ambient-2/pal/fx-butterfly-pink/1.png",
+     "+2 more"
+    ],
+    "source_id": "fx-butterfly-pink",
+    "generation": {
+     "kind": "hand-drawn",
+     "tool": "local Python/PIL pixel grids (phase1/ambient-2/scripts/butterfly.py)",
+     "mode": "hand-drawn (0 PixelLab calls)",
+     "pixellab_id": null,
+     "prompt": "",
+     "params": {
+      "frame_w": 12,
+      "frame_h": 12,
+      "frames": 4,
+      "ms": [
+       80,
+       80,
+       80,
+       80
+      ]
+     },
+     "created_at": "2026-10-31",
+     "generation_cost": 0,
+     "postprocess": [
+      "hand-drawn grids in palette.json letters (scripts/common.py LEG asserts every colour is in palette.json)",
+      "outer 1px #2e1d14 outline drawn by scripts/common.py outline() (4-neighbour, outside)",
+      "phase0 remap.py palette.json in out --outline --pad 0 on every frame (verified no-op on all visible pixels)",
+      "phase0 audit.py: off-palette=0, semi-alpha=0"
+     ],
+     "license": "original pixel art drawn for Pet Farm in this session; no third-party or AI-generated source"
+    },
+    "postprocess": [
+     "cropped to the strip bbox",
+     "packed into objects.webp (lossless WebP)"
+    ]
+   },
+   "verification": {
+    "in_engine_reviewed": true,
+    "approved_by": ""
+   }
+  },
+  {
+   "id": "park-fx-butterfly-yellow",
+   "role": "park object, animation or visitor frames",
+   "path": "public/ta-tua/game/assets/park/objects.webp#fx-butterfly-yellow",
+   "status": "sample",
+   "technical": {
+    "frames": 4,
+    "anchor": "foot centre (ax, ay in park.json)",
+    "filtering": "nearest"
+   },
+   "provenance": {
+    "kind": "derived",
+    "sources": [
+     "phase1/ambient-2/pal/fx-butterfly-yellow/0.png",
+     "phase1/ambient-2/pal/fx-butterfly-yellow/1.png",
+     "+2 more"
+    ],
+    "source_id": "fx-butterfly-yellow",
+    "generation": {
+     "kind": "hand-drawn",
+     "tool": "local Python/PIL pixel grids (phase1/ambient-2/scripts/butterfly.py)",
+     "mode": "hand-drawn (0 PixelLab calls)",
+     "pixellab_id": null,
+     "prompt": "",
+     "params": {
+      "frame_w": 12,
+      "frame_h": 12,
+      "frames": 4,
+      "ms": [
+       80,
+       80,
+       80,
+       80
+      ]
+     },
+     "created_at": "2026-10-31",
+     "generation_cost": 0,
+     "postprocess": [
+      "hand-drawn grids in palette.json letters (scripts/common.py LEG asserts every colour is in palette.json)",
+      "outer 1px #2e1d14 outline drawn by scripts/common.py outline() (4-neighbour, outside)",
+      "phase0 remap.py palette.json in out --outline --pad 0 on every frame (verified no-op on all visible pixels)",
+      "phase0 audit.py: off-palette=0, semi-alpha=0"
+     ],
+     "license": "original pixel art drawn for Pet Farm in this session; no third-party or AI-generated source"
     },
     "postprocess": [
      "cropped to the strip bbox",
@@ -318,8 +511,29 @@
     "sources": [
      "phase1/park-1/park-objects/gazebo.png"
     ],
-    "source_id": null,
-    "generation": "see the art package manifest.json / report.md",
+    "source_id": "prop-gazebo",
+    "generation": {
+     "kind": "generated",
+     "tool": "PixelLab MCP create_map_object",
+     "mode": "basic",
+     "pixellab_id": "1e0f435e-b888-464e-8c40-c2543698cb1b",
+     "prompt": "cute cozy small wooden park gazebo pavilion, octagonal, cream white wooden posts and low railings, warm coral red shingled pointed roof with a little golden finial, open sides, wooden floor platform with two front steps facing the viewer, chunky simple shapes, soft light from top-left, dark brown outline",
+     "params": {
+      "view": "low top-down",
+      "outline": "single color outline",
+      "shading": "medium shading",
+      "detail": "medium detail",
+      "size": "96x96"
+     },
+     "created_at": "2026-10-31",
+     "generation_cost": 1,
+     "postprocess": [
+      "remap.py: OKLab nearest, chroma x2, palette.json (48)",
+      "alpha threshold 128",
+      "outer outline #2e1d14 + 1px pad"
+     ],
+     "license": "PixelLab ToS (subscription, commercial use per https://pixellab.ai/termsofservice) — verify before ship"
+    },
     "postprocess": [
      "cropped to the strip bbox",
      "packed into objects.webp (lossless WebP)"
@@ -345,8 +559,72 @@
     "sources": [
      "phase1/park-1/park-objects/hedge-run2.png"
     ],
-    "source_id": null,
-    "generation": "see the art package manifest.json / report.md",
+    "source_id": "prop-hedge-run2",
+    "generation": {
+     "kind": "reused",
+     "tool": "-",
+     "mode": "-",
+     "pixellab_id": "",
+     "prompt": "",
+     "params": {
+      "source": "S/phase1/props-1/pal/hedge-left|mid|right.png"
+     },
+     "created_at": "2026-10-31",
+     "generation_cost": 0,
+     "postprocess": [
+      "copied unchanged; joined left + 2 x mid + right (scripts/snapshot.py)"
+     ],
+     "license": "see source manifest"
+    },
+    "postprocess": [
+     "cropped to the strip bbox",
+     "packed into objects.webp (lossless WebP)"
+    ]
+   },
+   "verification": {
+    "in_engine_reviewed": true,
+    "approved_by": ""
+   }
+  },
+  {
+   "id": "park-icecream-cart",
+   "role": "park object, animation or visitor frames",
+   "path": "public/ta-tua/game/assets/park/objects.webp#icecream-cart",
+   "status": "sample",
+   "technical": {
+    "frames": 1,
+    "anchor": "foot centre (ax, ay in park.json)",
+    "filtering": "nearest"
+   },
+   "provenance": {
+    "kind": "derived",
+    "sources": [
+     "phase1/park-2/pal/icecream-cart.png"
+    ],
+    "source_id": "prop-icecream-cart",
+    "generation": {
+     "kind": "generated",
+     "tool": "PixelLab MCP create_map_object",
+     "mode": "basic",
+     "pixellab_id": "d3a2bad2-818c-4dd5-9d3d-06489d1371b9",
+     "prompt": "cute cozy ice cream cart, rounded cream cart body with a pastel pink stripe along the side, a big pink and white striped umbrella on top, two round brown wooden wheels and a push handle at the side, three ice cream cones with pink, mint and yellow scoops standing on the counter top, chunky simple shapes, soft light from top-left, dark brown outline, no text, no letters",
+     "params": {
+      "view": "low top-down",
+      "outline": "single color outline",
+      "shading": "medium shading",
+      "detail": "medium detail",
+      "size": "64x64"
+     },
+     "created_at": "2026-10-31",
+     "generation_cost": 1,
+     "postprocess": [
+      "remap.py: OKLab nearest, chroma x2, palette.json (48)",
+      "alpha threshold 128",
+      "outer outline #2e1d14 + 1px pad",
+      "swap.py c4bcb0>dcc0a0 (grey body shade -> warm cream wall ramp)"
+     ],
+     "license": "PixelLab ToS (subscription, commercial use per https://pixellab.ai/termsofservice) — verify before ship"
+    },
     "postprocess": [
      "cropped to the strip bbox",
      "packed into objects.webp (lossless WebP)"
@@ -422,27 +700,20 @@
     ],
     "source_id": "prop-log",
     "generation": {
-     "kind": "generated",
-     "tool": "PixelLab MCP create_map_object",
-     "mode": "basic",
-     "pixellab_id": "6856960a-eb79-4af9-b464-ce9a73cec8c5",
-     "prompt": "cute fallen tree log lying on the ground sideways, warm brown bark, light wood rings on the cut end, a little green moss on top, chunky simple shapes, soft light from top-left, dark brown outline",
+     "kind": "reused",
+     "tool": "-",
+     "mode": "-",
+     "pixellab_id": "",
+     "prompt": "",
      "params": {
-      "view": "low top-down",
-      "outline": "single color outline",
-      "shading": "medium shading",
-      "detail": "medium detail",
-      "size": "48x32"
+      "source": "S/phase1/props-2/pal/log.png (sha1 14a2181d556b)"
      },
      "created_at": "2026-10-31",
-     "generation_cost": 1,
+     "generation_cost": 0,
      "postprocess": [
-      "remap.py: OKLab nearest, chroma x2, palette.json (48)",
-      "alpha threshold 128",
-      "outer outline #2e1d14 + 1px pad"
+      "copied unchanged"
      ],
-     "license": "PixelLab ToS (subscription, commercial use per https://pixellab.ai/termsofservice) — verify before ship",
-     "source_file": "phase1/props-2/pal/log.png"
+     "license": "see source manifest"
     },
     "postprocess": [
      "cropped to the strip bbox",
@@ -455,9 +726,9 @@
    }
   },
   {
-   "id": "park-npc-shopkeeper",
+   "id": "park-npc-boy",
    "role": "park object, animation or visitor frames",
-   "path": "public/ta-tua/game/assets/park/objects.webp#npc-shopkeeper",
+   "path": "public/ta-tua/game/assets/park/objects.webp#npc-boy",
    "status": "sample",
    "technical": {
     "frames": 13,
@@ -467,38 +738,9 @@
    "provenance": {
     "kind": "derived",
     "sources": [
-     "phase1/npc-1/pal/shopkeeper/rot-south.png",
-     "phase1/npc-1/pal/shopkeeper/walk-east-0.png",
+     "phase1/park-2/pal/npc-boy-south.png",
+     "phase1/park-2/pal/npc-boy-walk/east-0.png",
      "+11 more"
-    ],
-    "source_id": null,
-    "generation": "see the art package manifest.json / report.md",
-    "postprocess": [
-     "cropped to the strip bbox",
-     "packed into objects.webp (lossless WebP)"
-    ]
-   },
-   "verification": {
-    "in_engine_reviewed": true,
-    "approved_by": ""
-   }
-  },
-  {
-   "id": "park-npc-villager",
-   "role": "park object, animation or visitor frames",
-   "path": "public/ta-tua/game/assets/park/objects.webp#npc-villager",
-   "status": "sample",
-   "technical": {
-    "frames": 7,
-    "anchor": "foot centre (ax, ay in park.json)",
-    "filtering": "nearest"
-   },
-   "provenance": {
-    "kind": "derived",
-    "sources": [
-     "phase0/dl/pal/npc-south.png",
-     "phase0/dl/pal/walk-skel/east-0.png",
-     "+5 more"
     ],
     "source_id": "npc-villager",
     "generation": {
@@ -531,6 +773,246 @@
    }
   },
   {
+   "id": "park-npc-woman",
+   "role": "park object, animation or visitor frames",
+   "path": "public/ta-tua/game/assets/park/objects.webp#npc-woman",
+   "status": "sample",
+   "technical": {
+    "frames": 13,
+    "anchor": "foot centre (ax, ay in park.json)",
+    "filtering": "nearest"
+   },
+   "provenance": {
+    "kind": "derived",
+    "sources": [
+     "phase1/park-2/pal/npc-woman-south.png",
+     "phase1/park-2/pal/npc-woman-walk/east-0.png",
+     "+11 more"
+    ],
+    "source_id": "npc-villager",
+    "generation": {
+     "kind": "generated",
+     "tool": "PixelLab MCP create_character",
+     "mode": "v3",
+     "pixellab_id": "28f27b60-1094-4b0e-a2f4-ab74abaa5aa8",
+     "prompt": "cute friendly young villager girl, short chestnut brown bob hair, mint green short-sleeve top, cream apron, brown skirt, little brown shoes, warm cozy farm town style, chunky readable shapes, dark brown outline",
+     "params": {
+      "size": 48,
+      "view": "low top-down",
+      "outline": "single color outline",
+      "detail": "medium detail"
+     },
+     "created_at": "2026-10-31",
+     "generation_cost": 2,
+     "postprocess": [
+      "remap.py --outline --pad 0"
+     ],
+     "license": "PixelLab ToS (subscription, commercial use per https://pixellab.ai/termsofservice) — verify before ship"
+    },
+    "postprocess": [
+     "cropped to the strip bbox",
+     "packed into objects.webp (lossless WebP)"
+    ]
+   },
+   "verification": {
+    "in_engine_reviewed": true,
+    "approved_by": ""
+   }
+  },
+  {
+   "id": "park-pet-ball",
+   "role": "park object, animation or visitor frames",
+   "path": "public/ta-tua/game/assets/park/objects.webp#pet-ball",
+   "status": "sample",
+   "technical": {
+    "frames": 1,
+    "anchor": "foot centre (ax, ay in park.json)",
+    "filtering": "nearest"
+   },
+   "provenance": {
+    "kind": "derived",
+    "sources": [
+     "phase1/park-2/pal/pet-ball.png"
+    ],
+    "source_id": "prop-pet-ball",
+    "generation": {
+     "kind": "generated",
+     "tool": "PixelLab MCP create_map_object",
+     "mode": "basic",
+     "pixellab_id": "7694b7e9-69a3-4c6a-be56-984d6614efe6",
+     "prompt": "one tiny rubber pet toy ball, two-tone: top half bright red and bottom half cream with a thin dividing line, small round ball sitting on the ground with lots of empty space around it, chunky simple shapes, soft light from top-left, dark brown outline",
+     "params": {
+      "view": "low top-down",
+      "outline": "single color outline",
+      "shading": "medium shading",
+      "detail": "low detail",
+      "size": "32x32"
+     },
+     "created_at": "2026-10-31",
+     "generation_cost": 1,
+     "postprocess": [
+      "remap.py: OKLab nearest, chroma x2, palette.json (48)",
+      "alpha threshold 128",
+      "outer outline #2e1d14 + 1px pad"
+     ],
+     "license": "PixelLab ToS (subscription, commercial use per https://pixellab.ai/termsofservice) — verify before ship"
+    },
+    "postprocess": [
+     "cropped to the strip bbox",
+     "packed into objects.webp (lossless WebP)"
+    ]
+   },
+   "verification": {
+    "in_engine_reviewed": true,
+    "approved_by": ""
+   }
+  },
+  {
+   "id": "park-pet-bowl",
+   "role": "park object, animation or visitor frames",
+   "path": "public/ta-tua/game/assets/park/objects.webp#pet-bowl",
+   "status": "sample",
+   "technical": {
+    "frames": 1,
+    "anchor": "foot centre (ax, ay in park.json)",
+    "filtering": "nearest"
+   },
+   "provenance": {
+    "kind": "derived",
+    "sources": [
+     "phase1/park-2/pal/pet-bowl.png"
+    ],
+    "source_id": "prop-pet-bowl",
+    "generation": {
+     "kind": "generated",
+     "tool": "PixelLab MCP create_map_object",
+     "mode": "basic",
+     "pixellab_id": "2fe8f132-cd0d-44ed-9c40-eaf128f2c185",
+     "prompt": "small round pet water bowl sitting on the ground, light blue ceramic bowl filled with clear water, chunky simple shapes, soft light from top-left, dark brown outline",
+     "params": {
+      "view": "low top-down",
+      "outline": "single color outline",
+      "shading": "medium shading",
+      "detail": "medium detail",
+      "size": "32x32"
+     },
+     "created_at": "2026-10-31",
+     "generation_cost": 1,
+     "postprocess": [
+      "remap.py: OKLab nearest, chroma x2, palette.json (48)",
+      "alpha threshold 128",
+      "outer outline #2e1d14 + 1px pad"
+     ],
+     "license": "PixelLab ToS (subscription, commercial use per https://pixellab.ai/termsofservice) — verify before ship"
+    },
+    "postprocess": [
+     "cropped to the strip bbox",
+     "packed into objects.webp (lossless WebP)"
+    ]
+   },
+   "verification": {
+    "in_engine_reviewed": true,
+    "approved_by": ""
+   }
+  },
+  {
+   "id": "park-pet-ramp",
+   "role": "park object, animation or visitor frames",
+   "path": "public/ta-tua/game/assets/park/objects.webp#pet-ramp",
+   "status": "sample",
+   "technical": {
+    "frames": 1,
+    "anchor": "foot centre (ax, ay in park.json)",
+    "filtering": "nearest"
+   },
+   "provenance": {
+    "kind": "derived",
+    "sources": [
+     "phase1/park-2/pal/pet-ramp.png"
+    ],
+    "source_id": "prop-pet-ramp",
+    "generation": {
+     "kind": "generated",
+     "tool": "PixelLab MCP create_map_object",
+     "mode": "basic",
+     "pixellab_id": "1b76657f-1869-4c9b-9cd5-98016d3c0021",
+     "prompt": "small wooden pet agility ramp, a short gentle sloped plank ramp rising from left to right onto a low flat wooden platform, little cross slats on the slope, warm brown wood, chunky simple shapes, soft light from top-left, dark brown outline",
+     "params": {
+      "view": "low top-down",
+      "outline": "single color outline",
+      "shading": "medium shading",
+      "detail": "medium detail",
+      "size": "48x32"
+     },
+     "created_at": "2026-10-31",
+     "generation_cost": 1,
+     "postprocess": [
+      "remap.py: OKLab nearest, chroma x2, palette.json (48)",
+      "alpha threshold 128",
+      "outer outline #2e1d14 + 1px pad",
+      "swap.py f39b4a>c8915f, f2c49b>dcb07c (calm orange mottling to P0 wood ramp)"
+     ],
+     "license": "PixelLab ToS (subscription, commercial use per https://pixellab.ai/termsofservice) — verify before ship"
+    },
+    "postprocess": [
+     "cropped to the strip bbox",
+     "packed into objects.webp (lossless WebP)"
+    ]
+   },
+   "verification": {
+    "in_engine_reviewed": true,
+    "approved_by": ""
+   }
+  },
+  {
+   "id": "park-pet-tunnel",
+   "role": "park object, animation or visitor frames",
+   "path": "public/ta-tua/game/assets/park/objects.webp#pet-tunnel",
+   "status": "sample",
+   "technical": {
+    "frames": 1,
+    "anchor": "foot centre (ax, ay in park.json)",
+    "filtering": "nearest"
+   },
+   "provenance": {
+    "kind": "derived",
+    "sources": [
+     "phase1/park-2/pal/pet-tunnel.png"
+    ],
+    "source_id": "prop-pet-tunnel",
+    "generation": {
+     "kind": "generated",
+     "tool": "PixelLab MCP create_map_object",
+     "mode": "basic",
+     "pixellab_id": "7d8733b4-8090-465f-831f-719d1a2b2d76",
+     "prompt": "small pet play tunnel, a short round fabric tube lying on its side on the ground, mint teal fabric with cream rings, round dark open entrance at the front end, chunky simple shapes, soft light from top-left, dark brown outline",
+     "params": {
+      "view": "low top-down",
+      "outline": "single color outline",
+      "shading": "medium shading",
+      "detail": "medium detail",
+      "size": "48x32"
+     },
+     "created_at": "2026-10-31",
+     "generation_cost": 1,
+     "postprocess": [
+      "remap.py: OKLab nearest, chroma x2, palette.json (48)",
+      "alpha threshold 128",
+      "outer outline #2e1d14 + 1px pad"
+     ],
+     "license": "PixelLab ToS (subscription, commercial use per https://pixellab.ai/termsofservice) — verify before ship"
+    },
+    "postprocess": [
+     "cropped to the strip bbox",
+     "packed into objects.webp (lossless WebP)"
+    ]
+   },
+   "verification": {
+    "in_engine_reviewed": true,
+    "approved_by": ""
+   }
+  },
+  {
    "id": "park-picnic",
    "role": "park object, animation or visitor frames",
    "path": "public/ta-tua/game/assets/park/objects.webp#picnic",
@@ -545,8 +1027,29 @@
     "sources": [
      "phase1/park-1/park-objects/picnic.png"
     ],
-    "source_id": null,
-    "generation": "see the art package manifest.json / report.md",
+    "source_id": "prop-picnic",
+    "generation": {
+     "kind": "generated",
+     "tool": "PixelLab MCP create_map_object",
+     "mode": "basic",
+     "pixellab_id": "eb45aab4-ccce-4fc8-ab67-941dc00b860e",
+     "prompt": "cute picnic blanket spread flat on the grass, red and white checkered cloth with a small wicker picnic basket on one corner, seen from above at a slight angle, chunky simple shapes, soft light from top-left, dark brown outline",
+     "params": {
+      "view": "low top-down",
+      "outline": "single color outline",
+      "shading": "medium shading",
+      "detail": "medium detail",
+      "size": "64x48"
+     },
+     "created_at": "2026-10-31",
+     "generation_cost": 1,
+     "postprocess": [
+      "remap.py: OKLab nearest, chroma x2, palette.json (48)",
+      "alpha threshold 128",
+      "outer outline #2e1d14 + 1px pad"
+     ],
+     "license": "PixelLab ToS (subscription, commercial use per https://pixellab.ai/termsofservice) — verify before ship"
+    },
     "postprocess": [
      "cropped to the strip bbox",
      "packed into objects.webp (lossless WebP)"
@@ -572,8 +1075,23 @@
     "sources": [
      "phase1/park-1/park-objects/rock.png"
     ],
-    "source_id": null,
-    "generation": "see the art package manifest.json / report.md",
+    "source_id": "prop-rock",
+    "generation": {
+     "kind": "reused",
+     "tool": "-",
+     "mode": "-",
+     "pixellab_id": "",
+     "prompt": "",
+     "params": {
+      "source": "S/phase1/props-2/pal/rock-small.png (sha1 60fc754b3e0e)"
+     },
+     "created_at": "2026-10-31",
+     "generation_cost": 0,
+     "postprocess": [
+      "copied unchanged"
+     ],
+     "license": "see source manifest"
+    },
     "postprocess": [
      "cropped to the strip bbox",
      "packed into objects.webp (lossless WebP)"
@@ -599,8 +1117,31 @@
     "sources": [
      "phase1/park-1/park-objects/swings.png"
     ],
-    "source_id": null,
-    "generation": "see the art package manifest.json / report.md",
+    "source_id": "prop-swings",
+    "generation": {
+     "kind": "generated",
+     "tool": "PixelLab MCP create_map_object",
+     "mode": "basic",
+     "pixellab_id": "7ee6afe5-20d0-472d-8b09-99c6f5b90a21",
+     "prompt": "cute cozy wooden playground swing set, A-frame warm brown wooden posts with a top beam, two hanging swings on ropes with small red seats, seen from the front, chunky simple shapes, soft light from top-left, dark brown outline",
+     "params": {
+      "view": "low top-down",
+      "outline": "single color outline",
+      "shading": "medium shading",
+      "detail": "medium detail",
+      "size": "64x64"
+     },
+     "created_at": "2026-10-31",
+     "generation_cost": 1,
+     "postprocess": [
+      "clean.py pre --drop-green-below 47 (removed baked grass/shadow patch)",
+      "remap.py: OKLab nearest, chroma x2, palette.json (48)",
+      "alpha threshold 128",
+      "outer outline #2e1d14 + 1px pad",
+      "clean.py thin rows 10-44: 1 px ropes recoloured #5c3a24, side outline removed"
+     ],
+     "license": "PixelLab ToS (subscription, commercial use per https://pixellab.ai/termsofservice) — verify before ship"
+    },
     "postprocess": [
      "cropped to the strip bbox",
      "packed into objects.webp (lossless WebP)"
@@ -676,27 +1217,20 @@
     ],
     "source_id": "prop-tree-cherry",
     "generation": {
-     "kind": "generated",
-     "tool": "PixelLab MCP create_map_object",
-     "mode": "basic",
-     "pixellab_id": "f0465619-9bd3-4812-8d0e-62bdde818f73",
-     "prompt": "cute round cherry blossom tree with a short brown trunk, fluffy pastel pink blossom crown with soft light pink highlights, chunky simple shapes, soft light from top-left, dark brown outline",
+     "kind": "reused",
+     "tool": "-",
+     "mode": "-",
+     "pixellab_id": "",
+     "prompt": "",
      "params": {
-      "view": "low top-down",
-      "outline": "single color outline",
-      "shading": "medium shading",
-      "detail": "medium detail",
-      "size": "64x64"
+      "source": "S/phase1/props-2/pal/tree-cherry.png (sha1 671761bf92fd)"
      },
      "created_at": "2026-10-31",
-     "generation_cost": 1,
+     "generation_cost": 0,
      "postprocess": [
-      "remap.py: OKLab nearest, chroma x2, palette.json (48)",
-      "alpha threshold 128",
-      "outer outline #2e1d14 + 1px pad"
+      "copied unchanged"
      ],
-     "license": "PixelLab ToS (subscription, commercial use per https://pixellab.ai/termsofservice) — verify before ship",
-     "source_file": "phase1/props-2/pal/tree-cherry.png"
+     "license": "see source manifest"
     },
     "postprocess": [
      "cropped to the strip bbox",
@@ -725,27 +1259,20 @@
     ],
     "source_id": "prop-tree-orange",
     "generation": {
-     "kind": "generated",
-     "tool": "PixelLab MCP create_map_object",
-     "mode": "basic",
-     "pixellab_id": "fe7f3e52-dcd7-49ef-ba61-c72cf4f8110f",
-     "prompt": "cute round leafy fruit tree with a short brown trunk, fluffy bright green crown dotted with small round orange fruits, chunky simple shapes, soft light from top-left, dark brown outline",
+     "kind": "reused",
+     "tool": "-",
+     "mode": "-",
+     "pixellab_id": "",
+     "prompt": "",
      "params": {
-      "view": "low top-down",
-      "outline": "single color outline",
-      "shading": "medium shading",
-      "detail": "medium detail",
-      "size": "64x64"
+      "source": "S/phase1/props-2/pal/tree-orange.png (sha1 bd1278363463)"
      },
      "created_at": "2026-10-31",
-     "generation_cost": 1,
+     "generation_cost": 0,
      "postprocess": [
-      "remap.py: OKLab nearest, chroma x2, palette.json (48)",
-      "alpha threshold 128",
-      "outer outline #2e1d14 + 1px pad"
+      "copied unchanged"
      ],
-     "license": "PixelLab ToS (subscription, commercial use per https://pixellab.ai/termsofservice) — verify before ship",
-     "source_file": "phase1/props-2/pal/tree-orange.png"
+     "license": "see source manifest"
     },
     "postprocess": [
      "cropped to the strip bbox",
@@ -774,27 +1301,20 @@
     ],
     "source_id": "prop-tree-pine",
     "generation": {
-     "kind": "generated",
-     "tool": "PixelLab MCP create_map_object",
-     "mode": "basic",
-     "pixellab_id": "bb4f0882-38d0-4ba0-af50-0557b6d622cd",
-     "prompt": "cute cozy village pine tree, plump cone made of three rounded fluffy tiers of bright fresh green needles with light green highlights, short warm brown trunk, chunky simple shapes, soft light from top-left, dark brown outline",
+     "kind": "reused",
+     "tool": "-",
+     "mode": "-",
+     "pixellab_id": "",
+     "prompt": "",
      "params": {
-      "view": "low top-down",
-      "outline": "single color outline",
-      "shading": "medium shading",
-      "detail": "medium detail",
-      "size": "64x64"
+      "source": "S/phase1/props-2/pal/tree-pine.png (sha1 80d887589162)"
      },
      "created_at": "2026-10-31",
-     "generation_cost": 1,
+     "generation_cost": 0,
      "postprocess": [
-      "remap.py: OKLab nearest, chroma x2, palette.json (48)",
-      "alpha threshold 128",
-      "outer outline #2e1d14 + 1px pad"
+      "copied unchanged"
      ],
-     "license": "PixelLab ToS (subscription, commercial use per https://pixellab.ai/termsofservice) — verify before ship",
-     "source_file": "phase1/props-2/pal/tree-pine.png"
+     "license": "see source manifest"
     },
     "postprocess": [
      "cropped to the strip bbox",
@@ -812,9 +1332,9 @@
    "path": "public/ta-tua/game/assets/park/objects.webp",
    "status": "sample",
    "technical": {
-    "dimensions": "507x204",
-    "bytes": 10798,
-    "frames": 58,
+    "dimensions": "510x239",
+    "bytes": 13512,
+    "frames": 78,
     "padding": 1
    },
    "provenance": {

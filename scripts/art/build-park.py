@@ -11,11 +11,12 @@ Output, in public/ta-tua/game/assets/park/:
                 visitor routes, pond fx spots, lamp lights and the walkable area
 It also refreshes the park-* entries of docs/art/asset-manifest.json.
 
-Layout, first found:
-  1. ART_ROOT/phase1/park-1/layout.json (park-1's format: base image, objects with `obj` + park-objects/*.json
-     sidecars, walkable.polygon, night_glow), plus scripts/art/park-extras.json on top (fountain centrepiece,
-     visitors, pond fx: park-2 / ambient art, each optional);
-  2. scripts/art/park-layout.json, a fallback composed from Phase 0 Wang tiles and props.
+Layout (--layout auto|park-1|p0; auto = park-1 once its package has delivered, i.e. has report.txt/.md):
+  park-1  ART_ROOT/phase1/park-1/layout.json (park-1's format: base image, objects with `obj` + park-objects/*.json
+          sidecars, walkable.polygon + holes, night_glow, ambient_anchors), plus scripts/art/park-extras.json on top
+          (park-2's fountain centrepiece, visitors, pet toys, cart; ambient pond fx and butterflies; each optional);
+  p0      scripts/art/park-layout.json: the same park built from Phase 0 Wang tiles and props (+ approved Phase 1
+          props, park-2 and ambient art).
 Sprites are looked up by key ("a|b" = try a, then b) in park-1, park-2, props-*, ambient-*, npc-* and finally
 Phase 0. Missing art is skipped with a warning, so re-running this script after the art lands is the only step.
 """
@@ -280,16 +281,47 @@ def water_spots(ground, w, h, step=8):
 # ---------------------------------------------------------------- layout
 
 
-def load_layout(root):
+def park1_ready(root):
+    d = os.path.join(root, 'phase1', 'park-1')
+    return os.path.isfile(os.path.join(d, 'layout.json')) and any(
+        os.path.isfile(os.path.join(d, f)) for f in ('report.txt', 'report.md', 'README.md'))
+
+
+def blocker(b):
+    """park-1 holes are {rect: [x, y, w, h]} or {polygon: [...]}; ours are [x0, y0, x1, y1] or [[x, y], ...]."""
+    if isinstance(b, dict):
+        if 'rect' in b:
+            x, y, w, h = b['rect']
+            return [x, y, x + w, y + h]
+        return b.get('polygon') or b.get('points')
+    return b
+
+
+def at_anchor(o, anchors):
+    """Extras may sit on one of park-1's ambient anchors: {"at": "plaza_centre", "dx": 0, "dy": 13}."""
+    if 'at' not in o:
+        return o if 'x' in o else None
+    a = anchors.get(o['at'])
+    if not a:
+        return None
+    return {**o, 'x': a[0] + o.get('dx', 0), 'y': a[1] + o.get('dy', 0)}
+
+
+def load_layout(root, choice):
     park1 = os.path.join(root, 'phase1', 'park-1', 'layout.json')
-    if os.path.isfile(park1):
+    if choice == 'park-1' or (choice == 'auto' and park1_ready(root)):
         src = json.load(open(park1))
         base_dir = os.path.dirname(park1)
         walk = src.get('walkable')
         holes = []
+        rect = None
         if isinstance(walk, dict):
             holes = walk.get('holes') or []
+            safe = walk.get('safe_rect')
+            if safe:  # where the server's walk rectangle lands; park-1 keeps it below the lamp/bench row
+                rect = [safe['minX'], safe['minY'], safe['maxX'], safe['maxY']]
             walk = walk.get('polygon') or walk.get('points')
+        anchors = src.get('ambient_anchors') or {}
         objects = [{
             'sprite': o.get('obj') or o.get('sprite') or o.get('name'),
             'x': o['x'], 'y': o['y'],
@@ -298,16 +330,19 @@ def load_layout(root):
         } for o in src.get('objects', [])]
         layout = {
             'source': park1, 'size': src['size'], 'tile': src.get('tile', 16), 'px': 3,
-            'base': os.path.join(base_dir, src['base']), 'objects': objects, 'walk': walk,
-            'blocked': holes + src.get('blocked', []),
+            'base': os.path.join(base_dir, src['base']), 'objects': objects, 'walk': walk, 'rect': rect,
+            'blocked': [blocker(b) for b in holes + src.get('blocked', []) if blocker(b)],
             'lights': [[g['x'], g['y']] for g in src.get('night_glow', [])] or None,
             'npcs': [], 'fx': [],
         }
         if os.path.isfile(EXTRAS):
             extra = json.load(open(EXTRAS))
-            layout['objects'] += extra.get('objects', [])
+            layout['objects'] += [o for o in (at_anchor(o, anchors) for o in extra.get('objects', [])) if o]
             layout['npcs'] += extra.get('npcs', [])
-            layout['fx'] += extra.get('fx', [])
+            for f in extra.get('fx', []):
+                if isinstance(f.get('around'), str):
+                    f = {**f, 'around': [p[:2] for p in anchors.get(f['around'], [])]}
+                layout['fx'].append(f)
             layout['extras'] = EXTRAS
         return layout
     src = json.load(open(FALLBACK_LAYOUT))
@@ -319,9 +354,13 @@ def load_layout(root):
 
 
 def foot_rect(kind, x, y, w, h):
-    """Footprint (x0, y0, x1, y1) in art px that pets cannot stand in, or None."""
+    """Footprint in art px that pets cannot stand in: a rect (x0, y0, x1, y1), a polygon, or None."""
     if kind in (None, 'none'):
         return None
+    if isinstance(kind, dict) and 'ellipse' in kind:  # [dx, dy, rx, ry] from the foot point, e.g. a fountain basin
+        dx, dy, rx, ry = kind['ellipse']
+        rx, ry = rx + 3, ry + 2
+        return [[round(x + dx + rx * math.cos(a * math.pi / 8)), round(y + dy + ry * math.sin(a * math.pi / 8))] for a in range(16)]
     if isinstance(kind, list):
         fw, fh = kind
     elif kind == 'trunk':
@@ -351,13 +390,15 @@ def auto_shadow(kind, w, h, anim):
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument('root', nargs='?', default=DEFAULT_ROOT)
+    ap.add_argument('--layout', choices=('auto', 'park-1', 'p0'), default='auto',
+                    help='park-1 = the park-1 package layout, p0 = scripts/art/park-layout.json; auto = park-1 once delivered')
     ap.add_argument('--preview', help='also write a 2x composite PNG of the whole park (with the walkable area) here')
     args = ap.parse_args()
     root = os.path.abspath(args.root)
     if not os.path.isdir(os.path.join(root, 'phase0')):
         sys.exit(f'no phase0/ in {root}')
     dirs = sprite_dirs(root)
-    L = load_layout(root)
+    L = load_layout(root, args.layout)
     print(f'layout: {L["source"]}' + (f' + {L["extras"]}' if L.get('extras') else ''))
     W, H = L['size']
     T = L['tile']
@@ -447,18 +488,23 @@ def main():
             warn(f'fx {f["sprite"]}: not available, skipped')
             continue
         size = load(r['paths'][0]).size
-        spots = water_spots(ground, *size)
+        flutter = f.get('kind') == 'flutter'
+        spots = f.get('around', []) if flutter else water_spots(ground, *size)
         if not spots:
-            warn(f'fx {f["sprite"]}: no open water for a {size[0]}x{size[1]} box')
+            warn(f'fx {f["sprite"]}: nowhere to play ({"no anchors" if flutter else "no open water"})')
             continue
         meta = {}
-        meta_path = os.path.join(r['dir'], 'fx-anim.json')
-        if os.path.isfile(meta_path):
-            meta = json.load(open(meta_path)).get(r['alt'], {})
+        for index in ('fx-anim.json', 'index.json'):
+            meta_path = os.path.join(r['dir'], index)
+            if os.path.isfile(meta_path) and not meta:
+                meta = json.load(open(meta_path)).get(r['alt'], {})
+        ms = meta.get('ms_per_frame') or (meta.get('ms') or [110])[0]
         frames = atlas.add_strip(r['alt'], r['paths'], {'x': size[0] // 2, 'y': size[1] // 2})
         used[r['alt']] = r['paths']
-        fx.append({'frames': frames, 'ms': meta.get('ms_per_frame', 110), 'gap': meta.get('gap_ms', [800, 2500]),
-                   'count': f.get('count', 2), 'spots': spots})
+        entry = {'kind': 'flutter' if flutter else 'spark', 'frames': frames, 'ms': ms, 'count': f.get('count', 2), 'spots': spots}
+        if not flutter:
+            entry['gap'] = meta.get('gap_ms', [800, 2500])
+        fx.append(entry)
 
     if L['lights'] is not None:
         lights = L['lights']
@@ -489,7 +535,7 @@ def main():
         'npcs': npcs,
         'fx': fx,
         'lights': lights,
-        'nav': {'walk': L['walk'], 'blocked': blocked + water + L['blocked']},
+        'nav': {'walk': L['walk'], 'rect': L.get('rect'), 'blocked': blocked + water + L['blocked']},
     }
     text = json.dumps(park, ensure_ascii=False, separators=(',', ':'))
     with open(os.path.join(OUT, 'park.json'), 'w') as fh:
