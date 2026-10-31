@@ -31,6 +31,21 @@ Intended differences from the pilot
      - LEVEL_FORMS growth (level 10+) is capped per species so the standing pet keeps 2 free rows on top;
      - elder marks (cane, brows, beard), level marks and quy/huyenthoai auras are drawn (pilot: none).
 
+  C. The four -wear files (pet-boba-adult-wear, pet-boba-baby-wear, pet-meo_bac-adult-wear, pet-canh_cut-adult-wear) were
+     regenerated on 2026-10-31 (branch claude/design-pets-wear) because crown, glasses and scarf are no longer the
+     pilot's procedural drawings: every wearable is now the phase-2 artists' data (rig2/wear/data/*.js, built by
+     scripts/art/build-wear.mjs from wear-<slot>/data/<id>.json). What changed, all by design:
+     - crown: redrawn on an even 12 px width (10 px "small" on the baby), same seat on the head;
+     - glasses: the wear-face stamp (S/E/N + "big" for the baby), placed on the eye boxes, outer-silhouette outline;
+     - scarf: the wear-neck stamp (S/E/N + "small"), chin occlusion as before, E tail rows shift with pose.flutter;
+     - Boba's cup (WEAR-SPEC D2): pet -> cup body -> scarf -> straw + cup paws -> glasses -> crown, so the scarf now
+       shows over the cup lid while the straw stays on top;
+     - baby N: the scarf's longer tail reached row 45 (below the feet); the renderer cuts neck/back/charm items at the
+       ground row and re-outlines the cut, as for every item (2 px).
+     Before regenerating, every item was compared pixel by pixel with the artists' own preview code (hw.py,
+     common.py, neckprev.py, preview.py) on boba, meo_bac, canh_cut, tho_la x 6 stages x S/E/N/W: crown, glasses and
+     scarf are identical apart from canh_cut's navy recolour (A) and the ground cut above.
+
 Updating
   Only after looking at the new images next to the old ones (scripts/art/rig2-sheet.mjs, pet-lab.html):
     RIG2_UPDATE_GOLDEN=1 node --test petdex/test/rig2.test.js

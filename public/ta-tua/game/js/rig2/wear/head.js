@@ -1,44 +1,24 @@
-// Khe ĐẦU (14 món): mũ, nơ, hoa cài, vương miện... Chủ sở hữu: họa sĩ đồ đội đầu.
-// Mỗi món { S(ctx, img), E(ctx, img), N(ctx, img) } (xem wear/common.js). Điểm neo: ctx.sk.anchors.head = đỉnh đầu
-// (nhìn ngang: lùi 1 px về sau gáy). Luật của bản mẫu: hình dán cố định cho từng hướng, chốt ở GIỮA ĐÁY vành mũ,
-// lún 2 px vào đỉnh đầu; một hình vừa mọi loài, mọi giai đoạn tuổi. Vẽ sau cùng (trên kính, khăn, cốc).
-// crown: port nguyên từ pets-pilot (khớp từng điểm ảnh). Món khác: hình cũ của rig.js (LEGACY), hiện ở cả 3 hướng.
-import { RAMPS, padOutline, pyRound, stamp, blit } from '../core.js';
+// Khe ĐẦU (14 món): vương miện, hoa cài, vòng lá, mũ chóp, nơ, mũ nồi, nón lá, vầng hào quang, mũ lưỡi trai, mũ rơm,
+// mũ nấm, sừng quỷ, khăn đóng, hoa sen. Hình: gói vẽ phase 2 (wear-head), sinh ra ở wear/data/head.js
+// (scripts/art/build-wear.mjs). Luật đặt (wear/stamp.js): chốt của hình rơi vào (floor(x + .5), floor(y + .5)) của
+// ctx.sk.anchors.head (đỉnh đầu; nhìn ngang lùi 1 px về gáy), hình tự lún vào đầu theo chốt; "small" cho bé sơ sinh và
+// nhí nhố; khi nhảy, món lên cùng đầu (đỉnh món chạm mép trên thì renderFrame hạ cả cú nhảy), vầng hào quang trễ sau
+// đầu tối đa 2 px. Lớp: 13 món "front" (vẽ sau kính, khăn, cốc); halo "behind" (vẽ dưới pet: tai thỏ dựng trước vòng).
+// openTop (halo, flower, bow): món chừa đỉnh đầu, ctx.headTopCovered = false (đặc điểm trên đỉnh đầu vẫn hiện được).
+// earsOver (tophat, beret, cap): CHỈ hướng S và chỉ loài có tai nhọn hai bên đầu (EARS_OVER: tai mèo), tai của pet được
+// vẽ lại lên trên mũ (index.js); không bao giờ ở E, N, W; không cho tai thỏ (dựng trên đỉnh) hay tai tròn.
+// Món nào thiếu dữ liệu thì dùng hình cũ của rig.js (LEGACY, wear/common.js legacyEntry) ở cả 3 hướng.
+import DATA from './data/head.js';
 import { legacyEntry } from './common.js';
+import { dataEntry } from './stamp.js';
 
-const GOLD = RAMPS.gold;
-const CROWN_KEYS = { H: GOLD[4], h: GOLD[3], Y: GOLD[2], D: GOLD[1], R: '#e84a5f', r: '#a84848', B: '#58b9d6', b: '#2f6f9a', L: GOLD[0] };
-const CROWN = {
-  S: ['h....Y....Y', 'hY..hHY..YD', 'hYY.YYY.YDD', 'hYYYYYYYYYD', 'YRrYYBbYRrD', 'DDDDDDDDDDD'],
-  E: ['.h...Y...Y.', '.hY.hYY.YD.', '.hYYYYYYYDD', 'hYYYYYYYYYD', 'YYYYBbYYRrD', 'DDDDDDDDDDD'],
-  N: ['h....Y....Y', 'hY..hYY..YD', 'hYY.YYY.YDD', 'hYYYYYYYYYD', 'YYYYYBbYYYD', 'DDDDDDDDDDD'],
-};
+/** Loại tai (shared/pets.js `ears`) được vẽ lại lên trên món có earsOver ở hướng S: tai nhọn mọc hai bên đầu. */
+export const EARS_OVER = new Set(['cat']);
 
-/** Hình dán theo hướng (đã viền), lưu sẵn. */
-export function stampSet(rows, keys) {
-  const cache = {};
-  return (view) => (cache[view] ??= padOutline(stamp(rows[view], keys)));
-}
+/** Sổ đăng ký khe head: mã món (WEARABLES) → mục vẽ (wear/stamp.js dataEntry). */
+export const HEAD = Object.fromEntries(Object.entries(DATA).map(([id, item]) => [id, dataEntry('head', id, item)]));
 
-/** Dán hình mũ: giữa đáy vành ở điểm neo đầu, lún `sink` px vào đầu. */
-export function placeOnHead(img, pic, ctx, sink = 2) {
-  const [ax, ay] = ctx.sk.anchors.head;
-  const x = pyRound(ax - pic.w / 2);
-  const y = pyRound(ay) + sink - (pic.h - 1);
-  blit(img, pic, x, y);
-}
-
-const crownImg = stampSet(CROWN, CROWN_KEYS);
-const crown = {
-  S: (ctx, img) => placeOnHead(img, crownImg('S'), ctx),
-  E: (ctx, img) => placeOnHead(img, crownImg('E'), ctx),
-  N: (ctx, img) => placeOnHead(img, crownImg('N'), ctx),
-};
-
-/** Sổ đăng ký khe đầu: mã món (WEARABLES) → mục vẽ. */
-export const HEAD = { crown };
-
-/** Hình cũ của rig.js (chưa vẽ lại): màu được ép về bảng màu lúc chạy, viền #2e1d14. pivot/sink/side/dx như rig.js. */
+/** Hình cũ của rig.js (dự phòng: chỉ dùng khi món chưa có dữ liệu): màu được ép về bảng màu lúc chạy, viền #2e1d14. pivot/sink/side/dx như rig.js. */
 export const LEGACY = {
   tophat: { rows: ['..#######..', '..#w#####..', '..#w#####..', '..#######..', '..#######..', '..rrrrrrr..', '..#######..', '###########', '.#########.'], pal: { '#': '#3a3340', w: '#6d6478', r: '#4f8fd6' }, pivot: [5, 8], sink: 2 },
   beret: { rows: ['.....r......', '...rrrrrr...', '.rrrrrrrrrr.', 'rRrrrrrrrrrr', '.RRRRRRRRRR.'], pal: { r: '#e2493b', R: '#b8352a' }, pivot: [6, 4], sink: 3, dx: -1 },
@@ -55,7 +35,7 @@ export const LEGACY = {
   lotus: { rows: ['.....p.....', '...p.P.p...', '..pPpPpPp..', '.pPpPyPpPp.', 'ggpppppppgg', '.ggg...ggg.'], pal: { p: '#ff8fb1', P: '#ffd6e4', y: '#ffd75e', g: '#3f9a5a' }, pivot: [5, 5], sink: 3 },
 };
 
-/** Mục vẽ của món `id` ở khe đầu (món chưa vẽ lại: hình cũ ở cả 3 hướng; món lạ: null). */
+/** Mục vẽ của món `id` ở khe head: dữ liệu; thiếu dữ liệu thì hình cũ (LEGACY); món lạ: null (khe bị bỏ qua). */
 export function headFor(id) {
   if (HEAD[id]) return HEAD[id];
   return LEGACY[id] ? legacyEntry(id, LEGACY[id], 'head') : null;

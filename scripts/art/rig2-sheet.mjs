@@ -8,6 +8,9 @@
 //   rig2-dirs.png        all 51 adults x 4 directions (S, E, N, W), idle frame 0, plus walk frame 1 in E
 //   rig2-wear.png        every wearable on 3 body plans (boba biped, meo_bac quad, canh_cut bird) + a baby boba x 3 views (S, E, N)
 //   rig2-strip-<id>.png  with --species: every animation x direction for each listed species (one row per anim-dir)
+//   rig2-wear-<slot>.png with --only items (one sheet per wear slot): every item x boba / meo_bac / canh_cut / tho_la
+//                        x S E N W, an adult row and a baby row, plus the item's bag icon (wearIcon) at 1x and 3x;
+//                        --pose walk1 draws walk frame 1 (hop + scarf flutter), --ids a,b limits the items
 // Cells are 48x48 on a cream card; a red cell border marks a frame that breaks the rules (off-palette pixel,
 // semi-transparent pixel, or a pixel touching the cell edge). Labels are a tiny 3x5 pixel font.
 import { mkdirSync, writeFileSync } from "node:fs";
@@ -29,6 +32,8 @@ const SCALE = Math.max(1, Number(opt("scale", 2)));
 const LEVEL = Math.max(1, Number(opt("level", 1)));
 const STRIP = opt("species", "") ? opt("species", "").split(",") : [];
 const ONLY = opt("only", STRIP.length ? "strip" : "stages,dirs,wear").split(",");
+const IDS = opt("ids", "") ? opt("ids", "").split(",") : null;
+const POSE = opt("pose", "idle0");
 mkdirSync(OUT, { recursive: true });
 
 // ---------------------------------------------------------------- canvas
@@ -192,7 +197,45 @@ function stripSheet(id) {
   save(`rig2-strip-${id}.png`, c);
 }
 
+/** Item sheets (one per slot): every item x 4 species x S E N W, adult and baby rows, plus the bag icon. */
+function itemSheets() {
+  const species = ["boba", "meo_bac", "canh_cut", "tho_la"];
+  const stages = ["adult", "baby"];
+  const views = ["S", "E", "N", "W"];
+  const walk = POSE === "walk1";
+  const frameOf = (sp, st, v, wear) => (walk ? rig.renderAnim(sp, st, "walk", v, wear, { level: LEVEL }).frames[1].img : rig.renderFrame(sp, st, v, {}, wear, { level: LEVEL }).img);
+  for (const slot of ["head", "face", "neck", "back", "charm"]) {
+    const ids = Object.keys(WEARABLES).filter((id) => WEARABLES[id].slot === slot && (!IDS || IDS.includes(id))).sort();
+    if (!ids.length) continue;
+    const iconW = 64 * 4;
+    const gw = species.length * (views.length * (CELL + PAD) + 12);
+    const rowH = CELL + PAD;
+    const c = canvas(LABEL_W + iconW + gw + 16, HEAD_H + 20 + ids.length * (2 * rowH + 16));
+    text(c, `rig2 wear ${slot}: ${ids.length} items x boba meo_bac canh_cut tho_la x s e n w, adult + baby, ${walk ? "walk frame 1" : "idle 0"}, level ${LEVEL}`, 8, 8, INKC, 3);
+    species.forEach((sp, si) => views.forEach((v, vi) => text(c, `${sp.slice(0, 8)} ${v}`, LABEL_W + iconW + si * (views.length * (CELL + PAD) + 12) + vi * (CELL + PAD), HEAD_H, MUTED)));
+    ids.forEach((id, r) => {
+      const y0 = HEAD_H + 20 + r * (2 * rowH + 16);
+      text(c, id, 8, y0 + 8);
+      text(c, WEARABLES[id].name.normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/đ/g, "d").replace(/Đ/g, "d"), 8, y0 + 24, MUTED);
+      const icon = rig.wearIcon(id);
+      if (icon) {
+        frameAt(c, icon.img, LABEL_W, y0 + 44, 1);
+        frameAt(c, icon.img, LABEL_W + icon.img.w + 8, y0 + 44, 3);
+      }
+      stages.forEach((st, k) => {
+        const y = y0 + k * rowH;
+        text(c, st, LABEL_W + iconW - 64, y + CELL / 2 - 4, MUTED);
+        species.forEach((sp, si) => views.forEach((v, vi) => {
+          cell(c, frameOf(sp, st, v, { [slot]: id }), LABEL_W + iconW + si * (views.length * (CELL + PAD) + 12) + vi * (CELL + PAD), y);
+        }));
+      });
+    });
+    save(`rig2-wear-${slot}${walk ? "-walk1" : ""}.png`, c);
+  }
+}
+
 if (ONLY.includes("stages")) stagesSheet();
 if (ONLY.includes("dirs")) dirsSheet();
 if (ONLY.includes("wear")) wearSheet();
+if (ONLY.includes("items")) itemSheets();
 if (ONLY.includes("strip")) for (const id of STRIP.length ? STRIP : ["boba"]) stripSheet(id);
