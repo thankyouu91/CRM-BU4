@@ -6,12 +6,14 @@
 // Writes PNGs (default DIR = ./rig2-sheets, scale 2):
 //   rig2-stages.png      all 51 species x 6 life stages, front view (S), idle frame 0
 //   rig2-dirs.png        all 51 adults x 4 directions (S, E, N, W), idle frame 0, plus walk frame 1 in E
-//   rig2-wear.png        every wearable on 3 body plans (boba biped, meo_bac quad, canh_cut bird) + a baby boba x 3 views (S, E, N)
+//   rig2-wear.png        every wearable on 3 body plans (boba biped, meo_bac quad, canh_cut bird) + a baby boba x 3 views (S, E, N);
+//                        --wear-species a,b,c uses those adults + a baby of the first instead
 //   rig2-strip-<id>.png  with --species: every animation x direction for each listed species (one row per anim-dir)
 //   rig2-wear-<slot>.png with --only items (one sheet per wear slot): every item x boba / meo_bac / canh_cut / tho_la
 //                        x S E N W, an adult row and a baby row, plus the item's bag icon (wearIcon) at 1x and 3x;
 //                        --pose walk1 draws walk frame 1 (hop + scarf flutter), --ids a,b limits the items,
-//                        --wear-species a,b,c replaces the four bodies (e.g. add a round and a serpent species)
+//                        --wear-species a,b,c replaces the four bodies (e.g. add a round and a serpent species);
+//                        the flag also applies to the default rig2-wear.png sheet
 // Cells are 48x48 on a cream card; a red cell border marks a frame that breaks the rules (off-palette pixel,
 // semi-transparent pixel, or a pixel touching the cell edge). Labels are a tiny 3x5 pixel font.
 import { mkdirSync, writeFileSync } from "node:fs";
@@ -158,7 +160,9 @@ function dirsSheet() {
 }
 
 function wearSheet() {
-  const bodies = [["boba", "adult"], ["meo_bac", "adult"], ["canh_cut", "adult"], ["boba", "baby"]];
+  // --wear-species a,b,c: these adults (plus a baby of the first) replace the default bodies.
+  const ws = opt("wear-species", "") ? opt("wear-species", "").split(",") : null;
+  const bodies = ws ? [...ws.map((b) => [b, "adult"]), [ws[0], "baby"]] : [["boba", "adult"], ["meo_bac", "adult"], ["canh_cut", "adult"], ["boba", "baby"]];
   const views = ["S", "E", "N"];
   const ids = Object.keys(WEARABLES).sort((a, b) => WEARABLES[a].slot.localeCompare(WEARABLES[b].slot) || a.localeCompare(b));
   const groups = 2;
@@ -166,7 +170,8 @@ function wearSheet() {
   const status = rig.libraryStatus().wear;
   const gw = LABEL_W + bodies.length * views.length * (CELL + PAD) + bodies.length * 12 + 24;
   const c = canvas(groups * gw, HEAD_H + 20 + per * (CELL + PAD));
-  text(c, `rig2 wear: ${ids.length} items x boba / meo_bac / canh_cut / baby boba x s e n.  * = redrawn, others = legacy fallback`, 8, 8, INKC, 3);
+  const names = bodies.map(([b, st]) => (st === "adult" ? b : `${st} ${b}`)).join(" / ");
+  text(c, `rig2 wear: ${ids.length} items x ${names} x s e n.  * = redrawn, others = legacy fallback`, 8, 8, INKC, 3);
   for (let g = 0; g < groups; g++) {
     const x0 = g * gw + 8;
     bodies.forEach(([b, st], bi) => views.forEach((v, vi) => text(c, `${st === "adult" ? b.slice(0, 4) : st} ${v}`, x0 + LABEL_W + bi * 12 + (bi * 3 + vi) * (CELL + PAD), HEAD_H, MUTED)));

@@ -663,4 +663,6 @@ img.px-icon { max-width: 100%; max-height: 100%; height: auto; }
   .btn.small, .chip, .link-btn, .link-back, .modal .close, select { min-height: calc(40px / var(--zoom, 1)); }
   .btn.small, .chip, .link-btn, .modal .close { min-width: calc(40px / var(--zoom, 1)); justify-content: center; }
   .link-btn, .modal .close { display: inline-flex; align-items: center; justify-content: center; }
+  /* Nút của thanh chọn (.seg: kỳ thu chi ở ví, khung giờ, Mua/Bán, loại lệnh ở chợ và đất). */
+  .seg button { min-height: calc(40px / var(--zoom, 1)); }
 }

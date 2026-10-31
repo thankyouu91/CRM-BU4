@@ -888,3 +888,41 @@ test('tương phản (D5): mũ lưỡi trai và kính râm không trùng màu l�
     assert.deepEqual(shared, [], `${id} dùng màu lông cánh cụt: ${shared.join(' ')}`);
   }
 });
+
+// Soát lần 3 (bản gộp): ếch ra dáng ếch, đồ cổ không thành thắt lưng ở N trên dáng không cổ, dải màu tạm của Huyền Vũ.
+const bboxOf = (img) => {
+  let [x0, x1, y0, y1] = [99, -1, 99, -1];
+  for (let y = 0; y < 48; y++) for (let x = 0; x < 48; x++) if (img.data[(y * 48 + x) * 4 + 3]) [x0, x1, y0, y1] = [Math.min(x0, x), Math.max(x1, x), Math.min(y0, y), Math.max(y1, y)];
+  return { w: x1 - x0 + 1, h: y1 - y0 + 1, y0 };
+};
+test('ếch sen: khối bè ngang hơn cao (S, E, mọi giai đoạn), mắt nằm trong hai u mắt trên đỉnh', () => {
+  for (const st of STAGE_KEYS) {
+    for (const v of ['S', 'E']) {
+      const { img, sk } = rig.renderFrame('ech_sen', st, v);
+      const b = bboxOf(img);
+      assert.ok(b.w > b.h, `ech_sen ${st} ${v}: ${b.w}x${b.h}, phải bè ngang hơn cao`);
+      // Hàng mắt cách đỉnh bé (tính cả mầm lá 2 - 3 hàng trên đỉnh) không quá 6 hàng: trong u mắt, không giữa thân.
+      assert.ok(sk.eyeY - b.y0 <= 6, `ech_sen ${st} ${v}: mắt ở hàng ${sk.eyeY.toFixed(1)}, đỉnh ${b.y0}`);
+    }
+  }
+});
+
+test('đồ cổ ở N: dáng tròn và dáng rồng không vẽ (neo cổ nằm giữa lưng); dáng có cổ vẫn vẽ', () => {
+  const changed = (sp, wear) => {
+    const a = rig.renderFrame(sp, 'adult', 'N').img.data;
+    const b = rig.renderFrame(sp, 'adult', 'N', {}, wear).img.data;
+    let n = 0;
+    for (let k = 0; k < a.length; k += 4) if (a[k + 3] !== b[k + 3] || a[k] !== b[k]) n++;
+    return n;
+  };
+  for (const sp of ['heo_than', 'hai_cau', 'rong_lua', 'thanh_long']) for (const id of ['bowtie', 'bell', 'jade', 'amber']) assert.equal(changed(sp, { neck: id }), 0, `${sp} ${id}`);
+  assert.ok(changed('boba', { neck: 'scarf' }) > 0);
+  assert.ok(changed('meo_bac', { neck: 'bell' }) > 0);
+});
+
+test('bảng dải màu (soát lần 3): Huyền Vũ không dùng navy tạm (bậc tối nâu đen), cá chép vây cam, nghé đất nâu ấm', async () => {
+  const { SPECIES_RAMPS } = await import(`${GAME}rig2/ramps.js`);
+  assert.notEqual(SPECIES_RAMPS.huyen_vu.main, 'navy');
+  assert.equal(SPECIES_RAMPS.ca_chep_rong.accent, 'orange');
+  assert.notEqual(SPECIES_RAMPS.nghe_dat.main, SPECIES_RAMPS.te_giac_da.main);
+});

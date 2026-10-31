@@ -68,8 +68,8 @@ export const SPECIES_RAMPS = {
   ky_giong: { main: 'pink', belly: 'blossom', accent: 'rose' }, // #f6b3c8 #fde4ec #e46f96
   rua_bien: { main: 'aqua', belly: 'white', accent: 'teal' }, // #7fc3b5 #eef6e6 #3f8f86
   vit_may: { main: 'ice', belly: 'pearl', accent: 'orange' }, // #bfe3f7 #ffffff #f2a03d
-  ca_chep_rong: { main: 'white', belly: 'pearl', accent: 'flame' }, // #fbf6ee #ffffff #e9663f
-  huyen_vu: { main: 'navy', belly: 'ice', accent: 'sky' }, // #4d6b86 #cfe2e8 #9fc9dc
+  ca_chep_rong: { main: 'white', belly: 'pearl', accent: 'orange' }, // #fbf6ee #ffffff #e9663f (flame: vây, đuôi ra nâu gỉ, không phải cam cá chép)
+  huyen_vu: { main: 'fur_blue', belly: 'ice', accent: 'sky' }, // #4d6b86 #cfe2e8 #9fc9dc (tạm dùng fur_blue chờ D5: bậc tối nâu đen của 'navy' làm đầu, ngực gần đen, mất mặt)
   // ---- Hỏa: đỏ, cam, hồng
   cao_lua: { main: 'orange', belly: 'white', accent: 'flame' }, // #f08a4b #fff0dc #e2533b
   ga_trong: { main: 'orange', belly: 'butter', accent: 'red' }, // #f5a64a #ffe2b0 #e2493b
@@ -84,7 +84,7 @@ export const SPECIES_RAMPS = {
   // ---- Thổ: vàng đất, nâu, đất nung
   chuot_chui: { main: 'taupe', belly: 'latte', accent: 'pink' }, // #7d6253 #d8bfa5 #f3a7b5 (slate: bậc tối #4a3326 sát màu viền, gần đen; stone: xám sáng quá, L 0.64 so với 0.52)
   heo_dat: { main: 'terracotta', belly: 'peach', accent: 'gold' }, // #d98a5f #f2c7a5 #f2c14e (tan: vàng quá, không ra đất nung)
-  nghe_dat: { main: 'stone', belly: 'latte', accent: 'white' }, // #8c7a6b #cdbba8 #efe6d8 (như chuot_chui: slate ra gần đen)
+  nghe_dat: { main: 'taupe', belly: 'latte', accent: 'white' }, // #8c7a6b #cdbba8 #efe6d8 (như chuot_chui: slate ra gần đen; stone ra xám trung tính, lẫn với te_giac_da)
   lac_da: { main: 'sand', belly: 'wheat', accent: 'tan' }, // #e2c18c #f7e7c8 #b98a52
   cho_vang: { main: 'sand', belly: 'wheat', accent: 'fur_brown' }, // #e0b061 #fbeac8 #a8743c
   gau_mat: { main: 'fur_brown', belly: 'sand', accent: 'gold' }, // #9c6b43 #e2c08f #f2b134

@@ -36,7 +36,8 @@ export function lookOf(stage, level = 1) {
  */
 export function skeleton(sp, stage, view, pose = {}) {
   const arch = archetypeOf(sp);
-  const A = arch.dims;
+  // Móc của dáng khung: cỡ gốc riêng cho một loài (dáng tròn: ếch thấp, bè ngang, mắt trên đỉnh). Mặc định arch.dims.
+  const A = arch.dimsOf?.(sp) ?? arch.dims;
   const st = stage && stage.scale !== undefined ? stage : lookOf(stage);
   const hk = Math.sqrt(st.scale) * st.head;
   const bk = st.scale * st.body;
@@ -68,7 +69,7 @@ export function skeleton(sp, stage, view, pose = {}) {
   let hcy = btop + overlap - hry + (pose.hy ?? 0);
   if (st.elder) hcy += 1; // lão làng hơi còng
   const htop = hcy - hry;
-  const eyeY = hcy + hry * 0.16;
+  const eyeY = hcy + hry * (A.eyeK ?? 0.16); // eyeK: độ cao hàng mắt theo bán kính đầu (âm = trên tâm đầu)
   const eyeDx = Math.max(3.0, hrx * 0.43);
   const big = st.eye > 1.1;
   let face;

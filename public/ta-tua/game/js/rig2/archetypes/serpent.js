@@ -598,6 +598,8 @@ function anchors(sk, view, a) {
 
 export default {
   id: 'serpent',
+  /** Không có cổ: nhìn sau (N) index.js không vẽ đồ cổ (neo cổ nằm giữa lưng, dải cổ thành thắt lưng). */
+  neckN: false,
   dims: { head: [11.4, 9.6], body: [5.4, 5.6], side: [5.4, 5.0], leg: 3.0, overlap: 3.6, fwd: 5.0, eShift: 2.0, neckE: 'head' },
   /** Dáng tự vẽ đuôi (thân nối liền thành đuôi): index.js bỏ qua tails[...] khi cờ này bật (SERP-01). */
   ownsTail: true,

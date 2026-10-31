@@ -61,10 +61,13 @@ const cache = new Map();
 // ---------------------------------------------------------------- bé vẽ bằng bộ khung: dựng dần trong lúc rảnh
 
 // Một tấm đủ 14 hàng mất cỡ 70 ms (máy khỏe) tới 500 ms (điện thoại tầm trung), mà công viên dựng một tấm cho mỗi bé lúc vào
-// và mỗi lần thay đồ. Nên chỉ khung đầu của idle-S được vẽ ngay (bé hiện ra liền, đứng yên, cỡ 3 ms; 10 ms khi CPU chậm 4 lần);
-// các khung còn lại xếp hàng chờ, trình duyệt rảnh lúc nào vẽ vài khung lúc đó (requestIdleCallback, không có thì setTimeout;
-// mỗi khung cỡ 2 ms, 8 ms khi CPU chậm 4 lần, nên không làm giật hình), xong cả tấm mới thay ảnh một lần (cỡ 0,2 giây sau
-// trên máy khỏe).
+// và mỗi lần thay đồ. Nên chỉ khung đầu của idle-S được vẽ ngay (bé hiện ra liền, đứng yên); các khung còn lại xếp hàng chờ,
+// trình duyệt rảnh lúc nào vẽ vài khung lúc đó (requestIdleCallback, không có thì setTimeout), xong cả tấm mới thay ảnh một
+// lần (cỡ 0,2 giây sau trên máy khỏe). Đo trên máy khỏe (Node, đã nóng máy): một khung 3 - 6 ms; CPU chậm 4 lần thì gấp
+// chừng 4 lần. Lần ĐẦU (mỗi loài, giai đoạn, cấp, hướng) mặc bùa (S, E) hoặc đồ lưng (E), khung đó dựng thêm pet một lần để
+// quyết món có bị pet che hết không (rig2/index.js hiddenBehind, lưu lại cho mọi món, mọi khung sau): cỡ 8 - 18 ms. Lần đầu
+// một loài ở cấp có dáng lớn hơn còn dựng thêm vài khung để chọn cỡ vừa ô (fittedLook, lưu lại). Mỗi việc trong hàng chờ là
+// MỘT khung, nên khung nặng nhất vẫn có thể vượt 6 ms của một lượt pump.
 const jobs = [];
 let pumping = false;
 const whenIdle = (fn) => (typeof requestIdleCallback === 'function' ? requestIdleCallback(fn, { timeout: 1000 }) : setTimeout(() => fn(null), 16));
@@ -248,9 +251,34 @@ function guestAnchors(img, spec) {
       const cx = sum / Math.max(1, count);
       const at = (fy) => ({ x: Math.round(cx / ART_PX), y: Math.round((top + h * fy) / ART_PX) });
       const headRx = Math.round((maxX - minX) / 2 / ART_PX);
+      // Cằm = eo cổ dưới khối đầu, dò từ ảnh (không đoán theo tỉ lệ chiều cao): hàng rộng nhất trong nửa trên là giữa
+      // đầu; từ đó xuống tới 65% chiều cao, hàng HẸP NHẤT là eo cổ nếu hẹp hơn hẳn (≤ 85%) bề ngang đầu (tay ôm trước ngực
+      // nằm dưới eo nên không làm sai). Không có eo (thân liền đầu) thì lấy 52% chiều cao. Chốt đồ cổ thấp hơn cằm 2 điểm
+      // ảnh (cả viền trên của dải nằm dưới cằm), và guestSheet cắt mọi điểm trên hàng cằm: món không bao giờ đè lên mặt.
+      const widthAt = (y) => {
+        let a = -1;
+        let b = -1;
+        for (let x = 0; x < spec.frameW; x++) if (solid(x0 + x, y0 + y)) { if (a < 0) a = x; b = x; }
+        return a < 0 ? 0 : b - a + 1;
+      };
+      let headW = 0;
+      let headY = top;
+      for (let y = top; y <= top + h * 0.5; y++) {
+        const w = widthAt(y);
+        if (w > headW) [headW, headY] = [w, y];
+      }
+      let minW = Infinity;
+      let chin = -1;
+      for (let y = headY; y <= top + h * 0.65; y++) {
+        const w = widthAt(y);
+        if (w < minW) [minW, chin] = [w, y];
+      }
+      if (!(minW <= headW * 0.85)) chin = -1;
+      const neck = chin >= 0 ? { x: Math.round(cx / ART_PX), y: Math.ceil(chin / ART_PX) + 2 } : at(0.52);
       out[name].push({
-        anchors: { head: at(0.03), face: at(0.33), neck: at(0.47), back: at(0.45), charm: { ...at(0.6), x: at(0).x + headRx + 2 } },
+        anchors: { head: at(0.03), face: at(0.33), neck, back: at(0.45), charm: { ...at(0.6), x: at(0).x + headRx + 2 } },
         headRx,
+        chinY: chin >= 0 ? chin : Math.round(top + h * 0.52) - 2 * ART_PX,
       });
     }
   }
@@ -283,11 +311,20 @@ export async function guestSheet(sprite, wear = {}) {
       const x0 = f * PETDEX_SHEET.frameW;
       const y0 = a.row * PETDEX_SHEET.frameH;
       const cell = anchors[name][f];
-      // Đồ lưng sau người (chỉ lộ hai bên). Đồ cổ vẽ SAU ảnh của bé, ngay dưới cằm (neo cổ dò từ ảnh): hình đồ cổ Rig 2.0
+      // Đồ lưng sau người (chỉ lộ hai bên). Đồ cổ vẽ TRÊN ảnh của bé, ngay dưới cằm (neo cổ dò từ ảnh): hình đồ cổ Rig 2.0
       // là hình dán cố định cỡ Boba (khăn rộng chừng 12 điểm ảnh), vẽ sau người thì bị thân bé khách mời che mất.
       put(wear.back, cell, x0, y0, GUEST_BACK);
       g.drawImage(img, x0, y0, PETDEX_SHEET.frameW, PETDEX_SHEET.frameH, x0, y0, PETDEX_SHEET.frameW, PETDEX_SHEET.frameH);
-      for (const slot of ['neck', 'face', 'head', 'charm']) put(wear[slot], cell, x0, y0);
+      // Đồ cổ chỉ vẽ từ hàng cằm trở xuống (cắt phần trên): cằm dò sai thì món cũng không đè lên mặt, miệng.
+      if (wear.neck && cell) {
+        g.save();
+        g.beginPath();
+        g.rect(x0, y0 + cell.chinY, PETDEX_SHEET.frameW, PETDEX_SHEET.frameH - cell.chinY);
+        g.clip();
+        put(wear.neck, cell, x0, y0);
+        g.restore();
+      }
+      for (const slot of ['face', 'head', 'charm']) put(wear[slot], cell, x0, y0);
     }
   }
   const blob = await new Promise((resolve) => c.toBlob(resolve));

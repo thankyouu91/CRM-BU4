@@ -186,12 +186,17 @@ function draw(sp, st, view, pose, wear, opts, level) {
   // Cằm che dải đồ cổ (chừa hàng cằm cuối để dải nhét dưới cằm). Tính theo điểm neo cổ: dáng thường có cổ ở
   // hcy + hry − 0.2 nên y hệt elip đầu (hcy + hry − 1.0); dáng tròn nâng cổ của bé nhỏ tuổi lên theo khối (round.js).
   if (v !== 'N') ctx.chin = mAnd(groupMask(ctx.parts, 'head'), mAbove(sk.anchors.neck[1] - 0.8));
+  // Thăm dò của hiddenBehind: chỉ cần pet đã tô và ctx (đã có cằm), không ghép đồ đeo.
+  if (opts.probe) return { ctx, pet };
 
   // 3) ghép
   const img = newBuf();
   const worn = {};
   for (const slot of ['back', 'charm', 'head', 'face', 'neck']) {
     const id = ctx.wear[slot];
+    // Dáng không có cổ (tròn, rồng: `neckN: false`): nhìn sau, neo cổ nằm giữa lưng, dải cổ vắt ngang lưng như thắt
+    // lưng, nên không vẽ đồ cổ ở N (S, E vẫn vẽ dưới cằm).
+    if (slot === 'neck' && v === 'N' && ARCHETYPES[sk.arch]?.neckN === false) continue;
     const e = WEARABLES[id]?.slot === slot ? wearEntry(slot, id) : null;
     if (e) worn[slot] = e;
   }
@@ -244,6 +249,8 @@ function draw(sp, st, view, pose, wear, opts, level) {
 /** Món đeo phải lộ ra ít nhất chừng này điểm (khớp kiểm thử "món nào đang đeo cũng hiện ra"). */
 export const VISIBLE_MIN = 8;
 const hiddenCache = new Map();
+/** Pet đã tô + ctx của dáng đứng yên theo loài, giai đoạn, cấp, hướng (thăm dò của hiddenBehind). */
+const probeCache = new Map();
 /**
  * Món bùa (S, E) hoặc đồ lưng (E) vốn vẽ DƯỚI pet nhưng gần như bị pet che hết (đuôi rồng cuộn, đuôi xòe của chim, thân
  * cá chép to): vẽ lên TRÊN pet thay vì để món đã mua biến mất. "Gần như hết" = lộ ra ít hơn VISIBLE_MIN điểm (cánh nhìn
@@ -253,14 +260,49 @@ const hiddenCache = new Map();
  */
 function hiddenBehind(sp, st, v, slot, id, level = 1) {
   if (!(slot === 'charm' && (v === 'S' || v === 'E')) && !(slot === 'back' && v === 'E')) return false;
-  const key = `${sp.id}|${st.scale}|${st.head}|${st.body}|${st.leg}|${st.eye}|${st.elder ? 1 : 0}|${v}|${slot}|${id}|${formIndex(level)}`;
+  const base = `${sp.id}|${st.scale}|${st.head}|${st.body}|${st.leg}|${st.eye}|${st.elder ? 1 : 0}|${v}|${formIndex(level)}`;
+  const key = `${base}|${slot}|${id}`;
   if (hiddenCache.has(key)) return hiddenCache.get(key);
-  const o = { marks: false };
-  const bare = draw(sp, st, v, {}, {}, o, level).img;
-  hiddenCache.set(key, false);
-  const behind = draw(sp, st, v, {}, { [slot]: id }, o, level).img;
-  hiddenCache.set(key, true);
-  const ahead = draw(sp, st, v, {}, { [slot]: id }, o, level).img;
+  // MỘT lần dựng pet (dáng đứng yên, không dấu hiệu) cho mỗi loài, giai đoạn, cấp, hướng, dùng chung cho mọi món; mỗi món
+  // chỉ còn dán hình món lên một bộ đệm rồi ghép đúng thứ tự như draw() (đồ dưới pet, pet, đồ lưng trên đuôi, cốc của
+  // Boba; hoặc pet rồi món trên cùng). Trước đây mỗi món dựng lại cả pet 3 lần ngay trong khung đầu tiên (33 - 297 ms).
+  let probe = probeCache.get(base);
+  if (!probe) {
+    const { ctx, pet } = draw(sp, st, v, {}, {}, { marks: false, probe: true }, level);
+    const held = heldLayer(ctx, false);
+    const bare = newBuf();
+    over(bare, pet);
+    if (held) over(bare, held.full);
+    probe = { ctx, pet, held, bare };
+    probeCache.set(base, probe);
+  }
+  const entry = WEARABLES[id]?.slot === slot ? wearEntry(slot, id) : null;
+  // Món vốn đã vẽ trên pet ở hướng này (áo choàng trên thú bốn chân nhìn ngang, D4): không có gì để kéo lên.
+  if (!entry || wearInFront(slot, entry, v, probe.ctx.sk.arch)) {
+    hiddenCache.set(key, false);
+    return false;
+  }
+  const { ctx, pet, held, bare } = probe;
+  const layer = newBuf();
+  entry[v](ctx, layer);
+  // Vẽ dưới pet (như draw(): đồ lưng nhìn ngang còn phủ lên phần đuôi thò ra ngoài thân).
+  const behind = newBuf();
+  over(behind, layer);
+  over(behind, pet);
+  if (slot === 'back' && v === 'E') backOverTail(ctx, behind, layer, pet);
+  entry.over?.(ctx, behind); // WEAR-SPEC D1: phần "over" luôn vẽ ngay sau pet
+  if (held) over(behind, held.full);
+  // Vẽ trên pet: đồ lưng nằm dưới cốc của Boba, bùa trên cùng.
+  const ahead = newBuf();
+  over(ahead, pet);
+  if (slot === 'back') {
+    over(ahead, layer);
+    entry.over?.(ctx, ahead);
+    if (held) over(ahead, held.full);
+  } else {
+    if (held) over(ahead, held.full);
+    over(ahead, layer);
+  }
   const diff = (a) => {
     let n = 0;
     for (let k = 0; k < NPX * 4; k += 4) if ([0, 1, 2, 3].some((c) => a.data[k + c] !== bare.data[k + c])) n++;
@@ -425,6 +467,7 @@ export function wearIcon(id, { grow = 1, view } = {}) {
 export const clearWearIcons = () => {
   iconCache.clear();
   hiddenCache.clear();
+  probeCache.clear();
   clearStampCache();
 };
 

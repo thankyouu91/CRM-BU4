@@ -15,6 +15,8 @@ const TUNE = {
   heo_than: { nostril: '#a84848' },
   heo_dat: { nostril: '#5c3a24' },
   chuot_chui: { snout: 'pink', nostril: '#6e2e24', mole: true },
+  // Ếch sen: mắt nằm trong hai u trên đỉnh (round.js), nên mũi là hai chấm nhỏ và miệng là một nét cười RỘNG bên dưới.
+  ech_sen: { frog: true },
 };
 const tune = (ctx) => TUNE[ctx.sp.id] ?? {};
 
@@ -127,6 +129,17 @@ const plain = {
       ctx.parts.push(part('muzzlepatch', mAnd(ctx.headMask, m), ctx.ramps.belly, ctx.zh + 0.1, { group: 'head', normal: ctx.hnrm }));
     }
     const mx = pyRound(hcx);
+    if (tune(ctx).frog) {
+      const ny = pyRound(eyeY + 2.6);
+      ctx.pixels.push([mx - 2, ny, '#d9708a', 20], [mx + 1, ny, '#d9708a', 20]);
+      const my = ny + 2;
+      if (ctx.pose.mouth) mouthS(ctx, mx, my);
+      else {
+        for (let x = mx - 3; x <= mx + 2; x++) ctx.pixels.push([x, my, D, 20]);
+        ctx.pixels.push([mx - 4, my - 1, D, 20], [mx + 3, my - 1, D, 20]);
+      }
+      return;
+    }
     const ny = pyRound(eyeY + 1.6);
     ctx.pixels.push([mx - 1, ny, '#d9708a', 20], [mx, ny, '#d9708a', 20]);
     mouthS(ctx, mx, ny + 1);
@@ -139,10 +152,19 @@ const plain = {
       const m = mEllipse(hcx + hrx * 0.7, eyeY + 2.8, 3.2, 2.4);
       ctx.parts.push(part('muzzlepatch', mAnd(ctx.headMask, m), ctx.ramps.belly, ctx.zh + 0.1, { group: 'head', normal: ctx.hnrm }));
     }
-    const [nx, ny0] = [hcx + hrx * 0.86, eyeY + 2.2];
-    ctx.parts.push(part('snout', mEllipse(nx, ny0, 1.9, 1.6), ctx.ramps.main, ctx.zh + 0.1, { group: 'head', normal: ctx.hnrm }));
-    const tipx = pyRound(hcx + hrx * (0.86 + 0.15));
-    const ny = pyRound(eyeY + 1.6);
+    const frog = tune(ctx).frog;
+    const lo = frog ? 1.6 : 0; // ếch: mắt trên đỉnh, mũi và miệng thấp xuống dưới u mắt
+    const [nx, ny0] = [hcx + hrx * 0.86, eyeY + 2.2 + lo];
+    // Ếch: mặt phẳng, không có chóp mũi nhô ra (nhô ra thì nhìn ngang giống mỏ chim).
+    if (!frog) ctx.parts.push(part('snout', mEllipse(nx, ny0, 1.9, 1.6), ctx.ramps.main, ctx.zh + 0.1, { group: 'head', normal: ctx.hnrm }));
+    const tipx = pyRound(hcx + hrx * (frog ? 0.8 : 0.86 + 0.15));
+    const ny = pyRound(eyeY + 1.6 + lo);
+    if (frog && !ctx.pose.mouth) {
+      const my = ny + 2;
+      ctx.pixels.push([tipx, ny, '#d9708a', 20], [tipx - 5, my - 1, D, 20]);
+      for (let x = tipx - 4; x <= tipx - 1; x++) ctx.pixels.push([x, my, D, 20]);
+      return;
+    }
     ctx.pixels.push([tipx, ny, '#d9708a', 20]);
     const my = ny + 2;
     if (ctx.pose.mouth === 'open') ctx.pixels.push([tipx - 2, my, D, 20], [tipx - 1, my, D, 20], [tipx - 1, my + 1, '#e84a5f', 20]);

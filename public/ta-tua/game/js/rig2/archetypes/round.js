@@ -125,7 +125,9 @@ function geo(ctx) {
   const domes = tune(ctx).domes ? eyeDomes(ctx, ball) : null;
   if (domes) mOrInto(ball, domes);
   const { rows, box } = scan(ball);
-  const nrm = [box.cx - 1.8, box.cy - 2.6, box.rx + 0.8, box.ry + 1.2];
+  // Ếch: khối chiếu sáng to hơn khối, tâm lệch lên trái: mảng sáng gọn ở góc trên-trái, phần lớn khối ở bậc giữa (không
+  // thành một dải sáng chéo ngang cả mình như dưa chuột).
+  const nrm = domed ? [box.cx + 1.0, box.cy + 1.5, box.rx + 3.0, box.ry + 3.0] : [box.cx - 1.8, box.cy - 2.6, box.rx + 0.8, box.ry + 1.2];
   g = { ball, box, nrm, rows, domes };
   geoCache.set(sk, g);
   return g;
@@ -175,27 +177,29 @@ function smoothSides(ball) {
  */
 function eyeDomes(ctx, ball) {
   const { sk, view } = ctx;
-  const rx = 2.7 * sk.hk;
-  const ry = 2.6 * sk.hk;
-  const top = (x) => {
-    for (let y = 0; y < FH; y++) if (ball[y * FW + Math.floor(x)]) return y;
-    return Math.floor(sk.htop);
-  };
+  // Mắt to (sơ sinh, nhí nhố: 3×4) cần vòm to hơn để còn 1 hàng màu lông giữa mắt và viền.
+  const rx = Math.max(sk.big ? 3.4 : 2.4, 3.2 * sk.hk);
+  const ry = Math.max(sk.big ? 3.7 : 2.4, 3.1 * sk.hk);
   const span = (y) => {
     let a = FW;
     let b = -1;
     for (let x = 0; x < FW; x++) if (ball[y * FW + x]) { a = Math.min(a, x); b = Math.max(b, x); }
     return [a, b];
   };
-  const xs = view === 'E' ? [[sk.anchors.face[0] - 0.8, 0], [sk.anchors.face[0] - 0.8 - 4.4 * sk.hk, 0.6]] : [[sk.head[0] - sk.eyeDx, 0], [sk.head[0] + sk.eyeDx, 0]];
+  // Tâm vòm = hàng mắt (mắt nằm TRONG vòm): nhìn trước, nhìn sau hai cột mắt hcx ± eyeDx; nhìn ngang vòm gần trên mắt
+  // gần, vòm xa lùi sau, thấp hơn nửa điểm ảnh.
+  const ey = sk.eyeY;
+  const xs = view === 'E' ? [[sk.anchors.face[0] + 0.4, 0], [sk.anchors.face[0] - 4.6 * sk.hk - 0.6, 0.5]] : [[sk.head[0] - sk.eyeDx, 0], [sk.head[0] + sk.eyeDx, 0]];
   const m = newMask();
   for (const [x, drop] of xs) {
-    // Nửa trên của vòm elip, chân vòm ngồi trên đỉnh khối (thấp hơn đỉnh cột đó 1 hàng), không lòi ra ngoài hai bên khối.
-    const cy = top(x) + 0.5 + drop;
-    const [a, b] = span(Math.floor(cy));
-    const d = mAnd(mEllipse(x, cy, rx, ry), mAbove(cy));
-    for (let k = 0; k < FW * FH; k++) if (d[k] && (k % FW) >= a && (k % FW) <= b) m[k] = 1;
+    const cy = ey + drop;
+    const [a, b] = span(Math.min(FH - 1, Math.floor(cy) + 1));
+    const d = mAnd(mEllipse(x, cy, rx, ry), mAbove(cy + 1));
+    // Nhìn ngang: vòm gần được lồi qua mép trước của khối (mắt ếch nhô ra), không thì mắt dính vào viền.
+    const [lo, hi] = view === 'E' ? [a - 1, FW] : [a - 1, b + 1];
+    for (let k = 0; k < FW * FH; k++) if (d[k] && (k % FW) >= lo && (k % FW) <= hi) m[k] = 1;
   }
+  // Giữa hai vòm là đỉnh phẳng của khối (thấp hơn đỉnh vòm 2 - 3 hàng): viền khía xuống, thấy rõ hai u mắt.
   return m;
 }
 
@@ -743,10 +747,17 @@ function ballAnchors(sk, g) {
 // Đi: nảy như quả bóng, bẹp một chút lúc chạm đất (khung 0 và 3); khung 1 và 4 đã nhún lên 1 px (skeleton.animPoses).
 const WALK_SQ = [-0.5, 0, 0, -0.5, 0, 0];
 // Loài nhảy cao hơn khi đi (cá nóc, ếch): skeleton.animPoses truyền loài vào walkPose (tham số thứ 3).
+// Cỡ gốc riêng (skeleton.js gọi móc dimsOf): ếch sen bè ngang hơn cao, đầu dẹt, hàng mắt sát đỉnh (eyeK âm) để hai
+// mắt nằm trong hai u mắt trên đỉnh khối (eyeDomes), miệng rộng ngay dưới.
+const DIMS_OF = {
+  ech_sen: { head: [14.8, 7.4], body: [13.2, 5.4], side: [12.8, 5.4], leg: 1.6, overlap: 4.2, fwd: 1.6, eShift: 1.4, neckE: 'mid', eyeK: -1.0 },
+};
 const HOP = { ca_noc: [0, -2, -1, 0, -2, -1], ech_sen: [0, -2, -1, 0, -2, -1] };
 
 export default {
   id: 'round',
+  /** Không có cổ: nhìn sau (N) index.js không vẽ đồ cổ (neo cổ nằm giữa lưng, dải cổ thành thắt lưng). */
+  neckN: false,
   /**
    * Cỡ gốc (trước khi nhân theo giai đoạn tuổi), cùng nghĩa với biped.js. Đầu gần bằng thân, lún 4.64 vào thân rồi nhập
    * mềm (geo): bé sơ sinh gần như chỉ có cái đầu tròn; lớn lên thì phần bụng phía dưới nở ra (dáng ngồi, đáy rộng).
@@ -754,6 +765,8 @@ export default {
    * không chạm đất.
    */
   dims: { head: [12.4, 9.6], body: [10.8, 5.9], side: [11.3, 5.9], leg: 1.6, overlap: 4.64, fwd: 1.4, eShift: 1.4, neckE: 'mid' },
+  /** Móc của skeleton.js: cỡ gốc riêng của loài (ếch: thấp, bè ngang như bản cũ [14, 12], mắt trên đỉnh trong hai u). */
+  dimsOf: (sp) => (sp && DIMS_OF[sp.id]) || null,
   headZ: (view) => (view === 'N' ? 6 : 8),
   body: { S: body, E: body, N: body },
   head: { S: head, E: head, N: head },
