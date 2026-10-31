@@ -1,6 +1,7 @@
 import { burst, flyTo, floatText } from './fx.js';
 import { loadParkArt, mountPark16, rectNav } from './parkscene.js';
 import { PARK_PX, mountParkScene } from './scenes.js';
+import { directionOf } from './petmotion.js';
 import { createPetFigure } from './sprite.js';
 import { $, esc, toast } from './ui.js';
 
@@ -11,6 +12,11 @@ const WORLD_W = 2000;
 const ROOMS_POLL_MS = 3000;
 /** Bé cao chừng này trên chân: camera canh giữa thân bé chứ không canh chân. */
 const BODY_MID = 36;
+/** Bụi sau gót theo hướng đi (đơn vị thế giới, tính từ chân). Đi xuống (S) thì bụi ở sau lưng, thân bé che mất: không vẽ. */
+const DUST_AT = { E: [-14, -3], W: [14, -3], S: null, N: [0, 2] };
+/** Đoạn đường ngắn hơn chừng này (đơn vị thế giới, khoảng 6 điểm ảnh gốc) không làm bé đổi hướng. */
+const TURN_MIN = 18;
+const calmMq = matchMedia('(prefers-reduced-motion: reduce)');
 
 const clamp = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
 /** Mỗi điểm ảnh gốc hiện ra bấy nhiêu điểm ảnh màn hình: 3 trên máy tính, 2 trên điện thoại (số nguyên cho sắc nét). */
@@ -57,7 +63,8 @@ export function mountPark(root, ctx) {
   const tipEl = $('#park-tip', root);
 
   let world = { width: WORLD_W, height: 600, minX: 50, maxX: WORLD_W - 50, minY: 318, maxY: 585 };
-  let scale = 1;
+  let scale = 1; // điểm CSS của khung (đã zoom như cả game) cho mỗi đơn vị thế giới
+  let worldK = 1; // tỉ lệ transform của thế giới (thế giới tự bù zoom của game, xem worldZoom)
   let camX = 0; // mép trái / mép trên khung nhìn, theo đơn vị thế giới
   let camY = 0;
   let shownCam = { x: 0, y: 0 }; // camera đã làm tròn theo điểm ảnh gốc, đúng như đang hiện
@@ -96,8 +103,18 @@ export function mountPark(root, ctx) {
 
   // ---- camera: điểm ảnh gốc phóng số nguyên lần, khung nhìn đi theo bé của mình cả ngang lẫn dọc ----
 
+  /**
+   * Zoom thật của thế giới. css/style.css cho .park-world bù zoom 0.9 của game (như .t16 của phố), nên một điểm CSS
+   * trong thế giới là một điểm màn hình: điểm ảnh của cảnh và của bé (sheet pixelPerfect) rơi đúng lưới điểm màn hình,
+   * không bị làm tròn lệch rồi mới phóng. Cỡ hiện ra trên màn hình vẫn y như trước.
+   */
+  function worldZoom() {
+    return worldEl.currentCSSZoom || pageZoom() * (parseFloat(getComputedStyle(worldEl).zoom) || 1);
+  }
+
   function measure() {
     scale = pixelTarget() / pageZoom() / PARK_PX;
+    worldK = pixelTarget() / PARK_PX / worldZoom();
     wrap.style.setProperty('--park-scale', String(scale));
     wrap.style.setProperty('--park-h', `${Math.round(world.height * scale)}px`);
   }
@@ -106,7 +123,7 @@ export function mountPark(root, ctx) {
   function applyCamera() {
     // Camera bước theo từng điểm ảnh gốc để cảnh không nhòe, không rung mép.
     shownCam = { x: Math.round(camX / PARK_PX) * PARK_PX, y: Math.round(camY / PARK_PX) * PARK_PX };
-    worldEl.style.transform = `translate3d(${-shownCam.x * scale}px, ${-shownCam.y * scale}px, 0) scale(${scale})`;
+    worldEl.style.transform = `translate3d(${-shownCam.x * worldK}px, ${-shownCam.y * worldK}px, 0) scale(${worldK})`;
   }
   /** Góc trên-trái khung nhìn để bé của mình nằm giữa (kẹp trong thế giới); chưa có bé thì nhìn giữa bãi cỏ. */
   function cameraGoal() {
@@ -140,15 +157,22 @@ export function mountPark(root, ctx) {
   // ---- thú cưng trên sân ----
 
   function place(e) {
-    e.el.style.left = `${e.x}px`;
-    e.el.style.top = `${e.y}px`;
+    // Sheet pixelPerfect: đứng đúng lưới điểm ảnh của cảnh, để điểm ảnh của bé khớp với nền.
+    const k = e.figure?.crisp ? PARK_PX : 0;
+    e.el.style.left = `${k ? Math.round(e.x / k) * k : e.x}px`;
+    e.el.style.top = `${k ? Math.round(e.y / k) * k : e.y}px`;
     e.el.style.zIndex = String(Math.max(Math.round(e.y), e.lift ?? 0));
   }
 
   function setPet(e, player) {
     e.data = player;
     e.figure?.destroy();
-    e.figure = createPetFigure(speciesOf(player.pet.species), BASE_SCALE, player.pet.wear, { stage: player.pet.stage, ageScale: player.pet.scale, level: player.pet.level });
+    // Sheet pixelPerfect: mỗi điểm ảnh của bé bằng đúng một điểm ảnh của cảnh (PET_PX.park); sheet cũ giữ BASE_SCALE.
+    e.figure = createPetFigure(speciesOf(player.pet.species), BASE_SCALE, player.pet.wear, {
+      stage: player.pet.stage, ageScale: player.pet.scale, level: player.pet.level,
+      px: 'park', screenPx: () => pixelTarget() / PARK_PX,
+    });
+    e.figure.setDirection(e.dir, e.side);
     e.el.insertBefore(e.figure.el, e.nameEl);
     e.nameEl.innerHTML = `${esc(player.pet.name)} <b>Lv ${player.pet.level}</b><small>${player.offline ? '💤 ' : ''}${esc(player.username)}</small>`;
     e.el.classList.toggle('away', Boolean(player.offline));
@@ -186,7 +210,8 @@ export function mountPark(root, ctx) {
       bubbleEl: el.querySelector('.pg-bubble'),
       x: at.x, y: at.y, tx: at.x, ty: at.y, path: [],
       lx: player.x, ly: player.y, // vị trí trên máy chủ (đích mới nhất)
-      facing: 'runRight',
+      dir: 'S', // hướng đang nhìn (S/E/N/W), chọn theo hướng đi
+      side: 'E', // hướng ngang gần nhất
       dustAt: 0,
       onArrive: null,
       bubbleTimer: 0,
@@ -238,7 +263,13 @@ export function mountPark(root, ctx) {
       const dx = wp.x - e.x;
       const dy = wp.y - e.y;
       const dist = Math.hypot(dx, dy);
-      if (Math.abs(dx) > dist * 0.2) e.facing = dx > 0 ? 'runRight' : 'runLeft';
+      // Hướng chọn một lần cho mỗi đoạn đường, theo trục trội có trễ: đi chéo không đổi hướng qua lại, đoạn quá ngắn
+      // (chỉnh vị trí cuối đường, vòng qua góc) không làm bé quay.
+      if (e.seg !== wp) {
+        e.seg = wp;
+        e.dir = directionOf(dx, dy, e.dir, { minStep: TURN_MIN });
+      }
+      if (Math.abs(dx) > dist * 0.2) e.side = dx > 0 ? 'E' : 'W';
       if (dist <= budget) {
         e.x = wp.x;
         e.y = wp.y;
@@ -259,18 +290,24 @@ export function mountPark(root, ctx) {
     last = now;
     for (const e of entities.values()) {
       const sprite = e.figure.sprite;
+      const calm = calmMq.matches;
       if (advance(e, dt)) {
-        if (!sprite.busy) sprite.play(e.facing);
-        e.figure.body.style.transform = `translateY(${-Math.abs(Math.sin(now / 85)) * 5}px)`;
-        if (now - e.dustAt > 170) {
+        // Sheet cũ chỉ chạy ngang: đi lên / xuống thì chạy theo hướng ngang gần nhất (`side`, sprite.js chọn hàng).
+        sprite.setDirection(e.dir, e.side);
+        if (!sprite.busy) sprite.play('walk');
+        // Nhún khi đi: sheet pixelPerfect đã có bước nhún 1 điểm ảnh trong hoạt ảnh đi, không nhún lệch lưới điểm ảnh.
+        const hop = calm || e.figure.crisp ? '' : `translateY(${-Math.abs(Math.sin(now / 85)) * 5}px)`;
+        if (e.figure.body.style.transform !== hop) e.figure.body.style.transform = hop;
+        const dust = DUST_AT[e.dir];
+        if (dust && !calm && now - e.dustAt > 170) {
           e.dustAt = now;
-          const back = e.facing === 'runRight' ? -1 : 1;
-          burst(worldEl, e.x + back * 14, e.y - 3, { icon: 'dust', count: 1, spread: 16, rise: 10, life: 520, px: PARK_PX, stagger: 0 });
+          const [bx, by] = dust;
+          burst(worldEl, e.x + bx, e.y + by, { icon: 'dust', count: 1, spread: 16, rise: 10, life: 520, px: PARK_PX, stagger: 0 });
         }
         place(e);
       } else {
         if (e.figure.body.style.transform) e.figure.body.style.transform = '';
-        if (!sprite.busy && sprite.anim !== 'idle') sprite.play('idle');
+        if (!sprite.busy) sprite.play('idle'); // đứng nhìn theo hướng vừa đi (idleE/N/W nếu sheet có)
         if (e.onArrive) {
           const done = e.onArrive;
           e.onArrive = null;
@@ -330,8 +367,17 @@ export function mountPark(root, ctx) {
     const side = me.x < target.x ? -1 : 1;
     let x = target.x + side * CUDDLE_GAP;
     if (!nav.isOpen(x, target.y)) x = target.x - side * CUDDLE_GAP;
-    if (Math.hypot(me.x - x, me.y - target.y) < 12) return action();
-    moveSelf(x, target.y + 2, action);
+    // Tới nơi thì quay mặt về phía bạn rồi mới vuốt ve.
+    const faceThen = () => {
+      const t = entities.get(targetId);
+      if (t && Math.abs(t.x - me.x) > 1) {
+        me.dir = me.side = t.x > me.x ? 'E' : 'W';
+        me.figure.setDirection(me.dir);
+      }
+      action();
+    };
+    if (Math.hypot(me.x - x, me.y - target.y) < 12) return faceThen();
+    moveSelf(x, target.y + 2, faceThen);
   }
 
   // ---- menu tương tác với bé khác ----

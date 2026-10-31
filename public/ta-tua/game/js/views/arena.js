@@ -2,6 +2,7 @@
 // chọn giờ đấu, lịch đấu toàn thị trấn, lịch sử và xem lại trận (bé vẽ bằng bộ khung, có thanh máu).
 // Luật ở shared/arena.js, server ở petdex/server/arena.js.
 import { api } from '../api.js';
+import { hasDirections } from '../petmotion.js';
 import { createPetFigure } from '../sprite.js';
 import { esc, fmt, viewHead } from '../ui.js';
 import { RARITY_NAMES } from '../shared/arena.js';
@@ -164,8 +165,10 @@ export function renderArena(root, ctx) {
     w.teams.forEach((team, s) => team.forEach((m, i) => {
       const slot = box.querySelector(`[data-f="${s}-${i}"] .fig`);
       if (!slot || !m.pet) return;
-      const f = createPetFigure(speciesOf(m.pet.species), 0.34, m.pet.wear, { stage: m.pet.stage, ageScale: m.pet.scale ?? 1, level: m.pet.level });
-      if (s === 1) f.el.classList.add('flip');
+      const f = createPetFigure(speciesOf(m.pet.species), 0.34, m.pet.wear, { stage: m.pet.stage, ageScale: m.pet.scale ?? 1, level: m.pet.level, px: 'arena' });
+      // Hai bên nhìn nhau. Sheet có dáng đứng nghiêng (idleE / idleW) thì quay thật, đồ đeo không bị ngược; sheet cũ lật ảnh.
+      if (hasDirections(f.sprite.sheet, 'idle')) f.setDirection(s === 1 ? 'W' : 'E');
+      else if (s === 1) f.el.classList.add('flip');
       slot.append(f.el);
       figures.push(f);
     }));

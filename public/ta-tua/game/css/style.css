@@ -158,6 +158,10 @@ input:focus { border-color: var(--tea); box-shadow: 0 0 0 4px #c8915f33; }
 .pet-body { position: relative; }
 .pet-shadow, .pet-figure .accessory, .px-layer, .fx-px { image-rendering: pixelated; pointer-events: none; }
 .pet-shadow { position: absolute; left: 46%; bottom: 3%; transform: translate(-50%, 50%); }
+/* Sheet pixelPerfect (Rig 2.0): số nguyên điểm màn hình cho mỗi điểm ảnh gốc, theo bảng PET_PX (js/petmotion.js).
+   .pp-zoom bù zoom của cả game như .t16 của phố, để mỗi điểm ảnh ra tròn số điểm màn hình; chân ở giữa ô (24 trên 48). */
+.pet-figure.pp-zoom { zoom: calc(1 / var(--zoom, 1)); }
+.pet-figure.pp .pet-shadow { left: 50%; }
 .pet-figure .accessory { position: absolute; left: 42%; top: 8%; transform: translate(-50%, -50%); }
 .pet-figure .accessory[data-slot="face"] { top: 37%; }
 
@@ -202,6 +206,7 @@ input:focus { border-color: var(--tea); box-shadow: 0 0 0 4px #c8915f33; }
 .room .px-layer { z-index: 0; }
 .room .scene-glow { z-index: 3; }
 .room .figure-slot { position: absolute; left: 50%; top: 82%; z-index: 2; transform: translate(-46%, -96%); cursor: pointer; }
+.room .figure-slot:has(> .pet-figure.pp) { transform: translate(-50%, -96%); } /* Rig 2.0: chân ở giữa ô (24 trên 48) */
 .room[data-time="dusk"] .sprite { filter: sepia(.12) saturate(1.05); }
 .room[data-time="night"] .sprite { filter: sepia(.2) brightness(.88); }
 .mood-bubble {
@@ -281,6 +286,8 @@ input:focus { border-color: var(--tea); box-shadow: 0 0 0 4px #c8915f33; }
 .rank-row.me { background: #fff6d8; }
 .rank-no { font-family: var(--font-display); font-weight: 800; font-size: 1.5rem; text-align: center; color: var(--muted); }
 .rank-avatar { height: 66px; display: flex; align-items: flex-end; justify-content: center; overflow: hidden; }
+/* Bé pixelPerfect ở 2x (PET_PX.card, js/petmotion.js): cao tới 42 điểm ảnh gốc kể cả mũ, khung chứa đủ 84 điểm màn hình. */
+.rank-avatar:has(> .pet-figure.pp) { height: calc(84px / var(--zoom, 1)); }
 .rank-row h3 { font-size: 1.2rem; }
 .rank-row p { margin: 0; color: var(--muted); font-size: .88rem; }
 
@@ -296,6 +303,9 @@ input:focus { border-color: var(--tea); box-shadow: 0 0 0 4px #c8915f33; }
 }
 /* Thế giới 2000 x 600 đơn vị (park.js đặt lại theo máy chủ): camera dịch bằng transform. */
 .park-world { position: absolute; left: 0; top: 0; width: 2000px; height: 600px; transform-origin: 0 0; cursor: pointer; will-change: transform; }
+/* Thế giới bù zoom của game như .t16 của phố (park.js đọc currentCSSZoom và phóng pixelTarget / PARK_PX): một điểm CSS trong
+   thế giới là một điểm màn hình, nên điểm ảnh của cảnh và của bé rơi đúng lưới điểm màn hình. Cỡ hiện ra không đổi. */
+.park-world { zoom: calc(1 / var(--zoom, 1)); }
 .park-world .scene-bg, .park-world .scene-amb { z-index: 0; }
 .park-world .scene-glow { z-index: 9000; }
 /* Cảnh 16-bit (js/parkscene.js): nền ở dưới cùng; đồ vật, khách dạo xếp theo chân (z-index = y) cùng các bé. */

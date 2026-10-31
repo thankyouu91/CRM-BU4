@@ -22,10 +22,11 @@ export function renderCommunity(root, ctx) {
   let guildData = null;
 
   const speciesOf = (id) => species.find((s) => s.id === id) ?? species[0];
-  const mountFigure = (slot, pet, base) => {
+  /** `px`: nơi hiện bé trong bảng PET_PX (petmotion.js), chỉ dùng cho sheet pixelPerfect. */
+  const mountFigure = (slot, pet, base, px) => {
     if (!slot || !pet) return;
     const figure = createPetFigure(speciesOf(pet.species), base, pet.wear, {
-      stage: pet.stage ?? pet.age?.stage, ageScale: pet.scale ?? pet.age?.scale ?? 1, level: pet.level,
+      stage: pet.stage ?? pet.age?.stage, ageScale: pet.scale ?? pet.age?.scale ?? 1, level: pet.level, px,
     });
     slot.append(figure.el);
     figures.push(figure);
@@ -70,7 +71,7 @@ export function renderCommunity(root, ctx) {
             : '<p class="muted">Chưa có bạn nào. Gặp người chơi khác ở công viên rồi kết bạn nhé!</p>'}
         </section>
       </div>`;
-    for (const fr of f.friends) mountFigure(view.querySelector(`[data-fig="${fr.id}"]`), fr.pet, 0.38);
+    for (const fr of f.friends) mountFigure(view.querySelector(`[data-fig="${fr.id}"]`), fr.pet, 0.38, 'card');
   }
 
   async function visitFriend(id) {
@@ -91,7 +92,7 @@ export function renderCommunity(root, ctx) {
       },
     });
     const modal = document.querySelector('.modal');
-    for (const p of v.pets) mountFigure(modal.querySelector(`[data-vfig="${p.id}"]`), p, 0.6);
+    for (const p of v.pets) mountFigure(modal.querySelector(`[data-vfig="${p.id}"]`), p, 0.6, 'visit');
   }
 
   function giftTo(id) {

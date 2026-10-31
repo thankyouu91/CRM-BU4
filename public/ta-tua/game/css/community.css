@@ -98,6 +98,8 @@
 .friend-card .row { grid-column: 1 / -1; }
 .friend-pet { height: 80px; display: flex; align-items: flex-end; justify-content: center; overflow: hidden; }
 .friend-pet.big { height: 140px; }
+/* Bé pixelPerfect ở 2x (PET_PX.card): khung chứa đủ 42 điểm ảnh gốc (84 điểm màn hình); thăm nhà (3x) vừa sẵn 140px. */
+.friend-pet:not(.big):has(> .pet-figure.pp) { height: calc(84px / var(--zoom, 1)); }
 .visit-pets { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(140px, 100%), 1fr)); gap: 10px; margin: 10px 0; }
 .visit-pet { display: grid; justify-items: center; text-align: center; gap: 2px; padding: 8px; border-radius: 14px; background: var(--surface-2); }
 .emblems { display: flex; flex-wrap: wrap; gap: 6px; }
