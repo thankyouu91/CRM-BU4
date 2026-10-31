@@ -104,7 +104,8 @@ const wornIds = (pet) => Object.values(pet?.wear ?? {}).filter(Boolean);
 const isWorn = (pet, itemId) => wornIds(pet).includes(itemId);
 /** Giai đoạn tuổi từ số tuần (bảng vàng chỉ gửi số tuần). */
 const stageOfWeeks = (weeks) => state.catalog.stages.findLast((s) => weeks * 7 >= s.minDays)?.key ?? 'young';
-const figureOf = (pet, base) => createPetFigure(speciesOf(pet.species), base, pet.wear, { stage: pet.age.stage, ageScale: pet.age.scale, level: pet.level });
+/** `px`: nơi hiện bé trong bảng PET_PX (petmotion.js), chỉ dùng cho sheet pixelPerfect. */
+const figureOf = (pet, base, px) => createPetFigure(speciesOf(pet.species), base, pet.wear, { stage: pet.age.stage, ageScale: pet.age.scale, level: pet.level, px });
 const qtyOf = (itemId) => state.me.inventory[itemId] ?? 0;
 const isConsumable = (item) => item.type === 'food' || item.type === 'care';
 const ownedOfType = (type) => Object.values(items()).filter((i) => i.type === type && qtyOf(i.id) > 0);
@@ -179,7 +180,7 @@ function showAuth() {
   authFigure?.destroy();
   const species = state.catalog.species[0];
   if (species) {
-    authFigure = createPetFigure(species, 0.7);
+    authFigure = createPetFigure(species, 0.7, {}, { px: 'auth' });
     authFigure.sprite.play('wave');
     $('#auth-pet').replaceChildren(authFigure.el);
   }
@@ -633,7 +634,7 @@ function renderHome(root) {
 
   const room = $('#room');
   const slot = $('#figure-slot');
-  const figure = figureOf(pet, 1.25);
+  const figure = figureOf(pet, 1.25, 'home');
   figure.sprite.play(idleAnim(pet));
   slot.append(figure.el);
   slot.hidden = Boolean(busy?.away); // đi làm, đi học thì vắng nhà; tắm thì vẫn ở nhà
@@ -877,7 +878,7 @@ function renderAdopt(root) {
 
   const figures = species.map((s, i) => {
     // Nhận nuôi là nhận một bé sơ sinh, nên vẽ dáng sơ sinh.
-    const figure = createPetFigure(s, s.rig ? 0.8 : 0.62, {}, { stage: 'baby', ageScale: 1 });
+    const figure = createPetFigure(s, s.rig ? 0.8 : 0.62, {}, { stage: 'baby', ageScale: 1, px: 'pick' });
     root.querySelectorAll('.species-card .slot')[i].append(figure.el);
     return figure;
   });
@@ -1157,7 +1158,7 @@ async function renderRanks(root) {
       : '<div class="empty muted">Đồi Sao còn trống. Mong các bé sống thật lâu.</div>';
     const avatars = list.querySelectorAll('.rank-avatar');
     const figures = rows.map((m, i) => {
-      const figure = createPetFigure(speciesOf(m.species), 0.3, m.wear, { stage: 'elder', ageScale: 1, level: m.level });
+      const figure = createPetFigure(speciesOf(m.species), 0.3, m.wear, { stage: 'elder', ageScale: 1, level: m.level, px: 'card' });
       avatars[i].append(figure.el);
       return figure;
     });
@@ -1185,7 +1186,7 @@ async function renderRanks(root) {
 
   const avatars = list.querySelectorAll('.rank-avatar');
   const figures = rows.map((r, i) => {
-    const figure = createPetFigure(speciesOf(r.species), 0.3, r.wear, { stage: stageOfWeeks(r.weeks), ageScale: 1, level: r.level });
+    const figure = createPetFigure(speciesOf(r.species), 0.3, r.wear, { stage: stageOfWeeks(r.weeks), ageScale: 1, level: r.level, px: 'card' });
     avatars[i].append(figure.el);
     return figure;
   });
