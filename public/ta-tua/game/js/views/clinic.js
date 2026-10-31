@@ -1,6 +1,7 @@
 // Phòng khám: sức khỏe và sạch sẽ của các bé, khám tổng quát / chữa bệnh, bảo hiểm sức khỏe.
 import { api } from '../api.js';
 import { esc, fmt, viewHead } from '../ui.js';
+import { sceneHdr } from '../scenes-hdr.js';
 
 const PLAN_ICONS = { basic: '🩹', full: '🛡️' };
 const DIRTY_BELOW = 20;
@@ -8,6 +9,7 @@ const DIRTY_BELOW = 20;
 export function renderClinic(root, ctx) {
   root.innerHTML = `<div class="clinic-page">
     ${viewHead('🩺 Phòng khám', 'Khám tổng quát, chữa bệnh cho bé và mua bảo hiểm để đỡ lo viện phí.')}
+    ${sceneHdr('clinic')}
     <div class="clinic-view"><div class="empty muted">Đang tải…</div></div></div>`;
   const page = root.querySelector('.clinic-page');
   const view = page.querySelector('.clinic-view');

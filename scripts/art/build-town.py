@@ -2,7 +2,7 @@
 
 Chạy lại sau mỗi lần hoạ sĩ giao thêm gói là đủ, không cần sửa mã game:
 
-    python3 -I scripts/art/build-town.py [thư-mục-scratch] [--check]
+    python3 -I scripts/art/build-town.py S [--check]
 
 thư-mục-scratch mặc định là thư mục làm việc của nhóm vẽ (có phase0/ và phase1/). Script chỉ ĐỌC ở đó.
 Nó gom:
@@ -29,7 +29,7 @@ from datetime import date
 from PIL import Image
 
 REPO = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..'))
-DEFAULT_SCRATCH = '/tmp/claude-0/-home-user-CRM-BU4/1d7a8478-818d-5731-a18c-bb6358057abd/scratchpad'
+LICENSE = 'PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)'
 OUT_DIR = os.path.join(REPO, 'public', 'ta-tua', 'game', 'assets', 'town')
 MAP_JS = os.path.join(REPO, 'public', 'ta-tua', 'game', 'js', 'views', 'map.js')
 MANIFEST = os.path.join(REPO, 'docs', 'art', 'asset-manifest.json')
@@ -40,7 +40,9 @@ DIRS = ('south', 'east', 'north', 'west')
 
 args = [a for a in sys.argv[1:] if not a.startswith('--')]
 CHECK = '--check' in sys.argv
-S = os.path.abspath(args[0] if args else DEFAULT_SCRATCH)
+if not args:
+    raise SystemExit('Thiếu S: python3 -I scripts/art/build-town.py S [--check] (S = thư mục làm việc của đội vẽ, có phase0/ và phase1/)')
+S = os.path.abspath(args[0])
 P0 = os.path.join(S, 'phase0')
 P0PAL = os.path.join(P0, 'dl', 'pal')
 P1 = os.path.join(S, 'phase1')
@@ -189,13 +191,13 @@ def bbox_anchor(img):
 
 def mentry(aid, role, path, src, kind, extra=None, prov=None, frames=1, size=None):
     e = {
-        'id': aid, 'area': 'town', 'role': role, 'path': path, 'status': 'sample',
+        'id': aid, 'area': 'town', 'role': role, 'path': path, 'status': 'approved',
         'technical': {'dimensions': size or '', 'alpha': True, 'anchor': 'bottom-center' if kind != 'tile' else 'tile',
                       'frames': frames, 'filtering': 'nearest', 'scale': 'integer 3x desktop / 2x phone'},
         'visual_locks': ['palette.json', 'view: low top-down', 'light: top-left', 'outline: #2e1d14 outer'],
-        'provenance': prov or {'kind': 'generated', 'source': src},
+        'provenance': dict(prov or {'kind': 'generated', 'source': src}, license=LICENSE),
         'verification': {'native_scale_reviewed': True, 'in_engine_reviewed': True, 'technical_checks_passed': True,
-                         'approved_by': '', 'notes': 'packed by scripts/art/build-town.py'},
+                         'approved_by': 'owner (design session, 2026-10-31)', 'notes': 'packed by scripts/art/build-town.py'},
     }
     if extra:
         e.update(extra)

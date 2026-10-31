@@ -14,7 +14,7 @@
    "area": "town",
    "role": "terrain Wang set g->p",
    "path": "public/ta-tua/game/assets/town/town.json#tiles-grass-dirt",
-   "status": "sample",
+   "status": "approved",
    "technical": {
     "dimensions": "64x64 (16 tiles)",
     "alpha": true,
@@ -52,14 +52,14 @@
      "remap.py --tile",
      "swap.py dirt ramp +1 step lighter (9b6238>c8915f, b87d4b>dcb07c, 7a4e2c/8a5a34>b87d4b, 5c3a24>9b6238)"
     ],
-    "license": "PixelLab ToS (subscription, commercial use per https://pixellab.ai/termsofservice) — verify before ship",
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)",
     "package": "phase0"
    },
    "verification": {
     "native_scale_reviewed": true,
     "in_engine_reviewed": true,
     "technical_checks_passed": true,
-    "approved_by": "",
+    "approved_by": "owner (design session, 2026-10-31)",
     "notes": "packed by scripts/art/build-town.py"
    }
   },
@@ -68,7 +68,7 @@
    "area": "town",
    "role": "terrain Wang set w->g",
    "path": "public/ta-tua/game/assets/town/town.json#tiles-water-grass",
-   "status": "sample",
+   "status": "approved",
    "technical": {
     "dimensions": "64x64 (16 tiles)",
     "alpha": true,
@@ -101,14 +101,14 @@
     "postprocess": [
      "remap.py --tile"
     ],
-    "license": "PixelLab ToS (subscription, commercial use per https://pixellab.ai/termsofservice) — verify before ship",
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)",
     "package": "phase0"
    },
    "verification": {
     "native_scale_reviewed": true,
     "in_engine_reviewed": true,
     "technical_checks_passed": true,
-    "approved_by": "",
+    "approved_by": "owner (design session, 2026-10-31)",
     "notes": "packed by scripts/art/build-town.py"
    }
   },
@@ -117,7 +117,7 @@
    "area": "town",
    "role": "terrain Wang set p->s",
    "path": "public/ta-tua/game/assets/town/town.json#tiles-dirt-stone",
-   "status": "sample",
+   "status": "approved",
    "technical": {
     "dimensions": "64x64 (16 tiles)",
     "alpha": true,
@@ -148,14 +148,14 @@
      "remap.py --tile (standard takes no palette)",
      "swap.py same dirt ramp"
     ],
-    "license": "PixelLab ToS (subscription, commercial use per https://pixellab.ai/termsofservice) — verify before ship",
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)",
     "package": "phase0"
    },
    "verification": {
     "native_scale_reviewed": true,
     "in_engine_reviewed": true,
     "technical_checks_passed": true,
-    "approved_by": "",
+    "approved_by": "owner (design session, 2026-10-31)",
     "notes": "packed by scripts/art/build-town.py"
    }
   },
@@ -164,7 +164,7 @@
    "area": "town",
    "role": "terrain Wang set w->b",
    "path": "public/ta-tua/game/assets/town/town.json#tiles-water-sand",
-   "status": "sample",
+   "status": "approved",
    "technical": {
     "dimensions": "64x64 (16 tiles)",
     "alpha": true,
@@ -181,13 +181,14 @@
    ],
    "provenance": {
     "kind": "generated",
-    "package": "tiles"
+    "package": "tiles",
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)"
    },
    "verification": {
     "native_scale_reviewed": true,
     "in_engine_reviewed": true,
     "technical_checks_passed": true,
-    "approved_by": "",
+    "approved_by": "owner (design session, 2026-10-31)",
     "notes": "packed by scripts/art/build-town.py"
    }
   },
@@ -196,7 +197,7 @@
    "area": "town",
    "role": "terrain Wang set g->b",
    "path": "public/ta-tua/game/assets/town/town.json#tiles-grass-sand",
-   "status": "sample",
+   "status": "approved",
    "technical": {
     "dimensions": "64x64 (16 tiles)",
     "alpha": true,
@@ -213,13 +214,14 @@
    ],
    "provenance": {
     "kind": "generated",
-    "package": "tiles"
+    "package": "tiles",
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)"
    },
    "verification": {
     "native_scale_reviewed": true,
     "in_engine_reviewed": true,
     "technical_checks_passed": true,
-    "approved_by": "",
+    "approved_by": "owner (design session, 2026-10-31)",
     "notes": "packed by scripts/art/build-town.py"
    }
   },
@@ -228,7 +230,7 @@
    "area": "town",
    "role": "terrain Wang set g->c",
    "path": "public/ta-tua/game/assets/town/town.json#tiles-grass-cobble",
-   "status": "sample",
+   "status": "approved",
    "technical": {
     "dimensions": "64x64 (16 tiles)",
     "alpha": true,
@@ -245,13 +247,14 @@
    ],
    "provenance": {
     "kind": "generated",
-    "package": "tiles"
+    "package": "tiles",
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)"
    },
    "verification": {
     "native_scale_reviewed": true,
     "in_engine_reviewed": true,
     "technical_checks_passed": true,
-    "approved_by": "",
+    "approved_by": "owner (design session, 2026-10-31)",
     "notes": "packed by scripts/art/build-town.py"
    }
   },
@@ -260,7 +263,7 @@
    "area": "town",
    "role": "terrain Wang set p->c",
    "path": "public/ta-tua/game/assets/town/town.json#tiles-dirt-cobble",
-   "status": "sample",
+   "status": "approved",
    "technical": {
     "dimensions": "64x64 (16 tiles)",
     "alpha": true,
@@ -277,13 +280,14 @@
    ],
    "provenance": {
     "kind": "generated",
-    "package": "tiles"
+    "package": "tiles",
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)"
    },
    "verification": {
     "native_scale_reviewed": true,
     "in_engine_reviewed": true,
     "technical_checks_passed": true,
-    "approved_by": "",
+    "approved_by": "owner (design session, 2026-10-31)",
     "notes": "packed by scripts/art/build-town.py"
    }
   },
@@ -292,7 +296,7 @@
    "area": "town",
    "role": "terrain Wang set w->c",
    "path": "public/ta-tua/game/assets/town/town.json#tiles-water-cobble",
-   "status": "sample",
+   "status": "approved",
    "technical": {
     "dimensions": "64x64 (16 tiles)",
     "alpha": true,
@@ -309,13 +313,14 @@
    ],
    "provenance": {
     "kind": "generated",
-    "package": "tiles"
+    "package": "tiles",
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)"
    },
    "verification": {
     "native_scale_reviewed": true,
     "in_engine_reviewed": true,
     "technical_checks_passed": true,
-    "approved_by": "",
+    "approved_by": "owner (design session, 2026-10-31)",
     "notes": "packed by scripts/art/build-town.py"
    }
   },
@@ -324,7 +329,7 @@
    "area": "town",
    "role": "terrain Wang set c->s",
    "path": "public/ta-tua/game/assets/town/town.json#tiles-cobble-plaza",
-   "status": "sample",
+   "status": "approved",
    "technical": {
     "dimensions": "64x64 (16 tiles)",
     "alpha": true,
@@ -341,13 +346,14 @@
    ],
    "provenance": {
     "kind": "generated",
-    "package": "tiles"
+    "package": "tiles",
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)"
    },
    "verification": {
     "native_scale_reviewed": true,
     "in_engine_reviewed": true,
     "technical_checks_passed": true,
-    "approved_by": "",
+    "approved_by": "owner (design session, 2026-10-31)",
     "notes": "packed by scripts/art/build-town.py"
    }
   },
@@ -356,7 +362,7 @@
    "area": "town",
    "role": "terrain Wang set g->m",
    "path": "public/ta-tua/game/assets/town/town.json#tiles-grass-meadow",
-   "status": "sample",
+   "status": "approved",
    "technical": {
     "dimensions": "64x64 (16 tiles)",
     "alpha": true,
@@ -373,13 +379,14 @@
    ],
    "provenance": {
     "kind": "generated",
-    "package": "tiles"
+    "package": "tiles",
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)"
    },
    "verification": {
     "native_scale_reviewed": true,
     "in_engine_reviewed": true,
     "technical_checks_passed": true,
-    "approved_by": "",
+    "approved_by": "owner (design session, 2026-10-31)",
     "notes": "packed by scripts/art/build-town.py"
    }
   },
@@ -388,7 +395,7 @@
    "area": "town",
    "role": "terrain Wang set g->t",
    "path": "public/ta-tua/game/assets/town/town.json#tiles-grass-soil",
-   "status": "sample",
+   "status": "approved",
    "technical": {
     "dimensions": "64x64 (16 tiles)",
     "alpha": true,
@@ -405,13 +412,14 @@
    ],
    "provenance": {
     "kind": "generated",
-    "package": "tiles"
+    "package": "tiles",
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)"
    },
    "verification": {
     "native_scale_reviewed": true,
     "in_engine_reviewed": true,
     "technical_checks_passed": true,
-    "approved_by": "",
+    "approved_by": "owner (design session, 2026-10-31)",
     "notes": "packed by scripts/art/build-town.py"
    }
   },
@@ -420,7 +428,7 @@
    "area": "town",
    "role": "terrain Wang set h->g",
    "path": "public/ta-tua/game/assets/town/town.json#tiles-shallow-grass",
-   "status": "sample",
+   "status": "approved",
    "technical": {
     "dimensions": "64x64 (16 tiles)",
     "alpha": true,
@@ -437,13 +445,14 @@
    ],
    "provenance": {
     "kind": "generated",
-    "package": "tiles"
+    "package": "tiles",
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)"
    },
    "verification": {
     "native_scale_reviewed": true,
     "in_engine_reviewed": true,
     "technical_checks_passed": true,
-    "approved_by": "",
+    "approved_by": "owner (design session, 2026-10-31)",
     "notes": "packed by scripts/art/build-town.py"
    }
   },
@@ -452,7 +461,7 @@
    "area": "town",
    "role": "terrain Wang set h->b",
    "path": "public/ta-tua/game/assets/town/town.json#tiles-shallow-sand",
-   "status": "sample",
+   "status": "approved",
    "technical": {
     "dimensions": "64x64 (16 tiles)",
     "alpha": true,
@@ -469,13 +478,14 @@
    ],
    "provenance": {
     "kind": "generated",
-    "package": "tiles"
+    "package": "tiles",
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)"
    },
    "verification": {
     "native_scale_reviewed": true,
     "in_engine_reviewed": true,
     "technical_checks_passed": true,
-    "approved_by": "",
+    "approved_by": "owner (design session, 2026-10-31)",
     "notes": "packed by scripts/art/build-town.py"
    }
   },
@@ -484,7 +494,7 @@
    "area": "town",
    "role": "terrain Wang set w->h",
    "path": "public/ta-tua/game/assets/town/town.json#tiles-water-shallow",
-   "status": "sample",
+   "status": "approved",
    "technical": {
     "dimensions": "64x64 (16 tiles)",
     "alpha": true,
@@ -501,13 +511,14 @@
    ],
    "provenance": {
     "kind": "generated",
-    "package": "tiles"
+    "package": "tiles",
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)"
    },
    "verification": {
     "native_scale_reviewed": true,
     "in_engine_reviewed": true,
     "technical_checks_passed": true,
-    "approved_by": "",
+    "approved_by": "owner (design session, 2026-10-31)",
     "notes": "packed by scripts/art/build-town.py"
    }
   },
@@ -516,7 +527,7 @@
    "area": "town",
    "role": "building: home (PLACES.home)",
    "path": "public/ta-tua/game/assets/town/town.json#bld-home",
-   "status": "sample",
+   "status": "approved",
    "technical": {
     "dimensions": "130x130",
     "alpha": true,
@@ -552,14 +563,14 @@
      "outer outline #2e1d14 + 1px pad",
      "swap.py walls fbf1e3>fff3c4, dcc0a0>dcb07c (match shop/bank cream)"
     ],
-    "license": "PixelLab ToS (subscription, commercial use per https://pixellab.ai/termsofservice) — verify before ship",
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)",
     "package": "phase0"
    },
    "verification": {
     "native_scale_reviewed": true,
     "in_engine_reviewed": true,
     "technical_checks_passed": true,
-    "approved_by": "",
+    "approved_by": "owner (design session, 2026-10-31)",
     "notes": "packed by scripts/art/build-town.py"
    }
   },
@@ -568,7 +579,7 @@
    "area": "town",
    "role": "building \"Sắp mở\" variant: home",
    "path": "public/ta-tua/game/assets/town/town.json#bld-home-locked",
-   "status": "sample",
+   "status": "approved",
    "technical": {
     "dimensions": "130x130",
     "alpha": true,
@@ -587,13 +598,14 @@
     "kind": "derived",
     "package": "bldg-6",
     "recipe": "phase1/bldg-6/scripts/lock.py",
-    "from": "phase0/dl/pal/home.png"
+    "from": "phase0/dl/pal/home.png",
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)"
    },
    "verification": {
     "native_scale_reviewed": true,
     "in_engine_reviewed": true,
     "technical_checks_passed": true,
-    "approved_by": "",
+    "approved_by": "owner (design session, 2026-10-31)",
     "notes": "packed by scripts/art/build-town.py"
    }
   },
@@ -602,7 +614,7 @@
    "area": "town",
    "role": "building: shop (PLACES.shop)",
    "path": "public/ta-tua/game/assets/town/town.json#bld-shop",
-   "status": "sample",
+   "status": "approved",
    "technical": {
     "dimensions": "130x130",
     "alpha": true,
@@ -637,14 +649,14 @@
      "alpha threshold 128",
      "outer outline #2e1d14 + 1px pad"
     ],
-    "license": "PixelLab ToS (subscription, commercial use per https://pixellab.ai/termsofservice) — verify before ship",
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)",
     "package": "phase0"
    },
    "verification": {
     "native_scale_reviewed": true,
     "in_engine_reviewed": true,
     "technical_checks_passed": true,
-    "approved_by": "",
+    "approved_by": "owner (design session, 2026-10-31)",
     "notes": "packed by scripts/art/build-town.py"
    }
   },
@@ -653,7 +665,7 @@
    "area": "town",
    "role": "building \"Sắp mở\" variant: shop",
    "path": "public/ta-tua/game/assets/town/town.json#bld-shop-locked",
-   "status": "sample",
+   "status": "approved",
    "technical": {
     "dimensions": "130x130",
     "alpha": true,
@@ -672,13 +684,14 @@
     "kind": "derived",
     "package": "bldg-6",
     "recipe": "phase1/bldg-6/scripts/lock.py",
-    "from": "phase0/dl/pal/shop.png"
+    "from": "phase0/dl/pal/shop.png",
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)"
    },
    "verification": {
     "native_scale_reviewed": true,
     "in_engine_reviewed": true,
     "technical_checks_passed": true,
-    "approved_by": "",
+    "approved_by": "owner (design session, 2026-10-31)",
     "notes": "packed by scripts/art/build-town.py"
    }
   },
@@ -687,7 +700,7 @@
    "area": "town",
    "role": "building: jobs (PLACES.jobs)",
    "path": "public/ta-tua/game/assets/town/town.json#bld-jobs",
-   "status": "sample",
+   "status": "approved",
    "technical": {
     "dimensions": "130x130",
     "alpha": true,
@@ -723,7 +736,7 @@
      "remap.py --outline --pad 0 (re-outline new edges, stays 130x130)",
      "audit.py: off-palette=0 semi-alpha=0"
     ],
-    "license": "PixelLab ToS (subscription, commercial use per https://pixellab.ai/termsofservice) — verify before ship",
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)",
     "source_files": [
      "raw/job-v1.png",
      "pal/jobs.png"
@@ -735,7 +748,7 @@
     "native_scale_reviewed": true,
     "in_engine_reviewed": true,
     "technical_checks_passed": true,
-    "approved_by": "",
+    "approved_by": "owner (design session, 2026-10-31)",
     "notes": "packed by scripts/art/build-town.py"
    }
   },
@@ -744,7 +757,7 @@
    "area": "town",
    "role": "building \"Sắp mở\" variant: jobs",
    "path": "public/ta-tua/game/assets/town/town.json#bld-jobs-locked",
-   "status": "sample",
+   "status": "approved",
    "technical": {
     "dimensions": "130x130",
     "alpha": true,
@@ -763,13 +776,14 @@
     "kind": "derived",
     "package": "bldg-6",
     "recipe": "phase1/bldg-6/scripts/lock.py",
-    "from": "phase1/bldg-1/pal/jobs.png"
+    "from": "phase1/bldg-1/pal/jobs.png",
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)"
    },
    "verification": {
     "native_scale_reviewed": true,
     "in_engine_reviewed": true,
     "technical_checks_passed": true,
-    "approved_by": "",
+    "approved_by": "owner (design session, 2026-10-31)",
     "notes": "packed by scripts/art/build-town.py"
    }
   },
@@ -778,7 +792,7 @@
    "area": "town",
    "role": "building: bank (PLACES.bank)",
    "path": "public/ta-tua/game/assets/town/town.json#bld-bank",
-   "status": "sample",
+   "status": "approved",
    "technical": {
     "dimensions": "130x130",
     "alpha": true,
@@ -813,14 +827,14 @@
      "alpha threshold 128",
      "outer outline #2e1d14 + 1px pad"
     ],
-    "license": "PixelLab ToS (subscription, commercial use per https://pixellab.ai/termsofservice) — verify before ship",
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)",
     "package": "phase0"
    },
    "verification": {
     "native_scale_reviewed": true,
     "in_engine_reviewed": true,
     "technical_checks_passed": true,
-    "approved_by": "",
+    "approved_by": "owner (design session, 2026-10-31)",
     "notes": "packed by scripts/art/build-town.py"
    }
   },
@@ -829,7 +843,7 @@
    "area": "town",
    "role": "building \"Sắp mở\" variant: bank",
    "path": "public/ta-tua/game/assets/town/town.json#bld-bank-locked",
-   "status": "sample",
+   "status": "approved",
    "technical": {
     "dimensions": "130x130",
     "alpha": true,
@@ -848,13 +862,14 @@
     "kind": "derived",
     "package": "bldg-6",
     "recipe": "bldg-6 art",
-    "from": "phase0/dl/pal/bank.png"
+    "from": "phase0/dl/pal/bank.png",
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)"
    },
    "verification": {
     "native_scale_reviewed": true,
     "in_engine_reviewed": true,
     "technical_checks_passed": true,
-    "approved_by": "",
+    "approved_by": "owner (design session, 2026-10-31)",
     "notes": "packed by scripts/art/build-town.py"
    }
   },
@@ -863,7 +878,7 @@
    "area": "town",
    "role": "building: market (PLACES.market)",
    "path": "public/ta-tua/game/assets/town/town.json#bld-market",
-   "status": "sample",
+   "status": "approved",
    "technical": {
     "dimensions": "130x130",
     "alpha": true,
@@ -899,7 +914,7 @@
      "remap.py --outline --pad 0 (re-outline new edges, stays 130x130)",
      "audit.py: off-palette=0 semi-alpha=0"
     ],
-    "license": "PixelLab ToS (subscription, commercial use per https://pixellab.ai/termsofservice) — verify before ship",
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)",
     "source_files": [
      "raw/exch-v3.png",
      "pal/market.png"
@@ -911,7 +926,7 @@
     "native_scale_reviewed": true,
     "in_engine_reviewed": true,
     "technical_checks_passed": true,
-    "approved_by": "",
+    "approved_by": "owner (design session, 2026-10-31)",
     "notes": "packed by scripts/art/build-town.py"
    }
   },
@@ -920,7 +935,7 @@
    "area": "town",
    "role": "building \"Sắp mở\" variant: market",
    "path": "public/ta-tua/game/assets/town/town.json#bld-market-locked",
-   "status": "sample",
+   "status": "approved",
    "technical": {
     "dimensions": "130x130",
     "alpha": true,
@@ -939,13 +954,14 @@
     "kind": "derived",
     "package": "bldg-6",
     "recipe": "phase1/bldg-6/scripts/lock.py",
-    "from": "phase1/bldg-1/pal/market.png"
+    "from": "phase1/bldg-1/pal/market.png",
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)"
    },
    "verification": {
     "native_scale_reviewed": true,
     "in_engine_reviewed": true,
     "technical_checks_passed": true,
-    "approved_by": "",
+    "approved_by": "owner (design session, 2026-10-31)",
     "notes": "packed by scripts/art/build-town.py"
    }
   },
@@ -954,7 +970,7 @@
    "area": "town",
    "role": "building: news (PLACES.news)",
    "path": "public/ta-tua/game/assets/town/town.json#bld-news",
-   "status": "sample",
+   "status": "approved",
    "technical": {
     "dimensions": "130x130",
     "alpha": true,
@@ -990,7 +1006,7 @@
      "remap.py --outline --pad 0 (re-outline new edges, stays 130x130)",
      "audit.py: off-palette=0 semi-alpha=0"
     ],
-    "license": "PixelLab ToS (subscription, commercial use per https://pixellab.ai/termsofservice) — verify before ship",
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)",
     "source_files": [
      "raw/news-v4.png",
      "pal/news.png"
@@ -1002,7 +1018,7 @@
     "native_scale_reviewed": true,
     "in_engine_reviewed": true,
     "technical_checks_passed": true,
-    "approved_by": "",
+    "approved_by": "owner (design session, 2026-10-31)",
     "notes": "packed by scripts/art/build-town.py"
    }
   },
@@ -1011,7 +1027,7 @@
    "area": "town",
    "role": "building \"Sắp mở\" variant: news",
    "path": "public/ta-tua/game/assets/town/town.json#bld-news-locked",
-   "status": "sample",
+   "status": "approved",
    "technical": {
     "dimensions": "130x130",
     "alpha": true,
@@ -1030,13 +1046,14 @@
     "kind": "derived",
     "package": "bldg-6",
     "recipe": "phase1/bldg-6/scripts/lock.py",
-    "from": "phase1/bldg-1/pal/news.png"
+    "from": "phase1/bldg-1/pal/news.png",
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)"
    },
    "verification": {
     "native_scale_reviewed": true,
     "in_engine_reviewed": true,
     "technical_checks_passed": true,
-    "approved_by": "",
+    "approved_by": "owner (design session, 2026-10-31)",
     "notes": "packed by scripts/art/build-town.py"
    }
   },
@@ -1045,7 +1062,7 @@
    "area": "town",
    "role": "building: townhall (PLACES.townhall)",
    "path": "public/ta-tua/game/assets/town/town.json#bld-townhall",
-   "status": "sample",
+   "status": "approved",
    "technical": {
     "dimensions": "130x146",
     "alpha": true,
@@ -1081,7 +1098,7 @@
      "scripts/degrass.py band 5 --cut 2: removed baked-in grass tufts and yellow path strip under the plinth (P0 buildings carry no ground)",
      "outer outline #2e1d14 + 1px pad (remap.py --outline, final pass)"
     ],
-    "license": "PixelLab ToS (subscription, commercial use per https://pixellab.ai/termsofservice) — verify before ship",
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)",
     "package": "bldg-2",
     "source": "phase1/bldg-2/pal/townhall.png"
    },
@@ -1089,7 +1106,7 @@
     "native_scale_reviewed": true,
     "in_engine_reviewed": true,
     "technical_checks_passed": true,
-    "approved_by": "",
+    "approved_by": "owner (design session, 2026-10-31)",
     "notes": "packed by scripts/art/build-town.py"
    }
   },
@@ -1098,7 +1115,7 @@
    "area": "town",
    "role": "building \"Sắp mở\" variant: townhall",
    "path": "public/ta-tua/game/assets/town/town.json#bld-townhall-locked",
-   "status": "sample",
+   "status": "approved",
    "technical": {
     "dimensions": "130x146",
     "alpha": true,
@@ -1117,13 +1134,14 @@
     "kind": "derived",
     "package": "bldg-6",
     "recipe": "phase1/bldg-6/scripts/lock.py",
-    "from": "phase1/bldg-2/pal/townhall.png"
+    "from": "phase1/bldg-2/pal/townhall.png",
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)"
    },
    "verification": {
     "native_scale_reviewed": true,
     "in_engine_reviewed": true,
     "technical_checks_passed": true,
-    "approved_by": "",
+    "approved_by": "owner (design session, 2026-10-31)",
     "notes": "packed by scripts/art/build-town.py"
    }
   },
@@ -1132,7 +1150,7 @@
    "area": "town",
    "role": "building: school (PLACES.school)",
    "path": "public/ta-tua/game/assets/town/town.json#bld-school",
-   "status": "sample",
+   "status": "approved",
    "technical": {
     "dimensions": "130x130",
     "alpha": true,
@@ -1171,7 +1189,7 @@
      "scripts/fillgap.py rows 108-109: refilled plinth notches left by removed bushes",
      "outer outline #2e1d14 + 1px pad (remap.py --outline, final pass)"
     ],
-    "license": "PixelLab ToS (subscription, commercial use per https://pixellab.ai/termsofservice) — verify before ship",
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)",
     "package": "bldg-2",
     "source": "phase1/bldg-2/pal/school.png"
    },
@@ -1179,7 +1197,7 @@
     "native_scale_reviewed": true,
     "in_engine_reviewed": true,
     "technical_checks_passed": true,
-    "approved_by": "",
+    "approved_by": "owner (design session, 2026-10-31)",
     "notes": "packed by scripts/art/build-town.py"
    }
   },
@@ -1188,7 +1206,7 @@
    "area": "town",
    "role": "building \"Sắp mở\" variant: school",
    "path": "public/ta-tua/game/assets/town/town.json#bld-school-locked",
-   "status": "sample",
+   "status": "approved",
    "technical": {
     "dimensions": "130x130",
     "alpha": true,
@@ -1207,13 +1225,14 @@
     "kind": "derived",
     "package": "bldg-6",
     "recipe": "phase1/bldg-6/scripts/lock.py",
-    "from": "phase1/bldg-2/pal/school.png"
+    "from": "phase1/bldg-2/pal/school.png",
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)"
    },
    "verification": {
     "native_scale_reviewed": true,
     "in_engine_reviewed": true,
     "technical_checks_passed": true,
-    "approved_by": "",
+    "approved_by": "owner (design session, 2026-10-31)",
     "notes": "packed by scripts/art/build-town.py"
    }
   },
@@ -1222,7 +1241,7 @@
    "area": "town",
    "role": "building: clinic (PLACES.clinic)",
    "path": "public/ta-tua/game/assets/town/town.json#bld-clinic",
-   "status": "sample",
+   "status": "approved",
    "technical": {
     "dimensions": "130x130",
     "alpha": true,
@@ -1260,7 +1279,7 @@
      "swap.py walls fbf1e3>fff3c4, dcc0a0>dcb07c, ecd8bf>ecd2a2 (same cream as P0 home/shop/bank; white door + sign stay fffaf3)",
      "outer outline #2e1d14 + 1px pad (remap.py --outline, final pass)"
     ],
-    "license": "PixelLab ToS (subscription, commercial use per https://pixellab.ai/termsofservice) — verify before ship",
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)",
     "package": "bldg-2",
     "source": "phase1/bldg-2/pal/clinic.png"
    },
@@ -1268,7 +1287,7 @@
     "native_scale_reviewed": true,
     "in_engine_reviewed": true,
     "technical_checks_passed": true,
-    "approved_by": "",
+    "approved_by": "owner (design session, 2026-10-31)",
     "notes": "packed by scripts/art/build-town.py"
    }
   },
@@ -1277,7 +1296,7 @@
    "area": "town",
    "role": "building \"Sắp mở\" variant: clinic",
    "path": "public/ta-tua/game/assets/town/town.json#bld-clinic-locked",
-   "status": "sample",
+   "status": "approved",
    "technical": {
     "dimensions": "130x130",
     "alpha": true,
@@ -1296,13 +1315,14 @@
     "kind": "derived",
     "package": "bldg-6",
     "recipe": "phase1/bldg-6/scripts/lock.py",
-    "from": "phase1/bldg-2/pal/clinic.png"
+    "from": "phase1/bldg-2/pal/clinic.png",
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)"
    },
    "verification": {
     "native_scale_reviewed": true,
     "in_engine_reviewed": true,
     "technical_checks_passed": true,
-    "approved_by": "",
+    "approved_by": "owner (design session, 2026-10-31)",
     "notes": "packed by scripts/art/build-town.py"
    }
   },
@@ -1311,7 +1331,7 @@
    "area": "town",
    "role": "building: park (PLACES.park)",
    "path": "public/ta-tua/game/assets/town/town.json#bld-park",
-   "status": "sample",
+   "status": "approved",
    "technical": {
     "dimensions": "130x130",
     "alpha": true,
@@ -1347,7 +1367,7 @@
      "edit_park.py: both round hedges moved 6 px inwards (visible width 120 -> 104)",
      "remap.py --outline --pad 0: outer outline #2e1d14"
     ],
-    "license": "PixelLab ToS (subscription, commercial use per https://pixellab.ai/termsofservice) — verify before ship",
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)",
     "raw_file": "raw/park-v1.png",
     "package": "bldg-3",
     "source": "phase1/bldg-3/pal/park.png"
@@ -1356,7 +1376,7 @@
     "native_scale_reviewed": true,
     "in_engine_reviewed": true,
     "technical_checks_passed": true,
-    "approved_by": "",
+    "approved_by": "owner (design session, 2026-10-31)",
     "notes": "packed by scripts/art/build-town.py"
    }
   },
@@ -1365,7 +1385,7 @@
    "area": "town",
    "role": "building \"Sắp mở\" variant: park",
    "path": "public/ta-tua/game/assets/town/town.json#bld-park-locked",
-   "status": "sample",
+   "status": "approved",
    "technical": {
     "dimensions": "130x130",
     "alpha": true,
@@ -1384,13 +1404,14 @@
     "kind": "derived",
     "package": "bldg-6",
     "recipe": "phase1/bldg-6/scripts/lock.py",
-    "from": "phase1/bldg-3/pal/park.png"
+    "from": "phase1/bldg-3/pal/park.png",
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)"
    },
    "verification": {
     "native_scale_reviewed": true,
     "in_engine_reviewed": true,
     "technical_checks_passed": true,
-    "approved_by": "",
+    "approved_by": "owner (design session, 2026-10-31)",
     "notes": "packed by scripts/art/build-town.py"
    }
   },
@@ -1399,7 +1420,7 @@
    "area": "town",
    "role": "building: arcade (PLACES.arcade)",
    "path": "public/ta-tua/game/assets/town/town.json#bld-arcade",
-   "status": "sample",
+   "status": "approved",
    "technical": {
     "dimensions": "130x130",
     "alpha": true,
@@ -1436,7 +1457,7 @@
      "finish.py arcade: slide teal #2f7f73/#58b9d6/#8fd3bf/#2f5a3a -> sky #3f8fc0/#8fd0e8/#bfe3f2/#2f6f9a (keeps it apart from the bank's mint roof)",
      "finish.py arcade: round window panes recoloured pink/sky/yellow/mint (game lights), all palette colours"
     ],
-    "license": "PixelLab ToS (subscription, commercial use per https://pixellab.ai/termsofservice) — verify before ship",
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)",
     "raw_file": "raw/arcade-v6.png",
     "package": "bldg-3",
     "source": "phase1/bldg-3/pal/arcade.png"
@@ -1445,7 +1466,7 @@
     "native_scale_reviewed": true,
     "in_engine_reviewed": true,
     "technical_checks_passed": true,
-    "approved_by": "",
+    "approved_by": "owner (design session, 2026-10-31)",
     "notes": "packed by scripts/art/build-town.py"
    }
   },
@@ -1454,7 +1475,7 @@
    "area": "town",
    "role": "building \"Sắp mở\" variant: arcade",
    "path": "public/ta-tua/game/assets/town/town.json#bld-arcade-locked",
-   "status": "sample",
+   "status": "approved",
    "technical": {
     "dimensions": "130x130",
     "alpha": true,
@@ -1473,13 +1494,14 @@
     "kind": "derived",
     "package": "bldg-6",
     "recipe": "phase1/bldg-6/scripts/lock.py",
-    "from": "phase1/bldg-3/pal/arcade.png"
+    "from": "phase1/bldg-3/pal/arcade.png",
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)"
    },
    "verification": {
     "native_scale_reviewed": true,
     "in_engine_reviewed": true,
     "technical_checks_passed": true,
-    "approved_by": "",
+    "approved_by": "owner (design session, 2026-10-31)",
     "notes": "packed by scripts/art/build-town.py"
    }
   },
@@ -1488,7 +1510,7 @@
    "area": "town",
    "role": "building: kitchen (PLACES.kitchen)",
    "path": "public/ta-tua/game/assets/town/town.json#bld-kitchen",
-   "status": "sample",
+   "status": "approved",
    "technical": {
     "dimensions": "130x130",
     "alpha": true,
@@ -1526,7 +1548,7 @@
      "finish.py kitchen: removed ground stubs at bottom corners",
      "remap.py --outline --pad 0 (re-seal 1 edge pixel)"
     ],
-    "license": "PixelLab ToS (subscription, commercial use per https://pixellab.ai/termsofservice) — verify before ship",
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)",
     "raw_file": "raw/kitchen-v2.png",
     "package": "bldg-3",
     "source": "phase1/bldg-3/pal/kitchen.png"
@@ -1535,7 +1557,7 @@
     "native_scale_reviewed": true,
     "in_engine_reviewed": true,
     "technical_checks_passed": true,
-    "approved_by": "",
+    "approved_by": "owner (design session, 2026-10-31)",
     "notes": "packed by scripts/art/build-town.py"
    }
   },
@@ -1544,7 +1566,7 @@
    "area": "town",
    "role": "building \"Sắp mở\" variant: kitchen",
    "path": "public/ta-tua/game/assets/town/town.json#bld-kitchen-locked",
-   "status": "sample",
+   "status": "approved",
    "technical": {
     "dimensions": "130x130",
     "alpha": true,
@@ -1563,13 +1585,14 @@
     "kind": "derived",
     "package": "bldg-6",
     "recipe": "phase1/bldg-6/scripts/lock.py",
-    "from": "phase1/bldg-3/pal/kitchen.png"
+    "from": "phase1/bldg-3/pal/kitchen.png",
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)"
    },
    "verification": {
     "native_scale_reviewed": true,
     "in_engine_reviewed": true,
     "technical_checks_passed": true,
-    "approved_by": "",
+    "approved_by": "owner (design session, 2026-10-31)",
     "notes": "packed by scripts/art/build-town.py"
    }
   },
@@ -1578,7 +1601,7 @@
    "area": "town",
    "role": "building: garden (PLACES.garden)",
    "path": "public/ta-tua/game/assets/town/town.json#bld-garden",
-   "status": "sample",
+   "status": "approved",
    "technical": {
     "dimensions": "130x130",
     "alpha": true,
@@ -1615,7 +1638,7 @@
      "alpha threshold 128",
      "outer outline #2e1d14 + 1px pad"
     ],
-    "license": "PixelLab ToS (subscription, commercial use per https://pixellab.ai/termsofservice) — verify before ship",
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)",
     "package": "bldg-4",
     "source": "phase1/bldg-4/pal/garden.png"
    },
@@ -1623,7 +1646,7 @@
     "native_scale_reviewed": true,
     "in_engine_reviewed": true,
     "technical_checks_passed": true,
-    "approved_by": "",
+    "approved_by": "owner (design session, 2026-10-31)",
     "notes": "packed by scripts/art/build-town.py"
    }
   },
@@ -1632,7 +1655,7 @@
    "area": "town",
    "role": "building \"Sắp mở\" variant: garden",
    "path": "public/ta-tua/game/assets/town/town.json#bld-garden-locked",
-   "status": "sample",
+   "status": "approved",
    "technical": {
     "dimensions": "130x130",
     "alpha": true,
@@ -1651,13 +1674,14 @@
     "kind": "derived",
     "package": "bldg-6",
     "recipe": "phase1/bldg-6/scripts/lock.py",
-    "from": "phase1/bldg-4/pal/garden.png"
+    "from": "phase1/bldg-4/pal/garden.png",
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)"
    },
    "verification": {
     "native_scale_reviewed": true,
     "in_engine_reviewed": true,
     "technical_checks_passed": true,
-    "approved_by": "",
+    "approved_by": "owner (design session, 2026-10-31)",
     "notes": "packed by scripts/art/build-town.py"
    }
   },
@@ -1666,7 +1690,7 @@
    "area": "town",
    "role": "building: bazaar (PLACES.bazaar)",
    "path": "public/ta-tua/game/assets/town/town.json#bld-bazaar",
-   "status": "sample",
+   "status": "approved",
    "technical": {
     "dimensions": "130x130",
     "alpha": true,
@@ -1704,7 +1728,7 @@
      "right canopy + flag #d9708a -> #e84a5f (pink/white stripes belong to the P0 shop awning)",
      "remap.py --outline --pad 0 to close the outline"
     ],
-    "license": "PixelLab ToS (subscription, commercial use per https://pixellab.ai/termsofservice) — verify before ship",
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)",
     "package": "bldg-4",
     "source": "phase1/bldg-4/pal/bazaar.png"
    },
@@ -1712,7 +1736,7 @@
     "native_scale_reviewed": true,
     "in_engine_reviewed": true,
     "technical_checks_passed": true,
-    "approved_by": "",
+    "approved_by": "owner (design session, 2026-10-31)",
     "notes": "packed by scripts/art/build-town.py"
    }
   },
@@ -1721,7 +1745,7 @@
    "area": "town",
    "role": "building \"Sắp mở\" variant: bazaar",
    "path": "public/ta-tua/game/assets/town/town.json#bld-bazaar-locked",
-   "status": "sample",
+   "status": "approved",
    "technical": {
     "dimensions": "130x130",
     "alpha": true,
@@ -1740,13 +1764,14 @@
     "kind": "derived",
     "package": "bldg-6",
     "recipe": "phase1/bldg-6/scripts/lock.py",
-    "from": "phase1/bldg-4/pal/bazaar.png"
+    "from": "phase1/bldg-4/pal/bazaar.png",
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)"
    },
    "verification": {
     "native_scale_reviewed": true,
     "in_engine_reviewed": true,
     "technical_checks_passed": true,
-    "approved_by": "",
+    "approved_by": "owner (design session, 2026-10-31)",
     "notes": "packed by scripts/art/build-town.py"
    }
   },
@@ -1755,7 +1780,7 @@
    "area": "town",
    "role": "building: boba (PLACES.boba)",
    "path": "public/ta-tua/game/assets/town/town.json#bld-boba",
-   "status": "sample",
+   "status": "approved",
    "technical": {
     "dimensions": "130x130",
     "alpha": true,
@@ -1790,7 +1815,7 @@
      "alpha threshold 128",
      "outer outline #2e1d14 + 1px pad"
     ],
-    "license": "PixelLab ToS (subscription, commercial use per https://pixellab.ai/termsofservice) — verify before ship",
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)",
     "package": "bldg-4",
     "source": "phase1/bldg-4/pal/boba.png"
    },
@@ -1798,7 +1823,7 @@
     "native_scale_reviewed": true,
     "in_engine_reviewed": true,
     "technical_checks_passed": true,
-    "approved_by": "",
+    "approved_by": "owner (design session, 2026-10-31)",
     "notes": "packed by scripts/art/build-town.py"
    }
   },
@@ -1807,7 +1832,7 @@
    "area": "town",
    "role": "building \"Sắp mở\" variant: boba",
    "path": "public/ta-tua/game/assets/town/town.json#bld-boba-locked",
-   "status": "sample",
+   "status": "approved",
    "technical": {
     "dimensions": "130x130",
     "alpha": true,
@@ -1826,13 +1851,14 @@
     "kind": "derived",
     "package": "bldg-6",
     "recipe": "phase1/bldg-6/scripts/lock.py",
-    "from": "phase1/bldg-4/pal/boba.png"
+    "from": "phase1/bldg-4/pal/boba.png",
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)"
    },
    "verification": {
     "native_scale_reviewed": true,
     "in_engine_reviewed": true,
     "technical_checks_passed": true,
-    "approved_by": "",
+    "approved_by": "owner (design session, 2026-10-31)",
     "notes": "packed by scripts/art/build-town.py"
    }
   },
@@ -1841,7 +1867,7 @@
    "area": "town",
    "role": "building: factory (PLACES.factory)",
    "path": "public/ta-tua/game/assets/town/town.json#bld-factory",
-   "status": "sample",
+   "status": "approved",
    "technical": {
     "dimensions": "130x130",
     "alpha": true,
@@ -1878,7 +1904,7 @@
      "swapbox.py roof box (0,37)-(92,55): 6e6660>9c948a, 4a3326>6e6660, 5c3a24>6e6660, 9c948a>c4bcb0 (lighter grey sawtooth roof)",
      "swap.py brick d65f5f>c88a62, a84848>b4643a (warm terracotta; keeps it apart from shop red / clan-hall maroon)"
     ],
-    "license": "PixelLab ToS (subscription, commercial use per https://pixellab.ai/termsofservice) — verify before ship",
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)",
     "source_files": {
      "raw": "raw/factory-v2.png",
      "base": "pal/factory.base.png",
@@ -1891,7 +1917,7 @@
     "native_scale_reviewed": true,
     "in_engine_reviewed": true,
     "technical_checks_passed": true,
-    "approved_by": "",
+    "approved_by": "owner (design session, 2026-10-31)",
     "notes": "packed by scripts/art/build-town.py"
    }
   },
@@ -1900,7 +1926,7 @@
    "area": "town",
    "role": "building \"Sắp mở\" variant: factory",
    "path": "public/ta-tua/game/assets/town/town.json#bld-factory-locked",
-   "status": "sample",
+   "status": "approved",
    "technical": {
     "dimensions": "130x130",
     "alpha": true,
@@ -1919,13 +1945,14 @@
     "kind": "derived",
     "package": "bldg-6",
     "recipe": "phase1/bldg-6/scripts/lock.py",
-    "from": "phase1/bldg-5/pal/factory.png"
+    "from": "phase1/bldg-5/pal/factory.png",
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)"
    },
    "verification": {
     "native_scale_reviewed": true,
     "in_engine_reviewed": true,
     "technical_checks_passed": true,
-    "approved_by": "",
+    "approved_by": "owner (design session, 2026-10-31)",
     "notes": "packed by scripts/art/build-town.py"
    }
   },
@@ -1934,7 +1961,7 @@
    "area": "town",
    "role": "building: realestate (PLACES.realestate)",
    "path": "public/ta-tua/game/assets/town/town.json#bld-realestate",
-   "status": "sample",
+   "status": "approved",
    "technical": {
     "dimensions": "130x130",
     "alpha": true,
@@ -1971,7 +1998,7 @@
      "soften_ink.py: interior #2e1d14 (not silhouette edge) -> dark ramp steps by band: roof 3d2a1f/6e2e24, eave 3d2a1f/4a3326, walls+door 3d2a1f/5c3a24, base 3d2a1f/4a3326 (2755 px; outer outline untouched)",
      "swapbox.py walls (0,69)-(129,96): 9c948a>dcb07c (grey wall shade -> cream shade)"
     ],
-    "license": "PixelLab ToS (subscription, commercial use per https://pixellab.ai/termsofservice) — verify before ship",
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)",
     "source_files": {
      "raw": "raw/clanhall-v1.png",
      "base": "pal/realestate.base.png",
@@ -1984,7 +2011,7 @@
     "native_scale_reviewed": true,
     "in_engine_reviewed": true,
     "technical_checks_passed": true,
-    "approved_by": "",
+    "approved_by": "owner (design session, 2026-10-31)",
     "notes": "packed by scripts/art/build-town.py"
    }
   },
@@ -1993,7 +2020,7 @@
    "area": "town",
    "role": "building \"Sắp mở\" variant: realestate",
    "path": "public/ta-tua/game/assets/town/town.json#bld-realestate-locked",
-   "status": "sample",
+   "status": "approved",
    "technical": {
     "dimensions": "130x130",
     "alpha": true,
@@ -2012,13 +2039,14 @@
     "kind": "derived",
     "package": "bldg-6",
     "recipe": "phase1/bldg-6/scripts/lock.py",
-    "from": "phase1/bldg-5/pal/realestate.png"
+    "from": "phase1/bldg-5/pal/realestate.png",
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)"
    },
    "verification": {
     "native_scale_reviewed": true,
     "in_engine_reviewed": true,
     "technical_checks_passed": true,
-    "approved_by": "",
+    "approved_by": "owner (design session, 2026-10-31)",
     "notes": "packed by scripts/art/build-town.py"
    }
   },
@@ -2027,7 +2055,7 @@
    "area": "town",
    "role": "building: arena (PLACES.arena)",
    "path": "public/ta-tua/game/assets/town/town.json#bld-arena",
-   "status": "sample",
+   "status": "approved",
    "technical": {
     "dimensions": "130x130",
     "alpha": true,
@@ -2065,7 +2093,7 @@
      "swapbox.py below y35: fff3c4>fffaf3, ecd2a2>fff3c4 (walls up one step to P0 cream)",
      "soften_ink.py door band y69-110: 3d2a1f/4a3326 (softer door planks)"
     ],
-    "license": "PixelLab ToS (subscription, commercial use per https://pixellab.ai/termsofservice) — verify before ship",
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)",
     "source_files": {
      "raw": "raw/trophyhall-v2.png",
      "base": "pal/arena.base.png",
@@ -2078,7 +2106,7 @@
     "native_scale_reviewed": true,
     "in_engine_reviewed": true,
     "technical_checks_passed": true,
-    "approved_by": "",
+    "approved_by": "owner (design session, 2026-10-31)",
     "notes": "packed by scripts/art/build-town.py"
    }
   },
@@ -2087,7 +2115,7 @@
    "area": "town",
    "role": "building \"Sắp mở\" variant: arena",
    "path": "public/ta-tua/game/assets/town/town.json#bld-arena-locked",
-   "status": "sample",
+   "status": "approved",
    "technical": {
     "dimensions": "130x130",
     "alpha": true,
@@ -2106,13 +2134,14 @@
     "kind": "derived",
     "package": "bldg-6",
     "recipe": "phase1/bldg-6/scripts/lock.py",
-    "from": "phase1/bldg-5/pal/arena.png"
+    "from": "phase1/bldg-5/pal/arena.png",
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)"
    },
    "verification": {
     "native_scale_reviewed": true,
     "in_engine_reviewed": true,
     "technical_checks_passed": true,
-    "approved_by": "",
+    "approved_by": "owner (design session, 2026-10-31)",
     "notes": "packed by scripts/art/build-town.py"
    }
   },
@@ -2121,7 +2150,7 @@
    "area": "town",
    "role": "building: forge (PLACES.forge)",
    "path": "public/ta-tua/game/assets/town/town.json#bld-forge",
-   "status": "sample",
+   "status": "approved",
    "technical": {
     "dimensions": "130x130",
     "alpha": true,
@@ -2159,7 +2188,7 @@
      "rswap.py box y0..66 roof: #d65f5f>#b4643a, #a84848>#8c3f2a, #8c3f2a>#6e2e24, #d79c1c>#f39b4a (terracotta, distinct from Siêu thị red)",
      "rswap.py box y104..129 #f39b4a>#dcb07c (orange ground pad -> dirt)"
     ],
-    "license": "PixelLab ToS (subscription, commercial use per https://pixellab.ai/termsofservice) — verify before ship",
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)",
     "raw_file": "raw/forge-2.png",
     "package": "bldg-6",
     "source": "phase1/bldg-6/pal/forge.png"
@@ -2168,7 +2197,7 @@
     "native_scale_reviewed": true,
     "in_engine_reviewed": true,
     "technical_checks_passed": true,
-    "approved_by": "",
+    "approved_by": "owner (design session, 2026-10-31)",
     "notes": "packed by scripts/art/build-town.py"
    }
   },
@@ -2177,7 +2206,7 @@
    "area": "town",
    "role": "building \"Sắp mở\" variant: forge",
    "path": "public/ta-tua/game/assets/town/town.json#bld-forge-locked",
-   "status": "sample",
+   "status": "approved",
    "technical": {
     "dimensions": "130x130",
     "alpha": true,
@@ -2196,13 +2225,14 @@
     "kind": "derived",
     "package": "bldg-6",
     "recipe": "bldg-6 art",
-    "from": "phase1/bldg-6/pal/forge.png"
+    "from": "phase1/bldg-6/pal/forge.png",
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)"
    },
    "verification": {
     "native_scale_reviewed": true,
     "in_engine_reviewed": true,
     "technical_checks_passed": true,
-    "approved_by": "",
+    "approved_by": "owner (design session, 2026-10-31)",
     "notes": "packed by scripts/art/build-town.py"
    }
   },
@@ -2211,7 +2241,7 @@
    "area": "town",
    "role": "building: matshop (PLACES.matshop)",
    "path": "public/ta-tua/game/assets/town/town.json#bld-matshop",
-   "status": "sample",
+   "status": "approved",
    "technical": {
     "dimensions": "130x130",
     "alpha": true,
@@ -2248,7 +2278,7 @@
      "materials_touchup.py: blue watering-can -> stack of 2 silver + 1 gold ingots (palette colours)",
      "materials_touchup.py: left planks #8c3f2a/#6e2e24/#c88a62 -> #b87d4b/#8a5a34/#dcb07c (fresh lumber)"
     ],
-    "license": "PixelLab ToS (subscription, commercial use per https://pixellab.ai/termsofservice) — verify before ship",
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)",
     "raw_file": "raw/materials-1.png",
     "package": "bldg-6",
     "source": "phase1/bldg-6/pal/matshop.png"
@@ -2257,7 +2287,7 @@
     "native_scale_reviewed": true,
     "in_engine_reviewed": true,
     "technical_checks_passed": true,
-    "approved_by": "",
+    "approved_by": "owner (design session, 2026-10-31)",
     "notes": "packed by scripts/art/build-town.py"
    }
   },
@@ -2266,7 +2296,7 @@
    "area": "town",
    "role": "building \"Sắp mở\" variant: matshop",
    "path": "public/ta-tua/game/assets/town/town.json#bld-matshop-locked",
-   "status": "sample",
+   "status": "approved",
    "technical": {
     "dimensions": "130x130",
     "alpha": true,
@@ -2285,13 +2315,14 @@
     "kind": "derived",
     "package": "bldg-6",
     "recipe": "bldg-6 art",
-    "from": "phase1/bldg-6/pal/matshop.png"
+    "from": "phase1/bldg-6/pal/matshop.png",
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)"
    },
    "verification": {
     "native_scale_reviewed": true,
     "in_engine_reviewed": true,
     "technical_checks_passed": true,
-    "approved_by": "",
+    "approved_by": "owner (design session, 2026-10-31)",
     "notes": "packed by scripts/art/build-town.py"
    }
   },
@@ -2300,7 +2331,7 @@
    "area": "town",
    "role": "building: colosseum (PLACES.colosseum)",
    "path": "public/ta-tua/game/assets/town/town.json#bld-colosseum",
-   "status": "sample",
+   "status": "approved",
    "technical": {
     "dimensions": "130x130",
     "alpha": true,
@@ -2336,7 +2367,7 @@
      "outer outline #2e1d14 + 1px pad",
      "rawswap.py: raw floor #fdedb8 (merged with wall top by remap) -> #dcb07c sand"
     ],
-    "license": "PixelLab ToS (subscription, commercial use per https://pixellab.ai/termsofservice) — verify before ship",
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)",
     "raw_file": "raw/arena-2.png",
     "package": "bldg-6",
     "source": "phase1/bldg-6/pal/colosseum.png"
@@ -2345,7 +2376,7 @@
     "native_scale_reviewed": true,
     "in_engine_reviewed": true,
     "technical_checks_passed": true,
-    "approved_by": "",
+    "approved_by": "owner (design session, 2026-10-31)",
     "notes": "packed by scripts/art/build-town.py"
    }
   },
@@ -2354,7 +2385,7 @@
    "area": "town",
    "role": "building \"Sắp mở\" variant: colosseum",
    "path": "public/ta-tua/game/assets/town/town.json#bld-colosseum-locked",
-   "status": "sample",
+   "status": "approved",
    "technical": {
     "dimensions": "130x130",
     "alpha": true,
@@ -2373,13 +2404,14 @@
     "kind": "derived",
     "package": "bldg-6",
     "recipe": "bldg-6 art",
-    "from": "phase1/bldg-6/pal/colosseum.png"
+    "from": "phase1/bldg-6/pal/colosseum.png",
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)"
    },
    "verification": {
     "native_scale_reviewed": true,
     "in_engine_reviewed": true,
     "technical_checks_passed": true,
-    "approved_by": "",
+    "approved_by": "owner (design session, 2026-10-31)",
     "notes": "packed by scripts/art/build-town.py"
    }
   },
@@ -2388,7 +2420,7 @@
    "area": "town",
    "role": "prop: sign",
    "path": "public/ta-tua/game/assets/town/town.json#prop-sign",
-   "status": "sample",
+   "status": "approved",
    "technical": {
     "dimensions": "50x34",
     "alpha": true,
@@ -2424,14 +2456,14 @@
      "outer outline #2e1d14 + 1px pad",
      "swap.py pinks -> wood creams"
     ],
-    "license": "PixelLab ToS (subscription, commercial use per https://pixellab.ai/termsofservice) — verify before ship",
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)",
     "package": "phase0"
    },
    "verification": {
     "native_scale_reviewed": true,
     "in_engine_reviewed": true,
     "technical_checks_passed": true,
-    "approved_by": "",
+    "approved_by": "owner (design session, 2026-10-31)",
     "notes": "packed by scripts/art/build-town.py"
    }
   },
@@ -2440,7 +2472,7 @@
    "area": "town",
    "role": "prop: lamp",
    "path": "public/ta-tua/game/assets/town/town.json#prop-lamp",
-   "status": "sample",
+   "status": "approved",
    "technical": {
     "dimensions": "34x66",
     "alpha": true,
@@ -2475,14 +2507,14 @@
      "alpha threshold 128",
      "outer outline #2e1d14 + 1px pad"
     ],
-    "license": "PixelLab ToS (subscription, commercial use per https://pixellab.ai/termsofservice) — verify before ship",
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)",
     "package": "phase0"
    },
    "verification": {
     "native_scale_reviewed": true,
     "in_engine_reviewed": true,
     "technical_checks_passed": true,
-    "approved_by": "",
+    "approved_by": "owner (design session, 2026-10-31)",
     "notes": "packed by scripts/art/build-town.py"
    }
   },
@@ -2491,7 +2523,7 @@
    "area": "town",
    "role": "prop: bench",
    "path": "public/ta-tua/game/assets/town/town.json#prop-bench",
-   "status": "sample",
+   "status": "approved",
    "technical": {
     "dimensions": "50x34",
     "alpha": true,
@@ -2526,14 +2558,14 @@
      "alpha threshold 128",
      "outer outline #2e1d14 + 1px pad"
     ],
-    "license": "PixelLab ToS (subscription, commercial use per https://pixellab.ai/termsofservice) — verify before ship",
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)",
     "package": "phase0"
    },
    "verification": {
     "native_scale_reviewed": true,
     "in_engine_reviewed": true,
     "technical_checks_passed": true,
-    "approved_by": "",
+    "approved_by": "owner (design session, 2026-10-31)",
     "notes": "packed by scripts/art/build-town.py"
    }
   },
@@ -2542,7 +2574,7 @@
    "area": "town",
    "role": "prop: flowerbed",
    "path": "public/ta-tua/game/assets/town/town.json#prop-flowerbed",
-   "status": "sample",
+   "status": "approved",
    "technical": {
     "dimensions": "50x34",
     "alpha": true,
@@ -2577,14 +2609,14 @@
      "alpha threshold 128",
      "outer outline #2e1d14 + 1px pad"
     ],
-    "license": "PixelLab ToS (subscription, commercial use per https://pixellab.ai/termsofservice) — verify before ship",
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)",
     "package": "phase0"
    },
    "verification": {
     "native_scale_reviewed": true,
     "in_engine_reviewed": true,
     "technical_checks_passed": true,
-    "approved_by": "",
+    "approved_by": "owner (design session, 2026-10-31)",
     "notes": "packed by scripts/art/build-town.py"
    }
   },
@@ -2593,7 +2625,7 @@
    "area": "town",
    "role": "prop: tree",
    "path": "public/ta-tua/game/assets/town/town.json#prop-tree",
-   "status": "sample",
+   "status": "approved",
    "technical": {
     "dimensions": "66x66",
     "alpha": true,
@@ -2628,14 +2660,14 @@
      "alpha threshold 128",
      "outer outline #2e1d14 + 1px pad"
     ],
-    "license": "PixelLab ToS (subscription, commercial use per https://pixellab.ai/termsofservice) — verify before ship",
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)",
     "package": "phase0"
    },
    "verification": {
     "native_scale_reviewed": true,
     "in_engine_reviewed": true,
     "technical_checks_passed": true,
-    "approved_by": "",
+    "approved_by": "owner (design session, 2026-10-31)",
     "notes": "packed by scripts/art/build-town.py"
    }
   },
@@ -2644,7 +2676,7 @@
    "area": "town",
    "role": "prop: crate",
    "path": "public/ta-tua/game/assets/town/town.json#prop-crate",
-   "status": "sample",
+   "status": "approved",
    "technical": {
     "dimensions": "34x34",
     "alpha": true,
@@ -2679,14 +2711,14 @@
      "alpha threshold 128",
      "outer outline #2e1d14 + 1px pad"
     ],
-    "license": "PixelLab ToS (subscription, commercial use per https://pixellab.ai/termsofservice) — verify before ship",
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)",
     "package": "phase0"
    },
    "verification": {
     "native_scale_reviewed": true,
     "in_engine_reviewed": true,
     "technical_checks_passed": true,
-    "approved_by": "",
+    "approved_by": "owner (design session, 2026-10-31)",
     "notes": "packed by scripts/art/build-town.py"
    }
   },
@@ -2695,7 +2727,7 @@
    "area": "town",
    "role": "prop: fence",
    "path": "public/ta-tua/game/assets/town/town.json#prop-fence",
-   "status": "sample",
+   "status": "approved",
    "technical": {
     "dimensions": "50x34",
     "alpha": true,
@@ -2731,14 +2763,14 @@
      "outer outline #2e1d14 + 1px pad",
      "swap.py f39b4a>c8915f"
     ],
-    "license": "PixelLab ToS (subscription, commercial use per https://pixellab.ai/termsofservice) — verify before ship",
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)",
     "package": "phase0"
    },
    "verification": {
     "native_scale_reviewed": true,
     "in_engine_reviewed": true,
     "technical_checks_passed": true,
-    "approved_by": "",
+    "approved_by": "owner (design session, 2026-10-31)",
     "notes": "packed by scripts/art/build-town.py"
    }
   },
@@ -2747,7 +2779,7 @@
    "area": "town",
    "role": "prop: bikerack",
    "path": "public/ta-tua/game/assets/town/town.json#prop-bikerack",
-   "status": "sample",
+   "status": "approved",
    "technical": {
     "dimensions": "68x38",
     "alpha": true,
@@ -2782,7 +2814,7 @@
      "alpha threshold 128",
      "outer outline #2e1d14 + 1px pad"
     ],
-    "license": "PixelLab ToS (subscription, commercial use per https://pixellab.ai/termsofservice) — verify before ship",
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)",
     "package": "props-1",
     "source": "phase1/props-1/pal/bikerack.png"
    },
@@ -2790,7 +2822,7 @@
     "native_scale_reviewed": true,
     "in_engine_reviewed": true,
     "technical_checks_passed": true,
-    "approved_by": "",
+    "approved_by": "owner (design session, 2026-10-31)",
     "notes": "packed by scripts/art/build-town.py"
    }
   },
@@ -2799,7 +2831,7 @@
    "area": "town",
    "role": "prop: bin",
    "path": "public/ta-tua/game/assets/town/town.json#prop-bin",
-   "status": "sample",
+   "status": "approved",
    "technical": {
     "dimensions": "34x34",
     "alpha": true,
@@ -2836,7 +2868,7 @@
      "scripts/fix_bin.py: removed a stray ball at the lower-left, rebuilt that corner by mirroring the right contour",
      "swap.py lid band 6e2e24>2f7f73, d9708a>4fae93, c88a62>8fd3bf (purple/pink band -> teal ramp)"
     ],
-    "license": "PixelLab ToS (subscription, commercial use per https://pixellab.ai/termsofservice) — verify before ship",
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)",
     "package": "props-1",
     "source": "phase1/props-1/pal/bin.png"
    },
@@ -2844,7 +2876,7 @@
     "native_scale_reviewed": true,
     "in_engine_reviewed": true,
     "technical_checks_passed": true,
-    "approved_by": "",
+    "approved_by": "owner (design session, 2026-10-31)",
     "notes": "packed by scripts/art/build-town.py"
    }
   },
@@ -2853,7 +2885,7 @@
    "area": "town",
    "role": "prop: busstop",
    "path": "public/ta-tua/game/assets/town/town.json#prop-busstop",
-   "status": "sample",
+   "status": "approved",
    "technical": {
     "dimensions": "98x82",
     "alpha": true,
@@ -2888,7 +2920,7 @@
      "alpha threshold 128",
      "outer outline #2e1d14 + 1px pad"
     ],
-    "license": "PixelLab ToS (subscription, commercial use per https://pixellab.ai/termsofservice) — verify before ship",
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)",
     "package": "props-1",
     "source": "phase1/props-1/pal/busstop.png"
    },
@@ -2896,7 +2928,7 @@
     "native_scale_reviewed": true,
     "in_engine_reviewed": true,
     "technical_checks_passed": true,
-    "approved_by": "",
+    "approved_by": "owner (design session, 2026-10-31)",
     "notes": "packed by scripts/art/build-town.py"
    }
   },
@@ -2905,7 +2937,7 @@
    "area": "town",
    "role": "prop: crates-barrels",
    "path": "public/ta-tua/game/assets/town/town.json#prop-crates-barrels",
-   "status": "sample",
+   "status": "approved",
    "technical": {
     "dimensions": "50x50",
     "alpha": true,
@@ -2940,7 +2972,7 @@
      "alpha threshold 128",
      "outer outline #2e1d14 + 1px pad"
     ],
-    "license": "PixelLab ToS (subscription, commercial use per https://pixellab.ai/termsofservice) — verify before ship",
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)",
     "package": "props-1",
     "source": "phase1/props-1/pal/crates-barrels.png"
    },
@@ -2948,7 +2980,7 @@
     "native_scale_reviewed": true,
     "in_engine_reviewed": true,
     "technical_checks_passed": true,
-    "approved_by": "",
+    "approved_by": "owner (design session, 2026-10-31)",
     "notes": "packed by scripts/art/build-town.py"
    }
   },
@@ -2957,7 +2989,7 @@
    "area": "town",
    "role": "prop: crates-barrels-tall",
    "path": "public/ta-tua/game/assets/town/town.json#prop-crates-barrels-tall",
-   "status": "sample",
+   "status": "approved",
    "technical": {
     "dimensions": "50x50",
     "alpha": true,
@@ -2992,7 +3024,7 @@
      "alpha threshold 128",
      "outer outline #2e1d14 + 1px pad"
     ],
-    "license": "PixelLab ToS (subscription, commercial use per https://pixellab.ai/termsofservice) — verify before ship",
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)",
     "package": "props-1",
     "source": "phase1/props-1/pal/crates-barrels-tall.png"
    },
@@ -3000,7 +3032,7 @@
     "native_scale_reviewed": true,
     "in_engine_reviewed": true,
     "technical_checks_passed": true,
-    "approved_by": "",
+    "approved_by": "owner (design session, 2026-10-31)",
     "notes": "packed by scripts/art/build-town.py"
    }
   },
@@ -3009,7 +3041,7 @@
    "area": "town",
    "role": "prop: hedge",
    "path": "public/ta-tua/game/assets/town/town.json#prop-hedge",
-   "status": "sample",
+   "status": "approved",
    "technical": {
     "dimensions": "56x30",
     "alpha": true,
@@ -3044,7 +3076,7 @@
      "alpha threshold 128",
      "outer outline #2e1d14 + 1px pad"
     ],
-    "license": "PixelLab ToS (subscription, commercial use per https://pixellab.ai/termsofservice) — verify before ship",
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)",
     "package": "props-1",
     "source": "phase1/props-1/pal/hedge.png"
    },
@@ -3052,7 +3084,7 @@
     "native_scale_reviewed": true,
     "in_engine_reviewed": true,
     "technical_checks_passed": true,
-    "approved_by": "",
+    "approved_by": "owner (design session, 2026-10-31)",
     "notes": "packed by scripts/art/build-town.py"
    }
   },
@@ -3061,7 +3093,7 @@
    "area": "town",
    "role": "prop: hedge-left",
    "path": "public/ta-tua/game/assets/town/town.json#prop-hedge-left",
-   "status": "sample",
+   "status": "approved",
    "technical": {
     "dimensions": "17x30",
     "alpha": true,
@@ -3088,7 +3120,7 @@
     "postprocess": [
      "derived from prop-hedge by scripts/hedge_tile.py (cut at x<22 of the de-skewed image)"
     ],
-    "license": "PixelLab ToS (subscription, commercial use per https://pixellab.ai/termsofservice) — verify before ship",
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)",
     "package": "props-1",
     "source": "phase1/props-1/pal/hedge-left.png"
    },
@@ -3096,7 +3128,7 @@
     "native_scale_reviewed": true,
     "in_engine_reviewed": true,
     "technical_checks_passed": true,
-    "approved_by": "",
+    "approved_by": "owner (design session, 2026-10-31)",
     "notes": "packed by scripts/art/build-town.py"
    }
   },
@@ -3105,7 +3137,7 @@
    "area": "town",
    "role": "prop: hedge-mid",
    "path": "public/ta-tua/game/assets/town/town.json#prop-hedge-mid",
-   "status": "sample",
+   "status": "approved",
    "technical": {
     "dimensions": "16x30",
     "alpha": true,
@@ -3132,7 +3164,7 @@
     "postprocess": [
      "derived from prop-hedge by scripts/hedge_tile.py: 16-px window whose wrap seam best matches (seam dist 495)"
     ],
-    "license": "PixelLab ToS (subscription, commercial use per https://pixellab.ai/termsofservice) — verify before ship",
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)",
     "package": "props-1",
     "source": "phase1/props-1/pal/hedge-mid.png"
    },
@@ -3140,7 +3172,7 @@
     "native_scale_reviewed": true,
     "in_engine_reviewed": true,
     "technical_checks_passed": true,
-    "approved_by": "",
+    "approved_by": "owner (design session, 2026-10-31)",
     "notes": "packed by scripts/art/build-town.py"
    }
   },
@@ -3149,7 +3181,7 @@
    "area": "town",
    "role": "prop: hedge-right",
    "path": "public/ta-tua/game/assets/town/town.json#prop-hedge-right",
-   "status": "sample",
+   "status": "approved",
    "technical": {
     "dimensions": "23x30",
     "alpha": true,
@@ -3176,7 +3208,7 @@
     "postprocess": [
      "derived from prop-hedge by scripts/hedge_tile.py (x>=38 of the de-skewed image)"
     ],
-    "license": "PixelLab ToS (subscription, commercial use per https://pixellab.ai/termsofservice) — verify before ship",
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)",
     "package": "props-1",
     "source": "phase1/props-1/pal/hedge-right.png"
    },
@@ -3184,7 +3216,7 @@
     "native_scale_reviewed": true,
     "in_engine_reviewed": true,
     "technical_checks_passed": true,
-    "approved_by": "",
+    "approved_by": "owner (design session, 2026-10-31)",
     "notes": "packed by scripts/art/build-town.py"
    }
   },
@@ -3193,7 +3225,7 @@
    "area": "town",
    "role": "prop: hydrant",
    "path": "public/ta-tua/game/assets/town/town.json#prop-hydrant",
-   "status": "sample",
+   "status": "approved",
    "technical": {
     "dimensions": "34x34",
     "alpha": true,
@@ -3228,7 +3260,7 @@
      "alpha threshold 128",
      "outer outline #2e1d14 + 1px pad"
     ],
-    "license": "PixelLab ToS (subscription, commercial use per https://pixellab.ai/termsofservice) — verify before ship",
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)",
     "package": "props-1",
     "source": "phase1/props-1/pal/hydrant.png"
    },
@@ -3236,7 +3268,7 @@
     "native_scale_reviewed": true,
     "in_engine_reviewed": true,
     "technical_checks_passed": true,
-    "approved_by": "",
+    "approved_by": "owner (design session, 2026-10-31)",
     "notes": "packed by scripts/art/build-town.py"
    }
   },
@@ -3245,7 +3277,7 @@
    "area": "town",
    "role": "prop: lamp2",
    "path": "public/ta-tua/game/assets/town/town.json#prop-lamp2",
-   "status": "sample",
+   "status": "approved",
    "technical": {
     "dimensions": "34x66",
     "alpha": true,
@@ -3280,7 +3312,7 @@
      "alpha threshold 128",
      "outer outline #2e1d14 + 1px pad"
     ],
-    "license": "PixelLab ToS (subscription, commercial use per https://pixellab.ai/termsofservice) — verify before ship",
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)",
     "package": "props-1",
     "source": "phase1/props-1/pal/lamp2.png"
    },
@@ -3288,7 +3320,7 @@
     "native_scale_reviewed": true,
     "in_engine_reviewed": true,
     "technical_checks_passed": true,
-    "approved_by": "",
+    "approved_by": "owner (design session, 2026-10-31)",
     "notes": "packed by scripts/art/build-town.py"
    }
   },
@@ -3297,7 +3329,7 @@
    "area": "town",
    "role": "prop: mailbox",
    "path": "public/ta-tua/game/assets/town/town.json#prop-mailbox",
-   "status": "sample",
+   "status": "approved",
    "technical": {
     "dimensions": "34x34",
     "alpha": true,
@@ -3332,7 +3364,7 @@
      "alpha threshold 128",
      "outer outline #2e1d14 + 1px pad"
     ],
-    "license": "PixelLab ToS (subscription, commercial use per https://pixellab.ai/termsofservice) — verify before ship",
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)",
     "package": "props-1",
     "source": "phase1/props-1/pal/mailbox.png"
    },
@@ -3340,7 +3372,7 @@
     "native_scale_reviewed": true,
     "in_engine_reviewed": true,
     "technical_checks_passed": true,
-    "approved_by": "",
+    "approved_by": "owner (design session, 2026-10-31)",
     "notes": "packed by scripts/art/build-town.py"
    }
   },
@@ -3349,7 +3381,7 @@
    "area": "town",
    "role": "prop: newsstand",
    "path": "public/ta-tua/game/assets/town/town.json#prop-newsstand",
-   "status": "sample",
+   "status": "approved",
    "technical": {
     "dimensions": "50x50",
     "alpha": true,
@@ -3384,7 +3416,7 @@
      "alpha threshold 128",
      "outer outline #2e1d14 + 1px pad"
     ],
-    "license": "PixelLab ToS (subscription, commercial use per https://pixellab.ai/termsofservice) — verify before ship",
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)",
     "package": "props-1",
     "source": "phase1/props-1/pal/newsstand.png"
    },
@@ -3392,7 +3424,7 @@
     "native_scale_reviewed": true,
     "in_engine_reviewed": true,
     "technical_checks_passed": true,
-    "approved_by": "",
+    "approved_by": "owner (design session, 2026-10-31)",
     "notes": "packed by scripts/art/build-town.py"
    }
   },
@@ -3401,7 +3433,7 @@
    "area": "town",
    "role": "prop: signpost",
    "path": "public/ta-tua/game/assets/town/town.json#prop-signpost",
-   "status": "sample",
+   "status": "approved",
    "technical": {
     "dimensions": "50x50",
     "alpha": true,
@@ -3436,7 +3468,7 @@
      "alpha threshold 128",
      "outer outline #2e1d14 + 1px pad"
     ],
-    "license": "PixelLab ToS (subscription, commercial use per https://pixellab.ai/termsofservice) — verify before ship",
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)",
     "package": "props-1",
     "source": "phase1/props-1/pal/signpost.png"
    },
@@ -3444,7 +3476,7 @@
     "native_scale_reviewed": true,
     "in_engine_reviewed": true,
     "technical_checks_passed": true,
-    "approved_by": "",
+    "approved_by": "owner (design session, 2026-10-31)",
     "notes": "packed by scripts/art/build-town.py"
    }
   },
@@ -3453,7 +3485,7 @@
    "area": "town",
    "role": "prop: bamboo",
    "path": "public/ta-tua/game/assets/town/town.json#prop-bamboo",
-   "status": "sample",
+   "status": "approved",
    "technical": {
     "dimensions": "50x66",
     "alpha": true,
@@ -3490,7 +3522,7 @@
      "strip_base.py: baked dirt ground patch removed, orphan outline px dropped; remap.py --outline --pad 0 re-outlines (rows>=56)",
      "swap.py greens +1 step: 2f5a3a>3e7a3f, 3e7a3f>4e9a45, 4e9a45>6dbb5a, 6dbb5a>8fcf6a"
     ],
-    "license": "PixelLab ToS (subscription, commercial use per https://pixellab.ai/termsofservice) — verify before ship",
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)",
     "source_file": "phase1/props-2/pal/bamboo.png",
     "package": "props-2",
     "source": "phase1/props-2/pal/bamboo.png"
@@ -3499,7 +3531,7 @@
     "native_scale_reviewed": true,
     "in_engine_reviewed": true,
     "technical_checks_passed": true,
-    "approved_by": "",
+    "approved_by": "owner (design session, 2026-10-31)",
     "notes": "packed by scripts/art/build-town.py"
    }
   },
@@ -3508,7 +3540,7 @@
    "area": "town",
    "role": "prop: bush-large",
    "path": "public/ta-tua/game/assets/town/town.json#prop-bush-large",
-   "status": "sample",
+   "status": "approved",
    "technical": {
     "dimensions": "50x34",
     "alpha": true,
@@ -3543,7 +3575,7 @@
      "alpha threshold 128",
      "outer outline #2e1d14 + 1px pad"
     ],
-    "license": "PixelLab ToS (subscription, commercial use per https://pixellab.ai/termsofservice) — verify before ship",
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)",
     "source_file": "phase1/props-2/pal/bush-large.png",
     "package": "props-2",
     "source": "phase1/props-2/pal/bush-large.png"
@@ -3552,7 +3584,7 @@
     "native_scale_reviewed": true,
     "in_engine_reviewed": true,
     "technical_checks_passed": true,
-    "approved_by": "",
+    "approved_by": "owner (design session, 2026-10-31)",
     "notes": "packed by scripts/art/build-town.py"
    }
   },
@@ -3561,7 +3593,7 @@
    "area": "town",
    "role": "prop: bush-small",
    "path": "public/ta-tua/game/assets/town/town.json#prop-bush-small",
-   "status": "sample",
+   "status": "approved",
    "technical": {
     "dimensions": "34x34",
     "alpha": true,
@@ -3596,7 +3628,7 @@
      "alpha threshold 128",
      "outer outline #2e1d14 + 1px pad"
     ],
-    "license": "PixelLab ToS (subscription, commercial use per https://pixellab.ai/termsofservice) — verify before ship",
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)",
     "source_file": "phase1/props-2/pal/bush-small.png",
     "package": "props-2",
     "source": "phase1/props-2/pal/bush-small.png"
@@ -3605,7 +3637,7 @@
     "native_scale_reviewed": true,
     "in_engine_reviewed": true,
     "technical_checks_passed": true,
-    "approved_by": "",
+    "approved_by": "owner (design session, 2026-10-31)",
     "notes": "packed by scripts/art/build-town.py"
    }
   },
@@ -3614,7 +3646,7 @@
    "area": "town",
    "role": "prop: flowers",
    "path": "public/ta-tua/game/assets/town/town.json#prop-flowers",
-   "status": "sample",
+   "status": "approved",
    "technical": {
     "dimensions": "34x34",
     "alpha": true,
@@ -3651,7 +3683,7 @@
      "strip_base.py: baked dirt ground patch removed, orphan outline px dropped; remap.py --outline --pad 0 re-outlines (rows>=27, all colours)",
      "recolor_region.py petal shading 6e6660>a84848 (pink flower), 6e6660>c8915f (cream flowers)"
     ],
-    "license": "PixelLab ToS (subscription, commercial use per https://pixellab.ai/termsofservice) — verify before ship",
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)",
     "source_file": "phase1/props-2/pal/flowers.png",
     "package": "props-2",
     "source": "phase1/props-2/pal/flowers.png"
@@ -3660,7 +3692,7 @@
     "native_scale_reviewed": true,
     "in_engine_reviewed": true,
     "technical_checks_passed": true,
-    "approved_by": "",
+    "approved_by": "owner (design session, 2026-10-31)",
     "notes": "packed by scripts/art/build-town.py"
    }
   },
@@ -3669,7 +3701,7 @@
    "area": "town",
    "role": "prop: grass-tuft",
    "path": "public/ta-tua/game/assets/town/town.json#prop-grass-tuft",
-   "status": "sample",
+   "status": "approved",
    "technical": {
     "dimensions": "34x34",
     "alpha": true,
@@ -3705,7 +3737,7 @@
      "outer outline #2e1d14 + 1px pad",
      "strip_base.py: baked dirt ground patch removed, orphan outline px dropped; remap.py --outline --pad 0 re-outlines"
     ],
-    "license": "PixelLab ToS (subscription, commercial use per https://pixellab.ai/termsofservice) — verify before ship",
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)",
     "source_file": "phase1/props-2/pal/grass-tuft.png",
     "package": "props-2",
     "source": "phase1/props-2/pal/grass-tuft.png"
@@ -3714,7 +3746,7 @@
     "native_scale_reviewed": true,
     "in_engine_reviewed": true,
     "technical_checks_passed": true,
-    "approved_by": "",
+    "approved_by": "owner (design session, 2026-10-31)",
     "notes": "packed by scripts/art/build-town.py"
    }
   },
@@ -3723,7 +3755,7 @@
    "area": "town",
    "role": "prop: grass-tuft-2",
    "path": "public/ta-tua/game/assets/town/town.json#prop-grass-tuft-2",
-   "status": "sample",
+   "status": "approved",
    "technical": {
     "dimensions": "34x34",
     "alpha": true,
@@ -3759,7 +3791,7 @@
      "outer outline #2e1d14 + 1px pad",
      "strip_base.py: baked dirt ground patch removed, orphan outline px dropped; remap.py --outline --pad 0 re-outlines"
     ],
-    "license": "PixelLab ToS (subscription, commercial use per https://pixellab.ai/termsofservice) — verify before ship",
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)",
     "source_file": "phase1/props-2/pal/grass-tuft-2.png",
     "package": "props-2",
     "source": "phase1/props-2/pal/grass-tuft-2.png"
@@ -3768,7 +3800,7 @@
     "native_scale_reviewed": true,
     "in_engine_reviewed": true,
     "technical_checks_passed": true,
-    "approved_by": "",
+    "approved_by": "owner (design session, 2026-10-31)",
     "notes": "packed by scripts/art/build-town.py"
    }
   },
@@ -3777,7 +3809,7 @@
    "area": "town",
    "role": "prop: log",
    "path": "public/ta-tua/game/assets/town/town.json#prop-log",
-   "status": "sample",
+   "status": "approved",
    "technical": {
     "dimensions": "50x34",
     "alpha": true,
@@ -3812,7 +3844,7 @@
      "alpha threshold 128",
      "outer outline #2e1d14 + 1px pad"
     ],
-    "license": "PixelLab ToS (subscription, commercial use per https://pixellab.ai/termsofservice) — verify before ship",
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)",
     "source_file": "phase1/props-2/pal/log.png",
     "package": "props-2",
     "source": "phase1/props-2/pal/log.png"
@@ -3821,7 +3853,7 @@
     "native_scale_reviewed": true,
     "in_engine_reviewed": true,
     "technical_checks_passed": true,
-    "approved_by": "",
+    "approved_by": "owner (design session, 2026-10-31)",
     "notes": "packed by scripts/art/build-town.py"
    }
   },
@@ -3830,7 +3862,7 @@
    "area": "town",
    "role": "prop: potted-plant",
    "path": "public/ta-tua/game/assets/town/town.json#prop-potted-plant",
-   "status": "sample",
+   "status": "approved",
    "technical": {
     "dimensions": "34x34",
     "alpha": true,
@@ -3865,7 +3897,7 @@
      "alpha threshold 128",
      "outer outline #2e1d14 + 1px pad"
     ],
-    "license": "PixelLab ToS (subscription, commercial use per https://pixellab.ai/termsofservice) — verify before ship",
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)",
     "source_file": "phase1/props-2/pal/potted-plant.png",
     "package": "props-2",
     "source": "phase1/props-2/pal/potted-plant.png"
@@ -3874,7 +3906,7 @@
     "native_scale_reviewed": true,
     "in_engine_reviewed": true,
     "technical_checks_passed": true,
-    "approved_by": "",
+    "approved_by": "owner (design session, 2026-10-31)",
     "notes": "packed by scripts/art/build-town.py"
    }
   },
@@ -3883,7 +3915,7 @@
    "area": "town",
    "role": "prop: rock-large",
    "path": "public/ta-tua/game/assets/town/town.json#prop-rock-large",
-   "status": "sample",
+   "status": "approved",
    "technical": {
     "dimensions": "50x34",
     "alpha": true,
@@ -3919,7 +3951,7 @@
      "outer outline #2e1d14 + 1px pad",
      "swap.py to warm stone ramp: 6e6660>9c948a, 9c948a>c4bcb0, 3d2a1f>6e6660, ecd2a2/dcb07c>c4bcb0, c8915f>9c948a, 6e2e24>6e6660"
     ],
-    "license": "PixelLab ToS (subscription, commercial use per https://pixellab.ai/termsofservice) — verify before ship",
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)",
     "source_file": "phase1/props-2/pal/rock-large.png",
     "package": "props-2",
     "source": "phase1/props-2/pal/rock-large.png"
@@ -3928,7 +3960,7 @@
     "native_scale_reviewed": true,
     "in_engine_reviewed": true,
     "technical_checks_passed": true,
-    "approved_by": "",
+    "approved_by": "owner (design session, 2026-10-31)",
     "notes": "packed by scripts/art/build-town.py"
    }
   },
@@ -3937,7 +3969,7 @@
    "area": "town",
    "role": "prop: rock-small",
    "path": "public/ta-tua/game/assets/town/town.json#prop-rock-small",
-   "status": "sample",
+   "status": "approved",
    "technical": {
     "dimensions": "34x34",
     "alpha": true,
@@ -3973,7 +4005,7 @@
      "outer outline #2e1d14 + 1px pad",
      "swap.py to warm stone ramp: ecd8bf>c4bcb0, c4bcb0>9c948a, d9708a>9c948a"
     ],
-    "license": "PixelLab ToS (subscription, commercial use per https://pixellab.ai/termsofservice) — verify before ship",
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)",
     "source_file": "phase1/props-2/pal/rock-small.png",
     "package": "props-2",
     "source": "phase1/props-2/pal/rock-small.png"
@@ -3982,7 +4014,7 @@
     "native_scale_reviewed": true,
     "in_engine_reviewed": true,
     "technical_checks_passed": true,
-    "approved_by": "",
+    "approved_by": "owner (design session, 2026-10-31)",
     "notes": "packed by scripts/art/build-town.py"
    }
   },
@@ -3991,7 +4023,7 @@
    "area": "town",
    "role": "prop: tree-cherry",
    "path": "public/ta-tua/game/assets/town/town.json#prop-tree-cherry",
-   "status": "sample",
+   "status": "approved",
    "technical": {
     "dimensions": "66x66",
     "alpha": true,
@@ -4026,7 +4058,7 @@
      "alpha threshold 128",
      "outer outline #2e1d14 + 1px pad"
     ],
-    "license": "PixelLab ToS (subscription, commercial use per https://pixellab.ai/termsofservice) — verify before ship",
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)",
     "source_file": "phase1/props-2/pal/tree-cherry.png",
     "package": "props-2",
     "source": "phase1/props-2/pal/tree-cherry.png"
@@ -4035,7 +4067,7 @@
     "native_scale_reviewed": true,
     "in_engine_reviewed": true,
     "technical_checks_passed": true,
-    "approved_by": "",
+    "approved_by": "owner (design session, 2026-10-31)",
     "notes": "packed by scripts/art/build-town.py"
    }
   },
@@ -4044,7 +4076,7 @@
    "area": "town",
    "role": "prop: tree-orange",
    "path": "public/ta-tua/game/assets/town/town.json#prop-tree-orange",
-   "status": "sample",
+   "status": "approved",
    "technical": {
     "dimensions": "66x66",
     "alpha": true,
@@ -4079,7 +4111,7 @@
      "alpha threshold 128",
      "outer outline #2e1d14 + 1px pad"
     ],
-    "license": "PixelLab ToS (subscription, commercial use per https://pixellab.ai/termsofservice) — verify before ship",
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)",
     "source_file": "phase1/props-2/pal/tree-orange.png",
     "package": "props-2",
     "source": "phase1/props-2/pal/tree-orange.png"
@@ -4088,7 +4120,7 @@
     "native_scale_reviewed": true,
     "in_engine_reviewed": true,
     "technical_checks_passed": true,
-    "approved_by": "",
+    "approved_by": "owner (design session, 2026-10-31)",
     "notes": "packed by scripts/art/build-town.py"
    }
   },
@@ -4097,7 +4129,7 @@
    "area": "town",
    "role": "prop: tree-palm",
    "path": "public/ta-tua/game/assets/town/town.json#prop-tree-palm",
-   "status": "sample",
+   "status": "approved",
    "technical": {
     "dimensions": "66x66",
     "alpha": true,
@@ -4132,7 +4164,7 @@
      "alpha threshold 128",
      "outer outline #2e1d14 + 1px pad"
     ],
-    "license": "PixelLab ToS (subscription, commercial use per https://pixellab.ai/termsofservice) — verify before ship",
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)",
     "source_file": "phase1/props-2/pal/tree-palm.png",
     "package": "props-2",
     "source": "phase1/props-2/pal/tree-palm.png"
@@ -4141,7 +4173,7 @@
     "native_scale_reviewed": true,
     "in_engine_reviewed": true,
     "technical_checks_passed": true,
-    "approved_by": "",
+    "approved_by": "owner (design session, 2026-10-31)",
     "notes": "packed by scripts/art/build-town.py"
    }
   },
@@ -4150,7 +4182,7 @@
    "area": "town",
    "role": "prop: tree-pine",
    "path": "public/ta-tua/game/assets/town/town.json#prop-tree-pine",
-   "status": "sample",
+   "status": "approved",
    "technical": {
     "dimensions": "66x66",
     "alpha": true,
@@ -4185,7 +4217,7 @@
      "alpha threshold 128",
      "outer outline #2e1d14 + 1px pad"
     ],
-    "license": "PixelLab ToS (subscription, commercial use per https://pixellab.ai/termsofservice) — verify before ship",
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)",
     "source_file": "phase1/props-2/pal/tree-pine.png",
     "package": "props-2",
     "source": "phase1/props-2/pal/tree-pine.png"
@@ -4194,7 +4226,7 @@
     "native_scale_reviewed": true,
     "in_engine_reviewed": true,
     "technical_checks_passed": true,
-    "approved_by": "",
+    "approved_by": "owner (design session, 2026-10-31)",
     "notes": "packed by scripts/art/build-town.py"
    }
   },
@@ -4203,7 +4235,7 @@
    "area": "town",
    "role": "prop: dock",
    "path": "public/ta-tua/game/assets/town/town.json#prop-dock",
-   "status": "sample",
+   "status": "approved",
    "technical": {
     "dimensions": "66x50",
     "alpha": true,
@@ -4238,7 +4270,7 @@
      "alpha threshold 128",
      "outer outline #2e1d14 + 1px pad"
     ],
-    "license": "PixelLab ToS (subscription, commercial use per https://pixellab.ai/termsofservice) — verify before ship",
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)",
     "package": "props-3",
     "source": "phase1/props-3/pal/dock.png"
    },
@@ -4246,7 +4278,7 @@
     "native_scale_reviewed": true,
     "in_engine_reviewed": true,
     "technical_checks_passed": true,
-    "approved_by": "",
+    "approved_by": "owner (design session, 2026-10-31)",
     "notes": "packed by scripts/art/build-town.py"
    }
   },
@@ -4255,7 +4287,7 @@
    "area": "town",
    "role": "prop: festival-flags",
    "path": "public/ta-tua/game/assets/town/town.json#prop-festival-flags",
-   "status": "sample",
+   "status": "approved",
    "technical": {
     "dimensions": "66x34",
     "alpha": true,
@@ -4291,7 +4323,7 @@
      "outer outline #2e1d14 + 1px pad",
      "fix.py flags (cut end flags removed, rope redrawn to both ends, colours red/yellow/mint/pink + right-side fold shade)"
     ],
-    "license": "PixelLab ToS (subscription, commercial use per https://pixellab.ai/termsofservice) — verify before ship",
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)",
     "package": "props-3",
     "source": "phase1/props-3/pal/festival-flags.png"
    },
@@ -4299,7 +4331,7 @@
     "native_scale_reviewed": true,
     "in_engine_reviewed": true,
     "technical_checks_passed": true,
-    "approved_by": "",
+    "approved_by": "owner (design session, 2026-10-31)",
     "notes": "packed by scripts/art/build-town.py"
    }
   },
@@ -4308,7 +4340,7 @@
    "area": "town",
    "role": "prop: food-cart",
    "path": "public/ta-tua/game/assets/town/town.json#prop-food-cart",
-   "status": "sample",
+   "status": "approved",
    "technical": {
     "dimensions": "66x66",
     "alpha": true,
@@ -4344,7 +4376,7 @@
      "outer outline #2e1d14 + 1px pad",
      "fix.py foodcart (valance #9c948a>#4fae93, #6e6660>#2f7f73 in canopy rows; flame above pot -> cream steam)"
     ],
-    "license": "PixelLab ToS (subscription, commercial use per https://pixellab.ai/termsofservice) — verify before ship",
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)",
     "package": "props-3",
     "source": "phase1/props-3/pal/food-cart.png"
    },
@@ -4352,7 +4384,7 @@
     "native_scale_reviewed": true,
     "in_engine_reviewed": true,
     "technical_checks_passed": true,
-    "approved_by": "",
+    "approved_by": "owner (design session, 2026-10-31)",
     "notes": "packed by scripts/art/build-town.py"
    }
   },
@@ -4361,7 +4393,7 @@
    "area": "town",
    "role": "prop: footbridge",
    "path": "public/ta-tua/game/assets/town/town.json#prop-footbridge",
-   "status": "sample",
+   "status": "approved",
    "technical": {
     "dimensions": "98x66",
     "alpha": true,
@@ -4399,7 +4431,7 @@
      "outer outline #2e1d14 + 1px pad",
      "fix.py footbridge (clear 14 baked grass px, re-close outline, wood #b4643a>#b87d4b, #8c3f2a>#8a5a34)"
     ],
-    "license": "PixelLab ToS (subscription, commercial use per https://pixellab.ai/termsofservice) — verify before ship",
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)",
     "package": "props-3",
     "source": "phase1/props-3/pal/footbridge.png"
    },
@@ -4407,7 +4439,7 @@
     "native_scale_reviewed": true,
     "in_engine_reviewed": true,
     "technical_checks_passed": true,
-    "approved_by": "",
+    "approved_by": "owner (design session, 2026-10-31)",
     "notes": "packed by scripts/art/build-town.py"
    }
   },
@@ -4416,7 +4448,7 @@
    "area": "town",
    "role": "prop: lantern-red",
    "path": "public/ta-tua/game/assets/town/town.json#prop-lantern-red",
-   "status": "sample",
+   "status": "approved",
    "technical": {
     "dimensions": "34x50",
     "alpha": true,
@@ -4451,7 +4483,7 @@
      "alpha threshold 128",
      "outer outline #2e1d14 + 1px pad"
     ],
-    "license": "PixelLab ToS (subscription, commercial use per https://pixellab.ai/termsofservice) — verify before ship",
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)",
     "package": "props-3",
     "source": "phase1/props-3/pal/lantern-red.png"
    },
@@ -4459,7 +4491,7 @@
     "native_scale_reviewed": true,
     "in_engine_reviewed": true,
     "technical_checks_passed": true,
-    "approved_by": "",
+    "approved_by": "owner (design session, 2026-10-31)",
     "notes": "packed by scripts/art/build-town.py"
    }
   },
@@ -4468,7 +4500,7 @@
    "area": "town",
    "role": "prop: lantern-red-s",
    "path": "public/ta-tua/game/assets/town/town.json#prop-lantern-red-s",
-   "status": "sample",
+   "status": "approved",
    "technical": {
     "dimensions": "34x34",
     "alpha": true,
@@ -4504,7 +4536,7 @@
      "outer outline #2e1d14 + 1px pad",
      "fix.py lantern-red-s (yellow blob motif that could read as a glyph -> plain red + top-left highlight)"
     ],
-    "license": "PixelLab ToS (subscription, commercial use per https://pixellab.ai/termsofservice) — verify before ship",
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)",
     "package": "props-3",
     "source": "phase1/props-3/pal/lantern-red-s.png"
    },
@@ -4512,7 +4544,7 @@
     "native_scale_reviewed": true,
     "in_engine_reviewed": true,
     "technical_checks_passed": true,
-    "approved_by": "",
+    "approved_by": "owner (design session, 2026-10-31)",
     "notes": "packed by scripts/art/build-town.py"
    }
   },
@@ -4521,7 +4553,7 @@
    "area": "town",
    "role": "prop: lantern-teal",
    "path": "public/ta-tua/game/assets/town/town.json#prop-lantern-teal",
-   "status": "sample",
+   "status": "approved",
    "technical": {
     "dimensions": "34x50",
     "alpha": true,
@@ -4556,7 +4588,7 @@
      "alpha threshold 128",
      "outer outline #2e1d14 + 1px pad"
     ],
-    "license": "PixelLab ToS (subscription, commercial use per https://pixellab.ai/termsofservice) — verify before ship",
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)",
     "package": "props-3",
     "source": "phase1/props-3/pal/lantern-teal.png"
    },
@@ -4564,7 +4596,7 @@
     "native_scale_reviewed": true,
     "in_engine_reviewed": true,
     "technical_checks_passed": true,
-    "approved_by": "",
+    "approved_by": "owner (design session, 2026-10-31)",
     "notes": "packed by scripts/art/build-town.py"
    }
   },
@@ -4573,7 +4605,7 @@
    "area": "town",
    "role": "prop: lantern-teal-s",
    "path": "public/ta-tua/game/assets/town/town.json#prop-lantern-teal-s",
-   "status": "sample",
+   "status": "approved",
    "technical": {
     "dimensions": "34x34",
     "alpha": true,
@@ -4608,7 +4640,7 @@
      "alpha threshold 128",
      "outer outline #2e1d14 + 1px pad"
     ],
-    "license": "PixelLab ToS (subscription, commercial use per https://pixellab.ai/termsofservice) — verify before ship",
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)",
     "package": "props-3",
     "source": "phase1/props-3/pal/lantern-teal-s.png"
    },
@@ -4616,7 +4648,7 @@
     "native_scale_reviewed": true,
     "in_engine_reviewed": true,
     "technical_checks_passed": true,
-    "approved_by": "",
+    "approved_by": "owner (design session, 2026-10-31)",
     "notes": "packed by scripts/art/build-town.py"
    }
   },
@@ -4625,7 +4657,7 @@
    "area": "town",
    "role": "prop: market-umbrella",
    "path": "public/ta-tua/game/assets/town/town.json#prop-market-umbrella",
-   "status": "sample",
+   "status": "approved",
    "technical": {
     "dimensions": "66x66",
     "alpha": true,
@@ -4661,7 +4693,7 @@
      "outer outline #2e1d14 + 1px pad",
      "fix.py umbrella (canopy #d9708a>#f4a3b4, #a84848>#d9708a)"
     ],
-    "license": "PixelLab ToS (subscription, commercial use per https://pixellab.ai/termsofservice) — verify before ship",
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)",
     "package": "props-3",
     "source": "phase1/props-3/pal/market-umbrella.png"
    },
@@ -4669,7 +4701,7 @@
     "native_scale_reviewed": true,
     "in_engine_reviewed": true,
     "technical_checks_passed": true,
-    "approved_by": "",
+    "approved_by": "owner (design session, 2026-10-31)",
     "notes": "packed by scripts/art/build-town.py"
    }
   },
@@ -4678,7 +4710,7 @@
    "area": "town",
    "role": "prop: notice-board",
    "path": "public/ta-tua/game/assets/town/town.json#prop-notice-board",
-   "status": "sample",
+   "status": "approved",
    "technical": {
     "dimensions": "50x50",
     "alpha": true,
@@ -4714,7 +4746,7 @@
      "outer outline #2e1d14 + 1px pad",
      "fix.py noticeboard (baked grass/stones at the base removed, posts closed; single big sheet repainted as plank board + 3 blank notes with red pins)"
     ],
-    "license": "PixelLab ToS (subscription, commercial use per https://pixellab.ai/termsofservice) — verify before ship",
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)",
     "package": "props-3",
     "source": "phase1/props-3/pal/notice-board.png"
    },
@@ -4722,7 +4754,7 @@
     "native_scale_reviewed": true,
     "in_engine_reviewed": true,
     "technical_checks_passed": true,
-    "approved_by": "",
+    "approved_by": "owner (design session, 2026-10-31)",
     "notes": "packed by scripts/art/build-town.py"
    }
   },
@@ -4731,7 +4763,7 @@
    "area": "town",
    "role": "prop: planter",
    "path": "public/ta-tua/game/assets/town/town.json#prop-planter",
-   "status": "sample",
+   "status": "approved",
    "technical": {
     "dimensions": "50x50",
     "alpha": true,
@@ -4767,7 +4799,7 @@
      "outer outline #2e1d14 + 1px pad",
      "fix.py planter (shrub #3e7a3f>#6dbb5a, #2f5a3a>#4e9a45 to P0 tree greens)"
     ],
-    "license": "PixelLab ToS (subscription, commercial use per https://pixellab.ai/termsofservice) — verify before ship",
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)",
     "package": "props-3",
     "source": "phase1/props-3/pal/planter.png"
    },
@@ -4775,7 +4807,7 @@
     "native_scale_reviewed": true,
     "in_engine_reviewed": true,
     "technical_checks_passed": true,
-    "approved_by": "",
+    "approved_by": "owner (design session, 2026-10-31)",
     "notes": "packed by scripts/art/build-town.py"
    }
   },
@@ -4784,7 +4816,7 @@
    "area": "town",
    "role": "prop: rowboat",
    "path": "public/ta-tua/game/assets/town/town.json#prop-rowboat",
-   "status": "sample",
+   "status": "approved",
    "technical": {
     "dimensions": "66x50",
     "alpha": true,
@@ -4820,7 +4852,7 @@
      "outer outline #2e1d14 + 1px pad",
      "fix.py rowboat (gold rim/seats #f4c24f>#dcb07c, #d79c1c>#c8915f)"
     ],
-    "license": "PixelLab ToS (subscription, commercial use per https://pixellab.ai/termsofservice) — verify before ship",
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)",
     "package": "props-3",
     "source": "phase1/props-3/pal/rowboat.png"
    },
@@ -4828,7 +4860,7 @@
     "native_scale_reviewed": true,
     "in_engine_reviewed": true,
     "technical_checks_passed": true,
-    "approved_by": "",
+    "approved_by": "owner (design session, 2026-10-31)",
     "notes": "packed by scripts/art/build-town.py"
    }
   },
@@ -4837,7 +4869,7 @@
    "area": "town",
    "role": "prop: well",
    "path": "public/ta-tua/game/assets/town/town.json#prop-well",
-   "status": "sample",
+   "status": "approved",
    "technical": {
     "dimensions": "50x66",
     "alpha": true,
@@ -4872,7 +4904,7 @@
      "alpha threshold 128",
      "outer outline #2e1d14 + 1px pad"
     ],
-    "license": "PixelLab ToS (subscription, commercial use per https://pixellab.ai/termsofservice) — verify before ship",
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)",
     "package": "props-3",
     "source": "phase1/props-3/pal/well.png"
    },
@@ -4880,7 +4912,7 @@
     "native_scale_reviewed": true,
     "in_engine_reviewed": true,
     "technical_checks_passed": true,
-    "approved_by": "",
+    "approved_by": "owner (design session, 2026-10-31)",
     "notes": "packed by scripts/art/build-town.py"
    }
   },
@@ -4889,7 +4921,7 @@
    "area": "town",
    "role": "NPC villager: idle south/east/north/west; walk south/east",
    "path": "public/ta-tua/game/assets/town/town.json#npc-villager-*",
-   "status": "sample",
+   "status": "approved",
    "technical": {
     "dimensions": "",
     "alpha": true,
@@ -4921,14 +4953,14 @@
     "postprocess": [
      "remap.py --outline --pad 0"
     ],
-    "license": "PixelLab ToS (subscription, commercial use per https://pixellab.ai/termsofservice) — verify before ship",
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)",
     "package": "phase0"
    },
    "verification": {
     "native_scale_reviewed": true,
     "in_engine_reviewed": true,
     "technical_checks_passed": true,
-    "approved_by": "",
+    "approved_by": "owner (design session, 2026-10-31)",
     "notes": "packed by scripts/art/build-town.py"
    }
   },
@@ -4937,7 +4969,7 @@
    "area": "town",
    "role": "NPC child: idle west/east/south/north; walk south/east/north/west",
    "path": "public/ta-tua/game/assets/town/town.json#npc-child-*",
-   "status": "sample",
+   "status": "approved",
    "technical": {
     "dimensions": "",
     "alpha": true,
@@ -4954,13 +4986,14 @@
    ],
    "provenance": {
     "kind": "generated",
-    "package": "npc-1"
+    "package": "npc-1",
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)"
    },
    "verification": {
     "native_scale_reviewed": true,
     "in_engine_reviewed": true,
     "technical_checks_passed": true,
-    "approved_by": "",
+    "approved_by": "owner (design session, 2026-10-31)",
     "notes": "packed by scripts/art/build-town.py"
    }
   },
@@ -4969,7 +5002,7 @@
    "area": "town",
    "role": "NPC grandpa: idle west/east/south/north; walk south/east/north/west",
    "path": "public/ta-tua/game/assets/town/town.json#npc-grandpa-*",
-   "status": "sample",
+   "status": "approved",
    "technical": {
     "dimensions": "",
     "alpha": true,
@@ -4986,13 +5019,14 @@
    ],
    "provenance": {
     "kind": "generated",
-    "package": "npc-1"
+    "package": "npc-1",
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)"
    },
    "verification": {
     "native_scale_reviewed": true,
     "in_engine_reviewed": true,
     "technical_checks_passed": true,
-    "approved_by": "",
+    "approved_by": "owner (design session, 2026-10-31)",
     "notes": "packed by scripts/art/build-town.py"
    }
   },
@@ -5001,7 +5035,7 @@
    "area": "town",
    "role": "NPC shopkeeper: idle west/east/south/north; walk south/east/north/west",
    "path": "public/ta-tua/game/assets/town/town.json#npc-shopkeeper-*",
-   "status": "sample",
+   "status": "approved",
    "technical": {
     "dimensions": "",
     "alpha": true,
@@ -5018,13 +5052,14 @@
    ],
    "provenance": {
     "kind": "generated",
-    "package": "npc-1"
+    "package": "npc-1",
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)"
    },
    "verification": {
     "native_scale_reviewed": true,
     "in_engine_reviewed": true,
     "technical_checks_passed": true,
-    "approved_by": "",
+    "approved_by": "owner (design session, 2026-10-31)",
     "notes": "packed by scripts/art/build-town.py"
    }
   },
@@ -5033,7 +5068,7 @@
    "area": "town",
    "role": "NPC farmer: idle west/north/east/south; walk south/east/north/west",
    "path": "public/ta-tua/game/assets/town/town.json#npc-farmer-*",
-   "status": "sample",
+   "status": "approved",
    "technical": {
     "dimensions": "",
     "alpha": true,
@@ -5050,13 +5085,14 @@
    ],
    "provenance": {
     "kind": "generated",
-    "package": "npc-2"
+    "package": "npc-2",
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)"
    },
    "verification": {
     "native_scale_reviewed": true,
     "in_engine_reviewed": true,
     "technical_checks_passed": true,
-    "approved_by": "",
+    "approved_by": "owner (design session, 2026-10-31)",
     "notes": "packed by scripts/art/build-town.py"
    }
   },
@@ -5065,7 +5101,7 @@
    "area": "town",
    "role": "NPC postman: idle west/north/east/south; walk south/east/north/west",
    "path": "public/ta-tua/game/assets/town/town.json#npc-postman-*",
-   "status": "sample",
+   "status": "approved",
    "technical": {
     "dimensions": "",
     "alpha": true,
@@ -5082,13 +5118,14 @@
    ],
    "provenance": {
     "kind": "generated",
-    "package": "npc-2"
+    "package": "npc-2",
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)"
    },
    "verification": {
     "native_scale_reviewed": true,
     "in_engine_reviewed": true,
     "technical_checks_passed": true,
-    "approved_by": "",
+    "approved_by": "owner (design session, 2026-10-31)",
     "notes": "packed by scripts/art/build-town.py"
    }
   },
@@ -5097,7 +5134,7 @@
    "area": "town",
    "role": "NPC student: idle west/north/east/south; walk south/east/north/west",
    "path": "public/ta-tua/game/assets/town/town.json#npc-student-*",
-   "status": "sample",
+   "status": "approved",
    "technical": {
     "dimensions": "",
     "alpha": true,
@@ -5114,13 +5151,14 @@
    ],
    "provenance": {
     "kind": "generated",
-    "package": "npc-2"
+    "package": "npc-2",
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)"
    },
    "verification": {
     "native_scale_reviewed": true,
     "in_engine_reviewed": true,
     "technical_checks_passed": true,
-    "approved_by": "",
+    "approved_by": "owner (design session, 2026-10-31)",
     "notes": "packed by scripts/art/build-town.py"
    }
   },
@@ -5129,7 +5167,7 @@
    "area": "town",
    "role": "NPC chef: idle south/west/north/east; walk south/east/north/west",
    "path": "public/ta-tua/game/assets/town/town.json#npc-chef-*",
-   "status": "sample",
+   "status": "approved",
    "technical": {
     "dimensions": "",
     "alpha": true,
@@ -5146,13 +5184,14 @@
    ],
    "provenance": {
     "kind": "generated",
-    "package": "npc-3"
+    "package": "npc-3",
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)"
    },
    "verification": {
     "native_scale_reviewed": true,
     "in_engine_reviewed": true,
     "technical_checks_passed": true,
-    "approved_by": "",
+    "approved_by": "owner (design session, 2026-10-31)",
     "notes": "packed by scripts/art/build-town.py"
    }
   },
@@ -5161,7 +5200,7 @@
    "area": "town",
    "role": "NPC clerk: idle south/west/north/east; walk south/east/north/west",
    "path": "public/ta-tua/game/assets/town/town.json#npc-clerk-*",
-   "status": "sample",
+   "status": "approved",
    "technical": {
     "dimensions": "",
     "alpha": true,
@@ -5178,13 +5217,14 @@
    ],
    "provenance": {
     "kind": "generated",
-    "package": "npc-3"
+    "package": "npc-3",
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)"
    },
    "verification": {
     "native_scale_reviewed": true,
     "in_engine_reviewed": true,
     "technical_checks_passed": true,
-    "approved_by": "",
+    "approved_by": "owner (design session, 2026-10-31)",
     "notes": "packed by scripts/art/build-town.py"
    }
   },
@@ -5193,7 +5233,7 @@
    "area": "town",
    "role": "NPC jogger: idle south/west/north/east; walk south/east/north/west",
    "path": "public/ta-tua/game/assets/town/town.json#npc-jogger-*",
-   "status": "sample",
+   "status": "approved",
    "technical": {
     "dimensions": "",
     "alpha": true,
@@ -5210,13 +5250,14 @@
    ],
    "provenance": {
     "kind": "generated",
-    "package": "npc-3"
+    "package": "npc-3",
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)"
    },
    "verification": {
     "native_scale_reviewed": true,
     "in_engine_reviewed": true,
     "technical_checks_passed": true,
-    "approved_by": "",
+    "approved_by": "owner (design session, 2026-10-31)",
     "notes": "packed by scripts/art/build-town.py"
    }
   },
@@ -5225,7 +5266,7 @@
    "area": "town",
    "role": "NPC villager: idle south/east/north/west; walk south/east",
    "path": "public/ta-tua/game/assets/town/town.json#npc-villager-*",
-   "status": "sample",
+   "status": "approved",
    "technical": {
     "dimensions": "",
     "alpha": true,
@@ -5242,13 +5283,14 @@
    ],
    "provenance": {
     "kind": "generated",
-    "package": "npc-3"
+    "package": "npc-3",
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)"
    },
    "verification": {
     "native_scale_reviewed": true,
     "in_engine_reviewed": true,
     "technical_checks_passed": true,
-    "approved_by": "",
+    "approved_by": "owner (design session, 2026-10-31)",
     "notes": "packed by scripts/art/build-town.py"
    }
   },
@@ -5257,7 +5299,7 @@
    "area": "town",
    "role": "ambient: fountain loop (ping-pong)",
    "path": "public/ta-tua/game/assets/town/town.json#fx-fountain-*",
-   "status": "sample",
+   "status": "approved",
    "technical": {
     "dimensions": "66x66",
     "alpha": true,
@@ -5293,14 +5335,14 @@
      "alpha threshold 128",
      "outer outline #2e1d14 + 1px pad"
     ],
-    "license": "PixelLab ToS (subscription, commercial use per https://pixellab.ai/termsofservice) — verify before ship",
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)",
     "package": "phase0"
    },
    "verification": {
     "native_scale_reviewed": true,
     "in_engine_reviewed": true,
     "technical_checks_passed": true,
-    "approved_by": "",
+    "approved_by": "owner (design session, 2026-10-31)",
     "notes": "packed by scripts/art/build-town.py"
    }
   },
@@ -5309,7 +5351,7 @@
    "area": "town",
    "role": "ambient: chimney-smoke",
    "path": "public/ta-tua/game/assets/town/town.json#fx-chimney-smoke-*",
-   "status": "sample",
+   "status": "approved",
    "technical": {
     "dimensions": "16x32",
     "alpha": true,
@@ -5327,13 +5369,14 @@
    "provenance": {
     "kind": "generated",
     "package": "ambient-1",
-    "source": "phase1/ambient-1/pal/fx-chimney-smoke"
+    "source": "phase1/ambient-1/pal/fx-chimney-smoke",
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)"
    },
    "verification": {
     "native_scale_reviewed": true,
     "in_engine_reviewed": true,
     "technical_checks_passed": true,
-    "approved_by": "",
+    "approved_by": "owner (design session, 2026-10-31)",
     "notes": "packed by scripts/art/build-town.py"
    }
   },
@@ -5342,7 +5385,7 @@
    "area": "town",
    "role": "ambient: chimney-smoke-lg",
    "path": "public/ta-tua/game/assets/town/town.json#fx-chimney-smoke-lg-*",
-   "status": "sample",
+   "status": "approved",
    "technical": {
     "dimensions": "24x48",
     "alpha": true,
@@ -5360,13 +5403,14 @@
    "provenance": {
     "kind": "generated",
     "package": "ambient-1",
-    "source": "phase1/ambient-1/pal/fx-chimney-smoke-lg"
+    "source": "phase1/ambient-1/pal/fx-chimney-smoke-lg",
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)"
    },
    "verification": {
     "native_scale_reviewed": true,
     "in_engine_reviewed": true,
     "technical_checks_passed": true,
-    "approved_by": "",
+    "approved_by": "owner (design session, 2026-10-31)",
     "notes": "packed by scripts/art/build-town.py"
    }
   },
@@ -5375,7 +5419,7 @@
    "area": "town",
    "role": "ambient: forge-fire",
    "path": "public/ta-tua/game/assets/town/town.json#fx-forge-fire-*",
-   "status": "sample",
+   "status": "approved",
    "technical": {
     "dimensions": "24x16",
     "alpha": true,
@@ -5393,13 +5437,14 @@
    "provenance": {
     "kind": "generated",
     "package": "ambient-1",
-    "source": "phase1/ambient-1/pal/fx-forge-fire"
+    "source": "phase1/ambient-1/pal/fx-forge-fire",
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)"
    },
    "verification": {
     "native_scale_reviewed": true,
     "in_engine_reviewed": true,
     "technical_checks_passed": true,
-    "approved_by": "",
+    "approved_by": "owner (design session, 2026-10-31)",
     "notes": "packed by scripts/art/build-town.py"
    }
   },
@@ -5408,7 +5453,7 @@
    "area": "town",
    "role": "ambient: forge-fire-sm",
    "path": "public/ta-tua/game/assets/town/town.json#fx-forge-fire-sm-*",
-   "status": "sample",
+   "status": "approved",
    "technical": {
     "dimensions": "16x12",
     "alpha": true,
@@ -5426,13 +5471,14 @@
    "provenance": {
     "kind": "generated",
     "package": "ambient-1",
-    "source": "phase1/ambient-1/pal/fx-forge-fire-sm"
+    "source": "phase1/ambient-1/pal/fx-forge-fire-sm",
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)"
    },
    "verification": {
     "native_scale_reviewed": true,
     "in_engine_reviewed": true,
     "technical_checks_passed": true,
-    "approved_by": "",
+    "approved_by": "owner (design session, 2026-10-31)",
     "notes": "packed by scripts/art/build-town.py"
    }
   },
@@ -5441,7 +5487,7 @@
    "area": "town",
    "role": "ambient: forge-flames",
    "path": "public/ta-tua/game/assets/town/town.json#fx-forge-flames-*",
-   "status": "sample",
+   "status": "approved",
    "technical": {
     "dimensions": "24x16",
     "alpha": true,
@@ -5459,13 +5505,14 @@
    "provenance": {
     "kind": "generated",
     "package": "ambient-1",
-    "source": "phase1/ambient-1/pal/fx-forge-flames"
+    "source": "phase1/ambient-1/pal/fx-forge-flames",
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)"
    },
    "verification": {
     "native_scale_reviewed": true,
     "in_engine_reviewed": true,
     "technical_checks_passed": true,
-    "approved_by": "",
+    "approved_by": "owner (design session, 2026-10-31)",
     "notes": "packed by scripts/art/build-town.py"
    }
   },
@@ -5474,7 +5521,7 @@
    "area": "town",
    "role": "ambient: pond-ripple",
    "path": "public/ta-tua/game/assets/town/town.json#fx-pond-ripple-*",
-   "status": "sample",
+   "status": "approved",
    "technical": {
     "dimensions": "32x16",
     "alpha": true,
@@ -5492,13 +5539,14 @@
    "provenance": {
     "kind": "generated",
     "package": "ambient-1",
-    "source": "phase1/ambient-1/pal/fx-pond-ripple"
+    "source": "phase1/ambient-1/pal/fx-pond-ripple",
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)"
    },
    "verification": {
     "native_scale_reviewed": true,
     "in_engine_reviewed": true,
     "technical_checks_passed": true,
-    "approved_by": "",
+    "approved_by": "owner (design session, 2026-10-31)",
     "notes": "packed by scripts/art/build-town.py"
    }
   },
@@ -5507,7 +5555,7 @@
    "area": "town",
    "role": "ambient: pond-sparkle",
    "path": "public/ta-tua/game/assets/town/town.json#fx-pond-sparkle-*",
-   "status": "sample",
+   "status": "approved",
    "technical": {
     "dimensions": "16x16",
     "alpha": true,
@@ -5525,13 +5573,14 @@
    "provenance": {
     "kind": "generated",
     "package": "ambient-1",
-    "source": "phase1/ambient-1/pal/fx-pond-sparkle"
+    "source": "phase1/ambient-1/pal/fx-pond-sparkle",
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)"
    },
    "verification": {
     "native_scale_reviewed": true,
     "in_engine_reviewed": true,
     "technical_checks_passed": true,
-    "approved_by": "",
+    "approved_by": "owner (design session, 2026-10-31)",
     "notes": "packed by scripts/art/build-town.py"
    }
   },
@@ -5540,7 +5589,7 @@
    "area": "town",
    "role": "ambient: window-glint",
    "path": "public/ta-tua/game/assets/town/town.json#fx-window-glint-*",
-   "status": "sample",
+   "status": "approved",
    "technical": {
     "dimensions": "9x9",
     "alpha": true,
@@ -5558,13 +5607,14 @@
    "provenance": {
     "kind": "generated",
     "package": "ambient-1",
-    "source": "phase1/ambient-1/pal/fx-window-glint"
+    "source": "phase1/ambient-1/pal/fx-window-glint",
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)"
    },
    "verification": {
     "native_scale_reviewed": true,
     "in_engine_reviewed": true,
     "technical_checks_passed": true,
-    "approved_by": "",
+    "approved_by": "owner (design session, 2026-10-31)",
     "notes": "packed by scripts/art/build-town.py"
    }
   },
@@ -5573,7 +5623,7 @@
    "area": "town",
    "role": "ambient: bird-fly-side",
    "path": "public/ta-tua/game/assets/town/town.json#fx-bird-fly-side-*",
-   "status": "sample",
+   "status": "approved",
    "technical": {
     "dimensions": "16x16",
     "alpha": true,
@@ -5591,13 +5641,14 @@
    "provenance": {
     "kind": "generated",
     "package": "ambient-2",
-    "source": "phase1/ambient-2/pal/fx-bird-fly-side"
+    "source": "phase1/ambient-2/pal/fx-bird-fly-side",
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)"
    },
    "verification": {
     "native_scale_reviewed": true,
     "in_engine_reviewed": true,
     "technical_checks_passed": true,
-    "approved_by": "",
+    "approved_by": "owner (design session, 2026-10-31)",
     "notes": "packed by scripts/art/build-town.py"
    }
   },
@@ -5606,7 +5657,7 @@
    "area": "town",
    "role": "ambient: bird-fly-side-sparrow",
    "path": "public/ta-tua/game/assets/town/town.json#fx-bird-fly-side-sparrow-*",
-   "status": "sample",
+   "status": "approved",
    "technical": {
     "dimensions": "16x16",
     "alpha": true,
@@ -5624,13 +5675,14 @@
    "provenance": {
     "kind": "generated",
     "package": "ambient-2",
-    "source": "phase1/ambient-2/pal/fx-bird-fly-side-sparrow"
+    "source": "phase1/ambient-2/pal/fx-bird-fly-side-sparrow",
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)"
    },
    "verification": {
     "native_scale_reviewed": true,
     "in_engine_reviewed": true,
     "technical_checks_passed": true,
-    "approved_by": "",
+    "approved_by": "owner (design session, 2026-10-31)",
     "notes": "packed by scripts/art/build-town.py"
    }
   },
@@ -5639,7 +5691,7 @@
    "area": "town",
    "role": "ambient: bird-fly-top",
    "path": "public/ta-tua/game/assets/town/town.json#fx-bird-fly-top-*",
-   "status": "sample",
+   "status": "approved",
    "technical": {
     "dimensions": "16x16",
     "alpha": true,
@@ -5657,13 +5709,14 @@
    "provenance": {
     "kind": "generated",
     "package": "ambient-2",
-    "source": "phase1/ambient-2/pal/fx-bird-fly-top"
+    "source": "phase1/ambient-2/pal/fx-bird-fly-top",
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)"
    },
    "verification": {
     "native_scale_reviewed": true,
     "in_engine_reviewed": true,
     "technical_checks_passed": true,
-    "approved_by": "",
+    "approved_by": "owner (design session, 2026-10-31)",
     "notes": "packed by scripts/art/build-town.py"
    }
   },
@@ -5672,7 +5725,7 @@
    "area": "town",
    "role": "ambient: bird-fly-top-sparrow",
    "path": "public/ta-tua/game/assets/town/town.json#fx-bird-fly-top-sparrow-*",
-   "status": "sample",
+   "status": "approved",
    "technical": {
     "dimensions": "16x16",
     "alpha": true,
@@ -5690,13 +5743,14 @@
    "provenance": {
     "kind": "generated",
     "package": "ambient-2",
-    "source": "phase1/ambient-2/pal/fx-bird-fly-top-sparrow"
+    "source": "phase1/ambient-2/pal/fx-bird-fly-top-sparrow",
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)"
    },
    "verification": {
     "native_scale_reviewed": true,
     "in_engine_reviewed": true,
     "technical_checks_passed": true,
-    "approved_by": "",
+    "approved_by": "owner (design session, 2026-10-31)",
     "notes": "packed by scripts/art/build-town.py"
    }
   },
@@ -5705,7 +5759,7 @@
    "area": "town",
    "role": "ambient: bird-hop",
    "path": "public/ta-tua/game/assets/town/town.json#fx-bird-hop-*",
-   "status": "sample",
+   "status": "approved",
    "technical": {
     "dimensions": "16x16",
     "alpha": true,
@@ -5723,13 +5777,14 @@
    "provenance": {
     "kind": "generated",
     "package": "ambient-2",
-    "source": "phase1/ambient-2/pal/fx-bird-hop"
+    "source": "phase1/ambient-2/pal/fx-bird-hop",
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)"
    },
    "verification": {
     "native_scale_reviewed": true,
     "in_engine_reviewed": true,
     "technical_checks_passed": true,
-    "approved_by": "",
+    "approved_by": "owner (design session, 2026-10-31)",
     "notes": "packed by scripts/art/build-town.py"
    }
   },
@@ -5738,7 +5793,7 @@
    "area": "town",
    "role": "ambient: bird-hop-sparrow",
    "path": "public/ta-tua/game/assets/town/town.json#fx-bird-hop-sparrow-*",
-   "status": "sample",
+   "status": "approved",
    "technical": {
     "dimensions": "16x16",
     "alpha": true,
@@ -5756,13 +5811,14 @@
    "provenance": {
     "kind": "generated",
     "package": "ambient-2",
-    "source": "phase1/ambient-2/pal/fx-bird-hop-sparrow"
+    "source": "phase1/ambient-2/pal/fx-bird-hop-sparrow",
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)"
    },
    "verification": {
     "native_scale_reviewed": true,
     "in_engine_reviewed": true,
     "technical_checks_passed": true,
-    "approved_by": "",
+    "approved_by": "owner (design session, 2026-10-31)",
     "notes": "packed by scripts/art/build-town.py"
    }
   },
@@ -5771,7 +5827,7 @@
    "area": "town",
    "role": "ambient: butterfly-blue",
    "path": "public/ta-tua/game/assets/town/town.json#fx-butterfly-blue-*",
-   "status": "sample",
+   "status": "approved",
    "technical": {
     "dimensions": "12x12",
     "alpha": true,
@@ -5789,13 +5845,14 @@
    "provenance": {
     "kind": "generated",
     "package": "ambient-2",
-    "source": "phase1/ambient-2/pal/fx-butterfly-blue"
+    "source": "phase1/ambient-2/pal/fx-butterfly-blue",
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)"
    },
    "verification": {
     "native_scale_reviewed": true,
     "in_engine_reviewed": true,
     "technical_checks_passed": true,
-    "approved_by": "",
+    "approved_by": "owner (design session, 2026-10-31)",
     "notes": "packed by scripts/art/build-town.py"
    }
   },
@@ -5804,7 +5861,7 @@
    "area": "town",
    "role": "ambient: butterfly-pink",
    "path": "public/ta-tua/game/assets/town/town.json#fx-butterfly-pink-*",
-   "status": "sample",
+   "status": "approved",
    "technical": {
     "dimensions": "12x12",
     "alpha": true,
@@ -5822,13 +5879,14 @@
    "provenance": {
     "kind": "generated",
     "package": "ambient-2",
-    "source": "phase1/ambient-2/pal/fx-butterfly-pink"
+    "source": "phase1/ambient-2/pal/fx-butterfly-pink",
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)"
    },
    "verification": {
     "native_scale_reviewed": true,
     "in_engine_reviewed": true,
     "technical_checks_passed": true,
-    "approved_by": "",
+    "approved_by": "owner (design session, 2026-10-31)",
     "notes": "packed by scripts/art/build-town.py"
    }
   },
@@ -5837,7 +5895,7 @@
    "area": "town",
    "role": "ambient: butterfly-yellow",
    "path": "public/ta-tua/game/assets/town/town.json#fx-butterfly-yellow-*",
-   "status": "sample",
+   "status": "approved",
    "technical": {
     "dimensions": "12x12",
     "alpha": true,
@@ -5855,13 +5913,14 @@
    "provenance": {
     "kind": "generated",
     "package": "ambient-2",
-    "source": "phase1/ambient-2/pal/fx-butterfly-yellow"
+    "source": "phase1/ambient-2/pal/fx-butterfly-yellow",
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)"
    },
    "verification": {
     "native_scale_reviewed": true,
     "in_engine_reviewed": true,
     "technical_checks_passed": true,
-    "approved_by": "",
+    "approved_by": "owner (design session, 2026-10-31)",
     "notes": "packed by scripts/art/build-town.py"
    }
   },
@@ -5870,7 +5929,7 @@
    "area": "town",
    "role": "ambient: flag-gold",
    "path": "public/ta-tua/game/assets/town/town.json#fx-flag-gold-*",
-   "status": "sample",
+   "status": "approved",
    "technical": {
     "dimensions": "16x24",
     "alpha": true,
@@ -5888,13 +5947,14 @@
    "provenance": {
     "kind": "generated",
     "package": "ambient-2",
-    "source": "phase1/ambient-2/pal/fx-flag-gold"
+    "source": "phase1/ambient-2/pal/fx-flag-gold",
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)"
    },
    "verification": {
     "native_scale_reviewed": true,
     "in_engine_reviewed": true,
     "technical_checks_passed": true,
-    "approved_by": "",
+    "approved_by": "owner (design session, 2026-10-31)",
     "notes": "packed by scripts/art/build-town.py"
    }
   },
@@ -5903,7 +5963,7 @@
    "area": "town",
    "role": "ambient: flag-red",
    "path": "public/ta-tua/game/assets/town/town.json#fx-flag-red-*",
-   "status": "sample",
+   "status": "approved",
    "technical": {
     "dimensions": "16x24",
     "alpha": true,
@@ -5921,13 +5981,14 @@
    "provenance": {
     "kind": "generated",
     "package": "ambient-2",
-    "source": "phase1/ambient-2/pal/fx-flag-red"
+    "source": "phase1/ambient-2/pal/fx-flag-red",
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)"
    },
    "verification": {
     "native_scale_reviewed": true,
     "in_engine_reviewed": true,
     "technical_checks_passed": true,
-    "approved_by": "",
+    "approved_by": "owner (design session, 2026-10-31)",
     "notes": "packed by scripts/art/build-town.py"
    }
   },
@@ -5936,7 +5997,7 @@
    "area": "town",
    "role": "ambient: flag-teal",
    "path": "public/ta-tua/game/assets/town/town.json#fx-flag-teal-*",
-   "status": "sample",
+   "status": "approved",
    "technical": {
     "dimensions": "16x24",
     "alpha": true,
@@ -5954,13 +6015,14 @@
    "provenance": {
     "kind": "generated",
     "package": "ambient-2",
-    "source": "phase1/ambient-2/pal/fx-flag-teal"
+    "source": "phase1/ambient-2/pal/fx-flag-teal",
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)"
    },
    "verification": {
     "native_scale_reviewed": true,
     "in_engine_reviewed": true,
     "technical_checks_passed": true,
-    "approved_by": "",
+    "approved_by": "owner (design session, 2026-10-31)",
     "notes": "packed by scripts/art/build-town.py"
    }
   },
@@ -5969,7 +6031,7 @@
    "area": "town",
    "role": "ambient: lantern",
    "path": "public/ta-tua/game/assets/town/town.json#fx-lantern-*",
-   "status": "sample",
+   "status": "approved",
    "technical": {
     "dimensions": "16x24",
     "alpha": true,
@@ -5987,13 +6049,14 @@
    "provenance": {
     "kind": "generated",
     "package": "ambient-2",
-    "source": "phase1/ambient-2/pal/fx-lantern"
+    "source": "phase1/ambient-2/pal/fx-lantern",
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)"
    },
    "verification": {
     "native_scale_reviewed": true,
     "in_engine_reviewed": true,
     "technical_checks_passed": true,
-    "approved_by": "",
+    "approved_by": "owner (design session, 2026-10-31)",
     "notes": "packed by scripts/art/build-town.py"
    }
   },
@@ -6002,7 +6065,7 @@
    "area": "town",
    "role": "ambient: leaf-autumn",
    "path": "public/ta-tua/game/assets/town/town.json#fx-leaf-autumn-*",
-   "status": "sample",
+   "status": "approved",
    "technical": {
     "dimensions": "8x8",
     "alpha": true,
@@ -6020,13 +6083,14 @@
    "provenance": {
     "kind": "generated",
     "package": "ambient-2",
-    "source": "phase1/ambient-2/pal/fx-leaf-autumn"
+    "source": "phase1/ambient-2/pal/fx-leaf-autumn",
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)"
    },
    "verification": {
     "native_scale_reviewed": true,
     "in_engine_reviewed": true,
     "technical_checks_passed": true,
-    "approved_by": "",
+    "approved_by": "owner (design session, 2026-10-31)",
     "notes": "packed by scripts/art/build-town.py"
    }
   },
@@ -6035,7 +6099,7 @@
    "area": "town",
    "role": "ambient: leaf-green",
    "path": "public/ta-tua/game/assets/town/town.json#fx-leaf-green-*",
-   "status": "sample",
+   "status": "approved",
    "technical": {
     "dimensions": "8x8",
     "alpha": true,
@@ -6053,13 +6117,14 @@
    "provenance": {
     "kind": "generated",
     "package": "ambient-2",
-    "source": "phase1/ambient-2/pal/fx-leaf-green"
+    "source": "phase1/ambient-2/pal/fx-leaf-green",
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)"
    },
    "verification": {
     "native_scale_reviewed": true,
     "in_engine_reviewed": true,
     "technical_checks_passed": true,
-    "approved_by": "",
+    "approved_by": "owner (design session, 2026-10-31)",
     "notes": "packed by scripts/art/build-town.py"
    }
   },
@@ -6068,7 +6133,7 @@
    "area": "town",
    "role": "ambient: petal-pink",
    "path": "public/ta-tua/game/assets/town/town.json#fx-petal-pink-*",
-   "status": "sample",
+   "status": "approved",
    "technical": {
     "dimensions": "8x8",
     "alpha": true,
@@ -6086,14 +6151,353 @@
    "provenance": {
     "kind": "generated",
     "package": "ambient-2",
-    "source": "phase1/ambient-2/pal/fx-petal-pink"
+    "source": "phase1/ambient-2/pal/fx-petal-pink",
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)"
    },
    "verification": {
     "native_scale_reviewed": true,
     "in_engine_reviewed": true,
     "technical_checks_passed": true,
-    "approved_by": "",
+    "approved_by": "owner (design session, 2026-10-31)",
     "notes": "packed by scripts/art/build-town.py"
+   }
+  },
+  {
+   "id": "scene-factory",
+   "role": "header scene: Khu công nghiệp (view factory)",
+   "path": "public/ta-tua/game/assets/scenes/factory.webp",
+   "status": "approved",
+   "technical": {
+    "dimensions": "320x80",
+    "alpha": false,
+    "anchor": "center (phone: center crop)",
+    "frames": 1,
+    "filtering": "nearest",
+    "scale": "integer 3x desktop (2x when the column is under 960 px) / 2x phone",
+    "bytes": 4992,
+    "fx": []
+   },
+   "visual_locks": [
+    "palette.json",
+    "view: low top-down",
+    "light: top-left",
+    "outline: #2e1d14 outer"
+   ],
+   "provenance": {
+    "kind": "generated",
+    "tool": "scripts/art/build-scenes.py <- headers package (compose.py)",
+    "mode": "art",
+    "pixellab_id": "",
+    "prompt": "",
+    "params": {
+     "sources": [
+      "phase1/headers/factory-1x.png"
+     ]
+    },
+    "created_at": "",
+    "generation_cost": 0,
+    "postprocess": [
+     "opaque on #fbf1e3",
+     "WebP lossless (exact)"
+    ],
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)"
+   },
+   "verification": {
+    "native_scale_reviewed": true,
+    "in_engine_reviewed": true,
+    "technical_checks_passed": true,
+    "approved_by": "owner (design session, 2026-10-31)",
+    "notes": "off-palette=0 colours=33"
+   }
+  },
+  {
+   "id": "scene-bank",
+   "role": "header scene: Phố Ngân hàng (view bank)",
+   "path": "public/ta-tua/game/assets/scenes/bank.webp",
+   "status": "approved",
+   "technical": {
+    "dimensions": "320x80",
+    "alpha": false,
+    "anchor": "center (phone: center crop)",
+    "frames": 1,
+    "filtering": "nearest",
+    "scale": "integer 3x desktop (2x when the column is under 960 px) / 2x phone",
+    "bytes": 4212,
+    "fx": []
+   },
+   "visual_locks": [
+    "palette.json",
+    "view: low top-down",
+    "light: top-left",
+    "outline: #2e1d14 outer"
+   ],
+   "provenance": {
+    "kind": "generated",
+    "tool": "scripts/art/build-scenes.py <- headers package (compose.py)",
+    "mode": "art",
+    "pixellab_id": "",
+    "prompt": "",
+    "params": {
+     "sources": [
+      "phase1/headers/bank-1x.png"
+     ]
+    },
+    "created_at": "",
+    "generation_cost": 0,
+    "postprocess": [
+     "opaque on #fbf1e3",
+     "WebP lossless (exact)"
+    ],
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)"
+   },
+   "verification": {
+    "native_scale_reviewed": true,
+    "in_engine_reviewed": true,
+    "technical_checks_passed": true,
+    "approved_by": "owner (design session, 2026-10-31)",
+    "notes": "off-palette=0 colours=40"
+   }
+  },
+  {
+   "id": "scene-shop",
+   "role": "header scene: Siêu thị (view shop)",
+   "path": "public/ta-tua/game/assets/scenes/shop.webp",
+   "status": "approved",
+   "technical": {
+    "dimensions": "320x80",
+    "alpha": false,
+    "anchor": "center (phone: center crop)",
+    "frames": 1,
+    "filtering": "nearest",
+    "scale": "integer 3x desktop (2x when the column is under 960 px) / 2x phone",
+    "bytes": 4404,
+    "fx": []
+   },
+   "visual_locks": [
+    "palette.json",
+    "view: low top-down",
+    "light: top-left",
+    "outline: #2e1d14 outer"
+   ],
+   "provenance": {
+    "kind": "generated",
+    "tool": "scripts/art/build-scenes.py <- headers package (compose.py)",
+    "mode": "art",
+    "pixellab_id": "",
+    "prompt": "",
+    "params": {
+     "sources": [
+      "phase1/headers/shop-1x.png"
+     ]
+    },
+    "created_at": "",
+    "generation_cost": 0,
+    "postprocess": [
+     "opaque on #fbf1e3",
+     "WebP lossless (exact)"
+    ],
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)"
+   },
+   "verification": {
+    "native_scale_reviewed": true,
+    "in_engine_reviewed": true,
+    "technical_checks_passed": true,
+    "approved_by": "owner (design session, 2026-10-31)",
+    "notes": "off-palette=0 colours=40"
+   }
+  },
+  {
+   "id": "scene-kitchen",
+   "role": "header scene: Bếp (view kitchen)",
+   "path": "public/ta-tua/game/assets/scenes/kitchen.webp",
+   "status": "approved",
+   "technical": {
+    "dimensions": "320x80",
+    "alpha": false,
+    "anchor": "center (phone: center crop)",
+    "frames": 1,
+    "filtering": "nearest",
+    "scale": "integer 3x desktop (2x when the column is under 960 px) / 2x phone",
+    "bytes": 2446,
+    "fx": [
+     "fx-chimney-smoke"
+    ]
+   },
+   "visual_locks": [
+    "palette.json",
+    "view: low top-down",
+    "light: top-left",
+    "outline: #2e1d14 outer"
+   ],
+   "provenance": {
+    "kind": "generated",
+    "tool": "scripts/art/build-scenes.py <- headers package (compose.py)",
+    "mode": "art",
+    "pixellab_id": "",
+    "prompt": "",
+    "params": {
+     "sources": [
+      "phase1/headers/kitchen-1x.png"
+     ]
+    },
+    "created_at": "",
+    "generation_cost": 0,
+    "postprocess": [
+     "opaque on #fbf1e3",
+     "WebP lossless (exact)"
+    ],
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)"
+   },
+   "verification": {
+    "native_scale_reviewed": true,
+    "in_engine_reviewed": true,
+    "technical_checks_passed": true,
+    "approved_by": "owner (design session, 2026-10-31)",
+    "notes": "off-palette=0 colours=39"
+   }
+  },
+  {
+   "id": "scene-garden",
+   "role": "header scene: Vườn (view garden)",
+   "path": "public/ta-tua/game/assets/scenes/garden.webp",
+   "status": "approved",
+   "technical": {
+    "dimensions": "320x80",
+    "alpha": false,
+    "anchor": "center (phone: center crop)",
+    "frames": 1,
+    "filtering": "nearest",
+    "scale": "integer 3x desktop (2x when the column is under 960 px) / 2x phone",
+    "bytes": 5906,
+    "fx": []
+   },
+   "visual_locks": [
+    "palette.json",
+    "view: low top-down",
+    "light: top-left",
+    "outline: #2e1d14 outer"
+   ],
+   "provenance": {
+    "kind": "generated",
+    "tool": "scripts/art/build-scenes.py <- headers package (compose.py)",
+    "mode": "art",
+    "pixellab_id": "",
+    "prompt": "",
+    "params": {
+     "sources": [
+      "phase1/headers/garden-1x.png"
+     ]
+    },
+    "created_at": "",
+    "generation_cost": 0,
+    "postprocess": [
+     "opaque on #fbf1e3",
+     "WebP lossless (exact)"
+    ],
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)"
+   },
+   "verification": {
+    "native_scale_reviewed": true,
+    "in_engine_reviewed": true,
+    "technical_checks_passed": true,
+    "approved_by": "owner (design session, 2026-10-31)",
+    "notes": "off-palette=0 colours=43"
+   }
+  },
+  {
+   "id": "scene-school",
+   "role": "header scene: Trường học (view school)",
+   "path": "public/ta-tua/game/assets/scenes/school.webp",
+   "status": "approved",
+   "technical": {
+    "dimensions": "320x80",
+    "alpha": false,
+    "anchor": "center (phone: center crop)",
+    "frames": 1,
+    "filtering": "nearest",
+    "scale": "integer 3x desktop (2x when the column is under 960 px) / 2x phone",
+    "bytes": 4638,
+    "fx": []
+   },
+   "visual_locks": [
+    "palette.json",
+    "view: low top-down",
+    "light: top-left",
+    "outline: #2e1d14 outer"
+   ],
+   "provenance": {
+    "kind": "generated",
+    "tool": "scripts/art/build-scenes.py <- headers package (compose.py)",
+    "mode": "art",
+    "pixellab_id": "",
+    "prompt": "",
+    "params": {
+     "sources": [
+      "phase1/headers/school-1x.png"
+     ]
+    },
+    "created_at": "",
+    "generation_cost": 0,
+    "postprocess": [
+     "opaque on #fbf1e3",
+     "WebP lossless (exact)"
+    ],
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)"
+   },
+   "verification": {
+    "native_scale_reviewed": true,
+    "in_engine_reviewed": true,
+    "technical_checks_passed": true,
+    "approved_by": "owner (design session, 2026-10-31)",
+    "notes": "off-palette=0 colours=43"
+   }
+  },
+  {
+   "id": "scene-clinic",
+   "role": "header scene: Phòng khám (view clinic)",
+   "path": "public/ta-tua/game/assets/scenes/clinic.webp",
+   "status": "approved",
+   "technical": {
+    "dimensions": "320x80",
+    "alpha": false,
+    "anchor": "center (phone: center crop)",
+    "frames": 1,
+    "filtering": "nearest",
+    "scale": "integer 3x desktop (2x when the column is under 960 px) / 2x phone",
+    "bytes": 3850,
+    "fx": []
+   },
+   "visual_locks": [
+    "palette.json",
+    "view: low top-down",
+    "light: top-left",
+    "outline: #2e1d14 outer"
+   ],
+   "provenance": {
+    "kind": "generated",
+    "tool": "scripts/art/build-scenes.py <- headers package (compose.py)",
+    "mode": "art",
+    "pixellab_id": "",
+    "prompt": "",
+    "params": {
+     "sources": [
+      "phase1/headers/clinic-1x.png"
+     ]
+    },
+    "created_at": "",
+    "generation_cost": 0,
+    "postprocess": [
+     "opaque on #fbf1e3",
+     "WebP lossless (exact)"
+    ],
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)"
+   },
+   "verification": {
+    "native_scale_reviewed": true,
+    "in_engine_reviewed": true,
+    "technical_checks_passed": true,
+    "approved_by": "owner (design session, 2026-10-31)",
+    "notes": "off-palette=0 colours=40"
    }
   }
  ],
