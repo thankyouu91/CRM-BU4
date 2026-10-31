@@ -45,6 +45,7 @@ import {
   $, MOOD_ICONS, STAT_ICONS, STAT_LABELS, TYPE_LABELS,
   ageText, busyOf, clock, closeModal, countdown, effectText, esc, fmt, formatWait, modalOpen, openModal, toast, viewHead,
 } from './ui.js';
+import { sceneHdr } from './scenes-hdr.js';
 import { renderBank } from './views/bank.js';
 import { renderBazaar } from './views/bazaar.js';
 import { renderBusiness } from './views/business.js';
@@ -969,6 +970,7 @@ function renderShop(root) {
   };
   root.innerHTML = `
     ${viewHead('🏪 Siêu thị', `Đồ ăn và đồ chăm sóc dùng là hết. Đồ chơi mua một lần, dùng mãi. Phụ kiện mỗi lần mua là một hộp kín có 1–2 dòng +% ngẫu nhiên (${tierOdds()}), mở trong Túi đồ mới biết là dòng nào; May mắn của bé chính giúp ra 2 dòng.${indexNote}`)}
+    ${sceneHdr('shop')}
     ${essBanner}
     <div class="filters">
       ${['all', ...TYPE_ORDER].map((t) => `

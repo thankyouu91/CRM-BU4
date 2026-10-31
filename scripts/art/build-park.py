@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """Build the 16-bit park ("Công viên") runtime assets from the art team's folders.
 
-    python3 -I scripts/art/build-park.py [ART_ROOT] [--preview out.png]
+    python3 -I scripts/art/build-park.py ART_ROOT [--preview out.png]
 
-ART_ROOT is the scratch folder that holds phase0/ and phase1/ (default: the design team's scratchpad).
+ART_ROOT (required) is the art workspace that holds phase0/ and phase1/. It is not in the repo; the shipped assets do not need it.
 Output, in public/ta-tua/game/assets/park/:
   ground.webp   the flat ground (base + ground-layer decals), 1 px = 1 art pixel, lossless
   objects.webp  atlas of every standing object, animation and visitor frame (1 px padding), lossless
@@ -33,7 +33,8 @@ import sys
 from PIL import Image, ImageDraw
 
 REPO = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-DEFAULT_ROOT = '/tmp/claude-0/-home-user-CRM-BU4/1d7a8478-818d-5731-a18c-bb6358057abd/scratchpad'
+LICENSE = 'PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)'
+APPROVED_BY = 'owner (design session, 2026-10-31)'
 OUT = os.path.join(REPO, 'public/ta-tua/game/assets/park')
 FALLBACK_LAYOUT = os.path.join(REPO, 'scripts/art/park-layout.json')
 EXTRAS = os.path.join(REPO, 'scripts/art/park-extras.json')
@@ -389,7 +390,7 @@ def auto_shadow(kind, w, h, anim):
 
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument('root', nargs='?', default=DEFAULT_ROOT)
+    ap.add_argument('root', help='art workspace S with phase0/ and phase1/ (not in the repo; required)')
     ap.add_argument('--layout', choices=('auto', 'park-1', 'p0'), default='auto',
                     help='park-1 = the park-1 package layout, p0 = scripts/art/park-layout.json; auto = park-1 once delivered')
     ap.add_argument('--preview', help='also write a 2x composite PNG of the whole park (with the walkable area) here')
@@ -596,12 +597,12 @@ def write_manifest(root, L, ground_src, used, frames, ground_size, atlas_size, a
         'id': 'park-ground',
         'role': 'park background: base terrain plus flat ground-layer decals',
         'path': 'public/ta-tua/game/assets/park/ground.webp',
-        'status': 'sample',
+        'status': 'approved',
         'technical': {'dimensions': f'{L["size"][0]}x{L["size"][1]}', 'bytes': ground_size, 'filtering': 'nearest',
                       'scale': 'world = 3 units per art px; integer 3x desktop / 2x phone on screen'},
-        'provenance': {'kind': 'composed', 'tool': 'scripts/art/build-park.py', 'layout': rel(L['source']),
+        'provenance': {'kind': 'composed', 'tool': 'scripts/art/build-park.py', 'license': LICENSE, 'layout': rel(L['source']),
                        'sources': [rel(p) for p in ground_src]},
-        'verification': {'technical_checks_passed': not warnings, 'in_engine_reviewed': True, 'approved_by': ''},
+        'verification': {'technical_checks_passed': not warnings, 'in_engine_reviewed': True, 'approved_by': APPROVED_BY},
     }]
     for name, paths in sorted(used.items()):
         src = source_of(paths[0])
@@ -609,21 +610,21 @@ def write_manifest(root, L, ground_src, used, frames, ground_size, atlas_size, a
             'id': f'park-{name}',
             'role': 'park object, animation or visitor frames',
             'path': f'public/ta-tua/game/assets/park/objects.webp#{name}',
-            'status': 'sample',
+            'status': 'approved',
             'technical': {'frames': len(paths), 'anchor': 'foot centre (ax, ay in park.json)', 'filtering': 'nearest'},
-            'provenance': {'kind': 'derived', 'sources': [rel(p) for p in paths[:2]] + ([f'+{len(paths) - 2} more'] if len(paths) > 2 else []),
+            'provenance': {'kind': 'derived', 'license': LICENSE, 'sources': [rel(p) for p in paths[:2]] + ([f'+{len(paths) - 2} more'] if len(paths) > 2 else []),
                            'source_id': src['id'] if src else None,
                            'generation': src.get('provenance') if src else 'see the art package manifest.json / report.md',
                            'postprocess': ['cropped to the strip bbox', 'packed into objects.webp (lossless WebP)']},
-            'verification': {'in_engine_reviewed': True, 'approved_by': ''},
+            'verification': {'in_engine_reviewed': True, 'approved_by': APPROVED_BY},
         })
     entries.append({
         'id': 'park-atlas',
         'role': 'atlas of every park object, animation and visitor frame; frame map in park.json',
         'path': 'public/ta-tua/game/assets/park/objects.webp',
-        'status': 'sample',
+        'status': 'approved',
         'technical': {'dimensions': f'{atlas_dims[0]}x{atlas_dims[1]}', 'bytes': atlas_size, 'frames': len(frames), 'padding': 1},
-        'provenance': {'kind': 'packed', 'tool': 'scripts/art/build-park.py'},
+        'provenance': {'kind': 'packed', 'tool': 'scripts/art/build-park.py', 'license': LICENSE},
     })
     os.makedirs(os.path.dirname(MANIFEST), exist_ok=True)
     try:

@@ -1,6 +1,7 @@
 // Vườn: gieo hạt trên các ô đất, bắt sâu, thu hoạch vào kho Sàn, mở thêm ô; tưới hộ vườn bạn bè.
 import { api } from '../api.js';
 import { closeModal, countdown, esc, fmt, fmtLots, modalOpen, openModal, viewHead } from '../ui.js';
+import { sceneHdr } from '../scenes-hdr.js';
 
 let friendId = null; // vườn bạn đang mở để tưới hộ
 let lastAuto = 0; // lần tự tải lại gần nhất, tránh tải liên tục khi đồng hồ máy lệch giờ
@@ -10,6 +11,7 @@ const clamp01 = (v) => Math.max(0, Math.min(1, v));
 export function renderGarden(root, ctx) {
   root.innerHTML = `<div class="garden-page">
     ${viewHead('🌱 Vườn', 'Gieo hạt, chờ cây lớn rồi thu hoạch. Nông sản vào thẳng kho ở Sàn để bán, nấu ăn hoặc đem chế biến.')}
+    ${sceneHdr('garden')}
     <div class="garden-view"><div class="empty muted">Đang tải…</div></div></div>`;
   const page = root.querySelector('.garden-page');
   const view = page.querySelector('.garden-view');

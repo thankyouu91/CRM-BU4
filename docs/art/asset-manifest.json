@@ -1,12 +1,356 @@
 {
- "schema_version": 1,
- "note": "Provenance of the 16-bit art shipped in public/ta-tua/game/assets/. Format: phase0 asset-manifest.json.",
+ "schema_version": 2,
+ "art_direction_brief": "style-bible.md",
+ "palette": "palette.json",
+ "schema_notes": {
+  "provenance": "tool, mode, pixellab_id, prompt, params, created_at, generation_cost, postprocess[], license",
+  "status": "planned | sample | approved | rejected",
+  "path": "proposed runtime path; '#name' = atlas frame"
+ },
  "assets": [
+  {
+   "id": "scene-factory",
+   "role": "header scene: Khu công nghiệp (view factory)",
+   "path": "public/ta-tua/game/assets/scenes/factory.webp",
+   "status": "approved",
+   "technical": {
+    "dimensions": "320x80",
+    "alpha": false,
+    "anchor": "center (phone: center crop)",
+    "frames": 1,
+    "filtering": "nearest",
+    "scale": "integer 3x desktop (2x when the column is under 960 px) / 2x phone",
+    "bytes": 4992,
+    "fx": []
+   },
+   "visual_locks": [
+    "palette.json",
+    "view: low top-down",
+    "light: top-left",
+    "outline: #2e1d14 outer"
+   ],
+   "provenance": {
+    "kind": "generated",
+    "tool": "scripts/art/build-scenes.py <- headers package (compose.py)",
+    "mode": "art",
+    "pixellab_id": "",
+    "prompt": "",
+    "params": {
+     "sources": [
+      "phase1/headers/factory-1x.png"
+     ]
+    },
+    "created_at": "",
+    "generation_cost": 0,
+    "postprocess": [
+     "opaque on #fbf1e3",
+     "WebP lossless (exact)"
+    ],
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)"
+   },
+   "verification": {
+    "native_scale_reviewed": true,
+    "in_engine_reviewed": true,
+    "technical_checks_passed": true,
+    "approved_by": "owner (design session, 2026-10-31)",
+    "notes": "off-palette=0 colours=33"
+   }
+  },
+  {
+   "id": "scene-bank",
+   "role": "header scene: Phố Ngân hàng (view bank)",
+   "path": "public/ta-tua/game/assets/scenes/bank.webp",
+   "status": "approved",
+   "technical": {
+    "dimensions": "320x80",
+    "alpha": false,
+    "anchor": "center (phone: center crop)",
+    "frames": 1,
+    "filtering": "nearest",
+    "scale": "integer 3x desktop (2x when the column is under 960 px) / 2x phone",
+    "bytes": 4212,
+    "fx": []
+   },
+   "visual_locks": [
+    "palette.json",
+    "view: low top-down",
+    "light: top-left",
+    "outline: #2e1d14 outer"
+   ],
+   "provenance": {
+    "kind": "generated",
+    "tool": "scripts/art/build-scenes.py <- headers package (compose.py)",
+    "mode": "art",
+    "pixellab_id": "",
+    "prompt": "",
+    "params": {
+     "sources": [
+      "phase1/headers/bank-1x.png"
+     ]
+    },
+    "created_at": "",
+    "generation_cost": 0,
+    "postprocess": [
+     "opaque on #fbf1e3",
+     "WebP lossless (exact)"
+    ],
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)"
+   },
+   "verification": {
+    "native_scale_reviewed": true,
+    "in_engine_reviewed": true,
+    "technical_checks_passed": true,
+    "approved_by": "owner (design session, 2026-10-31)",
+    "notes": "off-palette=0 colours=40"
+   }
+  },
+  {
+   "id": "scene-shop",
+   "role": "header scene: Siêu thị (view shop)",
+   "path": "public/ta-tua/game/assets/scenes/shop.webp",
+   "status": "approved",
+   "technical": {
+    "dimensions": "320x80",
+    "alpha": false,
+    "anchor": "center (phone: center crop)",
+    "frames": 1,
+    "filtering": "nearest",
+    "scale": "integer 3x desktop (2x when the column is under 960 px) / 2x phone",
+    "bytes": 4404,
+    "fx": []
+   },
+   "visual_locks": [
+    "palette.json",
+    "view: low top-down",
+    "light: top-left",
+    "outline: #2e1d14 outer"
+   ],
+   "provenance": {
+    "kind": "generated",
+    "tool": "scripts/art/build-scenes.py <- headers package (compose.py)",
+    "mode": "art",
+    "pixellab_id": "",
+    "prompt": "",
+    "params": {
+     "sources": [
+      "phase1/headers/shop-1x.png"
+     ]
+    },
+    "created_at": "",
+    "generation_cost": 0,
+    "postprocess": [
+     "opaque on #fbf1e3",
+     "WebP lossless (exact)"
+    ],
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)"
+   },
+   "verification": {
+    "native_scale_reviewed": true,
+    "in_engine_reviewed": true,
+    "technical_checks_passed": true,
+    "approved_by": "owner (design session, 2026-10-31)",
+    "notes": "off-palette=0 colours=40"
+   }
+  },
+  {
+   "id": "scene-kitchen",
+   "role": "header scene: Bếp (view kitchen)",
+   "path": "public/ta-tua/game/assets/scenes/kitchen.webp",
+   "status": "approved",
+   "technical": {
+    "dimensions": "320x80",
+    "alpha": false,
+    "anchor": "center (phone: center crop)",
+    "frames": 1,
+    "filtering": "nearest",
+    "scale": "integer 3x desktop (2x when the column is under 960 px) / 2x phone",
+    "bytes": 2446,
+    "fx": [
+     "fx-chimney-smoke"
+    ]
+   },
+   "visual_locks": [
+    "palette.json",
+    "view: low top-down",
+    "light: top-left",
+    "outline: #2e1d14 outer"
+   ],
+   "provenance": {
+    "kind": "generated",
+    "tool": "scripts/art/build-scenes.py <- headers package (compose.py)",
+    "mode": "art",
+    "pixellab_id": "",
+    "prompt": "",
+    "params": {
+     "sources": [
+      "phase1/headers/kitchen-1x.png"
+     ]
+    },
+    "created_at": "",
+    "generation_cost": 0,
+    "postprocess": [
+     "opaque on #fbf1e3",
+     "WebP lossless (exact)"
+    ],
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)"
+   },
+   "verification": {
+    "native_scale_reviewed": true,
+    "in_engine_reviewed": true,
+    "technical_checks_passed": true,
+    "approved_by": "owner (design session, 2026-10-31)",
+    "notes": "off-palette=0 colours=39"
+   }
+  },
+  {
+   "id": "scene-garden",
+   "role": "header scene: Vườn (view garden)",
+   "path": "public/ta-tua/game/assets/scenes/garden.webp",
+   "status": "approved",
+   "technical": {
+    "dimensions": "320x80",
+    "alpha": false,
+    "anchor": "center (phone: center crop)",
+    "frames": 1,
+    "filtering": "nearest",
+    "scale": "integer 3x desktop (2x when the column is under 960 px) / 2x phone",
+    "bytes": 5906,
+    "fx": []
+   },
+   "visual_locks": [
+    "palette.json",
+    "view: low top-down",
+    "light: top-left",
+    "outline: #2e1d14 outer"
+   ],
+   "provenance": {
+    "kind": "generated",
+    "tool": "scripts/art/build-scenes.py <- headers package (compose.py)",
+    "mode": "art",
+    "pixellab_id": "",
+    "prompt": "",
+    "params": {
+     "sources": [
+      "phase1/headers/garden-1x.png"
+     ]
+    },
+    "created_at": "",
+    "generation_cost": 0,
+    "postprocess": [
+     "opaque on #fbf1e3",
+     "WebP lossless (exact)"
+    ],
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)"
+   },
+   "verification": {
+    "native_scale_reviewed": true,
+    "in_engine_reviewed": true,
+    "technical_checks_passed": true,
+    "approved_by": "owner (design session, 2026-10-31)",
+    "notes": "off-palette=0 colours=43"
+   }
+  },
+  {
+   "id": "scene-school",
+   "role": "header scene: Trường học (view school)",
+   "path": "public/ta-tua/game/assets/scenes/school.webp",
+   "status": "approved",
+   "technical": {
+    "dimensions": "320x80",
+    "alpha": false,
+    "anchor": "center (phone: center crop)",
+    "frames": 1,
+    "filtering": "nearest",
+    "scale": "integer 3x desktop (2x when the column is under 960 px) / 2x phone",
+    "bytes": 5206,
+    "fx": []
+   },
+   "visual_locks": [
+    "palette.json",
+    "view: low top-down",
+    "light: top-left",
+    "outline: #2e1d14 outer"
+   ],
+   "provenance": {
+    "kind": "generated",
+    "tool": "scripts/art/build-scenes.py <- headers package (compose.py)",
+    "mode": "art",
+    "pixellab_id": "",
+    "prompt": "",
+    "params": {
+     "sources": [
+      "phase1/headers/school-1x.png"
+     ]
+    },
+    "created_at": "",
+    "generation_cost": 0,
+    "postprocess": [
+     "opaque on #fbf1e3",
+     "WebP lossless (exact)"
+    ],
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)"
+   },
+   "verification": {
+    "native_scale_reviewed": true,
+    "in_engine_reviewed": true,
+    "technical_checks_passed": true,
+    "approved_by": "owner (design session, 2026-10-31)",
+    "notes": "off-palette=0 colours=44"
+   }
+  },
+  {
+   "id": "scene-clinic",
+   "role": "header scene: Phòng khám (view clinic)",
+   "path": "public/ta-tua/game/assets/scenes/clinic.webp",
+   "status": "approved",
+   "technical": {
+    "dimensions": "320x80",
+    "alpha": false,
+    "anchor": "center (phone: center crop)",
+    "frames": 1,
+    "filtering": "nearest",
+    "scale": "integer 3x desktop (2x when the column is under 960 px) / 2x phone",
+    "bytes": 4272,
+    "fx": []
+   },
+   "visual_locks": [
+    "palette.json",
+    "view: low top-down",
+    "light: top-left",
+    "outline: #2e1d14 outer"
+   ],
+   "provenance": {
+    "kind": "generated",
+    "tool": "scripts/art/build-scenes.py <- headers package (compose.py)",
+    "mode": "art",
+    "pixellab_id": "",
+    "prompt": "",
+    "params": {
+     "sources": [
+      "phase1/headers/clinic-1x.png"
+     ]
+    },
+    "created_at": "",
+    "generation_cost": 0,
+    "postprocess": [
+     "opaque on #fbf1e3",
+     "WebP lossless (exact)"
+    ],
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)"
+   },
+   "verification": {
+    "native_scale_reviewed": true,
+    "in_engine_reviewed": true,
+    "technical_checks_passed": true,
+    "approved_by": "owner (design session, 2026-10-31)",
+    "notes": "off-palette=0 colours=40"
+   }
+  },
   {
    "id": "park-ground",
    "role": "park background: base terrain plus flat ground-layer decals",
    "path": "public/ta-tua/game/assets/park/ground.webp",
-   "status": "sample",
+   "status": "approved",
    "technical": {
     "dimensions": "672x200",
     "bytes": 19142,
@@ -19,19 +363,20 @@
     "layout": "phase1/park-1/layout.json",
     "sources": [
      "phase1/park-1/park-base.png"
-    ]
+    ],
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)"
    },
    "verification": {
     "technical_checks_passed": true,
     "in_engine_reviewed": true,
-    "approved_by": ""
+    "approved_by": "owner (design session, 2026-10-31)"
    }
   },
   {
    "id": "park-bench",
    "role": "park object, animation or visitor frames",
    "path": "public/ta-tua/game/assets/park/objects.webp#bench",
-   "status": "sample",
+   "status": "approved",
    "technical": {
     "frames": 1,
     "anchor": "foot centre (ax, ay in park.json)",
@@ -68,18 +413,19 @@
     "postprocess": [
      "cropped to the strip bbox",
      "packed into objects.webp (lossless WebP)"
-    ]
+    ],
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)"
    },
    "verification": {
     "in_engine_reviewed": true,
-    "approved_by": ""
+    "approved_by": "owner (design session, 2026-10-31)"
    }
   },
   {
    "id": "park-bush",
    "role": "park object, animation or visitor frames",
    "path": "public/ta-tua/game/assets/park/objects.webp#bush",
-   "status": "sample",
+   "status": "approved",
    "technical": {
     "frames": 1,
     "anchor": "foot centre (ax, ay in park.json)",
@@ -110,18 +456,19 @@
     "postprocess": [
      "cropped to the strip bbox",
      "packed into objects.webp (lossless WebP)"
-    ]
+    ],
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)"
    },
    "verification": {
     "in_engine_reviewed": true,
-    "approved_by": ""
+    "approved_by": "owner (design session, 2026-10-31)"
    }
   },
   {
    "id": "park-bush-large",
    "role": "park object, animation or visitor frames",
    "path": "public/ta-tua/game/assets/park/objects.webp#bush-large",
-   "status": "sample",
+   "status": "approved",
    "technical": {
     "frames": 1,
     "anchor": "foot centre (ax, ay in park.json)",
@@ -152,18 +499,19 @@
     "postprocess": [
      "cropped to the strip bbox",
      "packed into objects.webp (lossless WebP)"
-    ]
+    ],
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)"
    },
    "verification": {
     "in_engine_reviewed": true,
-    "approved_by": ""
+    "approved_by": "owner (design session, 2026-10-31)"
    }
   },
   {
    "id": "park-dock",
    "role": "park object, animation or visitor frames",
    "path": "public/ta-tua/game/assets/park/objects.webp#dock",
-   "status": "sample",
+   "status": "approved",
    "technical": {
     "frames": 1,
     "anchor": "foot centre (ax, ay in park.json)",
@@ -194,18 +542,19 @@
     "postprocess": [
      "cropped to the strip bbox",
      "packed into objects.webp (lossless WebP)"
-    ]
+    ],
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)"
    },
    "verification": {
     "in_engine_reviewed": true,
-    "approved_by": ""
+    "approved_by": "owner (design session, 2026-10-31)"
    }
   },
   {
    "id": "park-fountain-lg-anim",
    "role": "park object, animation or visitor frames",
    "path": "public/ta-tua/game/assets/park/objects.webp#fountain-lg-anim",
-   "status": "sample",
+   "status": "approved",
    "technical": {
     "frames": 5,
     "anchor": "foot centre (ax, ay in park.json)",
@@ -223,18 +572,19 @@
     "postprocess": [
      "cropped to the strip bbox",
      "packed into objects.webp (lossless WebP)"
-    ]
+    ],
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)"
    },
    "verification": {
     "in_engine_reviewed": true,
-    "approved_by": ""
+    "approved_by": "owner (design session, 2026-10-31)"
    }
   },
   {
    "id": "park-fx-butterfly-blue",
    "role": "park object, animation or visitor frames",
    "path": "public/ta-tua/game/assets/park/objects.webp#fx-butterfly-blue",
-   "status": "sample",
+   "status": "approved",
    "technical": {
     "frames": 4,
     "anchor": "foot centre (ax, ay in park.json)",
@@ -278,18 +628,19 @@
     "postprocess": [
      "cropped to the strip bbox",
      "packed into objects.webp (lossless WebP)"
-    ]
+    ],
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)"
    },
    "verification": {
     "in_engine_reviewed": true,
-    "approved_by": ""
+    "approved_by": "owner (design session, 2026-10-31)"
    }
   },
   {
    "id": "park-fx-butterfly-pink",
    "role": "park object, animation or visitor frames",
    "path": "public/ta-tua/game/assets/park/objects.webp#fx-butterfly-pink",
-   "status": "sample",
+   "status": "approved",
    "technical": {
     "frames": 4,
     "anchor": "foot centre (ax, ay in park.json)",
@@ -333,18 +684,19 @@
     "postprocess": [
      "cropped to the strip bbox",
      "packed into objects.webp (lossless WebP)"
-    ]
+    ],
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)"
    },
    "verification": {
     "in_engine_reviewed": true,
-    "approved_by": ""
+    "approved_by": "owner (design session, 2026-10-31)"
    }
   },
   {
    "id": "park-fx-butterfly-yellow",
    "role": "park object, animation or visitor frames",
    "path": "public/ta-tua/game/assets/park/objects.webp#fx-butterfly-yellow",
-   "status": "sample",
+   "status": "approved",
    "technical": {
     "frames": 4,
     "anchor": "foot centre (ax, ay in park.json)",
@@ -388,18 +740,19 @@
     "postprocess": [
      "cropped to the strip bbox",
      "packed into objects.webp (lossless WebP)"
-    ]
+    ],
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)"
    },
    "verification": {
     "in_engine_reviewed": true,
-    "approved_by": ""
+    "approved_by": "owner (design session, 2026-10-31)"
    }
   },
   {
    "id": "park-fx-pond-ripple",
    "role": "park object, animation or visitor frames",
    "path": "public/ta-tua/game/assets/park/objects.webp#fx-pond-ripple",
-   "status": "sample",
+   "status": "approved",
    "technical": {
     "frames": 8,
     "anchor": "foot centre (ax, ay in park.json)",
@@ -436,18 +789,19 @@
     "postprocess": [
      "cropped to the strip bbox",
      "packed into objects.webp (lossless WebP)"
-    ]
+    ],
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)"
    },
    "verification": {
     "in_engine_reviewed": true,
-    "approved_by": ""
+    "approved_by": "owner (design session, 2026-10-31)"
    }
   },
   {
    "id": "park-fx-pond-sparkle",
    "role": "park object, animation or visitor frames",
    "path": "public/ta-tua/game/assets/park/objects.webp#fx-pond-sparkle",
-   "status": "sample",
+   "status": "approved",
    "technical": {
     "frames": 8,
     "anchor": "foot centre (ax, ay in park.json)",
@@ -489,18 +843,19 @@
     "postprocess": [
      "cropped to the strip bbox",
      "packed into objects.webp (lossless WebP)"
-    ]
+    ],
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)"
    },
    "verification": {
     "in_engine_reviewed": true,
-    "approved_by": ""
+    "approved_by": "owner (design session, 2026-10-31)"
    }
   },
   {
    "id": "park-gazebo",
    "role": "park object, animation or visitor frames",
    "path": "public/ta-tua/game/assets/park/objects.webp#gazebo",
-   "status": "sample",
+   "status": "approved",
    "technical": {
     "frames": 1,
     "anchor": "foot centre (ax, ay in park.json)",
@@ -537,18 +892,19 @@
     "postprocess": [
      "cropped to the strip bbox",
      "packed into objects.webp (lossless WebP)"
-    ]
+    ],
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)"
    },
    "verification": {
     "in_engine_reviewed": true,
-    "approved_by": ""
+    "approved_by": "owner (design session, 2026-10-31)"
    }
   },
   {
    "id": "park-hedge-run2",
    "role": "park object, animation or visitor frames",
    "path": "public/ta-tua/game/assets/park/objects.webp#hedge-run2",
-   "status": "sample",
+   "status": "approved",
    "technical": {
     "frames": 1,
     "anchor": "foot centre (ax, ay in park.json)",
@@ -579,18 +935,19 @@
     "postprocess": [
      "cropped to the strip bbox",
      "packed into objects.webp (lossless WebP)"
-    ]
+    ],
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)"
    },
    "verification": {
     "in_engine_reviewed": true,
-    "approved_by": ""
+    "approved_by": "owner (design session, 2026-10-31)"
    }
   },
   {
    "id": "park-icecream-cart",
    "role": "park object, animation or visitor frames",
    "path": "public/ta-tua/game/assets/park/objects.webp#icecream-cart",
-   "status": "sample",
+   "status": "approved",
    "technical": {
     "frames": 1,
     "anchor": "foot centre (ax, ay in park.json)",
@@ -628,18 +985,19 @@
     "postprocess": [
      "cropped to the strip bbox",
      "packed into objects.webp (lossless WebP)"
-    ]
+    ],
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)"
    },
    "verification": {
     "in_engine_reviewed": true,
-    "approved_by": ""
+    "approved_by": "owner (design session, 2026-10-31)"
    }
   },
   {
    "id": "park-lamp",
    "role": "park object, animation or visitor frames",
    "path": "public/ta-tua/game/assets/park/objects.webp#lamp",
-   "status": "sample",
+   "status": "approved",
    "technical": {
     "frames": 1,
     "anchor": "foot centre (ax, ay in park.json)",
@@ -676,18 +1034,19 @@
     "postprocess": [
      "cropped to the strip bbox",
      "packed into objects.webp (lossless WebP)"
-    ]
+    ],
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)"
    },
    "verification": {
     "in_engine_reviewed": true,
-    "approved_by": ""
+    "approved_by": "owner (design session, 2026-10-31)"
    }
   },
   {
    "id": "park-log",
    "role": "park object, animation or visitor frames",
    "path": "public/ta-tua/game/assets/park/objects.webp#log",
-   "status": "sample",
+   "status": "approved",
    "technical": {
     "frames": 1,
     "anchor": "foot centre (ax, ay in park.json)",
@@ -718,18 +1077,19 @@
     "postprocess": [
      "cropped to the strip bbox",
      "packed into objects.webp (lossless WebP)"
-    ]
+    ],
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)"
    },
    "verification": {
     "in_engine_reviewed": true,
-    "approved_by": ""
+    "approved_by": "owner (design session, 2026-10-31)"
    }
   },
   {
    "id": "park-npc-boy",
    "role": "park object, animation or visitor frames",
    "path": "public/ta-tua/game/assets/park/objects.webp#npc-boy",
-   "status": "sample",
+   "status": "approved",
    "technical": {
     "frames": 13,
     "anchor": "foot centre (ax, ay in park.json)",
@@ -765,18 +1125,19 @@
     "postprocess": [
      "cropped to the strip bbox",
      "packed into objects.webp (lossless WebP)"
-    ]
+    ],
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)"
    },
    "verification": {
     "in_engine_reviewed": true,
-    "approved_by": ""
+    "approved_by": "owner (design session, 2026-10-31)"
    }
   },
   {
    "id": "park-npc-woman",
    "role": "park object, animation or visitor frames",
    "path": "public/ta-tua/game/assets/park/objects.webp#npc-woman",
-   "status": "sample",
+   "status": "approved",
    "technical": {
     "frames": 13,
     "anchor": "foot centre (ax, ay in park.json)",
@@ -812,18 +1173,19 @@
     "postprocess": [
      "cropped to the strip bbox",
      "packed into objects.webp (lossless WebP)"
-    ]
+    ],
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)"
    },
    "verification": {
     "in_engine_reviewed": true,
-    "approved_by": ""
+    "approved_by": "owner (design session, 2026-10-31)"
    }
   },
   {
    "id": "park-pet-ball",
    "role": "park object, animation or visitor frames",
    "path": "public/ta-tua/game/assets/park/objects.webp#pet-ball",
-   "status": "sample",
+   "status": "approved",
    "technical": {
     "frames": 1,
     "anchor": "foot centre (ax, ay in park.json)",
@@ -860,18 +1222,19 @@
     "postprocess": [
      "cropped to the strip bbox",
      "packed into objects.webp (lossless WebP)"
-    ]
+    ],
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)"
    },
    "verification": {
     "in_engine_reviewed": true,
-    "approved_by": ""
+    "approved_by": "owner (design session, 2026-10-31)"
    }
   },
   {
    "id": "park-pet-bowl",
    "role": "park object, animation or visitor frames",
    "path": "public/ta-tua/game/assets/park/objects.webp#pet-bowl",
-   "status": "sample",
+   "status": "approved",
    "technical": {
     "frames": 1,
     "anchor": "foot centre (ax, ay in park.json)",
@@ -908,18 +1271,19 @@
     "postprocess": [
      "cropped to the strip bbox",
      "packed into objects.webp (lossless WebP)"
-    ]
+    ],
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)"
    },
    "verification": {
     "in_engine_reviewed": true,
-    "approved_by": ""
+    "approved_by": "owner (design session, 2026-10-31)"
    }
   },
   {
    "id": "park-pet-ramp",
    "role": "park object, animation or visitor frames",
    "path": "public/ta-tua/game/assets/park/objects.webp#pet-ramp",
-   "status": "sample",
+   "status": "approved",
    "technical": {
     "frames": 1,
     "anchor": "foot centre (ax, ay in park.json)",
@@ -957,18 +1321,19 @@
     "postprocess": [
      "cropped to the strip bbox",
      "packed into objects.webp (lossless WebP)"
-    ]
+    ],
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)"
    },
    "verification": {
     "in_engine_reviewed": true,
-    "approved_by": ""
+    "approved_by": "owner (design session, 2026-10-31)"
    }
   },
   {
    "id": "park-pet-tunnel",
    "role": "park object, animation or visitor frames",
    "path": "public/ta-tua/game/assets/park/objects.webp#pet-tunnel",
-   "status": "sample",
+   "status": "approved",
    "technical": {
     "frames": 1,
     "anchor": "foot centre (ax, ay in park.json)",
@@ -1005,18 +1370,19 @@
     "postprocess": [
      "cropped to the strip bbox",
      "packed into objects.webp (lossless WebP)"
-    ]
+    ],
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)"
    },
    "verification": {
     "in_engine_reviewed": true,
-    "approved_by": ""
+    "approved_by": "owner (design session, 2026-10-31)"
    }
   },
   {
    "id": "park-picnic",
    "role": "park object, animation or visitor frames",
    "path": "public/ta-tua/game/assets/park/objects.webp#picnic",
-   "status": "sample",
+   "status": "approved",
    "technical": {
     "frames": 1,
     "anchor": "foot centre (ax, ay in park.json)",
@@ -1053,18 +1419,19 @@
     "postprocess": [
      "cropped to the strip bbox",
      "packed into objects.webp (lossless WebP)"
-    ]
+    ],
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)"
    },
    "verification": {
     "in_engine_reviewed": true,
-    "approved_by": ""
+    "approved_by": "owner (design session, 2026-10-31)"
    }
   },
   {
    "id": "park-rock",
    "role": "park object, animation or visitor frames",
    "path": "public/ta-tua/game/assets/park/objects.webp#rock",
-   "status": "sample",
+   "status": "approved",
    "technical": {
     "frames": 1,
     "anchor": "foot centre (ax, ay in park.json)",
@@ -1095,18 +1462,19 @@
     "postprocess": [
      "cropped to the strip bbox",
      "packed into objects.webp (lossless WebP)"
-    ]
+    ],
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)"
    },
    "verification": {
     "in_engine_reviewed": true,
-    "approved_by": ""
+    "approved_by": "owner (design session, 2026-10-31)"
    }
   },
   {
    "id": "park-swings",
    "role": "park object, animation or visitor frames",
    "path": "public/ta-tua/game/assets/park/objects.webp#swings",
-   "status": "sample",
+   "status": "approved",
    "technical": {
     "frames": 1,
     "anchor": "foot centre (ax, ay in park.json)",
@@ -1145,18 +1513,19 @@
     "postprocess": [
      "cropped to the strip bbox",
      "packed into objects.webp (lossless WebP)"
-    ]
+    ],
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)"
    },
    "verification": {
     "in_engine_reviewed": true,
-    "approved_by": ""
+    "approved_by": "owner (design session, 2026-10-31)"
    }
   },
   {
    "id": "park-tree",
    "role": "park object, animation or visitor frames",
    "path": "public/ta-tua/game/assets/park/objects.webp#tree",
-   "status": "sample",
+   "status": "approved",
    "technical": {
     "frames": 1,
     "anchor": "foot centre (ax, ay in park.json)",
@@ -1193,18 +1562,19 @@
     "postprocess": [
      "cropped to the strip bbox",
      "packed into objects.webp (lossless WebP)"
-    ]
+    ],
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)"
    },
    "verification": {
     "in_engine_reviewed": true,
-    "approved_by": ""
+    "approved_by": "owner (design session, 2026-10-31)"
    }
   },
   {
    "id": "park-tree-cherry",
    "role": "park object, animation or visitor frames",
    "path": "public/ta-tua/game/assets/park/objects.webp#tree-cherry",
-   "status": "sample",
+   "status": "approved",
    "technical": {
     "frames": 1,
     "anchor": "foot centre (ax, ay in park.json)",
@@ -1235,18 +1605,19 @@
     "postprocess": [
      "cropped to the strip bbox",
      "packed into objects.webp (lossless WebP)"
-    ]
+    ],
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)"
    },
    "verification": {
     "in_engine_reviewed": true,
-    "approved_by": ""
+    "approved_by": "owner (design session, 2026-10-31)"
    }
   },
   {
    "id": "park-tree-orange",
    "role": "park object, animation or visitor frames",
    "path": "public/ta-tua/game/assets/park/objects.webp#tree-orange",
-   "status": "sample",
+   "status": "approved",
    "technical": {
     "frames": 1,
     "anchor": "foot centre (ax, ay in park.json)",
@@ -1277,18 +1648,19 @@
     "postprocess": [
      "cropped to the strip bbox",
      "packed into objects.webp (lossless WebP)"
-    ]
+    ],
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)"
    },
    "verification": {
     "in_engine_reviewed": true,
-    "approved_by": ""
+    "approved_by": "owner (design session, 2026-10-31)"
    }
   },
   {
    "id": "park-tree-pine",
    "role": "park object, animation or visitor frames",
    "path": "public/ta-tua/game/assets/park/objects.webp#tree-pine",
-   "status": "sample",
+   "status": "approved",
    "technical": {
     "frames": 1,
     "anchor": "foot centre (ax, ay in park.json)",
@@ -1319,18 +1691,19 @@
     "postprocess": [
      "cropped to the strip bbox",
      "packed into objects.webp (lossless WebP)"
-    ]
+    ],
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)"
    },
    "verification": {
     "in_engine_reviewed": true,
-    "approved_by": ""
+    "approved_by": "owner (design session, 2026-10-31)"
    }
   },
   {
    "id": "park-atlas",
    "role": "atlas of every park object, animation and visitor frame; frame map in park.json",
    "path": "public/ta-tua/game/assets/park/objects.webp",
-   "status": "sample",
+   "status": "approved",
    "technical": {
     "dimensions": "510x239",
     "bytes": 13512,
@@ -1339,7 +1712,11 @@
    },
    "provenance": {
     "kind": "packed",
-    "tool": "scripts/art/build-park.py"
+    "tool": "scripts/art/build-park.py",
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)"
+   },
+   "verification": {
+    "approved_by": "owner (design session, 2026-10-31)"
    }
   }
  ]

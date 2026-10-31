@@ -2,6 +2,7 @@
 import { api } from '../api.js';
 import { barChart } from '../charts.js';
 import { countdown, esc, fmt, fmtLots, pct, viewHead } from '../ui.js';
+import { sceneHdr } from '../scenes-hdr.js';
 
 /** Lựa chọn của người chơi giữ nguyên qua các lần vẽ lại. */
 const ui = { orderFor: null, batches: '10', help: false, tab: {} };
@@ -29,6 +30,7 @@ export function renderFactory(root, ctx) {
         <button class="btn small" data-go="contracts">📜 Hợp đồng</button>
         <button class="btn small" data-go="market">📈 Sàn</button>
       </div>`)}
+    ${sceneHdr('factory')}
     <div class="factory-view"><div class="empty muted">Đang tải…</div></div></div>`;
   const page = root.querySelector('.factory-page');
   const view = page.querySelector('.factory-view');

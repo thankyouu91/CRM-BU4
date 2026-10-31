@@ -1,0 +1,60 @@
+/* ---------- Cảnh đầu trang 16-bit (js/scenes-hdr.js) ----------
+   Tranh 320x80 phóng nguyên lần cho sắc: 3x khi cột nội dung đủ chỗ (960 điểm màn hình), còn lại 2x;
+   cột hẹp hơn 2x (điện thoại) thì cắt hai bên, giữ giữa, cao 160 điểm. Cả game bị thu nhỏ bằng zoom: var(--zoom),
+   nên mọi kích thước chia cho --zoom để mỗi điểm ảnh ra đúng 3 (hay 2) điểm màn hình. */
+.scene-hdr {
+  container-type: inline-size;
+  margin: -2px 0 20px;
+}
+.scene-hdr-art {
+  --s: 2;
+  --px: calc(1px * var(--s) / var(--zoom, 1));
+  position: relative;
+  width: fit-content;
+  max-width: 100%;
+  margin-inline: auto; /* tranh hẹp hơn cột (3x = 960 trong cột 1026, 2x = 640): đặt giữa như một bức tranh treo */
+  overflow: hidden;
+  background: var(--surface-2);
+  border: 2px solid var(--line);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+}
+/* Rộng và cao đặt thẳng trên ảnh (không suy từ khung): viền 2 px bị làm tròn theo điểm màn hình khi zoom,
+   suy từ khung thì tỉ lệ lệch khỏi số nguyên. Cột hẹp thì max-width cắt bớt hai bên, tỉ lệ vẫn theo chiều cao. */
+.scene-hdr img {
+  display: block;
+  width: calc(320 * var(--px));
+  max-width: 100%;
+  height: calc(80 * var(--px));
+  object-fit: cover;
+  object-position: center;
+  image-rendering: pixelated;
+  pointer-events: none;
+  user-select: none;
+}
+/* 3x cần 320×3 / 0,9 (--zoom) + 4 px viền = 1071 px CSS bên trong trang đã zoom. Đổi --zoom thì đổi số này. */
+@container (min-width: 1071px) {
+  .scene-hdr-art { --s: 3; }
+}
+
+/* Hoạt cảnh (khói…): dải khung xếp ngang, chạy bằng steps(); vị trí tính từ giữa tranh vì điện thoại cắt giữa. */
+.scene-fx {
+  position: absolute;
+  left: calc(50% + (var(--x) - 160) * var(--px));
+  top: calc(var(--y) * var(--px));
+  width: calc(var(--w) * var(--px));
+  height: calc(var(--h) * var(--px));
+  background-repeat: no-repeat;
+  background-position: 0 0;
+  background-size: calc(var(--n) * var(--w) * var(--px)) 100%;
+  image-rendering: pixelated;
+  pointer-events: none;
+  animation: scene-fx var(--dur, 1s) steps(var(--n)) infinite;
+}
+@keyframes scene-fx {
+  to { background-position: calc(-1 * var(--n) * var(--w) * var(--px)) 0; }
+}
+.scene-hdr.is-off .scene-fx { animation-play-state: paused; }
+@media (prefers-reduced-motion: reduce) {
+  .scene-fx { animation: none; }
+}
