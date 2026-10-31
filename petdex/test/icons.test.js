@@ -11,6 +11,10 @@ const SERVER = new URL('../server/', import.meta.url).pathname;
 const ROOT = new URL('../../', import.meta.url).pathname;
 const EMOJI = /\p{Extended_Pictographic}(?:\uFE0F|\u200D\p{Extended_Pictographic}\uFE0F?|[\u{1F3FB}-\u{1F3FF}])*|[\u{1F1E6}-\u{1F1FF}]{2}/gu;
 
+// Ký hiệu chữ, không phải emoji: phông chữ thường đã có và game tô màu chúng bằng CSS (ví dụ sao hạng ★ theo màu hạng),
+// nên giữ nguyên dạng chữ. Tùy bản ICU của Node mà \p{Extended_Pictographic} có bắt chúng hay không, nên loại hẳn ra.
+const TEXT_SYMBOLS = new Set(['★', '☆', '✓', '✔', '✕', '✗', '©', '®', '™']);
+
 function files(dir, exts) {
   return readdirSync(dir, { withFileTypes: true }).flatMap((e) => {
     const path = join(dir, e.name);
@@ -24,7 +28,7 @@ test('mọi emoji trong game đều có icon', () => {
   for (const file of [...files(GAME, ['.js', '.html', '.css']), ...files(SERVER, ['.js'])]) {
     for (const e of readFileSync(file, 'utf8').match(EMOJI) ?? []) {
       const key = normEmoji(e);
-      if (!ICONS.has(key) && !missing.has(key)) missing.set(key, file.slice(ROOT.length));
+      if (!TEXT_SYMBOLS.has(key) && !ICONS.has(key) && !missing.has(key)) missing.set(key, file.slice(ROOT.length));
     }
   }
   assert.deepEqual([...missing].map(([e, f]) => `${e} (${f})`), []);
