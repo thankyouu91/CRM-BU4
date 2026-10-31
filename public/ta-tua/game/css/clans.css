@@ -105,7 +105,7 @@
   .land-svg .lm-grid-shade { stroke-width: 4; stroke-opacity: .2; }
   .land-svg .lm-grid-line { stroke-width: 2; stroke-opacity: .62; }
   .lm-mini { width: 132px; }
-  .lm-mini-toggle { min-height: 40px; }
+  .lm-mini-toggle { min-height: 46px; } /* game thu nhỏ 10% (--zoom), 46px hiện ra khoảng 41px */
   .lm-mini-toggle i { width: 22px; height: 22px; }
 }
 .land-legend { display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: .82rem; align-items: center; }
