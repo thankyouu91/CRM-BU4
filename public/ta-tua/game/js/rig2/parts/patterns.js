@@ -95,13 +95,13 @@ function curvedWedge(a, mid, b, w) {
 
 // ================================================================ spots: đốm
 
-/** Đốm vẽ tay (bản đồ ký tự, tâm ở giữa): đốm tròn nhỏ, đốm vừa, mảng méo (hai biến thể, lật theo `seed`). */
+/** Đốm vẽ tay (bản đồ ký tự, tâm ở giữa): chấm 2×2, đốm vừa hơi xiên (không thành dấu cộng), mảng méo; lật theo `seed`. */
 const SPOT_STAMPS = {
   dot: [['##', '##']],
-  spot: [['.##.', '####', '.##.'], ['##', '##']],
+  spot: [['.###', '####', '###.'], ['##', '##']],
   blotch: [['.###.', '#####', '.##..'], ['.##', '###', '.#.']],
 };
-/** Hình một đốm tại (x, y): dot 2×2, spot 4×3 bo góc, blotch mảng méo, big mảng lớn (cá chép) dựng từ 3 elip. */
+/** Hình một đốm tại (x, y): dot 2×2, spot 4×3 xiên, blotch mảng méo, big mảng lớn (cá chép) dựng từ 3 elip. */
 function spotShape(x, y, size, k, seed) {
   if (size !== 'big') {
     const set = SPOT_STAMPS[size] ?? SPOT_STAMPS.spot;
@@ -234,30 +234,29 @@ function perEye(ctx, f) {
 }
 
 /**
- * Sói (kiểu husky): mũ lông sẫm trùm đỉnh đầu xuống tới trên mắt, mũi tên sẫm chĩa xuống giữa hai mắt, hai chấm mày sáng;
- * quanh mắt và mõm giữ màu lông sáng (không thành mặt nạ gấu mèo). Nhìn sau: gáy sẫm; thân: yên lưng sẫm.
+ * Sói: hai mảng mắt sẫm xếch lên phía tai (không nối qua sống mũi, để không thành mặt nạ gấu mèo), một vệt trán hình
+ * thoi; má và mõm giữ màu sáng. Nhìn ngang: mảng quanh mắt gần kéo xếch về phía tai. Thân: yên lưng sẫm (nhìn ngang,
+ * nhìn sau). Nhìn sau không có mặt nạ.
  */
 function wolfMask(ctx, ramp) {
   const { sk, view } = ctx;
   const k = patSize(sk);
-  const [hcx, hcy, hrx, hry] = sk.head;
+  const [hcx] = sk.head;
   const { eyeY } = sk;
-  if (view === 'N') {
-    onHead(ctx, 'mask', mAnd(mEllipse(hcx, sk.htop + hry * 0.6, hrx * 0.78, hry * 0.72), mAbove(hcy + hry * 0.2)), ramp, { shade: -1 });
-  } else {
-    const capY = eyeY - 2.2 * k - 0.4; // mép dưới của mũ lông
-    let cap = mAbove(capY);
-    const brow = perEye(ctx, (x, s) => mEllipse(x + s * 0.2, capY - 0.6, 1.2 * k + 0.15, 0.85 * k + 0.1));
-    cap = mAndNot(cap, brow);
-    const peak = view === 'S' ? mTri([hcx - 1.8 * k, capY - 0.5], [hcx + 1.8 * k, capY - 0.5], [hcx, eyeY + 0.6]) : mTri([hcx + hrx * 0.1, capY - 0.5], [hcx + hrx * 0.45, capY - 0.5], [hcx + hrx * 0.28, eyeY + 0.2]);
-    // nhìn ngang: mũ trùm cả nửa sau của đầu xuống tới tai và gáy
-    const back = view === 'E' ? mAnd(mEllipse(hcx - hrx * 0.55, hcy - hry * 0.1, hrx * 0.55, hry * 0.8), mAbove(eyeY + 1.0)) : newMask();
-    onHead(ctx, 'mask', mOr(cap, peak, back), ramp, { shade: -1 });
+  if (view !== 'N') {
+    const streak = (x, s, d) => mOr(mEllipse(x + s * 0.4, eyeY + 0.1, 2.0 * k + 0.35, 1.8 * k + 0.25), wedge([x + s * 0.6, eyeY + 0.4], [x + d * (3.6 * k + 0.6), eyeY - 2.4 * k - 0.4], 2.4 * k));
+    let m;
+    if (view === 'S') {
+      m = mOr(streak(hcx - sk.eyeDx, -1, -1), streak(hcx + sk.eyeDx, 1, 1), mTri([hcx - 1.2 * k, sk.htop + 3.8 * k], [hcx + 1.2 * k, sk.htop + 3.8 * k], [hcx, eyeY - 1.4]), mTri([hcx - 1.2 * k, sk.htop + 3.8 * k], [hcx + 1.2 * k, sk.htop + 3.8 * k], [hcx, sk.htop + 2.0]));
+    } else {
+      m = streak(sk.anchors.face[0], 1, -1);
+    }
+    onHead(ctx, 'mask', m, ramp);
   }
   // yên lưng sẫm (nhìn ngang, nhìn sau)
   const [bcx, bcy, brx, bry] = sk.body;
-  if (view === 'E') onBody(ctx, 'saddle', mAnd(backMask(ctx), mEllipse(bcx - brx * 0.1, bcy - bry * 0.7, brx * 0.72, bry * 0.55)), ramp, { shade: -1 });
-  if (view === 'N') onBody(ctx, 'saddle', mAnd(backMask(ctx), mEllipse(bcx, bcy - bry * 0.55, brx * 0.7, bry * 0.5)), ramp, { shade: -1 });
+  if (view === 'E') onBody(ctx, 'saddle', mAnd(backMask(ctx), mEllipse(bcx - brx * 0.1, bcy - bry * 0.7, brx * 0.72, bry * 0.55)), ramp);
+  if (view === 'N') onBody(ctx, 'saddle', mAnd(backMask(ctx), mEllipse(bcx, bcy - bry * 0.55, brx * 0.7, bry * 0.5)), ramp);
 }
 
 /** Gấu mèo đỏ: mảng trắng trên mày và hai má (mặt gấu mèo đỏ), mõm giữ nguyên của parts/faces.js. */
@@ -274,14 +273,9 @@ function redPandaMask(ctx, ramp) {
 /** Lân: mày đỏ rậm (dày, cong lên ở đuôi mày) và má đỏ tròn, như đầu lân múa. Nhìn sau: không có (gáy trơn). */
 function lionMask(ctx, ramp) {
   const { sk, view } = ctx;
-  const k = patSize(sk);
-  const [hcx, hcy, hrx, hry] = sk.head;
-  const { eyeY } = sk;
   if (view === 'N') return;
-  void hcx;
-  void hcy;
-  void hrx;
-  void hry;
+  const k = patSize(sk);
+  const { eyeY } = sk;
   const brows = perEye(ctx, (x, s) => mOr(mEllipse(x, eyeY - 2.6 * k, 2.1 * k + 0.3, 0.95 * k + 0.2, -s * 0.28), mEllipse(x + s * 1.6 * k, eyeY - 3.3 * k, 1.0 * k + 0.2, 0.8 * k + 0.2)));
   const cheeks = perEye(ctx, (x, s) => mEllipse(x + s * (view === 'S' ? 1.4 : -0.9) * k, eyeY + 2.6 * k, 1.5 * k + 0.2, 1.2 * k + 0.2));
   onHead(ctx, 'mask', mOr(brows, cheeks), ramp);
@@ -365,7 +359,7 @@ function bellyBands(ctx) {
   const nrm = bodyNrm(sk);
   let i = 0;
   for (let d = -12; d <= 12; d += step) {
-    const band = view === 'S' ? mAnd(mBelow(bcy + d - 0.01), mAbove(bcy + d + step)) : mAnd(mBelow(-1), mAnd(rightOf(bcx + d), leftOf(bcx + d + step)));
+    const band = view === 'S' ? mAnd(mBelow(bcy + d - 0.01), mAbove(bcy + d + step)) : mAnd(rightOf(bcx + d), leftOf(bcx + d + step));
     const m = mAnd(belly, band);
     if (!mAny(m)) continue;
     ctx.parts.push(part(`bellyband${i}`, m, ctx.ramps.belly, 4.15 + (view === 'S' ? i : -i) * 0.001, { normal: nrm }));
@@ -498,7 +492,7 @@ const TUNE = {
   huou_reu: { spots: { layout: 'fawn', size: 'dot' } }, // hươu rêu: đốm rêu xanh nhỏ
   nhim_reu: { spots: { layout: 'scatter', size: 'spot' } }, // nhím rêu: mảng rêu trên lưng
   ca_noc: { spots: { layout: 'scatter', size: 'dot' } }, // cá nóc: chấm vàng
-  ky_nhong: { spots: { layout: 'scatter', size: 'blotch', headSize: 'spot' } }, // kỳ nhông lửa: đốm đen méo
+  ky_nhong: { spots: { layout: 'scatter', size: 'blotch', headSize: 'spot', flat: 2 } }, // kỳ nhông lửa: đốm đen méo (phẳng: đốm tròn đều)
   te_giac_da: { spots: { layout: 'rock', size: 'blotch', shade: -1 } }, // tê giác đá: mảng đá sẫm (tối hơn một bậc: đá xám trên đá xám)
   ca_chep_rong: { spots: { layout: 'koi', size: 'big', headSize: 'big' } }, // cá chép rồng: mảng đỏ kohaku trên đầu và lưng
   bach_ho: { stripes: {} },

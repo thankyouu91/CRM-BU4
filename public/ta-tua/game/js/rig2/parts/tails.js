@@ -1,7 +1,14 @@
 // Đuôi: sổ đăng ký theo `tail` của từng loài trong shared/pets.js. Chủ sở hữu: họa sĩ đuôi.
 // Mỗi mục { S, E, N }: hàm vẽ nhận ctx, đẩy bộ phận vào ctx.parts. Đuôi nằm sau thân khi nhìn trước/ngang (z = 1)
 // và trước thân khi nhìn sau (z = 8). ctx.pose.tail ∈ {−1, 0, 1} làm chóp đuôi đung đưa.
-// flat, thin, puff, nub: port nguyên từ pets-pilot (khớp từng điểm ảnh). Loại chưa vẽ lại dùng tạm FALLBACK.
+// flat, thin, puff, nub: port nguyên từ pets-pilot (khớp từng điểm ảnh, ảnh mẫu kiểm thử khóa lại: đừng sửa).
+// fluffy, curl, fan, dragon, fish: Rig 2.0 (họa sĩ G), ĐÃ XONG, đủ S/E/N, mọi giai đoạn tuổi; FALLBACK nay để trống.
+//   fluffy  đuôi chổi lông xù, 4 dáng (sóc, cáo, sói, ngựa) + chóp khác màu + túm lông nhọn; gấu mèo đỏ có khoanh;
+//   curl    heo: vòng xoắn nhỏ có lỗ; chó: đuôi cuộn trên lưng, mặt trong màu bụng;
+//   fan     đuôi chim, mỗi loài một bộ lông vũ (gà con, gà trống, hạc, vịt, ưng, chu tước);
+//   dragon  đuôi rồng dày thuôn, bụng đuôi màu bụng, gai lưng, chùm lông/lửa ở chóp;
+//   fish    cuống đuôi màu thân + vây đuôi chẻ đôi màu điểm nhấn, mép vây sáng (cá chép rồng).
+// Đuôi mới luôn nằm trong ô và trên mặt đất (settle), lộ ra ngoài bóng đầu chibi (clearOfHead, hugSide). Tinh chỉnh: TUNE.
 import { FH, FW, mAnd, mAndNot, mChain, mEllipse, mOr, mTri, part } from '../core.js';
 
 /** Loài vẽ đuôi khác với dữ liệu: cánh cụt có mẩu đuôi nhỏ lộ ra khi nhìn ngang và nhìn sau (thiết kế của bản mẫu). */
@@ -112,8 +119,8 @@ const none = { S() {}, E() {}, N() {} };
 
 const clamp = (v, lo, hi) => (v < lo ? lo : v > hi ? hi : v);
 const DEG = Math.PI / 180;
-/** Cỡ đuôi theo giai đoạn: sơ sinh 0.72, nhí nhố 0.80, thiếu niên 0.90, thanh niên 0.97, trưởng thành 1.05 (chặn trên để cấp 50 vẫn vừa ô). */
-const tailSize = (sk) => clamp(0.5 + 0.5 * sk.bk, 0.6, 1.05);
+/** Cỡ đuôi theo giai đoạn: sơ sinh 0.79 (bé con đuôi to so với thân), nhí nhố 0.86, thiếu niên 0.93, thanh niên 1.0, trưởng thành 1.05 (chặn trên). */
+const tailSize = (sk) => clamp(0.6 + 0.42 * sk.bk, 0.75, 1.05);
 /** Mặt nạ từ chuỗi hạt [x, y, r]. */
 const mBeads = (pts) => mOr(...pts.map(([x, y, r]) => mEllipse(x, y, r, r)));
 /** Khối elip tô sáng bao quanh chuỗi hạt, lệch lên-trái (sáng tròn hơn, như pháp tuyến của bản mẫu). */
@@ -416,14 +423,21 @@ const curlView = (view) => (ctx) => {
   if (pig) {
     // heo: vòng nhỏ mảnh (1 điểm ảnh) có lỗ, cuống ngắn
     const R = Math.max(1.6, 2.0 * k);
-    if (view === 'E') curlRing(ctx, bcx - brx - R + 0.6 + sw * 0.3, bcy - bry * 0.15 - R * 0.4, R, 1, ramp, [bcx - brx + 1.0, bcy]);
+    if (view === 'E') {
+      // vòng nằm sau mông; đầu to (bé sơ sinh) che mông thì đẩy vòng ra sau mép đầu
+      const y = bcy - bry * 0.15 - R * 0.4;
+      const [hcx, hcy, hrx, hry] = sk.head;
+      const hw = halfWidth(hcy, hrx, hry, y, 2.25);
+      const x = Math.min(bcx - brx - R + 0.6, hw === null ? Infinity : hcx - hw - R * 0.35) + sw * 0.3;
+      curlRing(ctx, x, y, R, 1, ramp, [bcx - brx + 1.0, bcy]);
+    }
     else if (view === 'S') curlRing(ctx, bcx + brx + 1.6 + sw * 0.3, bcy - 0.2, R * 0.9, 1, ramp, [bcx + brx - 1.0, bcy + 0.8], -1);
     else curlRing(ctx, bcx + sw * 0.5, bcy + bry * 0.2, R, 8, ramp, [bcx - 1.7, bcy + bry * 0.2 + 1.7]);
     return;
   }
   if (view === 'E') {
     const pts = place(DOG_CURL, [bcx - brx + 1.4, sk.btop + 1.3], k, 'E', sw * 0.6);
-    dogCurl(ctx, aboveGround(pts, sk.ground), 1);
+    dogCurl(ctx, aboveGround(clearOfHead(ctx, pts, 'E', 2, 0.75), sk.ground), 1);
   } else if (view === 'S') {
     const pts = placeN(DOG_CURL, [bcx + brx - 0.4, bcy - bry * 0.1], k * 0.9, sw * 0.6, -1);
     dogCurl(ctx, aboveGround(hugSide(ctx, pts, 0.3, 1), sk.ground), 1);
@@ -673,9 +687,9 @@ const TUNE = {
   cun_co: { kind: 'dog' },
   cho_vang: { kind: 'dog' },
   // ---- fan
-  ga_vang: { // gà con: chỏm lông ngắn vểnh lên, màu thân, lông giữa cam
+  ga_vang: { // gà con: chỏm lông ngắn vểnh lên, màu thân, chóp lông giữa cam
     base: 0.15,
-    feathers: [{ a: 84, L: 4.6, w: 1.4, ramp: 'main' }, { a: 58, L: 5.2, w: 1.5, ramp: 'accent' }, { a: 32, L: 4.4, w: 1.4, ramp: 'main' }],
+    feathers: [{ a: 84, L: 4.6, w: 1.4, ramp: 'main' }, { a: 58, L: 5.2, w: 1.5, ramp: 'main', tip: 'accent' }, { a: 32, L: 4.4, w: 1.4, ramp: 'main' }],
     spreadN: 100, foreN: 0.9, baseN: 0.5,
   },
   ga_trong: { // gà trống: bốn lông xòe vồng cao rồi rủ (đỏ sẫm, đỏ, đỏ chóp cam, cam), như đuôi gà trống
