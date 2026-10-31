@@ -3,6 +3,7 @@ import { api } from '../api.js';
 import { barChart } from '../charts.js';
 import { countdown, esc, fmt, fmtLots, pct, viewHead } from '../ui.js';
 import { sceneHdr } from '../scenes-hdr.js';
+import { itemIcon } from '../itemart.js';
 
 /** Lựa chọn của người chơi giữ nguyên qua các lần vẽ lại. */
 const ui = { orderFor: null, batches: '10', help: false, tab: {} };
@@ -47,6 +48,8 @@ export function renderFactory(root, ctx) {
   let lastLoad = 0;
 
   const com = (c) => commodities[c] ?? { name: c, icon: '📦', base: 0 };
+  /** Icon 16-bit 32 điểm của hàng `c`; chưa có hình thì emoji như cũ. */
+  const comIcon = (c) => itemIcon({ id: c, icon: com(c).icon }, 3);
   const spec = (s) => Object.entries(s).map(([c, n]) => `${n} lô ${com(c).icon} ${com(c).name}`).join(' + ');
   const shortSpec = (s) => Object.entries(s).map(([c, n]) => `${n} ${com(c).icon}`).join(' + ');
   const have = (c) => data.goods[c] ?? 0;
@@ -200,14 +203,14 @@ export function renderFactory(root, ctx) {
 
         <div class="factory-flow" aria-label="Dây chuyền">
           <div class="flow-node ${f.canRun ? '' : 'low'}">
-            <span class="flow-icon">${com(inC).icon}</span>
+            <span class="flow-icon">${comIcon(inC)}</span>
             <b>${fmtLots(have(inC))} lô</b>
             <small>${esc(com(inC).name)}</small>
             <small class="flow-sub ${f.canRun ? '' : 'down'}">đủ ${fmt(f.canRun)} mẻ${f.canRun ? ` · ≈ ${fmt(Math.max(1, Math.round(f.canRun / rate)))} giờ` : ''}</small>
           </div>
           <div class="flow-arrow"><span>${shortSpec(def.input)}</span><i>➜</i><span>${shortSpec(def.output)}</span></div>
           <div class="flow-node out">
-            <span class="flow-icon">${com(outC).icon}</span>
+            <span class="flow-icon">${comIcon(outC)}</span>
             <b>${fmtLots(have(outC))} lô</b>
             <small>${esc(com(outC).name)}</small>
             <small class="flow-sub">hôm nay +${fmt(today.batches + today.toll_batches)} mẻ</small>
@@ -384,7 +387,7 @@ export function renderFactory(root, ctx) {
       </div>
       ${held.length ? `<ul class="factory-stock-list">${held.map(([c, q]) => `
         <li class="${q ? '' : 'empty-row'}">
-          <span class="factory-stock-name">${com(c).icon} ${esc(com(c).name)} ${tag(c)}</span>
+          <span class="factory-stock-name">${comIcon(c)} ${esc(com(c).name)} ${tag(c)}</span>
           <span class="factory-stock-qty"><b>${fmtLots(q)} lô</b>${enough(c, q)}</span>
         </li>`).join('')}</ul>` : '<p class="muted small">Kho đang trống. Mua nguyên liệu ở Sàn hoặc ký hợp đồng cung ứng.</p>'}
     </section>`;

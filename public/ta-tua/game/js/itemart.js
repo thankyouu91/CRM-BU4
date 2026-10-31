@@ -1,5 +1,10 @@
-// Biểu tượng pixel cho đồ trong Siêu thị và Túi đồ: cùng lưới, cùng viền nâu đậm, cùng độ thô với pet,
-// để đồ ăn, đồ chơi, đồ đeo trông như một bộ. Đồ đeo dùng chính hình vẽ lên người (rig.js).
+// Biểu tượng pixel cho đồ: Siêu thị, Túi đồ, trứng, Bếp, Sàn, Lò rèn, Vườn, Nhà máy.
+// Thứ tự tìm hình của một id:
+//   1. icon 16-bit 32x32 trong atlas assets/items/ (scripts/art/build-items.py, bảng khung ở itematlas.js);
+//   2. hình pixel cũ (ICONS dưới đây, lưới 9-13 ô, viền nâu đậm, cùng độ thô với pet);
+//   3. đồ đeo: chính hình vẽ lên người (rig.js);
+//   4. không có hình: emoji của món (bộ icon js/icons vẽ lại emoji thành pixel).
+import { ITEM_ATLAS } from './itematlas.js';
 import { OUTLINE, bitmap } from './pixel.js';
 import { wearImage } from './rig.js';
 import { ELEMENTS } from './shared/pets.js';
@@ -55,20 +60,45 @@ for (const [el, e] of Object.entries(ELEMENTS)) ICONS[`egg_${el}`] = [EGG_ROWS, 
 
 const cache = new Map();
 
-/** Ảnh pixel của món `id`: { url, w, h } ở độ phân giải gốc, hoặc null nếu món chưa có hình. */
+// Trang atlas chỉ vài KB: tải sẵn khi game mở để thẻ đồ đầu tiên đã có hình, không nháy
+// (giữ tham chiếu tới ảnh để chúng không bị thu dọn giữa chừng).
+const preloaded = typeof Image === 'function' ? ITEM_ATLAS.pages.map((p) => Object.assign(new Image(), { src: p.url })) : [];
+
+/**
+ * Ảnh pixel của món `id` ở độ phân giải gốc, hoặc null nếu món chưa có hình.
+ * Icon atlas: { url (trang atlas), w, h, x, y, sheet: [rộng, cao trang] }; hình cũ: { url (data URL), w, h }.
+ */
 export function itemArt(id) {
   if (!cache.has(id)) {
-    let canvas = null;
-    if (ICONS[id]) canvas = bitmap(ICONS[id][0], ICONS[id][1], OUTLINE);
-    else canvas = wearImage(id);
-    cache.set(id, canvas && { url: canvas.toDataURL(), w: canvas.width, h: canvas.height });
+    const f = Object.hasOwn(ITEM_ATLAS.frames, id) ? ITEM_ATLAS.frames[id] : null;
+    let art = null;
+    if (f && ITEM_ATLAS.pages[f[0]]) {
+      const page = ITEM_ATLAS.pages[f[0]];
+      art = { url: page.url, w: ITEM_ATLAS.size, h: ITEM_ATLAS.size, x: f[1], y: f[2], sheet: [page.w, page.h] };
+    } else {
+      const canvas = Object.hasOwn(ICONS, id) ? bitmap(ICONS[id][0], ICONS[id][1], OUTLINE) : wearImage(id);
+      art = canvas && { url: canvas.toDataURL(), w: canvas.width, h: canvas.height };
+    }
+    cache.set(id, art);
   }
   return cache.get(id);
 }
 
-/** Thẻ <img> của món đồ phóng `px` lần; món chưa có hình thì trả về emoji. */
-export function itemIcon(item, px = 4) {
+/**
+ * HTML hình của món đồ (`item` cần `id`, và `icon` là emoji dự phòng); món chưa có hình thì trả về emoji.
+ * - `scale`: icon atlas 32x32 phóng nguyên lần: 2 = 64 điểm (thẻ Siêu thị, Túi đồ, trứng), 1 = 32 điểm (danh sách).
+ *   Thẻ <span> nền sprite, bù zoom của cả game (css .px-atlas) nên mỗi điểm ảnh ra đúng `scale` điểm màn hình.
+ * - `px`: hệ số phóng của hình cũ (<img>, đồ đeo), giữ như trước: 4 ở thẻ, 3 ở danh sách chọn.
+ * Hình chỉ để trang trí (tên món đã ghi bằng chữ bên cạnh) nên ẩn với trình đọc màn hình.
+ */
+export function itemIcon(item, px = 4, scale = px >= 4 ? 2 : 1) {
   const a = item && itemArt(item.id);
   if (!a) return item?.icon ?? '';
+  if (a.sheet) {
+    const s = Math.max(1, Math.round(scale));
+    return `<span class="px-icon px-atlas" aria-hidden="true" style="width:${a.w * s}px;height:${a.h * s}px;`
+      + `background-image:url('${a.url}');background-position:${-a.x * s}px ${-a.y * s}px;`
+      + `background-size:${a.sheet[0] * s}px ${a.sheet[1] * s}px"></span>`;
+  }
   return `<img class="px-icon" src="${a.url}" alt="" width="${a.w * px}" height="${a.h * px}" />`;
 }
