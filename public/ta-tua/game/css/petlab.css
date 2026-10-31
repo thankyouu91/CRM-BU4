@@ -71,6 +71,13 @@
   .lab-layout { grid-template-columns: minmax(0, 1fr); }
   .lab-detail { position: static; max-height: none; order: -1; }
 }
+/* Màn cảm ứng: chip và công tắc cao tối thiểu 44 px trên màn hình cho dễ chạm (cả trang bị zoom --zoom nên chia lại),
+   giữ kiểu chip như cũ. */
+@media (pointer: coarse) {
+  .lab .chip { min-height: calc(44px / var(--zoom, 1)); justify-content: center; }
+  .lab-toggle { min-height: calc(44px / var(--zoom, 1)); padding: 0 4px; cursor: pointer; }
+  .lab-toggle input { width: 24px; height: 24px; margin: 0; }
+}
 @media (max-width: 520px) {
   .lab-head { flex-direction: column; }
   .lab-grid { grid-template-columns: repeat(2, 1fr); }

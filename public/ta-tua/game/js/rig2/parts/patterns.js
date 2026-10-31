@@ -3,6 +3,7 @@
 // Bụng màu sáng do dáng khung (archetypes/*) vẽ sẵn cho mọi loài; ở đây chỉ thêm phần riêng của hoa văn.
 //  - belly: vằn trán mèo (loài tai mèo), port nguyên từ pets-pilot (khớp từng điểm ảnh).
 //  - spots, stripes, mask, patch, scales, shell: HÌNH TẠM (chưa vẽ lại theo bản mẫu), dựng nhanh từ rig.js cũ, đã khóa màu.
+//    patch (gấu trúc) đã chỉnh lại sau soát: mảng mắt to nghiêng, đi cùng tai đen (parts/ears.js) và tay chân đen (ramps.js limb).
 import { RAMPS, mAnd, mEllipse, mOr, mAndNot, part, pyRound } from '../core.js';
 
 const none = () => {};
@@ -65,6 +66,20 @@ function eyeMask(ctx, rx, ry) {
   onHead(ctx, 'mask', m);
 }
 
+// ---- mảng mắt gấu trúc: hai mảng bầu dục to, nghiêng ra ngoài (đáy chếch về phía má), màu điểm nhấn bậc 1 cố định
+// (flat: không tô bóng; dải charcoal bậc 1 = #3d2a1f, tối như tai và tay chân nhưng không trùng màu viền #2e1d14);
+// mắt và đốm sáng của mắt nằm trên mảng.
+function pandaPatches(ctx) {
+  const { sk, view } = ctx;
+  if (view === 'N') return;
+  const [hcx] = sk.head;
+  const { eyeY, eyeDx } = sk;
+  const [rx, ry, tilt] = sk.big ? [3.0, 3.5, 0.4] : [2.8, 3.2, 0.4];
+  const at = (x, s) => mEllipse(x, eyeY + 0.4, rx, ry, -s * tilt);
+  const m = view === 'S' ? mOr(at(hcx - eyeDx, -1), at(hcx + eyeDx, 1)) : at(sk.anchors.face[0], -1);
+  ctx.parts.push(part('patch', mAnd(ctx.headMask, m), ctx.ramps.accent, ctx.zh + 0.15, { group: 'head', flat: 1, line: false }));
+}
+
 // ---- vảy (tê tê, rồng): chấm sáng xen kẽ trên thân
 function scales(ctx) {
   const { sk } = ctx;
@@ -106,7 +121,7 @@ export const FALLBACK = {
   spots: all(spots),
   stripes: all(stripes),
   mask: all((ctx) => eyeMask(ctx, 2.8, 2.2)),
-  patch: all((ctx) => eyeMask(ctx, 2.2, 2.6)),
+  patch: all(pandaPatches),
   scales: all(scales),
   shell: all(shell),
 };

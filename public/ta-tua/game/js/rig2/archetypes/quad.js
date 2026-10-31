@@ -1,6 +1,7 @@
 // Dáng BỐN CHÂN (quad): mèo, chó, cáo, hươu, ngựa, rùa... Chủ sở hữu: họa sĩ dáng quad.
 // Nhìn trước: hai chân trước dạng cột, bàn chân màu bụng. Nhìn ngang: thân dài, bốn chân bước chéo. Nhìn sau: mông và hai bàn chân sau.
 // Port nguyên từ pets-pilot/scripts/rig2.py (mèo Meo Bạc), khớp từng điểm ảnh với ảnh mẫu.
+// Chân dùng dải ramps.limb (mặc định = main, xem ramps.js); bàn chân vẫn màu bụng.
 import { gait, mAnd, mBelow, mEllipse, part } from '../core.js';
 
 function torso(ctx) {
@@ -26,7 +27,7 @@ function legs(ctx) {
     for (const [s, lift] of [[-1, lF], [1, lN]]) {
       const lx = bcx + s * Math.max(1.8, brx * 0.4);
       const m = mEllipse(lx, (top + g) / 2 - lift * 0.5, lw + 0.25, (g - top) / 2 + 0.45 - lift * 0.5, 0, 3.0);
-      ctx.parts.push(part(`legF${s}`, m, ramps.main, 5, { normal: [lx - 0.6, top, lw + 1, g - top + 1] }));
+      ctx.parts.push(part(`legF${s}`, m, ramps.limb ?? ramps.main, 5, { normal: [lx - 0.6, top, lw + 1, g - top + 1] }));
       const paw = mAnd(m, mBelow(g - 2.0 - lift));
       ctx.parts.push(part(`paw${s}`, paw, ramps.belly, 5.1, { group: `legF${s}`, normal: [lx - 0.6, g - 3, lw + 1, 3] }));
     }
@@ -34,7 +35,7 @@ function legs(ctx) {
     for (const [s, lift] of [[-1, lF], [1, lN]]) {
       const lx = bcx + s * Math.max(2.0, brx * 0.5);
       const m = mEllipse(lx, g - 1.4 - lift, 2.1, 1.7);
-      ctx.parts.push(part(`legB${s}`, m, ramps.main, 5, { normal: [lx - 0.5, g - 3, 2.6, 2.6] }));
+      ctx.parts.push(part(`legB${s}`, m, ramps.limb ?? ramps.main, 5, { normal: [lx - 0.5, g - 3, 2.6, 2.6] }));
       const pad = mAnd(m, mBelow(g - 0.9 - lift));
       ctx.parts.push(part(`pad${s}`, pad, ramps.belly, 5.1, { group: `legB${s}`, flat: 1 }));
     }
@@ -46,7 +47,7 @@ function legs(ctx) {
     for (const [nm, lx, off, lift, z, sh] of list) {
       const x0 = lx + off * 0.45;
       const m = mEllipse(x0, (top + g) / 2 - lift * 0.5, lw, (g - top) / 2 + 0.5 - lift * 0.5, 0, 2.6);
-      ctx.parts.push(part(`leg${nm}`, m, ramps.main, z, { normal: [x0 - 0.6, top, lw + 1, g - top + 1], shade: sh }));
+      ctx.parts.push(part(`leg${nm}`, m, ramps.limb ?? ramps.main, z, { normal: [x0 - 0.6, top, lw + 1, g - top + 1], shade: sh }));
       if (z === 5) {
         const paw = mAnd(m, mBelow(g - 1.6 - lift));
         ctx.parts.push(part(`paw${nm}`, paw, ramps.belly, 5.1, { group: `leg${nm}`, normal: [x0 - 0.6, g - 2, lw + 1, 2.5] }));

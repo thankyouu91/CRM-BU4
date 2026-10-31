@@ -74,36 +74,51 @@ export function drawFrame(species, stageKey, pose = {}, wear = {}, tick = 0, opt
   return toCanvas(img);
 }
 
-/** Toàn bộ khung hình của một hoạt ảnh (đã tính sẵn để chạy mượt); `opts.view` chọn hướng (mặc định S). */
-export function animFrames(species, stageKey, anim, wear = {}, opts = {}) {
+/**
+ * Các khung của một hoạt ảnh, chưa vẽ: [{ pose, view, tick }] (để vẽ dần từng khung, như petsheet.js rigSheet);
+ * drawFrame(species, stageKey, pose, wear, tick, { ...opts, view }) cho đúng khung mà animFrames vẽ.
+ */
+export function animSteps(species, anim, opts = {}) {
   const name = anim === 'run' ? 'walk' : ANIMS[anim] ? anim : 'idle';
   const view = opts.view ?? 'S';
+  return animPoses(speciesOf(species), name, view).map((pose, i) => ({ pose, view: pose.view ?? view, tick: i }));
+}
+
+/** Toàn bộ khung hình của một hoạt ảnh (đã tính sẵn để chạy mượt); `opts.view` chọn hướng (mặc định S). */
+export function animFrames(species, stageKey, anim, wear = {}, opts = {}) {
   const sp = speciesOf(species);
-  return animPoses(sp, name, view).map((pose, i) => drawFrame(sp, stageKey, pose, wear, i, { ...opts, view: pose.view ?? view }));
+  return animSteps(sp, anim, opts).map(({ pose, view, tick }) => drawFrame(sp, stageKey, pose, wear, tick, { ...opts, view }));
 }
 
 // ---------------------------------------------------------------- đồ đeo
 
 const wearCanvas = new Map();
-/** Hình món `id` đúng như vẽ lên người (hướng S), dạng canvas (Túi đồ, Siêu thị dùng làm biểu tượng); null nếu chưa có hình. */
-export function wearImage(id) {
-  if (!wearCanvas.has(id)) {
-    const icon = wearIcon(id);
-    wearCanvas.set(id, icon ? toCanvas(icon.img) : null);
+/**
+ * Hình món `id` đúng như vẽ lên người (hướng S), dạng canvas (Túi đồ, Siêu thị dùng làm biểu tượng); null nếu chưa có hình.
+ * opts.grow: như wearIcon (bé khách mời Petdex dùng khăn rộng hơn để lộ ra hai bên người).
+ */
+export function wearImage(id, opts = {}) {
+  const key = `${id}|${opts.grow ?? 1}`;
+  if (!wearCanvas.has(key)) {
+    const icon = wearIcon(id, opts);
+    wearCanvas.set(key, icon ? toCanvas(icon.img) : null);
   }
-  return wearCanvas.get(id);
+  return wearCanvas.get(key);
 }
 
 /**
  * Góc trên-trái để đặt hình wearImage(`id`) khi biết các điểm neo (`anchors`: { head: { x, y }, ... }).
- * Dùng cho bé khách mời Petdex (điểm neo dò từ ảnh). `headRx` giữ cho tương thích: hình đã gồm độ lún và lệch của món.
+ * Dùng cho bé khách mời Petdex (điểm neo dò từ ảnh). Hình đã gồm độ lún của món; món đội đầu lệch một bên (nơ, hoa cài)
+ * thì lệch theo `headRx` (nửa bề ngang đầu của chính bé khách mời) như luật cũ: neo + side × headRx + lún − chốt.
+ * opts: như wearImage (phải giống nhau để chốt khớp hình).
  */
-export function wearSpotAt(id, anchors, headRx) {
-  void headRx;
-  const icon = wearIcon(id);
+export function wearSpotAt(id, anchors, headRx, opts = {}) {
+  const icon = wearIcon(id, opts);
   const anchor = anchors?.[WEARABLES[id]?.slot];
   if (!icon || !anchor) return { x: 0, y: 0 };
-  return { x: anchor.x - icon.pivot[0], y: anchor.y - icon.pivot[1] };
+  const { side, dx } = icon.lean ?? { side: 0, dx: 0 };
+  const lean = side && Number.isFinite(headRx) ? Math.round(side * headRx) - dx : 0;
+  return { x: anchor.x - icon.pivot[0] + lean, y: anchor.y - icon.pivot[1] };
 }
 
 // ---------------------------------------------------------------- tiện ích cũ

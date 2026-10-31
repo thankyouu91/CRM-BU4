@@ -3,7 +3,8 @@
 //   cùng bố cục với ảnh của bản mẫu pets-pilot (petdex/test/golden/rig2/README.txt ghi những chỗ cố ý khác).
 //   Vẽ lại ảnh mẫu SAU KHI đã xem kỹ: RIG2_UPDATE_GOLDEN=1 node --test petdex/test/rig2.test.js
 // - Khói: mọi loài × mọi giai đoạn tuổi × mọi hướng vẽ được, đúng bảng 48 màu, không điểm bán trong suốt, không chạm mép ô,
-//   chân ở hàng 44; mọi món đồ đeo vẽ được ở mọi hướng.
+//   chân ở hàng 44; mọi món đồ đeo vẽ được ở mọi hướng, trong ô (cả bé sơ sinh, nhí nhố), và hiện ra ở S và E/W;
+//   wearIcon cho hình với mọi mục của 5 sổ đồ đeo và đưa cho hàm vẽ đủ ctx như khi vẽ lên pet.
 import assert from 'node:assert/strict';
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import test from 'node:test';
@@ -134,15 +135,22 @@ test('khói: mọi dáng hoạt ảnh của mọi loài (trưởng thành, cấp
   assert.deepEqual(problems, []);
 });
 
-test('khói: mọi món đồ đeo vẽ được ở mọi hướng, trên 3 dáng khung và bé sơ sinh, đúng bảng màu', () => {
+// Mọi món ở trong ô (ARTIST-GUIDE mục 3, 9) trên 3 dáng khung ở 3 cỡ người (sơ sinh, nhí nhố, trưởng thành) và bé lão làng
+// cấp 50 to nhất; khung đi bộ có nhún (step 1) và tick 2 (bùa đung đưa xuống thấp nhất).
+const WEAR_BODIES = [
+  ...['boba', 'meo_bac', 'canh_cut'].flatMap((sp) => ['adult', 'kid', 'baby'].map((st) => [sp, st, 1])),
+  ['thanh_long', 'elder', 50],
+];
+
+test('khói: mọi món đồ đeo vẽ được ở mọi hướng, trên 3 dáng khung × sơ sinh/nhí nhố/trưởng thành, đúng bảng màu, trong ô', () => {
   const problems = [];
   for (const [id, w] of Object.entries(WEARABLES)) {
-    for (const [sp, st] of [['boba', 'adult'], ['meo_bac', 'adult'], ['canh_cut', 'adult'], ['boba', 'baby'], ['thanh_long', 'elder']]) {
+    for (const [sp, st, level] of WEAR_BODIES) {
       for (const v of VIEWS) {
         try {
-          const { img } = rig.renderFrame(sp, st, v, { step: 1 }, { [w.slot]: id });
+          const { img } = rig.renderFrame(sp, st, v, { step: 1, lift: -1 }, { [w.slot]: id }, { tick: 2, level });
           const a = rig.auditFrame(img);
-          if (a.offPalette || a.semi) problems.push(`${id} trên ${sp}/${st}/${v}: ${JSON.stringify(a)}`);
+          if (a.offPalette || a.semi || a.edge) problems.push(`${id} trên ${sp}/${st}/${v}: ${JSON.stringify(a)}`);
         } catch (err) {
           problems.push(`${id} trên ${sp}/${st}/${v}: lỗi ${err.message}`);
         }
@@ -151,6 +159,81 @@ test('khói: mọi món đồ đeo vẽ được ở mọi hướng, trên 3 dá
     assert.ok(rig.wearIcon(id), `${id}: chưa có hình biểu tượng`);
   }
   assert.deepEqual(problems, []);
+});
+
+test('khói: món nào đang đeo cũng hiện ra ở hướng S và E (nên cả W) trên 3 dáng khung (bé đi bộ trong công viên dùng E/W)', () => {
+  const missing = [];
+  for (const sp of ['boba', 'meo_bac', 'canh_cut']) {
+    const bare = Object.fromEntries(['S', 'E', 'W'].map((v) => [v, rig.renderFrame(sp, 'adult', v, {}, {}).img.data]));
+    for (const [id, w] of Object.entries(WEARABLES)) {
+      for (const v of ['S', 'E', 'W']) {
+        const got = rig.renderFrame(sp, 'adult', v, {}, { [w.slot]: id }).img.data;
+        if (got.every((c, k) => c === bare[v][k])) missing.push(`${id} trên ${sp}/${v}`);
+      }
+    }
+  }
+  assert.deepEqual(missing, []);
+});
+
+test('wearIcon: mọi mục trong 5 sổ đồ đeo (đã vẽ lại và hình cũ) cho hình, và hàm vẽ nhận đủ ctx như trên pet', async () => {
+  const slots = {
+    head: await import(`${GAME}rig2/wear/head.js`),
+    face: await import(`${GAME}rig2/wear/face.js`),
+    neck: await import(`${GAME}rig2/wear/neck.js`),
+    back: await import(`${GAME}rig2/wear/back.js`),
+    charm: await import(`${GAME}rig2/wear/charm.js`),
+  };
+  const registry = { head: 'HEAD', face: 'FACE', neck: 'NECK', back: 'BACK', charm: 'CHARM' };
+  for (const [slot, mod] of Object.entries(slots)) {
+    for (const id of [...Object.keys(mod[registry[slot]]), ...Object.keys(mod.LEGACY)]) {
+      assert.equal(WEARABLES[id]?.slot, slot, `${id}: không phải món của khe ${slot} trong shared/pets.js`);
+      const icon = rig.wearIcon(id);
+      assert.ok(icon && icon.img.w > 0 && icon.img.h > 0, `${slot}/${id}: wearIcon rỗng`);
+      const { data } = icon.img;
+      for (let k = 0; k < data.length; k += 4) {
+        if (!data[k + 3]) continue;
+        const hex = `#${[0, 1, 2].map((c) => data[k + c].toString(16).padStart(2, '0')).join('')}`;
+        assert.ok(data[k + 3] === 255 && rig.inPalette(hex), `${slot}/${id}: hình biểu tượng có điểm ${hex} ngoài bảng màu`);
+      }
+    }
+  }
+  // Một món "của họa sĩ" dùng ctx.ramps, ctx.level, ctx.headMask (ARTIST-GUIDE mục 4): vẽ lên pet được thì hình biểu tượng cũng được.
+  const { HEAD } = slots.head;
+  const seen = {};
+  const spy = (ctx, img) => {
+    seen[ctx.chin === null ? 'icon' : 'pet'] = Object.keys(ctx).sort();
+    const accent = rig.RAMPS[ctx.ramps.accent][2];
+    const [ax, ay] = ctx.sk.anchors.head;
+    for (let dx = -2; dx <= 2; dx++) img.data.set([...[1, 3, 5].map((i) => parseInt(accent.slice(i, i + 2), 16)), 255], ((Math.round(ay) - 1) * 48 + Math.round(ax) + dx) * 4);
+    if (!ctx.headMask || ctx.level < 1 || !ctx.parts.length) throw new Error('ctx thiếu trường');
+  };
+  const saved = HEAD.tophat;
+  HEAD.tophat = { S: spy, E: spy, N: spy };
+  try {
+    rig.clearWearIcons();
+    rig.renderFrame('boba', 'adult', 'S', {}, { head: 'tophat' });
+    const icon = rig.wearIcon('tophat');
+    assert.ok(icon, 'wearIcon ném lỗi hoặc rỗng với món dùng ctx.ramps');
+    assert.deepEqual(seen.icon, seen.pet, 'wearIcon đưa thiếu trường ctx so với khi vẽ lên pet');
+  } finally {
+    if (saved) HEAD.tophat = saved;
+    else delete HEAD.tophat;
+    rig.clearWearIcons();
+  }
+  // Món vẽ lỗi: wearIcon trả về null (túi đồ hiện ô trống), không làm hỏng màn hình.
+  const savedBow = HEAD.bow;
+  HEAD.bow = { S: () => { throw new Error('hỏng'); }, E: () => {}, N: () => {} };
+  const warn = console.warn;
+  console.warn = () => {};
+  try {
+    rig.clearWearIcons();
+    assert.equal(rig.wearIcon('bow'), null);
+  } finally {
+    console.warn = warn;
+    if (savedBow) HEAD.bow = savedBow;
+    else delete HEAD.bow;
+    rig.clearWearIcons();
+  }
 });
 
 test('bảng dải màu: đủ 51 loài, mọi dải trong core.js, cánh cụt là xanh đen', async () => {

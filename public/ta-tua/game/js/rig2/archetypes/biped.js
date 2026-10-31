@@ -1,5 +1,6 @@
 // Dáng ĐỨNG HAI CHÂN (biped): Boba, thỏ, sóc, khỉ, gấu... Chủ sở hữu: họa sĩ dáng biped.
 // Vẽ thân (thân + bụng), chân, tay, và khối đầu. Tai, đuôi, mặt, hoa văn, đặc điểm do các file parts/ lo.
+// Chân và tay dùng dải ramps.limb (mặc định = main; gấu trúc: đen, xem ramps.js).
 // Port nguyên từ pets-pilot/scripts/rig2.py (body_parts, head_parts), khớp từng điểm ảnh với ảnh mẫu.
 import { gait, mAnd, mEllipse, part } from '../core.js';
 
@@ -33,13 +34,13 @@ function feet(ctx) {
     for (const [s, lift] of [[-1, lF], [1, lN]]) {
       const fx = bcx - (pose.sway ?? 0) + s * dx;
       const fy = g - fry + 0.42 - lift;
-      ctx.parts.push(part(`foot${s}`, mEllipse(fx, fy, frx, fry), ramps.main, 3, { normal: [fx - 0.5, fy - 1, frx + 0.5, fry + 1] }));
+      ctx.parts.push(part(`foot${s}`, mEllipse(fx, fy, frx, fry), ramps.limb ?? ramps.main, 3, { normal: [fx - 0.5, fy - 1, frx + 0.5, fry + 1] }));
     }
   } else {
     for (const [nm, off, lift, z, sh] of [['footF', -si, lF, 2, -1], ['footN', si, lN, 5, 0]]) {
       const fx = bcx + 0.8 + off * 0.9;
       const fy = g - fry + 0.42 - lift;
-      ctx.parts.push(part(nm, mEllipse(fx, fy, frx + 0.3, fry), ramps.main, z, { normal: [fx - 0.5, fy - 1, frx + 1, fry + 1], shade: sh }));
+      ctx.parts.push(part(nm, mEllipse(fx, fy, frx + 0.3, fry), ramps.limb ?? ramps.main, z, { normal: [fx - 0.5, fy - 1, frx + 1, fry + 1], shade: sh }));
     }
   }
 }
@@ -58,11 +59,11 @@ function arms(ctx) {
       const ax = bcx + s * (brx - 0.3 + up * 1.2);
       const ay = bcy - 0.4 - up * 3.2 + sw;
       const z = view === 'S' ? 6 : 3;
-      ctx.parts.push(part(`arm${s}`, mEllipse(ax, ay, 1.7, 2.6, -s * (0.35 + up * 0.5)), ramps.main, z, { normal: [ax - 0.5, ay - 1, 2.2, 3.2] }));
+      ctx.parts.push(part(`arm${s}`, mEllipse(ax, ay, 1.7, 2.6, -s * (0.35 + up * 0.5)), ramps.limb ?? ramps.main, z, { normal: [ax - 0.5, ay - 1, 2.2, 3.2] }));
     }
   } else if (!ctx.handsBusy) {
     const ax = bcx + 1.0 - si * 0.5;
-    ctx.parts.push(part('armN', mEllipse(ax, bcy - 0.2, 1.7, 2.7, -0.25 + si * 0.1), ramps.main, 6, { normal: [ax - 0.5, bcy - 1, 2.2, 3.2] }));
+    ctx.parts.push(part('armN', mEllipse(ax, bcy - 0.2, 1.7, 2.7, -0.25 + si * 0.1), ramps.limb ?? ramps.main, 6, { normal: [ax - 0.5, bcy - 1, 2.2, 3.2] }));
   }
 }
 

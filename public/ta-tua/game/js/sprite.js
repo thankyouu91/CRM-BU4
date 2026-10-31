@@ -35,6 +35,11 @@ export class Sprite {
     this.el.style.backgroundImage = this.sheet.url ? `url("${this.sheet.url}")` : 'none';
     this.el.classList.toggle('px', Boolean(this.sheet.pixelated));
     this.setScale(this.scale);
+    // Tấm của bộ khung còn đang dựng dở (petsheet.js rigSheet: mới có hàng đứng thở): đủ hàng thì lắp ảnh mới vào.
+    const s = this.sheet;
+    if (s.pending) s.ready.then(() => {
+      if (this.sheet === s && live.has(this)) this.setSheet(s);
+    });
   }
 
   /** Đang chạy hoạt ảnh một lần (vẫy tay, nhảy...) thì chưa nên đổi sang dáng đi. */
@@ -50,6 +55,7 @@ export class Sprite {
     s.height = `${frameH * scale}px`;
     s.backgroundSize = `${cols * frameW * scale}px auto`;
     // Ô của bộ khung Rig 2.0 còn vài hàng trống dưới chân: kéo hình xuống để chân chạm đất (bóng, chỗ đứng) như trước.
+    // Lề âm này phải nằm trong một khối flow-root (.pet-body trong style.css), nếu không nó tràn ra ngoài khung bé.
     s.marginBottom = this.sheet.padBottom ? `${-this.sheet.padBottom * scale}px` : '';
     this.draw();
   }

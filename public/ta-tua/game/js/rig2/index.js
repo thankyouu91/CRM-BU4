@@ -96,21 +96,27 @@ function fittedLook(sp, stage, level) {
   return fitCache.get(key);
 }
 
-function draw(sp, st, view, pose, wear, opts, level) {
-  const mirrorW = view === 'W';
-  const v = mirrorW ? 'E' : view;
-  const sk = skeleton(sp, st, v, pose);
+/**
+ * ctx của một khung hình (ARTIST-GUIDE mục 4): MỌI hàm trong sổ đăng ký (bộ phận lẫn đồ đeo, kể cả khi wearIcon vẽ hình
+ * món đồ cho túi đồ) nhận đúng bộ trường này. `sk`: bộ xương của khung; `opts`: tick, level (mặc định 1).
+ */
+export function makeCtx(sp, st, sk, view, pose = {}, wear = {}, opts = {}) {
+  const level = opts.level ?? 1;
+  const arch = archetypeOf(sp);
+  const [hcx, hcy, hrx, hry] = sk.head;
+  return {
+    sp, st, sk, view, pose, wear: wear ?? {}, tick: opts.tick ?? 0, level, form: formIndex(level),
+    ramps: rampsOf(sp), parts: [], pixels: [], held: { pixels: [], parts: [] },
+    zh: arch.headZ(view), hnrm: [hcx - 1.0, hcy - 1.5, hrx + 1.2, hry + 1.6], headMask: null,
+    handsBusy: Boolean(featureFor(sp.feature).holds), chin: null,
+  };
+}
+
+/** Bước 1 của pipeline: gom bộ phận của pet vào ctx.parts / ctx.pixels (đặt luôn ctx.headMask, ctx.held). */
+function collectParts(ctx, marks) {
+  const { sp, view: v } = ctx;
   const arch = archetypeOf(sp);
   const feature = featureFor(sp.feature);
-  const [hcx, hcy, hrx, hry] = sk.head;
-  const ctx = {
-    sp, st, sk, view: v, pose, wear: wear ?? {}, tick: opts.tick ?? 0, level, form: formIndex(level),
-    ramps: rampsOf(sp), parts: [], pixels: [], held: { pixels: [], parts: [] },
-    zh: arch.headZ(v), hnrm: [hcx - 1.0, hcy - 1.5, hrx + 1.2, hry + 1.6], headMask: null, handsBusy: Boolean(feature.holds), chin: null,
-  };
-  const marks = opts.marks !== false;
-
-  // 1) bộ phận
   tailFor(sp)[v](ctx);
   earsFor(sp.ears)[v](ctx);
   arch.body[v](ctx);
@@ -121,6 +127,19 @@ function draw(sp, st, view, pose, wear, opts, level) {
   patternFor(sp.pattern)[v](ctx);
   feature[v](ctx);
   if (marks) MARKS.body(ctx);
+}
+
+function draw(sp, st, view, pose, wear, opts, level) {
+  const mirrorW = view === 'W';
+  const v = mirrorW ? 'E' : view;
+  const sk = skeleton(sp, st, v, pose);
+  const feature = featureFor(sp.feature);
+  const [, hcy, , hry] = sk.head;
+  const ctx = makeCtx(sp, st, sk, v, pose, wear, { tick: opts.tick, level });
+  const marks = opts.marks !== false;
+
+  // 1) bộ phận
+  collectParts(ctx, marks);
 
   // 2) tô bóng, viền một lần cho cả khối
   const pet = outline(colourise(ctx.parts, ctx.pixels));
@@ -184,29 +203,50 @@ export function renderAnim(species, stage, anim, view = 'S', wear = {}, opts = {
 const iconCache = new Map();
 /**
  * Hình món `id` đúng như vẽ lên người ở hướng S (trên Boba trưởng thành, không có pet), cắt sát:
- * { img, pivot: [x, y] } với pivot = vị trí điểm neo khe của món trong hình (để đặt món lên bé khách mời).
+ * { img, pivot: [x, y], lean } với pivot = vị trí điểm neo khe của món trong hình (để đặt món lên bé khách mời) và
+ * lean = { side, dx } khi món đội đầu lệch sang một bên theo bề ngang đầu (nơ, hoa cài: hình cũ có `side`), để bé khách
+ * mời lệch theo đầu của chính bé (wearSpotAt trong rig.js). Hàm vẽ món nhận đủ ctx như khi vẽ lên pet (makeCtx), trừ
+ * ctx.chin = null (hình biểu tượng không bị cằm che). Món vẽ lỗi thì trả về null (túi đồ hiện ô trống), không ném lỗi.
+ * opts.grow: vẽ trên Boba to hơn chừng ấy lần (cỡ người, như dáng theo cấp): món vẽ theo bộ xương (khăn quàng) rộng ra,
+ * hình cũ cố định thì không đổi. Bé khách mời Petdex dùng cho khe cổ (petsheet.js guestSheet).
  */
-export function wearIcon(id) {
-  if (iconCache.has(id)) return iconCache.get(id);
+export function wearIcon(id, { grow = 1 } = {}) {
+  const key = `${id}|${grow}`;
+  if (iconCache.has(key)) return iconCache.get(key);
   const slot = WEARABLES[id]?.slot;
   const e = slot && wearEntry(slot, id);
   let out = null;
   if (e) {
-    const sp = SPECIES_BY_ID.boba;
-    const st = lookOf('adult');
-    const sk = skeleton(sp, st, 'S', {});
-    const ctx = { sp, st, sk, view: 'S', pose: {}, wear: { [slot]: id }, tick: 0, chin: null };
-    const img = newBuf();
-    e.S(ctx, img);
-    const b = bbox(img);
-    if (b) {
-      const [ax, ay] = sk.anchors[slot];
-      out = { img: crop(img, b.x0, b.y0, b.x1 - b.x0 + 1, b.y1 - b.y0 + 1), pivot: [pyRound(ax) - b.x0, pyRound(ay) - b.y0] };
+    try {
+      const sp = SPECIES_BY_ID.boba;
+      const adult = lookOf('adult');
+      const st = grow === 1 ? adult : { ...adult, scale: adult.scale * grow };
+      const sk = skeleton(sp, st, 'S', {});
+      const ctx = makeCtx(sp, st, sk, 'S', {}, { [slot]: id });
+      collectParts(ctx, false);
+      const img = newBuf();
+      e.S(ctx, img);
+      const b = bbox(img);
+      if (b) {
+        const [ax, ay] = sk.anchors[slot];
+        const side = slot === 'head' ? (e.def?.side ?? 0) : 0;
+        const dx = side ? pyRound(ax + (e.def.dx ?? 0) + side * sk.head[2]) - pyRound(ax + (e.def.dx ?? 0)) : 0;
+        out = {
+          img: crop(img, b.x0, b.y0, b.x1 - b.x0 + 1, b.y1 - b.y0 + 1),
+          pivot: [pyRound(ax) - b.x0, pyRound(ay) - b.y0],
+          lean: { side, dx },
+        };
+      }
+    } catch (err) {
+      console.warn(`rig2 wearIcon(${id}):`, err);
+      out = null;
     }
   }
-  iconCache.set(id, out);
+  iconCache.set(key, out);
   return out;
 }
+/** Xóa bộ nhớ đệm hình món (kiểm thử, hoặc pet lab sau khi sửa nóng một món). */
+export const clearWearIcons = () => iconCache.clear();
 
 // ---------------------------------------------------------------- tình trạng thư viện (cho contact sheet, kiểm thử, hướng dẫn)
 

@@ -12,13 +12,18 @@ const TUNE = {
 const tune = (ctx) => TUNE[ctx.sp.id] ?? {};
 const zBack = (view) => (view === 'N' ? 7 : 2);
 
+/**
+ * Tai tròn. Loài hoa văn 'patch' (gấu trúc) có tai màu điểm nhấn (đen), không có lòng tai hồng: cùng màu với mảng mắt và
+ * tay chân (ramps.js gau_truc limb), để bé vẫn nhận ra là gấu trúc chứ không phải gấu trắng.
+ */
 function roundEars(ctx) {
-  const { sk, view, pose, ramps } = ctx;
+  const { sk, view, pose, ramps, sp } = ctx;
   const [hcx, hcy, hrx, hry] = sk.head;
   const t = tune(ctx);
   const tw = pose.ear ?? 0;
   const zb = zBack(view);
   const r = ((2.9 * sk.hk) / 0.92) * 0.95 * (t.scale ?? 1);
+  const dark = sp.pattern === 'patch';
   const sides = view !== 'E' ? [-1, 1] : [-1];
   for (const s of sides) {
     let ex;
@@ -30,8 +35,8 @@ function roundEars(ctx) {
       ex = hcx + s * hrx * (t.spread ?? 0.7);
       ey = hcy - hry * (t.drop ?? 0.8) + (s > 0 ? tw : 0);
     }
-    ctx.parts.push(part(`ear${s}`, mEllipse(ex, ey, r, r), ramps.main, zb, { normal: [ex, ey, r, r] }));
-    if (view !== 'N') {
+    ctx.parts.push(part(`ear${s}`, mEllipse(ex, ey, r, r), dark ? ramps.accent : ramps.main, zb, { normal: [ex, ey, r, r] }));
+    if (view !== 'N' && !dark) {
       const ir = r - (r > 2.4 ? 1.25 : 1.0);
       ctx.parts.push(part(`ear${s}in`, mEllipse(ex + (view === 'E' ? 0.2 : s * 0.2), ey + 0.3, ir, ir), ramps.inner, zb + 0.1, {
         group: `ear${s}`, normal: [ex, ey, r, r],

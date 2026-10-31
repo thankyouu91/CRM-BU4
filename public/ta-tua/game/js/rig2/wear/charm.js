@@ -2,7 +2,8 @@
 // Mỗi món { S(ctx, img), E(ctx, img), N(ctx, img) } (xem wear/common.js). Bùa lơ lửng bên hông tại ctx.sk.anchors.charm
 // (S: bên phải bé; N: bên trái; E: sau lưng), đung đưa 1 px theo ctx.tick (tick % 4 ≥ 2 thì thấp xuống 1 px). Vẽ sau cùng.
 // Bùa giữ trong ô 48×48: hình rộng tối đa 7 px (cả viền) nếu chốt ở giữa đỉnh.
-// Chưa món nào vẽ lại: hình cũ của rig.js (LEGACY), hiện ở cả 3 hướng (bùa nhìn hướng nào cũng như nhau).
+// Chưa món nào vẽ lại: hình cũ của rig.js (LEGACY), hiện ở cả 3 hướng (bùa nhìn hướng nào cũng như nhau); bé thấp người
+// thì bùa được nâng lên cho cả nhịp đung đưa vẫn ở trên mặt đất (wear/common.js drawLegacy).
 import { legacyEntry } from './common.js';
 
 /** Sổ đăng ký khe bùa: mã món → mục vẽ (vẽ lại xong món nào thì thêm vào đây). */
@@ -23,5 +24,5 @@ export const LEGACY = {
 
 export function charmFor(id) {
   if (CHARM[id]) return CHARM[id];
-  return LEGACY[id] ? legacyEntry(id, LEGACY[id], 'charm', ['S', 'E', 'N']) : null;
+  return LEGACY[id] ? legacyEntry(id, LEGACY[id], 'charm') : null;
 }

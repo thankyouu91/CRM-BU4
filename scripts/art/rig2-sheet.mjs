@@ -6,7 +6,7 @@
 // Writes PNGs (default DIR = ./rig2-sheets, scale 2):
 //   rig2-stages.png      all 51 species x 6 life stages, front view (S), idle frame 0
 //   rig2-dirs.png        all 51 adults x 4 directions (S, E, N, W), idle frame 0, plus walk frame 1 in E
-//   rig2-wear.png        every wearable on 3 body plans (boba biped, meo_bac quad, canh_cut bird) x 3 views (S, E, N)
+//   rig2-wear.png        every wearable on 3 body plans (boba biped, meo_bac quad, canh_cut bird) + a baby boba x 3 views (S, E, N)
 //   rig2-strip-<id>.png  with --species: every animation x direction for each listed species (one row per anim-dir)
 // Cells are 48x48 on a cream card; a red cell border marks a frame that breaks the rules (off-palette pixel,
 // semi-transparent pixel, or a pixel touching the cell edge). Labels are a tiny 3x5 pixel font.
@@ -152,26 +152,26 @@ function dirsSheet() {
 }
 
 function wearSheet() {
-  const bodies = ["boba", "meo_bac", "canh_cut"];
+  const bodies = [["boba", "adult"], ["meo_bac", "adult"], ["canh_cut", "adult"], ["boba", "baby"]];
   const views = ["S", "E", "N"];
   const ids = Object.keys(WEARABLES).sort((a, b) => WEARABLES[a].slot.localeCompare(WEARABLES[b].slot) || a.localeCompare(b));
   const groups = 2;
   const per = Math.ceil(ids.length / groups);
   const status = rig.libraryStatus().wear;
-  const gw = LABEL_W + bodies.length * views.length * (CELL + PAD) + 3 * 12 + 24;
+  const gw = LABEL_W + bodies.length * views.length * (CELL + PAD) + bodies.length * 12 + 24;
   const c = canvas(groups * gw, HEAD_H + 20 + per * (CELL + PAD));
-  text(c, `rig2 wear: ${ids.length} items x boba / meo_bac / canh_cut x s e n.  * = redrawn, others = legacy fallback`, 8, 8, INKC, 3);
+  text(c, `rig2 wear: ${ids.length} items x boba / meo_bac / canh_cut / baby boba x s e n.  * = redrawn, others = legacy fallback`, 8, 8, INKC, 3);
   for (let g = 0; g < groups; g++) {
     const x0 = g * gw + 8;
-    bodies.forEach((b, bi) => views.forEach((v, vi) => text(c, `${b.slice(0, 4)} ${v}`, x0 + LABEL_W + bi * 12 + (bi * 3 + vi) * (CELL + PAD), HEAD_H, MUTED)));
+    bodies.forEach(([b, st], bi) => views.forEach((v, vi) => text(c, `${st === "adult" ? b.slice(0, 4) : st} ${v}`, x0 + LABEL_W + bi * 12 + (bi * 3 + vi) * (CELL + PAD), HEAD_H, MUTED)));
     ids.slice(g * per, (g + 1) * per).forEach((id, r) => {
       const y = HEAD_H + 20 + r * (CELL + PAD);
       const slot = WEARABLES[id].slot;
       const done = status[slot].done.includes(id);
       text(c, `${done ? "*" : ""}${id}`, x0, y + CELL / 2 - 10, done ? INKC : MUTED);
       text(c, slot, x0, y + CELL / 2 + 4, MUTED);
-      bodies.forEach((b, bi) => views.forEach((v, vi) => {
-        cell(c, rig.renderFrame(b, "adult", v, {}, { [slot]: id }, { level: LEVEL }).img, x0 + LABEL_W + bi * 12 + (bi * 3 + vi) * (CELL + PAD), y);
+      bodies.forEach(([b, st], bi) => views.forEach((v, vi) => {
+        cell(c, rig.renderFrame(b, st, v, {}, { [slot]: id }, { level: LEVEL }).img, x0 + LABEL_W + bi * 12 + (bi * 3 + vi) * (CELL + PAD), y);
       }));
     });
   }

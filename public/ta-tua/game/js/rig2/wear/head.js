@@ -33,7 +33,6 @@ const crown = {
   S: (ctx, img) => placeOnHead(img, crownImg('S'), ctx),
   E: (ctx, img) => placeOnHead(img, crownImg('E'), ctx),
   N: (ctx, img) => placeOnHead(img, crownImg('N'), ctx),
-  icon: () => crownImg('S'),
 };
 
 /** Sổ đăng ký khe đầu: mã món (WEARABLES) → mục vẽ. */
@@ -59,5 +58,5 @@ export const LEGACY = {
 /** Mục vẽ của món `id` ở khe đầu (món chưa vẽ lại: hình cũ ở cả 3 hướng; món lạ: null). */
 export function headFor(id) {
   if (HEAD[id]) return HEAD[id];
-  return LEGACY[id] ? legacyEntry(id, LEGACY[id], 'head', ['S', 'E', 'N']) : null;
+  return LEGACY[id] ? legacyEntry(id, LEGACY[id], 'head') : null;
 }

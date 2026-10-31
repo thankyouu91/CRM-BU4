@@ -1,10 +1,13 @@
 // Bảng dải màu của 51 loài (50 loài ngũ hành + linh vật Boba): MỘT bảng duy nhất. Chủ sở hữu: họa sĩ màu.
 // Mỗi loài: main (lông thân, đầu, tai, chân), belly (bụng, mõm, mặt nạ, bàn chân), accent (điểm nhấn: mỏ, chân chim,
-// hoa văn, mai rùa, mào), inner (lòng tai, mặc định 'pink'). Giá trị là tên dải trong core.js RAMPS (5 bậc, toàn màu trong bảng 48 màu).
+// hoa văn, mai rùa, mào), inner (lòng tai, mặc định 'pink'), limb (tay, chân của dáng biped và quad, mặc định = main;
+// chỉ gấu trúc có tay chân khác màu thân). Giá trị là tên dải trong core.js RAMPS (5 bậc, toàn màu trong bảng 48 màu).
 //
 // Cách chọn (đã chạy một lần rồi chép cố định vào bảng, để họa sĩ sửa tay từng dòng):
 //   nearestRamp(hex) = dải có bậc giữa gần màu loài nhất trong OKLab, độ sáng nặng gấp 2 và sắc độ (a, b) nặng gấp 3,
 //   để giữ cả SẮC lẫn ĐỘ SÁNG của màu trong shared/pets.js (cánh cụt #3d4a6b là xanh đen, không phải xanh lam tươi).
+//   Lưu ý: thân to tô chừng một nửa bằng bậc tối (bậc 1), nên lông trông tối hơn bậc giữa; dải có bậc tối gần màu viền
+//   (#3d2a1f, #4a3326) làm bé thân to gần như đen. Luôn xem lại trên contact sheet (rig2-dirs.png) rồi sửa tay dòng đó.
 // Ngoại lệ có chủ ý (ghi bên cạnh): bản mẫu pets-pilot đã được duyệt cho boba, meo_bac (mèo xám-trắng), tho_la.
 // Loài mới chưa có dòng trong bảng thì tự chọn bằng nearestRamp() lúc chạy (không bao giờ lỗi).
 import { RAMPS, oklab } from './core.js';
@@ -36,7 +39,7 @@ export const SPECIES_RAMPS = {
   boba: { main: 'fur_brown', belly: 'cream', accent: 'pink' }, // #9c6a42 #f3dcb8 #ff8fb1 (bản mẫu; tự chọn bụng ra wheat)
   // ---- Kim: trắng, bạc, vàng kim
   meo_bac: { main: 'fur_silver', belly: 'white', accent: 'fur_silver' }, // #e6e4df #ffffff #9fb0c2 (bản mẫu: mèo xám-trắng; tự chọn ra white)
-  chuot_chuong: { main: 'fur_silver', belly: 'white', accent: 'gold' }, // #cfd4dc #f6f3ec #f2c14e (tự chọn ra ice: xanh quá)
+  chuot_chuong: { main: 'pearl', belly: 'white', accent: 'gold' }, // #cfd4dc #f6f3ec #f2c14e (tự chọn ra ice: xanh quá; fur_silver tối quá, L 0.75 so với 0.87)
   soc_dong: { main: 'tan', belly: 'wheat', accent: 'gold' }, // #c98c4e #f3dcb5 #f2c14e
   ga_vang: { main: 'gold', belly: 'butter', accent: 'orange' }, // #f6d365 #fff1b8 #e9883a
   te_te: { main: 'fur_silver', belly: 'snow', accent: 'slate' }, // #a9b6c4 #e4e8ec #6f7f91
@@ -51,7 +54,7 @@ export const SPECIES_RAMPS = {
   khi_tre: { main: 'tan', belly: 'wheat', accent: 'fur_green' }, // #b48a5a #f1dcb8 #8fcf6a
   nhim_reu: { main: 'tan', belly: 'wheat', accent: 'grass' }, // #9a8a5e #efe2c2 #7fae5d (tự chọn ra stone: xám quá)
   cun_co: { main: 'sprout', belly: 'mint', accent: 'grass' }, // #c4e39a #f6fbe8 #6db35a
-  gau_truc: { main: 'pearl', belly: 'white', accent: 'charcoal' }, // #f5f5f0 #ffffff #3b3b42
+  gau_truc: { main: 'pearl', belly: 'white', accent: 'charcoal', limb: 'charcoal' }, // #f5f5f0 #ffffff #3b3b42 (tay chân, tai, mảng mắt đen)
   huou_reu: { main: 'tan', belly: 'wheat', accent: 'grass' }, // #b58a5e #f2e1c4 #7fae5d
   cao_la: { main: 'grass', belly: 'mint', accent: 'gold' }, // #7fbf6a #eef7dd #f4c45a
   rua_co_thu: { main: 'fur_green', belly: 'wheat', accent: 'fur_brown' }, // #9cc97a #efe6c5 #8a6a45 (mai nâu)
@@ -79,9 +82,9 @@ export const SPECIES_RAMPS = {
   ngua_lua: { main: 'cream', belly: 'white', accent: 'flame' }, // #f6d4a6 #fff4e2 #f0663c
   chu_tuoc: { main: 'red', belly: 'gold', accent: 'butter' }, // #e8403a #f8c25a #ffd75e
   // ---- Thổ: vàng đất, nâu, đất nung
-  chuot_chui: { main: 'slate', belly: 'latte', accent: 'pink' }, // #7d6253 #d8bfa5 #f3a7b5
+  chuot_chui: { main: 'stone', belly: 'latte', accent: 'pink' }, // #7d6253 #d8bfa5 #f3a7b5 (tự chọn ra slate: thân to nên nửa là bậc tối #4a3326, gần màu viền, ra gần đen)
   heo_dat: { main: 'tan', belly: 'peach', accent: 'gold' }, // #d98a5f #f2c7a5 #f2c14e
-  nghe_dat: { main: 'slate', belly: 'latte', accent: 'white' }, // #8c7a6b #cdbba8 #efe6d8
+  nghe_dat: { main: 'stone', belly: 'latte', accent: 'white' }, // #8c7a6b #cdbba8 #efe6d8 (như chuot_chui: slate ra gần đen)
   lac_da: { main: 'sand', belly: 'wheat', accent: 'tan' }, // #e2c18c #f7e7c8 #b98a52
   cho_vang: { main: 'sand', belly: 'wheat', accent: 'fur_brown' }, // #e0b061 #fbeac8 #a8743c
   gau_mat: { main: 'fur_brown', belly: 'sand', accent: 'gold' }, // #9c6b43 #e2c08f #f2b134
@@ -94,11 +97,13 @@ export const SPECIES_RAMPS = {
 /** Dải màu của loài `sp` (dòng trong bảng, thiếu thì tự chọn). */
 export function rampsOf(sp) {
   const row = SPECIES_RAMPS[sp.id];
-  const [main, belly, accent] = sp.colors ?? ['#9c6a42', '#f3dcb8', '#ff8fb1'];
+  const [mainHex, belly, accent] = sp.colors ?? ['#9c6a42', '#f3dcb8', '#ff8fb1'];
+  const main = row?.main ?? nearestRamp(mainHex);
   return {
-    main: row?.main ?? nearestRamp(main),
+    main,
     belly: row?.belly ?? nearestRamp(belly),
     accent: row?.accent ?? nearestRamp(accent),
     inner: row?.inner ?? 'pink',
+    limb: row?.limb ?? main,
   };
 }

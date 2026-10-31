@@ -51,7 +51,8 @@ export const RAMPS = {
   // ---- thêm ở bước port (Rig 2.0 cho 51 loài)
   // Xanh đen: bảng 48 màu không có màu navy thật (#3d4a6b); đây là dải tối nhất giữ được sắc xanh lam.
   navy: ['#2e1d14', '#3d2a1f', '#2f6f9a', '#3f8fc0', '#58b9d6'],
-  charcoal: ['#2e1d14', '#2e1d14', '#3d2a1f', '#4a3326', '#6e6660'],
+  // Gần đen (gấu trúc, bụng gấu mèo đỏ, vằn hổ trắng): bậc tối #3d2a1f, không trùng màu viền; bậc giữa ≈ #3b3b42, #4a302c của dữ liệu.
+  charcoal: ['#2e1d14', '#3d2a1f', '#4a3326', '#6e6660', '#9c948a'],
   stone: ['#4a3326', '#6e6660', '#9c948a', '#c4bcb0', '#eef8fb'],
   pearl: ['#9c948a', '#c4bcb0', '#eef8fb', '#fffaf3', '#fffaf3'],
   wood: ['#3d2a1f', '#5c3a24', '#7a4e2c', '#9b6238', '#b87d4b'],

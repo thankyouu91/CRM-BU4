@@ -2,7 +2,8 @@
 // Mỗi món { S(ctx, img), E(ctx, img), N(ctx, img) } (xem wear/common.js). Điểm neo ctx.sk.anchors.back = vai
 // (S/N: giữa đỉnh thân; E: phía sau thân). THỨ TỰ VẼ: nhìn trước và ngang, món lưng vẽ TRƯỚC pet (img lúc đó chỉ
 // có hào quang phía sau, pet sẽ đè lên); nhìn sau, món lưng vẽ SAU CÙNG (trên pet, mũ, khăn).
-// Chưa món nào vẽ lại: hình cũ của rig.js (LEGACY) hiện ở hướng S (sau lưng) và N (đè lên lưng); hướng E chưa có hình.
+// Chưa món nào vẽ lại: hình cũ của rig.js (LEGACY) hiện ở cả 3 hướng (S và E sau lưng, chỉ lộ mép cánh / áo choàng;
+// N đè lên lưng), không thò xuống dưới mặt đất (bé sơ sinh: áo choàng chạm đất như bàn chân). Xem wear/common.js legacyEntry.
 import { legacyEntry } from './common.js';
 
 /** Sổ đăng ký khe lưng: mã món → mục vẽ (vẽ lại xong món nào thì thêm vào đây). */
@@ -25,5 +26,5 @@ export const LEGACY = {
 
 export function backFor(id) {
   if (BACK[id]) return BACK[id];
-  return LEGACY[id] ? legacyEntry(id, LEGACY[id], 'back', ['S', 'N']) : null;
+  return LEGACY[id] ? legacyEntry(id, LEGACY[id], 'back') : null;
 }

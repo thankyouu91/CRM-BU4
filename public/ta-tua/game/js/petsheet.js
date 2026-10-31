@@ -2,7 +2,7 @@
 // - bé vẽ bằng bộ khung (rig.js): vẽ thẳng từ dữ liệu loài, đúng giai đoạn tuổi;
 // - bé khách mời Petdex (ảnh vẽ sẵn): dò điểm neo trên từng khung của ảnh rồi gắn đồ vào đó.
 import { makeCanvas } from './pixel.js';
-import { RIG_ANIMS, RIG_PIVOT, animFrames, formStage, skeleton, wearImage, wearSpotAt } from './rig.js';
+import { RIG_ANIMS, RIG_PIVOT, animSteps, drawFrame, formStage, skeleton, wearImage, wearSpotAt } from './rig.js';
 import { SLOT_IDS, SPECIES_BY_ID, WEARABLES, formIndex } from './shared/pets.js';
 
 /** Cỡ một pixel nghệ thuật trên màn hình ở tỉ lệ 1 (bằng độ thô của Boba và cảnh pixel). */
@@ -58,43 +58,128 @@ const wearKey = (wear) => SLOT_IDS.map((s) => wear?.[s] ?? '-').join(',');
 const hasWear = (wear) => Object.values(wear ?? {}).some((id) => id && WEARABLES[id]);
 const cache = new Map();
 
-/** Spritesheet của bé vẽ bằng bộ khung (tức thì, vài chục khung hình nhỏ); `level` chọn dáng theo cấp. */
+// ---------------------------------------------------------------- bé vẽ bằng bộ khung: dựng dần trong lúc rảnh
+
+// Một tấm đủ 14 hàng mất cỡ 70 ms (máy khỏe) tới 500 ms (điện thoại tầm trung), mà công viên dựng một tấm cho mỗi bé lúc vào
+// và mỗi lần thay đồ. Nên chỉ khung đầu của idle-S được vẽ ngay (bé hiện ra liền, đứng yên, cỡ 3 ms; 10 ms khi CPU chậm 4 lần);
+// các khung còn lại xếp hàng chờ, trình duyệt rảnh lúc nào vẽ vài khung lúc đó (requestIdleCallback, không có thì setTimeout;
+// mỗi khung cỡ 2 ms, 8 ms khi CPU chậm 4 lần, nên không làm giật hình), xong cả tấm mới thay ảnh một lần (cỡ 0,2 giây sau
+// trên máy khỏe).
+const jobs = [];
+let pumping = false;
+const whenIdle = (fn) => (typeof requestIdleCallback === 'function' ? requestIdleCallback(fn, { timeout: 1000 }) : setTimeout(() => fn(null), 16));
+/** Chạy việc trong hàng chờ: mỗi lần ít nhất 6 ms việc (hoặc một việc), thêm việc khi trình duyệt còn rảnh (chừa 4 ms). */
+function pump(deadline) {
+  const t0 = performance.now();
+  while (jobs.length && (performance.now() - t0 < 6 || (deadline && !deadline.didTimeout && deadline.timeRemaining() > 4))) {
+    const job = jobs.shift();
+    try {
+      job();
+    } catch (err) {
+      console.error('petsheet: lỗi dựng spritesheet', err);
+    }
+  }
+  if (jobs.length) whenIdle(pump);
+  else pumping = false;
+}
+function later(job) {
+  jobs.push(job);
+  if (!pumping) {
+    pumping = true;
+    whenIdle(pump);
+  }
+}
+
+/** Ảnh canvas → URL (toBlob mã hóa PNG ngoài luồng chính; trình duyệt cũ dùng toDataURL), đã giải mã sẵn để đổi ảnh không nháy. */
+async function canvasUrl(c) {
+  const blob = c.toBlob ? await new Promise((resolve) => c.toBlob(resolve)) : null;
+  const url = blob ? URL.createObjectURL(blob) : c.toDataURL();
+  const img = new Image();
+  img.src = url;
+  await img.decode().catch(() => {});
+  return url;
+}
+
+/** Vẽ các khung của một hàng vào canvas (khung E lật ngang khi `mirror`). */
+function paintRow(g, row, frames, mirror) {
+  frames.forEach((frame, i) => {
+    if (!mirror) return g.drawImage(frame, i * RIG_FW, row * RIG_FH);
+    g.save();
+    g.translate((i + 1) * RIG_FW, row * RIG_FH);
+    g.scale(-1, 1);
+    g.drawImage(frame, 0, 0);
+    g.restore();
+  });
+}
+
+/** Bảng tên play() → { row, frames, fps } từ các hàng đã có (RIG_PLAY: tên cũ của sprite.js trỏ vào hàng nào). */
+function playTable(rows) {
+  const anims = { ...rows };
+  for (const [name, [rowName, fps]] of Object.entries(RIG_PLAY)) anims[name] = { ...rows[rowName], ...(fps ? { fps } : {}) };
+  return anims;
+}
+
+/**
+ * Spritesheet của bé vẽ bằng bộ khung; `level` chọn dáng theo cấp. Trả về NGAY một tấm chỉ có khung đầu của idle-S (mọi tên
+ * play() tạm đứng yên ở khung này, giữ fps của mình); các hàng vẽ dần lúc rảnh, xong thì chính đối tượng `sheet` được cập nhật
+ * (url, anims), `sheet.pending` thành false và `sheet.ready` hoàn tất: Sprite (sprite.js) tự đổi sang ảnh đủ hàng.
+ * Gọi lại với cùng tham số trả về đúng tấm đó (đang dựng dở cũng vậy).
+ */
 export function rigSheet(speciesId, stageKey, wear = {}, level = 1) {
   const key = `rig|${speciesId}|${stageKey}|${formIndex(level)}|${wearKey(wear)}`;
   if (cache.has(key)) return cache.get(key);
+  // 1) Khung đầu của idle-S, ngay bây giờ (hàng 0 của ảnh tạm, rộng đủ số cột để background-size vẫn đúng).
+  const [c0, g0] = makeCanvas(RIG_COLS * RIG_FW, RIG_FH);
+  g0.drawImage(drawFrame(speciesId, stageKey, RIG_ANIMS.idle.frames[0], wear, 0, { level, view: 'S' }), 0, 0);
+  const temp = Object.fromEntries(RIG_ROWS.map(([name, anim]) => [name, { row: 0, frames: 1, fps: RIG_ANIMS[anim].fps }]));
+  // Chiều cao phần thân bé (từ đỉnh đầu tới chân), để hiệu ứng bay lên đúng đầu bé.
+  const top = skeleton(SPECIES_BY_ID[speciesId], formStage(stageKey, level)).head.top;
+  let done;
+  const sheet = {
+    url: c0.toDataURL(),
+    frameW: RIG_FW * ART_PX,
+    frameH: RIG_FH * ART_PX,
+    cols: RIG_COLS,
+    anims: playTable(temp),
+    pixelated: true,
+    bodyH: (RIG_PIVOT.y + 1 - top) * ART_PX,
+    padBottom: RIG_PAD_BOTTOM * ART_PX,
+    pending: true,
+    ready: new Promise((resolve) => { done = resolve; }),
+  };
+  cache.set(key, sheet);
+  // 2) Mỗi khung một việc lúc rảnh; hàng W lật lại cả hàng E (các việc của hàng E xếp trước hàng W).
   const [c, g] = makeCanvas(RIG_COLS * RIG_FW, RIG_ROWS.length * RIG_FH);
   const rows = {};
   const drawn = {};
   RIG_ROWS.forEach(([name, anim, view], row) => {
-    // Hướng W là hướng E lật ngang: lật lại các khung E vừa vẽ thay vì vẽ lại.
-    const east = view === 'W' ? drawn[`${anim}-E`] : null;
-    const frames = east ?? animFrames(speciesId, stageKey, anim, wear, { level, view });
+    const fps = RIG_ANIMS[anim].fps;
+    if (view === 'W') {
+      later(() => {
+        const east = drawn[`${anim}-E`];
+        paintRow(g, row, east, true);
+        rows[name] = { row, frames: east.length, fps };
+      });
+      return;
+    }
+    const steps = animSteps(speciesId, anim, { view });
+    const frames = [];
     drawn[`${anim}-${view}`] = frames;
-    frames.forEach((frame, i) => {
-      if (!east) return g.drawImage(frame, i * RIG_FW, row * RIG_FH);
-      g.save();
-      g.translate((i + 1) * RIG_FW, row * RIG_FH);
-      g.scale(-1, 1);
-      g.drawImage(frame, 0, 0);
-      g.restore();
-    });
-    rows[name] = { row, frames: frames.length, fps: RIG_ANIMS[anim].fps };
+    steps.forEach((st, i) => later(() => {
+      frames[i] = drawFrame(speciesId, stageKey, st.pose, wear, st.tick, { level, view: st.view });
+      g.drawImage(frames[i], i * RIG_FW, row * RIG_FH);
+      if (i === steps.length - 1) rows[name] = { row, frames: steps.length, fps };
+    }));
   });
-  const anims = { ...rows };
-  for (const [name, [rowName, fps]] of Object.entries(RIG_PLAY)) anims[name] = { ...rows[rowName], ...(fps ? { fps } : {}) };
-  // Chiều cao phần thân bé (từ đỉnh đầu tới chân), để hiệu ứng bay lên đúng đầu bé.
-  const top = skeleton(SPECIES_BY_ID[speciesId], formStage(stageKey, level)).head.top;
-  const sheet = {
-    url: c.toDataURL(),
-    frameW: RIG_FW * ART_PX,
-    frameH: RIG_FH * ART_PX,
-    cols: RIG_COLS,
-    anims,
-    pixelated: true,
-    bodyH: (RIG_PIVOT.y + 1 - top) * ART_PX,
-    padBottom: RIG_PAD_BOTTOM * ART_PX,
-  };
-  cache.set(key, sheet);
+  // 3) Đủ hàng: đổi ảnh một lần (ảnh đã giải mã sẵn). Hàng nào lỗi thì tên của nó đứng yên ở khung đầu như lúc chờ.
+  later(() => {
+    canvasUrl(c).catch(() => c.toDataURL()).then((url) => {
+      sheet.url = url;
+      sheet.anims = playTable({ ...temp, ...rows });
+      sheet.pending = false;
+      done(sheet);
+    });
+  });
   return sheet;
 }
 
@@ -170,6 +255,8 @@ function guestAnchors(img, spec) {
 }
 
 const anchorCache = new Map();
+/** Hình món cổ cho bé khách mời: vẽ trên Boba to gấp 1.6 lần, dải khăn rộng chừng 18 điểm ảnh (hình cũ 16). */
+const GUEST_NECK = { grow: 1.6 };
 
 /** Spritesheet của bé khách mời kèm đồ đeo; không đeo gì thì dùng nguyên ảnh gốc. */
 export async function guestSheet(sprite, wear = {}) {
@@ -182,10 +269,10 @@ export async function guestSheet(sprite, wear = {}) {
   const anchors = anchorCache.get(sprite);
   const [c, g] = makeCanvas(img.width, img.height);
   g.imageSmoothingEnabled = false;
-  const put = (id, cell, x0, y0) => {
-    const pic = id && WEARABLES[id] && wearImage(id);
+  const put = (id, cell, x0, y0, opts = {}) => {
+    const pic = id && WEARABLES[id] && wearImage(id, opts);
     if (!pic || !cell) return;
-    const { x, y } = wearSpotAt(id, cell.anchors, cell.headRx);
+    const { x, y } = wearSpotAt(id, cell.anchors, cell.headRx, opts);
     g.drawImage(pic, x0 + x * ART_PX, y0 + y * ART_PX, pic.width * ART_PX, pic.height * ART_PX);
   };
   for (const [name, a] of Object.entries(PETDEX_SHEET.anims)) {
@@ -193,9 +280,10 @@ export async function guestSheet(sprite, wear = {}) {
       const x0 = f * PETDEX_SHEET.frameW;
       const y0 = a.row * PETDEX_SHEET.frameH;
       const cell = anchors[name][f];
-      // Ảnh vẽ sẵn thường có tay ôm đồ trước ngực (Boba ôm cốc trà sữa), nên đồ ở cổ vẽ sau người, chỉ lộ hai bên.
+      // Ảnh vẽ sẵn thường có tay ôm đồ trước ngực (Boba ôm cốc trà sữa), nên đồ ở cổ vẽ sau người, chỉ lộ hai bên:
+      // món cổ vẽ theo bộ xương (khăn quàng) lấy hình trên Boba to hơn (GUEST_NECK) cho dải cổ rộng như hình cũ.
       put(wear.back, cell, x0, y0);
-      put(wear.neck, cell, x0, y0);
+      put(wear.neck, cell, x0, y0, GUEST_NECK);
       g.drawImage(img, x0, y0, PETDEX_SHEET.frameW, PETDEX_SHEET.frameH, x0, y0, PETDEX_SHEET.frameW, PETDEX_SHEET.frameH);
       for (const slot of ['face', 'head', 'charm']) put(wear[slot], cell, x0, y0);
     }

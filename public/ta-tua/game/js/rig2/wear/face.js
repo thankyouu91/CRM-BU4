@@ -3,7 +3,8 @@
 // tâm mắt (S: ctx.sk.head[0] ± ctx.sk.eyeDx; E: ctx.sk.anchors.face[0]), hàng mắt ctx.sk.eyeY, cỡ mắt 2×3
 // (3×4 khi ctx.sk.big, bé sơ sinh và nhí nhố). Mắt phải còn thấy: tròng kính là vòng trong, không tô kín.
 // Nhìn ngang: mắt gần + gọng tới tai. Nhìn sau: chỉ hai đầu gọng ló ở hai bên đầu. Vẽ trên khăn và cốc, dưới mũ.
-// glasses: port nguyên từ pets-pilot (khớp từng điểm ảnh). Món khác: hình cũ của rig.js (LEGACY), chỉ hiện ở hướng S.
+// glasses: port nguyên từ pets-pilot (khớp từng điểm ảnh). Món khác: hình cũ của rig.js (LEGACY): nguyên hình ở hướng S,
+// nửa gần của hình S ở hướng E (mắt phải của hình đặt lên mắt gần), không có ở hướng N (wear/common.js legacyEntry).
 import { putPixels, pyRound } from '../core.js';
 import { legacyEntry } from './common.js';
 
@@ -69,5 +70,5 @@ export const LEGACY = {
 
 export function faceFor(id) {
   if (FACE[id]) return FACE[id];
-  return LEGACY[id] ? legacyEntry(id, LEGACY[id], 'face', ['S']) : null;
+  return LEGACY[id] ? legacyEntry(id, LEGACY[id], 'face') : null;
 }

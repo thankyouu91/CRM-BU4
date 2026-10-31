@@ -155,7 +155,9 @@ input:focus { border-color: var(--tea); box-shadow: 0 0 0 4px #c8915f33; }
 .sprite { background-repeat: no-repeat; image-rendering: auto; }
 .sprite.px, .px-icon { image-rendering: pixelated; }
 .pet-figure { position: relative; display: inline-block; line-height: 0; }
-.pet-body { position: relative; }
+/* flow-root: lề âm dưới .sprite (ô Rig 2.0 còn hàng trống dưới chân) nằm gọn trong .pet-body, không tràn qua
+   .pet-figure dạng block (công viên), nên khung bé luôn kết thúc ở chân và bóng đổ nằm đúng dưới chân ở mọi màn. */
+.pet-body { position: relative; display: flow-root; }
 .pet-shadow, .pet-figure .accessory, .px-layer, .fx-px { image-rendering: pixelated; pointer-events: none; }
 .pet-shadow { position: absolute; left: 46%; bottom: 3%; transform: translate(-50%, 50%); }
 .pet-figure .accessory { position: absolute; left: 42%; top: 8%; transform: translate(-50%, -50%); }

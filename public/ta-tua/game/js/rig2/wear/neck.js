@@ -4,7 +4,8 @@
 // mọi điểm thuộc ctx.chin (mặt nạ đầu, chừa hàng cằm cuối) phải để trống. Phần buông: đuôi khăn phía trước (S),
 // bay ra sau và phấp phới theo bước đi (E, ctx.pose.flutter), rủ xuống lưng (N).
 // Thứ tự vẽ: sau thân pet, trước đồ cầm tay (cốc của Boba), kính và mũ.
-// scarf: port nguyên từ pets-pilot (khớp từng điểm ảnh). Món khác: hình cũ của rig.js (LEGACY), chỉ hiện ở hướng S.
+// scarf: port nguyên từ pets-pilot (khớp từng điểm ảnh). Món khác: hình cũ của rig.js (LEGACY): hướng S, và hướng E tại
+// điểm neo cổ của hướng ngang (cằm che như khăn); không có ở hướng N; không thò xuống dưới mặt đất (wear/common.js).
 import { NPX, FW, RAMPS, mAbove, mAny, mBelow, mEllipse, mOr, mRightOf, newBuf, outline, setPx } from '../core.js';
 import { legacyEntry } from './common.js';
 
@@ -89,5 +90,5 @@ export const LEGACY = {
 
 export function neckFor(id) {
   if (NECK[id]) return NECK[id];
-  return LEGACY[id] ? legacyEntry(id, LEGACY[id], 'neck', ['S']) : null;
+  return LEGACY[id] ? legacyEntry(id, LEGACY[id], 'neck') : null;
 }
