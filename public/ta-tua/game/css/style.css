@@ -595,3 +595,7 @@ input:focus { border-color: var(--tea); box-shadow: 0 0 0 4px #c8915f33; }
 .gear-group-title { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 10px; margin: 0 0 10px; font-family: var(--font-display); font-size: 1.15rem; }
 .gear-group-title small { font-family: var(--font-body, inherit); font-size: .8rem; font-weight: 600; }
 @media (max-width: 720px) { .gear-group { scroll-margin-top: 190px; } }
+
+/* Thả bé: liên kết nhỏ, tách khỏi các nút chăm sóc để khỏi bấm nhầm. */
+.release-row { display: flex; justify-content: flex-end; margin-top: 6px; }
+.release-row .link-btn:disabled { opacity: .5; cursor: not-allowed; }

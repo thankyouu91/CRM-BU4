@@ -545,7 +545,7 @@ export const ARTICLES: WikiArticle[] = [
     category: "nuoi-be",
     emoji: "🌠",
     summary: "Sáu tính cách, sáu giai đoạn tuổi, lương thâm niên, tuổi thọ, Đồi Sao và kỷ vật cho bé sau.",
-    keywords: ["tính cách", "tuổi", "già", "chết", "mất", "đồi sao", "kỷ vật", "tưởng niệm", "tuổi thọ", "thâm niên"],
+    keywords: ["tính cách", "tuổi", "già", "chết", "mất", "đồi sao", "kỷ vật", "tưởng niệm", "tuổi thọ", "thâm niên", "thả bé", "xóa bé"],
     related: ["cham-soc", "viec-lam", "cac-loai"],
     sections: [
       {
@@ -599,6 +599,19 @@ export const ARTICLES: WikiArticle[] = [
             "Bé để lại **kỷ vật**: bé kế tiếp (nhận nuôi hoặc nở) được **+5** vào kỹ năng sở trường của bé cũ.",
             "Ô của bé thành **ô tưởng niệm**, mở lại tốn **3.000 xu**.",
             "Nếu đó là **bé cuối cùng**, ô không bị khóa và bạn được **một trứng miễn phí** cùng hành, nở sau 3 ngày.",
+          ] },
+        ],
+      },
+      {
+        id: "tha-be",
+        title: "Thả bé",
+        blocks: [
+          { p: "Ở màn **🏠 Nhà**, dưới các nút chăm sóc có liên kết **🕊️ Thả bé**: gõ đúng tên bé để xác nhận, bé rời bạn mãi mãi." },
+          { list: [
+            "Khác với bé mất: **không** lên Đồi Sao, **không** để lại kỷ vật, ô được trả lại ngay (không thành ô tưởng niệm).",
+            "Trang phục bé đang đeo về **tủ đồ**; lương ca đã làm mà chưa nhận được trả nốt. Bé là thú chính thì bé kế tiếp lên thay.",
+            "Không thả được **bé duy nhất**, bé **đang bận** (đi làm, đi học, đang tắm) hay bé đang **đứng máy ngành chiến lược** của gia tộc.",
+            "Thả rồi thì không lấy lại được: kỹ năng, cấp và tính cách của bé mất hẳn.",
           ] },
         ],
       },

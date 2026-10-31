@@ -9,7 +9,7 @@ import { isAdmin } from "@/lib/rbac";
 // internal admin API (petdex/server/internal.js); every change is also written to WorkHub's
 // audit log with the administrator as actor.
 
-const ALLOWED = /^(overview|log|announcements(\/\d+\/delete)?|gear-config|gear\/\d+(\/delete)?|gift-codes(\/\d+(\/revoke)?)?|industries\/(status|unmerge|merge|heavy)|commerce|arena(\/\d+\/cancel)?|bots(\/(config|join-clan|leave-clan))?|clan-bank(\/freeze)?|bonds\/issue|chat(\/\d+\/delete)?|mail|clans(\/(config|macro|plots\/\d+|evasion\/\d+\/(collect|dismiss)))?|invites(\/\d+\/revoke)?|players(\/\d+(\/(coins|status|name|password-link|gear|mute|pets(\/\d+)?))?)?)$/;
+const ALLOWED = /^(overview|log|announcements(\/\d+\/delete)?|gear-config|gear\/\d+(\/delete)?|gift-codes(\/\d+(\/revoke)?)?|industries\/(status|unmerge|merge|heavy)|commerce|arena(\/\d+\/cancel)?|bots(\/(config|join-clan|leave-clan))?|clan-bank(\/freeze)?|bonds\/issue|chat(\/\d+\/delete)?|mail|clans(\/(config|macro|plots\/\d+|evasion\/\d+\/(collect|dismiss)))?|invites(\/\d+\/revoke)?|players(\/\d+(\/(coins|status|name|password-link|gear|mute|pets(\/\d+(\/delete)?)?))?)?)$/;
 
 /** Body fields that only label the audit entry; the game never sees them. */
 const LABEL_FIELDS = ["challenger", "defender", "targetName", "announcementTitle", "playerName", "petName", "speciesName", "itemName", "tierName", "clanName", "plotCode", "author"];
@@ -30,6 +30,7 @@ function describe(path: string, body: Record<string, unknown>): { action: AuditA
     return { action: "tatua.coins", entityId: id, summary: `${delta >= 0 ? "Cộng" : "Trừ"} ${Math.abs(delta).toLocaleString("vi-VN")} xu ${delta >= 0 ? "cho" : "của"} ${player}${body.memo ? `: ${body.memo}` : ""}` };
   }
   if (/^players\/\d+\/pets$/.test(path)) return { action: "tatua.pet_grant", entityId: id, summary: `Tặng thú cưng ${body.speciesName ? `“${String(body.speciesName)}” ` : ""}cho ${player}` };
+  if (/^players\/\d+\/pets\/\d+\/delete$/.test(path)) return { action: "tatua.pet_delete", entityId: id, summary: `Xoá thú cưng ${body.petName ? `“${String(body.petName)}” ` : ""}của ${player}${body.reason ? `: ${String(body.reason)}` : ""}` };
   if (/^players\/\d+\/pets\/\d+$/.test(path)) return { action: "tatua.pet", entityId: id, summary: `Sửa chỉ số thú cưng ${body.petName ? `“${body.petName}” ` : ""}của ${player}` };
   if (/^players\/\d+\/status$/.test(path)) return { action: body.banned ? "tatua.ban" : "tatua.unban", entityId: id, summary: `${body.banned ? "Khoá" : "Mở khoá"} ${player}` };
   if (/^players\/\d+\/name$/.test(path)) return { action: "tatua.rename", entityId: id, summary: `Đổi tên ${player} thành “${String(body.displayName ?? "")}”` };

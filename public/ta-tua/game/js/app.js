@@ -621,6 +621,7 @@ function renderHome(root) {
             : '<button class="btn" data-act="activate"><b>⭐</b>Chọn thú chính<small>Để dắt ra công viên</small></button>'}
           <button class="btn ${pet.sick ? 'pink' : ''}" data-go="clinic"><b>🩺</b>Phòng khám<small>${pet.sick ? 'Bé đang ốm!' : `❤️ ${pet.health}`}</small></button>
         </div>
+        ${state.me.pets.length > 1 ? `<div class="release-row"><button class="link-btn danger" data-act="release" ${busyLeft > 0 ? 'disabled title="Bé đang bận"' : ''}>🕊️ Thả bé</button></div>` : ''}
       </section>
     </div>`;
 
@@ -700,6 +701,14 @@ const ACTIONS = {
   reopen: () => {
     const { reopenCost } = state.me.slots;
     if (confirm(`Mở lại ô tưởng niệm với giá ${fmt(reopenCost)} xu để nuôi thêm bé mới?`)) act('/slots/reopen');
+  },
+  release: () => {
+    const pet = currentPet();
+    if (state.me.pets.length <= 1) return toast('Đây là bé duy nhất của bạn, không thả được.', 'error');
+    const typed = prompt(`Thả ${pet.name} về với thiên nhiên?\n\nBé sẽ rời bạn mãi mãi (không lập bia, không lấy lại được). Trang phục bé đang đeo về tủ đồ, lương ca đã làm được trả nốt.\n\nGõ đúng tên "${pet.name}" để xác nhận:`);
+    if (typed == null) return;
+    if (typed.trim() !== pet.name) return toast('Tên không khớp, chưa thả bé.', 'error');
+    act(`/pets/${pet.id}/release`, { name: typed.trim() }, { onDone: () => { state.petId = null; } });
   },
   'cancel-adopt': () => {
     state.adopting = false;

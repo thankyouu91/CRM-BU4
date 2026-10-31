@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Ban, Coins, Copy, Gamepad2, Gift, KeyRound, Link2, Pencil, RefreshCw, Search, ShieldCheck, Users } from "lucide-react";
+import { Ban, Coins, Copy, Gamepad2, Gift, KeyRound, Link2, Pencil, RefreshCw, Search, ShieldCheck, Trash2, Users } from "lucide-react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -631,6 +631,19 @@ function GrantPet({ detail, onChanged }: { detail: Detail; onChanged: () => void
 function PetEditor({ pet, player, skills, onChanged }: { pet: Pet; player: Player; skills: Record<string, { name: string }>; onChanged: () => void }) {
   const [form, setForm] = useState<Record<string, string>>({});
   const [busy, setBusy] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [reason, setReason] = useState("");
+  const remove = async () => {
+    try {
+      await api(`${ADMIN}/players/${player.id}/pets/${pet.id}/delete`, { method: "POST", body: { reason: reason.trim(), playerName: player.displayName, petName: pet.name } });
+      toast.success(`Đã xoá ${pet.name}`);
+      setDeleting(false);
+      setReason("");
+      onChanged();
+    } catch (err) {
+      toast.error(errorText(err));
+    }
+  };
   const value = (key: string, current: number) => form[key] ?? String(current);
   const set = (key: string, v: string) => setForm((f) => ({ ...f, [key]: v }));
   const dirty = Object.keys(form).length > 0;
@@ -659,7 +672,22 @@ function PetEditor({ pet, player, skills, onChanged }: { pet: Pet; player: Playe
       <CardHeader
         title={`${pet.name} · cấp ${pet.level}`}
         description={`${pet.species}${pet.age?.stage?.name ? ` · ${pet.age.stage.name}` : ""}${pet.mood?.label ? ` · ${pet.mood.label}` : ""}${pet.sick ? ` · đang ốm${pet.sick.name ? ` (${pet.sick.name})` : ""}` : ""}`}
-        action={dirty ? <div className="flex gap-2"><Button size="sm" variant="ghost" onClick={() => setForm({})}>Hoàn tác</Button><Button size="sm" onClick={save} loading={busy}>Lưu</Button></div> : null}
+        action={<div className="flex gap-2">
+          {dirty && <><Button size="sm" variant="ghost" onClick={() => setForm({})}>Hoàn tác</Button><Button size="sm" onClick={save} loading={busy}>Lưu</Button></>}
+          <Button size="sm" variant="outline" className="text-danger" onClick={() => setDeleting(true)}><Trash2 className="h-4 w-4" /> Xoá bé</Button>
+        </div>}
+      />
+      <ConfirmDialog
+        open={deleting}
+        onClose={() => setDeleting(false)}
+        onConfirm={async () => { if (reason.trim()) await remove(); else toast.error("Ghi lý do xoá bé."); }}
+        title={`Xoá ${pet.name}?`}
+        message={<div className="space-y-2">
+          <p>Bé bị xoá hẳn, không lập bia ở Đồi Sao và không khoá ô. Trang phục bé đang đeo về tủ đồ của {player.displayName}; lương ca đã làm được trả nốt; bé đang đứng máy ngành chiến lược thì rút ra.</p>
+          <Field label="Lý do (ghi vào nhật ký)"><Input value={reason} onChange={(e) => setReason(e.target.value)} maxLength={200} placeholder="Ví dụ: người chơi nhờ xoá bé trùng" /></Field>
+        </div>}
+        confirmLabel="Xoá bé"
+        danger
       />
       <CardBody className="grid gap-3 pt-3 sm:grid-cols-4 lg:grid-cols-7">
         {STATS.map((key) => (
@@ -791,7 +819,7 @@ function InvitesTab() {
   );
 }
 
-const LOG_LABEL: Record<string, string> = { coins: "Cộng/trừ xu", pet: "Sửa chỉ số bé", pet_grant: "Tặng thú cưng", ban: "Khoá", unban: "Mở khoá", rename: "Đổi tên", invite: "Tạo link mời", invite_revoke: "Thu hồi link", password_link: "Tạo link đặt mật khẩu", password_set: "Đặt mật khẩu qua link", gear_config: "Chỉnh tỷ lệ trang phục", gear_grant: "Tặng trang phục", gear_edit: "Sửa trang phục", gear_delete: "Xoá trang phục", gift_code: "Tạo mã quà", gift_code_revoke: "Thu hồi mã quà", announcement: "Đăng thông báo", announcement_delete: "Gỡ thông báo", clan_config: "Chỉnh luật gia tộc & giá đất", land_price: "Đặt giá lô đất", macro: "Chỉnh kinh tế vĩ mô", tax_evasion: "Sở thuế: phát hiện khai thiếu", tax_collect: "Truy thu thuế", tax_dismiss: "Bỏ qua hồ sơ thuế" };
+const LOG_LABEL: Record<string, string> = { coins: "Cộng/trừ xu", pet: "Sửa chỉ số bé", pet_grant: "Tặng thú cưng", pet_delete: "Xoá thú cưng", ban: "Khoá", unban: "Mở khoá", rename: "Đổi tên", invite: "Tạo link mời", invite_revoke: "Thu hồi link", password_link: "Tạo link đặt mật khẩu", password_set: "Đặt mật khẩu qua link", gear_config: "Chỉnh tỷ lệ trang phục", gear_grant: "Tặng trang phục", gear_edit: "Sửa trang phục", gear_delete: "Xoá trang phục", gift_code: "Tạo mã quà", gift_code_revoke: "Thu hồi mã quà", announcement: "Đăng thông báo", announcement_delete: "Gỡ thông báo", clan_config: "Chỉnh luật gia tộc & giá đất", land_price: "Đặt giá lô đất", macro: "Chỉnh kinh tế vĩ mô", tax_evasion: "Sở thuế: phát hiện khai thiếu", tax_collect: "Truy thu thuế", tax_dismiss: "Bỏ qua hồ sơ thuế" };
 const TIER_LABEL: Record<string, string> = { blue: "Xanh lam", green: "Xanh lục", gold: "Vàng", red: "Đỏ" };
 const AFFIX_LABEL: Record<string, string> = { income: "thu nhập", stats: "chỉ số", trade: "giao dịch", luck: "may mắn" };
 const affixList = (a: unknown) => Object.entries((a as Record<string, number>) ?? {}).map(([k, v]) => `+${v}% ${AFFIX_LABEL[k] ?? k}`).join(", ");
@@ -804,6 +832,7 @@ function LogTab() {
     if (row.action === "coins") return `${Number(d.delta) >= 0 ? "+" : "−"}${Math.abs(Number(d.delta)).toLocaleString("vi-VN")} xu${d.memo ? ` · ${String(d.memo)}` : ""} · ví còn ${Number(d.balance).toLocaleString("vi-VN")}`;
     if (row.action === "pet") return `${String(d.petName ?? "")}: ${Object.entries((d.changes as Record<string, number>) ?? {}).map(([k, v]) => `${STAT_LABEL[k] ?? k} ${v}`).concat(Object.entries((d.skills as Record<string, number>) ?? {}).map(([k, v]) => `${k} ${v}`)).join(", ")}`;
     if (row.action === "pet_grant") return `${String(d.petName ?? "")} (${String(d.speciesName ?? d.species ?? "")}${d.rarity ? `, ${RARITY_LABEL[String(d.rarity)] ?? String(d.rarity)}` : ""})`;
+    if (row.action === "pet_delete") return `${String(d.petName ?? "")} (cấp ${String(d.level ?? "")}): ${String(d.reason ?? "")}`;
     if (row.action === "rename") return `${String(d.from ?? "")} → ${String(d.to ?? "")}`;
     if (row.action === "invite") return `“${String(d.label ?? "")}”${d.maxUses ? ` · ${String(d.maxUses)} lượt` : ""}`;
     if (row.action === "invite_revoke") return `#${String(d.id ?? "")}`;

@@ -27,7 +27,7 @@ import { productionApi } from './routes-production.js';
 import { clanApi } from './routes-clans.js';
 import { clanConfig } from './clans.js';
 import { createPet, hatch, heirloomText, incubate } from './eggs.js';
-import { memorialsView, reopenSlot, slotsOf } from './lifecycle.js';
+import { memorialsView, releasePet, reopenSlot, slotsOf } from './lifecycle.js';
 import { track } from './quests.js';
 import { payStipend } from './town.js';
 import { bus, mutatePet, ownedPet, snapshot } from './service.js';
@@ -204,6 +204,14 @@ api.post('/eggs/:id/hatch', auth, (req, res) => {
   const result = hatch(req.user.id, Number(req.params.id), cleanPetName(req.body?.name));
   bus.emit('pet:changed', req.user.id);
   reply(res, req.user.id, result);
+});
+
+/** Thả bé: gõ đúng tên bé để xác nhận. Bé không lập bia, ô được trả lại, đồ đang đeo về tủ đồ. */
+api.post('/pets/:id/release', auth, (req, res) => {
+  const pet = ownedPet(req.user.id, req.params.id);
+  if (String(req.body?.name ?? '').trim() !== pet.name) throw new GameError(`Gõ đúng tên "${pet.name}" để xác nhận thả bé.`);
+  releasePet(req.user.id, pet.id);
+  reply(res, req.user.id, { message: `🕊️ Đã thả ${pet.name} về với thiên nhiên. Trang phục của bé đã về tủ đồ.` });
 });
 
 api.post('/pets/:id/active', auth, (req, res) => {

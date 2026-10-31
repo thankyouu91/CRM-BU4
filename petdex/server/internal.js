@@ -28,7 +28,7 @@ import { adminClanBankView, setClanBankFrozen } from './clan-bank.js';
 import { adminSharesView } from './clan-shares.js';
 import { adminBondsView, issueTreasuryBonds } from './clan-bonds.js';
 import { refPrice } from './industry.js';
-import { slotsOf } from './lifecycle.js';
+import { releasePet, slotsOf } from './lifecycle.js';
 import { bus, snapshot } from './service.js';
 import { getSpecies, listSpecies } from './species.js';
 import { ledgerPage, netWorth, richList } from './wallet.js';
@@ -547,6 +547,19 @@ internalApi.post('/admin/players/:id/pets/:petId', (req, res) => {
     store.adminLog(actor, 'pet', user.id, { petId: pet.id, petName: pet.name, changes, skills });
   });
   bus.emit('pet:changed', user.id);
+  res.json({ ok: true });
+});
+
+// Xóa bé của người chơi: đồ đang đeo về tủ, lương ca đã làm được trả nốt, rút khỏi ghế đứng máy; không lập bia, không khóa ô.
+internalApi.post('/admin/players/:id/pets/:petId/delete', (req, res) => {
+  const user = userOf(req);
+  const reason = String(req.body?.reason ?? '').trim().slice(0, 200);
+  if (!reason) throw new GameError('Ghi lý do xóa bé.');
+  const actor = actorOf(req);
+  store.transaction(() => {
+    const gone = releasePet(user.id, Number(req.params.petId), { admin: true });
+    store.adminLog(actor, 'pet_delete', user.id, { petId: Number(req.params.petId), petName: gone.name, species: gone.species, level: gone.level, reason });
+  });
   res.json({ ok: true });
 });
 

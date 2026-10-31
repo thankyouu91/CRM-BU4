@@ -29,6 +29,10 @@ const q = {
   insertEgg: db.prepare('INSERT INTO eggs (user_id, element, species, started_at, hatch_at) VALUES (?, ?, ?, ?, ?)'),
   eggCount: db.prepare('SELECT COUNT(*) AS n FROM eggs WHERE user_id = ? AND hatched_at IS NULL'),
   insertNews: db.prepare('INSERT INTO news (commodity, headline, effect, created_at, starts_at, ends_at) VALUES (NULL, ?, 0, ?, ?, ?)'),
+  pet: db.prepare('SELECT * FROM pets WHERE id = ?'),
+  operatorOfPet: db.prepare('SELECT plot_id FROM clan_operators WHERE pet_id = ?'),
+  dropOperator: db.prepare('DELETE FROM clan_operators WHERE pet_id = ?'),
+  dropGames: db.prepare('DELETE FROM minigame_sessions WHERE pet_id = ? AND finished_at IS NULL'),
   mine: db.prepare('SELECT * FROM memorials WHERE user_id = ? ORDER BY died_at DESC LIMIT 30'),
   all: db.prepare('SELECT m.*, u.username FROM memorials m JOIN users u ON u.id = m.user_id ORDER BY m.died_at DESC LIMIT 40'),
   heirloom: db.prepare('SELECT * FROM memorials WHERE user_id = ? AND heirloom_used_at IS NULL ORDER BY died_at LIMIT 1'),
@@ -96,6 +100,35 @@ function passAway(row, at) {
     q.lockSlot.run(row.owner_id);
   }
   q.insertNews.run(`🌠 ${row.name} của ${user.username} đã về với sao trời sau ${weeks} tuần`, at, at, at + 2 * DAY);
+}
+
+/**
+ * Thả bé (người chơi) hoặc xóa bé (quản trị viên): khác với bé mất, không lập bia, không khóa ô, không có kỷ vật.
+ * Trang phục đang đeo về lại tủ đồ (chỉ xóa chỗ đeo), lương ca đã làm chưa nhận được trả nốt, ván mini-game dở bị hủy.
+ * Người chơi không thả được bé đang bận (đi làm, đi học, đang tắm), bé đang đứng máy ngành chiến lược, hay bé cuối cùng;
+ * quản trị viên xóa được mọi bé (rút luôn khỏi ghế đứng máy). Bé chính bị thả thì bé kế tiếp lên thay.
+ */
+export function releasePet(ownerId, petId, { now = Date.now(), admin = false } = {}) {
+  return transaction(() => {
+    const row = q.pet.get(petId);
+    if (!row || row.owner_id !== ownerId) throw new GameError('Không tìm thấy bé này.');
+    if (!admin) {
+      if (listPets(ownerId).length <= 1) throw new GameError('Đây là bé duy nhất của bạn, không thả được.');
+      if (isBusy(row, now)) throw new GameError(`${row.name} đang bận, đợi bé xong việc rồi hẵng thả.`);
+      if (q.operatorOfPet.get(row.id)) throw new GameError(`${row.name} đang đứng máy ngành chiến lược của gia tộc, rút bé ra trước đã.`);
+    }
+    for (const sh of q.openShifts.all(row.id)) {
+      if (sh.pay > 0) post({ userId: ownerId, delta: sh.pay, kind: 'salary', memo: `Lương ca cuối của ${row.name}`, now });
+      q.claim.run(now, sh.id);
+    }
+    q.dropOperator.run(row.id);
+    q.dropGames.run(row.id);
+    q.deletePet.run(row.id); // xóa kéo theo kỹ năng, nghề, ca làm, chỗ đeo đồ (khóa ngoại ON DELETE CASCADE); trang phục vẫn trong tủ
+    const user = getUser(ownerId);
+    if (user.active_pet_id === row.id) setActivePet(ownerId, listPets(ownerId)[0]?.id ?? null);
+    bus.emit('pet:changed', ownerId);
+    return { name: row.name, species: row.species, level: row.level };
+  });
 }
 
 /**
