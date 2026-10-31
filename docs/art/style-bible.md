@@ -35,6 +35,10 @@ Quy tắc:
 - **Ô (tile):** 16×16 px. Đơn vị bản đồ là ô.
 - **Tỉ lệ hiển thị:** 3× trên máy tính, 2× trên điện thoại (< 768 px). Chỉ dùng số nguyên.
   - Vẽ thế giới lên canvas ở 1× rồi phóng bằng CSS `image-rendering: pixelated`. Cách này giữ bóng và mép sắc nét.
+- **Ngoại lệ: bản đồ đất gia tộc** (chủ game duyệt 2026-10-31). Tranh 702 × 332 điểm ảnh, xem ở 1×, 2×, 3× nguyên lần (khối cuộn bù zoom 0,9 của game như phố).
+  - Máy tính mặc định **1×**: thấy đủ 200 lô một lúc; 2× và 3× bằng nút + / −.
+  - Điện thoại (≤ 720 px) mặc định **2×**: ô chạm 64 × 74 điểm, mở quanh lô của gia tộc mình (không có thì E10), "Xem nhanh" mở sẵn.
+  - Lý do: bản đồ là trang để chọn lô nên cần thấy toàn cảnh; mức 3× vẫn có và đúng cỡ điểm ảnh của phố 16-bit.
 - **Góc nhìn: `low top-down` (~20°, kiểu 3/4 RPG) cho mọi thứ.** Lý do:
   - Mặt tiền nhà (cửa, mái hiên, cột) nhìn thấy được. Đó là thứ giúp người chơi nhận ra Siêu thị hay Ngân hàng và có chỗ để chạm.
   - Đây là góc mặc định của `create_character`, và pro tileset cũng hỗ trợ.

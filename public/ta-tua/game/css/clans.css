@@ -334,3 +334,56 @@
   .biz-strip-toggle i { width: 0; height: 0; border: 6px solid transparent; border-top-color: var(--pearl); transform: translateY(3px); }
   .biz-strip-toggle[aria-expanded="true"] i { border-top-color: transparent; border-bottom-color: var(--pearl); transform: translateY(-3px); }
 }
+
+/* ---------- bản đồ đất 16-bit (landmap.js + assets/landmap/, dựng bằng scripts/art/build-landmap.py) ----------
+   Tranh 702 × 332 điểm ảnh = khung SVG 1053 × 498 (1 điểm ảnh = 1,5 đơn vị). Khối cuộn bù zoom 0,9 của game như phố
+   16-bit (.t16), nên 1×, 2×, 3× (--lmz) là nguyên lần thật: mỗi điểm ảnh tranh ra đúng 1, 2, 3 điểm màn hình.
+   Canvas mặt đất (tranh + hiệu ứng) dưới SVG trong suốt (lưới, lô, huy hiệu), canvas trời (mây, hải âu) trên cùng. */
+.land-scroll:has(> .lm16-stage) {
+  zoom: calc(1 / var(--zoom, 1));
+  /* chỉ chặn cuộn dây chuyền theo chiều ngang: vuốt dọc tới mép bản đồ thì trang cuộn tiếp (không kẹt ở 2× và 3×) */
+  overflow: auto; overscroll-behavior-x: contain; background: #3f8fc0; max-height: 332px; scrollbar-width: thin;
+}
+.land-scroll:has(> .lm16-stage):focus-visible { outline: 3px solid var(--pink-deep); outline-offset: 2px; }
+.land-wrap.zin .land-scroll:has(> .lm16-stage) { max-height: 440px; }
+.lm16-stage { position: relative; width: calc(702px * var(--lmz, 1)); height: calc(332px * var(--lmz, 1)); }
+.lm16-stage > canvas, .lm16-stage > .land-svg { position: absolute; inset: 0; width: 100%; height: 100%; min-width: 0; display: block; }
+.lm16-stage > canvas { image-rendering: pixelated; pointer-events: none; }
+.lm16-stage.heat > .lm16-ground { visibility: hidden; }
+.lm16-sky { transition: opacity .3s; }
+.lm16-stage:has(.plot.sel) .lm16-sky { opacity: .3; }
+/* Từ 2× mây to bằng vài lô: làm mờ để không che mã lô và huy hiệu. */
+.zin .lm16-sky { opacity: .45; }
+.zin .lm16-stage:has(.plot.sel) .lm16-sky { opacity: .25; }
+/* lưới: giữ độ đậm vạch kem như trước (.5 máy tính, .62 điện thoại); vạch 1 điểm và bóng mực 2 điểm ở 1× */
+.lm16-stage .land-svg .lm-grid-line { stroke-width: 1.5; }
+.lm16-stage .land-svg .lm-grid-shade { stroke-width: 3; stroke-opacity: .34; }
+/* mã lô hiện ở mọi ô từ 2×, 8,5 đơn vị (~11 điểm ở 2×), chữ mực quầng kem */
+.land-wrap.zin .land-svg.terrain .code { opacity: 1; fill: #2e1d14; font-size: 8.5px; paint-order: stroke; stroke: #fff3e3; stroke-width: 2.4px; stroke-linejoin: round; }
+.land-wrap.zin .land-svg .plot.sel .code { font-size: 9px; stroke: none; }
+/* lô có công trình biểu tượng: từ 2× huy hiệu thu thành ghim góc dưới phải (60 %), công trình lộ ra; 1× vẫn ở giữa */
+.land-svg .lmk-badge { transition: transform .15s; }
+.land-wrap.zin .land-svg .plot.lmk .lmk-badge { transform: translate(12px, 12px) scale(.6); }
+@media (prefers-reduced-motion: reduce) { .land-svg .lmk-badge, .lm16-sky { transition: none; } }
+/* nút phóng to: góc trên trái, cùng kiểu thẻ "Xem nhanh"; tranh lỗi tải thì landmap.js gỡ nút */
+.lm-zoom {
+  position: absolute; left: 8px; top: 8px; z-index: 2; display: flex; align-items: center; gap: 2px; padding: 3px;
+  background: var(--surface-2); border: 2px solid var(--pearl); border-radius: 12px; box-shadow: 0 3px 0 var(--pearl);
+}
+.lm-zoom button {
+  width: 32px; height: 30px; border: 0; border-radius: 8px; background: var(--tea-deep); color: var(--surface-2);
+  font-weight: 800; font-size: 1.05rem; line-height: 1; cursor: pointer;
+}
+.lm-zoom button:disabled { opacity: .35; cursor: default; }
+.lm-zoom button:focus-visible { outline: 3px solid var(--pink-deep); outline-offset: 1px; }
+.lm-zoom b { min-width: 30px; text-align: center; font-size: .82rem; }
+/* máy tính: thẻ bớt 3 điểm lề mỗi bên để tranh 702 điểm vừa khung ở 1× */
+@media (min-width: 721px) { .land-main:has(.lm16-stage) { padding-left: 11px; padding-right: 11px; } }
+/* điện thoại (cùng ngưỡng 720 px): mặc định 2× (landmap.js), nút 46 điểm CSS (~41 thật sau zoom 0,9 của game) */
+@media (max-width: 720px) {
+  .lm-zoom button { width: 46px; height: 46px; font-size: 1.35rem; }
+  .lm-zoom b { min-width: 34px; font-size: .9rem; }
+  .lm16-stage .land-svg .lm-grid-line { stroke-width: 2; }
+  .lm16-stage .land-svg .lm-grid-shade { stroke-width: 4; stroke-opacity: .34; }
+  .land-wrap.zin .land-scroll:has(> .lm16-stage) { max-height: 400px; }
+}
