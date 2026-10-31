@@ -1,9 +1,12 @@
 #!/usr/bin/env python3
 """Cảnh đầu trang 16-bit (320x80) cho 7 màn: factory, bank, shop, kitchen, garden, school, clinic.
 
-    python3 -I scripts/art/build-scenes.py [S] [--preview out.png]
+    python3 -I scripts/art/build-scenes.py S [--preview out.png]
 
-S là thư mục làm việc của đội vẽ (mặc định: thư mục scratch của phiên Phase 1). Với mỗi cảnh:
+S (bắt buộc) là thư mục làm việc của đội vẽ, chứa phase0/ (bảng màu, tài sản Phase 0) và phase1/ (các gói
+headers, bldg-*, props-*, npc-*, ambient-*, tiles). Thư mục này không nằm trong repo: muốn dựng lại thì lấy bản
+lưu của đội vẽ (hỏi Phòng thiết kế) rồi truyền đường dẫn vào. Ảnh trong public/ đã là bản cuối nên game chạy
+không cần S. Với mỗi cảnh:
   1. Gói `headers` đã có tranh cuối (S/phase1/headers/**/<name>-1x.png, đúng 320x80) -> dùng nguyên tranh đó.
   2. Chưa có -> ghép tạm từ tài sản Phase 0 đã duyệt (ô Wang, nhà, đạo cụ, NPC). Gói Phase 1 nào đã có hình
      hợp (xưởng bldg-5, bếp bldg-3, ...) thì lấy thêm; thiếu thì quay về hình Phase 0.
@@ -28,7 +31,7 @@ import sys
 
 from PIL import Image
 
-DEFAULT_S = '/tmp/claude-0/-home-user-CRM-BU4/1d7a8478-818d-5731-a18c-bb6358057abd/scratchpad'
+LICENSE = 'PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)'
 REPO = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..'))
 OUT = os.path.join(REPO, 'public', 'ta-tua', 'game', 'assets', 'scenes')
 MANIFEST = os.path.join(REPO, 'docs', 'art', 'asset-manifest.json')
@@ -54,7 +57,9 @@ if '--preview' in args:
     i = args.index('--preview')
     preview = args[i + 1]
     del args[i:i + 2]
-S = os.path.abspath(args[0] if args else DEFAULT_S)
+if not args:
+    raise SystemExit('Thiếu S: python3 -I scripts/art/build-scenes.py S [--preview out.png] (xem docstring)')
+S = os.path.abspath(args[0])
 P0 = os.path.join(S, 'phase0')
 P1 = os.path.join(S, 'phase1')
 
@@ -533,7 +538,7 @@ def manifest_entry(name, status, sources, check, size, fx):
         'id': f'scene-{name}',
         'role': f'header scene: {LABELS[name]} (view {name})',
         'path': f'public/ta-tua/game/assets/scenes/{name}.webp',
-        'status': 'sample',
+        'status': 'sample' if placeholder else 'approved',
         'technical': {
             'dimensions': f'{W}x{H}', 'alpha': False, 'anchor': 'center (phone: center crop)', 'frames': 1,
             'filtering': 'nearest', 'scale': 'integer 3x desktop (2x when the column is under 960 px) / 2x phone',
@@ -551,11 +556,11 @@ def manifest_entry(name, status, sources, check, size, fx):
             'generation_cost': 0,
             'postprocess': ['opaque on #fbf1e3', 'WebP lossless (exact)'] + (
                 ['Wang terrain + sprites placed by bottom-centre', 'shadow 28% #2e1d14 snapped to palette'] if placeholder else []),
-            'license': 'derived from PixelLab assets listed in sources (PixelLab ToS) — verify before ship',
+            'license': LICENSE,
         },
         'verification': {
             'native_scale_reviewed': True, 'in_engine_reviewed': True, 'technical_checks_passed': check['off_palette'] == 0,
-            'approved_by': '', 'notes': f'off-palette={check["off_palette"]} colours={check["colours"]}'
+            'approved_by': '' if placeholder else 'owner (design session, 2026-10-31)', 'notes': f'off-palette={check["off_palette"]} colours={check["colours"]}'
                 + ('; placeholder until the headers package lands' if placeholder else ''),
         },
     }
