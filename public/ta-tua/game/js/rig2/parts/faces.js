@@ -204,7 +204,7 @@ function maskBox(m) {
 /** Hàng dưới cùng của đầu ở cột x (cằm), để miệng không rơi ra ngoài đầu ở bé sơ sinh (đầu thấp, mũi to). */
 function chinAt(ctx, x) {
   const m = ctx.headMask;
-  for (let y = 47; y >= 0; y--) if (m[y * 48 + x]) return y;
+  if (m) for (let y = 47; y >= 0; y--) if (m[y * 48 + x]) return y;
   return 47;
 }
 
@@ -230,6 +230,7 @@ const snout = {
       const nose = mAnd(ctx.headMask, mEllipse(hcx, ny, 2.6, 1.7, 0, 2.2));
       ctx.parts.push(part('snout', nose, ramp, ctx.zh + 0.12, { normal: [hcx - 1, ny - 1.2, 3.4, 2.6] }));
       const b = maskBox(nose);
+      if (!b) return; // đầu lạ không chứa nổi mũi: thôi vẽ, không lỗi
       const r = b.y0 + 1;
       P.push([mx - 2, r, nos, 20], [mx + 1, r, nos, 20]);
       mouthS(ctx, mx, Math.min(b.y1 + 1, chinAt(ctx, mx) - 2));
@@ -241,6 +242,7 @@ const snout = {
     const disc = mAnd(ctx.headMask, mEllipse(hcx, sy, srx, sry, 0, 2.6));
     ctx.parts.push(part('snout', disc, ramp, ctx.zh + 0.12, { normal: [hcx - 1.2, sy - 1.6, srx + 1.2, sry + 1.8] }));
     const b = maskBox(disc);
+    if (!b) return;
     // lỗ mũi: hai vạch dọc đối xứng qua trục, cách vành 1 điểm (đĩa hẹp: sát vành)
     const inset = b.x1 - b.x0 + 1 >= 8 ? 2 : 1;
     const rows = b.y1 - b.y0 + 1 >= 5 ? [b.y0 + 1, b.y0 + 2] : [b.y0 + 1];

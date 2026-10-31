@@ -252,7 +252,7 @@ function crest(ctx) {
 
 /**
  * Than hồng trên má (gấu mèo đỏ, kỳ nhông lửa, heo than): mỗi má một đốm than hồng thay cho má hồng (blush đổi sang cam):
- * hàng trên cam - lõi vàng sáng - cam, hàng dưới một điểm đỏ; lõi và điểm đỏ lập lòe theo ctx.tick. Lõi sáng cách mắt 1-2 cột
+ * 3×2: hàng trên cam - lõi trắng vàng - cam, hàng dưới đỏ - vàng - đỏ; lõi và hai góc đỏ lập lòe theo ctx.tick. Lõi sáng cách mắt 1 cột
  * (sát mắt thì nhìn như giọt nước mắt). Cùng hàng với má hồng của eyes() (faces.js), theo cả khi liếc mắt (pose.look).
  * Nhìn sau không thấy má.
  */
@@ -268,9 +268,10 @@ function ember(ctx) {
   const list = view === 'S' ? [[-1, hcx - sk.eyeDx], [1, hcx + sk.eyeDx]] : [[1, sk.anchors.face[0]]];
   for (const [s, ex] of list) {
     const x0 = Math.floor(ex - ew / 2 + 0.5) + look;
-    // má 3 điểm ngay dưới-ngoài mắt (cùng hàng với má hồng): cam - lõi sáng - cam, hàng dưới một điểm đỏ
+    // đốm than 3×2 ngay dưới-ngoài mắt (hàng trên cùng hàng với má hồng): cam - lõi sáng - cam / đỏ - vàng - đỏ
     const c = view === 'S' && s > 0 ? x0 + ew + 1 : x0 - 2;
-    ctx.pixels.push([c - 1, y, '#f39b4a', 19.5], [c, y, hot, 19.5], [c + 1, y, '#f39b4a', 19.5], [c, y + 1, low, 19.5]);
+    ctx.pixels.push([c - 1, y, '#f39b4a', 19.5], [c, y, hot, 19.5], [c + 1, y, '#f39b4a', 19.5],
+      [c - 1, y + 1, low, 19.5], [c, y + 1, '#f4c24f', 19.5], [c + 1, y + 1, low, 19.5]);
   }
 }
 
@@ -380,8 +381,9 @@ function cup(ctx) {
 /**
  * Bong bóng (hải cẩu, cá nóc, kỳ giông, vịt mây): một bong bóng tròn 4×4 trong suốt (vành xanh, chấm sáng trên-trái) và một
  * bong bóng nhỏ, bay lên cạnh đầu theo ctx.tick (chu kỳ 6 khung, lệch pha nhau), lên tới đỉnh thì vỡ thành 4 chấm.
- * Nhìn trước: bên trái của bé (bên phải người xem, như rig cũ), từ ngang trán lên đỉnh đầu (trên vây tai, trên bùa);
- * nhìn ngang: trước trán, cao hơn mõm/mỏ; nhìn sau: bên trái người xem. Luôn trong cột/hàng 1..46.
+ * Bay bên tay phải của bé, từ ngang trán lên đỉnh đầu (cao hơn vây tai): nhìn trước = bên trái người xem, nhìn sau = bên phải
+ * người xem, nhìn ngang = trước trán, cao hơn mõm/mỏ. Rig cũ để bên phải người xem, nhưng đó là phía bùa (charm) bay
+ * (luôn bên trái của bé), bóng bay/đèn lồng sẽ chồng lên bong bóng. Luôn trong cột/hàng 1..46.
  */
 const RING = '#58b9d6';
 const SHINE = '#eef8fb';
@@ -399,7 +401,9 @@ function popBubble(img, x, y) {
 function bubbleOver(ctx, img) {
   const { sk, view } = ctx;
   const [hcx, , hrx] = sk.head;
-  const side = view === 'N' ? -1 : 1;
+  // phía tay phải của bé (bùa luôn bay bên trái của bé, nên hai thứ không chồng nhau): nhìn trước = trái người xem,
+  // nhìn sau = phải người xem; nhìn ngang = trước mặt (bùa ở sau lưng).
+  const side = view === 'S' ? -1 : 1;
   const top = pyRound(sk.htop);
   // bong bóng to (4×4): 6 bước, từ ngang trán bay lên tới đỉnh đầu, lắc 1 điểm ở bước 2 và 5; bước cuối vỡ
   const k = ctx.tick % 6;
