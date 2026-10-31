@@ -4,7 +4,7 @@ Chạy lại sau mỗi lần hoạ sĩ giao thêm gói là đủ, không cần s
 
     python3 -I scripts/art/build-town.py S [--check]
 
-thư-mục-scratch mặc định là thư mục làm việc của nhóm vẽ (có phase0/ và phase1/). Script chỉ ĐỌC ở đó.
+S (bắt buộc) là thư mục làm việc của nhóm vẽ, không nằm trong repo (có phase0/ và phase1/). Script chỉ ĐỌC ở đó.
 Nó gom:
   - địa hình: phase1/tiles/pal/terrain.json (nếu có) hoặc 3 bộ Wang của Phase 0;
   - nhà: Nhà/Siêu thị/Ngân hàng của Phase 0 + mọi nhà đã có trong phase1/bldg-*/pal/;
