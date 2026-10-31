@@ -4,7 +4,7 @@ import { barChart } from '../charts.js';
 import { countdown, esc, fmt, fmtLots, pct, viewHead } from '../ui.js';
 
 /** Lựa chọn của người chơi giữ nguyên qua các lần vẽ lại. */
-const ui = { orderFor: null, batches: '10', help: false };
+const ui = { orderFor: null, batches: '10', help: false, tab: {} };
 
 const HOUR = 3600_000;
 /** Ngày theo giờ Việt Nam ('2026-10-29'), khớp với `day` trong số liệu 7 ngày. */
@@ -107,8 +107,8 @@ export function renderFactory(root, ctx) {
     const pets = n.open ? `<ul class="pb-list">${n.pets.map((p) => `
       <li><span><b>${esc(p.name)}</b> <small class="muted">⚡ ${p.energy}</small>${p.ok ? '' : `<br><small class="muted">${esc(p.why)}</small>`}</span>
         <button class="btn small" data-fx-night="${f.id}:${p.id}" ${p.ok ? '' : 'disabled'}>🌙 Vào ca đêm</button></li>`).join('')}</ul>` : '';
-    return `<div class="factory-block">
-      <div><h4>🌙 Ca đêm ${n.hours} giờ</h4>${head}</div>
+    return `<div class="factory-night">
+      <div><b>🌙 Ca đêm ${n.hours} giờ</b> ${head}</div>
       ${pets}
     </div>`;
   }
@@ -134,6 +134,42 @@ export function renderFactory(root, ctx) {
       </table></div>`;
   }
 
+  /** Các phần quản lý ít dùng, mỗi lần mở một tab (nhớ theo từng xưởng). */
+  const TABS = [
+    ['report', '📊 Báo cáo'],
+    ['toll', '🤝 Gia công thuê'],
+    ['hire', '📋 Tuyển người'],
+    ['upgrade', '⬆️ Nâng cấp'],
+  ];
+
+  function tabBody(f, tab) {
+    const post = f.jobPost;
+    if (tab === 'report') return daysHtml(f);
+    if (tab === 'toll') {
+      return `<form class="job-form" data-fx-toll="${f.id}">
+          <label>Phí/mẻ <input name="fee" type="number" min="0" max="${rules.maxTollFee}" step="1" value="${f.tollFee}" required /></label>
+          <label class="check"><input name="open" type="checkbox" ${f.tollOpen ? 'checked' : ''} /> Đang nhận</label>
+          <button class="btn small">Lưu</button>
+        </form>
+        <small class="muted">Phí 0–${rules.maxTollFee} 🪙/mẻ. Khách gửi nguyên liệu tới, xưởng làm đơn của khách trước, xong mẻ nào nhận phí mẻ đó.</small>
+        ${queueHtml(f)}`;
+    }
+    if (tab === 'hire') {
+      return `<form class="job-form" data-fx-jobs="${f.id}">
+          <label>Lương/giờ <input name="wage" type="number" min="${wageMin}" max="${wageMax}" step="1" value="${post?.wage ?? 15}" required /></label>
+          <label>Số người <input name="slots" type="number" min="1" max="3" step="1" value="${post?.slots ?? 1}" required /></label>
+          <label class="check"><input name="open" type="checkbox" ${post?.open ? 'checked' : ''} /> Đang tuyển</label>
+          <button class="btn small">Lưu tin</button>
+        </form>
+        <small class="muted">Lương ${wageMin}–${wageMax} 🪙/giờ, trừ khỏi ví bạn ngay khi bé người khác vào ca.</small>`;
+    }
+    return `<div class="row-between">
+        <small class="muted">${f.nextUpgrade === null ? `Xưởng đã ở cấp cao nhất (cấp ${f.level + 1}).` : `Lên cấp ${f.level + 2}: +${rules.perLevel} mẻ/giờ.`}</small>
+        ${f.nextUpgrade === null ? '<span class="badge star">Tối đa</span>'
+          : `<button class="btn small gold" data-fx-upgrade="${f.id}" ${ctx.me.user.coins < f.nextUpgrade ? 'disabled title="Chưa đủ xu"' : ''}>Nâng cấp · ${fmt(f.nextUpgrade)} 🪙</button>`}
+      </div>`;
+  }
+
   function factoryCard(f) {
     const def = data.kinds[f.kind];
     const now = Date.now();
@@ -141,77 +177,64 @@ export function renderFactory(root, ctx) {
     const nightOn = f.duty.some((d) => d.night && d.startsAt <= now && d.endsAt > now);
     const today = f.days.find((d) => d.day === todayKey()) ?? { batches: 0, toll_batches: 0, toll_income: 0 };
     const rate = perHour(f.kind, f.level);
-    const post = f.jobPost;
     const [inC] = Object.keys(def.input);
     const [outC] = Object.keys(def.output);
+    const tab = ui.tab[f.id] ?? null;
+    const status = nightOn ? ['night', '🌙 Ca đêm'] : working ? ['on', '🟢 Đang chạy'] : ['off', '⚪ Đang nghỉ'];
+    const hint = !f.canRun
+      ? `<p class="pb-note">Hết ${com(inC).icon} ${esc(com(inC).name)} trong kho. Mua thêm ở Sàn hoặc ký hợp đồng để có hàng về mỗi đêm.</p>`
+      : !working ? '<p class="pb-note">Xưởng chỉ chạy khi có bé đứng máy. Bấm <b>Cho bé đứng máy</b> để bắt đầu.</p>' : '';
     return `
-      <section class="card factory-card">
+      <section class="card factory-card is-${status[0]}">
         <header class="factory-head">
           <span class="factory-icon">${def.icon}</span>
           <div>
             <h3>${esc(def.name)} <span class="badge level">cấp ${f.level + 1}</span></h3>
-            <small class="muted">${spec(def.input)} → ${spec(def.output)}</small>
+            <small class="muted">${rate}–${fmt(Math.floor(rate * (1 + rules.skillBoost)))} mẻ/giờ · thuê đất ${fmt(f.rent)} 🪙/đêm</small>
           </div>
-          <span class="badge ${working ? 'star' : ''}">${nightOn ? '🌙 Ca đêm' : working ? '🟢 Đang chạy' : '⚪ Đang nghỉ'}</span>
+          <span class="factory-status ${status[0]}">${status[1]}</span>
         </header>
-        ${f.unpaidDays ? `<p class="pb-warn">⚠️ Nợ tiền thuê đất ${f.unpaidDays} đêm. Nợ ${unpaidLimit} đêm liền xưởng sẽ bị đóng (−${evicted} điểm tín dụng) — nhớ để đủ ${fmt(f.rent)} 🪙 trong ví trước nửa đêm.</p>` : ''}
-        <div class="cb-stats">
-          <div><span class="muted">Công suất</span><b>${rate}–${fmt(Math.floor(rate * (1 + rules.skillBoost)))}</b><small class="muted">mẻ/giờ</small></div>
-          <div><span class="muted">Kho đủ cho</span><b class="${f.canRun ? '' : 'down'}">${fmt(f.canRun)} mẻ</b><small class="muted">${com(inC).icon} ${fmtLots(have(inC))} lô${f.canRun ? ` · ≈ ${fmt(Math.max(1, Math.round(f.canRun / rate)))} giờ máy` : ''}</small></div>
-          <div><span class="muted">Hôm nay</span><b>${fmt(today.batches + today.toll_batches)} mẻ</b><small class="muted">${com(outC).icon} kho ${fmtLots(have(outC))} lô</small></div>
-          <div><span class="muted">Thuê đất</span><b>${fmt(f.rent)} 🪙</b><small class="muted">mỗi đêm</small></div>
-        </div>
-        ${f.canRun ? '' : `<p class="pb-note">Hết ${com(inC).icon} ${esc(com(inC).name)} trong kho: mua thêm ở Sàn hoặc ký hợp đồng để có hàng về mỗi đêm.</p>`}
+        ${f.unpaidDays ? `<p class="pb-warn">⚠️ Nợ tiền thuê đất ${f.unpaidDays} đêm. Nợ ${unpaidLimit} đêm liền xưởng sẽ bị đóng (−${evicted} điểm tín dụng). Để đủ ${fmt(f.rent)} 🪙 trong ví trước nửa đêm.</p>` : ''}
 
-        <div class="factory-block">
-          <div class="row-between"><h4>🧑‍🏭 Đứng máy</h4><button class="btn small gold" data-go="jobs">Cho bé đứng máy</button></div>
+        <div class="factory-flow" aria-label="Dây chuyền">
+          <div class="flow-node ${f.canRun ? '' : 'low'}">
+            <span class="flow-icon">${com(inC).icon}</span>
+            <b>${fmtLots(have(inC))} lô</b>
+            <small>${esc(com(inC).name)}</small>
+            <small class="flow-sub ${f.canRun ? '' : 'down'}">đủ ${fmt(f.canRun)} mẻ${f.canRun ? ` · ≈ ${fmt(Math.max(1, Math.round(f.canRun / rate)))} giờ` : ''}</small>
+          </div>
+          <div class="flow-arrow"><span>${shortSpec(def.input)}</span><i>➜</i><span>${shortSpec(def.output)}</span></div>
+          <div class="flow-node out">
+            <span class="flow-icon">${com(outC).icon}</span>
+            <b>${fmtLots(have(outC))} lô</b>
+            <small>${esc(com(outC).name)}</small>
+            <small class="flow-sub">hôm nay +${fmt(today.batches + today.toll_batches)} mẻ</small>
+          </div>
+        </div>
+        ${hint}
+
+        <div class="factory-crew">
+          <div class="row-between">
+            <h4>🧑‍🏭 Đứng máy</h4>
+            <button class="btn small gold" data-go="jobs">Cho bé đứng máy</button>
+          </div>
           ${dutyHtml(f)}
-        </div>
-
-        <div class="factory-block">
-          <div class="row-between">
-            <div><h4>🔁 Chạy liên tục</h4><small class="muted">Ca của bé nhà mình xong thì tự vào ca kế cùng độ dài.</small></div>
-            <label class="check"><input type="checkbox" data-fx-auto="${f.id}" ${f.autoRun ? 'checked' : ''} /> ${f.autoRun ? 'Đang bật' : 'Đang tắt'}</label>
-          </div>
+          <label class="factory-toggle">
+            <input type="checkbox" data-fx-auto="${f.id}" ${f.autoRun ? 'checked' : ''} />
+            <span><b>🔁 Chạy liên tục</b><small class="muted">Bé nhà mình xong ca thì tự vào ca kế cùng độ dài.</small></span>
+          </label>
           ${autoStatus(f)}
-        </div>
-        ${nightHtml(f)}
-
-        <div class="factory-block">
-          <div class="row-between">
-            <div><h4>⬆️ Nâng cấp</h4><small class="muted">${f.nextUpgrade === null ? 'Xưởng đã ở cấp cao nhất.' : `Lên cấp ${f.level + 2}: +${rules.perLevel} mẻ/giờ`}</small></div>
-            ${f.nextUpgrade === null ? '<span class="badge star">Tối đa</span>'
-              : `<button class="btn small" data-fx-upgrade="${f.id}" ${ctx.me.user.coins < f.nextUpgrade ? 'disabled title="Chưa đủ xu"' : ''}>${fmt(f.nextUpgrade)} 🪙</button>`}
-          </div>
+          ${nightHtml(f)}
         </div>
 
-        <div class="factory-block">
-          <h4>🤝 Nhận gia công thuê</h4>
-          <form class="job-form" data-fx-toll="${f.id}">
-            <label>Phí/mẻ <input name="fee" type="number" min="0" max="${rules.maxTollFee}" step="1" value="${f.tollFee}" required /></label>
-            <label class="check"><input name="open" type="checkbox" ${f.tollOpen ? 'checked' : ''} /> Đang nhận</label>
-            <button class="btn small">Lưu</button>
-          </form>
-          <small class="muted">Phí 0–${rules.maxTollFee} 🪙/mẻ. Khách gửi nguyên liệu tới, xưởng làm đơn của khách trước, xong mẻ nào nhận phí mẻ đó.</small>
-          ${queueHtml(f)}
-        </div>
+        <nav class="factory-tabs" role="tablist">
+          ${TABS.map(([key, label]) => `<button type="button" role="tab" class="chip ${tab === key ? 'current' : ''}" aria-selected="${tab === key}" data-fx-tab="${f.id}:${key}">${label}${key === 'toll' && f.queue.length ? ` <span class="badge">${f.queue.length}</span>` : ''}</button>`).join('')}
+        </nav>
+        ${tab ? `<div class="factory-tab-body">${tabBody(f, tab)}</div>` : ''}
 
-        <div class="factory-block">
-          <h4>📋 Tuyển công nhân</h4>
-          <form class="job-form" data-fx-jobs="${f.id}">
-            <label>Lương/giờ <input name="wage" type="number" min="${wageMin}" max="${wageMax}" step="1" value="${post?.wage ?? 15}" required /></label>
-            <label>Số người <input name="slots" type="number" min="1" max="3" step="1" value="${post?.slots ?? 1}" required /></label>
-            <label class="check"><input name="open" type="checkbox" ${post?.open ? 'checked' : ''} /> Đang tuyển</label>
-            <button class="btn small">Lưu tin</button>
-          </form>
-          <small class="muted">Lương ${wageMin}–${wageMax} 🪙/giờ, trừ khỏi ví bạn ngay khi bé người khác vào ca.</small>
-        </div>
-
-        <div class="factory-block">
-          <h4>📊 7 ngày gần nhất</h4>
-          ${daysHtml(f)}
-        </div>
-        <button class="link-btn danger" data-fx-close="${f.id}" ${f.queue.length ? 'disabled title="Còn đơn gia công đang chờ"' : ''}>Đóng xưởng</button>
+        <footer class="factory-foot">
+          <button class="link-btn danger" data-fx-close="${f.id}" ${f.queue.length ? 'disabled title="Còn đơn gia công đang chờ"' : ''}>Đóng xưởng</button>
+        </footer>
       </section>`;
   }
 
@@ -423,6 +446,10 @@ export function renderFactory(root, ctx) {
       const form = btn.closest('form');
       form.querySelector('input[name="batches"]').value = ui.batches;
       updatePreview(form);
+    } else if (d.fxTab) {
+      const [id, key] = d.fxTab.split(':');
+      ui.tab[id] = ui.tab[id] === key ? null : key;
+      draw();
     } else if (d.fxNight) {
       const [factoryId, petId] = d.fxNight.split(':').map(Number);
       ctx.act('/jobs/start', { petId, factoryId, night: true });

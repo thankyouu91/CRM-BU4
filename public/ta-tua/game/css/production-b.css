@@ -298,3 +298,38 @@
   width: 100%; min-height: 40px; margin: 0; justify-content: center;
   white-space: normal; overflow-wrap: break-word; text-align: center; line-height: 1.2;
 }
+
+/* ---------- Thẻ xưởng (thiết kế gọn): dây chuyền, đứng máy, tab quản lý ---------- */
+.factory-card { gap: 14px; }
+.factory-card.is-on { border-color: var(--mint); }
+.factory-card.is-night { border-color: #8c8ad6; }
+.factory-status { padding: 4px 10px; border-radius: 999px; font-weight: 800; font-size: .82rem; white-space: nowrap; border: 2px solid var(--line); background: var(--surface-2); }
+.factory-status.on { background: #eef9f5; border-color: var(--mint); color: var(--mint-deep); }
+.factory-status.night { background: #efeefc; border-color: #b9b7ee; color: #4b48a8; }
+.factory-flow { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); gap: 10px; align-items: stretch; }
+.flow-node { display: grid; justify-items: center; text-align: center; gap: 2px; padding: 12px 8px; border-radius: 16px; background: var(--surface-2); border: 2px solid var(--line); min-width: 0; }
+.flow-node.out { background: #eef9f5; border-color: #bfe6d6; }
+.flow-node.low { background: #fdeceb; border-color: #f0b4b4; }
+.flow-icon { font-size: 2rem; line-height: 1; }
+.flow-node b { font-family: var(--font-display); font-size: 1.3rem; }
+.flow-node small { font-size: .8rem; font-weight: 700; overflow-wrap: anywhere; }
+.flow-sub { color: var(--muted); }
+.flow-arrow { display: grid; justify-items: center; align-content: center; gap: 2px; font-weight: 800; font-size: .85rem; color: var(--muted); }
+.flow-arrow i { font-style: normal; font-size: 1.6rem; color: var(--tea-deep); }
+.factory-crew { display: grid; gap: 8px; padding: 12px; border-radius: 16px; background: #fffaf2; border: 2px solid var(--line); }
+.factory-toggle { display: flex; align-items: flex-start; gap: 10px; padding: 8px 10px; border-radius: 12px; background: #fff; border: 2px solid var(--line); cursor: pointer; }
+.factory-toggle input { width: 20px; height: 20px; margin-top: 2px; accent-color: var(--mint-deep); }
+.factory-toggle span { display: grid; gap: 1px; }
+.factory-night { display: grid; gap: 6px; font-size: .9rem; }
+.factory-tabs { display: flex; flex-wrap: wrap; gap: 6px; padding-top: 4px; border-top: 2px dashed var(--line); }
+.factory-tabs .chip { cursor: pointer; }
+.factory-tab-body { display: grid; gap: 8px; padding: 12px; border-radius: 16px; border: 2px solid var(--line); background: #fff; }
+.factory-tab-body .job-form { padding: 8px 10px; }
+.factory-foot { display: flex; justify-content: flex-end; }
+@media (max-width: 520px) {
+  .factory-flow { grid-template-columns: 1fr; }
+  .flow-arrow { display: flex; justify-content: center; align-items: center; gap: 10px; }
+  .factory-head { grid-template-columns: auto minmax(0, 1fr); }
+  .factory-head .factory-status { grid-column: 1 / -1; justify-self: start; }
+  .flow-arrow i { transform: rotate(90deg); }
+}
