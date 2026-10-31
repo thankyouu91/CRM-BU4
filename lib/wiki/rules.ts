@@ -14,6 +14,7 @@ export const CLAN = {
   unlockLevel: 4,
   industryLevels: [1, 3, 5],
   expandMultiplier: 4,
+  exitShare: 0.8,
   baseTax: 0.35,
   extraTaxPerIndustry: 0.025,
   refundRate: 0.15,

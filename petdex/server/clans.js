@@ -33,6 +33,8 @@ export const DEFAULT_CLAN_CONFIG = {
   industryLevels: [1, 3, 5],
   /** Ngành thứ 2 và 3 phải trả gấp bao nhiêu lần mức bồi thường gốc của ngành đó. */
   expandMultiplier: 4,
+  /** Bỏ một ngành đã thâu tóm: quỹ gia tộc trả phần này của số tiền đã trả lúc thâu tóm. */
+  exitShare: 0.8,
   baseTax: 0.35,
   extraTaxPerIndustry: 0.025,
   refundRate: 0.15,
@@ -72,6 +74,7 @@ export function normalizeClanConfig(input = {}) {
     unlockLevel: int(input.unlockLevel, 1, 30, d.unlockLevel),
     industryLevels: [0, 1, 2].map((i) => int(levels[i], 1, 10, d.industryLevels[i])).map((v, i, a) => (i ? Math.max(v, a[i - 1]) : v)),
     expandMultiplier: num(input.expandMultiplier, 1, 100, d.expandMultiplier),
+    exitShare: num(input.exitShare, 0, 1, d.exitShare),
     baseTax: num(input.baseTax, 0, 0.9, d.baseTax),
     extraTaxPerIndustry: num(input.extraTaxPerIndustry, 0, 0.3, d.extraTaxPerIndustry),
     refundRate: num(input.refundRate, 0, 1, d.refundRate),
@@ -160,6 +163,7 @@ const q = {
     SELECT i.industry, COUNT(*) AS n FROM clan_industries i JOIN clans c ON c.id = i.clan_id
     WHERE c.dissolved_at IS NULL GROUP BY i.industry`),
   dropIndustries: db.prepare('DELETE FROM clan_industries WHERE clan_id = ?'),
+  dropIndustry: db.prepare('DELETE FROM clan_industries WHERE clan_id = ? AND industry = ?'),
 
   ensurePlot: db.prepare('INSERT OR IGNORE INTO land_plots (id) VALUES (?)'),
   plots: db.prepare('SELECT * FROM land_plots ORDER BY id'),
@@ -170,6 +174,7 @@ const q = {
   releasePlot: db.prepare("UPDATE land_plots SET clan_id = NULL, industry = NULL, bought_at = NULL, bought_price = NULL, index_at_buy = NULL, design = '[]', design_spent = 0 WHERE id = ?"),
   releaseClanPlots: db.prepare("UPDATE land_plots SET clan_id = NULL, industry = NULL, bought_at = NULL, bought_price = NULL, index_at_buy = NULL, design = '[]', design_spent = 0 WHERE clan_id = ?"),
   setPlotIndustry: db.prepare('UPDATE land_plots SET industry = ? WHERE id = ?'),
+  clearIndustryPlots: db.prepare('UPDATE land_plots SET industry = NULL, variant = NULL WHERE clan_id = ? AND industry = ?'),
   setDesign: db.prepare('UPDATE land_plots SET design = ?, design_spent = ? WHERE id = ?'),
   setOverride: db.prepare('UPDATE land_plots SET price_override = ? WHERE id = ?'),
 
@@ -477,6 +482,36 @@ export function enterIndustry(userId, industry, now = Date.now()) {
   });
 }
 
+/** Phí bỏ một ngành: `exitShare` của số tiền gia tộc đã trả lúc thâu tóm (suất được trao miễn phí thì bỏ miễn phí). */
+export const exitFee = (paid, cfg = clanConfig()) => Math.round((paid ?? 0) * cfg.exitShare);
+
+/**
+ * Tộc trưởng bỏ một ngành đã thâu tóm để lấy chỗ cho ngành khác. Quỹ trả `exitFee` (một nửa vào ngân sách thị trấn,
+ * như lúc thâu tóm), ngành được gỡ khỏi gia tộc, các lô đang làm ngành đó về chưa chọn ngành nhưng giữ công trình.
+ * Ngành chiến lược có luật riêng (Đấu trường, ngân hàng) nên không bỏ ở đây.
+ */
+export function exitIndustry(userId, industry, now = Date.now()) {
+  return transaction(() => {
+    const { clan } = mustRole(userId, ['leader'], 'bỏ ngành');
+    const cfg = clanConfig();
+    const ind = INDUSTRIES[industry];
+    if (!ind) throw new GameError('Không có ngành này.');
+    const held = q.industries.all(clan.id).find((i) => i.industry === industry);
+    if (!held) throw new GameError(`Gia tộc chưa nắm ngành ${ind.name}.`);
+    if (isStrategic(industry)) throw new GameError(`${ind.name} là ngành chiến lược, không bỏ được ở đây.`);
+    const fee = exitFee(held.fee, cfg);
+    clanSpend(clan.id, fee, 'clan_exit', `Bỏ ngành ${ind.name}`, now);
+    toTreasury(fee / 2, 'clan_exit', `${clan.name} bỏ ngành ${ind.name}`, now);
+    q.dropIndustry.run(clan.id, industry);
+    const plots = q.clearIndustryPlots.run(clan.id, industry).changes;
+    q.insertNews.run(`${ind.icon} Gia tộc ${clan.name} rút khỏi ngành ${ind.name}`, now, now, now + 2 * DAY);
+    const rate = taxRate(q.industries.all(clan.id).length, cfg);
+    return {
+      message: `${ind.icon} Đã bỏ ngành ${ind.name}${fee ? `, quỹ trả ${fmt(fee)} xu` : ''}.${plots ? ` ${plots} lô về chưa chọn ngành (giữ công trình).` : ''} Thuế doanh nghiệp giờ là ${Math.round(rate * 100)}%.`,
+    };
+  });
+}
+
 /** Tỉ lệ doanh thu gia tộc tự khai báo để tính thuế (0–100%). */
 export function setDeclareRatio(userId, ratio) {
   return transaction(() => {
@@ -607,7 +642,7 @@ export function clanView(userId, now = Date.now()) {
     industries: q.industries.all(c.id).map((i) => i.industry),
   }));
   const config = {
-    createCost: cfg.createCost, unlockLevel: cfg.unlockLevel, industryLevels: cfg.industryLevels, expandMultiplier: cfg.expandMultiplier,
+    createCost: cfg.createCost, unlockLevel: cfg.unlockLevel, industryLevels: cfg.industryLevels, expandMultiplier: cfg.expandMultiplier, exitShare: cfg.exitShare,
     baseTax: cfg.baseTax, extraTaxPerIndustry: cfg.extraTaxPerIndustry, refundRate: cfg.refundRate, comp: cfg.comp,
     donationQuotaPerLevel: cfg.donationQuotaPerLevel, levels: CLAN_LEVELS, emblems: CLAN_EMBLEMS, industryClans: counts,
     closedIndustries: HEAVY_INDUSTRIES.filter(industryClosed),

@@ -81,6 +81,7 @@ export const KINDS = {
   clan_dividend: { group: 'income', label: 'Cổ tức gia tộc' },
   // Các dòng dưới chỉ ghi trên tài khoản quỹ gia tộc (clan:<id>) và ngân sách thị trấn.
   clan_comp: { group: 'transfer', label: 'Bồi thường thị trường (thâu tóm ngành)' },
+  clan_exit: { group: 'transfer', label: 'Phí bỏ ngành' },
   clan_land: { group: 'transfer', label: 'Mua bán đất' },
   clan_build: { group: 'transfer', label: 'Xây công trình' },
   clan_revenue: { group: 'transfer', label: 'Doanh thu gia tộc' },

@@ -6,7 +6,7 @@ import { bindMiniMap, bindPlotTips, landMapSvg, miniMapHtml, scrollToPlot } from
 import { BIZ_IDLE, bizLegend, industriesInUse, myClanStrip, plotBusiness, plotTipHtml } from '../landbiz.js';
 import {
   CLIMATES, DESIGN, INDUSTRIES, INDUSTRY_ORDER, LAND, PALETTE, PHASES, PIECES, PIECE_FAMILIES, PLOTS, WEATHER, ZONES,
-  designBonus, designComplete, designCost, designSvg, envFactor, pieceById, pieceSvg,
+  designBonus, designComplete, designCost, designSvg, envFactor, isStrategic, pieceById, pieceSvg,
 } from '../shared/clan.js';
 import {
   ESSENTIALS, ESSENTIAL_CATS, GOODS, GOOD_ORDER, PRODUCTION_INDUSTRIES, SECTORS, STRATEGIC_INDUSTRIES, STRATEGIC_RULES, extractKindOf, lineOf, variantInfo, variantsFor,
@@ -140,6 +140,8 @@ export function renderClans(root, ctx) {
   let alive = true;
 
   const act = (path, payload = {}) => ctx.act(path, payload);
+  /** Phí bỏ ngành `id`: phần `exitShare` của số tiền gia tộc đã trả lúc thâu tóm ngành đó. */
+  const exitCost = (id) => Math.round((data?.clan?.industries.find((i) => i.id === id)?.fee ?? 0) * (data?.config?.exitShare ?? 0));
 
   function drawTabs() {
     const inClan = Boolean(data?.clan);
@@ -249,7 +251,7 @@ export function renderClans(root, ctx) {
               ${recipeLine(id)}
               ${marketLine(id)}
               <small class="muted">${rivals ? `${rivals} gia tộc ${mine ? 'khác cùng ' : ''}đang nắm` : mine ? 'Chỉ gia tộc bạn nắm' : 'Chưa ai nắm'}</small>
-              ${mine ? '<span class="badge star">Đã thâu tóm</span>'
+              ${mine ? `<span class="badge star">Đã thâu tóm</span>${leader && !isStrategic(id) ? `<button class="link-btn danger exit-industry" data-exit-industry="${id}">Bỏ ngành · ${money(exitCost(id))}</button>` : ''}`
                 : `<button class="btn small ${can ? 'primary' : ''}" data-industry="${id}" ${can ? '' : 'disabled'}>Thâu tóm · ${money(fee)}</button>`}
             </div>`;
           }).join('')}</div>`).join('')}
@@ -1098,6 +1100,12 @@ export function renderClans(root, ctx) {
     } else if ((el = on('[data-industry]'))) {
       const ind = INDUSTRIES[el.dataset.industry];
       if (confirm(`Thâu tóm ngành ${ind.name}? Quỹ gia tộc trả ${fmt(data.clan.nextFees[el.dataset.industry])} xu tiền bồi thường thị trường.`)) act('/clans/industries', { industry: el.dataset.industry });
+    } else if ((el = on('[data-exit-industry]'))) {
+      const id = el.dataset.exitIndustry;
+      const plots = data.clan.plots.filter((x) => x.industry === id).length;
+      if (confirm(`Bỏ ngành ${INDUSTRIES[id].name}? Quỹ gia tộc trả ${fmt(exitCost(id))} xu (${pctInt(data.config.exitShare)} số đã trả lúc thâu tóm).${plots ? ` ${plots} lô đang làm ngành này sẽ về chưa chọn ngành, công trình vẫn giữ.` : ''} Muốn làm lại ngành này phải thâu tóm lại từ đầu.`)) {
+        act('/clans/industries/exit', { industry: id });
+      }
     } else if ((el = on('[data-open-plot]'))) {
       ui.plotId = Number(el.dataset.openPlot);
       ui.tab = 'map';

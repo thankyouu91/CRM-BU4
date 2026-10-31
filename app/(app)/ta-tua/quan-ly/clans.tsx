@@ -31,6 +31,7 @@ interface ClanConfig {
   unlockLevel: number;
   industryLevels: number[];
   expandMultiplier: number;
+  exitShare: number;
   baseTax: number;
   extraTaxPerIndustry: number;
   refundRate: number;
@@ -114,6 +115,7 @@ const FIELDS: { path: string; label: string; hint?: string; percent?: boolean; s
   { path: "extraTaxPerIndustry", label: "Cộng thêm mỗi ngành mở rộng", percent: true, group: "tax" },
   { path: "refundRate", label: "Hoàn thuế cuối tháng", hint: "Trên tổng thuế đã đóng trong tháng.", percent: true, group: "tax" },
   { path: "expandMultiplier", label: "Hệ số phí ngành thứ 2, 3", hint: "Gấp bao nhiêu lần mức bồi thường gốc.", step: 0.5, group: "tax" },
+  { path: "exitShare", label: "Phí bỏ ngành", hint: "Phần trăm số tiền gia tộc đã trả lúc thâu tóm ngành đó.", percent: true, group: "tax" },
   { path: "createCost", label: "Phí lập gia tộc", group: "clan" },
   { path: "unlockLevel", label: "Cấp bé cần để vào gia tộc", group: "clan" },
   { path: "industryLevels.0", label: "Cấp gia tộc cho ngành 1", group: "clan" },

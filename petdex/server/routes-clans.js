@@ -1,7 +1,7 @@
 // API Gia tộc, Sở Nhà Đất (bản đồ 200 lô, xem trước, mua bán, lắp ghép công trình) và bản tin vĩ mô.
 import { Router } from './router.js';
 import {
-  buyPlot, choosePlant, clanConfig, collectAsTaxOffice, taxOfficeCases, clanView, createClan, donateClan, enterIndustry, joinClan, kickMember, landView, leaveClan, payDividend,
+  buyPlot, choosePlant, clanConfig, collectAsTaxOffice, taxOfficeCases, clanView, createClan, donateClan, enterIndustry, exitIndustry, joinClan, kickMember, landView, leaveClan, payDividend,
   plotPreview, saveDesign, sellPlot, setDeclareRatio, setMemberRole, setPlotIndustry,
 } from './clans.js';
 import { dayKey } from './clock.js';
@@ -123,6 +123,7 @@ clanApi.post('/clans/donate', (req, res) => reply(res, uid(req), donateClan(uid(
 clanApi.post('/clans/kick', (req, res) => reply(res, uid(req), kickMember(uid(req), intField(req.body?.userId, 'Thành viên'))));
 clanApi.post('/clans/role', (req, res) => reply(res, uid(req), setMemberRole(uid(req), intField(req.body?.userId, 'Thành viên'), String(req.body?.role ?? ''))));
 clanApi.post('/clans/industries', (req, res) => reply(res, uid(req), enterIndustry(uid(req), String(req.body?.industry ?? ''))));
+clanApi.post('/clans/industries/exit', (req, res) => reply(res, uid(req), exitIndustry(uid(req), String(req.body?.industry ?? ''))));
 clanApi.post('/clans/declare', (req, res) => reply(res, uid(req), setDeclareRatio(uid(req), req.body?.ratio)));
 clanApi.post('/clans/dividend', (req, res) => reply(res, uid(req), payDividend(uid(req), intField(req.body?.amount, 'Số tiền'))));
 

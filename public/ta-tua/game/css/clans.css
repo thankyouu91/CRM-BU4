@@ -44,6 +44,7 @@
 .industry.held { border-color: var(--mint-deep); background: #eef9f5; }
 .industry-icon { font-size: 1.8rem; }
 .industry .btn { white-space: normal; }
+.industry .exit-industry { font-size: .8rem; white-space: nowrap; }
 
 .clan-table { width: 100%; border-collapse: collapse; font-size: .88rem; }
 .clan-table th { text-align: left; color: var(--muted); font-weight: 800; padding: 6px; border-bottom: 2px solid var(--line); }

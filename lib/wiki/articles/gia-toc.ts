@@ -83,7 +83,7 @@ export const article: WikiArticle = {
   category: "kinh-te",
   emoji: "🏯",
   summary: `Lập hoặc vào gia tộc từ cấp ${CLAN.unlockLevel}: góp quỹ, lên cấp, thâu tóm tới ${CLAN_XP.maxIndustries} ngành, nộp thuế doanh nghiệp, gửi quỹ kỳ hạn, bầu lại tộc trưởng và bán hàng cho Siêu thị.`,
-  keywords: ["clan", "gia tộc", "tộc trưởng", "trưởng lão", "quỹ", "góp quỹ", "cổ tức", "ngành", "thâu tóm", "dây chuyền", "thuế doanh nghiệp", "tiền gửi", "kỳ hạn", "phế truất", "bỏ phiếu", "quản trị", "hụi lớn", "siêu thị", "suất ăn gia tộc", "chất lượng", "công nghiệp nặng", "tạm đóng", "giải tán"],
+  keywords: ["clan", "gia tộc", "tộc trưởng", "trưởng lão", "quỹ", "góp quỹ", "cổ tức", "ngành", "thâu tóm", "bỏ ngành", "dây chuyền", "thuế doanh nghiệp", "tiền gửi", "kỳ hạn", "phế truất", "bỏ phiếu", "quản trị", "hụi lớn", "siêu thị", "suất ăn gia tộc", "chất lượng", "công nghiệp nặng", "tạm đóng", "giải tán"],
   related: ["so-nha-dat", "kinh-te-vi-mo", "so-cong-thuong", "dau-truong", "hui", "tai-chinh", "sieu-thi", "thue-toa-thi-chinh"],
   sections: [
     {
@@ -113,7 +113,7 @@ export const article: WikiArticle = {
           ["Mua đất, chọn ngành và dây chuyền cho lô, lắp công trình", "👑 Tộc trưởng, 🎖️ Trưởng lão"],
           ["Mua bán hàng của gia tộc (sàn công nghiệp, nhập khẩu, bán NPC, sổ chào giá Siêu thị)", "👑 Tộc trưởng, 🎖️ Trưởng lão"],
           ["Thách đấu và chọn giờ đấu ở [Đấu trường](dau-truong)", "👑 Tộc trưởng, 🎖️ Trưởng lão"],
-          ["Thâu tóm ngành, nộp tờ khai thuế, chia cổ tức, bán lại đất", "👑 Tộc trưởng"],
+          ["Thâu tóm và bỏ ngành, nộp tờ khai thuế, chia cổ tức, bán lại đất", "👑 Tộc trưởng"],
           ["Phân vai, mời ra, nhường chức, nâng cấp hạ tầng chiến lược", "👑 Tộc trưởng"],
           ["Bảng **👑 Quản trị**: gửi quỹ kỳ hạn; cho gia tộc chơi hụi lớn", "👑 Tộc trưởng (chưa từng bị phế truất)"],
         ] } },
@@ -134,6 +134,7 @@ export const article: WikiArticle = {
           `Ngành chiến lược (${strategicNames}) theo luật riêng: mỗi gia tộc một ngành, có số gia tộc chủ tối đa, luôn trả mức gốc. Xem [Sở Công Thương](so-cong-thuong).`,
           `Ngành dịch vụ: nhiều gia tộc cùng nắm một ngành thì doanh thu lô của ai cũng nhân hệ số cạnh tranh 1 ÷ (1 + ${pct(competitionStep, 0)} × số gia tộc khác cùng ngành); ví dụ 3 gia tộc cùng ngành thì ×${mult(Math.round(competitionFactor(3) * 1000) / 1000)}.`,
           "Gia tộc từng nắm hai ngành nay đã gộp làm một thì giữ một suất và được hoàn tiền thâu tóm của suất thừa.",
+          `**Bỏ ngành.** Tộc trưởng bỏ được một ngành đã thâu tóm (trừ ngành chiến lược) để lấy chỗ cho ngành khác: quỹ trả **${pct(CLAN.exitShare, 0)}** số tiền đã trả lúc thâu tóm ngành đó, một nửa vào ngân sách thị trấn. Lô đang làm ngành đó về chưa chọn ngành nhưng giữ công trình. Thuế doanh nghiệp giảm theo số ngành còn lại; muốn làm lại ngành cũ thì thâu tóm lại từ đầu.`,
         ] },
         { p: `**Công nghiệp nặng tạm đóng.** ${heavyNames} ${HEAVY.closedByDefault ? "đang tạm đóng" : "đang mở"}. Ngành đóng không thâu tóm được, không chọn được cho lô, và lô đang làm ngành đó không chạy. Khi đóng, gia tộc đang nắm được hoàn ${HEAVY.refundShare === 1 ? "toàn bộ" : pct(HEAVY.refundShare)} phí thâu tóm vào quỹ, ngành được gỡ (trả lại suất ngành), lô về chưa chọn ngành nhưng ${HEAVY.keepsBuilding ? "giữ công trình" : "mất công trình"}. Ban quản lý mở lại được. Chi tiết ở [Sở Công Thương](so-cong-thuong).` },
         { p: "**Ngành của gia tộc làm giá Sàn.** Ngành có gia tộc nắm sẽ đẩy giá trung bình của một số hàng trên [Sàn Nguyên Liệu](san-nguyen-lieu): ngành làm ra hàng thì cung tăng, giá giảm; ngành dùng hàng thì cầu tăng, giá lên; ngành điện, nhiên liệu làm hàng chế biến rẻ đi; ngành giao vận, máy móc làm giá bớt nhảy. Ngành chưa ai nắm thì hàng chạy theo thị trường bình thường." },
