@@ -261,3 +261,47 @@
   .arena-fighters { grid-template-columns: repeat(auto-fill, minmax(52px, 1fr)); gap: 4px; }
   .fighter .fig { height: 56px; }
 }
+
+/* ---------- bản đồ đất: kinh doanh trên từng lô ---------- */
+/* Dải "Gia tộc của tôi": mỗi lô một nút (chạm để chọn lô trên bản đồ). */
+.biz-strip { display: grid; gap: 8px; padding: 10px 12px; background: var(--surface-2); border: 2px solid var(--line); border-radius: 16px; }
+.biz-strip-head { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 14px; font-size: .88rem; }
+.biz-strip-head > b { font-family: var(--font-display); font-size: 1.05rem; }
+.biz-good { color: #2f6b45; font-weight: 800; }
+.biz-bad { color: #a8281c; font-weight: 800; }
+.biz-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.biz-chip { display: flex; align-items: center; gap: 8px; min-height: 46px; padding: 5px 12px 5px 8px; border: 2px solid var(--line-strong); border-radius: 14px;
+  background: #fff; box-shadow: 0 3px 0 var(--line-strong); text-align: left; font-size: .85rem; line-height: 1.2; transition: transform .08s, box-shadow .08s; }
+.biz-chip:active { transform: translateY(2px); box-shadow: 0 1px 0 var(--line-strong); }
+.biz-chip-icon { font-size: 1.35rem; line-height: 1; }
+.biz-chip-text { color: var(--ink); }
+.biz-chip-text small { display: block; font-weight: 800; color: #2f6b45; }
+.biz-chip.st-low small { color: #8a5300; }
+.biz-chip.st-idle small { color: var(--muted); }
+.biz-chip.st-zero { border-color: #d23b3b; background: #fff1ef; box-shadow: 0 3px 0 #f2b8b5; }
+.biz-chip.st-zero small { color: #a8281c; }
+.biz-chip.current { border-color: var(--pearl); background: #fff7da; box-shadow: 0 3px 0 var(--gold-deep); }
+/* Dòng "Đang làm gì" ở khung bên. */
+.biz-status { display: grid; gap: 2px; margin: 0; padding: 8px 10px; border-radius: 12px; border: 2px solid var(--line); background: var(--surface-2); font-size: .88rem; }
+.biz-status.st-ok { border-color: #b9dfc4; background: #eef8f0; color: #24563a; }
+.biz-status.st-low { border-color: #f1d29a; background: #fff6e5; color: #7a4a00; }
+.biz-status.st-zero { border-color: #f2b8b5; background: #fff1ef; color: #8f1d14; }
+/* Chú thích nổi khi rê chuột lên lô (máy có chuột). */
+.lm-tip { position: absolute; z-index: 3; max-width: 250px; padding: 7px 10px; background: var(--surface-2); border: 2px solid var(--pearl); border-radius: 10px;
+  box-shadow: 0 3px 0 var(--tea-deep); font-size: .8rem; line-height: 1.4; pointer-events: none; }
+.lm-tip .tip-owner { font-weight: 800; border-bottom: 3px solid var(--clan, var(--line)); }
+.lm-tip .tip-state { font-weight: 800; }
+.lm-tip .tip-state.st-ok { color: #2f6b45; }
+.lm-tip .tip-state.st-low { color: #8a5300; }
+.lm-tip .tip-state.st-zero { color: #a8281c; }
+.lm-tip .tip-state.st-idle { color: var(--muted); }
+.land-legend i.free { background: #f6efe4; }
+.land-legend b { font-weight: 800; }
+/* Lô của mình đang sản lượng 0: vòng đỏ lan nhẹ quanh dấu "!" (tắt khi người chơi chọn giảm chuyển động). */
+.land-svg .biz-ping { opacity: 0; }
+.land-svg .biz-mark.mine.warn .biz-ping { transform-box: fill-box; transform-origin: center; animation: biz-ping 1.8s ease-out infinite; }
+@keyframes biz-ping { from { transform: scale(1); opacity: .8; } to { transform: scale(2); opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { .land-svg .biz-mark.mine.warn .biz-ping { animation: none; } }
+@media (max-width: 720px) {
+  .biz-chip { flex: 1 1 calc(50% - 8px); }
+}

@@ -2,7 +2,8 @@
 // xem trước sản lượng theo môi trường, lắp ghép công trình từ 200 mẫu (tối đa 20 mảnh), thuế doanh nghiệp và bản tin vĩ mô.
 import { api } from '../api.js';
 import { esc, fmt, pct, viewHead } from '../ui.js';
-import { bindMiniMap, landMapSvg, miniMapHtml } from '../landmap.js';
+import { bindMiniMap, bindPlotTips, landMapSvg, miniMapHtml, scrollToPlot } from '../landmap.js';
+import { BIZ_IDLE, bizLegend, industriesInUse, myClanStrip, plotBusiness, plotTipHtml } from '../landbiz.js';
 import {
   CLIMATES, DESIGN, INDUSTRIES, INDUSTRY_ORDER, LAND, PALETTE, PHASES, PIECES, PIECE_FAMILIES, PLOTS, WEATHER, ZONES,
   designBonus, designComplete, designCost, designSvg, envFactor, pieceById, pieceSvg,
@@ -449,15 +450,35 @@ export function renderClans(root, ctx) {
       };
       case 'growth': return (p) => heatColor(p.growth / LAND.maxGrowth);
       case 'fit': return (p) => heatColor((envFactor(ui.industry, p.zone, p.climate) - 0.4) / 1.0);
+      case 'business': {
+        // Lô có chủ tô theo ngành, lô chưa chọn ngành màu be, lô trống màu kem nhạt.
+        const colors = new Map(industriesInUse(land.plots).map((u) => [u.id, u.color]));
+        return (p) => {
+          const info = land.plots[p.id - 1];
+          return info.owner ? colors.get(info.industry) ?? BIZ_IDLE : '#f6efe4';
+        };
+      }
       default: return () => null;
     }
+  }
+
+  let business = new Map();
+  /** Trạng thái kinh doanh của mọi lô có chủ; lô của gia tộc mình dùng ước tính mỗi đêm của máy chủ (/clans). */
+  function businessMap() {
+    const mine = new Map((data?.clan?.plots ?? []).map((x) => [x.id, x]));
+    const upkeep = mine.size ? data.clan.upkeep / mine.size : 0;
+    const closed = data?.config?.closedIndustries ?? [];
+    return new Map(land.plots.filter((x) => x.owner).map((x) => [x.id, plotBusiness(x, { est: x.mine ? mine.get(x.id) ?? null : null, upkeep, closed })]));
   }
 
   function mapSvg() {
     const values = land.plots.map((x) => x.price ?? x.value);
     const range = { min: Math.min(...values), max: Math.max(...values) };
     // Giá thay đổi theo dữ liệu nên chế độ "giá" lấy cả khoảng giá vào khóa bộ nhớ đệm.
-    const key = ui.heat === 'fit' ? `fit:${ui.industry}` : ui.heat === 'price' ? `price:${values.join(',')}` : ui.heat === 'resource' ? 'zone' : ui.heat;
+    const key = ui.heat === 'fit' ? `fit:${ui.industry}` : ui.heat === 'price' ? `price:${values.join(',')}` : ui.heat === 'resource' ? 'zone'
+      : ui.heat === 'business' ? `business:${land.plots.map((x) => (x.owner ? x.industry ?? '-' : '')).join(',')}` : ui.heat;
+    // Huy hiệu kinh doanh hiện ở chế độ địa hình và chế độ theo ngành (các chế độ khác giữ lớp phủ màu gia tộc).
+    const showBiz = ui.heat === 'zone' || ui.heat === 'business';
     return landMapSvg({
       key,
       fillFor: heatFill(range),
@@ -465,11 +486,14 @@ export function renderClans(root, ctx) {
       selected: ui.plotId,
       showClimate: ui.heat === 'climate',
       resources: ui.heat === 'resource' ? new Map(land.plots.map((x) => [x.id, topDeposits(x.deposits)])) : null,
+      business: showBiz ? business : null,
+      tint: ui.heat !== 'business',
     });
   }
 
   function legend() {
     if (ui.heat === 'resource') return '<span>Biểu tượng trên mỗi ô là mỏ hoặc tài nguyên chính của lô (khai thác bằng ngành Khai khoáng, Dầu khí, Lâm nghiệp, Nông nghiệp, Chăn nuôi).</span>';
+    if (ui.heat === 'business') return bizLegend(land.plots);
     if (ui.heat === 'zone') return Object.values(ZONES).map((z) => `<span><i style="background:${z.color}"></i>${z.icon} ${z.name}</span>`).join('');
     if (ui.heat === 'climate') return Object.entries(CLIMATES).map(([k, c]) => `<span><i style="background:${{ sunny: '#f7d774', rainy: '#8fb8de', temperate: '#b9dba0', windy: '#c9c4e8' }[k]}"></i>${c.icon} ${c.name}</span>`).join('');
     const label = { price: ['Đắt', 'Rẻ'], growth: ['Tăng chậm', 'Tăng nhanh'], fit: ['Không hợp', 'Rất hợp'] }[ui.heat];
@@ -479,9 +503,12 @@ export function renderClans(root, ctx) {
   function drawMap() {
     const s = land.stats;
     const m = land.macro;
+    business = businessMap();
+    const mine = data.clan ? land.plots.filter((x) => x.mine).map((info) => ({ plot: PLOT_BY_ID.get(info.id), info, biz: business.get(info.id) })) : [];
     body.innerHTML = `
       <div class="land-layout">
         <section class="card land-main">
+          ${myClanStrip(data.clan, mine, ui.plotId)}
           <div class="land-stats">
             <span>🏘️ Còn <b>${s.free}</b>/${LAND.count} lô</span>
             <span>📈 Hệ số khan hiếm <b>×${s.scarcity.toFixed(2)}</b></span>
@@ -492,7 +519,7 @@ export function renderClans(root, ctx) {
           <div class="land-tools">
             <label>Tô màu theo
               <select data-heat>
-                ${[['zone', 'Địa hình'], ['resource', 'Tài nguyên & mỏ'], ['climate', 'Khí hậu'], ['price', 'Giá đất'], ['growth', '% tăng giá'], ['fit', 'Độ hợp ngành']].map(([k, n]) => `<option value="${k}" ${ui.heat === k ? 'selected' : ''}>${n}</option>`).join('')}
+                ${[['zone', 'Địa hình'], ['business', 'Ngành đang kinh doanh'], ['resource', 'Tài nguyên & mỏ'], ['climate', 'Khí hậu'], ['price', 'Giá đất'], ['growth', '% tăng giá'], ['fit', 'Độ hợp ngành']].map(([k, n]) => `<option value="${k}" ${ui.heat === k ? 'selected' : ''}>${n}</option>`).join('')}
               </select></label>
             <label ${ui.heat === 'fit' ? '' : 'hidden'}>Ngành
               <select data-fit>${openIds(data?.config).map((id) => `<option value="${id}" ${ui.industry === id ? 'selected' : ''}>${INDUSTRIES[id].icon} ${esc(INDUSTRIES[id].name)}</option>`).join('')}</select></label>
@@ -503,7 +530,34 @@ export function renderClans(root, ctx) {
         <aside class="card land-panel">${plotPanel()}</aside>
       </div>`;
     bindMiniMap(body.querySelector('.land-wrap'));
+    bindPlotTips(body.querySelector('.land-wrap'), (id) => {
+      const p = PLOT_BY_ID.get(id);
+      return plotTipHtml(p, land.plots[id - 1], business.get(id), { zoneName: ZONES[p.zone].name, money });
+    });
     if (ui.plotId) loadPreview();
+  }
+
+  /** Dòng "Đang làm gì" ở đầu khung bên của lô có chủ (cảnh báo đỏ khi sản lượng 0). */
+  function bizStatus(info) {
+    const biz = business.get(info.id);
+    if (!biz) return '';
+    const ind = INDUSTRIES[info.industry];
+    return `<p class="biz-status st-${biz.state}" role="status"><b>${ind ? `${ind.icon} ${esc(ind.name)}` : '💤 Chưa chọn ngành'}</b>
+      <span>${biz.state === 'zero' ? '⚠️ ' : ''}${esc(biz.reason)}</span></p>`;
+  }
+
+  /** Chọn một lô: đổi viền chọn, nút trong dải "Gia tộc của tôi" và khung bên, không vẽ lại bản đồ. */
+  function selectPlot(id) {
+    ui.plotId = id;
+    body.querySelectorAll('.land-svg .plot.sel').forEach((g) => g.classList.remove('sel'));
+    const el = body.querySelector(`.land-svg .plot[data-plot="${id}"]`);
+    if (el) {
+      el.classList.add('sel');
+      el.parentNode.append(el);
+    }
+    body.querySelectorAll('[data-pick-plot]').forEach((b) => b.classList.toggle('current', Number(b.dataset.pickPlot) === id));
+    body.querySelector('.land-panel').innerHTML = plotPanel();
+    loadPreview();
   }
 
   function plotPanel() {
@@ -523,6 +577,7 @@ export function renderClans(root, ctx) {
     return `
       <div class="plot-head"><h3>Lô ${p.code}</h3>
         ${info.owner ? `<span class="owner-tag" style="--clan:${esc(info.owner.color)}">${esc(info.owner.emblem)} ${esc(info.owner.name)}</span>` : '<span class="badge star">Còn trống</span>'}</div>
+      ${bizStatus(info)}
       <div class="plot-env">
         <span>${ZONES[p.zone].icon} <b>${ZONES[p.zone].name}</b><small class="muted">${ZONES[p.zone].desc}</small></span>
         <span>${CLIMATES[p.climate].icon} <b>${CLIMATES[p.climate].name}</b></span>
@@ -1021,14 +1076,13 @@ export function renderClans(root, ctx) {
       ui.plotId = Number(el.dataset.openPlot);
       ui.tab = 'map';
       draw();
+    } else if ((el = on('[data-pick-plot]'))) {
+      // Nút lô trong dải "Gia tộc của tôi": chọn lô như chạm trên bản đồ, cuộn bản đồ tới lô đó (điện thoại).
+      selectPlot(Number(el.dataset.pickPlot));
+      scrollToPlot(body.querySelector('.land-wrap'), Number(el.dataset.pickPlot));
     } else if ((el = on('[data-plot]'))) {
       // Chỉ đổi lô đang chọn và khung bên, không vẽ lại bản đồ.
-      ui.plotId = Number(el.dataset.plot);
-      body.querySelectorAll('.land-svg .plot.sel').forEach((g) => g.classList.remove('sel'));
-      el.classList.add('sel');
-      el.parentNode.append(el);
-      body.querySelector('.land-panel').innerHTML = plotPanel();
-      loadPreview();
+      selectPlot(Number(el.dataset.plot));
     } else if ((el = on('[data-buy]'))) {
       const p = PLOT_BY_ID.get(Number(el.dataset.buy));
       if (confirm(`Mua lô ${p.code} bằng quỹ gia tộc?`)) act(`/land/${p.id}/buy`);
