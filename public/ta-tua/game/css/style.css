@@ -306,6 +306,8 @@ input:focus { border-color: var(--tea); box-shadow: 0 0 0 4px #c8915f33; }
 .pk-sprite.flip { transform: scaleX(-1); }
 .pk-sprite.pk-fade { opacity: .45; }
 .pk-fx, .pk-shadow { z-index: 1; }
+.pk-fly { z-index: 8500; }
+.park-world[data-time="night"] .pk-fly { display: none; }
 .pk-shadow { background-size: 100% 100%; }
 .pk-glow {
   z-index: 9000; display: none; width: 150px; height: 150px; transform: translate(-50%, -50%); border-radius: 50%;

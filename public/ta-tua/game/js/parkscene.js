@@ -63,7 +63,7 @@ const DIRS = [[1, 0, 1], [-1, 0, 1], [0, 1, 1], [0, -1, 1], [1, 1, Math.SQRT2], 
  * thật sự đi được, rồi `snap` kéo điểm rơi vào ao hay đồ vật ra chỗ trống gần nhất. Mọi máy cùng tính một kiểu
  * nên ai cũng thấy bé đứng cùng một chỗ.
  */
-export function createNav({ width, height, walk, blocked = [], cell = 12, inset = 0 }) {
+export function createNav({ width, height, walk, rect = null, blocked = [], cell = 12, inset = 0 }) {
   const cols = Math.ceil(width / cell);
   const rows = Math.ceil(height / cell);
   const open = new Uint8Array(cols * rows);
@@ -78,10 +78,11 @@ export function createNav({ width, height, walk, blocked = [], cell = 12, inset 
         && !polys.some((p) => pointInPolygon(x, y, p)) ? 1 : 0;
     }
   }
-  // Ô bị chặn -> ô trống gần nhất (loang BFS từ mọi ô trống), để snap chạy O(1).
+  // Ô bị chặn -> ô trống gần nhất (loang BFS từ mọi ô trống), để snap chạy O(1). Loang từ hàng dưới lên: khi hai phía
+  // xa bằng nhau, bé đứng trước đồ vật (dễ thấy) thay vì khuất sau nó.
   const nearest = new Int32Array(cols * rows).fill(-1);
   const queue = [];
-  for (let i = 0; i < open.length; i++) if (open[i]) { nearest[i] = i; queue.push(i); }
+  for (let i = open.length - 1; i >= 0; i--) if (open[i]) { nearest[i] = i; queue.push(i); }
   for (let q = 0; q < queue.length; q++) {
     const i = queue[q];
     const c = i % cols;
@@ -99,7 +100,9 @@ export function createNav({ width, height, walk, blocked = [], cell = 12, inset 
 
   const xs = walk.map((p) => p[0]);
   const ys = walk.map((p) => p[1]);
-  const box = { x0: Math.min(...xs), y0: Math.min(...ys), x1: Math.max(...xs), y1: Math.min(Math.max(...ys), height - inset) };
+  // Khung nhận tọa độ máy chủ: `rect` của cảnh (park-1: safe rect, dưới hàng đèn/ghế) hoặc khung bao của vùng đi.
+  const [rx0, ry0, rx1, ry1] = rect ?? [Math.min(...xs), Math.min(...ys), Math.max(...xs), Math.max(...ys)];
+  const box = { x0: rx0, y0: ry0, x1: rx1, y1: Math.min(ry1, height - inset) };
   let logical = { minX: box.x0, maxX: box.x1, minY: box.y0, maxY: box.y1 };
 
   const cellOf = (x, y) => clamp(Math.floor(y / cell), 0, rows - 1) * cols + clamp(Math.floor(x / cell), 0, cols - 1);
@@ -117,9 +120,38 @@ export function createNav({ width, height, walk, blocked = [], cell = 12, inset 
     return { x: clamp(x, c * cell + 1, (c + 1) * cell - 1), y: clamp(y, r * cell + 1, (r + 1) * cell - 1) };
   }
 
+  const openCell = (c, r) => c >= 0 && r >= 0 && c < cols && r < rows && open[r * cols + c] === 1;
+  /** Đoạn thẳng a->b chỉ đi qua ô trống? Duyệt đúng mọi ô đoạn thẳng cắt qua (kể cả đi sát góc). */
   function clear(ax, ay, bx, by) {
-    const steps = Math.ceil(Math.hypot(bx - ax, by - ay) / (cell / 3));
-    for (let k = 1; k <= steps; k++) if (!isOpen(ax + ((bx - ax) * k) / steps, ay + ((by - ay) * k) / steps)) return false;
+    let c = Math.floor(ax / cell);
+    let r = Math.floor(ay / cell);
+    const ec = Math.floor(bx / cell);
+    const er = Math.floor(by / cell);
+    const dx = bx - ax;
+    const dy = by - ay;
+    const sc = Math.sign(dx);
+    const sr = Math.sign(dy);
+    const stepX = dx ? Math.abs(cell / dx) : Infinity;
+    const stepY = dy ? Math.abs(cell / dy) : Infinity;
+    let tx = dx ? (sc > 0 ? (c + 1) * cell - ax : ax - c * cell) / Math.abs(dx) : Infinity;
+    let ty = dy ? (sr > 0 ? (r + 1) * cell - ay : ay - r * cell) / Math.abs(dy) : Infinity;
+    for (let n = cols + rows; n >= 0; n--) {
+      if (!openCell(c, r)) return false;
+      if (c === ec && r === er) return true;
+      if (Math.abs(tx - ty) < 1e-9) {
+        if (!openCell(c + sc, r) || !openCell(c, r + sr)) return false;
+        tx += stepX;
+        ty += stepY;
+        c += sc;
+        r += sr;
+      } else if (tx < ty) {
+        tx += stepX;
+        c += sc;
+      } else {
+        ty += stepY;
+        r += sr;
+      }
+    }
     return true;
   }
 
@@ -340,7 +372,13 @@ export function mountPark16(world, art) {
     show(el, name, o.x, o.y);
     el.style.zIndex = String(Math.round(o.y * K));
     if (anim) anims.push({ el, anim, o, shown: 0 });
-    if (o.occ) occluders.push({ el, x0: (o.x - f.ax) * K, x1: (o.x - f.ax + f.w) * K, y0: (o.y - f.ay) * K, y1: o.y * K, faded: false });
+    // Vùng che: khung ảnh bỏ bớt góc trong suốt (12% mỗi bên, 10% phía trên).
+    if (o.occ) {
+      occluders.push({
+        el, faded: false,
+        x0: (o.x - f.ax + f.w * 0.12) * K, x1: (o.x - f.ax + f.w * 0.88) * K, y0: (o.y - f.ay + f.h * 0.1) * K, y1: o.y * K,
+      });
+    }
   }
 
   // khách dạo: đi tới đi lui theo lối, nghỉ ở hai đầu
@@ -390,9 +428,14 @@ export function mountPark16(world, art) {
   }
 
   // ánh nước trên ao: chớp một vòng ở một chỗ, nghỉ, rồi sang chỗ khác
-  const sparks = data.fx.flatMap((fx) => Array.from({ length: fx.count }, () => ({
+  const sparks = data.fx.filter((fx) => fx.kind !== 'flutter').flatMap((fx) => Array.from({ length: fx.count }, () => ({
     fx, el: add(sprite('pk-fx')), start: 0, until: 0, frame: -1,
   })));
+  // bướm lượn quanh luống hoa (ban ngày)
+  const flies = data.fx.filter((fx) => fx.kind === 'flutter').flatMap((fx, j) => Array.from({ length: fx.count }, (_, i) => {
+    const [cx, cy] = fx.spots[(i + j) % fx.spots.length];
+    return { fx, cx, cy, phase: rand(0, 6), el: add(sprite('pk-fly')) };
+  }));
   function placeSpark(sp, now) {
     const [x, y] = sp.fx.spots[Math.floor(Math.random() * sp.fx.spots.length)];
     sp.x = x;
@@ -452,6 +495,7 @@ export function mountPark16(world, art) {
     }
     for (const n of npcs) drawNpc(n, 0, false);
     for (const sp of sparks) sp.el.hidden = true;
+    for (const b of flies) b.el.hidden = true;
   }
 
   function tick(now) {
@@ -496,6 +540,12 @@ export function mountPark16(world, art) {
         show(sp.el, sp.fx.frames[i], sp.x, sp.y);
       }
     }
+    for (const b of flies) {
+      const x = b.cx + 18 * Math.sin(t * 0.55 + b.phase) + 5 * Math.sin(t * 1.7 + b.phase * 2);
+      const y = b.cy - 16 + 7 * Math.sin(t * 0.8 + b.phase) - 3 * Math.abs(Math.sin(t * 2.4 + b.phase));
+      b.el.hidden = false;
+      show(b.el, b.fx.frames[Math.floor(now / b.fx.ms) % b.fx.frames.length], x, y);
+    }
   }
 
   function sync() {
@@ -527,6 +577,7 @@ export function mountPark16(world, art) {
     width: W * K,
     height: Math.min(H * K, world.offsetHeight || H * K),
     walk: data.nav.walk.map(([x, y]) => [x * K, y * K]),
+    rect: data.nav.rect ? data.nav.rect.map((v) => v * K) : null,
     blocked: data.nav.blocked.map((b) => (Array.isArray(b[0]) ? b.map(([x, y]) => [x * K, y * K]) : b.map((v) => v * K))),
     inset: TAG_ROOM,
   });
