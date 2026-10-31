@@ -2,6 +2,7 @@
 import { api } from '../api.js';
 import { lineChart } from '../charts.js';
 import { countdown, esc, fmt, pct, viewHead } from '../ui.js';
+import { sceneHdr } from '../scenes-hdr.js';
 import { focusClanBank } from './clan-bank.js';
 
 let term = 7;
@@ -58,6 +59,7 @@ function streetHtml(cb, ctx) {
 
 export function renderBank(root, ctx) {
   root.innerHTML = `${viewHead('🏦 Phố Ngân hàng', 'Giữa phố là Ngân hàng Trân Châu của nhà nước; hai bên là ngân hàng tư của các gia tộc, lãi cao hơn nhưng rủi ro hơn.')}
+    ${sceneHdr('bank')}
     <div class="bank-view"><div class="empty muted">Đang tải…</div></div>`;
   const view = root.querySelector('.bank-view');
   const need = ctx.catalog.unlocks.bank;

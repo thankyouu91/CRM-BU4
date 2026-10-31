@@ -1,0 +1,350 @@
+{
+ "schema_version": 2,
+ "art_direction_brief": "style-bible.md",
+ "palette": "palette.json",
+ "schema_notes": {
+  "provenance": "tool, mode, pixellab_id, prompt, params, created_at, generation_cost, postprocess[], license",
+  "status": "planned | sample | approved | rejected",
+  "path": "proposed runtime path; '#name' = atlas frame"
+ },
+ "assets": [
+  {
+   "id": "scene-factory",
+   "role": "header scene: Khu công nghiệp (view factory)",
+   "path": "public/ta-tua/game/assets/scenes/factory.webp",
+   "status": "sample",
+   "technical": {
+    "dimensions": "320x80",
+    "alpha": false,
+    "anchor": "center (phone: center crop)",
+    "frames": 1,
+    "filtering": "nearest",
+    "scale": "integer 3x desktop (2x when the column is under 960 px) / 2x phone",
+    "bytes": 4992,
+    "fx": []
+   },
+   "visual_locks": [
+    "palette.json",
+    "view: low top-down",
+    "light: top-left",
+    "outline: #2e1d14 outer"
+   ],
+   "provenance": {
+    "kind": "generated",
+    "tool": "scripts/art/build-scenes.py <- headers package (compose.py)",
+    "mode": "art",
+    "pixellab_id": "",
+    "prompt": "",
+    "params": {
+     "sources": [
+      "phase1/headers/factory-1x.png"
+     ]
+    },
+    "created_at": "",
+    "generation_cost": 0,
+    "postprocess": [
+     "opaque on #fbf1e3",
+     "WebP lossless (exact)"
+    ],
+    "license": "derived from PixelLab assets listed in sources (PixelLab ToS) — verify before ship"
+   },
+   "verification": {
+    "native_scale_reviewed": true,
+    "in_engine_reviewed": true,
+    "technical_checks_passed": true,
+    "approved_by": "",
+    "notes": "off-palette=0 colours=33"
+   }
+  },
+  {
+   "id": "scene-bank",
+   "role": "header scene: Phố Ngân hàng (view bank)",
+   "path": "public/ta-tua/game/assets/scenes/bank.webp",
+   "status": "sample",
+   "technical": {
+    "dimensions": "320x80",
+    "alpha": false,
+    "anchor": "center (phone: center crop)",
+    "frames": 1,
+    "filtering": "nearest",
+    "scale": "integer 3x desktop (2x when the column is under 960 px) / 2x phone",
+    "bytes": 4212,
+    "fx": []
+   },
+   "visual_locks": [
+    "palette.json",
+    "view: low top-down",
+    "light: top-left",
+    "outline: #2e1d14 outer"
+   ],
+   "provenance": {
+    "kind": "generated",
+    "tool": "scripts/art/build-scenes.py <- headers package (compose.py)",
+    "mode": "art",
+    "pixellab_id": "",
+    "prompt": "",
+    "params": {
+     "sources": [
+      "phase1/headers/bank-1x.png"
+     ]
+    },
+    "created_at": "",
+    "generation_cost": 0,
+    "postprocess": [
+     "opaque on #fbf1e3",
+     "WebP lossless (exact)"
+    ],
+    "license": "derived from PixelLab assets listed in sources (PixelLab ToS) — verify before ship"
+   },
+   "verification": {
+    "native_scale_reviewed": true,
+    "in_engine_reviewed": true,
+    "technical_checks_passed": true,
+    "approved_by": "",
+    "notes": "off-palette=0 colours=40"
+   }
+  },
+  {
+   "id": "scene-shop",
+   "role": "header scene: Siêu thị (view shop)",
+   "path": "public/ta-tua/game/assets/scenes/shop.webp",
+   "status": "sample",
+   "technical": {
+    "dimensions": "320x80",
+    "alpha": false,
+    "anchor": "center (phone: center crop)",
+    "frames": 1,
+    "filtering": "nearest",
+    "scale": "integer 3x desktop (2x when the column is under 960 px) / 2x phone",
+    "bytes": 4404,
+    "fx": []
+   },
+   "visual_locks": [
+    "palette.json",
+    "view: low top-down",
+    "light: top-left",
+    "outline: #2e1d14 outer"
+   ],
+   "provenance": {
+    "kind": "generated",
+    "tool": "scripts/art/build-scenes.py <- headers package (compose.py)",
+    "mode": "art",
+    "pixellab_id": "",
+    "prompt": "",
+    "params": {
+     "sources": [
+      "phase1/headers/shop-1x.png"
+     ]
+    },
+    "created_at": "",
+    "generation_cost": 0,
+    "postprocess": [
+     "opaque on #fbf1e3",
+     "WebP lossless (exact)"
+    ],
+    "license": "derived from PixelLab assets listed in sources (PixelLab ToS) — verify before ship"
+   },
+   "verification": {
+    "native_scale_reviewed": true,
+    "in_engine_reviewed": true,
+    "technical_checks_passed": true,
+    "approved_by": "",
+    "notes": "off-palette=0 colours=40"
+   }
+  },
+  {
+   "id": "scene-kitchen",
+   "role": "header scene: Bếp (view kitchen)",
+   "path": "public/ta-tua/game/assets/scenes/kitchen.webp",
+   "status": "sample",
+   "technical": {
+    "dimensions": "320x80",
+    "alpha": false,
+    "anchor": "center (phone: center crop)",
+    "frames": 1,
+    "filtering": "nearest",
+    "scale": "integer 3x desktop (2x when the column is under 960 px) / 2x phone",
+    "bytes": 2446,
+    "fx": [
+     "fx-chimney-smoke"
+    ]
+   },
+   "visual_locks": [
+    "palette.json",
+    "view: low top-down",
+    "light: top-left",
+    "outline: #2e1d14 outer"
+   ],
+   "provenance": {
+    "kind": "generated",
+    "tool": "scripts/art/build-scenes.py <- headers package (compose.py)",
+    "mode": "art",
+    "pixellab_id": "",
+    "prompt": "",
+    "params": {
+     "sources": [
+      "phase1/headers/kitchen-1x.png"
+     ]
+    },
+    "created_at": "",
+    "generation_cost": 0,
+    "postprocess": [
+     "opaque on #fbf1e3",
+     "WebP lossless (exact)"
+    ],
+    "license": "derived from PixelLab assets listed in sources (PixelLab ToS) — verify before ship"
+   },
+   "verification": {
+    "native_scale_reviewed": true,
+    "in_engine_reviewed": true,
+    "technical_checks_passed": true,
+    "approved_by": "",
+    "notes": "off-palette=0 colours=39"
+   }
+  },
+  {
+   "id": "scene-garden",
+   "role": "header scene: Vườn (view garden)",
+   "path": "public/ta-tua/game/assets/scenes/garden.webp",
+   "status": "sample",
+   "technical": {
+    "dimensions": "320x80",
+    "alpha": false,
+    "anchor": "center (phone: center crop)",
+    "frames": 1,
+    "filtering": "nearest",
+    "scale": "integer 3x desktop (2x when the column is under 960 px) / 2x phone",
+    "bytes": 5906,
+    "fx": []
+   },
+   "visual_locks": [
+    "palette.json",
+    "view: low top-down",
+    "light: top-left",
+    "outline: #2e1d14 outer"
+   ],
+   "provenance": {
+    "kind": "generated",
+    "tool": "scripts/art/build-scenes.py <- headers package (compose.py)",
+    "mode": "art",
+    "pixellab_id": "",
+    "prompt": "",
+    "params": {
+     "sources": [
+      "phase1/headers/garden-1x.png"
+     ]
+    },
+    "created_at": "",
+    "generation_cost": 0,
+    "postprocess": [
+     "opaque on #fbf1e3",
+     "WebP lossless (exact)"
+    ],
+    "license": "derived from PixelLab assets listed in sources (PixelLab ToS) — verify before ship"
+   },
+   "verification": {
+    "native_scale_reviewed": true,
+    "in_engine_reviewed": true,
+    "technical_checks_passed": true,
+    "approved_by": "",
+    "notes": "off-palette=0 colours=43"
+   }
+  },
+  {
+   "id": "scene-school",
+   "role": "header scene: Trường học (view school)",
+   "path": "public/ta-tua/game/assets/scenes/school.webp",
+   "status": "sample",
+   "technical": {
+    "dimensions": "320x80",
+    "alpha": false,
+    "anchor": "center (phone: center crop)",
+    "frames": 1,
+    "filtering": "nearest",
+    "scale": "integer 3x desktop (2x when the column is under 960 px) / 2x phone",
+    "bytes": 4638,
+    "fx": []
+   },
+   "visual_locks": [
+    "palette.json",
+    "view: low top-down",
+    "light: top-left",
+    "outline: #2e1d14 outer"
+   ],
+   "provenance": {
+    "kind": "generated",
+    "tool": "scripts/art/build-scenes.py <- headers package (compose.py)",
+    "mode": "art",
+    "pixellab_id": "",
+    "prompt": "",
+    "params": {
+     "sources": [
+      "phase1/headers/school-1x.png"
+     ]
+    },
+    "created_at": "",
+    "generation_cost": 0,
+    "postprocess": [
+     "opaque on #fbf1e3",
+     "WebP lossless (exact)"
+    ],
+    "license": "derived from PixelLab assets listed in sources (PixelLab ToS) — verify before ship"
+   },
+   "verification": {
+    "native_scale_reviewed": true,
+    "in_engine_reviewed": true,
+    "technical_checks_passed": true,
+    "approved_by": "",
+    "notes": "off-palette=0 colours=43"
+   }
+  },
+  {
+   "id": "scene-clinic",
+   "role": "header scene: Phòng khám (view clinic)",
+   "path": "public/ta-tua/game/assets/scenes/clinic.webp",
+   "status": "sample",
+   "technical": {
+    "dimensions": "320x80",
+    "alpha": false,
+    "anchor": "center (phone: center crop)",
+    "frames": 1,
+    "filtering": "nearest",
+    "scale": "integer 3x desktop (2x when the column is under 960 px) / 2x phone",
+    "bytes": 3850,
+    "fx": []
+   },
+   "visual_locks": [
+    "palette.json",
+    "view: low top-down",
+    "light: top-left",
+    "outline: #2e1d14 outer"
+   ],
+   "provenance": {
+    "kind": "generated",
+    "tool": "scripts/art/build-scenes.py <- headers package (compose.py)",
+    "mode": "art",
+    "pixellab_id": "",
+    "prompt": "",
+    "params": {
+     "sources": [
+      "phase1/headers/clinic-1x.png"
+     ]
+    },
+    "created_at": "",
+    "generation_cost": 0,
+    "postprocess": [
+     "opaque on #fbf1e3",
+     "WebP lossless (exact)"
+    ],
+    "license": "derived from PixelLab assets listed in sources (PixelLab ToS) — verify before ship"
+   },
+   "verification": {
+    "native_scale_reviewed": true,
+    "in_engine_reviewed": true,
+    "technical_checks_passed": true,
+    "approved_by": "",
+    "notes": "off-palette=0 colours=40"
+   }
+  }
+ ]
+}
