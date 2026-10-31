@@ -214,7 +214,7 @@
     "frames": 1,
     "filtering": "nearest",
     "scale": "integer 3x desktop (2x when the column is under 960 px) / 2x phone",
-    "bytes": 3730,
+    "bytes": 5906,
     "fx": []
    },
    "visual_locks": [
@@ -224,26 +224,21 @@
     "outline: #2e1d14 outer"
    ],
    "provenance": {
-    "kind": "composited",
-    "tool": "scripts/art/build-scenes.py (placeholder compositor)",
-    "mode": "placeholder",
+    "kind": "generated",
+    "tool": "scripts/art/build-scenes.py <- headers package (compose.py)",
+    "mode": "art",
     "pixellab_id": "",
     "prompt": "",
     "params": {
      "sources": [
-      "phase0/dl/pal/flowerbed.png",
-      "phase0/dl/pal/tree.png",
-      "phase1/bldg-4/pal/garden.png",
-      "phase1/npc-2/pal/farmer/idle-south.png"
+      "phase1/headers/garden-1x.png"
      ]
     },
     "created_at": "",
     "generation_cost": 0,
     "postprocess": [
      "opaque on #fbf1e3",
-     "WebP lossless (exact)",
-     "Wang terrain + sprites placed by bottom-centre",
-     "shadow 28% #2e1d14 snapped to palette"
+     "WebP lossless (exact)"
     ],
     "license": "derived from PixelLab assets listed in sources (PixelLab ToS) — verify before ship"
    },
@@ -252,7 +247,7 @@
     "in_engine_reviewed": true,
     "technical_checks_passed": true,
     "approved_by": "",
-    "notes": "off-palette=0 colours=38; placeholder until the headers package lands"
+    "notes": "off-palette=0 colours=43"
    }
   },
   {

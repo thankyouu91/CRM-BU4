@@ -7,7 +7,9 @@ S là thư mục làm việc của đội vẽ (mặc định: thư mục scratc
   1. Gói `headers` đã có tranh cuối (S/phase1/headers/**/<name>-1x.png, đúng 320x80) -> dùng nguyên tranh đó.
   2. Chưa có -> ghép tạm từ tài sản Phase 0 đã duyệt (ô Wang, nhà, đạo cụ, NPC). Gói Phase 1 nào đã có hình
      hợp (xưởng bldg-5, bếp bldg-3, ...) thì lấy thêm; thiếu thì quay về hình Phase 0.
-Hoạt cảnh khói (gói ambient-1, fx-anim.json) chỉ thêm khi biết chỗ miệng ống khói và miệng đó nằm trong khung.
+Hoạt cảnh khói/hơi (gói ambient-1, fx-anim.json) đặt theo hình nhà (tranh tạm) hoặc theo layers/<name>/layers.json
+của gói headers (tranh cuối, xem FX_HINTS); chỉ thêm khi miệng ống khói nằm trong khung.
+Ảnh <name>-phone.png của gói headers không cần: trên điện thoại CSS cắt giữa đúng như vậy từ ảnh 1x.
 
 Ra (public/ta-tua/game/assets/scenes/):
   <name>.webp            ảnh cảnh 320x80, WebP lossless
@@ -39,8 +41,8 @@ LABELS = {
 }
 MAX_BYTES = 200 * 1024
 
-# Vị trí miệng ống khói (x giữa, y đỉnh, theo điểm ảnh 1x của cảnh) trên tranh CUỐI của gói headers.
-# Tranh tạm tự tính từ hình nhà; tranh cuối thì điền tay ở đây khi đã xem tranh (để trống = không có khói).
+# Ghi đè tay vị trí hoạt cảnh trên tranh CUỐI (x giữa, y miệng, theo điểm ảnh 1x của cảnh) khi layers.json
+# không đủ để tự tính. Có mục ở đây thì bỏ qua FX_HINTS của cảnh đó.
 FINAL_FX = {
     # 'factory': [('fx-chimney-smoke-lg', 251, 9)],
     # 'kitchen': [('fx-chimney-smoke', 60, 14)],
@@ -273,7 +275,7 @@ def prop(*patterns, fallback=None):
 
 def compose(name):
     tree = p0('tree')
-    lamp, bench, crate, bed, fence, sign = (p0(n) for n in ('lamp', 'bench', 'crate', 'flowerbed', 'fence', 'sign'))
+    lamp, bench, crate, bed, fence = (p0(n) for n in ('lamp', 'bench', 'crate', 'flowerbed', 'fence'))
     if name == 'shop':
         sc = Scene(band(4))
         sc.add(tree, 14, 44)
