@@ -4220,6 +4220,25 @@
    ],
    "provenance": {
     "kind": "generated",
+    "tool": "PixelLab MCP create_map_object",
+    "mode": "basic",
+    "pixellab_id": "9f6c7984-2bba-49ea-a7b1-7703f94a7c36",
+    "prompt": "wooden boat dock seen from the front, straight horizontal plank walkway running from left to right, top surface of light warm brown planks visible, a row of short round wooden posts along the front edge, isolated object, no water, no grass, chunky simple shapes, soft light from top-left, dark brown outline",
+    "params": {
+     "view": "low top-down",
+     "outline": "single color outline",
+     "shading": "medium shading",
+     "detail": "medium detail",
+     "size": "64x48"
+    },
+    "created_at": "2026-10-31",
+    "generation_cost": 1,
+    "postprocess": [
+     "remap.py (P0): OKLab nearest, chroma x2, palette.json (48)",
+     "alpha threshold 128",
+     "outer outline #2e1d14 + 1px pad"
+    ],
+    "license": "PixelLab ToS (subscription, commercial use per https://pixellab.ai/termsofservice) — verify before ship",
     "package": "props-3",
     "source": "phase1/props-3/pal/dock.png"
    },
@@ -4253,6 +4272,26 @@
    ],
    "provenance": {
     "kind": "generated",
+    "tool": "PixelLab MCP create_map_object",
+    "mode": "basic",
+    "pixellab_id": "1f29b21a-4fee-4b8c-9513-6473e66228ef",
+    "prompt": "string of small triangle festival bunting flags hanging in a gentle downward curve on a thin dark rope stretched from the left edge to the right edge, alternating pink, yellow, mint and red flags, chunky simple shapes, soft light from top-left, dark brown outline",
+    "params": {
+     "view": "low top-down",
+     "outline": "single color outline",
+     "shading": "medium shading",
+     "detail": "medium detail",
+     "size": "64x32"
+    },
+    "created_at": "2026-10-31",
+    "generation_cost": 1,
+    "postprocess": [
+     "remap.py (P0): OKLab nearest, chroma x2, palette.json (48)",
+     "alpha threshold 128",
+     "outer outline #2e1d14 + 1px pad",
+     "fix.py flags (cut end flags removed, rope redrawn to both ends, colours red/yellow/mint/pink + right-side fold shade)"
+    ],
+    "license": "PixelLab ToS (subscription, commercial use per https://pixellab.ai/termsofservice) — verify before ship",
     "package": "props-3",
     "source": "phase1/props-3/pal/festival-flags.png"
    },
@@ -4286,6 +4325,26 @@
    ],
    "provenance": {
     "kind": "generated",
+    "tool": "PixelLab MCP create_map_object",
+    "mode": "basic",
+    "pixellab_id": "0d44ed7d-801b-4025-8fa1-92668befd485",
+    "prompt": "cute cozy village wooden street food cart on two wheels, small mint and cream striped canopy roof on thin posts, a steaming pot and little bowls on the counter, front facing the viewer, chunky simple shapes, soft light from top-left, dark brown outline, no text, no letters",
+    "params": {
+     "view": "low top-down",
+     "outline": "single color outline",
+     "shading": "medium shading",
+     "detail": "medium detail",
+     "size": "64x64"
+    },
+    "created_at": "2026-10-31",
+    "generation_cost": 1,
+    "postprocess": [
+     "remap.py (P0): OKLab nearest, chroma x2, palette.json (48)",
+     "alpha threshold 128",
+     "outer outline #2e1d14 + 1px pad",
+     "fix.py foodcart (valance #9c948a>#4fae93, #6e6660>#2f7f73 in canopy rows; flame above pot -> cream steam)"
+    ],
+    "license": "PixelLab ToS (subscription, commercial use per https://pixellab.ai/termsofservice) — verify before ship",
     "package": "props-3",
     "source": "phase1/props-3/pal/food-cart.png"
    },
@@ -4319,6 +4378,28 @@
    ],
    "provenance": {
     "kind": "generated",
+    "tool": "PixelLab MCP create_map_object",
+    "mode": "style-match, custom mask",
+    "pixellab_id": "01f7cd0a-6d68-4628-9b09-cce0c5a662b7",
+    "prompt": "small wooden footbridge crossing the canal from the left grass bank to the right grass bank, gently arched warm brown plank walkway running left to right with low wooden railings and round posts at both ends, chunky simple shapes, soft light from top-left, dark brown outline",
+    "params": {
+     "view": "low top-down",
+     "outline": "single color outline",
+     "shading": "medium shading",
+     "detail": "medium detail",
+     "size": "96x64 (auto from background)",
+     "background_image": "scripts/bg-canal-16.png (96x64 crop of P0 ts-water-grass canal, world px x248-344 y24-88 of preview.py terrain, 16-colour PNG)",
+     "inpainting": "mask scripts/bg-canal-mask.png: white rect (12,12)-(83,55)"
+    },
+    "created_at": "2026-10-31",
+    "generation_cost": 1,
+    "postprocess": [
+     "remap.py (P0): OKLab nearest, chroma x2, palette.json (48)",
+     "alpha threshold 128",
+     "outer outline #2e1d14 + 1px pad",
+     "fix.py footbridge (clear 14 baked grass px, re-close outline, wood #b4643a>#b87d4b, #8c3f2a>#8a5a34)"
+    ],
+    "license": "PixelLab ToS (subscription, commercial use per https://pixellab.ai/termsofservice) — verify before ship",
     "package": "props-3",
     "source": "phase1/props-3/pal/footbridge.png"
    },
@@ -4352,6 +4433,25 @@
    ],
    "provenance": {
     "kind": "generated",
+    "tool": "PixelLab MCP create_map_object",
+    "mode": "basic",
+    "pixellab_id": "d97e1665-e540-477c-8c6c-e657a28e05b2",
+    "prompt": "single round red paper festival lantern hanging from a short dark cord at the top, gold cap on top and bottom, small gold tassel hanging below, warm glow, centered, chunky simple shapes, soft light from top-left, dark brown outline",
+    "params": {
+     "view": "low top-down",
+     "outline": "single color outline",
+     "shading": "medium shading",
+     "detail": "medium detail",
+     "size": "32x48"
+    },
+    "created_at": "2026-10-31",
+    "generation_cost": 1,
+    "postprocess": [
+     "remap.py (P0): OKLab nearest, chroma x2, palette.json (48)",
+     "alpha threshold 128",
+     "outer outline #2e1d14 + 1px pad"
+    ],
+    "license": "PixelLab ToS (subscription, commercial use per https://pixellab.ai/termsofservice) — verify before ship",
     "package": "props-3",
     "source": "phase1/props-3/pal/lantern-red.png"
    },
@@ -4385,6 +4485,26 @@
    ],
    "provenance": {
     "kind": "generated",
+    "tool": "PixelLab MCP create_map_object",
+    "mode": "basic",
+    "pixellab_id": "5066f022-fc4c-436c-acd6-cb34c977207c",
+    "prompt": "single small round red paper festival lantern hanging from a short dark cord at the top, gold cap on top and bottom, tiny gold tassel below, warm glow, centered, chunky simple shapes, soft light from top-left, dark brown outline",
+    "params": {
+     "view": "low top-down",
+     "outline": "single color outline",
+     "shading": "medium shading",
+     "detail": "medium detail",
+     "size": "32x32"
+    },
+    "created_at": "2026-10-31",
+    "generation_cost": 1,
+    "postprocess": [
+     "remap.py (P0): OKLab nearest, chroma x2, palette.json (48)",
+     "alpha threshold 128",
+     "outer outline #2e1d14 + 1px pad",
+     "fix.py lantern-red-s (yellow blob motif that could read as a glyph -> plain red + top-left highlight)"
+    ],
+    "license": "PixelLab ToS (subscription, commercial use per https://pixellab.ai/termsofservice) — verify before ship",
     "package": "props-3",
     "source": "phase1/props-3/pal/lantern-red-s.png"
    },
@@ -4418,6 +4538,25 @@
    ],
    "provenance": {
     "kind": "generated",
+    "tool": "PixelLab MCP create_map_object",
+    "mode": "basic",
+    "pixellab_id": "7e2cfcd1-a3de-44a6-980c-8f8d21378153",
+    "prompt": "single tall oval silk lantern hanging from a short dark cord at the top, teal green fabric stretched over thin gold ribs, gold cap on top and bottom, small red tassel hanging below, warm glow, centered, chunky simple shapes, soft light from top-left, dark brown outline",
+    "params": {
+     "view": "low top-down",
+     "outline": "single color outline",
+     "shading": "medium shading",
+     "detail": "medium detail",
+     "size": "32x48"
+    },
+    "created_at": "2026-10-31",
+    "generation_cost": 1,
+    "postprocess": [
+     "remap.py (P0): OKLab nearest, chroma x2, palette.json (48)",
+     "alpha threshold 128",
+     "outer outline #2e1d14 + 1px pad"
+    ],
+    "license": "PixelLab ToS (subscription, commercial use per https://pixellab.ai/termsofservice) — verify before ship",
     "package": "props-3",
     "source": "phase1/props-3/pal/lantern-teal.png"
    },
@@ -4451,6 +4590,25 @@
    ],
    "provenance": {
     "kind": "generated",
+    "tool": "PixelLab MCP create_map_object",
+    "mode": "basic",
+    "pixellab_id": "f34c0b7a-4567-47c9-afc6-7af3d56a47f9",
+    "prompt": "single small tall oval silk lantern hanging from a short dark cord at the top, teal green fabric over thin gold ribs, gold cap on top and bottom, tiny red tassel below, warm glow, centered, chunky simple shapes, soft light from top-left, dark brown outline",
+    "params": {
+     "view": "low top-down",
+     "outline": "single color outline",
+     "shading": "medium shading",
+     "detail": "medium detail",
+     "size": "32x32"
+    },
+    "created_at": "2026-10-31",
+    "generation_cost": 1,
+    "postprocess": [
+     "remap.py (P0): OKLab nearest, chroma x2, palette.json (48)",
+     "alpha threshold 128",
+     "outer outline #2e1d14 + 1px pad"
+    ],
+    "license": "PixelLab ToS (subscription, commercial use per https://pixellab.ai/termsofservice) — verify before ship",
     "package": "props-3",
     "source": "phase1/props-3/pal/lantern-teal-s.png"
    },
@@ -4484,6 +4642,26 @@
    ],
    "provenance": {
     "kind": "generated",
+    "tool": "PixelLab MCP create_map_object",
+    "mode": "basic",
+    "pixellab_id": "6bc23cc4-58ce-42b4-b56e-986764ddb1c6",
+    "prompt": "large outdoor market stall parasol standing on the ground, wide round canopy with pink and cream stripes and a scalloped edge, straight wooden pole fixed into a small heavy round stone base on the ground, seen from slightly above, chunky simple shapes, soft light from top-left, dark brown outline",
+    "params": {
+     "view": "low top-down",
+     "outline": "single color outline",
+     "shading": "medium shading",
+     "detail": "medium detail",
+     "size": "64x64"
+    },
+    "created_at": "2026-10-31",
+    "generation_cost": 1,
+    "postprocess": [
+     "remap.py (P0): OKLab nearest, chroma x2, palette.json (48)",
+     "alpha threshold 128",
+     "outer outline #2e1d14 + 1px pad",
+     "fix.py umbrella (canopy #d9708a>#f4a3b4, #a84848>#d9708a)"
+    ],
+    "license": "PixelLab ToS (subscription, commercial use per https://pixellab.ai/termsofservice) — verify before ship",
     "package": "props-3",
     "source": "phase1/props-3/pal/market-umbrella.png"
    },
@@ -4517,6 +4695,26 @@
    ],
    "provenance": {
     "kind": "generated",
+    "tool": "PixelLab MCP create_map_object",
+    "mode": "basic",
+    "pixellab_id": "44a2a313-a870-4acf-90fe-42bcd7f8cd90",
+    "prompt": "cute cozy village wooden notice board on two posts with a small pitched wooden roof, a few blank cream paper sheets pinned to the board with little red pins, nothing written on the papers, front facing the viewer, chunky simple shapes, soft light from top-left, dark brown outline, no text, no letters",
+    "params": {
+     "view": "low top-down",
+     "outline": "single color outline",
+     "shading": "medium shading",
+     "detail": "medium detail",
+     "size": "48x48"
+    },
+    "created_at": "2026-10-31",
+    "generation_cost": 1,
+    "postprocess": [
+     "remap.py (P0): OKLab nearest, chroma x2, palette.json (48)",
+     "alpha threshold 128",
+     "outer outline #2e1d14 + 1px pad",
+     "fix.py noticeboard (baked grass/stones at the base removed, posts closed; single big sheet repainted as plank board + 3 blank notes with red pins)"
+    ],
+    "license": "PixelLab ToS (subscription, commercial use per https://pixellab.ai/termsofservice) — verify before ship",
     "package": "props-3",
     "source": "phase1/props-3/pal/notice-board.png"
    },
@@ -4550,6 +4748,26 @@
    ],
    "provenance": {
     "kind": "generated",
+    "tool": "PixelLab MCP create_map_object",
+    "mode": "basic",
+    "pixellab_id": "92a37299-80a3-4e72-8ed6-b8f65af89e19",
+    "prompt": "cute cozy plaza planter box seen from the front, low rectangular box of light warm grey stone blocks with its flat front face toward the viewer, filled with dark soil and a round neatly trimmed green shrub with a few tiny yellow flowers, chunky simple shapes, soft light from top-left, dark brown outline",
+    "params": {
+     "view": "low top-down",
+     "outline": "single color outline",
+     "shading": "medium shading",
+     "detail": "medium detail",
+     "size": "48x48"
+    },
+    "created_at": "2026-10-31",
+    "generation_cost": 1,
+    "postprocess": [
+     "remap.py (P0): OKLab nearest, chroma x2, palette.json (48)",
+     "alpha threshold 128",
+     "outer outline #2e1d14 + 1px pad",
+     "fix.py planter (shrub #3e7a3f>#6dbb5a, #2f5a3a>#4e9a45 to P0 tree greens)"
+    ],
+    "license": "PixelLab ToS (subscription, commercial use per https://pixellab.ai/termsofservice) — verify before ship",
     "package": "props-3",
     "source": "phase1/props-3/pal/planter.png"
    },
@@ -4583,6 +4801,26 @@
    ],
    "provenance": {
     "kind": "generated",
+    "tool": "PixelLab MCP create_map_object",
+    "mode": "basic",
+    "pixellab_id": "12c53da5-ccd9-4b0b-a3a3-bb63b59dfb06",
+    "prompt": "cute small wooden rowboat floating, long side facing the viewer, seen from slightly above so the inside is visible, pointed bow on the right, two little wooden bench seats inside, two oars resting across the seats, warm brown planks with a lighter wooden rim, chunky simple shapes, soft light from top-left, dark brown outline",
+    "params": {
+     "view": "low top-down",
+     "outline": "single color outline",
+     "shading": "medium shading",
+     "detail": "medium detail",
+     "size": "64x48"
+    },
+    "created_at": "2026-10-31",
+    "generation_cost": 1,
+    "postprocess": [
+     "remap.py (P0): OKLab nearest, chroma x2, palette.json (48)",
+     "alpha threshold 128",
+     "outer outline #2e1d14 + 1px pad",
+     "fix.py rowboat (gold rim/seats #f4c24f>#dcb07c, #d79c1c>#c8915f)"
+    ],
+    "license": "PixelLab ToS (subscription, commercial use per https://pixellab.ai/termsofservice) — verify before ship",
     "package": "props-3",
     "source": "phase1/props-3/pal/rowboat.png"
    },
@@ -4616,6 +4854,25 @@
    ],
    "provenance": {
     "kind": "generated",
+    "tool": "PixelLab MCP create_map_object",
+    "mode": "basic",
+    "pixellab_id": "47cce0c2-1ba1-4ba0-acec-3b19cbb717d9",
+    "prompt": "cute cozy village round stone water well, short round wall of light warm grey stones, small wooden pitched roof on two wooden posts, a wooden bucket hanging on a rope, chunky simple shapes, soft light from top-left, dark brown outline",
+    "params": {
+     "view": "low top-down",
+     "outline": "single color outline",
+     "shading": "medium shading",
+     "detail": "medium detail",
+     "size": "48x64"
+    },
+    "created_at": "2026-10-31",
+    "generation_cost": 1,
+    "postprocess": [
+     "remap.py (P0): OKLab nearest, chroma x2, palette.json (48)",
+     "alpha threshold 128",
+     "outer outline #2e1d14 + 1px pad"
+    ],
+    "license": "PixelLab ToS (subscription, commercial use per https://pixellab.ai/termsofservice) — verify before ship",
     "package": "props-3",
     "source": "phase1/props-3/pal/well.png"
    },
@@ -4678,14 +4935,14 @@
   {
    "id": "npc-child",
    "area": "town",
-   "role": "NPC child: idle west/east/south/north; walk south/east/west",
+   "role": "NPC child: idle west/east/south/north; walk south/east/north/west",
    "path": "public/ta-tua/game/assets/town/town.json#npc-child-*",
    "status": "sample",
    "technical": {
     "dimensions": "",
     "alpha": true,
     "anchor": "bottom-center",
-    "frames": 22,
+    "frames": 28,
     "filtering": "nearest",
     "scale": "integer 3x desktop / 2x phone"
    },
@@ -4774,14 +5031,14 @@
   {
    "id": "npc-farmer",
    "area": "town",
-   "role": "NPC farmer: idle west/north/east/south; walk south/east/west",
+   "role": "NPC farmer: idle west/north/east/south; walk south/east/north/west",
    "path": "public/ta-tua/game/assets/town/town.json#npc-farmer-*",
    "status": "sample",
    "technical": {
     "dimensions": "",
     "alpha": true,
     "anchor": "bottom-center",
-    "frames": 22,
+    "frames": 28,
     "filtering": "nearest",
     "scale": "integer 3x desktop / 2x phone"
    },
@@ -4806,14 +5063,14 @@
   {
    "id": "npc-postman",
    "area": "town",
-   "role": "NPC postman: idle west/north/east/south; walk south/east/west",
+   "role": "NPC postman: idle west/north/east/south; walk south/east/north/west",
    "path": "public/ta-tua/game/assets/town/town.json#npc-postman-*",
    "status": "sample",
    "technical": {
     "dimensions": "",
     "alpha": true,
     "anchor": "bottom-center",
-    "frames": 22,
+    "frames": 28,
     "filtering": "nearest",
     "scale": "integer 3x desktop / 2x phone"
    },
@@ -4838,14 +5095,14 @@
   {
    "id": "npc-student",
    "area": "town",
-   "role": "NPC student: idle west/north/east/south; walk south/east/west",
+   "role": "NPC student: idle west/north/east/south; walk south/east/north/west",
    "path": "public/ta-tua/game/assets/town/town.json#npc-student-*",
    "status": "sample",
    "technical": {
     "dimensions": "",
     "alpha": true,
     "anchor": "bottom-center",
-    "frames": 22,
+    "frames": 28,
     "filtering": "nearest",
     "scale": "integer 3x desktop / 2x phone"
    },
@@ -4942,6 +5199,38 @@
     "alpha": true,
     "anchor": "bottom-center",
     "frames": 28,
+    "filtering": "nearest",
+    "scale": "integer 3x desktop / 2x phone"
+   },
+   "visual_locks": [
+    "palette.json",
+    "view: low top-down",
+    "light: top-left",
+    "outline: #2e1d14 outer"
+   ],
+   "provenance": {
+    "kind": "generated",
+    "package": "npc-3"
+   },
+   "verification": {
+    "native_scale_reviewed": true,
+    "in_engine_reviewed": true,
+    "technical_checks_passed": true,
+    "approved_by": "",
+    "notes": "packed by scripts/art/build-town.py"
+   }
+  },
+  {
+   "id": "npc-villager",
+   "area": "town",
+   "role": "NPC villager: idle south/east/north/west; walk south/east",
+   "path": "public/ta-tua/game/assets/town/town.json#npc-villager-*",
+   "status": "sample",
+   "technical": {
+    "dimensions": "",
+    "alpha": true,
+    "anchor": "bottom-center",
+    "frames": 20,
     "filtering": "nearest",
     "scale": "integer 3x desktop / 2x phone"
    },
@@ -5814,10 +6103,10 @@
    "built": "2026-10-31",
    "files": {
     "town-0.webp": 60566,
-    "town-1.webp": 63546,
-    "town.json": 52810
+    "town-1.webp": 67078,
+    "town.json": 55129
    },
-   "total_bytes": 176922,
+   "total_bytes": 182773,
    "missing_places": []
   }
  }

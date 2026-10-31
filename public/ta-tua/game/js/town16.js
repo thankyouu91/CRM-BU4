@@ -203,7 +203,7 @@ function drawTerrain(A, ter, g) {
       g.drawImage(spr.img, spr.sx + tx - spr.ox, spr.sy + ty - spr.oy, T, T, x * T, y * T, T, T);
     }
   }
-  if (missing.length) console.debug('Phố 16-bit: thiếu ô Wang', missing.slice(0, 12));
+  if (missing.length) console.debug('Phố 16-bit: thiếu ô Wang', missing.length, missing.slice(0, 12).join(' '));
 }
 
 // ---------------------------------------------------------------- bố cục phố
@@ -257,7 +257,10 @@ function layout(A, places, art) {
   const cols = W / T;
   const ter = makeTerrain(A, cols, Math.ceil(H / T));
   const lastV = ter.rows;
-  for (let y = roadV; y <= roadV + 2; y++) for (let x = 0; x <= cols; x++) ter.set(x, y, 'p');
+  // Mặt phố lát đá cuội nếu gói địa hình có đủ cặp nối (cỏ–cuội, đất–cuội); không thì đường đất như phố mẫu.
+  const has = (a, b) => Object.values(A.data.terrain).some((t) => [t.lower, t.upper].sort().join('') === [a, b].sort().join(''));
+  const ROAD = has('g', 'c') && has('p', 'c') ? 'c' : 'p';
+  for (let y = roadV; y <= roadV + 2; y++) for (let x = 0; x <= cols; x++) ter.set(x, y, ROAD);
 
   const buildings = [];
   const statics = []; // { sprite, x, y, flip?, shadow?: [rx, ry] }
@@ -267,7 +270,7 @@ function layout(A, places, art) {
   const put = (name, x, y, opts = {}) => {
     const sprite = typeof name === 'string' ? prop(name) : name;
     if (!sprite) return null;
-    const s = { name, sprite, x: Math.round(x), y: Math.round(y), shadow: opts.shadow ?? [Math.max(4, Math.round(sprite.w / 2.4)), 2], flip: opts.flip };
+    const s = { name, sprite, x: Math.round(x), y: Math.round(y), shadow: 'shadow' in opts ? opts.shadow : [Math.max(4, Math.round(sprite.w / 2.4)), 2], flip: opts.flip };
     statics.push(s);
     return s;
   };
@@ -284,6 +287,9 @@ function layout(A, places, art) {
   const trees = props('tree').filter((n) => !/palm|bamboo/.test(n));
   const lamps = props('lamp');
   const lamp = lamps.includes('lamp') ? 'lamp' : lamps[0];
+  // Đồ trước sân hợp với từng nơi (nếu gói đạo cụ có), còn lại chọn ngẫu nhiên theo hạt giống cố định.
+  const YARD = { home: 'hydrant', shop: 'flowerbed', jobs: 'notice-board', bank: 'flowerbed', market: 'crates-barrels', news: 'newsstand', townhall: 'planter', school: 'bikerack', clinic: 'potted-plant', garden: 'well', bazaar: 'market-umbrella', boba: 'food-cart', factory: 'crates-barrels-tall', forge: 'crate', matshop: 'crates-barrels', arcade: 'flowers' };
+  const yardProp = (id) => (A.data.props[YARD[id]] ? YARD[id] : null);
 
   // ---- dãy trên (hàng 0): cửa nhìn ra đường
   for (const [i, it] of rowItems[0].entries()) {
@@ -291,7 +297,8 @@ function layout(A, places, art) {
       const x0 = Math.round(it.x0 / T) + 1;
       const x1 = Math.round((it.x0 + it.w) / T) - 1;
       const y0 = Math.max(1, roadV - 6);
-      for (let y = y0; y < roadV; y++) for (let x = x0; x <= x1; x++) ter.set(x, y, 'p');
+      // nền quảng trường cùng chất liệu với mặt phố (bộ Wang chỉ ghép 2 địa hình mỗi ô: tránh ngã ba cỏ–đất–cuội)
+      for (let y = y0; y < roadV; y++) for (let x = x0; x <= x1; x++) ter.set(x, y, ROAD);
       for (let y = y0 + 1; y < roadV - 1; y++) for (let x = x0 + 1; x <= x1 - 1; x++) ter.set(x, y, 's');
       const fy = Math.round(((y0 + roadV - 1) / 2) * T + 24);
       if (fxDef('fountain')) fx.push({ kind: 'fountain', x: it.cx, y: fy, def: fxDef('fountain'), shadow: [19, 4] });
@@ -316,11 +323,11 @@ function layout(A, places, art) {
     const b = { place: it.place, art: it.art, x: it.cx, y: B0, row: 0, hooks: it.art.real ? A.data.buildings[it.place.id]?.hooks : null };
     buildings.push(b);
     const door = Math.round(doorX(it, B0) / T - 0.5);
-    for (let y = Math.floor(B0 / T) - 1; y < roadV; y++) { ter.set(door, y, 'p'); ter.set(door + 1, y, 'p'); }
+    for (let y = Math.floor(B0 / T) - 1; y < roadV; y++) { ter.set(door, y, ROAD); ter.set(door + 1, y, ROAD); }
     const left = (door - 0.5) * T;
     const right = (door + 1.5) * T;
     put('sign', left - 18, B0 + 10);
-    put(i % 3 === 1 ? 'flowerbed' : pick(yardKinds, rand), right + 18, B0 + 9);
+    put(yardProp(it.place.id) ?? (i % 3 === 1 ? 'flowerbed' : pick(yardKinds, rand)), right + 18, B0 + 9);
     if (i % 2 === 0) put(lamp, it.x0 + it.w, roadTop + 6, { shadow: [5, 2] });
     else put(pick(bushes, rand), it.x0 + it.w, B0 - 1);
   }
@@ -357,6 +364,11 @@ function layout(A, places, art) {
       }
       put(pick(props('rock'), rand) ?? 'crate', it.x0 + 14, roadBottom + 18);
       put('log', it.x0 + it.w - 22, roadBottom + 20);
+      // thuyền con trên mặt hồ (đặt trên vùng nước thuần, không bóng đổ)
+      if (spots.length && prop('rowboat')) {
+        const [bx, by] = spots[Math.floor(spots.length / 2)];
+        put('rowboat', bx, by + 8, { shadow: null });
+      }
       put(trees.find((n) => /cherry/.test(n)) ?? trees[0], it.x0 + it.w - 6, H + 2, { shadow: [16, 3] });
       if (fxDef('bird-hop-sparrow')) fx.push({ kind: 'loop', def: fxDef('bird-hop-sparrow'), x: it.x0 + 34, y: roadBottom + 16, z: roadBottom + 16 });
       continue;
@@ -366,12 +378,16 @@ function layout(A, places, art) {
     buildings.push(b);
     const door = Math.round(doorX(it, B1) / T - 0.5);
     // cổng vòm (lòng trong suốt): lối đất chạy xuyên từ đường xuống
-    const from = hooks?.through ? roadV + 2 : Math.floor(B1 / T);
-    for (let y = from; y <= lastV; y++) { ter.set(door, y, 'p'); ter.set(door + 1, y, 'p'); }
+    // lối nối thẳng ra phố (qua cổng vòm) lát cùng chất liệu mặt phố; lối cụt trước cửa là đất
+    const through = !!hooks?.through;
+    for (let y = through ? roadV + 2 : Math.floor(B1 / T); y <= lastV; y++) {
+      ter.set(door, y, through ? ROAD : 'p');
+      ter.set(door + 1, y, through ? ROAD : 'p');
+    }
     const left = (door - 0.5) * T;
     const right = (door + 1.5) * T;
     put(i % 2 ? pick(bushes, rand) : 'flowerbed', left - 18, H - 1);
-    put(i % 2 ? 'flowerbed' : pick(props('flower').concat(bushes), rand), right + 18, H - 1);
+    put(yardProp(it.place.id) ?? (i % 2 ? 'flowerbed' : pick(props('flower').concat(bushes), rand)), right + 18, H - 1);
     if (i % 2 === 1) put(lamp, it.x0 + it.w, roadBottom + 4, { shadow: [5, 2] });
     else put(pick(bushes.concat(props('flower')), rand), it.x0 + it.w, roadBottom + 14);
     if (it.place.id === 'colosseum' && it.place.unlocked) {

@@ -366,12 +366,21 @@ WALK_RE = re.compile(r'(?:^|[-_/])(south|east|north|west)[-_/](\d+)$')
 
 
 def add_npc(cid, pkg, idle, walk, idle_anim, entries=()):
-    """idle: {dir: path}; walk / idle_anim: {dir: [path...]}. Neo của mỗi chuỗi = bbox khung 0."""
-    n = {'package': pkg, 'idle': {}, 'walk': {}, 'idleAnim': {}}
+    """idle: {dir: path}; walk / idle_anim: {dir: [path...]}.
+    Neo chân = giữa ô (48×48 đứng → x 24, 64×64 đi → x 32) và đáy bbox khung 0 (46 / 54), như báo cáo các gói NPC."""
+    # Cùng một nhân vật ở gói sau (vd npc-3 thêm "thở" cho dân làng P0): chỉ bổ sung hướng/chuỗi còn thiếu.
+    old = meta['npcs'].get(cid)
+    n = old or {'package': pkg, 'idle': {}, 'walk': {}, 'idleAnim': {}}
+    if old:
+        n['package'] = f"{old['package']}+{pkg}"
+        idle = {d: p for d, p in idle.items() if d not in old['idle']}
+        walk = {d: v for d, v in walk.items() if d not in old['walk']}
+        idle_anim = {d: v for d, v in idle_anim.items() if d not in old['idleAnim']}
+    anchor_of = lambda img: [img.width / 2, (img.getbbox() or (0, 0, 0, img.height))[3]]
     for d, path in idle.items():
         img = Image.open(path)
         add_frame(f'npc-{cid}-{d}', img, rel(path), 'sprites')
-        n['idle'][d] = {'frame': f'npc-{cid}-{d}', 'anchor': bbox_anchor(img)}
+        n['idle'][d] = {'frame': f'npc-{cid}-{d}', 'anchor': anchor_of(img)}
     for key, seqs, out in (('walk', walk, n['walk']), ('idle', idle_anim, n['idleAnim'])):
         for d, paths in seqs.items():
             if not paths:
@@ -380,7 +389,7 @@ def add_npc(cid, pkg, idle, walk, idle_anim, entries=()):
             for i, path in enumerate(paths):
                 img = Image.open(path)
                 if i == 0:
-                    anchor = bbox_anchor(img)
+                    anchor = anchor_of(img)
                 add_frame(f'npc-{cid}-{key}-{d}-{i}', img, rel(path), 'sprites')
                 frames.append(f'npc-{cid}-{key}-{d}-{i}')
             out[d] = {'frames': frames, 'anchor': anchor}
@@ -429,8 +438,6 @@ for pkg in sorted(d for d in os.listdir(P1) if d.startswith('npc-')):
         if os.path.isdir(cdir) and not c.startswith('_'):
             idle, walk, ianim = scan_char(cdir)
             cid = re.sub(r'[^a-z0-9]+', '-', c.lower()).strip('-')
-            if cid in meta['npcs']:
-                cid = f'{cid}-{pkg}'
             add_npc(cid, pkg, idle, walk, ianim)
 found_report.append('NPC: ' + ', '.join(f'{k}(đi: {"/".join(v["walk"]) or "-"})' for k, v in meta['npcs'].items()))
 
