@@ -1,9 +1,10 @@
 // Bản đồ đất của gia tộc: 200 lô là 200 ô lục giác (đỉnh nhọn) xếp thẳng hàng 20 × 10, hàng lẻ lệch nửa ô,
 // giữa biển. Trong trình duyệt nền là tranh pixel art nhìn 3/4 (landpixel.js), vẽ một lần cho mọi chế độ; lưới lô
-// mảnh, màu theo chế độ (nền tranh mờ đi), lô chọn, cờ gia tộc và mây trôi là SVG vẽ đè. Khi không có canvas (test
-// trên Node) thì vẽ nền vector đơn giản. Lớp tĩnh lưu bộ nhớ đệm, lớp lô đất (chủ, chọn) vẽ đè lên.
-import { CLIMATES, LAND, MAP_PALETTE as C, PLOTS, ZONES, riverRow } from './shared/clan.js';
+// mảnh, màu theo chế độ (nền tranh mờ đi), lô chọn, huy hiệu kinh doanh của lô có chủ và mây trôi là SVG vẽ đè. Khi
+// không có canvas (test trên Node) thì vẽ nền vector đơn giản. Lớp tĩnh lưu bộ nhớ đệm, lớp lô đất vẽ đè lên.
+import { CLIMATES, DESIGN, INDUSTRIES, LAND, MAP_PALETTE as C, PLOTS, ZONES, designSvg, pieceById, riverRow } from './shared/clan.js';
 import { drawClouds, drawPixelBase } from './landpixel.js';
+import { iconSvg } from './icons/index.js';
 
 /** Bề ngang một ô; bán kính (tâm tới đỉnh) và bước giữa hai hàng suy ra từ đó. */
 export const TW = 48;
@@ -138,35 +139,93 @@ function cloudLayer() {
 
 const esc = (v) => String(v ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 
-/** Vùng bấm, màu gia tộc, huy hiệu, mã lô; `infos` theo id: { owner, mine }. */
-export function plotLayer(infos, { selected = null, showClimate = false, resources = null } = {}) {
+// ---------------------------------------------------------------- huy hiệu kinh doanh
+
+const placed = (svg, x, y, w, h) => svg.replace('<svg ', `<svg x="${f1(x)}" y="${f1(y)}" width="${f1(w)}" height="${f1(h)}" `);
+const iconCache = new Map();
+/** Biểu tượng pixel của emoji, đặt trong ô vuông `size` có tâm (x, y); emoji thường nếu chưa có icon. */
+function icon(emoji, x, y, size) {
+  if (!iconCache.has(emoji)) iconCache.set(emoji, iconSvg(emoji));
+  const svg = iconCache.get(emoji);
+  return svg ? placed(svg, x - size / 2, y - size / 2, size, size) : `<text x="${f1(x)}" y="${f1(y + size * 0.35)}" text-anchor="middle" font-size="${f1(size)}">${esc(emoji)}</text>`;
+}
+
+/** Công trình thu nhỏ: cắt khung vẽ 24×20 ô về đúng phần có mảnh (chừa nửa ô) để tòa nhà lấp đầy huy hiệu. */
+function miniature(design, x, y, w, h) {
+  const cells = design.map((p) => ({ p, piece: pieceById(p.piece) })).filter((d) => d.piece);
+  if (!cells.length) return '';
+  const k = DESIGN.cell;
+  const x0 = Math.min(...cells.map((d) => d.p.x)) * k - k / 2;
+  const y0 = Math.min(...cells.map((d) => d.p.y)) * k - k / 2;
+  const x1 = Math.max(...cells.map((d) => d.p.x + d.piece.w)) * k + k / 2;
+  const y1 = Math.max(...cells.map((d) => d.p.y + d.piece.h)) * k + k / 2;
+  return placed(designSvg(design).replace(/viewBox="[^"]*"/, `viewBox="${x0} ${y0} ${x1 - x0} ${y1 - y0}" preserveAspectRatio="xMidYMax meet"`), x, y, w, h);
+}
+
+/** Viền huy hiệu: lô của mình viền vàng dày, gia tộc khác viền màu gia tộc; cả hai có nét mực bên ngoài. */
+function rim(shape, info) {
+  const color = info.mine ? '#f4c24f' : esc(info.owner.color);
+  return `${shape(`fill="none" stroke="#2e1d14" stroke-width="${info.mine ? 6 : 4.4}"`)}${shape(`fill="#fff3e3" stroke="${color}" stroke-width="${info.mine ? 3.6 : 2.4}"${info.industry ? '' : ' stroke-dasharray="4 2.5"'}`)}`;
+}
+
+/**
+ * Huy hiệu kinh doanh giữa ô: thẻ kem có công trình thu nhỏ (kèm biểu tượng ngành ở góc), hoặc chỉ biểu tượng ngành khi
+ * chưa xây; lô chưa chọn ngành hiện huy hiệu gia tộc viền đứt. Dấu "!" đỏ khi lô có ngành mà sản lượng 0.
+ */
+function bizMarker(g, info, biz, compact) {
+  const ind = INDUSTRIES[info.industry];
+  const warn = biz?.state === 'zero';
+  let body;
+  if (info.design?.length && !compact) {
+    const card = (attrs) => `<rect x="-19" y="-13" width="38" height="32" rx="6" ${attrs}/>`;
+    body = `${rim(card, info)}${miniature(info.design, -15, -10, 30, 26)}
+      ${ind ? `<circle cx="-17" cy="-12" r="8" fill="#fff3e3" stroke="#2e1d14" stroke-width="1.4"/>${icon(ind.icon, -17, -12, 11)}` : ''}`;
+  } else {
+    const r = compact ? 10.5 : 12;
+    const disc = (attrs) => `<circle cx="0" cy="2" r="${r}" ${attrs}/>`;
+    body = `${rim(disc, info)}${icon(ind ? ind.icon : info.owner.emblem, 0, 2, compact ? 13 : 15)}`;
+  }
+  // dấu "!" vẽ bằng hình (không phụ thuộc phông chữ): vạch và chấm trắng trên tròn đỏ viền mực
+  const alert = warn ? `<g class="biz-warn" transform="translate(${compact || !info.design?.length ? '11 -9' : '17 -12'})"><circle class="biz-ping" r="7" fill="none" stroke="#d23b3b" stroke-width="2"/><circle r="7" fill="#d23b3b" stroke="#2e1d14" stroke-width="1.4"/>
+    <rect x="-1.25" y="-4.6" width="2.5" height="5.4" rx=".8" fill="#fff"/><rect x="-1.25" y="2.2" width="2.5" height="2.5" rx=".8" fill="#fff"/></g>` : '';
+  return `<g class="biz-mark${info.mine ? ' mine' : ''}${warn ? ' warn' : ''}" transform="translate(${f1(g.cx)} ${f1(g.cy)})${info.mine ? ' scale(1.1)' : ''}" pointer-events="none">${body}${alert}</g>`;
+}
+
+/**
+ * Vùng bấm, màu gia tộc, huy hiệu, mã lô; `infos` theo id: { owner, mine, industry, design }. Có `business`
+ * (Map id → trạng thái kinh doanh) thì lô có chủ hiện huy hiệu kinh doanh thay cho lá cờ; `tint: false` bỏ lớp phủ
+ * màu gia tộc (chế độ tô màu theo ngành).
+ */
+export function plotLayer(infos, { selected = null, showClimate = false, resources = null, business = null, tint: tinted = true } = {}) {
   return PLOTS.map((p) => {
     const g = GEOMETRY.get(p.id);
     const info = infos.get(p.id) ?? {};
     const owner = info.owner;
     const shape = pts(g.hex);
     const inner = pts(g.hex.map(([x, y]) => [g.cx + (x - g.cx) * 0.9, g.cy + (y - g.cy) * 0.9]));
-    // Lô có chủ: phủ màu gia tộc, viền trong (nét đứt nếu là lô của mình) và lá cờ nhỏ mang huy hiệu.
-    const tint = owner ? `<g pointer-events="none"><polygon points="${shape}" fill="${esc(owner.color)}" fill-opacity=".3"/>
-      <polygon points="${inner}" fill="none" stroke="#fff3e3" stroke-width="4" stroke-linejoin="round"/>
-      <polygon points="${inner}" fill="none" stroke="${esc(owner.color)}" stroke-width="2.4" stroke-linejoin="round"${info.mine ? ' stroke-dasharray="6 3"' : ''}/></g>` : '';
-    const badge = owner ? `<g class="flag" transform="translate(${f1(g.cx - 2)} ${f1(g.cy + 6)})" pointer-events="none">
+    // Lô có chủ: phủ màu gia tộc, viền trong (lô của mình viền vàng dày, gia tộc khác màu gia tộc) và huy hiệu.
+    const edge = business && info.mine ? '#f4c24f' : esc(owner?.color);
+    const tint = owner ? `<g pointer-events="none">${tinted ? `<polygon points="${shape}" fill="${esc(owner.color)}" fill-opacity=".3"/>` : ''}
+      <polygon points="${inner}" fill="none" stroke="#2e1d14" stroke-opacity=".55" stroke-width="${business && info.mine ? 6 : 4}" stroke-linejoin="round"/>
+      <polygon points="${inner}" fill="none" stroke="${edge}" stroke-width="${business && info.mine ? 3.4 : 2.4}" stroke-linejoin="round"${info.mine && !business ? ' stroke-dasharray="6 3"' : ''}/></g>` : '';
+    const badge = owner && business ? bizMarker(g, info, business.get(p.id), !tinted) : owner ? `<g class="flag" transform="translate(${f1(g.cx - 2)} ${f1(g.cy + 6)})" pointer-events="none">
       <path d="M-3 0h7v2.5h-7zM-0.5 -20h2.5v20h-2.5z" fill="#2e1d14"/><path d="M2 -20h15v11h-15z" fill="#2e1d14"/>
       <path d="M2 -19h14v9h-14z" fill="${esc(owner.color)}"/><text x="9" y="-11.6" text-anchor="middle" font-size="7.5">${esc(owner.emblem)}</text></g>` : '';
     const climate = showClimate ? `<text x="${f1(g.cx + 12)}" y="${f1(g.cy + 16)}" text-anchor="middle" font-size="10" pointer-events="none">${CLIMATES[p.climate].icon}</text>` : '';
     const res = resources?.get(p.id) ? `<text x="${f1(g.cx)}" y="${f1(g.cy + (owner ? 20 : 6))}" text-anchor="middle" font-size="${owner ? 9 : 13}" pointer-events="none">${resources.get(p.id)}</text>` : '';
-    return `<g class="plot${owner ? ' taken' : ' free'}${info.mine ? ' mine' : ''}${selected === p.id ? ' sel' : ''}" data-plot="${p.id}">
+    const warn = business?.get(p.id)?.state === 'zero';
+    return `<g class="plot${owner ? ' taken' : ' free'}${info.mine ? ' mine' : ''}${warn ? ' warn' : ''}${selected === p.id ? ' sel' : ''}" data-plot="${p.id}">
       ${tint}<polygon class="hit" points="${shape}"/><polygon class="ring" points="${shape}"/>${badge}${climate}${res}
       <path class="pin" d="M${f1(g.cx - 15)} ${f1(g.cy - HEX_R - 19)}h30v13h-11l-4 5l-4 -5h-11z"/>
       <text class="code" x="${f1(g.cx)}" y="${f1(g.cy - HEX_R + 12)}" text-anchor="middle">${p.code}</text></g>`;
   }).join('');
 }
 
-export function landMapSvg({ key, fillFor, infos, selected, showClimate, resources }) {
+export function landMapSvg({ key, fillFor, infos, selected, showClimate, resources, business = null, tint = true }) {
   const terrain = pixelBase && !isHeat(fillFor);
   return `<svg class="land-svg${terrain ? ' terrain' : ''}" viewBox="0 0 ${MAP_W} ${MAP_H}" role="img" aria-label="Bản đồ 200 lô đất">
     <g class="lm-static">${staticLayer(key, fillFor).replace(ART_HREF, art?.url ?? '')}</g>
-    <g class="lm-plots">${plotLayer(infos, { selected, showClimate, resources })}</g>
+    <g class="lm-plots">${plotLayer(infos, { selected, showClimate, resources, business, tint })}</g>
     ${terrain ? cloudLayer() : ''}
   </svg>`;
 }
@@ -236,4 +295,60 @@ export function bindMiniMap(wrap) {
   if (typeof ResizeObserver !== 'undefined') new ResizeObserver(() => { update(); place(); }).observe(scroll);
   update();
   setOpen(miniOpen ?? overflow());
+}
+
+// ---------------------------------------------------------------- tới lô, chú thích khi rê chuột
+
+const calm = () => typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+/** Cuộn bản đồ (khung `wrap`) cho lô `id` vào giữa, rồi đưa bản đồ vào màn hình nếu đang khuất (điện thoại). */
+export function scrollToPlot(wrap, id) {
+  const scroll = wrap?.querySelector('.land-scroll');
+  const g = GEOMETRY.get(id);
+  if (!scroll || !g) return;
+  const behavior = calm() ? 'auto' : 'smooth';
+  if (scroll.scrollWidth > scroll.clientWidth + 2) scroll.scrollTo({ left: (g.cx / MAP_W) * scroll.scrollWidth - scroll.clientWidth / 2, behavior });
+  const r = wrap.getBoundingClientRect();
+  if (r.top < 0 || r.bottom > innerHeight) wrap.scrollIntoView({ block: 'nearest', behavior });
+}
+
+/**
+ * Chú thích nổi khi rê chuột lên lô (chỉ chuột: chạm vẫn chọn lô như cũ, khung bên đã có đủ thông tin).
+ * `tipFor(id)` trả HTML của chú thích.
+ */
+export function bindPlotTips(wrap, tipFor) {
+  const scroll = wrap?.querySelector('.land-scroll');
+  if (!scroll || typeof document === 'undefined') return;
+  const tip = document.createElement('div');
+  tip.className = 'lm-tip';
+  tip.setAttribute('role', 'tooltip');
+  tip.hidden = true;
+  wrap.append(tip);
+  let shown = null;
+  const hide = () => {
+    tip.hidden = true;
+    shown = null;
+  };
+  scroll.addEventListener('pointermove', (e) => {
+    if (e.pointerType !== 'mouse') return;
+    const plot = e.target.closest?.('[data-plot]');
+    if (!plot) return hide();
+    const id = Number(plot.dataset.plot);
+    if (id !== shown) {
+      tip.innerHTML = tipFor(id);
+      shown = id;
+    }
+    tip.hidden = false;
+    // Đặt cạnh con trỏ, lật sang trái/lên trên khi sát mép khung bản đồ.
+    const box = wrap.getBoundingClientRect();
+    const zoom = box.width / wrap.offsetWidth || 1; // bù CSS zoom của game
+    const x = (e.clientX - box.left) / zoom;
+    const y = (e.clientY - box.top) / zoom;
+    const flipX = x + 16 + tip.offsetWidth > wrap.offsetWidth;
+    const flipY = y + 16 + tip.offsetHeight > wrap.offsetHeight;
+    tip.style.left = `${Math.max(4, flipX ? x - 12 - tip.offsetWidth : x + 16)}px`;
+    tip.style.top = `${Math.max(4, flipY ? y - 12 - tip.offsetHeight : y + 16)}px`;
+  });
+  scroll.addEventListener('pointerleave', hide);
+  scroll.addEventListener('scroll', hide, { passive: true });
 }
