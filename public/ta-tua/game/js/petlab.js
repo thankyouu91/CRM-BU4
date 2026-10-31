@@ -1,5 +1,5 @@
 // Xưởng tạo hình: xem 50 loài pet ngũ hành, 6 giai đoạn tuổi, thử đồ đeo theo khe và xem số liệu từng loài.
-import { RIG_ANIMS, RIG_H, RIG_W, animFrames, drawFrame } from './rig.js';
+import { RIG_ANIMS, RIG_H, RIG_VIEWS, RIG_W, animFrames, drawFrame } from './rig.js';
 import {
   ELEMENTS, LEVEL_FORMS, LIFE_STAGES, MASCOTS, RARITIES, RELATIONS, SKILL_IDS, SLOTS, SPECIES, SPECIES_BY_ID, WEARABLES, relation, speciesStats,
   wearLimit,
@@ -14,7 +14,9 @@ const SKILLS = {
   charm: { name: 'Duyên dáng', icon: '✨' },
   craft: { name: 'Khéo tay', icon: '🖐️' },
 };
-const ANIM_LABELS = { idle: '😊 Đứng chơi', wave: '👋 Vẫy tay', jump: '🦘 Nhảy', run: '🏃 Chạy', sad: '😢 Buồn', think: '🤔 Ngó nghiêng', busy: '💼 Làm việc', spin: '🌀 Xoay' };
+const ANIM_LABELS = { idle: '😊 Đứng chơi', walk: '🏃 Đi bộ', wave: '👋 Vẫy tay', jump: '🦘 Nhảy', sad: '😢 Buồn', think: '🤔 Ngó nghiêng', busy: '💼 Làm việc', spin: '🌀 Xoay' };
+/** Bốn hướng nhìn của Rig 2.0 (W là E lật ngang). */
+const VIEW_LABELS = { S: '↓ Trước (S)', E: '→ Phải (E)', N: '↑ Sau (N)', W: '← Trái (W)' };
 
 const state = {
   element: 'all',
@@ -24,6 +26,7 @@ const state = {
   wear: { head: 'nonla', face: null, neck: 'scarf', back: null, charm: null },
   level: 1, // dáng theo cấp (LEVEL_FORMS)
   anchors: false,
+  view: 'S', // hướng nhìn: S, E, N, W
   dressAll: true,
   rarity: 'all', // độ hiếm tối thiểu: all, hiem, quy, huyenthoai
 };
@@ -34,6 +37,9 @@ if (RARITIES[params.get('rarity')]) state.rarity = params.get('rarity');
 if (LIFE_STAGES.some((s) => s.key === params.get('stage'))) state.stage = params.get('stage');
 if (Number(params.get('level')) >= 1) state.level = Math.floor(Number(params.get('level')));
 if (SPECIES_BY_ID[params.get('species')]) state.selected = params.get('species');
+if (RIG_VIEWS.includes(params.get('view'))) state.view = params.get('view');
+if (RIG_ANIMS[params.get('anim')]) state.anim = params.get('anim');
+if (params.get('anchors') === '1') state.anchors = true;
 if (params.get('wear') === '0') {
   state.wear = { head: null, face: null, neck: null, back: null, charm: null };
   state.dressAll = false;
@@ -48,15 +54,15 @@ const wearKey = (w) => Object.values(w).map((v) => v ?? '-').join(',');
 
 const frameCache = new Map();
 function framesFor(id, stage, anim, wear) {
-  const key = `${id}|${stage}|${anim}|${wearKey(wear)}|${state.anchors}|${state.level}`;
-  if (!frameCache.has(key)) frameCache.set(key, animFrames(id, stage, anim, wear, { anchors: state.anchors, level: state.level }));
+  const key = `${id}|${stage}|${anim}|${wearKey(wear)}|${state.anchors}|${state.level}|${state.view}`;
+  if (!frameCache.has(key)) frameCache.set(key, animFrames(id, stage, anim, wear, { anchors: state.anchors, level: state.level, view: state.view }));
   return frameCache.get(key);
 }
 
 const players = new Set();
 function play(canvas, frames, fps, scale) {
-  canvas.width = (RIG_W + 2) * scale;
-  canvas.height = (RIG_H + 2) * scale;
+  canvas.width = RIG_W * scale;
+  canvas.height = RIG_H * scale;
   const g = canvas.getContext('2d');
   g.imageSmoothingEnabled = false;
   const player = { canvas, g, frames, fps, scale, start: performance.now() + Math.random() * 400, shown: -1 };
@@ -90,6 +96,8 @@ function drawFilters() {
     .map(([k, label]) => `<button class="chip ${state.rarity === k ? 'on' : ''}" data-rarity="${k}">${label}</button>`).join('');
   $('#stage-filter').innerHTML = LIFE_STAGES.map((s) => `
     <button class="chip ${state.stage === s.key ? 'on' : ''}" data-stage="${s.key}">${s.name}<small>${s.fromWeek}+ tuần</small></button>`).join('');
+  $('#view-filter').innerHTML = RIG_VIEWS.map((v) => `
+    <button class="chip ${state.view === v ? 'on' : ''}" data-view="${v}">${VIEW_LABELS[v]}</button>`).join('');
 }
 
 // ---------------------------------------------------------------- bộ sưu tập
@@ -217,7 +225,7 @@ function drawDetail() {
 
   play(detail.querySelector('#big'), framesFor(sp.id, state.stage, state.anim, state.wear), RIG_ANIMS[state.anim].fps, 5);
   for (const c of detail.querySelectorAll('[data-life]')) {
-    const frame = drawFrame(sp, c.dataset.life, {}, state.wear, 0, { anchors: state.anchors, level: state.level });
+    const frame = drawFrame(sp, c.dataset.life, {}, state.wear, 0, { anchors: state.anchors, level: state.level, view: state.view });
     c.width = frame.width * 2;
     c.height = frame.height * 2;
     const g = c.getContext('2d');
@@ -225,7 +233,7 @@ function drawDetail() {
     g.drawImage(frame, 0, 0, c.width, c.height);
   }
   for (const c of detail.querySelectorAll('[data-form]')) {
-    const frame = drawFrame(sp, state.stage, {}, state.wear, 0, { level: Number(c.dataset.form) });
+    const frame = drawFrame(sp, state.stage, {}, state.wear, 0, { level: Number(c.dataset.form), view: state.view });
     c.width = frame.width * 2;
     c.height = frame.height * 2;
     const g = c.getContext('2d');
@@ -260,6 +268,9 @@ document.addEventListener('click', (e) => {
   } else if (d.stage) {
     state.stage = d.stage;
     render();
+  } else if (d.view) {
+    state.view = d.view;
+    render();
   } else if (d.species) {
     state.selected = d.species;
     for (const c of document.querySelectorAll('.lab-card')) c.classList.toggle('current', c === b);
@@ -285,6 +296,7 @@ $('#dress-all').addEventListener('change', (e) => {
 });
 
 $('#dress-all').checked = state.dressAll;
+$('#show-anchors').checked = state.anchors;
 render();
 startIcons();
 setFavicon('🐾');

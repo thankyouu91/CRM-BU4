@@ -299,7 +299,7 @@
    Thứ tự: hành động chính (Đeo / Tháo / Mở hộp / Sửa) → Nâng cấp → Bán nhanh. */
 .view .gear-card .foot { display: grid; grid-template-columns: minmax(0, 1fr); gap: 8px; align-items: stretch; }
 .view .gear-card .foot .btn {
-  width: 100%; min-height: 40px; margin: 0; justify-content: center;
+  width: 100%; min-height: calc(40px / var(--zoom, 1)); margin: 0; justify-content: center;
   white-space: normal; overflow-wrap: break-word; text-align: center; line-height: 1.2;
 }
 
