@@ -70,8 +70,8 @@ export function renderMap(root, ctx) {
           ${fortuneBanner(ctx.me.fortune)}
         </div>
       </div>
-      <section class="card quest-board" hidden></section>
       <div class="map-host"></div>
+      <section class="card quest-board" hidden></section>
     </div>`;
   const board = root.querySelector('.quest-board');
 
@@ -118,13 +118,13 @@ export function renderMap(root, ctx) {
     if (btn) open(btn.dataset.place);
   });
 
+  // Phố 16-bit tự thay danh sách nút khi ảnh đã nạp xong; nạp ảnh lỗi thì nó dùng bản đồ vẽ tay cũ (townmap.js).
   let map = null;
   let alive = true;
-  import('../townmap.js')
-    .then(({ mountTownMap }) => {
+  import('../town16.js')
+    .then(({ mountTown }) => {
       if (!alive) return;
-      host.replaceChildren();
-      map = mountTownMap(host, { places, onSelect: open });
+      map = mountTown(host, { places, onSelect: open });
     })
     .catch((err) => console.warn('Không nạp được bản đồ pixel, dùng danh sách nút.', err));
   return () => {

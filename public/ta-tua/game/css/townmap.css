@@ -92,3 +92,113 @@
   60% { transform: translateX(-3px); }
   80% { transform: translateX(3px); }
 }
+
+/* ---------- Phố 16-bit (town16.js) ----------
+   Canvas thế giới vẽ ở 1×, phóng nguyên lần (--s: 3 máy tính, 2 điện thoại). Khối .t16 bù lại zoom 0.9
+   của cả game để mỗi điểm ảnh ra đúng 3 (hoặc 2) điểm màn hình, không nhoè, không lệch cỡ. */
+.map-view > * { min-width: 0; }
+.t16 {
+  --s: 3;
+  position: relative; width: 100%; min-width: 0;
+  zoom: calc(1 / var(--zoom, 1));
+  user-select: none; -webkit-tap-highlight-color: transparent;
+}
+.t16-scroll {
+  position: relative; width: 100%; overflow-x: auto; overflow-y: hidden;
+  overscroll-behavior-x: contain; scrollbar-width: thin; scrollbar-color: var(--line-strong) transparent;
+  border: 2px solid var(--line-strong); border-radius: var(--radius); box-shadow: 0 6px 0 var(--line);
+  background: #4e9a45;
+}
+.t16-world { position: relative; }
+.t16-canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; image-rendering: pixelated; }
+.t16-ui { position: absolute; inset: 0; }
+
+/* Nút phủ đúng khung toà nhà; chip tên nổi trên nóc. */
+.t16-place {
+  position: absolute; margin: 0; padding: 0; border: 0; background: none; color: var(--ink);
+  font: inherit; cursor: pointer; border-radius: 12px;
+}
+.t16-place:focus { outline: none; }
+.t16-place:focus-visible { outline: 3px solid var(--pink-deep); outline-offset: 3px; z-index: 3; }
+.t16-place:hover, .t16-place.tip { z-index: 3; }
+.t16-chip {
+  --dx: 0px;
+  position: absolute; left: 50%; bottom: calc(100% + 4px - var(--drop, 0px)); transform: translateX(calc(-50% + var(--dx)));
+  display: flex; align-items: center; gap: 6px; white-space: nowrap;
+  padding: 1px 12px 0; border: 2px solid var(--line-strong); border-radius: 999px;
+  background: var(--surface); box-shadow: 0 3px 0 var(--line-strong);
+  font-family: var(--font-display); font-weight: 800; font-size: 18px; line-height: 1.45; color: var(--ink);
+  pointer-events: none;
+}
+.t16-chip::after {
+  content: ''; position: absolute; left: calc(50% - var(--dx)); bottom: -7px; width: 9px; height: 9px;
+  background: var(--surface); border-right: 2px solid var(--line-strong); border-bottom: 2px solid var(--line-strong);
+  transform: translateX(-50%) rotate(45deg);
+}
+.t16-badge {
+  padding: 0 8px; border-radius: 999px; background: var(--gold); color: var(--pearl);
+  box-shadow: inset 0 -2px 0 var(--gold-deep); font-size: 0.74em; line-height: 1.6;
+  animation: t16-pulse 1.6s ease-in-out infinite;
+}
+.t16-lock {
+  position: absolute; left: 50%; top: calc(var(--drop, 0px) + 12px); transform: translateX(-50%);
+  max-width: calc(100% + 24px); width: max-content; padding: 2px 9px; border-radius: 999px;
+  background: rgba(61, 42, 31, 0.88); color: #fffaf3; white-space: normal; text-align: center;
+  font-family: var(--font-body); font-weight: 800; font-size: 13px; line-height: 1.3; pointer-events: none;
+}
+.t16-place.locked .t16-chip { background: #ece6df; color: var(--muted); }
+.t16-place.locked .t16-chip::after { background: #ece6df; }
+.t16-place.shake .t16-chip { animation: t16-shake .4s linear; }
+.t16-place.tip .t16-lock { background: var(--pearl); outline: 2px solid var(--gold); }
+.t16-place:focus-visible .t16-chip { background: #fff1c2; border-color: var(--gold-deep); }
+.t16-place:focus-visible .t16-chip::after { background: #fff1c2; border-color: var(--gold-deep); }
+@media (hover: hover) {
+  .t16-place:hover .t16-chip, .t16-place:hover .t16-chip::after { background: #fff1c2; }
+  .t16-place.locked:hover .t16-chip, .t16-place.locked:hover .t16-chip::after { background: #f5efe8; }
+}
+
+/* Mũi tên cuộn (máy tính) và gợi ý "Vuốt ngang" (điện thoại, màn cảm ứng). */
+.t16-nav {
+  position: absolute; top: 50%; z-index: 4; width: 44px; height: 44px; margin-top: -22px; padding: 0 0 3px;
+  border: 2px solid var(--line-strong); border-radius: 50%; background: var(--surface); color: var(--tea-deep);
+  box-shadow: 0 3px 0 var(--line-strong); font: 800 28px/1 var(--font-display); cursor: pointer;
+}
+.t16-nav.prev { left: 10px; }
+.t16-nav.next { right: 10px; }
+.t16-nav:hover { background: #fff1c2; }
+.t16-nav:focus-visible { outline: 3px solid var(--pink-deep); outline-offset: 2px; }
+.t16-hint {
+  display: none; position: absolute; right: 10px; top: var(--hint-top, 10px); z-index: 4; margin: 0; padding: 3px 11px;
+  border: 2px solid var(--line-strong); border-radius: 999px; background: var(--surface); color: var(--ink);
+  box-shadow: 0 3px 0 var(--line-strong); font-family: var(--font-body); font-weight: 800; font-size: 13px;
+  pointer-events: none; transition: opacity .3s;
+}
+.t16-hint span { display: inline-block; animation: t16-nudge 1.4s ease-in-out infinite; }
+@media (hover: none), (pointer: coarse), (max-width: 767px) {
+  .t16-nav { display: none; }
+  .t16.t16-scrollable .t16-hint { display: block; }
+  .t16.t16-scrolled .t16-hint { opacity: 0; }
+}
+@media (max-width: 767px) {
+  /* Điện thoại: phần chào gọn lại để phố (2×) lọt gần trọn màn hình đầu. */
+  .map-view { gap: 10px; }
+  .map-intro h2 { font-size: 1.6rem; }
+  .map-intro p.muted { font-size: 0.92rem; line-height: 1.35; }
+  .map-intro .fortune-banner { margin-top: 6px; }
+  .t16-chip { font-size: 14px; padding: 0 10px; gap: 5px; }
+  .t16-chip::after { width: 8px; height: 8px; bottom: -6px; }
+  .t16-lock { font-size: 11.5px; padding: 1px 7px; }
+  .t16-scroll { border-radius: 16px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .t16-badge, .t16-hint span, .t16-place.shake .t16-chip { animation: none; }
+}
+
+@keyframes t16-pulse { 50% { transform: translateY(-2px); } }
+@keyframes t16-nudge { 50% { transform: translateX(3px); } }
+@keyframes t16-shake {
+  20% { transform: translateX(calc(-50% + var(--dx) - 4px)); }
+  40% { transform: translateX(calc(-50% + var(--dx) + 4px)); }
+  60% { transform: translateX(calc(-50% + var(--dx) - 3px)); }
+  80% { transform: translateX(calc(-50% + var(--dx) + 3px)); }
+}

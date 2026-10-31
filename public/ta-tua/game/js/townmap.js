@@ -1087,7 +1087,7 @@ function lightWindows(art, raw, k, chance) {
 }
 
 /** Vẽ toà `kind` lên canvas (KW+2)×(h+2+HEAD), chân toà ở hàng cuối. */
-function renderBuilding(kind, { locked, time, seed }) {
+export function renderBuilding(kind, { locked, time, seed }) {
   const h = HEIGHT[kind] ?? HEIGHT.filler;
   const k = kit(h, seed, locked);
   (BUILD[kind] ?? BUILD.filler)(k);
