@@ -2,7 +2,7 @@
 import { art } from './pixel.js';
 import { ART_PX, PETDEX_SHEET, guestSheet, rigSheet } from './petsheet.js';
 import { levelForm } from './shared/pets.js';
-import { DIRS, PHONE_QUERY, isPixelPerfect, petPx, resolveAnim } from './petmotion.js';
+import { DIRS, PHONE_QUERY, isPixelPerfect, petPx, resolveAnim, runPace } from './petmotion.js';
 
 export { ART_PX };
 export { PET_PX, isPixelPerfect } from './petmotion.js';
@@ -21,8 +21,11 @@ function loop(now) {
 }
 requestAnimationFrame(loop);
 motionMq.addEventListener('change', () => {
+  // refresh() bỏ qua bé đang vẫy tay, nhảy... (chạy một lần): hết lượt, update() tự về dáng `then` theo cờ mới.
   for (const sprite of live) sprite.refresh();
 });
+/** Hàng đi bốn hướng của sheet mới (Rig 2.0), phát nhanh hơn khi bé chạy trên sân (Sprite.runWalk). */
+const WALK_ROWS = new Set(DIRS.map((d) => `walk${d}`));
 
 /**
  * Một bé đang chạy hoạt ảnh. `sheet` là URL ảnh Petdex, hoặc một spritesheet
@@ -38,6 +41,7 @@ export class Sprite {
     this.dir = 'S'; // hướng đang nhìn: S / E / N / W
     this.side = 'E'; // hướng ngang gần nhất (sheet cũ chỉ có chạy sang phải / trái)
     this.want = null; // tên đã gọi play() ('walk', 'idle', 'wave'...), trước khi đổi ra hàng thật của sheet
+    this.runWalk = false; // chạy trên sân (công viên): hàng đi phát theo nhịp chạy của sheet (runPace)
     this.setSheet(sheet);
     this.play('idle');
     live.add(this);
@@ -48,8 +52,8 @@ export class Sprite {
     this.sheet = typeof sheet === 'string' ? { ...PETDEX_SHEET, url: sheet } : sheet;
     this.el.style.backgroundImage = this.sheet.url ? `url("${this.sheet.url}")` : 'none';
     this.el.classList.toggle('px', Boolean(this.sheet.pixelated));
+    this.refresh(); // sheet mới có thể có hàng khác (walkE, idleN...): chọn lại hàng cho tên đang chạy
     this.setScale(this.scale);
-    if (this.want && !this.once) this.refresh();
   }
 
   /** Đang chạy hoạt ảnh một lần (vẫy tay, nhảy...) thì chưa nên đổi sang dáng đi. */
@@ -81,9 +85,9 @@ export class Sprite {
     if (!this.once) this.refresh();
   }
 
-  /** Chọn lại hàng cho tên đã gọi (đổi hướng, đổi sheet, bật tắt giảm chuyển động). */
+  /** Chọn lại hàng cho tên đã gọi (đổi hướng, đổi sheet, bật tắt giảm chuyển động). Đang chạy một lần thì thôi. */
   refresh() {
-    if (this.want) this.play(this.want, { then: this.then });
+    if (this.want && !this.once) this.play(this.want, { then: this.then });
   }
 
   /**
@@ -108,7 +112,8 @@ export class Sprite {
   update(now) {
     const anim = this.sheet.anims[this.anim];
     if (!anim) return;
-    const step = this.once || !calm() ? Math.floor(((now - this.started) / 1000) * anim.fps) : 0;
+    const fps = this.runWalk && WALK_ROWS.has(this.anim) ? anim.fps * runPace(this.sheet.anims) : anim.fps;
+    const step = this.once || !calm() ? Math.floor(((now - this.started) / 1000) * fps) : 0;
     if (this.once && step >= anim.frames) {
       this.once = false;
       this.play(this.then);
@@ -156,8 +161,9 @@ phoneMq.addEventListener('change', () => {
  *   số nguyên điểm màn hình cho mỗi điểm ảnh gốc, `scale` bị bỏ qua. Sheet cũ vẫn dùng `scale` như trước.
  * - `screenPx`: bé nằm trong một thế giới đã phóng sẵn (công viên): số điểm màn hình cho mỗi điểm CSS của
  *   thế giới, hoặc hàm trả về số đó. Bỏ trống thì bé tự bù zoom của game (lớp .pp-zoom, như .t16 của phố).
+ * - `run`: bé chạy trên sân (công viên): hàng đi bốn hướng phát theo nhịp chạy của sheet (runPace, petmotion.js).
  */
-export function createPetFigure(species, scale, wear = {}, { stage = 'young', ageScale = 1, level = 1, px = 'card', screenPx = 0 } = {}) {
+export function createPetFigure(species, scale, wear = {}, { stage = 'young', ageScale = 1, level = 1, px = 'card', screenPx = 0, run = false } = {}) {
   const rig = Boolean(species?.rig);
   const looseScale = rig ? scale : scale * ageScale * levelForm(level).grow;
   const el = document.createElement('div');
@@ -171,6 +177,7 @@ export function createPetFigure(species, scale, wear = {}, { stage = 'young', ag
   body.className = 'pet-body';
   const sheetFor = (w) => (rig ? rigSheet(species.id, stage, w ?? {}, level) : species?.sprite ?? '');
   const sprite = new Sprite(sheetFor(wear), looseScale);
+  sprite.runWalk = run;
   body.append(sprite.el);
   el.append(shadow, body);
   let alive = true;

@@ -8,18 +8,25 @@ export const DIRS = ['S', 'E', 'N', 'W'];
 const isDir = (d) => DIRS.includes(d);
 const isSide = (d) => d === 'E' || d === 'W';
 
+/** Nhích ít hơn chừng này (đơn vị của dx, dy) coi như đứng yên, kể cả khi quay ngược chiều. */
+const NUDGE = 0.5;
+
 /**
  * Hướng từ véc-tơ di chuyển (dx, dy) theo trục trội, có trễ để đi chéo không giật qua lại:
  * đang đi ngang thì chỉ đổi sang dọc khi |dy| lớn hơn |dx| × `hysteresis` (và ngược lại).
- * Bước quá ngắn (dưới `minStep`) giữ nguyên hướng cũ.
+ * Bước quá ngắn (dưới `minStep`) không đổi trục: chỉnh vị trí cuối đường không làm bé quay ngang sang dọc.
+ * Nhưng bước ngắn ngược chiều trên cùng trục thì vẫn quay (E và W, S và N), để bé không đi giật lùi.
  */
 export function directionOf(dx, dy, prev = 'S', { hysteresis = 1.35, minStep = 0.5 } = {}) {
   const ax = Math.abs(dx);
   const ay = Math.abs(dy);
   const last = isDir(prev) ? prev : 'S';
-  if (!(Math.hypot(ax, ay) >= minStep)) return last;
   const side = dx > 0 ? 'E' : 'W';
   const updown = dy > 0 ? 'S' : 'N';
+  if (!(Math.hypot(ax, ay) >= minStep)) {
+    if (isSide(last)) return ax > ay && ax >= NUDGE ? side : last;
+    return ay > ax && ay >= NUDGE ? updown : last;
+  }
   if (isSide(last)) return ay > ax * hysteresis ? updown : side;
   return ax > ay * hysteresis ? side : updown;
 }
@@ -45,6 +52,18 @@ export function resolveAnim(anims, name, dir = 'S', side = 'E') {
     return has('idle') ? 'idle' : has('idleS') ? 'idleS' : null;
   }
   return has(name) ? name : null;
+}
+
+/**
+ * Nhịp bước khi bé chạy (công viên): Rig 2.0 có runRight / runLeft là chính hàng walkE / walkW phát nhanh hơn
+ * (14 so với 10 fps), để chân theo kịp tốc độ đi trên sân. Trả về tỉ lệ đó để mọi hàng đi (cả S / N) cùng nhịp.
+ * Sheet cũ (không có walkE, hoặc runRight là hàng riêng) trả về 1.
+ */
+export function runPace(anims) {
+  const walk = anims?.walkE;
+  const run = anims?.runRight;
+  if (!walk || !run || walk.row !== run.row || !(walk.fps > 0) || !(run.fps > 0)) return 1;
+  return run.fps / walk.fps;
 }
 
 /** Sheet có hướng thật (có hàng đi hoặc đứng theo hướng) thì quay bằng setDirection, không lật CSS. */

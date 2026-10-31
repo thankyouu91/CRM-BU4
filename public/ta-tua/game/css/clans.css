@@ -249,8 +249,10 @@
 .fighter { display: flex; flex-direction: column; align-items: center; gap: 2px; min-width: 0; transition: transform .15s, opacity .3s; }
 .fighter .fig { height: 62px; width: 100%; overflow: hidden; display: flex; align-items: flex-end; justify-content: center; }
 .fighter .fig .flip { transform: scaleX(-1); }
-/* Bé pixelPerfect ở 2x (PET_PX.arena): khung chứa đủ 42 điểm ảnh gốc; hai bên nhìn nhau bằng hàng E / W, không lật ảnh. */
+/* Bé pixelPerfect ở 2x (PET_PX.arena): khung chứa đủ 42 điểm ảnh gốc; hai bên nhìn nhau bằng hàng E / W, không lật ảnh.
+   Dáng nghiêng (E / W) rộng gần hết ô 48 điểm ảnh, nên mỗi cột rộng bằng cả ô (96 điểm màn hình): không cắt mất đuôi. */
 .fighter .fig:has(> .pet-figure.pp) { height: calc(84px / var(--zoom, 1)); }
+.arena-fighters:has(.pet-figure.pp) { grid-template-columns: repeat(auto-fill, minmax(calc(96px / var(--zoom, 1)), 1fr)); }
 .fighter .hp { width: 100%; height: 6px; border-radius: 4px; background: #c9b9a0; overflow: hidden; }
 .fighter .hp i { display: block; height: 100%; background: #3fa860; transition: width .4s; }
 .fighter small { font-size: .68rem; text-align: center; line-height: 1.1; overflow-wrap: anywhere; }
@@ -262,6 +264,8 @@
   .arena-side { padding: 6px; }
   .arena-fighters { grid-template-columns: repeat(auto-fill, minmax(52px, 1fr)); gap: 4px; }
   .fighter .fig { height: 56px; }
+  /* Bé pixelPerfect cần cột 96 điểm màn hình: hai bên xếp trên dưới để mỗi bên vẫn có vài bé một hàng. */
+  .arena-stage:has(.pet-figure.pp) { grid-template-columns: 1fr; }
 }
 
 /* ---------- bản đồ đất: kinh doanh trên từng lô ---------- */

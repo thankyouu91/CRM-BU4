@@ -168,9 +168,10 @@ export function mountPark(root, ctx) {
     e.data = player;
     e.figure?.destroy();
     // Sheet pixelPerfect: mỗi điểm ảnh của bé bằng đúng một điểm ảnh của cảnh (PET_PX.park); sheet cũ giữ BASE_SCALE.
+    // Bé đi trên sân nhanh (SPEED) nên bước theo nhịp chạy của sheet (run), chân đỡ trượt.
     e.figure = createPetFigure(speciesOf(player.pet.species), BASE_SCALE, player.pet.wear, {
       stage: player.pet.stage, ageScale: player.pet.scale, level: player.pet.level,
-      px: 'park', screenPx: () => pixelTarget() / PARK_PX,
+      px: 'park', screenPx: () => pixelTarget() / PARK_PX, run: true,
     });
     e.figure.setDirection(e.dir, e.side);
     e.el.insertBefore(e.figure.el, e.nameEl);
@@ -214,6 +215,7 @@ export function mountPark(root, ctx) {
       side: 'E', // hướng ngang gần nhất
       dustAt: 0,
       onArrive: null,
+      faceId: null, // tới nơi thì quay mặt về bé này (sau khi vuốt ve), máy nào cũng thấy như nhau
       bubbleTimer: 0,
       // Cư dân (chủ đang vắng) tự đi dạo quanh chỗ của mình; mỗi máy thấy một kiểu, không gửi lên máy chủ.
       home: at,
@@ -307,6 +309,10 @@ export function mountPark(root, ctx) {
         place(e);
       } else {
         if (e.figure.body.style.transform) e.figure.body.style.transform = '';
+        if (e.faceId) {
+          faceToward(e, entities.get(e.faceId));
+          e.faceId = null;
+        }
         if (!sprite.busy) sprite.play('idle'); // đứng nhìn theo hướng vừa đi (idleE/N/W nếu sheet có)
         if (e.onArrive) {
           const done = e.onArrive;
@@ -356,7 +362,15 @@ export function mountPark(root, ctx) {
     me.ly = to.y;
     walkTo(me, at.x, at.y);
     me.onArrive = onArrive;
+    me.faceId = null;
     socket.emit('pg:move', to);
+  }
+
+  /** Quay bé `e` sang trái / phải về phía bé `t`. */
+  function faceToward(e, t) {
+    if (!e || !t || Math.abs(t.x - e.x) <= 1) return;
+    e.dir = e.side = t.x > e.x ? 'E' : 'W';
+    e.figure.setDirection(e.dir);
   }
 
   /** Chạy tới cạnh bé kia rồi mới vuốt ve. */
@@ -367,13 +381,9 @@ export function mountPark(root, ctx) {
     const side = me.x < target.x ? -1 : 1;
     let x = target.x + side * CUDDLE_GAP;
     if (!nav.isOpen(x, target.y)) x = target.x - side * CUDDLE_GAP;
-    // Tới nơi thì quay mặt về phía bạn rồi mới vuốt ve.
+    // Tới nơi thì quay mặt về phía bạn rồi mới vuốt ve (máy khác quay theo khi nhận pg:fx).
     const faceThen = () => {
-      const t = entities.get(targetId);
-      if (t && Math.abs(t.x - me.x) > 1) {
-        me.dir = me.side = t.x > me.x ? 'E' : 'W';
-        me.figure.setDirection(me.dir);
-      }
+      faceToward(me, entities.get(targetId));
       action();
     };
     if (Math.hypot(me.x - x, me.y - target.y) < 12) return faceThen();
@@ -578,6 +588,7 @@ export function mountPark(root, ctx) {
     e.ly = y;
     const at = nav.toDisplay(x, y);
     walkTo(e, at.x, at.y);
+    e.faceId = null; // đi chỗ khác thì thôi quay về bạn
   });
 
   socket.on('pg:player', (player) => {
@@ -601,6 +612,10 @@ export function mountPark(root, ctx) {
 
   socket.on('pg:fx', ({ from, to, kind, icon }) => {
     if (kind === 'cuddle') {
+      // Bé vuốt ve quay về phía bạn trên mọi máy: máy này có thể còn đang chiếu bé đi nốt đoạn cuối, nên chờ tới nơi
+      // (step) mới quay. Máy của chính bé đã quay trong approach().
+      const cuddler = from !== selfId ? entities.get(from) : null;
+      if (cuddler) cuddler.faceId = to;
       entities.get(to)?.figure.sprite.play('jump', { once: true });
       entities.get(from)?.figure.sprite.play('wave', { once: true });
       particles(to, 0.75, { icon: 'heart', count: 6, spread: 80, rise: 70 });

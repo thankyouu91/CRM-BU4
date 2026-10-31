@@ -2,7 +2,7 @@
 // ra hàng có thật trên sheet mới (walkS/E/N/W, idleE/N/W) lẫn sheet cũ (idle, runRight, runLeft), và bảng cỡ số nguyên.
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { DIRS, PET_PX, directionOf, hasDirections, isPixelPerfect, petPx, resolveAnim } from '../../public/ta-tua/game/js/petmotion.js';
+import { DIRS, PET_PX, directionOf, hasDirections, isPixelPerfect, petPx, resolveAnim, runPace } from '../../public/ta-tua/game/js/petmotion.js';
 
 const row = { row: 0, frames: 6, fps: 10 };
 const OLD = Object.fromEntries(['idle', 'runRight', 'runLeft', 'wave', 'jump', 'sad', 'wait', 'busy', 'think', 'spin'].map((k) => [k, row]));
@@ -38,13 +38,29 @@ test('đi chéo không giật: phải vượt ngưỡng trễ mới đổi trụ
   assert.deepEqual([...seen], ['E']);
 });
 
-test('bước quá ngắn hoặc đứng yên giữ hướng cũ', () => {
+test('bước quá ngắn hoặc đứng yên giữ trục cũ', () => {
   assert.equal(directionOf(0, 0, 'N'), 'N');
-  assert.equal(directionOf(0.2, -0.1, 'W'), 'W');
-  assert.equal(directionOf(2, 0, 'W', { minStep: 3 }), 'W');
+  assert.equal(directionOf(0.2, -0.1, 'W'), 'W', 'nhích chưa tới nửa đơn vị: đứng yên');
   assert.equal(directionOf(4, 0, 'W', { minStep: 3 }), 'E');
+  // Bước ngắn (công viên: TURN_MIN = 18) không đổi trục: chỉnh vị trí cuối đường không làm bé quay lên / xuống.
+  assert.equal(directionOf(2, 10, 'E', { minStep: 18 }), 'E');
+  assert.equal(directionOf(-3, -12, 'W', { minStep: 18 }), 'W');
+  assert.equal(directionOf(12, 0, 'N', { minStep: 18 }), 'N');
+  assert.equal(directionOf(-12, 3, 'S', { minStep: 18 }), 'S');
   assert.equal(directionOf(Number.NaN, 1, 'E'), 'E');
   assert.equal(directionOf(5, 0, 'bogus'), 'E');
+});
+
+test('bước ngắn ngược chiều trên cùng trục vẫn quay: bé không đi giật lùi', () => {
+  assert.equal(directionOf(12, 0, 'W', { minStep: 18 }), 'E');
+  assert.equal(directionOf(-12, 0, 'E', { minStep: 18 }), 'W');
+  assert.equal(directionOf(2, 0, 'W', { minStep: 3 }), 'E');
+  assert.equal(directionOf(10, 6, 'W', { minStep: 18 }), 'E', 'ngang vẫn trội');
+  assert.equal(directionOf(6, 10, 'W', { minStep: 18 }), 'W', 'dọc trội: giữ hướng cũ');
+  assert.equal(directionOf(12, 0, 'E', { minStep: 18 }), 'E');
+  assert.equal(directionOf(6, -10, 'S', { minStep: 18 }), 'N');
+  assert.equal(directionOf(0, 12, 'N', { minStep: 18 }), 'S');
+  assert.equal(directionOf(0.1, -0.3, 'S', { minStep: 18 }), 'S', 'nhích chưa tới nửa đơn vị: đứng yên');
 });
 
 test('sheet mới: walk và idle theo đúng hướng', () => {
@@ -78,6 +94,15 @@ test('cảm xúc và tên cũ giữ nguyên; tên không có trả về null', (
   for (const k of ['wave', 'jump', 'sad', 'wait', 'busy', 'think', 'spin', 'runRight', 'runLeft']) assert.equal(resolveAnim(NEW, k, 'N'), k);
   assert.equal(resolveAnim(OLD, 'dance', 'S'), null);
   assert.equal(resolveAnim(undefined, 'idle', 'S'), null);
+});
+
+test('runPace: hàng đi phát theo nhịp chạy khi runRight là chính hàng walkE; sheet cũ giữ nhịp', () => {
+  const rig2 = { walkE: { row: 5, frames: 6, fps: 10 }, runRight: { row: 5, frames: 6, fps: 14 } };
+  assert.equal(runPace(rig2), 1.4);
+  assert.equal(runPace(OLD), 1, 'sheet cũ không có walkE');
+  assert.equal(runPace({ walkE: { row: 5, fps: 10 }, runRight: { row: 1, fps: 14 } }), 1, 'runRight là hàng riêng');
+  assert.equal(runPace({ walkE: { row: 5, fps: 0 }, runRight: { row: 5, fps: 14 } }), 1);
+  assert.equal(runPace(undefined), 1);
 });
 
 test('hasDirections chỉ đúng khi sheet có cả hàng E lẫn W (không bao giờ lật CSS sheet có W)', () => {
