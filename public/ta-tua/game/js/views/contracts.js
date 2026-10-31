@@ -1,6 +1,7 @@
 // Hợp đồng cung ứng: chốt giá với người chơi khác, mỗi nửa đêm hàng tự đi từ kho bên bán sang kho bên mua.
 import { api } from '../api.js';
 import { ago, countdown, esc, fmt, pct, viewHead } from '../ui.js';
+import { hasAtlasIcon, itemIcon } from '../itemart.js';
 
 /** Bản nháp đề xuất mới và trạng thái giao diện, giữ nguyên qua các lần vẽ lại. */
 const form = { counterpart: '', role: 'sell', commodity: '', lots: '1', price: '', days: '7' };
@@ -39,6 +40,11 @@ export function renderContracts(root, ctx) {
   let stopped = false;
 
   const com = (c) => commodities[c] ?? { name: c, icon: '📦' };
+  /** Icon 16-bit 32 điểm của mặt hàng `c` (atlas assets/items); chưa có hình thì emoji như cũ. */
+  const comIcon = (c) => itemIcon({ id: c, icon: com(c).icon }, 3, 1);
+  /** Emoji của mặt hàng chêm vào câu, chỉ khi hàng chưa có icon 16-bit: có rồi thì đầu thẻ (hay ô chọn hàng) đã vẽ
+   *  icon đó, chêm emoji cũ (hình khác hẳn) là một thứ ra hai hình. */
+  const glyph = (c) => (hasAtlasIcon(c) ? '' : ` ${com(c).icon}`);
   const stockLots = (c) => (data.goods[c] ?? 0) / lot;
   const lotsText = (n) => n.toLocaleString('vi-VN', { maximumFractionDigits: 1 });
   const breakShare = () => rules.breakShare ?? 0.1;
@@ -81,7 +87,7 @@ export function renderContracts(root, ctx) {
   function head(c) {
     const k = com(c.commodity);
     return `<header class="contract-head">
-      <span class="contract-icon">${k.icon}</span>
+      <span class="contract-icon">${comIcon(c.commodity)}</span>
       <div><b>${c.role === 'sell' ? 'Bán' : 'Mua'} ${esc(k.name)}</b> <small class="muted">#${c.id}</small><br>
         <small class="muted">${c.role === 'sell' ? 'cho' : 'của'} <b>${esc(c.partner)}</b></small></div>
       ${statusBadge(c)}
@@ -101,7 +107,7 @@ export function renderContracts(root, ctx) {
     const need = escrowFor(c.role, c.lots, c.price, c.days);
     const expired = c.expiresAt <= Date.now();
     const stock = c.role === 'sell'
-      ? `<li class="${stockLots(c.commodity) >= c.lots ? '' : 'down'}"><span>Kho của bạn</span><b>${lotsText(stockLots(c.commodity))} lô ${com(c.commodity).icon} (cần ${c.lots} lô mỗi đêm)</b></li>`
+      ? `<li class="${stockLots(c.commodity) >= c.lots ? '' : 'down'}"><span>Kho của bạn</span><b>${lotsText(stockLots(c.commodity))} lô${glyph(c.commodity)} (cần ${c.lots} lô mỗi đêm)</b></li>`
       : `<li><span>Mỗi đêm trả</span><b>${fmt(c.lots * c.price)} 🪙 (ví trước, thiếu thì trừ ký quỹ)</b></li>`;
     return `<article class="contract-card incoming">
       ${head(c)}
@@ -173,7 +179,7 @@ export function renderContracts(root, ctx) {
   function pastRow(c) {
     const k = com(c.commodity);
     return `<li class="contract-past">
-      <span class="contract-icon small">${k.icon}</span>
+      <span class="contract-icon small">${comIcon(c.commodity)}</span>
       <div><b>${c.role === 'sell' ? 'Bán' : 'Mua'} ${esc(k.name)}</b> <small class="muted">${c.role === 'sell' ? 'cho' : 'của'} ${esc(c.partner)} · ${c.lots} lô × ${fmt(c.price)} 🪙 × ${c.days} ngày
         ${c.status === 'done' || c.status === 'broken' ? ` · đã giao ${lotsText(c.delivered)} lô` : ''} · ${ago(c.createdAt)}</small></div>
       ${statusBadge(c)}
@@ -201,12 +207,11 @@ export function renderContracts(root, ctx) {
     const daily = lots * price;
     const escrow = escrowFor(form.role, lots, price, days);
     const coins = ctx.me.user.coins;
-    const k = com(form.commodity);
     const extra = form.role === 'sell'
       ? (() => {
         const have = stockLots(form.commodity);
         const nights = Math.floor(have / lots);
-        return `<li class="${nights >= days ? '' : 'down'}"><span>Kho của bạn</span><b>${lotsText(have)} lô ${k.icon} · đủ ${Math.min(nights, days)}/${days} đêm</b></li>`;
+        return `<li class="${nights >= days ? '' : 'down'}"><span>Kho của bạn</span><b>${lotsText(have)} lô${glyph(form.commodity)} · đủ ${Math.min(nights, days)}/${days} đêm</b></li>`;
       })()
       : `<li><span>Mỗi đêm cần sẵn</span><b>${fmt(daily)} 🪙 để nhận hàng</b></li>`;
     return `<ul class="pb-list">
@@ -228,6 +233,8 @@ export function renderContracts(root, ctx) {
     const market = data.prices[form.commodity] ?? 0;
     const [lo, hi] = band(form.commodity);
     const chip = (label, v) => `<button type="button" class="chip" data-ct-price="${v}">${label}</button>`;
+    // Ô chọn hàng: icon 16-bit của hàng đang chọn đứng cạnh (form vẽ lại khi đổi hàng). <option> chỉ chứa chữ, nên hàng
+    // đã có icon 16-bit thì bỏ emoji cũ khỏi tên, để hàng đang chọn không ra hai hình khác nhau.
     return `<form class="contract-form" data-ct-form>
       <label>Đối tác
         <input name="counterpart" list="ct-friends" maxlength="20" autocomplete="off" placeholder="Tên người chơi" value="${esc(form.counterpart)}" required />
@@ -238,9 +245,10 @@ export function renderContracts(root, ctx) {
         <button type="button" class="${form.role === 'buy' ? 'current buy' : ''}" data-ct-role="buy">Tôi mua</button>
       </div>
       <label>Mặt hàng
+        <span class="contract-pick"><span class="contract-icon small">${comIcon(form.commodity)}</span>
         <select name="commodity">${Object.entries(commodities).map(([id, k]) => `
-          <option value="${esc(id)}" ${id === form.commodity ? 'selected' : ''}>${k.icon} ${esc(k.name)} · ${fmt(data.prices[id] ?? 0)} 🪙/lô</option>`).join('')}
-        </select>
+          <option value="${esc(id)}" ${id === form.commodity ? 'selected' : ''}>${hasAtlasIcon(id) ? '' : `${k.icon} `}${esc(k.name)} · ${fmt(data.prices[id] ?? 0)} 🪙/lô</option>`).join('')}
+        </select></span>
       </label>
       <div class="contract-form-row">
         <label>Lô mỗi đêm <input name="lots" type="number" min="1" max="${rules.maxLots}" step="1" value="${esc(form.lots)}" required /></label>

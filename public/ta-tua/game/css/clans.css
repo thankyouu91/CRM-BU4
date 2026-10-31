@@ -181,6 +181,17 @@
 .recipe { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 2px; color: var(--muted); }
 .good-chip { display: inline-flex; align-items: center; gap: 1px; padding: 0 4px; border-radius: 8px; background: var(--surface-2); font-size: .8rem; }
 .good-chip b { font-size: .75rem; }
+/* Icon hàng 16-bit (itemart.js, .px-atlas 32x32 phóng 1x, đúng 32 điểm màn hình): ô bảng, ô giá, mỏ của lô,
+   chuỗi ngành, khung xem trước của lô. Thẻ ngành ở tab Gia tộc giữ emoji nhỏ (xem recipeLine trong clans.js). */
+.good-cell { display: inline-flex; align-items: center; gap: 6px; vertical-align: middle; }
+.good-chip.art { gap: 0; padding: 0 6px 0 0; border-radius: 10px; }
+.good-chip.art:not(:has(b)) { padding: 0; background: none; }
+.recipe-line { display: flex; flex-wrap: wrap; align-items: center; gap: 2px; width: 100%; }
+.recipe-name { width: 100%; }
+.good-row { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; }
+.trade-list li { display: flex; flex-wrap: wrap; align-items: center; gap: 0 4px; }
+/* Dòng bảng có icon hàng cao 32 điểm: số liệu các cột khác căn giữa theo icon, không treo ở mép trên. */
+.clan-table tr:has(.good-cell) > td { vertical-align: middle; }
 .plot-deposits { display: flex; flex-wrap: wrap; gap: 4px 8px; font-size: .85rem; }
 .plot-deposits small { width: 100%; }
 .prod-preview { display: grid; gap: 4px; font-size: .88rem; }
@@ -195,7 +206,7 @@
 .chain-node.held { border-color: var(--mint-deep); background: #eef9f5; }
 .chain-node .recipe { justify-content: flex-start; }
 .price-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(170px, 100%), 1fr)); gap: 4px 12px; font-size: .85rem; }
-.price-grid span { display: flex; justify-content: space-between; gap: 6px; }
+.price-grid > span { display: flex; justify-content: space-between; align-items: center; gap: 6px; }
 @media (max-width: 900px) { .chain { grid-template-columns: minmax(0, 1fr); } .chain-arrow { transform: rotate(90deg); justify-self: center; } }
 .infra-mine { display: grid; gap: 6px; margin-top: 8px; padding: 12px; border-radius: 14px; background: #eef9f5; border: 2px solid var(--mint-deep); }
 .infra-mine h4, .infra-mine p { margin: 0; }

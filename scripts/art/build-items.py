@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Dựng atlas icon đồ 16-bit (32x32) cho Siêu thị, Túi đồ, Bếp, Sàn, Lò rèn, Vườn, Nhà máy.
+"""Dựng atlas icon đồ 16-bit (32x32) cho Siêu thị, Túi đồ, Bếp, Sàn, Lò rèn, Vườn, Nhà máy, Gia tộc.
 
     python3 -I scripts/art/build-items.py S [--check]
 
@@ -11,8 +11,8 @@ Mỗi icon phải qua đủ các bước kiểm sau; sai một chỗ là script 
   - đúng 32x32, tên tệp là id (a-z, 0-9, _), id không trùng giữa các gói;
   - có đúng một mục trong manifest.json của gói (icon chỉ có mục rejected thì bị bỏ qua), status sample hoặc approved,
     và content_bbox của mục khớp với ảnh (ảnh bị sửa sau khi ghi manifest, hay còn đang vẽ dở, thì không khớp);
-  - có nguồn gốc: pixellab_id + prompt (ảnh PixelLab, ghi dòng giấy phép PixelLab), hoặc kind hand-built có tool
-    (giữ dòng giấy phép của mục, không gắn giấy phép PixelLab);
+  - có nguồn gốc: pixellab_id (uuid, hay danh sách uuid khi icon ghép từ nhiều lần sinh) + prompt (ảnh PixelLab, ghi dòng
+    giấy phép PixelLab), hoặc kind hand-built có tool (giữ dòng giấy phép của mục, không gắn giấy phép PixelLab);
   - status lấy từ mục của gói. Icon chỉ thành approved khi mục đã approved (có approved_by), hoặc khi gói có bản ghi
     duyệt trong PACKAGES và inputs_sha1 của bản ghi khớp đúng bộ tệp đang có: sửa hay thêm một icon sau khi duyệt
     là phải duyệt lại.
@@ -52,6 +52,7 @@ GAP = 1            # 1 px trong suốt quanh mỗi khung, để phóng to không
 COLS = 16          # 16 khung một hàng: trang rộng 16 * 33 + 1 = 529 px
 MAX_FILE = 200 * 1024
 ID_RE = re.compile(r'^[a-z0-9_]+$')
+UUID_RE = re.compile(r'^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$')
 
 # Gói được xếp vào atlas, theo đúng thứ tự này. Gói không có ở đây thì không được đọc, dù thư mục đã có trong S.
 #   name:     thư mục S/phase1/<name>/ (có pal/ và manifest.json)
@@ -64,7 +65,23 @@ PACKAGES = (
         'in_engine_reviewed': True,
         'inputs_sha1': 'd1a82d00497fd36c3c38731e65cfcf5964d548f9',   # 43 icon của phase1/items/pal
     }},
-    # Hàng gia tộc phase1/goods-a, goods-b, goods-c: đang vẽ (status sample, chưa duyệt), chưa xếp vào atlas.
+    # Hàng gia tộc (GOODS trong js/shared/industry.js), id good-<id>. Chủ dự án duyệt sau vòng phê bình của art director
+    # và lượt sửa (review/critique.txt, report.txt của từng gói); xem trong game ở màn Gia tộc, Hợp đồng, Cộng đồng.
+    {'name': 'goods-a', 'prefix': 'good', 'approved': {
+        'by': 'owner (design session, 2026-10-31)',
+        'in_engine_reviewed': True,
+        'inputs_sha1': 'c8960730deff59de63e01f2997b454fa2fc0417a',   # 15 icon khoáng sản, năng lượng thô
+    }},
+    {'name': 'goods-b', 'prefix': 'good', 'approved': {
+        'by': 'owner (design session, 2026-10-31)',
+        'in_engine_reviewed': True,
+        'inputs_sha1': '9b5609d2213543fdcef9a5baefc5d681b8a19d1d',   # 11 icon nông sản, gỗ, cao su, điện
+    }},
+    {'name': 'goods-c', 'prefix': 'good', 'approved': {
+        'by': 'owner (design session, 2026-10-31)',
+        'in_engine_reviewed': True,
+        'inputs_sha1': '102b45b55b0ee9dddd2fc3b7e9e0dd5465de2362',   # 15 icon hàng công nghiệp
+    }},
 )
 
 args = [a for a in sys.argv[1:] if not a.startswith('--')]
@@ -120,13 +137,21 @@ def entry_matches(e, stem):
 
 
 def provenance_of(entry, where):
-    """(provenance đã kèm giấy phép, lỗi hoặc None). PixelLab cần pixellab_id + prompt; tự vẽ cần kind hand-built + tool."""
+    """(provenance đã kèm giấy phép, lỗi hoặc None). PixelLab cần pixellab_id + prompt; tự vẽ cần kind hand-built + tool.
+    Icon ghép từ nhiều lần sinh (vd titan, urani: một khối đá + một chùm tinh thể) ghi pixellab_id là danh sách mã,
+    prompt là danh sách cùng độ dài, theo đúng thứ tự."""
     prov = entry.get('provenance')
     if not isinstance(prov, dict):
         return None, f'{where}: mục trong manifest.json không có provenance'
     prov = dict(prov)
     if prov.get('pixellab_id'):
-        if not prov.get('prompt'):
+        ids = prov['pixellab_id'] if isinstance(prov['pixellab_id'], list) else [prov['pixellab_id']]
+        if not all(isinstance(i, str) and UUID_RE.match(i) for i in ids):
+            return None, f'{where}: pixellab_id phải là mã PixelLab (uuid), hay danh sách mã khi icon ghép từ nhiều lần sinh'
+        prompt = prov.get('prompt')
+        if isinstance(prompt, list) and (len(prompt) != len(ids) or not all(isinstance(t, str) and t for t in prompt)):
+            return None, f'{where}: prompt là danh sách thì phải có đúng {len(ids)} câu, mỗi pixellab_id một câu'
+        if not prompt:
             return None, f'{where}: có pixellab_id nhưng thiếu prompt'
         prov['license'] = LICENSE
         return prov, None

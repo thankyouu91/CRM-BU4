@@ -38,7 +38,16 @@ test('item atlas: mọi khung là id có thật trong catalog', () => {
   const known = new Set([...Object.keys(ITEMS), ...Object.keys(DISHES), ...Object.keys(COMMODITIES), ...Object.keys(GOODS)]);
   const unknown = Object.keys(frames).filter((id) => !known.has(id));
   assert.deepEqual(unknown, [], 'tên tệp icon phải đúng id catalog');
-  assert.ok(Object.keys(frames).length >= 43);
+  assert.ok(Object.keys(frames).length >= 84);
+});
+
+// Màn Gia tộc (kho, sàn công nghiệp, chuỗi ngành, mỏ của lô) vẽ icon 16-bit cho mọi hàng gia tộc: thiếu khung nào thì
+// hàng đó lại hiện emoji cũ giữa các icon 16-bit. Mặt hàng Sàn (hợp đồng, dự án Hội) cũng vậy.
+test('item atlas: mọi hàng gia tộc (GOODS) và mọi mặt hàng Sàn đều có khung', () => {
+  const missing = [...Object.keys(GOODS), ...Object.keys(COMMODITIES)].filter((id) => !Object.hasOwn(frames, id));
+  assert.deepEqual(missing, [], 'hàng chưa có icon 16-bit trong atlas');
+  const goods = itemEntries().filter((a) => Object.hasOwn(GOODS, a.path.split('#')[1]));
+  assert.deepEqual(goods.map((a) => a.id).sort(), Object.keys(GOODS).map((id) => `good-${id}`).sort(), 'hàng gia tộc mang id good-<id> trong manifest');
 });
 
 test('item atlas: mọi khung nằm gọn trong trang, không chồng nhau, trang khớp tệp WebP thật', () => {
@@ -98,8 +107,12 @@ test('item atlas: mỗi icon đã được duyệt và có nguồn gốc, giấy
     if (a.status !== 'approved') problems.push(`${a.id}: status ${a.status}, chưa được duyệt`);
     if (!a.verification?.approved_by) problems.push(`${a.id}: thiếu verification.approved_by`);
     if (prov.pixellab_id) {
-      if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/.test(prov.pixellab_id)) problems.push(`${a.id}: pixellab_id lạ`);
-      if (!prov.prompt) problems.push(`${a.id}: ảnh PixelLab thiếu prompt`);
+      // Icon ghép từ nhiều lần sinh (titan, urani) ghi danh sách mã, kèm danh sách prompt cùng độ dài.
+      const ids = [prov.pixellab_id].flat();
+      const prompts = [prov.prompt].flat();
+      if (!ids.every((id) => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/.test(id))) problems.push(`${a.id}: pixellab_id lạ`);
+      if (!prompts.length || !prompts.every((t) => typeof t === 'string' && t)) problems.push(`${a.id}: ảnh PixelLab thiếu prompt`);
+      else if (Array.isArray(prov.prompt) && prompts.length !== ids.length) problems.push(`${a.id}: mỗi pixellab_id một prompt`);
       if (!/PixelLab ToS §1\.3, §3\.3/.test(prov.license ?? '')) problems.push(`${a.id}: thiếu dòng giấy phép PixelLab`);
     } else if (String(prov.kind ?? '').startsWith('hand-built') && prov.tool) {
       if (!prov.license || /pixellab/i.test(prov.license)) problems.push(`${a.id}: icon tự vẽ cần giấy phép riêng, không phải của PixelLab`);
