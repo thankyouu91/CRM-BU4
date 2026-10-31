@@ -10,10 +10,11 @@ import { INK, RAMPS, mAnd, mEllipse, mOr, mTri, oklab, part, pyRound } from '../
 const TUNE = {
   boba: { band: true },
   // Mũi heo (snout). Đĩa mũi mặc định theo dải bụng (như mõm): heo than hồng nhạt, heo đất màu đào (heo đất nung).
-  // nostril: màu lỗ mũi (bậc 0 của dải bụng nhạt quá ở 2x). mole: mũi chuột chũi, snout = dải của cục mũi (hồng như dữ liệu).
+  // nostril: màu lỗ mũi (bậc 0 của dải bụng nhạt quá ở 2x). mole: mũi chuột chũi, snout = dải của cục mũi (hồng như dữ liệu);
+  // lỗ mũi chuột chũi #6e2e24, khác bậc 0 #a84848 của dải 'pink'.
   heo_than: { nostril: '#a84848' },
   heo_dat: { nostril: '#5c3a24' },
-  chuot_chui: { snout: 'pink', nostril: '#a84848', mole: true },
+  chuot_chui: { snout: 'pink', nostril: '#6e2e24', mole: true },
 };
 const tune = (ctx) => TUNE[ctx.sp.id] ?? {};
 
@@ -180,8 +181,10 @@ const beak = {
 
 // ---- mũi heo (snout): đĩa mũi nhô ra, hai lỗ mũi. Heo: đĩa to bè giữa hai mắt; chuột chũi (TUNE mole): mõm kem thon
 // kéo xuống một cục mũi hồng nhỏ, nhìn ngang là mõm dài nhọn chúc xuống. Nhìn sau (N): đầu che hết mũi, không vẽ gì.
-// Đĩa mũi là khối riêng (nhóm 'snout', không phải 'head'): có nét trong bậc 0 của chính dải màu (vành đĩa) và đổ bóng
-// một bậc xuống đầu ngay dưới nó, nên đọc ra là nhô lên chứ không phải vệt sơn. Dải màu: TUNE snout, mặc định dải bụng.
+// Nhìn trước: đĩa mũi (và cục mũi chuột chũi) cùng nhóm 'head', tô sáng theo khối riêng đặt giữa đĩa, nên phần lớn là bậc
+// giữa/sáng, nhạt hơn đầu (đĩa nhô lên); vành vẽ tay: hai bên bậc 1, đáy bậc 0 như bóng đổ, không có vành trên (vành kín bốn
+// phía nhìn như vòng tối, như miệng chữ O). Lỗ mũi khác bậc 0 của dải mũi (TUNE nostril). Nhìn ngang: ống mũi là khối riêng
+// (nét trong tự động ở chỗ nối đầu), chóp sáng. Dải màu: TUNE snout, mặc định dải bụng.
 
 /** Khung bao của một mặt nạ: { x0, y0, x1, y1 } (tính cả), hoặc null. */
 function maskBox(m) {
@@ -226,26 +229,42 @@ const snout = {
       // sống mũi kem từ giữa hai mắt xuống, cục mũi hồng ở cuối
       const bridge = mOr(mEllipse(hcx, eyeY + 1.0, 2.0, 2.6), mEllipse(hcx, eyeY + 2.8, 3.3, 2.1));
       ctx.parts.push(part('muzzle', mAnd(ctx.headMask, bridge), ctx.ramps.belly, ctx.zh + 0.1, { group: 'head', normal: ctx.hnrm }));
+      // cục mũi: cùng nhóm 'head' nên KHÔNG có vành nét trong tự động (vành bậc 0 #a84848 phủ gần hết cục mũi nhỏ, nhìn thành
+      // đốm đỏ sẫm); tô sáng theo khối của chính nó (phần lớn hồng #f4a3b4, sáng #ffd1dc trên-trái), một hàng đáy bậc 1 vẽ tay
       const ny = eyeY + 2.6 + (big ? 0.3 : 0);
-      const nose = mAnd(ctx.headMask, mEllipse(hcx, ny, 2.6, 1.7, 0, 2.2));
-      ctx.parts.push(part('snout', nose, ramp, ctx.zh + 0.12, { normal: [hcx - 1, ny - 1.2, 3.4, 2.6] }));
+      const nose = mAnd(ctx.headMask, mEllipse(hcx, ny, big ? 2.4 : 2.9, 1.6, 0, 2.2));
+      ctx.parts.push(part('snout', nose, ramp, ctx.zh + 0.12, { group: 'head', normal: [hcx - 0.4, ny - 0.3, 3.6, 2.6] }));
       const b = maskBox(nose);
       if (!b) return; // đầu lạ không chứa nổi mũi: thôi vẽ, không lỗi
-      const r = b.y0 + 1;
+      const R = RAMPS[ramp];
+      for (let x = b.x0; x <= b.x1; x++) if (nose[b.y1 * 48 + x] && nose[(b.y1 - 1) * 48 + x]) P.push([x, b.y1, R[1], 19.5]);
+      const r = b.y1 - 1;
       P.push([mx - 2, r, nos, 20], [mx + 1, r, nos, 20]);
       mouthS(ctx, mx, Math.min(b.y1 + 1, chinAt(ctx, mx) - 2));
       return;
     }
+    // đĩa mũi heo: 4 hàng, cùng nhóm 'head' (không có vành nét trong tự động, vành kín bốn phía nhìn như vòng tròn tối,
+    // như cái miệng chữ O); khối sáng riêng đặt giữa đĩa nên phần lớn đĩa là bậc giữa/sáng (nhạt hơn đầu: đĩa nhô lên),
+    // vành vẽ tay chỉ ở hai bên (bậc 1) và đáy (bậc 0, như bóng đổ dưới đĩa)
     const srx = Math.max(2.9, hrx * 0.33);
-    const sry = Math.max(1.9, hry * 0.215);
-    const sy = eyeY + 2.3 + (big ? 0.3 : 0);
+    const sry = Math.max(2.1, hry * 0.24);
+    const sy = eyeY + 2.4 + (big ? 0.3 : 0);
     const disc = mAnd(ctx.headMask, mEllipse(hcx, sy, srx, sry, 0, 2.6));
-    ctx.parts.push(part('snout', disc, ramp, ctx.zh + 0.12, { normal: [hcx - 1.2, sy - 1.6, srx + 1.2, sry + 1.8] }));
+    ctx.parts.push(part('snout', disc, ramp, ctx.zh + 0.12, { group: 'head', normal: [hcx - 0.2, sy - 0.5, srx + 2.6, sry + 2.4] }));
     const b = maskBox(disc);
     if (!b) return;
+    const R = RAMPS[ramp];
+    const at = (x, y) => x >= 0 && x < 48 && y >= 0 && y < 48 && disc[y * 48 + x];
+    for (let y = b.y0 + 1; y <= b.y1; y++) {
+      for (let x = b.x0; x <= b.x1; x++) {
+        if (!at(x, y)) continue;
+        if (!at(x, y + 1)) P.push([x, y, R[0], 19.5]);
+        else if (!at(x - 1, y) || !at(x + 1, y)) P.push([x, y, R[1], 19.5]);
+      }
+    }
     // lỗ mũi: hai vạch dọc đối xứng qua trục, cách vành 1 điểm (đĩa hẹp: sát vành)
     const inset = b.x1 - b.x0 + 1 >= 8 ? 2 : 1;
-    const rows = b.y1 - b.y0 + 1 >= 5 ? [b.y0 + 1, b.y0 + 2] : [b.y0 + 1];
+    const rows = b.y1 - b.y0 + 1 >= 4 ? [b.y0 + 1, b.y0 + 2] : [b.y0 + 1];
     for (const y of rows) P.push([b.x0 + inset, y, nos, 20], [b.x1 - inset, y, nos, 20]);
     mouthS(ctx, mx, Math.min(b.y1 + 1, chinAt(ctx, mx) - 2));
   },
@@ -275,10 +294,10 @@ const snout = {
     const sx = hcx + hrx - 0.4;
     const sy = eyeY + 2.4;
     const tube = mEllipse(sx, sy, 2.4, 2.1, 0, 3.0);
-    ctx.parts.push(part('snout', tube, ramp, ctx.zh + 0.2, { normal: [sx - 1.6, sy - 1.6, 3.4, 3.0] }));
+    ctx.parts.push(part('snout', tube, ramp, ctx.zh + 0.2, { normal: [sx - 0.6, sy - 0.8, 3.8, 3.4] }));
     const b = maskBox(tube);
     // mặt đĩa nhìn nghiêng: cột chóp sáng một bậc, lỗ mũi trên mặt đĩa
-    for (let y = b.y0 + 1; y < b.y1; y++) P.push([b.x1, y, RAMPS[ramp][2], 19.5]);
+    for (let y = b.y0 + 1; y < b.y1; y++) P.push([b.x1, y, RAMPS[ramp][3], 19.5]);
     P.push([b.x1, pyRound(sy) - 1, nos, 20], [b.x1 - 1, pyRound(sy) - 1, nos, 20]);
     const my = b.y1 + 1;
     if (ctx.pose.mouth === 'open') P.push([b.x1 - 2, my, D, 20], [b.x1 - 3, my, D, 20], [b.x1 - 3, my + 1, '#e84a5f', 20]);
