@@ -52,4 +52,12 @@ export default {
     '......ss..', '.....ss...', '.....s....', 'LLLLLsLLLL', '.tttttttt.', '.twtttttt.', '.twtttttt.',
     '.tttttttt.', '.tpptpptt.', '..pptppt..', '..pppppp..', '...pppp...',
   ], { s: '#ff8fb1', L: '#e9eef5', t: '#e8c49a', w: '#fff3e0', p: '#3d2a1f' }],
+  '🔥': ['fire', 'Lửa', [
+    '....r.....', '....rr....', '...rrr..r.', '..rrorr.r.', '..rroorrr.', '.rrooorrr.',
+    '.rroyyorrr', 'rrooyyyorr', 'rroyyyyorr', 'rroyyyyorr', '.rrooyoor.', '..rrrrrr..',
+  ], { r: '#e84a5f', o: '#f39b4a', y: '#ffd75e' }],
+  '🏷': ['price-tag', 'Nhãn giá', [
+    '...ttttttttt', '..tttttttttT', '.ttkkttttttT', 'tttkkttttttT', 'tttttttttttT', '.tttttttttTT',
+    '..ttttttTTTT', '...TTTTTTTTT',
+  ], { t: '#f6d79a', T: '#d9a85c', k: '#2e1d14' }],
 };
