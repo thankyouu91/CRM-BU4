@@ -352,6 +352,9 @@
 .lm16-stage.heat > .lm16-ground { visibility: hidden; }
 .lm16-sky { transition: opacity .3s; }
 .lm16-stage:has(.plot.sel) .lm16-sky { opacity: .3; }
+/* Từ 2× mây to bằng vài lô: làm mờ để không che mã lô và huy hiệu. */
+.zin .lm16-sky { opacity: .45; }
+.zin .lm16-stage:has(.plot.sel) .lm16-sky { opacity: .25; }
 /* lưới: giữ độ đậm vạch kem như trước (.5 máy tính, .62 điện thoại); vạch 1 điểm và bóng mực 2 điểm ở 1× */
 .lm16-stage .land-svg .lm-grid-line { stroke-width: 1.5; }
 .lm16-stage .land-svg .lm-grid-shade { stroke-width: 3; stroke-opacity: .34; }
