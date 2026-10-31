@@ -3,6 +3,8 @@
 //   node scripts/art/build-wear.mjs <art folder>
 // Each item: layer, keys (one character -> palette colour), views { S, E, N } (+ small for baby/kid, big for the
 // big-eye face stages): rows drawn WITHOUT the outer outline, pivot = the pixel that lands on the slot anchor.
+// Integrator keys (build-wear.mjs tables): lag (halo), drape (D4: over a quad in E), openTop (head top stays
+// free), icon (bag/shop icon view when not S).
 // N may be null (the item cannot be seen from behind). W is the mirrored E frame. Rules: rig2/wear/stamp.js.
 export default {
   beret: {
@@ -85,6 +87,7 @@ export default {
   },
   bow: {
     layer: 'front',
+    openTop: true,
     keys: { H: '#ffd1dc', P: '#f4a3b4', p: '#d9708a', d: '#a84848' },
     views: {
       S: {
@@ -381,6 +384,7 @@ export default {
   },
   flower: {
     layer: 'front',
+    openTop: true,
     keys: { H: '#ffd1dc', P: '#f4a3b4', p: '#d9708a', d: '#a84848', Y: '#f4c24f', y: '#d79c1c', G: '#8fcf6a', g: '#4e9a45', k: '#3e7a3f' },
     views: {
       S: {
@@ -461,7 +465,8 @@ export default {
   },
   halo: {
     layer: 'behind',
-    lag: 3,
+    lag: 2,
+    openTop: true,
     keys: { H: '#fffaf3', h: '#fff3c4', Y: '#f4c24f', D: '#d79c1c' },
     views: {
       S: {

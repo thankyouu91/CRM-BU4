@@ -3,6 +3,8 @@
 //   node scripts/art/build-wear.mjs <art folder>
 // Each item: layer, keys (one character -> palette colour), views { S, E, N } (+ small for baby/kid, big for the
 // big-eye face stages): rows drawn WITHOUT the outer outline, pivot = the pixel that lands on the slot anchor.
+// Integrator keys (build-wear.mjs tables): lag (halo), drape (D4: over a quad in E), openTop (head top stays
+// free), icon (bag/shop icon view when not S).
 // N may be null (the item cannot be seen from behind). W is the mirrored E frame. Rules: rig2/wear/stamp.js.
 export default {
   angel: {
@@ -132,6 +134,8 @@ export default {
   },
   aotoi: {
     layer: 'behindNfront',
+    drape: true,
+    icon: 'N',
     keys: { k: '#8a5a34', s: '#9b6238', S: '#b87d4b', h: '#dcb07c', H: '#ecd2a2', g: '#4e9a45', D: '#3e7a3f' },
     views: {
       S: {
@@ -222,6 +226,7 @@ export default {
   },
   backpack: {
     layer: 'behindNfront',
+    icon: 'N',
     keys: { r: '#6e2e24', t: '#8c3f2a', T: '#b4643a', o: '#f39b4a', k: '#7a4e2c', K: '#9b6238', c: '#c8915f', C: '#dcb07c', y: '#d79c1c', Y: '#f4c24f' },
     views: {
       S: {
@@ -579,6 +584,8 @@ export default {
   },
   cape: {
     layer: 'behindNfront',
+    drape: true,
+    icon: 'N',
     keys: { K: '#b87d4b', y: '#d79c1c', Y: '#f4c24f', W: '#fff3c4', r: '#6e2e24', t: '#8c3f2a', T: '#b4643a', o: '#f39b4a' },
     views: {
       S: {
@@ -1086,6 +1093,8 @@ export default {
   },
   starcape: {
     layer: 'behindNfront',
+    drape: true,
+    icon: 'N',
     keys: { n: '#2f6f9a', b: '#3f8fc0', g: '#8a5a34', y: '#d79c1c', Y: '#f4c24f', W: '#fff3c4' },
     views: {
       S: {
@@ -1176,6 +1185,8 @@ export default {
   },
   wavecape: {
     layer: 'behindNfront',
+    drape: true,
+    icon: 'N',
     keys: { b: '#3f8fc0', B: '#58b9d6', l: '#8fd0e8', f: '#bfe3f2', F: '#eef8fb', t: '#2f7f73', T: '#4fae93', m: '#8fd3bf' },
     views: {
       S: {

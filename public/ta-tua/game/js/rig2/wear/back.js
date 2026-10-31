@@ -3,6 +3,9 @@
 // (scripts/art/build-wear.mjs). Luật đặt (wear/stamp.js): chốt rơi vào (floor(x), floor(y)) của ctx.sk.anchors.back (vai;
 // nhìn ngang: sau lưng, thú bốn chân thì dời lên gần cổ, WEAR-SPEC D4); "small" cho bé sơ sinh và nhí nhố.
 // Lớp "behindNfront": S/E vẽ TRƯỚC pet (chỉ lộ cánh, mép áo choàng), N vẽ sau cùng (đè lên lưng và chân đầu).
+// Áo choàng, áo tơi (`drape`, WEAR-SPEC D4): thú bốn chân nhìn ngang thì vẽ SAU pet, phủ lưng từ gáy tới mông.
+// Nhìn ngang, đồ lưng vẽ dưới pet vẫn nằm trên phần ĐUÔI thò ra ngoài thân (sóc, chim xòe đuôi: index.js backOverTail).
+// Hình túi đồ (wearIcon): áo choàng, áo tơi, ba lô lấy hình N (cả món), các món khác hình S.
 // "over" (WEAR-SPEC D1, nếu một hướng có): phần ôm trước ngực (quai ba lô, dây áo choàng) vẽ ngay SAU thân pet, trước khăn,
 // kính, mũ, có viền riêng, cằm che. Không thò xuống dưới hàng chân, không chạm mép trái/phải.
 // Món nào thiếu dữ liệu thì dùng hình cũ của rig.js (LEGACY) ở cả 3 hướng.

@@ -94,12 +94,14 @@ export function animFrames(species, stageKey, anim, wear = {}, opts = {}) {
 
 const wearCanvas = new Map();
 /**
- * Hình món `id` đúng như vẽ lên người (hướng S), dạng canvas cỡ 1x (Túi đồ, Siêu thị, Nhà/thay đồ dùng làm biểu tượng):
- * với 55 món của gói vẽ phase 2 đó là hình dán S đã viền #2e1d14 (rig2/wear/data, wearIcon); null nếu chưa có hình.
- * opts.grow: như wearIcon (món vẽ theo bộ xương thì rộng ra; hình dán cố định thì không đổi).
+ * Hình món `id` đúng như vẽ lên người, dạng canvas cỡ 1x (Túi đồ, Siêu thị, Nhà/thay đồ dùng làm biểu tượng): với 55 món
+ * của gói vẽ phase 2 đó là hình dán đã viền #2e1d14 (rig2/wear/data, wearIcon) ở hướng biểu tượng của món: S, trừ áo
+ * choàng, áo tơi, ba lô, khăn quàng (N: thấy cả món); null nếu chưa có hình.
+ * opts.grow: như wearIcon (món vẽ theo bộ xương thì rộng ra; hình dán cố định thì không đổi); opts.view: ép hướng
+ * ('S' cho bé khách mời nhìn trước: đồ lưng vẽ sau người chỉ lộ dải hai bên như trên pet).
  */
 export function wearImage(id, opts = {}) {
-  const key = `${id}|${opts.grow ?? 1}`;
+  const key = `${id}|${opts.grow ?? 1}|${opts.view ?? ''}`;
   if (!wearCanvas.has(key)) {
     const icon = wearIcon(id, opts);
     wearCanvas.set(key, icon ? toCanvas(icon.img) : null);
@@ -109,8 +111,9 @@ export function wearImage(id, opts = {}) {
 
 /**
  * Góc trên-trái để đặt hình wearImage(`id`) khi biết các điểm neo (`anchors`: { head: { x, y }, ... }).
- * Dùng cho bé khách mời Petdex (điểm neo dò từ ảnh). Hình đã gồm độ lún của món; món đội đầu lệch một bên (nơ, hoa cài)
- * thì lệch theo `headRx` (nửa bề ngang đầu của chính bé khách mời) như luật cũ: neo + side × headRx + lún − chốt.
+ * Dùng cho bé khách mời Petdex (điểm neo dò từ ảnh). Chốt của hình là đúng điểm mà luật đặt của khe đặt món trên pet
+ * (wearIcon pivot), hình đã gồm độ lún của món. Hình cũ dự phòng đội đầu lệch một bên (nơ, hoa cài) thì lệch theo
+ * `headRx` (nửa bề ngang đầu của chính bé khách mời) như luật cũ: neo + side × headRx + lún − chốt.
  * opts: như wearImage (phải giống nhau để chốt khớp hình).
  */
 export function wearSpotAt(id, anchors, headRx, opts = {}) {

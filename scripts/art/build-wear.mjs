@@ -17,7 +17,8 @@
 //     item (baby/kid), "big" for every face item (big-eye stages), no "big" outside face, no "small" in face;
 //   - rows are rectangular and use only their item's keys; every pivot is a pixel inside its rows;
 //   - "layer" is front | behind | behindNfront; "over" (WEAR-SPEC D1) only on back views; "earsOver" only on head items;
-//   - the flutter rows (WEAR-SPEC D3, named in the neck report) exist in the item's E rows.
+//   - the flutter rows (WEAR-SPEC D3, named in the neck report) exist in the item's E rows;
+//   - the integrator tables below (LAG, DRAPE, ICON, OPEN_TOP) name items of the right slot and views that exist.
 // Output is deterministic: items sorted by id, fixed layout, so a rebuild from the same JSON gives the same bytes.
 import { existsSync, readFileSync, readdirSync, writeFileSync } from "node:fs";
 import { join, resolve } from "node:path";
@@ -41,8 +42,28 @@ const FLUTTER = {
   scarf: { views: [3, 5], small: [3, 4] },
   leafscarf: { views: [3, 7], small: [3, 5] },
 };
-/** wear-head/report.txt "JUMP": the halo trails the head by up to this many px when the pet jumps (floats). */
-const LAG = { halo: 3 };
+/**
+ * wear-head/report.txt "JUMP": the halo trails the head by up to this many px when the pet jumps (floats). The artist
+ * asked for 2-3; 2 keeps a 1 px gap over the head at the jump apex (the ring floats 3 px above the head top).
+ */
+const LAG = { halo: 2 };
+/**
+ * WEAR-SPEC D4: drapes that lie over the back. On a quad seen from the side (E, and W = mirrored E) the renderer draws
+ * them OVER the pet from the shoulder anchor, so the cape covers the back from the nape to the rump; drawn behind a
+ * long quad body only a collar and a hem tab showed. Bipeds, birds, round and serpent bodies keep the item's layer.
+ */
+const DRAPE = new Set(["aotoi", "cape", "starcape", "wavecape"]);
+/**
+ * Bag/shop icon view (wearIcon). Default S, the drawing seen on the pet from the front. For these the S stamp is only
+ * the strip that peeks out around the body (a flat bar as an icon), while N shows the whole item: capes and the pack
+ * from behind (WEAR-SPEC: back items "are seen fully in N"), the scarf's band with both tails.
+ */
+const ICON = { aotoi: "N", backpack: "N", cape: "N", scarf: "N", starcape: "N", wavecape: "N" };
+/**
+ * Head items that leave the top of the head free (the halo floats above it, the flower and bow sit at the side). The
+ * renderer exposes this as ctx.headTopCovered, so head-top features (sprout, flame, ...) can stay visible under them.
+ */
+const OPEN_TOP = new Set(["bow", "flower", "halo"]);
 
 const { WEARABLES } = await import(pathToFileURL(join(GAME, "shared/pets.js")).href);
 const { PALETTE, INK } = await import(pathToFileURL(join(GAME, "rig2/core.js")).href);
@@ -99,6 +120,10 @@ export function validateItem(slot, d, file = d?.id) {
     }
     for (const v of Object.keys(set)) if (!VIEWS.includes(v)) err(`${vn}: unknown view "${v}" (W is the mirrored E)`);
   }
+  const icon = ICON[d.id];
+  if (icon && !d.views?.[icon]) err(`icon view ${icon} is missing or null`);
+  if (DRAPE.has(d.id) && slot !== "back") err(`drape (WEAR-SPEC D4) is for back items only`);
+  if (OPEN_TOP.has(d.id) && slot !== "head") err(`openTop is for head items only`);
   const fl = FLUTTER[d.id];
   if (fl) {
     for (const [vn, [a, b]] of Object.entries(fl)) {
@@ -169,6 +194,9 @@ function runtimeItem(slot, d) {
   const out = { layer: d.layer ?? DEFAULT_LAYER[slot] };
   if (d.earsOver) out.earsOver = true;
   if (LAG[d.id]) out.lag = LAG[d.id];
+  if (DRAPE.has(d.id)) out.drape = true;
+  if (OPEN_TOP.has(d.id)) out.openTop = true;
+  if (ICON[d.id]) out.icon = ICON[d.id];
   out.keys = Object.fromEntries(Object.entries(d.keys).map(([k, c]) => [k, c.toLowerCase()]));
   out.views = set("views");
   if (d.small) out.small = set("small");
@@ -197,6 +225,8 @@ export function moduleText(slot, items) {
     "//   node scripts/art/build-wear.mjs <art folder>",
     "// Each item: layer, keys (one character -> palette colour), views { S, E, N } (+ small for baby/kid, big for the",
     "// big-eye face stages): rows drawn WITHOUT the outer outline, pivot = the pixel that lands on the slot anchor.",
+    "// Integrator keys (build-wear.mjs tables): lag (halo), drape (D4: over a quad in E), openTop (head top stays",
+    "// free), icon (bag/shop icon view when not S).",
     "// N may be null (the item cannot be seen from behind). W is the mirrored E frame. Rules: rig2/wear/stamp.js.",
     "export default {",
   ];
@@ -205,6 +235,9 @@ export function moduleText(slot, items) {
     out.push(`  ${id}: {`, `    layer: ${q(it.layer)},`);
     if (it.earsOver) out.push("    earsOver: true,");
     if (it.lag) out.push(`    lag: ${it.lag},`);
+    if (it.drape) out.push("    drape: true,");
+    if (it.openTop) out.push("    openTop: true,");
+    if (it.icon) out.push(`    icon: ${q(it.icon)},`);
     out.push(`    keys: { ${Object.entries(it.keys).map(([k, c]) => `${/^[A-Za-z_$]$/.test(k) ? k : q(k)}: ${q(c)}`).join(", ")} },`);
     for (const vn of ["views", "small", "big"]) {
       if (!it[vn]) continue;

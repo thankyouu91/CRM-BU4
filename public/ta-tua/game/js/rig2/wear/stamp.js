@@ -8,8 +8,9 @@
 //    thôi: lỗ kín (tròng kính, lỗ mắt mặt nạ) để trống cho thấy mắt (báo cáo khe mặt, luật 1). Các khe khác viền cả lỗ kín
 //    (ngọc bội, đồng xu, nan quạt: báo cáo khe cổ luật 4, khe bùa), đúng pad_outline của rig2.py.
 //  - "pivot" là điểm ảnh của hình rơi đúng điểm neo của khe ở khung này (ctx.sk.anchors), làm tròn theo từng khe:
-//      đầu  : (floor(x + .5), floor(y + .5)) của neo đầu; đỉnh hình không lên quá hàng 1 khi nhảy (đẩy xuống); món có
-//             `lag` (vầng hào quang) trễ sau đầu tối đa chừng ấy px khi bé nhảy lên.
+//      đầu  : (floor(x + .5), floor(y + .5)) của neo đầu; món có `lag` (vầng hào quang) trễ sau đầu tối đa chừng ấy px
+//             khi bé nhảy lên (lag 2: vòng vẫn lơ lửng cách đầu 1 px ở đỉnh cú nhảy). Món KHÔNG bị đẩy xuống khi nhảy:
+//             nhảy cao mà đỉnh mũ chạm mép trên thì renderFrame (index.js) hạ cả cú nhảy, bé và mũ lên xuống cùng nhau.
 //      mặt  : theo Ô MẮT, không theo neo thô: Y = floor(eyeY − eh/2 + .5) (hàng trên của mắt, mắt 2×3 hoặc 3×4);
 //             X = pyRound(neo mặt x) ở S/N, floor(neo mặt x − ew/2 + .5) ở E; X += pose.look ở S và E (mắt liếc thì kính
 //             liếc theo), không ở N.
@@ -19,9 +20,13 @@
 //             cùng neo, vẽ SAU thân pet (trước khăn, kính, mũ), có viền riêng, cằm che.
 //      bùa  : (pyRound(x), pyRound(y)) của neo bùa, nhún xuống 1 px khi tick % 4 ≥ 2.
 //  - "layer": front (vẽ trên pet), behind (vẽ dưới pet), behindNfront (dưới pet ở S/E, trên pet ở N). index.js đọc
-//    entry.layer cho MỌI khe (WEAR-SPEC D6).
+//    entry.layer cho MỌI khe (WEAR-SPEC D6). Thêm (bảng của build-wear.mjs): `drape` (áo choàng, áo tơi: thú bốn chân
+//    nhìn ngang thì vẽ TRÊN pet, WEAR-SPEC D4), `openTop` (món đầu chừa đỉnh đầu: ctx.headTopCovered = false), `icon`
+//    (hướng của hình túi đồ khi không phải S).
 //  - An toàn: món lưng, cổ, bùa không thò xuống dưới hàng chân (cắt và viền lại mép cắt; bùa thì nâng lên), món lưng và
-//    bùa không chạm mép trái/phải. Với 55 món đã duyệt trên 4 loài mẫu thì các chốt này không đổi điểm ảnh nào.
+//    bùa không chạm mép trái/phải. Các chốt này CÓ đổi vài điểm ảnh trên 4 loài mẫu: hàng cuối của huy chương "small"
+//    (S) và đuôi khăn quàng "small" (N) ở bé sơ sinh chạm hàng chân nên bị cắt và viền lại (1-2 px; họa sĩ khe cổ có thể
+//    rút ngắn một hàng để chốt không còn tác dụng).
 import { FH, FW, INK, blit, newBuf, outline, pyRound, stamp } from '../core.js';
 import { blitClipped } from './common.js';
 
@@ -81,22 +86,23 @@ export function variantOf(slot, item, sk) {
 }
 
 const cache = new Map();
-/** Hình đã viền { pic, pivot: [x, y] trong hình đã viền, top: hàng đục đầu tiên } của một hướng (lưu sẵn). */
+/** Hình đã viền { pic, pivot: [x, y] trong hình đã viền } của một hướng (lưu sẵn). */
 function outlined(slot, id, vn, view, part, vd, keys, f) {
   const key = `${slot}|${id}|${vn}|${view}|${part}|${f}`;
   if (!cache.has(key)) {
     const rows = f ? flutterRows(vd.rows, vd.flutter, f) : vd.rows;
     const raw = stamp(rows, keys);
     const pic = slot === 'face' ? outerOutline(raw) : padRing(raw);
-    let top = 0;
-    while (top < pic.h && !pic.data.subarray(top * pic.w * 4, (top + 1) * pic.w * 4).some((v, i) => i % 4 === 3 && v)) top++;
-    cache.set(key, { pic, pivot: [vd.pivot[0] + 1, vd.pivot[1] + 1 + (f ? 1 : 0)], top });
+    cache.set(key, { pic, pivot: [vd.pivot[0] + 1, vd.pivot[1] + 1 + (f ? 1 : 0)] });
   }
   return cache.get(key);
 }
 
-/** Điểm ảnh (nguyên) mà chốt của hình rơi vào, theo luật của khe. */
-function anchorPixel(slot, ctx) {
+/**
+ * Điểm ảnh (nguyên) mà chốt của hình rơi vào, theo luật của khe (ctx: sk, view, pose của khung). wearIcon (index.js)
+ * dùng đúng điểm này làm chốt của hình túi đồ, để bé khách mời Petdex đặt món y như khi vẽ lên pet.
+ */
+export function anchorPixel(slot, ctx) {
   const { sk, view, pose } = ctx;
   const [ax, ay] = sk.anchors[slot];
   if (slot === 'face') {
@@ -123,13 +129,13 @@ export function drawItem(slot, id, item, ctx, img, part = 'main') {
   if (part === 'over') vd = vd?.over;
   if (!vd) return false;
   const f = v === 'E' && vd.flutter ? Math.max(-1, Math.min(1, Math.round(pose.flutter ?? 0))) : 0;
-  const { pic, pivot, top } = outlined(slot, id, vn, v, part, vd, item.keys, f);
+  const { pic, pivot } = outlined(slot, id, vn, v, part, vd, item.keys, f);
   const [px, py] = anchorPixel(slot, ctx);
   let x = px - pivot[0];
   let y = py - pivot[1];
   if (slot === 'head') {
+    // Vầng hào quang trễ sau đầu khi nhảy. Không đẩy món xuống ở đây: renderFrame hạ cả cú nhảy nếu đỉnh món chạm mép.
     if (item.lag) y += Math.min(item.lag, Math.max(0, -Math.round(pose.lift ?? 0)));
-    y = Math.max(y, 1 - top); // nhảy cao: đỉnh món đội đầu không lên quá hàng 1
     blit(img, pic, x, y);
   } else if (slot === 'face') {
     blit(img, pic, x, y);
@@ -150,15 +156,19 @@ export function drawItem(slot, id, item, ctx, img, part = 'main') {
 export const hasOver = (item) => ['views', 'small', 'big'].some((vn) => ['S', 'E', 'N'].some((v) => item[vn]?.[v]?.over));
 
 /**
- * Mục sổ đăng ký cho món có dữ liệu: { S, E, N, layer, earsOver, over?, data }.
- * index.js đọc `layer` (vẽ dưới hay trên pet ở hướng này), gọi `over` ngay sau pet, và `earsOver` (khe đầu, chỉ hướng S,
- * loài tai mèo hai bên đầu: vẽ lại tai lên trên mũ chóp, mũ nồi, mũ lưỡi trai).
+ * Mục sổ đăng ký cho món có dữ liệu: { S, E, N, layer, earsOver, drape, openTop, icon, over?, data }.
+ * index.js đọc `layer` (vẽ dưới hay trên pet ở hướng này), `drape` (thú bốn chân nhìn ngang: vẽ trên pet, D4), gọi
+ * `over` ngay sau pet, `earsOver` (khe đầu, chỉ hướng S, loài tai mèo hai bên đầu: vẽ lại tai lên trên mũ chóp, mũ nồi,
+ * mũ lưỡi trai), `openTop` (món đầu chừa đỉnh đầu) và `icon` (hướng vẽ hình túi đồ, mặc định S).
  */
 export function dataEntry(slot, id, item) {
   const draw = (ctx, img) => {
     drawItem(slot, id, item, ctx, img, 'main');
   };
-  const entry = { S: draw, E: draw, N: draw, layer: item.layer, earsOver: Boolean(item.earsOver), data: item };
+  const entry = {
+    S: draw, E: draw, N: draw, layer: item.layer, earsOver: Boolean(item.earsOver), drape: Boolean(item.drape),
+    openTop: Boolean(item.openTop), icon: item.icon ?? 'S', data: item,
+  };
   if (hasOver(item)) entry.over = (ctx, img) => drawItem(slot, id, item, ctx, img, 'over');
   return entry;
 }

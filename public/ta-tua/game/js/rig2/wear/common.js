@@ -10,7 +10,8 @@
 //    ctx.view: 'S' | 'E' | 'N' (hướng 'W' được vẽ bằng 'E' rồi lật cả khung, đừng tự lật);
 //    ctx.pose, ctx.tick (số khung, cho món đung đưa), ctx.sk (đầu, thân, mắt, mặt đất: xem skeleton.js), ctx.ramps,
 //    ctx.chin (mặt nạ cằm, khe cổ; null ở hướng N và trong wearIcon).
-//  - Hình biểu tượng (túi đồ, cửa hàng, bé khách mời) luôn là hình S của món, do wearIcon() trong index.js tự cắt.
+//  - Hình biểu tượng (túi đồ, cửa hàng, bé khách mời) là hình S của món (món có dữ liệu `icon` thì hướng đó, ví dụ áo
+//    choàng lấy hình N), do wearIcon() trong index.js tự cắt.
 // Món chưa có dữ liệu dùng hình cũ của rig.js (LEGACY trong từng file khe), đã ép về bảng màu và viền #2e1d14,
 // hiện ở cả S và E (W = E lật) để bé đi bộ trong công viên vẫn mặc đủ đồ đã mua; luật từng khe xem legacyEntry.
 // Món lưng, cổ, bùa không bao giờ thò xuống dưới mặt đất (ctx.sk.ground): bé sơ sinh và nhí nhố người thấp; món lưng và

@@ -6,8 +6,10 @@
 // Thứ tự ghép một khung (bản mẫu pets-pilot, proposal.txt mục 4; đồ đeo theo WEAR-SPEC D1, D2, D6):
 //   bộ phận: đuôi → tai → thân (dáng khung) → đầu → mặt → hoa văn → đặc điểm → dấu hiệu; mắt và nét mặt là điểm tô thẳng
 //   → tô bóng (colourise) → viền #2e1d14
-//   Đồ đeo có "layer" (wear/stamp.js): front = trên pet, behind = dưới pet, behindNfront = dưới pet ở S/E, trên pet ở N.
-//   S/E: hào quang → đồ DƯỚI pet (lưng, bùa, rồi đầu/mặt/cổ nếu có: vầng hào quang) → PET → phần "over" của đồ lưng
+//   Đồ đeo có "layer" (wear/stamp.js): front = trên pet, behind = dưới pet, behindNfront = dưới pet ở S/E, trên pet ở N;
+//   áo choàng, áo tơi (`drape`) trên thú bốn chân nhìn ngang: trên pet (WEAR-SPEC D4, phủ lưng từ gáy).
+//   S/E: hào quang → đồ DƯỚI pet (lưng, bùa, rồi đầu/mặt/cổ nếu có: vầng hào quang) → PET (nhìn ngang: đồ lưng dưới pet
+//        vẽ lại lên phần đuôi thò ra ngoài thân, backOverTail) → phần "over" của đồ lưng
 //        (quai ba lô) → thân cốc → đồ cổ (cằm che) → ống hút + tay ôm cốc → đồ mặt → đồ đầu (tai mèo vẽ lại lên mũ có
 //        earsOver, chỉ S) → bùa (nếu trên pet) → đốm sáng
 //   N:   hào quang → đồ DƯỚI pet → PET → đồ mặt → đồ cổ → đồ đầu → đồ lưng (+ over) → bùa → đốm sáng
@@ -16,7 +18,7 @@ import { LEVEL_FORMS, SPECIES_BY_ID, WEARABLES, formIndex } from '../shared/pets
 import {
   FH, FW, INK, NPX, PALETTE, PIVOT, RAMPS, bbox, colourise, crop, groupMask, inPalette, mAbove, mAnd, mirror, newBuf, outline, over, pyRound, setPx,
 } from './core.js';
-import { clearStampCache } from './wear/stamp.js';
+import { anchorPixel, clearStampCache } from './wear/stamp.js';
 import { MARKS } from './marks.js';
 import { rampsOf } from './ramps.js';
 import { ANIMS, ARCHETYPES, animPoses, archetypeOf, lookOf, skeleton } from './skeleton.js';
@@ -40,8 +42,13 @@ const WEAR_FOR = { head: headFor, face: faceWearFor, neck: neckFor, back: backFo
 export const wearEntry = (slot, id) => (id && WEAR_FOR[slot] ? WEAR_FOR[slot](id) : null);
 /** Lớp mặc định của khe khi mục không ghi `layer` (hình cũ dự phòng): đồ lưng dưới pet ở S/E, trên pet ở N. */
 const DEFAULT_LAYER = { head: 'front', face: 'front', neck: 'front', back: 'behindNfront', charm: 'front' };
-/** Món ở khe `slot` vẽ TRÊN pet ở hướng `v` (S/E/N) không. */
-export const wearInFront = (slot, entry, v) => {
+/**
+ * Món ở khe `slot` vẽ TRÊN pet ở hướng `v` (S/E/N) không. `arch`: mã dáng khung của pet (skeleton.js ARCHETYPES):
+ * áo choàng, áo tơi (`drape`) trên thú bốn chân nhìn ngang thì vẽ trên pet, phủ lưng từ gáy tới mông (WEAR-SPEC D4:
+ * neo lưng đã dời lên vai; vẽ dưới thân dài thì chỉ lộ cổ áo và một mẩu vạt sau mông).
+ */
+export const wearInFront = (slot, entry, v, arch) => {
+  if (entry?.drape && arch === 'quad' && v === 'E') return true;
   const layer = entry?.layer ?? DEFAULT_LAYER[slot];
   return layer === 'front' || (layer === 'behindNfront' && v === 'N');
 };
@@ -121,8 +128,18 @@ export function makeCtx(sp, st, sk, view, pose = {}, wear = {}, opts = {}) {
     sp, st, sk, view, pose, wear: wear ?? {}, tick: opts.tick ?? 0, level, form: formIndex(level),
     ramps: rampsOf(sp), parts: [], pixels: [], held: { pixels: [], parts: [] },
     zh: arch.headZ(view), hnrm: [hcx - 1.0, hcy - 1.5, hrx + 1.2, hry + 1.6], headMask: null,
-    handsBusy: Boolean(featureFor(sp.feature).holds), chin: null,
+    handsBusy: Boolean(featureFor(sp.feature).holds), chin: null, headTopCovered: headTopCovered(wear?.head),
   };
+}
+
+/**
+ * ctx.headTopCovered: bé đang đội một món che ĐỈNH đầu (vương miện, mũ...). false khi không đội gì hoặc món chừa đỉnh
+ * đầu (`openTop`: vầng hào quang lơ lửng phía trên, hoa cài và nơ ở một bên), để đặc điểm trên đỉnh đầu (mầm lá, ngọn
+ * lửa...) chỉ giấu khi thật sự bị che. Hình cũ dự phòng coi như che.
+ */
+function headTopCovered(id) {
+  const e = id && WEARABLES[id]?.slot === 'head' ? wearEntry('head', id) : null;
+  return Boolean(e) && !e.openTop;
 }
 
 /** Bước 1 của pipeline: gom bộ phận của pet vào ctx.parts / ctx.pixels (đặt luôn ctx.headMask, ctx.held). */
@@ -131,6 +148,7 @@ function collectParts(ctx, marks) {
   const arch = archetypeOf(sp);
   const feature = featureFor(sp.feature);
   tailFor(sp)[v](ctx);
+  ctx.tailParts = [0, ctx.parts.length]; // để vẽ đồ lưng lên phần đuôi thò ra ngoài thân (backOverTail)
   const e0 = ctx.parts.length;
   earsFor(sp.ears)[v](ctx);
   ctx.earParts = [e0, ctx.parts.length]; // để vẽ lại tai lên mũ (earsOver)
@@ -170,15 +188,24 @@ function draw(sp, st, view, pose, wear, opts, level) {
     const e = WEARABLES[id]?.slot === slot ? wearEntry(slot, id) : null;
     if (e) worn[slot] = e;
   }
-  const front = (slot) => worn[slot] && wearInFront(slot, worn[slot], v);
-  const drawSlot = (slot) => {
-    worn[slot][v](ctx, img);
-    if (slot === 'head' && v === 'S' && worn.head.earsOver && EARS_OVER.has(sp.ears)) earsOverHat(ctx, img, pet);
+  const front = (slot) => worn[slot] && wearInFront(slot, worn[slot], v, sk.arch);
+  const drawSlot = (slot, dst = img) => {
+    worn[slot][v](ctx, dst);
+    if (slot === 'head' && v === 'S' && worn.head.earsOver && EARS_OVER.has(sp.ears)) earsOverHat(ctx, dst, pet);
   };
   if (marks) MARKS.behind(ctx, img);
   // Đồ dưới pet: xa nhất trước (lưng), rồi bùa, rồi món đầu/mặt/cổ có layer behind (vầng hào quang).
-  for (const slot of ['back', 'charm', 'head', 'face', 'neck']) if (worn[slot] && !front(slot)) drawSlot(slot);
+  // Đồ lưng dưới pet ở hướng ngang vẽ riêng một lớp để sau đó đè lên phần đuôi thò ra ngoài thân (backOverTail).
+  const backBehindE = v === 'E' && worn.back && !front('back') ? newBuf() : null;
+  for (const slot of ['back', 'charm', 'head', 'face', 'neck']) {
+    if (!worn[slot] || front(slot)) continue;
+    if (slot === 'back' && backBehindE) {
+      drawSlot('back', backBehindE);
+      over(img, backBehindE);
+    } else drawSlot(slot);
+  }
   over(img, pet);
+  if (backBehindE) backOverTail(ctx, img, backBehindE, pet);
   if (v === 'N') {
     for (const slot of ['face', 'neck', 'head', 'back']) if (front(slot)) drawSlot(slot);
     worn.back?.over?.(ctx, img);
@@ -242,6 +269,29 @@ function overMasked(dst, src, mask) {
 }
 
 /**
+ * Nhìn ngang, đồ lưng vẽ dưới pet (cánh, ba lô, áo choàng trên dáng không phải bốn chân) nằm TRÊN phần đuôi thò ra ngoài
+ * thân: đuôi to (sóc, gấu mèo đỏ, chim xòe đuôi) mọc ở mông, xa người xem hơn món đeo ở vai, và nếu vẽ đè thì che mất cả
+ * món. Ở những điểm chỉ có đuôi (pet khác với pet bỏ đuôi, và bỏ đuôi thì ở đó trống hoặc là viền của thân), lấy hình
+ * "món lưng dưới pet bỏ đuôi" (`layer` = lớp món lưng): món phủ lên đuôi, viền của thân vẫn nằm trên món. Đuôi vắt
+ * trước thân giữ nguyên. Bùa không theo luật này (bùa nấp sau đuôi, báo cáo khe bùa).
+ */
+function backOverTail(ctx, img, layer, pet) {
+  const [a, b] = ctx.tailParts ?? [0, 0];
+  if (b <= a) return;
+  const bare = outline(colourise([...ctx.parts.slice(0, a), ...ctx.parts.slice(b)], ctx.pixels));
+  const ink = [1, 3, 5].map((i) => parseInt(INK.slice(i, i + 2), 16));
+  for (let k = 0; k < NPX; k++) {
+    const i = k * 4;
+    if (!layer.data[i + 3] || !pet.data[i + 3]) continue;
+    if ([0, 1, 2, 3].every((c) => pet.data[i + c] === bare.data[i + c])) continue; // không phải điểm của đuôi
+    const isInk = bare.data[i + 3] && ink.every((c, j) => bare.data[i + j] === c);
+    if (bare.data[i + 3] && !isInk) continue; // đuôi vắt trước thân ở đây
+    const src = isInk ? bare : layer;
+    for (let c = 0; c < 4; c++) img.data[i + c] = src.data[i + c];
+  }
+}
+
+/**
  * earsOver (khe đầu, chỉ hướng S, tai mèo hai bên đầu): vẽ lại tai của pet (kèm viền) lên trên mũ chóp, mũ nồi, mũ lưỡi
  * trai. Mặt nạ tai = những điểm của pet thay đổi khi bỏ phần tai (như hw.py ear_mask của họa sĩ).
  */
@@ -274,41 +324,47 @@ export function renderAnim(species, stage, anim, view = 'S', wear = {}, opts = {
 
 const iconCache = new Map();
 /**
- * Hình món `id` đúng như vẽ lên người ở hướng S (trên Boba trưởng thành, không có pet), cắt sát. Với món có dữ liệu
- * (gói vẽ phase 2) đó chính là hình dán S đã viền, cỡ 1x (đồ mặt: viền bóng ngoài, tròng kính để trống):
- * { img, pivot: [x, y], lean } với pivot = vị trí điểm neo khe của món trong hình (để đặt món lên bé khách mời) và
- * lean = { side, dx } khi món đội đầu lệch sang một bên theo bề ngang đầu (nơ, hoa cài: hình cũ có `side`), để bé khách
- * mời lệch theo đầu của chính bé (wearSpotAt trong rig.js). Hàm vẽ món nhận đủ ctx như khi vẽ lên pet (makeCtx), trừ
- * ctx.chin = null (hình biểu tượng không bị cằm che). Món vẽ lỗi thì trả về null (túi đồ hiện ô trống), không ném lỗi.
- * opts.grow: vẽ trên Boba to hơn chừng ấy lần (cỡ người, như dáng theo cấp): món vẽ theo bộ xương (khăn quàng) rộng ra,
- * hình cũ cố định thì không đổi. Bé khách mời Petdex dùng cho khe cổ (petsheet.js guestSheet).
+ * Hình món `id` đúng như vẽ lên người (trên Boba trưởng thành, không có pet), cắt sát, cỡ 1x: hình dán đã viền (đồ mặt:
+ * viền bóng ngoài, tròng kính để trống) ở hướng `icon` của món: S (nhìn trước) trừ món mà hình S chỉ là dải ló ra quanh
+ * người (áo choàng, áo tơi, ba lô: N, thấy cả món; khăn quàng: N, dải khăn và hai đuôi). opts.view ép một hướng ('S',
+ * 'E', 'N'), ví dụ bé khách mời Petdex nhìn trước muốn hình S của đồ lưng.
+ * Trả về { img, pivot: [x, y], lean, view } với pivot = điểm ảnh của hình rơi đúng chỗ luật đặt của khe đặt nó trên pet
+ * (wear/stamp.js anchorPixel: đầu, cổ floor(x + .5); mặt theo ô mắt; lưng floor; bùa pyRound) để đặt món lên bé khách
+ * mời, và lean = { side, dx } (chỉ hình cũ dự phòng: nơ, hoa cài lệch theo bề ngang đầu; hình dữ liệu đặt cố định theo
+ * chốt như trên pet, nên side 0). Hàm vẽ món nhận đủ ctx như khi vẽ lên pet (makeCtx), trừ ctx.chin = null (hình biểu
+ * tượng không bị cằm che). Món vẽ lỗi thì trả về null (túi đồ hiện ô trống), không ném lỗi.
+ * opts.grow: vẽ trên Boba to hơn chừng ấy lần (cỡ người, như dáng theo cấp): món vẽ theo bộ xương rộng ra, hình dán cố
+ * định thì không đổi (cả 55 món hiện nay). Bé khách mời Petdex dùng cho khe cổ (petsheet.js guestSheet).
  */
-export function wearIcon(id, { grow = 1 } = {}) {
-  const key = `${id}|${grow}`;
-  if (iconCache.has(key)) return iconCache.get(key);
+export function wearIcon(id, { grow = 1, view } = {}) {
   const slot = WEARABLES[id]?.slot;
   const e = slot && wearEntry(slot, id);
+  const v = ['S', 'E', 'N'].includes(view) ? view : e?.icon ?? 'S';
+  const key = `${id}|${grow}|${v}`;
+  if (iconCache.has(key)) return iconCache.get(key);
   let out = null;
   if (e) {
     try {
       const sp = SPECIES_BY_ID.boba;
       const adult = lookOf('adult');
       const st = grow === 1 ? adult : { ...adult, scale: adult.scale * grow };
-      const sk = skeleton(sp, st, 'S', {});
-      const ctx = makeCtx(sp, st, sk, 'S', {}, { [slot]: id });
+      const sk = skeleton(sp, st, v, {});
+      const ctx = makeCtx(sp, st, sk, v, {}, { [slot]: id });
       collectParts(ctx, false);
       const img = newBuf();
-      e.S(ctx, img);
+      e[v](ctx, img);
       e.over?.(ctx, img);
       const b = bbox(img);
       if (b) {
         const [ax, ay] = sk.anchors[slot];
-        const side = slot === 'head' ? (e.def?.side ?? 0) : 0;
+        const [px, py] = e.legacy ? [pyRound(ax), pyRound(ay)] : anchorPixel(slot, ctx);
+        const side = e.legacy && slot === 'head' ? (e.def?.side ?? 0) : 0;
         const dx = side ? pyRound(ax + (e.def.dx ?? 0) + side * sk.head[2]) - pyRound(ax + (e.def.dx ?? 0)) : 0;
         out = {
           img: crop(img, b.x0, b.y0, b.x1 - b.x0 + 1, b.y1 - b.y0 + 1),
-          pivot: [pyRound(ax) - b.x0, pyRound(ay) - b.y0],
+          pivot: [px - b.x0, py - b.y0],
           lean: { side, dx },
+          view: v,
         };
       }
     } catch (err) {

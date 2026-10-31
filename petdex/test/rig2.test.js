@@ -3,9 +3,10 @@
 //   cùng bố cục với ảnh của bản mẫu pets-pilot (petdex/test/golden/rig2/README.txt ghi những chỗ cố ý khác).
 //   Vẽ lại ảnh mẫu SAU KHI đã xem kỹ: RIG2_UPDATE_GOLDEN=1 node --test petdex/test/rig2.test.js
 // - Khói: mọi loài × mọi giai đoạn tuổi × mọi hướng vẽ được, đúng bảng 48 màu, không điểm bán trong suốt, không chạm mép ô,
-//   chân ở hàng 44; mọi món đồ đeo vẽ được ở mọi hướng, trong ô (6 giai đoạn tuổi, đi bộ, nhảy, liếc mắt), và hiện ra ở
-//   S và E/W; lớp đồ đeo và luật đặt của gói vẽ phase 2 (WEAR-SPEC D1-D6, báo cáo từng khe); wearIcon cho đúng hình dán S
-//   của món và đưa cho hàm vẽ đủ ctx như khi vẽ lên pet; dữ liệu đồ đeo qua được scripts/art/build-wear.mjs --check.
+//   chân ở hàng 44; mọi món đồ đeo vẽ được ở mọi hướng, trong ô (6 giai đoạn tuổi, đi bộ, nhảy, liếc mắt), và hiện ra
+//   (ít nhất 8 điểm) ở S và E trên cả 51 loài × sơ sinh/nhí nhố/trưởng thành; lớp đồ đeo và luật đặt của gói vẽ phase 2
+//   (WEAR-SPEC D1-D6, báo cáo từng khe) tính lại độc lập từ dữ liệu; wearIcon cho đúng hình dán của món (hướng `icon`)
+//   và đưa cho hàm vẽ đủ ctx như khi vẽ lên pet; dữ liệu đồ đeo qua được scripts/art/build-wear.mjs --check.
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
@@ -140,8 +141,8 @@ test('khói: mọi dáng hoạt ảnh của mọi loài (trưởng thành, cấp
 
 // Mọi món ở trong ô (ARTIST-GUIDE mục 3, 9; WEAR-SPEC) trên 3 dáng khung (biped Boba, quad Mèo Bạc, bird Cánh Cụt) × 6 giai
 // đoạn tuổi × 4 hướng, ở khung đi bộ có nhún (step 1, lift −1), khăn lay (flutter 1) và tick 2 (bùa nhún xuống thấp nhất);
-// thêm đỉnh cú nhảy (lift −6: món đội đầu bị đẩy xuống cho khỏi chạm mép) và mắt liếc (think: look ±1) ở bé sơ sinh và
-// trưởng thành, nhìn S và E; và bé lão làng cấp 50 to nhất.
+// thêm đỉnh cú nhảy (lift −6: món đội đầu lên cùng đầu, renderFrame hạ cả cú nhảy cho khỏi chạm mép) và mắt liếc (think:
+// look ±1) ở bé sơ sinh và trưởng thành, nhìn S và E; và bé lão làng cấp 50 to nhất.
 const WEAR_SPECIES = ['boba', 'meo_bac', 'canh_cut'];
 const STAGE_KEYS = LIFE_STAGES.map((s) => s.key);
 const WALK1 = { step: 1, bob: 0, tail: -1, flutter: 1, lift: -1 };
@@ -172,7 +173,7 @@ test('khói: mọi món × 3 dáng khung × 6 giai đoạn × 4 hướng (đi b�
   assert.deepEqual(problems, []);
 });
 
-/** So khung có đeo `wear` với khung để trống `bare`: số điểm đổi trên người pet (pet đục) và ngoài người pet. */
+/** So khung có đeo `wear` với khung để trống `bare`: số điểm đổi trên người pet (pet đục) và ngoài người pet, cột trái/phải và hàng trên cùng của vùng đổi. */
 function changed(sp, st, v, wear, { pose = {}, bare = {}, tick = 0 } = {}) {
   const a = rig.renderFrame(sp, st, v, pose, bare, { marks: false, tick }).img.data;
   const b = rig.renderFrame(sp, st, v, pose, wear, { marks: false, tick }).img.data;
@@ -180,27 +181,73 @@ function changed(sp, st, v, wear, { pose = {}, bare = {}, tick = 0 } = {}) {
   let offPet = 0;
   let x0 = 48;
   let y0 = 48;
+  let x1 = -1;
   for (let k = 0; k < 48 * 48; k++) {
     const i = k * 4;
     if (a[i] === b[i] && a[i + 1] === b[i + 1] && a[i + 2] === b[i + 2] && a[i + 3] === b[i + 3]) continue;
     if (a[i + 3]) onPet++;
     else offPet++;
     x0 = Math.min(x0, k % 48);
+    x1 = Math.max(x1, k % 48);
     y0 = Math.min(y0, Math.floor(k / 48));
   }
-  return { onPet, offPet, x0, y0 };
+  return { onPet, offPet, x0, x1, y0 };
 }
 const idsOf = (slot) => Object.keys(WEARABLES).filter((id) => WEARABLES[id].slot === slot);
+
+const TAILS = await import(`${GAME}rig2/parts/tails.js`);
+/** Gọi fn() trong lúc đuôi của loài `sp` (tailFor: kể cả đuôi riêng của loài, như cánh cụt) tạm thời là đuôi rỗng. */
+function withoutTail(sp, fn) {
+  const t = TAILS.tailFor(rig.speciesOf(sp));
+  // Mọi chỗ trong hai sổ trỏ tới đúng mục này (đuôi tạm dùng chung mục: fan = puff, curl = thin).
+  const slots = [TAILS.TAILS, TAILS.FALLBACK].flatMap((r) => Object.keys(r).filter((k) => r[k] === t).map((k) => [r, k]));
+  const empty = { S() {}, E() {}, N() {} };
+  for (const [r, k] of slots) r[k] = empty;
+  try {
+    return fn();
+  } finally {
+    for (const [r, k] of slots) r[k] = t;
+  }
+}
+/** Điểm của phần ĐUÔI thò ra ngoài thân: khung có đuôi khác khung cùng loài bỏ đuôi. */
+function tailMask(sp, st, v, pose = {}) {
+  const a = rig.renderFrame(sp, st, v, pose, {}, { marks: false }).img.data;
+  const b = withoutTail(sp, () => rig.renderFrame(sp, st, v, pose, {}, { marks: false }).img.data);
+  const m = new Uint8Array(48 * 48);
+  for (let k = 0; k < 48 * 48; k++) if ([0, 1, 2, 3].some((c) => a[k * 4 + c] !== b[k * 4 + c])) m[k] = 1;
+  return m;
+}
+/** Như changed(), tách điểm đè lên pet thành trên đuôi (tail) và trên phần còn lại (body). */
+function changedOnTail(sp, st, v, wear) {
+  const a = rig.renderFrame(sp, st, v, {}, {}, { marks: false }).img.data;
+  const b = rig.renderFrame(sp, st, v, {}, wear, { marks: false }).img.data;
+  const tail = tailMask(sp, st, v);
+  const out = { tail: 0, body: 0, off: 0 };
+  for (let k = 0; k < 48 * 48; k++) {
+    const i = k * 4;
+    if ([0, 1, 2, 3].every((c) => a[i + c] === b[i + c])) continue;
+    if (!a[i + 3]) out.off++;
+    else if (tail[k]) out.tail++;
+    else out.body++;
+  }
+  return out;
+}
+const DRAPES = ['aotoi', 'cape', 'starcape', 'wavecape'];
 
 test('lớp đồ đeo (WEAR-SPEC D6): lưng và bùa dưới pet ở S/E/W, trên pet ở N; vầng hào quang dưới pet; áo choàng đè lưng ở N', () => {
   const bad = [];
   for (const sp of WEAR_SPECIES) {
+    const quad = rig.speciesOf(sp).body === 'quad';
     for (const st of ['adult', 'baby']) {
       for (const slot of ['back', 'charm']) {
         for (const id of idsOf(slot)) {
           for (const v of ['S', 'E', 'W']) {
-            const c = changed(sp, st, v, { [slot]: id });
-            if (c.onPet || !c.offPet) bad.push(`${id} ${sp}/${st}/${v}: ${c.onPet} điểm đè lên pet, ${c.offPet} điểm lộ ra`);
+            if (quad && v !== 'S' && DRAPES.includes(id)) continue; // D4: áo choàng phủ lưng thú bốn chân nhìn ngang (test riêng)
+            // Đồ lưng nhìn ngang được phủ lên phần đuôi thò ra ngoài thân (backOverTail), không bao giờ lên thân.
+            const c = slot === 'back' && v !== 'S' ? changedOnTail(sp, st, v, { [slot]: id }) : changed(sp, st, v, { [slot]: id });
+            const onPet = c.body ?? c.onPet;
+            const off = c.off ?? c.offPet;
+            if (onPet || !off) bad.push(`${id} ${sp}/${st}/${v}: ${onPet} điểm đè lên pet, ${off} điểm lộ ra`);
           }
         }
       }
@@ -220,8 +267,57 @@ test('lớp đồ đeo (WEAR-SPEC D6): lưng và bùa dưới pet ở S/E/W, tr�
     const e = rig.wearEntry(slot, id);
     assert.equal(rig.wearInFront(slot, e, 'N'), true, `${id}: phải vẽ trên pet ở N`);
     assert.equal(rig.wearInFront(slot, e, 'E'), false, `${id}: phải vẽ dưới pet ở E`);
+    assert.equal(rig.wearInFront(slot, e, 'E', 'biped'), false, `${id}: phải vẽ dưới biped ở E`);
   }
   assert.equal(rig.wearInFront('head', rig.wearEntry('head', 'halo'), 'N'), false);
+  assert.deepEqual(bad, []);
+});
+
+test('áo choàng, áo tơi trên thú bốn chân nhìn ngang (WEAR-SPEC D4): phủ lưng từ gáy, trên pet; S vẫn dưới pet', () => {
+  const bad = [];
+  const quads = ALL.filter((sp) => sp.body === 'quad');
+  assert.ok(quads.length >= 10);
+  for (const id of DRAPES) {
+    const e = rig.wearEntry('back', id);
+    assert.equal(e.drape, true, `${id}: thiếu cờ drape`);
+    assert.equal(rig.wearInFront('back', e, 'E', 'quad'), true, `${id}: thú bốn chân nhìn ngang phải vẽ trên pet`);
+    assert.equal(rig.wearInFront('back', e, 'S', 'quad'), false, `${id}: thú bốn chân nhìn trước vẫn vẽ dưới pet`);
+    for (const sp of quads) {
+      for (const st of ['baby', 'kid', 'adult']) {
+        const sk = rig.skeleton(sp, st, 'E', {});
+        const c = changed(sp.id, st, 'E', { back: id });
+        // Phủ lưng: nhiều điểm đè lên pet, và cổ áo tới tận neo vai đã dời lên gáy (D4), không treo giữa lưng.
+        if (c.onPet < (st === 'adult' ? 40 : 20)) bad.push(`${id} ${sp.id}/${st}/E: chỉ ${c.onPet} điểm phủ lưng`);
+        if (c.x1 < Math.floor(sk.anchors.back[0])) bad.push(`${id} ${sp.id}/${st}/E: cổ áo dừng ở x ${c.x1}, trước neo vai ${sk.anchors.back[0].toFixed(1)}`);
+        const w = changed(sp.id, st, 'W', { back: id });
+        if (w.onPet !== c.onPet) bad.push(`${id} ${sp.id}/${st}/W khác E (${w.onPet} / ${c.onPet})`);
+      }
+    }
+    // Không phải thú bốn chân: giữ lớp của món (dưới pet).
+    for (const sp of ['boba', 'canh_cut', 'tho_la']) {
+      const c = changedOnTail(sp, 'adult', 'E', { back: id });
+      if (c.body) bad.push(`${id} ${sp}/adult/E: ${c.body} điểm đè lên thân`);
+    }
+  }
+  assert.deepEqual(bad, []);
+});
+
+test('đồ lưng nhìn ngang nằm trên phần đuôi thò ra ngoài thân, không bao giờ trên thân; bùa vẫn nấp sau đuôi', () => {
+  const bad = [];
+  let overTail = 0;
+  for (const sp of ALL.filter((s) => TAILS.tailFor(s) !== TAILS.TAILS.none)) {
+    for (const st of ['kid', 'adult']) {
+      for (const id of ['angel', 'batwings', 'backpack', 'cape']) {
+        if (sp.body === 'quad' && DRAPES.includes(id)) continue;
+        const c = changedOnTail(sp.id, st, 'E', { back: id });
+        if (c.body) bad.push(`${id} ${sp.id}/${st}/E: ${c.body} điểm đè lên thân`);
+        overTail += c.tail;
+      }
+      const c = changedOnTail(sp.id, st, 'E', { charm: 'lantern' });
+      if (c.tail || c.body) bad.push(`lantern ${sp.id}/${st}/E: bùa đè ${c.tail} điểm đuôi, ${c.body} điểm thân`);
+    }
+  }
+  assert.ok(overTail > 100, `đồ lưng không phủ lên đuôi ở đâu cả (${overTail} điểm)`);
   assert.deepEqual(bad, []);
 });
 
@@ -280,12 +376,182 @@ test('luật đặt đồ đeo: kính liếc theo mắt (S/E, không N), khăn l
   const on = { cat: render('meo_bac', 'S'), catE: render('meo_bac', 'E'), boba: render('boba', 'S') };
   HEAD.tophat.earsOver = false;
   try {
-    assert.ok(on.cat.some((c, k) => c !== render('meo_bac', 'S')[k]), 'tai mèo không được vẽ lại lên mũ chóp ở S');
-    assert.ok(on.catE.every((c, k) => c === render('meo_bac', 'E')[k]), 'earsOver không được dùng ở E');
-    assert.ok(on.boba.every((c, k) => c === render('boba', 'S')[k]), 'earsOver chỉ cho tai mèo');
+    const off = { cat: render('meo_bac', 'S'), catE: render('meo_bac', 'E'), boba: render('boba', 'S') };
+    assert.ok(on.cat.some((c, k) => c !== off.cat[k]), 'tai mèo không được vẽ lại lên mũ chóp ở S');
+    assert.ok(on.catE.every((c, k) => c === off.catE[k]), 'earsOver không được dùng ở E');
+    assert.ok(on.boba.every((c, k) => c === off.boba[k]), 'earsOver chỉ cho tai mèo');
   } finally {
     HEAD.tophat.earsOver = true;
   }
+});
+
+// Luật đặt của 5 khe, tính lại ĐỘC LẬP từ dữ liệu (wear/data/*.js) và công thức trong bộ xem trước của họa sĩ (hw.py,
+// common.py place_xy, neckprev.py render(), preview.py, wl.py), không gọi wear/stamp.js:
+//   đầu (floor(x + .5), floor(y + .5)) + trễ của vầng hào quang; mặt theo ô mắt (2×3, mắt to 3×4) + pose.look ở S/E;
+//   cổ floor(x + .5); lưng floor(x), floor(y); bùa pyRound + nhún 1 px khi tick % 4 ≥ 2, nâng lên khỏi mặt đất;
+//   lưng và bùa không chạm mép trái/phải; "small" (đồ mặt: "big") cho sơ sinh và nhí nhố.
+// Mọi điểm mà món làm đổi trong khung (so với khung đeo đúng món đó nhưng hàm vẽ rỗng, để đặc điểm bị giấu như nhau) phải
+// là điểm của hình dán đã viền đặt đúng chỗ: đúng màu, hoặc #2e1d14 (mép cắt ở mặt đất, viền thân vẽ lên đồ lưng trên đuôi).
+// Cằm che, tai mèo vẽ lại lên mũ, ống hút của Boba chỉ làm BỚT điểm đổi nên không cần ngoại lệ. Lệch 1 px là sai màu.
+function pyRoundRef(v) {
+  const f = Math.floor(v);
+  const d = v - f;
+  return d > 0.5 ? f + 1 : d < 0.5 ? f : f % 2 === 0 ? f : f + 1;
+}
+async function wearRegistries() {
+  const out = {};
+  for (const [slot, name] of [['head', 'HEAD'], ['face', 'FACE'], ['neck', 'NECK'], ['back', 'BACK'], ['charm', 'CHARM']]) {
+    out[slot] = (await import(`${GAME}rig2/wear/${slot}.js`))[name];
+  }
+  return out;
+}
+/** Hình dán đã viền và góc trên-trái của nó theo luật đặt của họa sĩ; null nếu hướng này không có hình. */
+async function expectedStamp(slot, item, sk, view, stKey, pose = {}, tick = 0) {
+  const core = await import(`${GAME}rig2/core.js`);
+  const { outerOutline } = await import(`${GAME}rig2/wear/stamp.js`);
+  const young = stKey === 'baby' || stKey === 'kid';
+  const vn = slot === 'face' ? (young && item.big ? 'big' : 'views') : young && item.small ? 'small' : 'views';
+  const vd = item[vn][view];
+  if (!vd) return null;
+  const raw = core.stamp(vd.rows, item.keys);
+  const pic = slot === 'face' ? outerOutline(raw) : core.padOutline(raw);
+  const [ax, ay] = sk.anchors[slot];
+  let X;
+  let Y;
+  if (slot === 'face') {
+    const [ew, eh] = young ? [3, 4] : [2, 3];
+    X = (view === 'E' ? Math.floor(ax - ew / 2 + 0.5) : pyRoundRef(ax)) + (view === 'N' ? 0 : pose.look ?? 0);
+    Y = Math.floor(sk.eyeY - eh / 2 + 0.5);
+  } else if (slot === 'back') {
+    [X, Y] = [Math.floor(ax), Math.floor(ay)];
+  } else if (slot === 'charm') {
+    [X, Y] = [pyRoundRef(ax), pyRoundRef(ay)];
+  } else {
+    [X, Y] = [Math.floor(ax + 0.5), Math.floor(ay + 0.5)];
+    if (slot === 'head' && item.lag) Y += Math.min(item.lag, Math.max(0, -(pose.lift ?? 0)));
+  }
+  let x = X - vd.pivot[0] - 1;
+  let y = Y - vd.pivot[1] - 1;
+  if (slot === 'charm') {
+    y = Math.min(y, pyRoundRef(sk.ground) - pic.h);
+    if (tick % 4 >= 2) y += 1;
+  }
+  if (slot === 'back' || slot === 'charm') x = Math.min(Math.max(x, 1), 47 - pic.w);
+  return { pic, x, y };
+}
+/** So một khung có món với khung "món rỗng": { bad: [điểm không giải thích được], exact: số điểm đúng màu hình dán }. */
+function explain(got, ref, want) {
+  const bad = [];
+  let exact = 0;
+  for (let k = 0; k < 48 * 48; k++) {
+    const i = k * 4;
+    if ([0, 1, 2, 3].every((c) => got[i + c] === ref[i + c])) continue;
+    const sx = (k % 48) - want.x;
+    const sy = Math.floor(k / 48) - want.y;
+    const inside = sx >= 0 && sy >= 0 && sx < want.pic.w && sy < want.pic.h;
+    const j = inside ? (sy * want.pic.w + sx) * 4 : -1;
+    if (!inside || !want.pic.data[j + 3]) {
+      bad.push(`(${k % 48},${Math.floor(k / 48)}) ngoài hình dán`);
+      continue;
+    }
+    if ([0, 1, 2, 3].every((c) => got[i + c] === want.pic.data[j + c])) exact++;
+    else if (!(got[i] === 0x2e && got[i + 1] === 0x1d && got[i + 2] === 0x14 && got[i + 3] === 255)) bad.push(`(${k % 48},${Math.floor(k / 48)}) sai màu`);
+  }
+  return { bad, exact };
+}
+/** Khung có món `id` và khung cùng món nhưng hàm vẽ rỗng (cùng ctx.wear, cùng lớp). */
+function renderPair(regs, slot, id, sp, st, v, pose, opts) {
+  const got = rig.renderFrame(sp, st, v, pose, { [slot]: id }, { marks: false, ...opts }).img.data;
+  const saved = regs[slot][id];
+  const noop = () => {};
+  regs[slot][id] = { ...saved, S: noop, E: noop, N: noop, over: undefined };
+  try {
+    return [got, rig.renderFrame(sp, st, v, pose, { [slot]: id }, { marks: false, ...opts }).img.data];
+  } finally {
+    regs[slot][id] = saved;
+  }
+}
+
+test('luật đặt đồ đeo tính lại từ dữ liệu: 55 món × 4 loài mẫu × 6 giai đoạn × S/E/N, mắt liếc, bùa nhún, trễ của vầng hào quang', async () => {
+  const regs = await wearRegistries();
+  const problems = [];
+  const exact = {};
+  const check = async (slot, id, sp, st, v, pose = {}, opts = {}) => {
+    const item = regs[slot][id].data;
+    const sk = rig.skeleton(rig.speciesOf(sp), st, v, pose);
+    const want = await expectedStamp(slot, item, sk, v, st, pose, opts.tick ?? 0);
+    if (!want) return;
+    const [got, ref] = renderPair(regs, slot, id, sp, st, v, pose, opts);
+    const r = explain(got, ref, want);
+    exact[id] = (exact[id] ?? 0) + r.exact;
+    if (r.bad.length) problems.push(`${id} ${sp}/${st}/${v} ${JSON.stringify(pose)}: ${r.bad.length} điểm, ví dụ ${r.bad.slice(0, 3).join(' ')}`);
+  };
+  for (const [id, w] of Object.entries(WEARABLES)) {
+    for (const sp of ['boba', 'meo_bac', 'canh_cut', 'tho_la']) {
+      for (const st of STAGE_KEYS) for (const v of ['S', 'E', 'N']) await check(w.slot, id, sp, st, v, {}, { tick: w.slot === 'charm' && st === 'adult' ? 2 : 0 });
+    }
+  }
+  for (const id of idsOf('face')) {
+    for (const v of ['S', 'E', 'N']) for (const look of [-1, 1]) for (const st of ['baby', 'adult']) await check('face', id, 'meo_bac', st, v, { look });
+  }
+  for (const id of ['halo', 'crown', 'tophat']) {
+    for (const lift of [-3, -6]) for (const v of ['S', 'E']) await check('head', id, 'boba', 'adult', v, { lift }, { fit: false });
+  }
+  assert.deepEqual(problems, []);
+  for (const id of Object.keys(WEARABLES)) assert.ok(exact[id] > 0, `${id}: không thấy điểm nào của hình dán`);
+});
+
+test('nhảy: món đội đầu lên cùng đầu (không bị đẩy xuống), vầng hào quang trễ 2 px và vẫn lơ lửng; khung nhảy vừa ô', () => {
+  const topRow = (img) => {
+    for (let y = 0; y < 48; y++) for (let x = 0; x < 48; x++) if (img[(y * 48 + x) * 4 + 3]) return y;
+    return 48;
+  };
+  // Hàng trên cùng của riêng món (so với khung không đội gì), khi không hạ cú nhảy (fit: false); Boba nhí nhố: món
+  // còn trong ô cả ở lift −6.
+  const itemTop = (id, lift) => {
+    const bare = rig.renderFrame('boba', 'kid', 'S', { lift }, {}, { marks: false, fit: false }).img.data;
+    const got = rig.renderFrame('boba', 'kid', 'S', { lift }, { head: id }, { marks: false, fit: false }).img.data;
+    for (let k = 0; k < 48 * 48; k++) if ([0, 1, 2, 3].some((c) => got[k * 4 + c] !== bare[k * 4 + c])) return Math.floor(k / 48);
+    return 48;
+  };
+  assert.ok(itemTop('halo', -6) >= 1, 'hào quang ra khỏi ô: chọn khung thấp hơn cho phép thử');
+  assert.equal(itemTop('crown', 0) - itemTop('crown', -3), 3);
+  assert.equal(itemTop('crown', 0) - itemTop('crown', -6), 6);
+  assert.equal(itemTop('halo', 0) - itemTop('halo', -3), 1, 'hào quang trễ 2 px ở lift −3');
+  assert.equal(itemTop('halo', 0) - itemTop('halo', -6), 4, 'hào quang trễ 2 px ở lift −6');
+  // Đỉnh cú nhảy, có hạ cú nhảy cho vừa ô: mũ cách neo đầu đúng như lúc đứng, vòng hào quang còn hở trên đầu.
+  for (const sp of ['canh_cut', 'boba', 'tho_la', 'meo_bac']) {
+    for (const id of ['tophat', 'nonla', 'lotus', 'halo', 'crown']) {
+      const run = rig.renderAnim(sp, 'adult', 'jump', 'S', { head: id }, { marks: false });
+      const bare = rig.renderAnim(sp, 'adult', 'jump', 'S', {}, { marks: false });
+      const rest = topRow(run.frames[0].img.data) - Math.floor(run.frames[0].anchors.head[1] + 0.5);
+      run.frames.forEach((f, i) => {
+        assert.ok(topRow(f.img.data) >= 1, `${id} ${sp} khung ${i}: chạm mép trên`);
+        const off = topRow(f.img.data) - Math.floor(f.anchors.head[1] + 0.5);
+        if (id !== 'halo') assert.equal(off, rest, `${id} ${sp} khung ${i}: mũ bị đẩy lệch khỏi đầu (${off} / ${rest})`);
+        else assert.ok(off - rest <= 2, `halo ${sp} khung ${i}: trễ ${off - rest} px`);
+      });
+      if (id === 'halo') {
+        // Ở đỉnh cú nhảy vòng hào quang vẫn cách đỉnh đầu (khung không đội gì) ít nhất 1 hàng trống... trên Boba và cánh cụt.
+        if (sp === 'boba' || sp === 'canh_cut') {
+          const apex = run.frames[2];
+          const head = topRow(bare.frames[2].img.data) + (Math.floor(apex.anchors.head[1] + 0.5) - Math.floor(bare.frames[2].anchors.head[1] + 0.5));
+          const haloRows = [];
+          for (let y = 0; y < head; y++) if ([...Array(48).keys()].some((x) => apex.img.data[(y * 48 + x) * 4 + 3])) haloRows.push(y);
+          assert.ok(haloRows.length && haloRows.at(-1) < head - 1, `halo ${sp}: vòng chạm đầu ở đỉnh cú nhảy (${haloRows.at(-1)} / ${head})`);
+        }
+      }
+    }
+  }
+});
+
+test('ctx.headTopCovered: chỉ món đội đầu che đỉnh đầu (không phải vầng hào quang, hoa cài, nơ)', () => {
+  const sk = rig.skeleton('tho_la', 'adult', 'S', {});
+  const sp = rig.speciesOf('tho_la');
+  const covered = (wear) => rig.makeCtx(sp, sk.st, sk, 'S', {}, wear).headTopCovered;
+  assert.equal(covered({}), false);
+  for (const id of idsOf('head')) assert.equal(covered({ head: id }), !['halo', 'flower', 'bow'].includes(id), id);
+  assert.equal(covered({ face: 'glasses' }), false);
 });
 
 test('điểm neo đồ đeo: bùa E ngoài cả đầu (WEAR-SPEC D6), lưng E của thú bốn chân dời lên vai (D4)', () => {
@@ -331,22 +597,37 @@ test('phần "over" của đồ lưng (WEAR-SPEC D1): vẽ sau thân pet, có vi
   }
 });
 
-test('wearIcon / wearImage: hình túi đồ của mọi món là đúng hình dán S đã viền, cỡ 1x (đồ mặt: viền bóng ngoài)', async () => {
+test('wearIcon / wearImage: hình túi đồ là đúng hình dán đã viền ở hướng `icon` của món (mặc định S), cỡ 1x; chốt = điểm đặt trên pet', async () => {
   const core = await import(`${GAME}rig2/core.js`);
   const { outerOutline } = await import(`${GAME}rig2/wear/stamp.js`);
+  const want = (slot, item, v) => {
+    const vd = item.views[v];
+    const raw = core.stamp(vd.rows, item.keys);
+    const pic = slot === 'face' ? outerOutline(raw) : core.padOutline(raw);
+    const b = core.bbox(pic);
+    return { img: core.crop(pic, b.x0, b.y0, b.x1 - b.x0 + 1, b.y1 - b.y0 + 1), pivot: [vd.pivot[0] + 1 - b.x0, vd.pivot[1] + 1 - b.y0] };
+  };
+  const views = {};
   for (const slot of ['head', 'face', 'neck', 'back', 'charm']) {
     const DATA = (await import(`${GAME}rig2/wear/data/${slot}.js`)).default;
     for (const [id, item] of Object.entries(DATA)) {
-      const raw = core.stamp(item.views.S.rows, item.keys);
-      const pic = slot === 'face' ? outerOutline(raw) : core.padOutline(raw);
-      const b = core.bbox(pic);
-      const want = core.crop(pic, b.x0, b.y0, b.x1 - b.x0 + 1, b.y1 - b.y0 + 1);
-      const icon = rig.wearIcon(id);
-      assert.ok(icon, `${id}: không có hình túi đồ`);
-      assert.deepEqual([icon.img.w, icon.img.h], [want.w, want.h], `${id}: cỡ hình`);
-      assert.ok(icon.img.data.every((c, k) => c === want.data[k]), `${id}: hình túi đồ khác hình dán S`);
+      views[id] = item.icon ?? 'S';
+      for (const [v, icon] of [[views[id], rig.wearIcon(id)], ['S', rig.wearIcon(id, { view: 'S' })]]) {
+        const w = want(slot, item, v);
+        assert.ok(icon, `${id}: không có hình túi đồ`);
+        assert.equal(icon.view, v, `${id}: hướng hình`);
+        assert.deepEqual([icon.img.w, icon.img.h], [w.img.w, w.img.h], `${id}/${v}: cỡ hình`);
+        assert.ok(icon.img.data.every((c, k) => c === w.img.data[k]), `${id}/${v}: hình túi đồ khác hình dán`);
+        // Chốt của hình = chỗ chốt của hình dán rơi khi vẽ lên Boba (bé khách mời Petdex đặt món theo chốt này).
+        assert.deepEqual(icon.pivot, w.pivot, `${id}/${v}: chốt của hình túi đồ`);
+        assert.deepEqual(icon.lean, { side: 0, dx: 0 }, `${id}: hình dữ liệu không lệch theo bề ngang đầu`);
+      }
     }
   }
+  // Món mà hình S chỉ là dải ló ra quanh người lấy hình N (thấy cả món); còn lại hình S.
+  const N = Object.keys(views).filter((id) => views[id] === 'N').sort();
+  assert.deepEqual(N, ['aotoi', 'backpack', 'cape', 'scarf', 'starcape', 'wavecape']);
+  assert.ok(Object.values(views).every((v) => v === 'S' || v === 'N'));
 });
 
 test('hình cũ dự phòng: món thiếu dữ liệu vẫn vẽ được bằng hình rig.js cũ (đúng bảng màu, trong ô)', async () => {
@@ -383,18 +664,27 @@ test('scripts/art/build-wear.mjs --check: dữ liệu đồ đeo hợp lệ (55 
   assert.equal(r.status, 0, `${r.stdout}\n${r.stderr}`);
 });
 
-test('khói: món nào đang đeo cũng hiện ra ở hướng S và E (nên cả W) trên 3 dáng khung (bé đi bộ trong công viên dùng E/W)', () => {
-  const missing = [];
-  for (const sp of ['boba', 'meo_bac', 'canh_cut']) {
-    const bare = Object.fromEntries(['S', 'E', 'W'].map((v) => [v, rig.renderFrame(sp, 'adult', v, {}, {}).img.data]));
-    for (const [id, w] of Object.entries(WEARABLES)) {
-      for (const v of ['S', 'E', 'W']) {
-        const got = rig.renderFrame(sp, 'adult', v, {}, { [w.slot]: id }).img.data;
-        if (got.every((c, k) => c === bare[v][k])) missing.push(`${id} trên ${sp}/${v}`);
+// Mọi món phải hiện ra (ít nhất VISIBLE_MIN điểm khác khung để trống) ở S và E (W = E lật) trên cả 51 loài, sơ sinh,
+// nhí nhố và trưởng thành: bé đi bộ trong công viên dùng E/W. Chạy lại sau MỖI nhánh vẽ dáng khung, đuôi, tai, đặc điểm
+// được gộp: thân tròn to hay đuôi xù mới có thể che hết một món (đồ lưng ở S chỉ là dải ló ra quanh người). Khi đó quyết
+// từng trường hợp (vẽ thêm phần "over" D1, chỉnh neo trong skeleton.js...), đừng hạ ngưỡng.
+const VISIBLE_MIN = 8;
+test(`khói: món nào đang đeo cũng hiện ra (≥ ${VISIBLE_MIN} điểm) ở S và E trên 51 loài × sơ sinh/nhí nhố/trưởng thành`, () => {
+  const low = [];
+  for (const sp of ALL) {
+    for (const st of ['baby', 'kid', 'adult']) {
+      for (const v of ['S', 'E']) {
+        const bare = rig.renderFrame(sp, st, v, {}, {}, { marks: false }).img.data;
+        for (const [id, w] of Object.entries(WEARABLES)) {
+          const got = rig.renderFrame(sp, st, v, {}, { [w.slot]: id }, { marks: false }).img.data;
+          let n = 0;
+          for (let k = 0; k < 48 * 48; k++) if ([0, 1, 2, 3].some((c) => got[k * 4 + c] !== bare[k * 4 + c])) n++;
+          if (n < VISIBLE_MIN) low.push(`${id} trên ${sp.id}/${st}/${v}: ${n} điểm`);
+        }
       }
     }
   }
-  assert.deepEqual(missing, []);
+  assert.deepEqual(low, []);
 });
 
 test('wearIcon: mọi mục trong 5 sổ đồ đeo (đã vẽ lại và hình cũ) cho hình, và hàm vẽ nhận đủ ctx như trên pet', async () => {
@@ -470,4 +760,17 @@ test('bảng dải màu: đủ 51 loài, mọi dải trong core.js, cánh cụt 
     for (const hex of ramp) assert.ok(rig.inPalette(hex), `${name}: ${hex} ngoài bảng màu`);
   }
   assert.equal(SPECIES_RAMPS.canh_cut.main, 'navy');
+});
+
+// WEAR-SPEC D5 (chờ chủ dự án duyệt dải navy): mũ lưỡi trai dùng đúng 3 màu của dải 'navy' mà cánh cụt dùng cho lông, nên
+// trên cánh cụt mũ chỉ tách khỏi đầu nhờ đường viền. Khi dải navy thật được duyệt, đổi màu cánh cụt (hoặc dời mũ sang các
+// bậc xanh nhạt hơn) rồi bỏ `todo` để khóa lại.
+test('tương phản (D5): mũ lưỡi trai và kính râm không trùng màu lông của cánh cụt', { todo: 'chờ WEAR-SPEC D5 (dải navy)' }, async () => {
+  const { SPECIES_RAMPS } = await import(`${GAME}rig2/ramps.js`);
+  const fur = new Set(rig.RAMPS[SPECIES_RAMPS.canh_cut.main].slice(1));
+  for (const [slot, id] of [['head', 'cap'], ['face', 'shades']]) {
+    const item = (await import(`${GAME}rig2/wear/data/${slot}.js`)).default[id];
+    const shared = Object.values(item.keys).filter((c) => fur.has(c));
+    assert.deepEqual(shared, [], `${id} dùng màu lông cánh cụt: ${shared.join(' ')}`);
+  }
 });

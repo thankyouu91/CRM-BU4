@@ -2,8 +2,9 @@
 // mũ nấm, sừng quỷ, khăn đóng, hoa sen. Hình: gói vẽ phase 2 (wear-head), sinh ra ở wear/data/head.js
 // (scripts/art/build-wear.mjs). Luật đặt (wear/stamp.js): chốt của hình rơi vào (floor(x + .5), floor(y + .5)) của
 // ctx.sk.anchors.head (đỉnh đầu; nhìn ngang lùi 1 px về gáy), hình tự lún vào đầu theo chốt; "small" cho bé sơ sinh và
-// nhí nhố; khi nhảy, đỉnh món không lên quá hàng 1 (đẩy xuống), vầng hào quang trễ sau đầu tối đa 3 px.
-// Lớp: 13 món "front" (vẽ sau kính, khăn, cốc); halo "behind" (vẽ dưới pet: tai thỏ dựng trước vòng).
+// nhí nhố; khi nhảy, món lên cùng đầu (đỉnh món chạm mép trên thì renderFrame hạ cả cú nhảy), vầng hào quang trễ sau
+// đầu tối đa 2 px. Lớp: 13 món "front" (vẽ sau kính, khăn, cốc); halo "behind" (vẽ dưới pet: tai thỏ dựng trước vòng).
+// openTop (halo, flower, bow): món chừa đỉnh đầu, ctx.headTopCovered = false (đặc điểm trên đỉnh đầu vẫn hiện được).
 // earsOver (tophat, beret, cap): CHỈ hướng S và chỉ loài có tai nhọn hai bên đầu (EARS_OVER: tai mèo), tai của pet được
 // vẽ lại lên trên mũ (index.js); không bao giờ ở E, N, W; không cho tai thỏ (dựng trên đỉnh) hay tai tròn.
 // Món nào thiếu dữ liệu thì dùng hình cũ của rig.js (LEGACY, wear/common.js legacyEntry) ở cả 3 hướng.

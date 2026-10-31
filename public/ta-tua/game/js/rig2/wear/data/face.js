@@ -3,6 +3,8 @@
 //   node scripts/art/build-wear.mjs <art folder>
 // Each item: layer, keys (one character -> palette colour), views { S, E, N } (+ small for baby/kid, big for the
 // big-eye face stages): rows drawn WITHOUT the outer outline, pivot = the pixel that lands on the slot anchor.
+// Integrator keys (build-wear.mjs tables): lag (halo), drape (D4: over a quad in E), openTop (head top stays
+// free), icon (bag/shop icon view when not S).
 // N may be null (the item cannot be seen from behind). W is the mirrored E frame. Rules: rig2/wear/stamp.js.
 export default {
   bandana: {
