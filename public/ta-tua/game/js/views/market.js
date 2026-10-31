@@ -3,6 +3,7 @@ import { api } from '../api.js';
 import { candleChart, lineChart, sparkline } from '../charts.js';
 import { ago, countdown, esc, fmt, fmtLots, fmtPrice, pct, viewHead } from '../ui.js';
 import { INDUSTRIES } from '../shared/clan.js';
+import { itemIcon } from '../itemart.js';
 
 const KIND_TEXT = { supply: 'cung tăng', demand: 'cầu tăng', cost: 'chi phí chế biến giảm', stabilize: 'bớt biến động' };
 
@@ -47,7 +48,7 @@ export function renderMarket(root, ctx) {
     const def = commodities[c.id];
     return `
       <tr class="${c.id === ui.selected ? 'current' : ''}" data-pick="${c.id}">
-        <td><span class="mk-icon">${def.icon}</span> ${def.name}${def.kind === 'processed' ? ' <small class="badge">chế biến</small>' : ''}</td>
+        <td><span class="mk-icon">${itemIcon({ id: c.id, icon: def.icon }, 3)}</span> ${def.name}${def.kind === 'processed' ? ' <small class="badge">chế biến</small>' : ''}</td>
         <td class="num"><b>${fmtPrice(c.price)}</b></td>
         <td class="num ${c.change >= 0 ? 'up' : 'down'}">${pct(c.change)}</td>
         <td class="spark-cell"><div class="spark" data-spark="${c.id}"></div></td>
@@ -66,7 +67,7 @@ export function renderMarket(root, ctx) {
     if (!ui.limit) ui.limit = fmtPrice(c.price).replace(',', '.');
     return `
       <header class="mk-head">
-        <span class="mk-icon big">${def.icon}</span>
+        <span class="mk-icon big">${itemIcon({ id: c.id, icon: def.icon })}</span>
         <div>
           <h3>${def.name}</h3>
           <small class="muted">${def.kind === 'processed' ? `Chế biến từ ${Object.entries(def.inputs).map(([i, n]) => `${n} lô ${commodities[i].name.toLowerCase()}`).join(', ')}` : 'Hàng thô'}
@@ -182,7 +183,7 @@ export function renderMarket(root, ctx) {
       for (const l of h.lots) if (l.expiresAt) byFresh[l.freshness] = { name: l.freshnessName, qty: (byFresh[l.freshness]?.qty ?? 0) + l.qty };
       const freshLine = Object.entries(byFresh).map(([k, f]) => `<span class="fresh fresh-${k}">${fmtLots(f.qty)} lô ${f.name}</span>`).join(' ');
       return `<li>
-        <span class="mk-icon">${def.icon}</span>
+        <span class="mk-icon">${itemIcon({ id, icon: def.icon }, 3)}</span>
         <div><b>${def.name}</b> · ${fmtLots(h.qty)} lô <small class="muted">≈ ${fmt(h.value)} 🪙</small>
           <br><small class="muted">Vốn ${h.avgCost ? `${fmtPrice(h.avgCost)}/lô` : '0 (tự kiếm)'} · bán ngay ${fmtPrice(priceOf(id).bid * h.quality)}/lô</small> ${pnlCell(h)}
           ${freshLine ? `<br><small>${freshLine}</small>` : ''}
@@ -207,7 +208,7 @@ export function renderMarket(root, ctx) {
   function newsHtml() {
     if (!data.news.length) return '<p class="muted">Chưa có tin mới.</p>';
     return `<ul class="mk-news">${data.news.map((n) => `
-      <li class="${n.flash ? 'flash' : ''}"><span>${commodities[n.commodity].icon}</span>
+      <li class="${n.flash ? 'flash' : ''}"><span>${itemIcon({ id: n.commodity, icon: commodities[n.commodity].icon }, 3)}</span>
         <div>${esc(n.headline)} <span class="${n.up ? 'up' : 'down'}">${n.up ? '▲' : '▼'}</span>
           <br><small class="muted">${n.early ? '🧠 Tin sớm · ' : ''}${ago(n.at)}</small></div></li>`).join('')}</ul>
       ${data.smart ? '' : '<p class="muted small">Bé có Thông minh từ 60 sẽ đọc được tin sớm 30 phút.</p>'}`;

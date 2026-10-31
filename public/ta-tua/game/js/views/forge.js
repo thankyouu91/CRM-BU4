@@ -107,7 +107,7 @@ export function renderMaterials(root, ctx) {
         <button class="btn small" data-go="forge">⚒️ Lò rèn</button></p>
       <div class="item-grid">${forge.materials.map((m) => `
         <article class="card item-card">
-          <div class="icon">${esc(m.icon)}</div>
+          <div class="icon">${itemIcon({ id: m.commodity, icon: esc(m.icon) })}</div>
           <h3>${esc(m.name)}</h3>
           <p class="price">${fmt(m.price)} 🪙 <small class="muted">/ lô</small></p>
           <div class="foot">

@@ -2,6 +2,7 @@
 import { api } from '../api.js';
 import { closeModal, countdown, esc, fmt, fmtLots, modalOpen, openModal, viewHead } from '../ui.js';
 import { sceneHdr } from '../scenes-hdr.js';
+import { hasAtlasIcon, itemIcon } from '../itemart.js';
 
 let friendId = null; // vườn bạn đang mở để tưới hộ
 let lastAuto = 0; // lần tự tải lại gần nhất, tránh tải liên tục khi đồng hồ máy lệch giờ
@@ -29,9 +30,12 @@ export function renderGarden(root, ctx) {
   let timer = 0;
   let ticks = 0;
 
+  /** Tên nông sản cây cho ra. Dòng nào gọi hàm này cũng đã vẽ icon của chính nông sản đó (cropIcon), nên có icon
+   *  16-bit thì chỉ ghi tên, không chêm emoji cũ (hình khác hẳn) vào cùng dòng. */
   const commodityLabel = (id) => {
     const c = commodities[id];
-    return c ? `${esc(c.icon)} ${esc(c.name)}` : esc(id);
+    if (!c) return esc(id);
+    return hasAtlasIcon(id) ? esc(c.name) : `${esc(c.icon)} ${esc(c.name)}`;
   };
 
   /** Sản lượng dự kiến (phần) sau khi tính tưới hộ và sâu bệnh. */
@@ -41,8 +45,11 @@ export function renderGarden(root, ctx) {
     return `${Math.max(1, Math.round(lo * mult))}–${Math.max(1, Math.round(hi * mult))}`;
   }
 
+  /** Icon 16-bit 32 điểm của nông sản mà cây cho ra (Chè ra lá trà...); chưa có hình thì emoji của cây. */
+  const cropIcon = (crop) => itemIcon({ id: crop.commodity, icon: esc(crop.icon) }, 3);
+
   /** Cây non → cây lớn → ra quả, theo phần trăm thời gian đã qua. */
-  const stageIcon = (crop, done, ready) => (ready || done >= 0.67 ? esc(crop.icon) : done >= 0.34 ? '🌿' : '🌱');
+  const stageIcon = (crop, done, ready) => (ready || done >= 0.67 ? cropIcon(crop) : done >= 0.34 ? '🌿' : '🌱');
 
   function plotTile(p, data, own) {
     if (!p.crop) {
@@ -95,7 +102,7 @@ export function renderGarden(root, ctx) {
   function cropGuide() {
     return Object.values(mine.crops).map((c) => `
       <li>
-        <span class="garden-guide-icon">${esc(c.icon)}</span>
+        <span class="garden-guide-icon">${cropIcon(c)}</span>
         <div>
           <b>${esc(c.name)}</b>
           <small class="muted">⏱ ${c.hours} giờ · 📦 ${c.yield[0]}–${c.yield[1]} phần → ${commodityLabel(c.commodity)}</small>
@@ -186,7 +193,7 @@ export function renderGarden(root, ctx) {
           const poor = coins < c.seed;
           return `
             <button class="pick garden-pick" data-pick="${esc(id)}" ${poor ? 'disabled' : ''}>
-              <b>${esc(c.icon)}</b>
+              <b>${cropIcon(c)}</b>
               <span>${esc(c.name)}
                 <small>${c.hours} giờ · thu ${c.yield[0]}–${c.yield[1]} phần (${fmtLots(c.yield[0])}–${fmtLots(c.yield[1])} lô)</small>
                 <small>thành ${commodityLabel(c.commodity)}</small>

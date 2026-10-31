@@ -3,6 +3,7 @@ import { api } from '../api.js';
 import { barChart } from '../charts.js';
 import { countdown, esc, fmt, fmtLots, pct, viewHead } from '../ui.js';
 import { sceneHdr } from '../scenes-hdr.js';
+import { hasAtlasIcon, itemIcon } from '../itemart.js';
 
 /** Lựa chọn của người chơi giữ nguyên qua các lần vẽ lại. */
 const ui = { orderFor: null, batches: '10', help: false, tab: {} };
@@ -47,8 +48,21 @@ export function renderFactory(root, ctx) {
   let lastLoad = 0;
 
   const com = (c) => commodities[c] ?? { name: c, icon: '📦', base: 0 };
-  const spec = (s) => Object.entries(s).map(([c, n]) => `${n} lô ${com(c).icon} ${com(c).name}`).join(' + ');
-  const shortSpec = (s) => Object.entries(s).map(([c, n]) => `${n} ${com(c).icon}`).join(' + ');
+  /** Icon 16-bit 32 điểm của hàng `c`; chưa có hình thì emoji như cũ. */
+  const comIcon = (c) => itemIcon({ id: c, icon: com(c).icon }, 3);
+  /** Emoji của hàng `c` để chêm vào câu chữ, chỉ khi hàng chưa có icon 16-bit: có rồi thì thẻ đã vẽ icon đó,
+   *  chêm emoji cũ (hình khác hẳn) là một thứ ra hai hình. */
+  const glyph = (c) => (hasAtlasIcon(c) ? '' : `${com(c).icon} `);
+  const spec = (s) => Object.entries(s).map(([c, n]) => `${n} lô ${glyph(c)}${com(c).name}`).join(' + ');
+  /** Icon của xưởng: catalog lấy chính emoji của thành phẩm (Xưởng sấy trà 🍂 = Trà khô), nên thành phẩm có icon 16-bit
+   *  thì vẽ icon đó, để đầu thẻ và dây chuyền bên dưới cùng một hình. */
+  const kindIcon = (def) => {
+    const [out] = Object.keys(def.output ?? {});
+    return out && def.icon === com(out).icon ? comIcon(out) : def.icon;
+  };
+  /** "2 [icon]": số lô và icon 16-bit (chưa có hình thì emoji); icon ẩn với trình đọc màn hình nên đọc bằng aria-label. */
+  const shortSpec = (s) => Object.entries(s)
+    .map(([c, n]) => `<span class="fx-spec" role="img" aria-label="${n} lô ${esc(com(c).name)}">${n} ${comIcon(c)}</span>`).join(' + ');
   const have = (c) => data.goods[c] ?? 0;
   /** Số mẻ làm được với hàng trong kho của mình. */
   const maxBatches = (input) => Math.min(...Object.entries(input).map(([c, n]) => Math.floor(have(c) / (n * lot))));
@@ -184,12 +198,12 @@ export function renderFactory(root, ctx) {
     const tab = ui.tab[f.id] ?? null;
     const status = nightOn ? ['night', '🌙 Ca đêm'] : working ? ['on', '🟢 Đang chạy'] : ['off', '⚪ Đang nghỉ'];
     const hint = !f.canRun
-      ? `<p class="pb-note">Hết ${com(inC).icon} ${esc(com(inC).name)} trong kho. Mua thêm ở Sàn hoặc ký hợp đồng để có hàng về mỗi đêm.</p>`
+      ? `<p class="pb-note">Hết ${glyph(inC)}${esc(com(inC).name)} trong kho. Mua thêm ở Sàn hoặc ký hợp đồng để có hàng về mỗi đêm.</p>`
       : !working ? '<p class="pb-note">Xưởng chỉ chạy khi có bé đứng máy. Bấm <b>Cho bé đứng máy</b> để bắt đầu.</p>' : '';
     return `
       <section class="card factory-card is-${status[0]}">
         <header class="factory-head">
-          <span class="factory-icon">${def.icon}</span>
+          <span class="factory-icon">${kindIcon(def)}</span>
           <div>
             <h3>${esc(def.name)} <span class="badge level">cấp ${f.level + 1}</span></h3>
             <small class="muted">${rate}–${fmt(Math.floor(rate * (1 + rules.skillBoost)))} mẻ/giờ · thuê đất ${fmt(f.rent)} 🪙/đêm</small>
@@ -200,14 +214,14 @@ export function renderFactory(root, ctx) {
 
         <div class="factory-flow" aria-label="Dây chuyền">
           <div class="flow-node ${f.canRun ? '' : 'low'}">
-            <span class="flow-icon">${com(inC).icon}</span>
+            <span class="flow-icon">${comIcon(inC)}</span>
             <b>${fmtLots(have(inC))} lô</b>
             <small>${esc(com(inC).name)}</small>
             <small class="flow-sub ${f.canRun ? '' : 'down'}">đủ ${fmt(f.canRun)} mẻ${f.canRun ? ` · ≈ ${fmt(Math.max(1, Math.round(f.canRun / rate)))} giờ` : ''}</small>
           </div>
           <div class="flow-arrow"><span>${shortSpec(def.input)}</span><i>➜</i><span>${shortSpec(def.output)}</span></div>
           <div class="flow-node out">
-            <span class="flow-icon">${com(outC).icon}</span>
+            <span class="flow-icon">${comIcon(outC)}</span>
             <b>${fmtLots(have(outC))} lô</b>
             <small>${esc(com(outC).name)}</small>
             <small class="flow-sub">hôm nay +${fmt(today.batches + today.toll_batches)} mẻ</small>
@@ -248,7 +262,7 @@ export function renderFactory(root, ctx) {
       ? `<div class="factory-kinds">${Object.entries(data.kinds).map(([kind, def]) => {
         const m = margin(def);
         return `<article class="factory-kind">
-          <span class="factory-icon">${def.icon}</span>
+          <span class="factory-icon">${kindIcon(def)}</span>
           <h4>${esc(def.name)}</h4>
           <p class="factory-recipe">${shortSpec(def.input)} → ${shortSpec(def.output)}<br><small class="muted">${spec(def.input)} thành ${spec(def.output)}</small></p>
           <ul class="factory-facts">
@@ -275,11 +289,11 @@ export function renderFactory(root, ctx) {
     const lines = Object.entries(def.input).map(([c, lots]) => {
       const need = lots * n;
       const ok = have(c) >= need * lot;
-      return `<li class="${ok ? '' : 'down'}"><span>${com(c).icon} Cần ${fmt(need)} lô ${esc(com(c).name)}</span><b>kho ${fmtLots(have(c))} lô</b></li>`;
+      return `<li class="${ok ? '' : 'down'}"><span>${comIcon(c)} Cần ${fmt(need)} lô ${esc(com(c).name)}</span><b>kho ${fmtLots(have(c))} lô</b></li>`;
     });
     const fee = o.fee * n;
     lines.push(`<li class="${ctx.me.user.coins >= fee ? '' : 'down'}"><span>🪙 Phí giữ trước ${n} × ${fmt(o.fee)}</span><b>${fmt(fee)} 🪙</b></li>`);
-    lines.push(`<li><span>📦 Nhận về kho</span><b>${Object.entries(def.output).map(([c, lots]) => `${fmt(lots * n)} lô ${com(c).icon}`).join(' + ')}</b></li>`);
+    lines.push(`<li><span>📦 Nhận về kho</span><b>${Object.entries(def.output).map(([c, lots]) => `${fmt(lots * n)} lô ${glyph(c)}${esc(com(c).name)}`).join(' + ')}</b></li>`);
     const enough = valid && Object.entries(def.input).every(([c, lots]) => have(c) >= lots * n * lot) && ctx.me.user.coins >= fee;
     return { html: `${valid ? '' : '<p class="down small">Số mẻ từ 1 đến 100.</p>'}<ul class="pb-list">${lines.join('')}</ul>`, enough };
   }
@@ -291,7 +305,7 @@ export function renderFactory(root, ctx) {
     const preview = open ? orderPreview(o) : null;
     return `<li class="factory-offer ${open ? 'open' : ''}">
       <div class="factory-offer-head">
-        <span class="factory-icon small">${def.icon}</span>
+        <span class="factory-icon small">${kindIcon(def)}</span>
         <div><b>${esc(o.name)}</b> <span class="badge">cấp ${o.level + 1}</span><br>
           <small class="muted">của ${esc(o.owner)} · ${shortSpec(def.input)} → ${shortSpec(def.output)}</small></div>
         <div class="factory-fee"><b>${fmt(o.fee)} 🪙</b><small class="muted">/mẻ</small></div>
@@ -313,7 +327,7 @@ export function renderFactory(root, ctx) {
     const mine = data.myTolls.length ? `<h4>Đơn của bạn</h4><ul class="pb-list">${data.myTolls.map((o) => {
       const def = data.kinds[o.kind] ?? { icon: '🏭' };
       return `<li class="factory-mytoll">
-        <span class="factory-icon small">${def.icon}</span>
+        <span class="factory-icon small">${kindIcon(def)}</span>
         <div><b>${esc(o.name)}</b> <small class="muted">của ${esc(o.owner)} · ${fmt(o.fee)} 🪙/mẻ</small>
           <div class="bar xp"><i style="width:${Math.round((o.done / Math.max(1, o.batches)) * 100)}%"></i></div>
           <small class="muted">${o.done}/${o.batches} mẻ xong${o.fee ? ` · còn giữ phí ${fmt((o.batches - o.done) * o.fee)} 🪙` : ''}</small></div>
@@ -384,7 +398,7 @@ export function renderFactory(root, ctx) {
       </div>
       ${held.length ? `<ul class="factory-stock-list">${held.map(([c, q]) => `
         <li class="${q ? '' : 'empty-row'}">
-          <span class="factory-stock-name">${com(c).icon} ${esc(com(c).name)} ${tag(c)}</span>
+          <span class="factory-stock-name">${comIcon(c)} ${esc(com(c).name)} ${tag(c)}</span>
           <span class="factory-stock-qty"><b>${fmtLots(q)} lô</b>${enough(c, q)}</span>
         </li>`).join('')}</ul>` : '<p class="muted small">Kho đang trống. Mua nguyên liệu ở Sàn hoặc ký hợp đồng cung ứng.</p>'}
     </section>`;

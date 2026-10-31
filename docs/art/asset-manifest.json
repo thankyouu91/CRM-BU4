@@ -7824,6 +7824,2830 @@
    "verification": {
     "approved_by": "owner (design session, 2026-10-31)"
    }
+  },
+  {
+   "id": "item-ball",
+   "area": "items",
+   "role": "toy icon: Bóng nảy (catalog id `ball`, group toy)",
+   "path": "public/ta-tua/game/assets/items/items-0.webp#ball",
+   "status": "approved",
+   "technical": {
+    "dimensions": "32x32",
+    "content_bbox": [
+     5,
+     5,
+     27,
+     27
+    ],
+    "alpha": true,
+    "anchor": "centre (icon, content centred in canvas)",
+    "frames": 1,
+    "filtering": "nearest",
+    "scale": "integer: 2x (64 px) shop/bag cards and eggs, 1x (32 px) lists; html zoom compensated",
+    "atlas_frame": [
+     "items-0.webp",
+     1,
+     1,
+     32,
+     32
+    ]
+   },
+   "visual_locks": [
+    "palette.json",
+    "view: low top-down",
+    "light: top-left",
+    "outline: #2e1d14 outer (uniform, checked)",
+    "icon canvas 32x32, centred"
+   ],
+   "provenance": {
+    "kind": "generated",
+    "tool": "PixelLab MCP create_map_object",
+    "mode": "basic",
+    "pixellab_id": "3c7bd5bb-cd7f-42e4-aa13-e66f1160b456",
+    "prompt": "cute bouncy toy ball with red, yellow, blue and green panels, shiny white highlight, chunky simple shapes, soft light from top-left, dark brown outline",
+    "params": {
+     "view": "low top-down",
+     "outline": "single color outline",
+     "shading": "medium shading",
+     "detail": "medium detail",
+     "size": "32x32"
+    },
+    "created_at": "2026-10-31",
+    "generation_cost": 1,
+    "postprocess": [
+     "remap.py --outline: OKLab nearest, chroma x2, palette.json (48), alpha threshold 128, outer outline #2e1d14 + 1px pad",
+     "fit.py: crop to bbox, centre in 32x32 (trim 1 overflowing outline row and re-ink if needed, never rescale)"
+    ],
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)",
+    "package": "items",
+    "source": "phase1/items/pal/ball.png"
+   },
+   "verification": {
+    "native_scale_reviewed": true,
+    "in_engine_reviewed": true,
+    "technical_checks_passed": true,
+    "approved_by": "owner (design session, 2026-10-31)",
+    "notes": "packed by scripts/art/build-items.py"
+   }
+  },
+  {
+   "id": "item-bath",
+   "area": "items",
+   "role": "care icon: Tắm bong bóng (catalog id `bath`, group care)",
+   "path": "public/ta-tua/game/assets/items/items-0.webp#bath",
+   "status": "approved",
+   "technical": {
+    "dimensions": "32x32",
+    "content_bbox": [
+     2,
+     2,
+     30,
+     26
+    ],
+    "alpha": true,
+    "anchor": "centre (icon, content centred in canvas)",
+    "frames": 1,
+    "filtering": "nearest",
+    "scale": "integer: 2x (64 px) shop/bag cards and eggs, 1x (32 px) lists; html zoom compensated",
+    "atlas_frame": [
+     "items-0.webp",
+     34,
+     1,
+     32,
+     32
+    ]
+   },
+   "visual_locks": [
+    "palette.json",
+    "view: low top-down",
+    "light: top-left",
+    "outline: #2e1d14 outer (uniform, checked)",
+    "icon canvas 32x32, centred"
+   ],
+   "provenance": {
+    "kind": "generated+edited",
+    "tool": "PixelLab MCP create_map_object + local PIL edits",
+    "mode": "basic",
+    "pixellab_id": "47831d3a-1c6d-4519-9e97-79d219f804b0",
+    "prompt": "cute small white bathtub with little golden feet overflowing with fluffy white soap bubbles, pastel blue water, chunky simple shapes, soft light from top-left, dark brown outline",
+    "params": {
+     "view": "low top-down",
+     "outline": "single color outline",
+     "shading": "medium shading",
+     "detail": "medium detail",
+     "size": "32x32"
+    },
+    "created_at": "2026-10-31",
+    "generation_cost": 1,
+    "postprocess": [
+     "remap.py --outline: OKLab nearest, chroma x2, palette.json (48), alpha threshold 128, outer outline #2e1d14 + 1px pad",
+     "fit.py: crop to bbox, centre in 32x32 (trim 1 overflowing outline row and re-ink if needed, never rescale)",
+     "scripts/fixes.py: + 4 rising foam bubbles"
+    ],
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)",
+    "package": "items",
+    "source": "phase1/items/pal/bath.png"
+   },
+   "verification": {
+    "native_scale_reviewed": true,
+    "in_engine_reviewed": true,
+    "technical_checks_passed": true,
+    "approved_by": "owner (design session, 2026-10-31)",
+    "notes": "packed by scripts/art/build-items.py"
+   }
+  },
+  {
+   "id": "item-boba",
+   "area": "items",
+   "role": "food icon: Trà sữa trân châu (catalog id `boba`, group food)",
+   "path": "public/ta-tua/game/assets/items/items-0.webp#boba",
+   "status": "approved",
+   "technical": {
+    "dimensions": "32x32",
+    "content_bbox": [
+     8,
+     0,
+     24,
+     31
+    ],
+    "alpha": true,
+    "anchor": "centre (icon, content centred in canvas)",
+    "frames": 1,
+    "filtering": "nearest",
+    "scale": "integer: 2x (64 px) shop/bag cards and eggs, 1x (32 px) lists; html zoom compensated",
+    "atlas_frame": [
+     "items-0.webp",
+     67,
+     1,
+     32,
+     32
+    ]
+   },
+   "visual_locks": [
+    "palette.json",
+    "view: low top-down",
+    "light: top-left",
+    "outline: #2e1d14 outer (uniform, checked)",
+    "icon canvas 32x32, centred"
+   ],
+   "provenance": {
+    "kind": "generated",
+    "tool": "PixelLab MCP create_map_object",
+    "mode": "basic",
+    "pixellab_id": "9034cf39-a040-4078-9361-ed7b570a798a",
+    "prompt": "cute tall clear plastic bubble tea cup with a round dome lid and a thick pink straw, creamy caramel milk tea with many black tapioca pearls at the bottom, chunky simple shapes, soft light from top-left, dark brown outline",
+    "params": {
+     "view": "low top-down",
+     "outline": "single color outline",
+     "shading": "medium shading",
+     "detail": "medium detail",
+     "size": "32x32"
+    },
+    "created_at": "2026-10-31",
+    "generation_cost": 1,
+    "postprocess": [
+     "remap.py --outline: OKLab nearest, chroma x2, palette.json (48), alpha threshold 128, outer outline #2e1d14 + 1px pad",
+     "fit.py: crop to bbox, centre in 32x32 (trim 1 overflowing outline row and re-ink if needed, never rescale)"
+    ],
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)",
+    "package": "items",
+    "source": "phase1/items/pal/boba.png"
+   },
+   "verification": {
+    "native_scale_reviewed": true,
+    "in_engine_reviewed": true,
+    "technical_checks_passed": true,
+    "approved_by": "owner (design session, 2026-10-31)",
+    "notes": "packed by scripts/art/build-items.py"
+   }
+  },
+  {
+   "id": "item-cake",
+   "area": "items",
+   "role": "food icon: Bánh kem dâu (catalog id `cake`, group food)",
+   "path": "public/ta-tua/game/assets/items/items-0.webp#cake",
+   "status": "approved",
+   "technical": {
+    "dimensions": "32x32",
+    "content_bbox": [
+     4,
+     3,
+     28,
+     28
+    ],
+    "alpha": true,
+    "anchor": "centre (icon, content centred in canvas)",
+    "frames": 1,
+    "filtering": "nearest",
+    "scale": "integer: 2x (64 px) shop/bag cards and eggs, 1x (32 px) lists; html zoom compensated",
+    "atlas_frame": [
+     "items-0.webp",
+     100,
+     1,
+     32,
+     32
+    ]
+   },
+   "visual_locks": [
+    "palette.json",
+    "view: low top-down",
+    "light: top-left",
+    "outline: #2e1d14 outer (uniform, checked)",
+    "icon canvas 32x32, centred"
+   ],
+   "provenance": {
+    "kind": "generated",
+    "tool": "PixelLab MCP create_map_object",
+    "mode": "basic",
+    "pixellab_id": "a1067c80-042d-4c84-8bc9-64e571a4dc51",
+    "prompt": "cute slice of strawberry cream layer cake on a small white plate, pink cream layers, white frosting top, one red strawberry on top, appetising, chunky simple shapes, soft light from top-left, dark brown outline",
+    "params": {
+     "view": "low top-down",
+     "outline": "single color outline",
+     "shading": "medium shading",
+     "detail": "medium detail",
+     "size": "32x32"
+    },
+    "created_at": "2026-10-31",
+    "generation_cost": 1,
+    "postprocess": [
+     "remap.py --outline: OKLab nearest, chroma x2, palette.json (48), alpha threshold 128, outer outline #2e1d14 + 1px pad",
+     "fit.py: crop to bbox, centre in 32x32 (trim 1 overflowing outline row and re-ink if needed, never rescale)"
+    ],
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)",
+    "package": "items",
+    "source": "phase1/items/pal/cake.png"
+   },
+   "verification": {
+    "native_scale_reviewed": true,
+    "in_engine_reviewed": true,
+    "technical_checks_passed": true,
+    "approved_by": "owner (design session, 2026-10-31)",
+    "notes": "packed by scripts/art/build-items.py"
+   }
+  },
+  {
+   "id": "item-cane",
+   "area": "items",
+   "role": "commodity-raw icon: Mía (catalog id `cane`, group commodity)",
+   "path": "public/ta-tua/game/assets/items/items-0.webp#cane",
+   "status": "approved",
+   "technical": {
+    "dimensions": "32x32",
+    "content_bbox": [
+     4,
+     2,
+     28,
+     30
+    ],
+    "alpha": true,
+    "anchor": "centre (icon, content centred in canvas)",
+    "frames": 1,
+    "filtering": "nearest",
+    "scale": "integer: 2x (64 px) shop/bag cards and eggs, 1x (32 px) lists; html zoom compensated",
+    "atlas_frame": [
+     "items-0.webp",
+     133,
+     1,
+     32,
+     32
+    ]
+   },
+   "visual_locks": [
+    "palette.json",
+    "view: low top-down",
+    "light: top-left",
+    "outline: #2e1d14 outer (uniform, checked)",
+    "icon canvas 32x32, centred"
+   ],
+   "provenance": {
+    "kind": "generated+edited",
+    "tool": "PixelLab MCP create_map_object + local PIL edits",
+    "mode": "basic",
+    "pixellab_id": "42fab068-dc98-425f-85d7-3d3872d1ba47",
+    "prompt": "cute bundle of three short sugar cane stalks tied with a string, purple-brown jointed stalks with green leaves on top, chunky simple shapes, soft light from top-left, dark brown outline",
+    "params": {
+     "view": "low top-down",
+     "outline": "single color outline",
+     "shading": "medium shading",
+     "detail": "medium detail",
+     "size": "32x32"
+    },
+    "created_at": "2026-10-31",
+    "generation_cost": 1,
+    "postprocess": [
+     "remap.py --outline: OKLab nearest, chroma x2, palette.json (48), alpha threshold 128, outer outline #2e1d14 + 1px pad",
+     "fit.py: crop to bbox, centre in 32x32 (trim 1 overflowing outline row and re-ink if needed, never rescale)",
+     "scripts/hueshift.py: purple stalks (not in palette) -> maroon wood ramp by lightness, before remap"
+    ],
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)",
+    "package": "items",
+    "source": "phase1/items/pal/cane.png"
+   },
+   "verification": {
+    "native_scale_reviewed": true,
+    "in_engine_reviewed": true,
+    "technical_checks_passed": true,
+    "approved_by": "owner (design session, 2026-10-31)",
+    "notes": "packed by scripts/art/build-items.py"
+   }
+  },
+  {
+   "id": "item-cassava",
+   "area": "items",
+   "role": "commodity-raw icon: Củ sắn (catalog id `cassava`, group commodity)",
+   "path": "public/ta-tua/game/assets/items/items-0.webp#cassava",
+   "status": "approved",
+   "technical": {
+    "dimensions": "32x32",
+    "content_bbox": [
+     4,
+     4,
+     27,
+     27
+    ],
+    "alpha": true,
+    "anchor": "centre (icon, content centred in canvas)",
+    "frames": 1,
+    "filtering": "nearest",
+    "scale": "integer: 2x (64 px) shop/bag cards and eggs, 1x (32 px) lists; html zoom compensated",
+    "atlas_frame": [
+     "items-0.webp",
+     166,
+     1,
+     32,
+     32
+    ]
+   },
+   "visual_locks": [
+    "palette.json",
+    "view: low top-down",
+    "light: top-left",
+    "outline: #2e1d14 outer (uniform, checked)",
+    "icon canvas 32x32, centred"
+   ],
+   "provenance": {
+    "kind": "generated+edited",
+    "tool": "PixelLab MCP create_map_object + local PIL edits",
+    "mode": "basic",
+    "pixellab_id": "a4619fc7-7192-43c5-a827-147c07faeb04",
+    "prompt": "cute cassava root, long tapered brown tuber with rough bark skin and one cut end showing white flesh, chunky simple shapes, soft light from top-left, dark brown outline",
+    "params": {
+     "view": "low top-down",
+     "outline": "single color outline",
+     "shading": "medium shading",
+     "detail": "medium detail",
+     "size": "32x32"
+    },
+    "created_at": "2026-10-31",
+    "generation_cost": 1,
+    "postprocess": [
+     "remap.py --outline: OKLab nearest, chroma x2, palette.json (48), alpha threshold 128, outer outline #2e1d14 + 1px pad",
+     "fit.py: crop to bbox, centre in 32x32 (trim 1 overflowing outline row and re-ink if needed, never rescale)",
+     "scripts/fixes.py: white cut face with tan ring"
+    ],
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)",
+    "package": "items",
+    "source": "phase1/items/pal/cassava.png"
+   },
+   "verification": {
+    "native_scale_reviewed": true,
+    "in_engine_reviewed": true,
+    "technical_checks_passed": true,
+    "approved_by": "owner (design session, 2026-10-31)",
+    "notes": "packed by scripts/art/build-items.py"
+   }
+  },
+  {
+   "id": "item-clan_care",
+   "area": "items",
+   "role": "care icon: Bộ chăm sóc gia tộc (catalog id `clan_care`, group care)",
+   "path": "public/ta-tua/game/assets/items/items-0.webp#clan_care",
+   "status": "approved",
+   "technical": {
+    "dimensions": "32x32",
+    "content_bbox": [
+     3,
+     4,
+     28,
+     28
+    ],
+    "alpha": true,
+    "anchor": "centre (icon, content centred in canvas)",
+    "frames": 1,
+    "filtering": "nearest",
+    "scale": "integer: 2x (64 px) shop/bag cards and eggs, 1x (32 px) lists; html zoom compensated",
+    "atlas_frame": [
+     "items-0.webp",
+     199,
+     1,
+     32,
+     32
+    ]
+   },
+   "visual_locks": [
+    "palette.json",
+    "view: low top-down",
+    "light: top-left",
+    "outline: #2e1d14 outer (uniform, checked)",
+    "icon canvas 32x32, centred"
+   ],
+   "provenance": {
+    "kind": "generated+edited",
+    "tool": "PixelLab MCP create_map_object + local PIL edits",
+    "mode": "basic",
+    "pixellab_id": "54eab000-6466-4b92-9265-2c04b8ade92d",
+    "prompt": "cute small pet care kit box, mint green box with a white cross emblem on the front, a lotion pump bottle and a fluffy towel peeking out of the top, no text, chunky simple shapes, soft light from top-left, dark brown outline",
+    "params": {
+     "view": "low top-down",
+     "outline": "single color outline",
+     "shading": "medium shading",
+     "detail": "medium detail",
+     "size": "32x32"
+    },
+    "created_at": "2026-10-31",
+    "generation_cost": 1,
+    "postprocess": [
+     "remap.py --outline: OKLab nearest, chroma x2, palette.json (48), alpha threshold 128, outer outline #2e1d14 + 1px pad",
+     "fit.py: crop to bbox, centre in 32x32 (trim 1 overflowing outline row and re-ink if needed, never rescale)",
+     "scripts/tiers.py: skull-like emblem -> red cross on white label"
+    ],
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)",
+    "package": "items",
+    "source": "phase1/items/pal/clan_care.png"
+   },
+   "verification": {
+    "native_scale_reviewed": true,
+    "in_engine_reviewed": true,
+    "technical_checks_passed": true,
+    "approved_by": "owner (design session, 2026-10-31)",
+    "notes": "packed by scripts/art/build-items.py"
+   }
+  },
+  {
+   "id": "item-clan_care_ngon",
+   "area": "items",
+   "role": "care icon: Bộ chăm sóc gia tộc (Ngon) (catalog id `clan_care_ngon`, group care)",
+   "path": "public/ta-tua/game/assets/items/items-0.webp#clan_care_ngon",
+   "status": "approved",
+   "technical": {
+    "dimensions": "32x32",
+    "content_bbox": [
+     3,
+     4,
+     28,
+     28
+    ],
+    "alpha": true,
+    "anchor": "centre (icon, content centred in canvas)",
+    "frames": 1,
+    "filtering": "nearest",
+    "scale": "integer: 2x (64 px) shop/bag cards and eggs, 1x (32 px) lists; html zoom compensated",
+    "atlas_frame": [
+     "items-0.webp",
+     232,
+     1,
+     32,
+     32
+    ]
+   },
+   "visual_locks": [
+    "palette.json",
+    "view: low top-down",
+    "light: top-left",
+    "outline: #2e1d14 outer (uniform, checked)",
+    "icon canvas 32x32, centred"
+   ],
+   "provenance": {
+    "kind": "derived (hand edit)",
+    "tool": "PixelLab MCP create_map_object + local PIL edits",
+    "mode": "basic",
+    "pixellab_id": "54eab000-6466-4b92-9265-2c04b8ade92d",
+    "prompt": "cute small pet care kit box, mint green box with a white cross emblem on the front, a lotion pump bottle and a fluffy towel peeking out of the top, no text, chunky simple shapes, soft light from top-left, dark brown outline",
+    "params": {
+     "view": "low top-down",
+     "outline": "single color outline",
+     "shading": "medium shading",
+     "detail": "medium detail",
+     "size": "32x32"
+    },
+    "created_at": "2026-10-31",
+    "generation_cost": 0,
+    "postprocess": [
+     "remap.py --outline: OKLab nearest, chroma x2, palette.json (48), alpha threshold 128, outer outline #2e1d14 + 1px pad",
+     "fit.py: crop to bbox, centre in 32x32 (trim 1 overflowing outline row and re-ink if needed, never rescale)",
+     "scripts/tiers.py: + pink ribbon band and bow"
+    ],
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)",
+    "package": "items",
+    "source": "phase1/items/pal/clan_care_ngon.png"
+   },
+   "verification": {
+    "native_scale_reviewed": true,
+    "in_engine_reviewed": true,
+    "technical_checks_passed": true,
+    "approved_by": "owner (design session, 2026-10-31)",
+    "notes": "packed by scripts/art/build-items.py"
+   }
+  },
+  {
+   "id": "item-clan_care_tuyet",
+   "area": "items",
+   "role": "care icon: Bộ chăm sóc gia tộc (Tuyệt hảo) (catalog id `clan_care_tuyet`, group care)",
+   "path": "public/ta-tua/game/assets/items/items-0.webp#clan_care_tuyet",
+   "status": "approved",
+   "technical": {
+    "dimensions": "32x32",
+    "content_bbox": [
+     1,
+     1,
+     31,
+     28
+    ],
+    "alpha": true,
+    "anchor": "centre (icon, content centred in canvas)",
+    "frames": 1,
+    "filtering": "nearest",
+    "scale": "integer: 2x (64 px) shop/bag cards and eggs, 1x (32 px) lists; html zoom compensated",
+    "atlas_frame": [
+     "items-0.webp",
+     265,
+     1,
+     32,
+     32
+    ]
+   },
+   "visual_locks": [
+    "palette.json",
+    "view: low top-down",
+    "light: top-left",
+    "outline: #2e1d14 outer (uniform, checked)",
+    "icon canvas 32x32, centred"
+   ],
+   "provenance": {
+    "kind": "derived (hand edit)",
+    "tool": "PixelLab MCP create_map_object + local PIL edits",
+    "mode": "basic",
+    "pixellab_id": "54eab000-6466-4b92-9265-2c04b8ade92d",
+    "prompt": "cute small pet care kit box, mint green box with a white cross emblem on the front, a lotion pump bottle and a fluffy towel peeking out of the top, no text, chunky simple shapes, soft light from top-left, dark brown outline",
+    "params": {
+     "view": "low top-down",
+     "outline": "single color outline",
+     "shading": "medium shading",
+     "detail": "medium detail",
+     "size": "32x32"
+    },
+    "created_at": "2026-10-31",
+    "generation_cost": 0,
+    "postprocess": [
+     "remap.py --outline: OKLab nearest, chroma x2, palette.json (48), alpha threshold 128, outer outline #2e1d14 + 1px pad",
+     "fit.py: crop to bbox, centre in 32x32 (trim 1 overflowing outline row and re-ink if needed, never rescale)",
+     "scripts/tiers.py: + gold ribbon, gold corner trim, 2 sparkles"
+    ],
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)",
+    "package": "items",
+    "source": "phase1/items/pal/clan_care_tuyet.png"
+   },
+   "verification": {
+    "native_scale_reviewed": true,
+    "in_engine_reviewed": true,
+    "technical_checks_passed": true,
+    "approved_by": "owner (design session, 2026-10-31)",
+    "notes": "packed by scripts/art/build-items.py"
+   }
+  },
+  {
+   "id": "item-clan_meal",
+   "area": "items",
+   "role": "food icon: Suất ăn gia tộc (catalog id `clan_meal`, group food)",
+   "path": "public/ta-tua/game/assets/items/items-0.webp#clan_meal",
+   "status": "approved",
+   "technical": {
+    "dimensions": "32x32",
+    "content_bbox": [
+     3,
+     5,
+     29,
+     27
+    ],
+    "alpha": true,
+    "anchor": "centre (icon, content centred in canvas)",
+    "frames": 1,
+    "filtering": "nearest",
+    "scale": "integer: 2x (64 px) shop/bag cards and eggs, 1x (32 px) lists; html zoom compensated",
+    "atlas_frame": [
+     "items-0.webp",
+     298,
+     1,
+     32,
+     32
+    ]
+   },
+   "visual_locks": [
+    "palette.json",
+    "view: low top-down",
+    "light: top-left",
+    "outline: #2e1d14 outer (uniform, checked)",
+    "icon canvas 32x32, centred"
+   ],
+   "provenance": {
+    "kind": "generated+edited",
+    "tool": "PixelLab MCP create_map_object + local PIL edits",
+    "mode": "basic",
+    "pixellab_id": "9a06febf-8382-4a96-a179-723e423d4bcc",
+    "prompt": "cute bento lunch box, red lacquer box with white rice, green broccoli, a yellow rolled omelette and a pink sausage, appetising, chunky simple shapes, soft light from top-left, dark brown outline",
+    "params": {
+     "view": "low top-down",
+     "outline": "single color outline",
+     "shading": "medium shading",
+     "detail": "medium detail",
+     "size": "32x32"
+    },
+    "created_at": "2026-10-31",
+    "generation_cost": 1,
+    "postprocess": [
+     "remap.py --outline: OKLab nearest, chroma x2, palette.json (48), alpha threshold 128, outer outline #2e1d14 + 1px pad",
+     "fit.py: crop to bbox, centre in 32x32 (trim 1 overflowing outline row and re-ink if needed, never rescale)",
+     "scripts/tiers.py: omelette highlight lime->pale yellow"
+    ],
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)",
+    "package": "items",
+    "source": "phase1/items/pal/clan_meal.png"
+   },
+   "verification": {
+    "native_scale_reviewed": true,
+    "in_engine_reviewed": true,
+    "technical_checks_passed": true,
+    "approved_by": "owner (design session, 2026-10-31)",
+    "notes": "packed by scripts/art/build-items.py"
+   }
+  },
+  {
+   "id": "item-clan_meal_ngon",
+   "area": "items",
+   "role": "food icon: Suất ăn gia tộc (Ngon) (catalog id `clan_meal_ngon`, group food)",
+   "path": "public/ta-tua/game/assets/items/items-0.webp#clan_meal_ngon",
+   "status": "approved",
+   "technical": {
+    "dimensions": "32x32",
+    "content_bbox": [
+     3,
+     5,
+     29,
+     27
+    ],
+    "alpha": true,
+    "anchor": "centre (icon, content centred in canvas)",
+    "frames": 1,
+    "filtering": "nearest",
+    "scale": "integer: 2x (64 px) shop/bag cards and eggs, 1x (32 px) lists; html zoom compensated",
+    "atlas_frame": [
+     "items-0.webp",
+     331,
+     1,
+     32,
+     32
+    ]
+   },
+   "visual_locks": [
+    "palette.json",
+    "view: low top-down",
+    "light: top-left",
+    "outline: #2e1d14 outer (uniform, checked)",
+    "icon canvas 32x32, centred"
+   ],
+   "provenance": {
+    "kind": "derived (hand edit)",
+    "tool": "PixelLab MCP create_map_object + local PIL edits",
+    "mode": "basic",
+    "pixellab_id": "9a06febf-8382-4a96-a179-723e423d4bcc",
+    "prompt": "cute bento lunch box, red lacquer box with white rice, green broccoli, a yellow rolled omelette and a pink sausage, appetising, chunky simple shapes, soft light from top-left, dark brown outline",
+    "params": {
+     "view": "low top-down",
+     "outline": "single color outline",
+     "shading": "medium shading",
+     "detail": "medium detail",
+     "size": "32x32"
+    },
+    "created_at": "2026-10-31",
+    "generation_cost": 0,
+    "postprocess": [
+     "remap.py --outline: OKLab nearest, chroma x2, palette.json (48), alpha threshold 128, outer outline #2e1d14 + 1px pad",
+     "fit.py: crop to bbox, centre in 32x32 (trim 1 overflowing outline row and re-ink if needed, never rescale)",
+     "scripts/tiers.py: + herb sprig, sesame, fish-cake swirl (garnish) + pink bow on the bowl"
+    ],
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)",
+    "package": "items",
+    "source": "phase1/items/pal/clan_meal_ngon.png"
+   },
+   "verification": {
+    "native_scale_reviewed": true,
+    "in_engine_reviewed": true,
+    "technical_checks_passed": true,
+    "approved_by": "owner (design session, 2026-10-31)",
+    "notes": "packed by scripts/art/build-items.py"
+   }
+  },
+  {
+   "id": "item-clan_meal_tuyet",
+   "area": "items",
+   "role": "food icon: Suất ăn gia tộc (Tuyệt hảo) (catalog id `clan_meal_tuyet`, group food)",
+   "path": "public/ta-tua/game/assets/items/items-0.webp#clan_meal_tuyet",
+   "status": "approved",
+   "technical": {
+    "dimensions": "32x32",
+    "content_bbox": [
+     2,
+     0,
+     31,
+     27
+    ],
+    "alpha": true,
+    "anchor": "centre (icon, content centred in canvas)",
+    "frames": 1,
+    "filtering": "nearest",
+    "scale": "integer: 2x (64 px) shop/bag cards and eggs, 1x (32 px) lists; html zoom compensated",
+    "atlas_frame": [
+     "items-0.webp",
+     364,
+     1,
+     32,
+     32
+    ]
+   },
+   "visual_locks": [
+    "palette.json",
+    "view: low top-down",
+    "light: top-left",
+    "outline: #2e1d14 outer (uniform, checked)",
+    "icon canvas 32x32, centred"
+   ],
+   "provenance": {
+    "kind": "derived (hand edit)",
+    "tool": "PixelLab MCP create_map_object + local PIL edits",
+    "mode": "basic",
+    "pixellab_id": "9a06febf-8382-4a96-a179-723e423d4bcc",
+    "prompt": "cute bento lunch box, red lacquer box with white rice, green broccoli, a yellow rolled omelette and a pink sausage, appetising, chunky simple shapes, soft light from top-left, dark brown outline",
+    "params": {
+     "view": "low top-down",
+     "outline": "single color outline",
+     "shading": "medium shading",
+     "detail": "medium detail",
+     "size": "32x32"
+    },
+    "created_at": "2026-10-31",
+    "generation_cost": 0,
+    "postprocess": [
+     "remap.py --outline: OKLab nearest, chroma x2, palette.json (48), alpha threshold 128, outer outline #2e1d14 + 1px pad",
+     "fit.py: crop to bbox, centre in 32x32 (trim 1 overflowing outline row and re-ink if needed, never rescale)",
+     "scripts/tiers.py: + garnish, gold rim and band, gold bow, 2 sparkles"
+    ],
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)",
+    "package": "items",
+    "source": "phase1/items/pal/clan_meal_tuyet.png"
+   },
+   "verification": {
+    "native_scale_reviewed": true,
+    "in_engine_reviewed": true,
+    "technical_checks_passed": true,
+    "approved_by": "owner (design session, 2026-10-31)",
+    "notes": "packed by scripts/art/build-items.py"
+   }
+  },
+  {
+   "id": "item-condensed",
+   "area": "items",
+   "role": "commodity-processed icon: Sữa đặc (catalog id `condensed`, group commodity)",
+   "path": "public/ta-tua/game/assets/items/items-0.webp#condensed",
+   "status": "approved",
+   "technical": {
+    "dimensions": "32x32",
+    "content_bbox": [
+     6,
+     4,
+     25,
+     28
+    ],
+    "alpha": true,
+    "anchor": "centre (icon, content centred in canvas)",
+    "frames": 1,
+    "filtering": "nearest",
+    "scale": "integer: 2x (64 px) shop/bag cards and eggs, 1x (32 px) lists; html zoom compensated",
+    "atlas_frame": [
+     "items-0.webp",
+     397,
+     1,
+     32,
+     32
+    ]
+   },
+   "visual_locks": [
+    "palette.json",
+    "view: low top-down",
+    "light: top-left",
+    "outline: #2e1d14 outer (uniform, checked)",
+    "icon canvas 32x32, centred"
+   ],
+   "provenance": {
+    "kind": "generated",
+    "tool": "PixelLab MCP create_map_object",
+    "mode": "basic",
+    "pixellab_id": "5f209963-7bd1-4519-ae24-98371dbbb4a1",
+    "prompt": "cute small cylindrical tin can of sweetened condensed milk with a cream and red label, no text, lid open with thick white milk inside, chunky simple shapes, soft light from top-left, dark brown outline",
+    "params": {
+     "view": "low top-down",
+     "outline": "single color outline",
+     "shading": "medium shading",
+     "detail": "medium detail",
+     "size": "32x32"
+    },
+    "created_at": "2026-10-31",
+    "generation_cost": 1,
+    "postprocess": [
+     "remap.py --outline: OKLab nearest, chroma x2, palette.json (48), alpha threshold 128, outer outline #2e1d14 + 1px pad",
+     "fit.py: crop to bbox, centre in 32x32 (trim 1 overflowing outline row and re-ink if needed, never rescale)"
+    ],
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)",
+    "package": "items",
+    "source": "phase1/items/pal/condensed.png"
+   },
+   "verification": {
+    "native_scale_reviewed": true,
+    "in_engine_reviewed": true,
+    "technical_checks_passed": true,
+    "approved_by": "owner (design session, 2026-10-31)",
+    "notes": "packed by scripts/art/build-items.py"
+   }
+  },
+  {
+   "id": "item-dried_tea",
+   "area": "items",
+   "role": "commodity-processed icon: Trà khô (catalog id `dried_tea`, group commodity)",
+   "path": "public/ta-tua/game/assets/items/items-0.webp#dried_tea",
+   "status": "approved",
+   "technical": {
+    "dimensions": "32x32",
+    "content_bbox": [
+     3,
+     6,
+     29,
+     25
+    ],
+    "alpha": true,
+    "anchor": "centre (icon, content centred in canvas)",
+    "frames": 1,
+    "filtering": "nearest",
+    "scale": "integer: 2x (64 px) shop/bag cards and eggs, 1x (32 px) lists; html zoom compensated",
+    "atlas_frame": [
+     "items-0.webp",
+     430,
+     1,
+     32,
+     32
+    ]
+   },
+   "visual_locks": [
+    "palette.json",
+    "view: low top-down",
+    "light: top-left",
+    "outline: #2e1d14 outer (uniform, checked)",
+    "icon canvas 32x32, centred"
+   ],
+   "provenance": {
+    "kind": "generated",
+    "tool": "PixelLab MCP create_map_object",
+    "mode": "basic",
+    "pixellab_id": "0f04931f-d5f7-498a-961e-5de0b3cd5ced",
+    "prompt": "cute small round woven bamboo tray holding a heap of dark green curled dried tea leaves, chunky simple shapes, soft light from top-left, dark brown outline",
+    "params": {
+     "view": "low top-down",
+     "outline": "single color outline",
+     "shading": "medium shading",
+     "detail": "medium detail",
+     "size": "32x32"
+    },
+    "created_at": "2026-10-31",
+    "generation_cost": 1,
+    "postprocess": [
+     "remap.py --outline: OKLab nearest, chroma x2, palette.json (48), alpha threshold 128, outer outline #2e1d14 + 1px pad",
+     "fit.py: crop to bbox, centre in 32x32 (trim 1 overflowing outline row and re-ink if needed, never rescale)"
+    ],
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)",
+    "package": "items",
+    "source": "phase1/items/pal/dried_tea.png"
+   },
+   "verification": {
+    "native_scale_reviewed": true,
+    "in_engine_reviewed": true,
+    "technical_checks_passed": true,
+    "approved_by": "owner (design session, 2026-10-31)",
+    "notes": "packed by scripts/art/build-items.py"
+   }
+  },
+  {
+   "id": "item-egg_hoa",
+   "area": "items",
+   "role": "egg icon: Trứng Hỏa (catalog id `egg_hoa`, group egg)",
+   "path": "public/ta-tua/game/assets/items/items-0.webp#egg_hoa",
+   "status": "approved",
+   "technical": {
+    "dimensions": "32x32",
+    "content_bbox": [
+     5,
+     3,
+     27,
+     29
+    ],
+    "alpha": true,
+    "anchor": "centre (icon, content centred in canvas)",
+    "frames": 1,
+    "filtering": "nearest",
+    "scale": "integer: 2x (64 px) shop/bag cards and eggs, 1x (32 px) lists; html zoom compensated",
+    "atlas_frame": [
+     "items-0.webp",
+     463,
+     1,
+     32,
+     32
+    ]
+   },
+   "visual_locks": [
+    "palette.json",
+    "view: low top-down",
+    "light: top-left",
+    "outline: #2e1d14 outer (uniform, checked)",
+    "icon canvas 32x32, centred"
+   ],
+   "provenance": {
+    "kind": "derived (hand edit)",
+    "tool": "PixelLab MCP create_map_object + local PIL edits",
+    "mode": "basic",
+    "pixellab_id": "e5896129-a2d4-4c29-9b56-15a0f01ca77c",
+    "prompt": "cute large smooth oval egg standing upright, plain cream white shell with a soft glossy highlight, no pattern, chunky simple shapes, soft light from top-left, dark brown outline",
+    "params": {
+     "view": "low top-down",
+     "outline": "single color outline",
+     "shading": "medium shading",
+     "detail": "medium detail",
+     "size": "32x32"
+    },
+    "created_at": "2026-10-31",
+    "generation_cost": 0,
+    "postprocess": [
+     "remap.py --outline: OKLab nearest, chroma x2, palette.json (48), alpha threshold 128, outer outline #2e1d14 + 1px pad",
+     "fit.py: crop to bbox, centre in 32x32 (trim 1 overflowing outline row and re-ink if needed, never rescale)",
+     "scripts/eggs.py: shell ramp -> element colour + hand-drawn pattern: orange/red #d65f5f + flames"
+    ],
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)",
+    "package": "items",
+    "source": "phase1/items/pal/egg_hoa.png"
+   },
+   "verification": {
+    "native_scale_reviewed": true,
+    "in_engine_reviewed": true,
+    "technical_checks_passed": true,
+    "approved_by": "owner (design session, 2026-10-31)",
+    "notes": "packed by scripts/art/build-items.py"
+   }
+  },
+  {
+   "id": "item-egg_kim",
+   "area": "items",
+   "role": "egg icon: Trứng Kim (catalog id `egg_kim`, group egg)",
+   "path": "public/ta-tua/game/assets/items/items-0.webp#egg_kim",
+   "status": "approved",
+   "technical": {
+    "dimensions": "32x32",
+    "content_bbox": [
+     5,
+     3,
+     27,
+     29
+    ],
+    "alpha": true,
+    "anchor": "centre (icon, content centred in canvas)",
+    "frames": 1,
+    "filtering": "nearest",
+    "scale": "integer: 2x (64 px) shop/bag cards and eggs, 1x (32 px) lists; html zoom compensated",
+    "atlas_frame": [
+     "items-0.webp",
+     496,
+     1,
+     32,
+     32
+    ]
+   },
+   "visual_locks": [
+    "palette.json",
+    "view: low top-down",
+    "light: top-left",
+    "outline: #2e1d14 outer (uniform, checked)",
+    "icon canvas 32x32, centred"
+   ],
+   "provenance": {
+    "kind": "generated+edited",
+    "tool": "PixelLab MCP create_map_object + local PIL edits",
+    "mode": "basic",
+    "pixellab_id": "e5896129-a2d4-4c29-9b56-15a0f01ca77c",
+    "prompt": "cute large smooth oval egg standing upright, plain cream white shell with a soft glossy highlight, no pattern, chunky simple shapes, soft light from top-left, dark brown outline",
+    "params": {
+     "view": "low top-down",
+     "outline": "single color outline",
+     "shading": "medium shading",
+     "detail": "medium detail",
+     "size": "32x32"
+    },
+    "created_at": "2026-10-31",
+    "generation_cost": 1,
+    "postprocess": [
+     "remap.py --outline: OKLab nearest, chroma x2, palette.json (48), alpha threshold 128, outer outline #2e1d14 + 1px pad",
+     "fit.py: crop to bbox, centre in 32x32 (trim 1 overflowing outline row and re-ink if needed, never rescale)",
+     "scripts/eggs.py: shell ramp -> element colour + hand-drawn pattern: silver #c4bcb0 + gold band #f4c24f"
+    ],
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)",
+    "package": "items",
+    "source": "phase1/items/pal/egg_kim.png"
+   },
+   "verification": {
+    "native_scale_reviewed": true,
+    "in_engine_reviewed": true,
+    "technical_checks_passed": true,
+    "approved_by": "owner (design session, 2026-10-31)",
+    "notes": "packed by scripts/art/build-items.py"
+   }
+  },
+  {
+   "id": "item-egg_moc",
+   "area": "items",
+   "role": "egg icon: Trứng Mộc (catalog id `egg_moc`, group egg)",
+   "path": "public/ta-tua/game/assets/items/items-0.webp#egg_moc",
+   "status": "approved",
+   "technical": {
+    "dimensions": "32x32",
+    "content_bbox": [
+     5,
+     3,
+     27,
+     29
+    ],
+    "alpha": true,
+    "anchor": "centre (icon, content centred in canvas)",
+    "frames": 1,
+    "filtering": "nearest",
+    "scale": "integer: 2x (64 px) shop/bag cards and eggs, 1x (32 px) lists; html zoom compensated",
+    "atlas_frame": [
+     "items-0.webp",
+     1,
+     34,
+     32,
+     32
+    ]
+   },
+   "visual_locks": [
+    "palette.json",
+    "view: low top-down",
+    "light: top-left",
+    "outline: #2e1d14 outer (uniform, checked)",
+    "icon canvas 32x32, centred"
+   ],
+   "provenance": {
+    "kind": "derived (hand edit)",
+    "tool": "PixelLab MCP create_map_object + local PIL edits",
+    "mode": "basic",
+    "pixellab_id": "e5896129-a2d4-4c29-9b56-15a0f01ca77c",
+    "prompt": "cute large smooth oval egg standing upright, plain cream white shell with a soft glossy highlight, no pattern, chunky simple shapes, soft light from top-left, dark brown outline",
+    "params": {
+     "view": "low top-down",
+     "outline": "single color outline",
+     "shading": "medium shading",
+     "detail": "medium detail",
+     "size": "32x32"
+    },
+    "created_at": "2026-10-31",
+    "generation_cost": 0,
+    "postprocess": [
+     "remap.py --outline: OKLab nearest, chroma x2, palette.json (48), alpha threshold 128, outer outline #2e1d14 + 1px pad",
+     "fit.py: crop to bbox, centre in 32x32 (trim 1 overflowing outline row and re-ink if needed, never rescale)",
+     "scripts/eggs.py: shell ramp -> element colour + hand-drawn pattern: green #6dbb5a + sprout"
+    ],
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)",
+    "package": "items",
+    "source": "phase1/items/pal/egg_moc.png"
+   },
+   "verification": {
+    "native_scale_reviewed": true,
+    "in_engine_reviewed": true,
+    "technical_checks_passed": true,
+    "approved_by": "owner (design session, 2026-10-31)",
+    "notes": "packed by scripts/art/build-items.py"
+   }
+  },
+  {
+   "id": "item-egg_tho",
+   "area": "items",
+   "role": "egg icon: Trứng Thổ (catalog id `egg_tho`, group egg)",
+   "path": "public/ta-tua/game/assets/items/items-0.webp#egg_tho",
+   "status": "approved",
+   "technical": {
+    "dimensions": "32x32",
+    "content_bbox": [
+     5,
+     3,
+     27,
+     29
+    ],
+    "alpha": true,
+    "anchor": "centre (icon, content centred in canvas)",
+    "frames": 1,
+    "filtering": "nearest",
+    "scale": "integer: 2x (64 px) shop/bag cards and eggs, 1x (32 px) lists; html zoom compensated",
+    "atlas_frame": [
+     "items-0.webp",
+     34,
+     34,
+     32,
+     32
+    ]
+   },
+   "visual_locks": [
+    "palette.json",
+    "view: low top-down",
+    "light: top-left",
+    "outline: #2e1d14 outer (uniform, checked)",
+    "icon canvas 32x32, centred"
+   ],
+   "provenance": {
+    "kind": "derived (hand edit)",
+    "tool": "PixelLab MCP create_map_object + local PIL edits",
+    "mode": "basic",
+    "pixellab_id": "e5896129-a2d4-4c29-9b56-15a0f01ca77c",
+    "prompt": "cute large smooth oval egg standing upright, plain cream white shell with a soft glossy highlight, no pattern, chunky simple shapes, soft light from top-left, dark brown outline",
+    "params": {
+     "view": "low top-down",
+     "outline": "single color outline",
+     "shading": "medium shading",
+     "detail": "medium detail",
+     "size": "32x32"
+    },
+    "created_at": "2026-10-31",
+    "generation_cost": 0,
+    "postprocess": [
+     "remap.py --outline: OKLab nearest, chroma x2, palette.json (48), alpha threshold 128, outer outline #2e1d14 + 1px pad",
+     "fit.py: crop to bbox, centre in 32x32 (trim 1 overflowing outline row and re-ink if needed, never rescale)",
+     "scripts/eggs.py: shell ramp -> element colour + hand-drawn pattern: earth #c8915f + zigzag strata"
+    ],
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)",
+    "package": "items",
+    "source": "phase1/items/pal/egg_tho.png"
+   },
+   "verification": {
+    "native_scale_reviewed": true,
+    "in_engine_reviewed": true,
+    "technical_checks_passed": true,
+    "approved_by": "owner (design session, 2026-10-31)",
+    "notes": "packed by scripts/art/build-items.py"
+   }
+  },
+  {
+   "id": "item-egg_thuy",
+   "area": "items",
+   "role": "egg icon: Trứng Thủy (catalog id `egg_thuy`, group egg)",
+   "path": "public/ta-tua/game/assets/items/items-0.webp#egg_thuy",
+   "status": "approved",
+   "technical": {
+    "dimensions": "32x32",
+    "content_bbox": [
+     5,
+     3,
+     27,
+     29
+    ],
+    "alpha": true,
+    "anchor": "centre (icon, content centred in canvas)",
+    "frames": 1,
+    "filtering": "nearest",
+    "scale": "integer: 2x (64 px) shop/bag cards and eggs, 1x (32 px) lists; html zoom compensated",
+    "atlas_frame": [
+     "items-0.webp",
+     67,
+     34,
+     32,
+     32
+    ]
+   },
+   "visual_locks": [
+    "palette.json",
+    "view: low top-down",
+    "light: top-left",
+    "outline: #2e1d14 outer (uniform, checked)",
+    "icon canvas 32x32, centred"
+   ],
+   "provenance": {
+    "kind": "derived (hand edit)",
+    "tool": "PixelLab MCP create_map_object + local PIL edits",
+    "mode": "basic",
+    "pixellab_id": "e5896129-a2d4-4c29-9b56-15a0f01ca77c",
+    "prompt": "cute large smooth oval egg standing upright, plain cream white shell with a soft glossy highlight, no pattern, chunky simple shapes, soft light from top-left, dark brown outline",
+    "params": {
+     "view": "low top-down",
+     "outline": "single color outline",
+     "shading": "medium shading",
+     "detail": "medium detail",
+     "size": "32x32"
+    },
+    "created_at": "2026-10-31",
+    "generation_cost": 0,
+    "postprocess": [
+     "remap.py --outline: OKLab nearest, chroma x2, palette.json (48), alpha threshold 128, outer outline #2e1d14 + 1px pad",
+     "fit.py: crop to bbox, centre in 32x32 (trim 1 overflowing outline row and re-ink if needed, never rescale)",
+     "scripts/eggs.py: shell ramp -> element colour + hand-drawn pattern: blue #3f8fc0 + waves"
+    ],
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)",
+    "package": "items",
+    "source": "phase1/items/pal/egg_thuy.png"
+   },
+   "verification": {
+    "native_scale_reviewed": true,
+    "in_engine_reviewed": true,
+    "technical_checks_passed": true,
+    "approved_by": "owner (design session, 2026-10-31)",
+    "notes": "packed by scripts/art/build-items.py"
+   }
+  },
+  {
+   "id": "item-fish",
+   "area": "items",
+   "role": "food icon: Cá tươi (catalog id `fish`, group food)",
+   "path": "public/ta-tua/game/assets/items/items-0.webp#fish",
+   "status": "approved",
+   "technical": {
+    "dimensions": "32x32",
+    "content_bbox": [
+     2,
+     6,
+     30,
+     26
+    ],
+    "alpha": true,
+    "anchor": "centre (icon, content centred in canvas)",
+    "frames": 1,
+    "filtering": "nearest",
+    "scale": "integer: 2x (64 px) shop/bag cards and eggs, 1x (32 px) lists; html zoom compensated",
+    "atlas_frame": [
+     "items-0.webp",
+     100,
+     34,
+     32,
+     32
+    ]
+   },
+   "visual_locks": [
+    "palette.json",
+    "view: low top-down",
+    "light: top-left",
+    "outline: #2e1d14 outer (uniform, checked)",
+    "icon canvas 32x32, centred"
+   ],
+   "provenance": {
+    "kind": "generated+edited",
+    "tool": "PixelLab MCP create_map_object + local PIL edits",
+    "mode": "basic",
+    "pixellab_id": "2cf58157-bafc-4bdb-becb-98d739e66789",
+    "prompt": "cute fresh whole fish lying on its side, smooth silver-blue body, pale belly, one simple round black eye, small fins and a forked tail, appetising seafood, chunky simple shapes, soft light from top-left, dark brown outline",
+    "params": {
+     "view": "low top-down",
+     "outline": "single color outline",
+     "shading": "medium shading",
+     "detail": "medium detail",
+     "size": "32x32"
+    },
+    "created_at": "2026-10-31",
+    "generation_cost": 1,
+    "postprocess": [
+     "remap.py --outline: OKLab nearest, chroma x2, palette.json (48), alpha threshold 128, outer outline #2e1d14 + 1px pad",
+     "fit.py: crop to bbox, centre in 32x32 (trim 1 overflowing outline row and re-ink if needed, never rescale)",
+     "scripts/fixes.py: gill/fin scribbles cleared, gill arc, fin, eye glint"
+    ],
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)",
+    "package": "items",
+    "source": "phase1/items/pal/fish.png"
+   },
+   "verification": {
+    "native_scale_reviewed": true,
+    "in_engine_reviewed": true,
+    "technical_checks_passed": true,
+    "approved_by": "owner (design session, 2026-10-31)",
+    "notes": "packed by scripts/art/build-items.py"
+   }
+  },
+  {
+   "id": "item-grilled_fish",
+   "area": "items",
+   "role": "dish icon: Cá nướng (catalog id `grilled_fish`, group kitchen)",
+   "path": "public/ta-tua/game/assets/items/items-0.webp#grilled_fish",
+   "status": "approved",
+   "technical": {
+    "dimensions": "32x32",
+    "content_bbox": [
+     3,
+     7,
+     29,
+     24
+    ],
+    "alpha": true,
+    "anchor": "centre (icon, content centred in canvas)",
+    "frames": 1,
+    "filtering": "nearest",
+    "scale": "integer: 2x (64 px) shop/bag cards and eggs, 1x (32 px) lists; html zoom compensated",
+    "atlas_frame": [
+     "items-0.webp",
+     133,
+     34,
+     32,
+     32
+    ]
+   },
+   "visual_locks": [
+    "palette.json",
+    "view: low top-down",
+    "light: top-left",
+    "outline: #2e1d14 outer (uniform, checked)",
+    "icon canvas 32x32, centred"
+   ],
+   "provenance": {
+    "kind": "generated",
+    "tool": "PixelLab MCP create_map_object",
+    "mode": "basic",
+    "pixellab_id": "fa00773d-4a20-41e8-992e-fcc7dac45098",
+    "prompt": "cute grilled fish on a small oval white plate, golden brown crispy skin with dark grill marks, a lemon wedge and a green herb leaf, appetising, chunky simple shapes, soft light from top-left, dark brown outline",
+    "params": {
+     "view": "low top-down",
+     "outline": "single color outline",
+     "shading": "medium shading",
+     "detail": "medium detail",
+     "size": "32x32"
+    },
+    "created_at": "2026-10-31",
+    "generation_cost": 1,
+    "postprocess": [
+     "remap.py --outline: OKLab nearest, chroma x2, palette.json (48), alpha threshold 128, outer outline #2e1d14 + 1px pad",
+     "fit.py: crop to bbox, centre in 32x32 (trim 1 overflowing outline row and re-ink if needed, never rescale)"
+    ],
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)",
+    "package": "items",
+    "source": "phase1/items/pal/grilled_fish.png"
+   },
+   "verification": {
+    "native_scale_reviewed": true,
+    "in_engine_reviewed": true,
+    "technical_checks_passed": true,
+    "approved_by": "owner (design session, 2026-10-31)",
+    "notes": "packed by scripts/art/build-items.py"
+   }
+  },
+  {
+   "id": "item-home_milk_tea",
+   "area": "items",
+   "role": "dish icon: Trà sữa nhà làm (catalog id `home_milk_tea`, group kitchen)",
+   "path": "public/ta-tua/game/assets/items/items-0.webp#home_milk_tea",
+   "status": "approved",
+   "technical": {
+    "dimensions": "32x32",
+    "content_bbox": [
+     8,
+     1,
+     24,
+     31
+    ],
+    "alpha": true,
+    "anchor": "centre (icon, content centred in canvas)",
+    "frames": 1,
+    "filtering": "nearest",
+    "scale": "integer: 2x (64 px) shop/bag cards and eggs, 1x (32 px) lists; html zoom compensated",
+    "atlas_frame": [
+     "items-0.webp",
+     166,
+     34,
+     32,
+     32
+    ]
+   },
+   "visual_locks": [
+    "palette.json",
+    "view: low top-down",
+    "light: top-left",
+    "outline: #2e1d14 outer (uniform, checked)",
+    "icon canvas 32x32, centred"
+   ],
+   "provenance": {
+    "kind": "generated+edited",
+    "tool": "PixelLab MCP create_map_object + local PIL edits",
+    "mode": "basic",
+    "pixellab_id": "43d08a86-6832-4cf3-aa78-13b9d239d0ea",
+    "prompt": "cute glass mason jar of homemade milk tea with black tapioca pearls at the bottom and a striped paper straw, chunky simple shapes, soft light from top-left, dark brown outline",
+    "params": {
+     "view": "low top-down",
+     "outline": "single color outline",
+     "shading": "medium shading",
+     "detail": "medium detail",
+     "size": "32x32"
+    },
+    "created_at": "2026-10-31",
+    "generation_cost": 1,
+    "postprocess": [
+     "remap.py --outline: OKLab nearest, chroma x2, palette.json (48), alpha threshold 128, outer outline #2e1d14 + 1px pad",
+     "fit.py: crop to bbox, centre in 32x32 (trim 1 overflowing outline row and re-ink if needed, never rescale)",
+     "scripts/fixes.py: jar contents cream -> milk-tea tan"
+    ],
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)",
+    "package": "items",
+    "source": "phase1/items/pal/home_milk_tea.png"
+   },
+   "verification": {
+    "native_scale_reviewed": true,
+    "in_engine_reviewed": true,
+    "technical_checks_passed": true,
+    "approved_by": "owner (design session, 2026-10-31)",
+    "notes": "packed by scripts/art/build-items.py"
+   }
+  },
+  {
+   "id": "item-juice",
+   "area": "items",
+   "role": "care icon: Nước tăng lực (catalog id `juice`, group care)",
+   "path": "public/ta-tua/game/assets/items/items-0.webp#juice",
+   "status": "approved",
+   "technical": {
+    "dimensions": "32x32",
+    "content_bbox": [
+     9,
+     3,
+     23,
+     29
+    ],
+    "alpha": true,
+    "anchor": "centre (icon, content centred in canvas)",
+    "frames": 1,
+    "filtering": "nearest",
+    "scale": "integer: 2x (64 px) shop/bag cards and eggs, 1x (32 px) lists; html zoom compensated",
+    "atlas_frame": [
+     "items-0.webp",
+     199,
+     34,
+     32,
+     32
+    ]
+   },
+   "visual_locks": [
+    "palette.json",
+    "view: low top-down",
+    "light: top-left",
+    "outline: #2e1d14 outer (uniform, checked)",
+    "icon canvas 32x32, centred"
+   ],
+   "provenance": {
+    "kind": "generated+edited",
+    "tool": "PixelLab MCP create_map_object + local PIL edits",
+    "mode": "basic",
+    "pixellab_id": "0c10d9b6-a8e7-4313-8e0d-bedd7938b2c3",
+    "prompt": "cute small energy drink juice box with a bent white straw, bright green carton with an orange lightning bolt emblem, no text, chunky simple shapes, soft light from top-left, dark brown outline",
+    "params": {
+     "view": "low top-down",
+     "outline": "single color outline",
+     "shading": "medium shading",
+     "detail": "medium detail",
+     "size": "32x32"
+    },
+    "created_at": "2026-10-31",
+    "generation_cost": 1,
+    "postprocess": [
+     "remap.py --outline: OKLab nearest, chroma x2, palette.json (48), alpha threshold 128, outer outline #2e1d14 + 1px pad",
+     "fit.py: crop to bbox, centre in 32x32 (trim 1 overflowing outline row and re-ink if needed, never rescale)",
+     "scripts/fixes.py: redrawn lightning bolt"
+    ],
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)",
+    "package": "items",
+    "source": "phase1/items/pal/juice.png"
+   },
+   "verification": {
+    "native_scale_reviewed": true,
+    "in_engine_reviewed": true,
+    "technical_checks_passed": true,
+    "approved_by": "owner (design session, 2026-10-31)",
+    "notes": "packed by scripts/art/build-items.py"
+   }
+  },
+  {
+   "id": "item-kite",
+   "area": "items",
+   "role": "toy icon: Diều giấy (catalog id `kite`, group toy)",
+   "path": "public/ta-tua/game/assets/items/items-0.webp#kite",
+   "status": "approved",
+   "technical": {
+    "dimensions": "32x32",
+    "content_bbox": [
+     7,
+     3,
+     25,
+     29
+    ],
+    "alpha": true,
+    "anchor": "centre (icon, content centred in canvas)",
+    "frames": 1,
+    "filtering": "nearest",
+    "scale": "integer: 2x (64 px) shop/bag cards and eggs, 1x (32 px) lists; html zoom compensated",
+    "atlas_frame": [
+     "items-0.webp",
+     232,
+     34,
+     32,
+     32
+    ]
+   },
+   "visual_locks": [
+    "palette.json",
+    "view: low top-down",
+    "light: top-left",
+    "outline: #2e1d14 outer (uniform, checked)",
+    "icon canvas 32x32, centred"
+   ],
+   "provenance": {
+    "kind": "generated",
+    "tool": "PixelLab MCP create_map_object",
+    "mode": "basic",
+    "pixellab_id": "3b6f0cfa-e56b-4b25-a566-b46062e5ee44",
+    "prompt": "cute diamond shaped paper kite with red and yellow panels and a short wavy string tail with little bows, chunky simple shapes, soft light from top-left, dark brown outline",
+    "params": {
+     "view": "low top-down",
+     "outline": "single color outline",
+     "shading": "medium shading",
+     "detail": "medium detail",
+     "size": "32x32"
+    },
+    "created_at": "2026-10-31",
+    "generation_cost": 1,
+    "postprocess": [
+     "remap.py --outline: OKLab nearest, chroma x2, palette.json (48), alpha threshold 128, outer outline #2e1d14 + 1px pad",
+     "fit.py: crop to bbox, centre in 32x32 (trim 1 overflowing outline row and re-ink if needed, never rescale)"
+    ],
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)",
+    "package": "items",
+    "source": "phase1/items/pal/kite.png"
+   },
+   "verification": {
+    "native_scale_reviewed": true,
+    "in_engine_reviewed": true,
+    "technical_checks_passed": true,
+    "approved_by": "owner (design session, 2026-10-31)",
+    "notes": "packed by scripts/art/build-items.py"
+   }
+  },
+  {
+   "id": "item-mango",
+   "area": "items",
+   "role": "commodity-raw icon: Xoài chín (catalog id `mango`, group commodity)",
+   "path": "public/ta-tua/game/assets/items/items-0.webp#mango",
+   "status": "approved",
+   "technical": {
+    "dimensions": "32x32",
+    "content_bbox": [
+     6,
+     2,
+     26,
+     30
+    ],
+    "alpha": true,
+    "anchor": "centre (icon, content centred in canvas)",
+    "frames": 1,
+    "filtering": "nearest",
+    "scale": "integer: 2x (64 px) shop/bag cards and eggs, 1x (32 px) lists; html zoom compensated",
+    "atlas_frame": [
+     "items-0.webp",
+     265,
+     34,
+     32,
+     32
+    ]
+   },
+   "visual_locks": [
+    "palette.json",
+    "view: low top-down",
+    "light: top-left",
+    "outline: #2e1d14 outer (uniform, checked)",
+    "icon canvas 32x32, centred"
+   ],
+   "provenance": {
+    "kind": "generated+edited",
+    "tool": "PixelLab MCP create_map_object + local PIL edits",
+    "mode": "basic",
+    "pixellab_id": "4ee8514f-c99f-41ca-b2d3-66a973a2b727",
+    "prompt": "cute ripe yellow mango with an orange blush and a small green leaf on the stem, appetising, chunky simple shapes, soft light from top-left, dark brown outline",
+    "params": {
+     "view": "low top-down",
+     "outline": "single color outline",
+     "shading": "medium shading",
+     "detail": "medium detail",
+     "size": "32x32"
+    },
+    "created_at": "2026-10-31",
+    "generation_cost": 1,
+    "postprocess": [
+     "remap.py --outline: OKLab nearest, chroma x2, palette.json (48), alpha threshold 128, outer outline #2e1d14 + 1px pad",
+     "fit.py: crop to bbox, centre in 32x32 (trim 1 overflowing outline row and re-ink if needed, never rescale)",
+     "scripts/fixes.py: highlight"
+    ],
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)",
+    "package": "items",
+    "source": "phase1/items/pal/mango.png"
+   },
+   "verification": {
+    "native_scale_reviewed": true,
+    "in_engine_reviewed": true,
+    "technical_checks_passed": true,
+    "approved_by": "owner (design session, 2026-10-31)",
+    "notes": "packed by scripts/art/build-items.py"
+   }
+  },
+  {
+   "id": "item-milk",
+   "area": "items",
+   "role": "commodity-raw icon: Sữa tươi (catalog id `milk`, group commodity)",
+   "path": "public/ta-tua/game/assets/items/items-0.webp#milk",
+   "status": "approved",
+   "technical": {
+    "dimensions": "32x32",
+    "content_bbox": [
+     9,
+     2,
+     23,
+     30
+    ],
+    "alpha": true,
+    "anchor": "centre (icon, content centred in canvas)",
+    "frames": 1,
+    "filtering": "nearest",
+    "scale": "integer: 2x (64 px) shop/bag cards and eggs, 1x (32 px) lists; html zoom compensated",
+    "atlas_frame": [
+     "items-0.webp",
+     298,
+     34,
+     32,
+     32
+    ]
+   },
+   "visual_locks": [
+    "palette.json",
+    "view: low top-down",
+    "light: top-left",
+    "outline: #2e1d14 outer (uniform, checked)",
+    "icon canvas 32x32, centred"
+   ],
+   "provenance": {
+    "kind": "generated",
+    "tool": "PixelLab MCP create_map_object",
+    "mode": "basic",
+    "pixellab_id": "34110d01-90d7-4760-a790-c63aae3f67d5",
+    "prompt": "cute small glass milk bottle with a light blue cap, full of fresh white milk, chunky simple shapes, soft light from top-left, dark brown outline",
+    "params": {
+     "view": "low top-down",
+     "outline": "single color outline",
+     "shading": "medium shading",
+     "detail": "medium detail",
+     "size": "32x32"
+    },
+    "created_at": "2026-10-31",
+    "generation_cost": 1,
+    "postprocess": [
+     "remap.py --outline: OKLab nearest, chroma x2, palette.json (48), alpha threshold 128, outer outline #2e1d14 + 1px pad",
+     "fit.py: crop to bbox, centre in 32x32 (trim 1 overflowing outline row and re-ink if needed, never rescale)"
+    ],
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)",
+    "package": "items",
+    "source": "phase1/items/pal/milk.png"
+   },
+   "verification": {
+    "native_scale_reviewed": true,
+    "in_engine_reviewed": true,
+    "technical_checks_passed": true,
+    "approved_by": "owner (design session, 2026-10-31)",
+    "notes": "packed by scripts/art/build-items.py"
+   }
+  },
+  {
+   "id": "item-onigiri",
+   "area": "items",
+   "role": "food icon: Cơm nắm (catalog id `onigiri`, group food)",
+   "path": "public/ta-tua/game/assets/items/items-0.webp#onigiri",
+   "status": "approved",
+   "technical": {
+    "dimensions": "32x32",
+    "content_bbox": [
+     4,
+     4,
+     28,
+     28
+    ],
+    "alpha": true,
+    "anchor": "centre (icon, content centred in canvas)",
+    "frames": 1,
+    "filtering": "nearest",
+    "scale": "integer: 2x (64 px) shop/bag cards and eggs, 1x (32 px) lists; html zoom compensated",
+    "atlas_frame": [
+     "items-0.webp",
+     331,
+     34,
+     32,
+     32
+    ]
+   },
+   "visual_locks": [
+    "palette.json",
+    "view: low top-down",
+    "light: top-left",
+    "outline: #2e1d14 outer (uniform, checked)",
+    "icon canvas 32x32, centred"
+   ],
+   "provenance": {
+    "kind": "generated",
+    "tool": "PixelLab MCP create_map_object",
+    "mode": "basic",
+    "pixellab_id": "dda2107e-3bf7-4eb3-8473-ca4ff5b5ce8a",
+    "prompt": "cute triangle rice ball onigiri, fluffy white rice with a dark green seaweed strip wrapped at the bottom, chunky simple shapes, soft light from top-left, dark brown outline",
+    "params": {
+     "view": "low top-down",
+     "outline": "single color outline",
+     "shading": "medium shading",
+     "detail": "medium detail",
+     "size": "32x32"
+    },
+    "created_at": "2026-10-31",
+    "generation_cost": 1,
+    "postprocess": [
+     "remap.py --outline: OKLab nearest, chroma x2, palette.json (48), alpha threshold 128, outer outline #2e1d14 + 1px pad",
+     "fit.py: crop to bbox, centre in 32x32 (trim 1 overflowing outline row and re-ink if needed, never rescale)"
+    ],
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)",
+    "package": "items",
+    "source": "phase1/items/pal/onigiri.png"
+   },
+   "verification": {
+    "native_scale_reviewed": true,
+    "in_engine_reviewed": true,
+    "technical_checks_passed": true,
+    "approved_by": "owner (design session, 2026-10-31)",
+    "notes": "packed by scripts/art/build-items.py"
+   }
+  },
+  {
+   "id": "item-pearl",
+   "area": "items",
+   "role": "commodity-processed icon: Trân châu (catalog id `pearl`, group commodity)",
+   "path": "public/ta-tua/game/assets/items/items-0.webp#pearl",
+   "status": "approved",
+   "technical": {
+    "dimensions": "32x32",
+    "content_bbox": [
+     2,
+     4,
+     30,
+     28
+    ],
+    "alpha": true,
+    "anchor": "centre (icon, content centred in canvas)",
+    "frames": 1,
+    "filtering": "nearest",
+    "scale": "integer: 2x (64 px) shop/bag cards and eggs, 1x (32 px) lists; html zoom compensated",
+    "atlas_frame": [
+     "items-0.webp",
+     364,
+     34,
+     32,
+     32
+    ]
+   },
+   "visual_locks": [
+    "palette.json",
+    "view: low top-down",
+    "light: top-left",
+    "outline: #2e1d14 outer (uniform, checked)",
+    "icon canvas 32x32, centred"
+   ],
+   "provenance": {
+    "kind": "generated+edited",
+    "tool": "PixelLab MCP create_map_object + local PIL edits",
+    "mode": "basic",
+    "pixellab_id": "a4ad13c5-79a1-4de9-abc8-9ef40ddf3219",
+    "prompt": "cute small wooden bowl heaped with glossy round black tapioca pearls, chunky simple shapes, soft light from top-left, dark brown outline",
+    "params": {
+     "view": "low top-down",
+     "outline": "single color outline",
+     "shading": "medium shading",
+     "detail": "medium detail",
+     "size": "32x32"
+    },
+    "created_at": "2026-10-31",
+    "generation_cost": 1,
+    "postprocess": [
+     "remap.py --outline: OKLab nearest, chroma x2, palette.json (48), alpha threshold 128, outer outline #2e1d14 + 1px pad",
+     "fit.py: crop to bbox, centre in 32x32 (trim 1 overflowing outline row and re-ink if needed, never rescale)",
+     "scripts/darkramp.py: dark pearls -> ink/#4a3326/#6e6660 by lightness (rows<16) before remap, so pearls stay separate"
+    ],
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)",
+    "package": "items",
+    "source": "phase1/items/pal/pearl.png"
+   },
+   "verification": {
+    "native_scale_reviewed": true,
+    "in_engine_reviewed": true,
+    "technical_checks_passed": true,
+    "approved_by": "owner (design session, 2026-10-31)",
+    "notes": "packed by scripts/art/build-items.py"
+   }
+  },
+  {
+   "id": "item-pork",
+   "area": "items",
+   "role": "commodity-raw icon: Thịt heo (catalog id `pork`, group commodity)",
+   "path": "public/ta-tua/game/assets/items/items-0.webp#pork",
+   "status": "approved",
+   "technical": {
+    "dimensions": "32x32",
+    "content_bbox": [
+     2,
+     6,
+     30,
+     26
+    ],
+    "alpha": true,
+    "anchor": "centre (icon, content centred in canvas)",
+    "frames": 1,
+    "filtering": "nearest",
+    "scale": "integer: 2x (64 px) shop/bag cards and eggs, 1x (32 px) lists; html zoom compensated",
+    "atlas_frame": [
+     "items-0.webp",
+     397,
+     34,
+     32,
+     32
+    ]
+   },
+   "visual_locks": [
+    "palette.json",
+    "view: low top-down",
+    "light: top-left",
+    "outline: #2e1d14 outer (uniform, checked)",
+    "icon canvas 32x32, centred"
+   ],
+   "provenance": {
+    "kind": "generated+edited",
+    "tool": "PixelLab MCP create_map_object + local PIL edits",
+    "mode": "basic",
+    "pixellab_id": "19bf3321-a773-4fc5-840e-0aee7640b3bb",
+    "prompt": "cute thick slab of raw pork belly seen from the side, clear alternating stripes of pink meat and white fat, thin pink skin on top, fresh butcher cut, chunky simple shapes, soft light from top-left, dark brown outline",
+    "params": {
+     "view": "low top-down",
+     "outline": "single color outline",
+     "shading": "medium shading",
+     "detail": "medium detail",
+     "size": "32x32"
+    },
+    "created_at": "2026-10-31",
+    "generation_cost": 1,
+    "postprocess": [
+     "remap.py --outline: OKLab nearest, chroma x2, palette.json (48), alpha threshold 128, outer outline #2e1d14 + 1px pad",
+     "fit.py: crop to bbox, centre in 32x32 (trim 1 overflowing outline row and re-ink if needed, never rescale)",
+     "scripts/fixes.py: pork-belly fat/meat layers on the side face"
+    ],
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)",
+    "package": "items",
+    "source": "phase1/items/pal/pork.png"
+   },
+   "verification": {
+    "native_scale_reviewed": true,
+    "in_engine_reviewed": true,
+    "technical_checks_passed": true,
+    "approved_by": "owner (design session, 2026-10-31)",
+    "notes": "packed by scripts/art/build-items.py"
+   }
+  },
+  {
+   "id": "item-strawberry",
+   "area": "items",
+   "role": "commodity-raw icon: Dâu tây (catalog id `strawberry`, group commodity)",
+   "path": "public/ta-tua/game/assets/items/items-0.webp#strawberry",
+   "status": "approved",
+   "technical": {
+    "dimensions": "32x32",
+    "content_bbox": [
+     4,
+     2,
+     28,
+     30
+    ],
+    "alpha": true,
+    "anchor": "centre (icon, content centred in canvas)",
+    "frames": 1,
+    "filtering": "nearest",
+    "scale": "integer: 2x (64 px) shop/bag cards and eggs, 1x (32 px) lists; html zoom compensated",
+    "atlas_frame": [
+     "items-0.webp",
+     430,
+     34,
+     32,
+     32
+    ]
+   },
+   "visual_locks": [
+    "palette.json",
+    "view: low top-down",
+    "light: top-left",
+    "outline: #2e1d14 outer (uniform, checked)",
+    "icon canvas 32x32, centred"
+   ],
+   "provenance": {
+    "kind": "generated",
+    "tool": "PixelLab MCP create_map_object",
+    "mode": "basic",
+    "pixellab_id": "103d1dcd-96ca-40f5-9d99-208a99497e8c",
+    "prompt": "cute fresh ripe red strawberry with a green leafy top and tiny yellow seeds, appetising, chunky simple shapes, soft light from top-left, dark brown outline",
+    "params": {
+     "view": "low top-down",
+     "outline": "single color outline",
+     "shading": "medium shading",
+     "detail": "medium detail",
+     "size": "32x32"
+    },
+    "created_at": "2026-10-31",
+    "generation_cost": 1,
+    "postprocess": [
+     "remap.py --outline: OKLab nearest, chroma x2, palette.json (48), alpha threshold 128, outer outline #2e1d14 + 1px pad",
+     "fit.py: crop to bbox, centre in 32x32 (trim 1 overflowing outline row and re-ink if needed, never rescale)"
+    ],
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)",
+    "package": "items",
+    "source": "phase1/items/pal/strawberry.png"
+   },
+   "verification": {
+    "native_scale_reviewed": true,
+    "in_engine_reviewed": true,
+    "technical_checks_passed": true,
+    "approved_by": "owner (design session, 2026-10-31)",
+    "notes": "packed by scripts/art/build-items.py"
+   }
+  },
+  {
+   "id": "item-strawberry_cake",
+   "area": "items",
+   "role": "dish icon: Bánh dâu (catalog id `strawberry_cake`, group kitchen)",
+   "path": "public/ta-tua/game/assets/items/items-0.webp#strawberry_cake",
+   "status": "approved",
+   "technical": {
+    "dimensions": "32x32",
+    "content_bbox": [
+     3,
+     3,
+     29,
+     29
+    ],
+    "alpha": true,
+    "anchor": "centre (icon, content centred in canvas)",
+    "frames": 1,
+    "filtering": "nearest",
+    "scale": "integer: 2x (64 px) shop/bag cards and eggs, 1x (32 px) lists; html zoom compensated",
+    "atlas_frame": [
+     "items-0.webp",
+     463,
+     34,
+     32,
+     32
+    ]
+   },
+   "visual_locks": [
+    "palette.json",
+    "view: low top-down",
+    "light: top-left",
+    "outline: #2e1d14 outer (uniform, checked)",
+    "icon canvas 32x32, centred"
+   ],
+   "provenance": {
+    "kind": "generated+edited",
+    "tool": "PixelLab MCP create_map_object + local PIL edits",
+    "mode": "basic",
+    "pixellab_id": "e43508b7-256b-4c3f-b4f1-5a1c66030f43",
+    "prompt": "cute small whole round cake covered in pink strawberry frosting, white cream swirls around the top edge and fresh red strawberries on top, appetising, chunky simple shapes, soft light from top-left, dark brown outline",
+    "params": {
+     "view": "low top-down",
+     "outline": "single color outline",
+     "shading": "medium shading",
+     "detail": "medium detail",
+     "size": "32x32"
+    },
+    "created_at": "2026-10-31",
+    "generation_cost": 1,
+    "postprocess": [
+     "remap.py --outline: OKLab nearest, chroma x2, palette.json (48), alpha threshold 128, outer outline #2e1d14 + 1px pad",
+     "fit.py: crop to bbox, centre in 32x32 (trim 1 overflowing outline row and re-ink if needed, never rescale)",
+     "orange flecks on the berries -> light pink"
+    ],
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)",
+    "package": "items",
+    "source": "phase1/items/pal/strawberry_cake.png"
+   },
+   "verification": {
+    "native_scale_reviewed": true,
+    "in_engine_reviewed": true,
+    "technical_checks_passed": true,
+    "approved_by": "owner (design session, 2026-10-31)",
+    "notes": "packed by scripts/art/build-items.py"
+   }
+  },
+  {
+   "id": "item-strawberry_smoothie",
+   "area": "items",
+   "role": "dish icon: Sinh tố dâu (catalog id `strawberry_smoothie`, group kitchen)",
+   "path": "public/ta-tua/game/assets/items/items-0.webp#strawberry_smoothie",
+   "status": "approved",
+   "technical": {
+    "dimensions": "32x32",
+    "content_bbox": [
+     5,
+     1,
+     26,
+     31
+    ],
+    "alpha": true,
+    "anchor": "centre (icon, content centred in canvas)",
+    "frames": 1,
+    "filtering": "nearest",
+    "scale": "integer: 2x (64 px) shop/bag cards and eggs, 1x (32 px) lists; html zoom compensated",
+    "atlas_frame": [
+     "items-0.webp",
+     496,
+     34,
+     32,
+     32
+    ]
+   },
+   "visual_locks": [
+    "palette.json",
+    "view: low top-down",
+    "light: top-left",
+    "outline: #2e1d14 outer (uniform, checked)",
+    "icon canvas 32x32, centred"
+   ],
+   "provenance": {
+    "kind": "generated",
+    "tool": "PixelLab MCP create_map_object",
+    "mode": "basic",
+    "pixellab_id": "f5798101-d031-4f1d-9992-d12050c96dc5",
+    "prompt": "cute short glass tumbler of thick pink strawberry smoothie with a strawberry on the rim, chunky simple shapes, soft light from top-left, dark brown outline",
+    "params": {
+     "view": "low top-down",
+     "outline": "single color outline",
+     "shading": "medium shading",
+     "detail": "medium detail",
+     "size": "32x32"
+    },
+    "created_at": "2026-10-31",
+    "generation_cost": 1,
+    "postprocess": [
+     "remap.py --outline: OKLab nearest, chroma x2, palette.json (48), alpha threshold 128, outer outline #2e1d14 + 1px pad",
+     "fit.py: crop to bbox, centre in 32x32 (trim 1 overflowing outline row and re-ink if needed, never rescale)"
+    ],
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)",
+    "package": "items",
+    "source": "phase1/items/pal/strawberry_smoothie.png"
+   },
+   "verification": {
+    "native_scale_reviewed": true,
+    "in_engine_reviewed": true,
+    "technical_checks_passed": true,
+    "approved_by": "owner (design session, 2026-10-31)",
+    "notes": "packed by scripts/art/build-items.py"
+   }
+  },
+  {
+   "id": "item-sugar",
+   "area": "items",
+   "role": "commodity-processed icon: Đường nâu (catalog id `sugar`, group commodity)",
+   "path": "public/ta-tua/game/assets/items/items-0.webp#sugar",
+   "status": "approved",
+   "technical": {
+    "dimensions": "32x32",
+    "content_bbox": [
+     5,
+     2,
+     26,
+     30
+    ],
+    "alpha": true,
+    "anchor": "centre (icon, content centred in canvas)",
+    "frames": 1,
+    "filtering": "nearest",
+    "scale": "integer: 2x (64 px) shop/bag cards and eggs, 1x (32 px) lists; html zoom compensated",
+    "atlas_frame": [
+     "items-0.webp",
+     1,
+     67,
+     32,
+     32
+    ]
+   },
+   "visual_locks": [
+    "palette.json",
+    "view: low top-down",
+    "light: top-left",
+    "outline: #2e1d14 outer (uniform, checked)",
+    "icon canvas 32x32, centred"
+   ],
+   "provenance": {
+    "kind": "generated+edited",
+    "tool": "PixelLab MCP create_map_object + local PIL edits",
+    "mode": "basic",
+    "pixellab_id": "aa56764c-6f01-40de-bfeb-0c47648db57a",
+    "prompt": "cute stack of three golden brown sugar cubes with sparkly sugar crystals, chunky simple shapes, soft light from top-left, dark brown outline",
+    "params": {
+     "view": "low top-down",
+     "outline": "single color outline",
+     "shading": "medium shading",
+     "detail": "medium detail",
+     "size": "32x32"
+    },
+    "created_at": "2026-10-31",
+    "generation_cost": 1,
+    "postprocess": [
+     "remap.py --outline: OKLab nearest, chroma x2, palette.json (48), alpha threshold 128, outer outline #2e1d14 + 1px pad",
+     "fit.py: crop to bbox, centre in 32x32 (trim 1 overflowing outline row and re-ink if needed, never rescale)",
+     "swap.py: gold ramp -> brown-sugar earth ramp"
+    ],
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)",
+    "package": "items",
+    "source": "phase1/items/pal/sugar.png"
+   },
+   "verification": {
+    "native_scale_reviewed": true,
+    "in_engine_reviewed": true,
+    "technical_checks_passed": true,
+    "approved_by": "owner (design session, 2026-10-31)",
+    "notes": "packed by scripts/art/build-items.py"
+   }
+  },
+  {
+   "id": "item-sushi",
+   "area": "items",
+   "role": "food icon: Khay sushi (catalog id `sushi`, group food)",
+   "path": "public/ta-tua/game/assets/items/items-0.webp#sushi",
+   "status": "approved",
+   "technical": {
+    "dimensions": "32x32",
+    "content_bbox": [
+     2,
+     7,
+     30,
+     25
+    ],
+    "alpha": true,
+    "anchor": "centre (icon, content centred in canvas)",
+    "frames": 1,
+    "filtering": "nearest",
+    "scale": "integer: 2x (64 px) shop/bag cards and eggs, 1x (32 px) lists; html zoom compensated",
+    "atlas_frame": [
+     "items-0.webp",
+     34,
+     67,
+     32,
+     32
+    ]
+   },
+   "visual_locks": [
+    "palette.json",
+    "view: low top-down",
+    "light: top-left",
+    "outline: #2e1d14 outer (uniform, checked)",
+    "icon canvas 32x32, centred"
+   ],
+   "provenance": {
+    "kind": "generated",
+    "tool": "PixelLab MCP create_map_object",
+    "mode": "basic",
+    "pixellab_id": "a4b58a18-d4ad-46fb-b4d0-a8685a3727c6",
+    "prompt": "two salmon nigiri sushi side by side on a small wooden tray, side view, oval white rice mounds topped with thick orange salmon slices with white stripes, appetising, chunky simple shapes, soft light from top-left, dark brown outline",
+    "params": {
+     "view": "low top-down",
+     "outline": "single color outline",
+     "shading": "medium shading",
+     "detail": "medium detail",
+     "size": "32x32"
+    },
+    "created_at": "2026-10-31",
+    "generation_cost": 1,
+    "postprocess": [
+     "remap.py --outline: OKLab nearest, chroma x2, palette.json (48), alpha threshold 128, outer outline #2e1d14 + 1px pad",
+     "fit.py: crop to bbox, centre in 32x32 (trim 1 overflowing outline row and re-ink if needed, never rescale)"
+    ],
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)",
+    "package": "items",
+    "source": "phase1/items/pal/sushi.png"
+   },
+   "verification": {
+    "native_scale_reviewed": true,
+    "in_engine_reviewed": true,
+    "technical_checks_passed": true,
+    "approved_by": "owner (design session, 2026-10-31)",
+    "notes": "packed by scripts/art/build-items.py"
+   }
+  },
+  {
+   "id": "item-tea_boba_milk_tea",
+   "area": "items",
+   "role": "food icon: Trà sữa trân châu (catalog id `tea_boba_milk_tea`, group food)",
+   "path": "public/ta-tua/game/assets/items/items-0.webp#tea_boba_milk_tea",
+   "status": "approved",
+   "technical": {
+    "dimensions": "32x32",
+    "content_bbox": [
+     7,
+     0,
+     25,
+     31
+    ],
+    "alpha": true,
+    "anchor": "centre (icon, content centred in canvas)",
+    "frames": 1,
+    "filtering": "nearest",
+    "scale": "integer: 2x (64 px) shop/bag cards and eggs, 1x (32 px) lists; html zoom compensated",
+    "atlas_frame": [
+     "items-0.webp",
+     67,
+     67,
+     32,
+     32
+    ]
+   },
+   "visual_locks": [
+    "palette.json",
+    "view: low top-down",
+    "light: top-left",
+    "outline: #2e1d14 outer (uniform, checked)",
+    "icon canvas 32x32, centred"
+   ],
+   "provenance": {
+    "kind": "generated+edited",
+    "tool": "PixelLab MCP create_map_object + local PIL edits",
+    "mode": "basic",
+    "pixellab_id": "a4b3f110-316a-4f26-8f41-57fadead669d",
+    "prompt": "cute tall clear plastic bubble tea cup with a round dome lid and a thick pink straw, filled with smooth light brown traditional milk tea and a few ice cubes, no pearls, chunky simple shapes, soft light from top-left, dark brown outline",
+    "params": {
+     "view": "low top-down",
+     "outline": "single color outline",
+     "shading": "medium shading",
+     "detail": "medium detail",
+     "size": "32x32"
+    },
+    "created_at": "2026-10-31",
+    "generation_cost": 1,
+    "postprocess": [
+     "remap.py --outline: OKLab nearest, chroma x2, palette.json (48), alpha threshold 128, outer outline #2e1d14 + 1px pad",
+     "fit.py: crop to bbox, centre in 32x32 (trim 1 overflowing outline row and re-ink if needed, never rescale)",
+     "scripts/tea.py: master cup tea_milk_tea-v1, liquid ramp swap + hand pixels: + 4 extra pearls"
+    ],
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)",
+    "package": "items",
+    "source": "phase1/items/pal/tea_boba_milk_tea.png"
+   },
+   "verification": {
+    "native_scale_reviewed": true,
+    "in_engine_reviewed": true,
+    "technical_checks_passed": true,
+    "approved_by": "owner (design session, 2026-10-31)",
+    "notes": "packed by scripts/art/build-items.py"
+   }
+  },
+  {
+   "id": "item-tea_brown_sugar_milk",
+   "area": "items",
+   "role": "food icon: Sữa tươi trân châu đường đen (catalog id `tea_brown_sugar_milk`, group food)",
+   "path": "public/ta-tua/game/assets/items/items-0.webp#tea_brown_sugar_milk",
+   "status": "approved",
+   "technical": {
+    "dimensions": "32x32",
+    "content_bbox": [
+     7,
+     0,
+     25,
+     31
+    ],
+    "alpha": true,
+    "anchor": "centre (icon, content centred in canvas)",
+    "frames": 1,
+    "filtering": "nearest",
+    "scale": "integer: 2x (64 px) shop/bag cards and eggs, 1x (32 px) lists; html zoom compensated",
+    "atlas_frame": [
+     "items-0.webp",
+     100,
+     67,
+     32,
+     32
+    ]
+   },
+   "visual_locks": [
+    "palette.json",
+    "view: low top-down",
+    "light: top-left",
+    "outline: #2e1d14 outer (uniform, checked)",
+    "icon canvas 32x32, centred"
+   ],
+   "provenance": {
+    "kind": "derived (hand edit)",
+    "tool": "PixelLab MCP create_map_object + local PIL edits",
+    "mode": "basic",
+    "pixellab_id": "a4b3f110-316a-4f26-8f41-57fadead669d",
+    "prompt": "cute tall clear plastic bubble tea cup with a round dome lid and a thick pink straw, filled with smooth light brown traditional milk tea and a few ice cubes, no pearls, chunky simple shapes, soft light from top-left, dark brown outline",
+    "params": {
+     "view": "low top-down",
+     "outline": "single color outline",
+     "shading": "medium shading",
+     "detail": "medium detail",
+     "size": "32x32"
+    },
+    "created_at": "2026-10-31",
+    "generation_cost": 0,
+    "postprocess": [
+     "remap.py --outline: OKLab nearest, chroma x2, palette.json (48), alpha threshold 128, outer outline #2e1d14 + 1px pad",
+     "fit.py: crop to bbox, centre in 32x32 (trim 1 overflowing outline row and re-ink if needed, never rescale)",
+     "scripts/tea.py: master cup tea_milk_tea-v1, liquid ramp swap + hand pixels: white milk, brown-sugar syrup layer + drips, dark pearls"
+    ],
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)",
+    "package": "items",
+    "source": "phase1/items/pal/tea_brown_sugar_milk.png"
+   },
+   "verification": {
+    "native_scale_reviewed": true,
+    "in_engine_reviewed": true,
+    "technical_checks_passed": true,
+    "approved_by": "owner (design session, 2026-10-31)",
+    "notes": "packed by scripts/art/build-items.py"
+   }
+  },
+  {
+   "id": "item-tea_condensed_tea",
+   "area": "items",
+   "role": "food icon: Trà sữa sữa đặc (catalog id `tea_condensed_tea`, group food)",
+   "path": "public/ta-tua/game/assets/items/items-0.webp#tea_condensed_tea",
+   "status": "approved",
+   "technical": {
+    "dimensions": "32x32",
+    "content_bbox": [
+     7,
+     0,
+     25,
+     31
+    ],
+    "alpha": true,
+    "anchor": "centre (icon, content centred in canvas)",
+    "frames": 1,
+    "filtering": "nearest",
+    "scale": "integer: 2x (64 px) shop/bag cards and eggs, 1x (32 px) lists; html zoom compensated",
+    "atlas_frame": [
+     "items-0.webp",
+     133,
+     67,
+     32,
+     32
+    ]
+   },
+   "visual_locks": [
+    "palette.json",
+    "view: low top-down",
+    "light: top-left",
+    "outline: #2e1d14 outer (uniform, checked)",
+    "icon canvas 32x32, centred"
+   ],
+   "provenance": {
+    "kind": "derived (hand edit)",
+    "tool": "PixelLab MCP create_map_object + local PIL edits",
+    "mode": "basic",
+    "pixellab_id": "a4b3f110-316a-4f26-8f41-57fadead669d",
+    "prompt": "cute tall clear plastic bubble tea cup with a round dome lid and a thick pink straw, filled with smooth light brown traditional milk tea and a few ice cubes, no pearls, chunky simple shapes, soft light from top-left, dark brown outline",
+    "params": {
+     "view": "low top-down",
+     "outline": "single color outline",
+     "shading": "medium shading",
+     "detail": "medium detail",
+     "size": "32x32"
+    },
+    "created_at": "2026-10-31",
+    "generation_cost": 0,
+    "postprocess": [
+     "remap.py --outline: OKLab nearest, chroma x2, palette.json (48), alpha threshold 128, outer outline #2e1d14 + 1px pad",
+     "fit.py: crop to bbox, centre in 32x32 (trim 1 overflowing outline row and re-ink if needed, never rescale)",
+     "scripts/tea.py: master cup tea_milk_tea-v1, liquid ramp swap + hand pixels: amber tea over white condensed-milk layer"
+    ],
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)",
+    "package": "items",
+    "source": "phase1/items/pal/tea_condensed_tea.png"
+   },
+   "verification": {
+    "native_scale_reviewed": true,
+    "in_engine_reviewed": true,
+    "technical_checks_passed": true,
+    "approved_by": "owner (design session, 2026-10-31)",
+    "notes": "packed by scripts/art/build-items.py"
+   }
+  },
+  {
+   "id": "item-tea_leaf",
+   "area": "items",
+   "role": "commodity-raw icon: Lá trà tươi (catalog id `tea_leaf`, group commodity)",
+   "path": "public/ta-tua/game/assets/items/items-0.webp#tea_leaf",
+   "status": "approved",
+   "technical": {
+    "dimensions": "32x32",
+    "content_bbox": [
+     2,
+     3,
+     30,
+     29
+    ],
+    "alpha": true,
+    "anchor": "centre (icon, content centred in canvas)",
+    "frames": 1,
+    "filtering": "nearest",
+    "scale": "integer: 2x (64 px) shop/bag cards and eggs, 1x (32 px) lists; html zoom compensated",
+    "atlas_frame": [
+     "items-0.webp",
+     166,
+     67,
+     32,
+     32
+    ]
+   },
+   "visual_locks": [
+    "palette.json",
+    "view: low top-down",
+    "light: top-left",
+    "outline: #2e1d14 outer (uniform, checked)",
+    "icon canvas 32x32, centred"
+   ],
+   "provenance": {
+    "kind": "generated",
+    "tool": "PixelLab MCP create_map_object",
+    "mode": "basic",
+    "pixellab_id": "29836973-70db-4f2a-8702-2905e4e1f504",
+    "prompt": "cute sprig of three fresh glossy green tea leaves on a short stem, chunky simple shapes, soft light from top-left, dark brown outline",
+    "params": {
+     "view": "low top-down",
+     "outline": "single color outline",
+     "shading": "medium shading",
+     "detail": "medium detail",
+     "size": "32x32"
+    },
+    "created_at": "2026-10-31",
+    "generation_cost": 1,
+    "postprocess": [
+     "remap.py --outline: OKLab nearest, chroma x2, palette.json (48), alpha threshold 128, outer outline #2e1d14 + 1px pad",
+     "fit.py: crop to bbox, centre in 32x32 (trim 1 overflowing outline row and re-ink if needed, never rescale)"
+    ],
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)",
+    "package": "items",
+    "source": "phase1/items/pal/tea_leaf.png"
+   },
+   "verification": {
+    "native_scale_reviewed": true,
+    "in_engine_reviewed": true,
+    "technical_checks_passed": true,
+    "approved_by": "owner (design session, 2026-10-31)",
+    "notes": "packed by scripts/art/build-items.py"
+   }
+  },
+  {
+   "id": "item-tea_milk_tea",
+   "area": "items",
+   "role": "food icon: Trà sữa truyền thống (catalog id `tea_milk_tea`, group food)",
+   "path": "public/ta-tua/game/assets/items/items-0.webp#tea_milk_tea",
+   "status": "approved",
+   "technical": {
+    "dimensions": "32x32",
+    "content_bbox": [
+     7,
+     0,
+     25,
+     31
+    ],
+    "alpha": true,
+    "anchor": "centre (icon, content centred in canvas)",
+    "frames": 1,
+    "filtering": "nearest",
+    "scale": "integer: 2x (64 px) shop/bag cards and eggs, 1x (32 px) lists; html zoom compensated",
+    "atlas_frame": [
+     "items-0.webp",
+     199,
+     67,
+     32,
+     32
+    ]
+   },
+   "visual_locks": [
+    "palette.json",
+    "view: low top-down",
+    "light: top-left",
+    "outline: #2e1d14 outer (uniform, checked)",
+    "icon canvas 32x32, centred"
+   ],
+   "provenance": {
+    "kind": "derived (hand edit)",
+    "tool": "PixelLab MCP create_map_object + local PIL edits",
+    "mode": "basic",
+    "pixellab_id": "a4b3f110-316a-4f26-8f41-57fadead669d",
+    "prompt": "cute tall clear plastic bubble tea cup with a round dome lid and a thick pink straw, filled with smooth light brown traditional milk tea and a few ice cubes, no pearls, chunky simple shapes, soft light from top-left, dark brown outline",
+    "params": {
+     "view": "low top-down",
+     "outline": "single color outline",
+     "shading": "medium shading",
+     "detail": "medium detail",
+     "size": "32x32"
+    },
+    "created_at": "2026-10-31",
+    "generation_cost": 0,
+    "postprocess": [
+     "remap.py --outline: OKLab nearest, chroma x2, palette.json (48), alpha threshold 128, outer outline #2e1d14 + 1px pad",
+     "fit.py: crop to bbox, centre in 32x32 (trim 1 overflowing outline row and re-ink if needed, never rescale)",
+     "scripts/tea.py: master cup tea_milk_tea-v1, liquid ramp swap + hand pixels: deeper tea, pearls removed, 4 ice cubes"
+    ],
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)",
+    "package": "items",
+    "source": "phase1/items/pal/tea_milk_tea.png"
+   },
+   "verification": {
+    "native_scale_reviewed": true,
+    "in_engine_reviewed": true,
+    "technical_checks_passed": true,
+    "approved_by": "owner (design session, 2026-10-31)",
+    "notes": "packed by scripts/art/build-items.py"
+   }
+  },
+  {
+   "id": "item-tea_strawberry_smoothie",
+   "area": "items",
+   "role": "food icon: Sinh tố dâu sữa (catalog id `tea_strawberry_smoothie`, group food)",
+   "path": "public/ta-tua/game/assets/items/items-0.webp#tea_strawberry_smoothie",
+   "status": "approved",
+   "technical": {
+    "dimensions": "32x32",
+    "content_bbox": [
+     7,
+     0,
+     25,
+     31
+    ],
+    "alpha": true,
+    "anchor": "centre (icon, content centred in canvas)",
+    "frames": 1,
+    "filtering": "nearest",
+    "scale": "integer: 2x (64 px) shop/bag cards and eggs, 1x (32 px) lists; html zoom compensated",
+    "atlas_frame": [
+     "items-0.webp",
+     232,
+     67,
+     32,
+     32
+    ]
+   },
+   "visual_locks": [
+    "palette.json",
+    "view: low top-down",
+    "light: top-left",
+    "outline: #2e1d14 outer (uniform, checked)",
+    "icon canvas 32x32, centred"
+   ],
+   "provenance": {
+    "kind": "derived (hand edit)",
+    "tool": "PixelLab MCP create_map_object + local PIL edits",
+    "mode": "basic",
+    "pixellab_id": "a4b3f110-316a-4f26-8f41-57fadead669d",
+    "prompt": "cute tall clear plastic bubble tea cup with a round dome lid and a thick pink straw, filled with smooth light brown traditional milk tea and a few ice cubes, no pearls, chunky simple shapes, soft light from top-left, dark brown outline",
+    "params": {
+     "view": "low top-down",
+     "outline": "single color outline",
+     "shading": "medium shading",
+     "detail": "medium detail",
+     "size": "32x32"
+    },
+    "created_at": "2026-10-31",
+    "generation_cost": 0,
+    "postprocess": [
+     "remap.py --outline: OKLab nearest, chroma x2, palette.json (48), alpha threshold 128, outer outline #2e1d14 + 1px pad",
+     "fit.py: crop to bbox, centre in 32x32 (trim 1 overflowing outline row and re-ink if needed, never rescale)",
+     "scripts/tea.py: master cup tea_milk_tea-v1, liquid ramp swap + hand pixels: pink smoothie, dome of whipped cream, strawberry"
+    ],
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)",
+    "package": "items",
+    "source": "phase1/items/pal/tea_strawberry_smoothie.png"
+   },
+   "verification": {
+    "native_scale_reviewed": true,
+    "in_engine_reviewed": true,
+    "technical_checks_passed": true,
+    "approved_by": "owner (design session, 2026-10-31)",
+    "notes": "packed by scripts/art/build-items.py"
+   }
+  },
+  {
+   "id": "item-tea_strawberry_tea",
+   "area": "items",
+   "role": "food icon: Trà dâu (catalog id `tea_strawberry_tea`, group food)",
+   "path": "public/ta-tua/game/assets/items/items-0.webp#tea_strawberry_tea",
+   "status": "approved",
+   "technical": {
+    "dimensions": "32x32",
+    "content_bbox": [
+     7,
+     0,
+     25,
+     31
+    ],
+    "alpha": true,
+    "anchor": "centre (icon, content centred in canvas)",
+    "frames": 1,
+    "filtering": "nearest",
+    "scale": "integer: 2x (64 px) shop/bag cards and eggs, 1x (32 px) lists; html zoom compensated",
+    "atlas_frame": [
+     "items-0.webp",
+     265,
+     67,
+     32,
+     32
+    ]
+   },
+   "visual_locks": [
+    "palette.json",
+    "view: low top-down",
+    "light: top-left",
+    "outline: #2e1d14 outer (uniform, checked)",
+    "icon canvas 32x32, centred"
+   ],
+   "provenance": {
+    "kind": "derived (hand edit)",
+    "tool": "PixelLab MCP create_map_object + local PIL edits",
+    "mode": "basic",
+    "pixellab_id": "a4b3f110-316a-4f26-8f41-57fadead669d",
+    "prompt": "cute tall clear plastic bubble tea cup with a round dome lid and a thick pink straw, filled with smooth light brown traditional milk tea and a few ice cubes, no pearls, chunky simple shapes, soft light from top-left, dark brown outline",
+    "params": {
+     "view": "low top-down",
+     "outline": "single color outline",
+     "shading": "medium shading",
+     "detail": "medium detail",
+     "size": "32x32"
+    },
+    "created_at": "2026-10-31",
+    "generation_cost": 0,
+    "postprocess": [
+     "remap.py --outline: OKLab nearest, chroma x2, palette.json (48), alpha threshold 128, outer outline #2e1d14 + 1px pad",
+     "fit.py: crop to bbox, centre in 32x32 (trim 1 overflowing outline row and re-ink if needed, never rescale)",
+     "scripts/tea.py: master cup tea_milk_tea-v1, liquid ramp swap + hand pixels: clear red tea, ice, strawberry slice"
+    ],
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)",
+    "package": "items",
+    "source": "phase1/items/pal/tea_strawberry_tea.png"
+   },
+   "verification": {
+    "native_scale_reviewed": true,
+    "in_engine_reviewed": true,
+    "technical_checks_passed": true,
+    "approved_by": "owner (design session, 2026-10-31)",
+    "notes": "packed by scripts/art/build-items.py"
+   }
+  },
+  {
+   "id": "item-vitamin",
+   "area": "items",
+   "role": "care icon: Vitamin tổng hợp (catalog id `vitamin`, group care)",
+   "path": "public/ta-tua/game/assets/items/items-0.webp#vitamin",
+   "status": "approved",
+   "technical": {
+    "dimensions": "32x32",
+    "content_bbox": [
+     4,
+     3,
+     28,
+     28
+    ],
+    "alpha": true,
+    "anchor": "centre (icon, content centred in canvas)",
+    "frames": 1,
+    "filtering": "nearest",
+    "scale": "integer: 2x (64 px) shop/bag cards and eggs, 1x (32 px) lists; html zoom compensated",
+    "atlas_frame": [
+     "items-0.webp",
+     298,
+     67,
+     32,
+     32
+    ]
+   },
+   "visual_locks": [
+    "palette.json",
+    "view: low top-down",
+    "light: top-left",
+    "outline: #2e1d14 outer (uniform, checked)",
+    "icon canvas 32x32, centred"
+   ],
+   "provenance": {
+    "kind": "generated",
+    "tool": "PixelLab MCP create_map_object",
+    "mode": "basic",
+    "pixellab_id": "a5008b55-3926-4787-9557-77f796a52574",
+    "prompt": "cute round vitamin bottle with an orange cap and a cream label with a red heart, two yellow capsule pills beside it, no text, chunky simple shapes, soft light from top-left, dark brown outline",
+    "params": {
+     "view": "low top-down",
+     "outline": "single color outline",
+     "shading": "medium shading",
+     "detail": "medium detail",
+     "size": "32x32"
+    },
+    "created_at": "2026-10-31",
+    "generation_cost": 1,
+    "postprocess": [
+     "remap.py --outline: OKLab nearest, chroma x2, palette.json (48), alpha threshold 128, outer outline #2e1d14 + 1px pad",
+     "fit.py: crop to bbox, centre in 32x32 (trim 1 overflowing outline row and re-ink if needed, never rescale)"
+    ],
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)",
+    "package": "items",
+    "source": "phase1/items/pal/vitamin.png"
+   },
+   "verification": {
+    "native_scale_reviewed": true,
+    "in_engine_reviewed": true,
+    "technical_checks_passed": true,
+    "approved_by": "owner (design session, 2026-10-31)",
+    "notes": "packed by scripts/art/build-items.py"
+   }
+  },
+  {
+   "id": "item-yarn",
+   "area": "items",
+   "role": "toy icon: Cuộn len (catalog id `yarn`, group toy)",
+   "path": "public/ta-tua/game/assets/items/items-0.webp#yarn",
+   "status": "approved",
+   "technical": {
+    "dimensions": "32x32",
+    "content_bbox": [
+     4,
+     6,
+     28,
+     26
+    ],
+    "alpha": true,
+    "anchor": "centre (icon, content centred in canvas)",
+    "frames": 1,
+    "filtering": "nearest",
+    "scale": "integer: 2x (64 px) shop/bag cards and eggs, 1x (32 px) lists; html zoom compensated",
+    "atlas_frame": [
+     "items-0.webp",
+     331,
+     67,
+     32,
+     32
+    ]
+   },
+   "visual_locks": [
+    "palette.json",
+    "view: low top-down",
+    "light: top-left",
+    "outline: #2e1d14 outer (uniform, checked)",
+    "icon canvas 32x32, centred"
+   ],
+   "provenance": {
+    "kind": "generated+edited",
+    "tool": "PixelLab MCP create_map_object + local PIL edits",
+    "mode": "basic",
+    "pixellab_id": "5586f7fa-28eb-4e5a-9cb5-600fee7da134",
+    "prompt": "ball of rose pink wool yarn with neatly wound strands and one loose strand trailing out, plain object with no face, chunky simple shapes, soft light from top-left, dark brown outline",
+    "params": {
+     "view": "low top-down",
+     "outline": "single color outline",
+     "shading": "medium shading",
+     "detail": "medium detail",
+     "size": "32x32"
+    },
+    "created_at": "2026-10-31",
+    "generation_cost": 1,
+    "postprocess": [
+     "remap.py --outline: OKLab nearest, chroma x2, palette.json (48), alpha threshold 128, outer outline #2e1d14 + 1px pad",
+     "fit.py: crop to bbox, centre in 32x32 (trim 1 overflowing outline row and re-ink if needed, never rescale)",
+     "scripts/fixes.py: texture repainted as wound strands (lit ramp + curved grooves)"
+    ],
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)",
+    "package": "items",
+    "source": "phase1/items/pal/yarn.png"
+   },
+   "verification": {
+    "native_scale_reviewed": true,
+    "in_engine_reviewed": true,
+    "technical_checks_passed": true,
+    "approved_by": "owner (design session, 2026-10-31)",
+    "notes": "packed by scripts/art/build-items.py"
+   }
   }
  ],
  "builds": {
@@ -7837,6 +10661,24 @@
    },
    "total_bytes": 182773,
    "missing_places": []
+  },
+  "items": {
+   "script": "scripts/art/build-items.py",
+   "art_as_of": "2026-10-31",
+   "packages": {
+    "items": {
+     "icons": 43,
+     "inputs_sha1": "d1a82d00497fd36c3c38731e65cfcf5964d548f9",
+     "approved_by": "owner (design session, 2026-10-31)"
+    }
+   },
+   "files": {
+    "items-0.webp": 6154,
+    "items.json": 1453
+   },
+   "total_bytes": 7607,
+   "frames": 43,
+   "inputs_sha1": "d1a82d00497fd36c3c38731e65cfcf5964d548f9"
   }
  }
 }

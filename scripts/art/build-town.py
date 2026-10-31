@@ -201,6 +201,9 @@ def mentry(aid, role, path, src, kind, extra=None, prov=None, frames=1, size=Non
     }
     if extra:
         e.update(extra)
+    # Một nhân vật có thể được bổ sung ở gói sau (vd dân làng P0 + hoạt cảnh thở của npc-3):
+    # mục mới thay mục cũ cùng id, để manifest không bao giờ có id lặp.
+    manifest_entries[:] = [m for m in manifest_entries if m['id'] != aid]
     manifest_entries.append(e)
 
 

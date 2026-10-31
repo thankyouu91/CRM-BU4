@@ -2,6 +2,7 @@
 import { api } from '../api.js';
 import { closeModal, countdown, esc, fmt, modalOpen, openModal, viewHead } from '../ui.js';
 import { sceneHdr } from '../scenes-hdr.js';
+import { itemIcon } from '../itemart.js';
 
 const EFFECTS = {
   fullness: { icon: '🍙', name: 'No bụng' },
@@ -35,9 +36,12 @@ export function renderKitchen(root, ctx) {
   let timer = 0;
 
   const multText = (m) => `×${m.toLocaleString('vi-VN')}`;
+  /** Icon 16-bit 32 điểm của món nấu / nguyên liệu (id trong catalog); chưa có hình thì emoji như cũ. */
+  const artIcon = (id, emoji) => itemIcon({ id, icon: esc(emoji) }, 3);
+  /** Nguyên liệu: icon (cùng hình với khung Thử công thức) rồi tên. */
   const commodityLabel = (id) => {
     const c = commodities[id];
-    return c ? `${esc(c.icon)} ${esc(c.name)}` : esc(id);
+    return c ? `${artIcon(id, c.icon)} ${esc(c.name)}` : esc(id);
   };
   const effectText = (effect = {}, mult = 1) => Object.entries(effect)
     .map(([k, v]) => `<span title="${esc(EFFECTS[k]?.name ?? k)}">${EFFECTS[k]?.icon ?? '✨'} +${Math.round(v * mult)}</span>`)
@@ -85,7 +89,7 @@ export function renderKitchen(root, ctx) {
     return `
       <article class="card kitchen-recipe ${ok ? '' : 'is-short'}">
         <header>
-          <span class="kitchen-icon">${esc(r.icon)}</span>
+          <span class="kitchen-icon">${artIcon(id, r.icon)}</span>
           <div>
             <h4>${esc(r.name)}</h4>
             ${r.hidden ? '<span class="badge star">✨ Món bí mật</span>' : ''}
@@ -93,7 +97,7 @@ export function renderKitchen(root, ctx) {
         </header>
         <ul class="kitchen-inputs">${Object.entries(r.inputs).map(([c, n]) => {
           const have = data.goods[c] ?? 0;
-          return `<li class="${have >= n ? '' : 'down'}"><span>${commodityLabel(c)}</span><b>${have}/${n}</b></li>`;
+          return `<li class="${have >= n ? '' : 'down'}"><span class="kitchen-in-name">${commodityLabel(c)}</span><b>${have}/${n}</b></li>`;
         }).join('')}</ul>
         <p class="kitchen-effect">${effectText(r.effect)}</p>
         <p class="muted small">Giá tham chiếu ~${fmt(r.value)} 🪙 (loại ${esc(rules.quality[0].name)})</p>
@@ -125,7 +129,7 @@ export function renderKitchen(root, ctx) {
         const name = esc(commodities[c].name);
         return `
           <li class="${n ? 'is-on' : ''}">
-            <span>${commodityLabel(c)} <small class="muted">kho ${have}</small></span>
+            <span class="kitchen-mix-name">${artIcon(c, commodities[c].icon)} ${name} <small class="muted">kho ${have}</small></span>
             <span class="kitchen-step">
               <button class="btn small" data-mix="${esc(c)}" data-step="-1" ${n > 0 ? '' : 'disabled'} aria-label="Bớt ${name}">−</button>
               <b>${n}</b>
@@ -148,7 +152,7 @@ export function renderKitchen(root, ctx) {
     const left = d.expiresAt - Date.now();
     return `
       <li class="kitchen-dish q${Number(d.quality)} ${left < SOON_MS ? 'is-soon' : ''}" data-expires="${Number(d.expiresAt)}">
-        <span class="kitchen-icon small">${esc(def.icon)}</span>
+        <span class="kitchen-icon small">${artIcon(d.recipe, def.icon)}</span>
         <div class="kitchen-dish-main">
           <div><b>${esc(def.name)}</b> <span class="badge kitchen-q q${Number(d.quality)}">${esc(d.qualityName)}</span></div>
           <small class="kitchen-effect">${effectText(def.effect, mult)}</small>

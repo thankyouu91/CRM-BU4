@@ -258,8 +258,9 @@ input:focus { border-color: var(--tea); box-shadow: 0 0 0 4px #c8915f33; }
 .filters button.current { background: var(--ink); border-color: var(--ink); color: #fff; box-shadow: 0 4px 0 #2a1c14; }
 .item-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(220px, 100%), 1fr)); gap: 16px; }
 .item-card { padding: 16px; display: flex; flex-direction: column; gap: 8px; position: relative; }
+/* Ô 72 điểm màn hình (đã bù zoom): vừa icon 16-bit 2x = 64 điểm, chừa 4 điểm mỗi bên như bản mẫu đã duyệt. */
 .item-card .icon {
-  font-size: 2.6rem; width: 72px; height: 72px; display: grid; place-items: center;
+  font-size: 2.6rem; width: calc(72px / var(--zoom, 1)); height: calc(72px / var(--zoom, 1)); display: grid; place-items: center;
   border-radius: 20px; background: var(--surface-2); border: 2px solid var(--line);
 }
 .item-card h3 { font-size: 1.25rem; }
@@ -481,9 +482,18 @@ input:focus { border-color: var(--tea); box-shadow: 0 0 0 4px #c8915f33; }
 }
 
 /* ---------- Pet ngũ hành & đồ đeo 4 khe ---------- */
-.px-icon { max-width: 100%; max-height: 100%; height: auto; }
-.item-card .icon .px-icon { max-width: 60px; max-height: 60px; }
-.pick b .px-icon { max-width: 44px; max-height: 40px; vertical-align: middle; }
+/* Hình pixel cũ (đồ đeo, lưới 9-13 ô) là <img class="px-icon">: giữ khung cũ. Icon 16-bit là .px-atlas, cỡ đúng nguyên lần. */
+img.px-icon { max-width: 100%; max-height: 100%; height: auto; }
+.item-card .icon img.px-icon { max-width: 60px; max-height: 60px; }
+.pick b img.px-icon { max-width: 44px; max-height: 40px; vertical-align: middle; }
+/* Icon đồ 16-bit (atlas assets/items, itemart.js): khung 32x32 phóng 1x (danh sách) hoặc 2x (thẻ, trứng).
+   Bù zoom 0.9 của cả game như phố 16-bit (.t16), để mỗi điểm ảnh ra đúng 1 hay 2 điểm màn hình, không nhoè. */
+.px-atlas {
+  display: inline-block; flex: none; vertical-align: middle;
+  zoom: calc(1 / var(--zoom, 1));
+  background-repeat: no-repeat;
+}
+.pick b .px-atlas { display: block; margin: 0 auto; }
 .slot-head { margin: 10px 0 2px; font-family: var(--font-display); font-size: 1rem; }
 .species-card .slot { height: 150px; width: 100%; display: flex; align-items: flex-end; justify-content: center; overflow: hidden; }
 .species-card { border-top: 6px solid var(--el, var(--line)); }
@@ -511,7 +521,7 @@ input:focus { border-color: var(--tea); box-shadow: 0 0 0 4px #c8915f33; }
   background: #fff; border: 2px solid var(--line); border-top: 5px solid var(--el);
 }
 .egg-card.ready { box-shadow: 0 0 0 3px color-mix(in srgb, var(--el) 40%, transparent); }
-.egg-card .px-icon { width: 44px; }
+.egg-card img.px-icon { width: 44px; }
 .egg-hatch { display: grid; gap: 6px; width: 100%; }
 .egg-hatch input { width: 100%; }
 .stage-note { margin: -4px 0 8px; font-size: .85rem; color: var(--muted); }
@@ -589,8 +599,12 @@ input:focus { border-color: var(--tea); box-shadow: 0 0 0 4px #c8915f33; }
 .gear-lines li, .gear-lines-inline { overflow-wrap: break-word; }
 .gear-pool { line-height: 1.5; }
 .tier-chip { white-space: nowrap; }
-/* nhãn góc thẻ (Đang đeo · tên bé, Có N) không đè lên hình món */
-.item-card > .badge.owned { display: block; max-width: calc(100% - 104px); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+/* nhãn góc thẻ (Đang đeo · tên bé, Có N) không đè lên hình món: chừa đệm thẻ 16 + ô hình (72 điểm màn hình, đã bù zoom,
+   như .item-card .icon) + lề phải của nhãn 14 + khoảng hở 8 */
+.item-card > .badge.owned {
+  display: block; max-width: calc(100% - 38px - 72px / var(--zoom, 1));
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
 @media (max-width: 380px) {
   .item-grid { grid-template-columns: minmax(0, 1fr); }
   .tabs button { font-size: .68rem; padding: 4px 2px; white-space: normal; line-height: 1.1; text-align: center; }
