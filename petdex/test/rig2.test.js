@@ -153,6 +153,40 @@ test('khói: mọi dáng hoạt ảnh của mọi loài (trưởng thành, cấp
   assert.deepEqual(problems, []);
 });
 
+// Quét toàn bộ thư viện sau khi gộp mọi nhánh vẽ (dáng tròn, rồng, tai, đuôi, hoa văn, mặt, đặc điểm, dấu hiệu, đồ đeo):
+// 51 loài × 6 giai đoạn × S/E/N/W × mọi hoạt ảnh × cấp 1 và 50 (dấu hiệu cấp, hào quang, lão làng bật như trong game).
+// W là khung E lật nguyên (index.js), nên W được kiểm qua E (lật không đổi màu, chạm mép trái thành chạm mép phải), và một
+// mẫu nhỏ xác nhận W đúng là E lật. 'spin' tự quay đủ 4 hướng nên chỉ chạy một lần.
+test('khói (bản gộp): 51 loài × 6 giai đoạn × S/E/N/W × mọi hoạt ảnh, cấp 1 và 50: đúng bảng màu, đục hẳn, không chạm mép', async () => {
+  const core = await import(`${GAME}rig2/core.js`);
+  const problems = [];
+  let frames = 0;
+  for (const sp of ALL) {
+    for (const st of LIFE_STAGES) {
+      for (const level of [1, 50]) {
+        for (const anim of Object.keys(rig.ANIMS)) {
+          for (const v of anim === 'spin' ? ['S'] : ['S', 'E', 'N']) {
+            rig.renderAnim(sp, st.key, anim, v, {}, { level }).frames.forEach(({ img }, i) => {
+              frames++;
+              const a = rig.auditFrame(img);
+              if (a.offPalette || a.semi || a.edge) problems.push(`${sp.id}/${st.key}/L${level}/${anim}[${i}]/${v}: ${JSON.stringify(a)}`);
+            });
+          }
+        }
+      }
+    }
+  }
+  assert.ok(frames > 60000, `chỉ quét ${frames} khung`);
+  for (const id of ['boba', 'nhim_reu', 'thanh_long', 'ga_trong']) {
+    for (const pose of rig.animPoses(rig.speciesOf(id), 'walk', 'E')) {
+      const e = rig.renderFrame(id, 'adult', 'E', pose, {}, { level: 50 }).img;
+      const w = rig.renderFrame(id, 'adult', 'W', pose, {}, { level: 50 }).img;
+      assert.ok(core.mirror(e).data.every((c, k) => c === w.data[k]), `${id}: W phải là E lật`);
+    }
+  }
+  assert.deepEqual(problems, []);
+});
+
 // Mọi món ở trong ô (ARTIST-GUIDE mục 3, 9; WEAR-SPEC) trên 3 dáng khung (biped Boba, quad Mèo Bạc, bird Cánh Cụt) × 6 giai
 // đoạn tuổi × 4 hướng, ở khung đi bộ có nhún (step 1, lift −1), khăn lay (flutter 1) và tick 2 (bùa nhún xuống thấp nhất);
 // thêm đỉnh cú nhảy (lift −6: món đội đầu lên cùng đầu, renderFrame hạ cả cú nhảy cho khỏi chạm mép) và mắt liếc (think:
@@ -576,6 +610,32 @@ test('ctx.headTopCovered: chỉ món đội đầu che đỉnh đầu (không ph
   assert.equal(covered({}), false);
   for (const id of idsOf('head')) assert.equal(covered({ head: id }), !['halo', 'flower', 'bow'].includes(id), id);
   assert.equal(covered({ face: 'glasses' }), false);
+});
+
+test('móc của dáng khung (bước ghép): cá nóc và ếch nảy cao khi đi; cổ dáng tròn theo khối, cách đất ≥ 6 px; rồng không vẽ đuôi của tails.js', () => {
+  const hop = (id) => rig.animPoses(rig.speciesOf(id), 'walk', 'S').map((p) => p.lift ?? 0);
+  assert.deepEqual(hop('ca_noc'), [0, -2, -1, 0, -2, -1]);
+  assert.deepEqual(hop('ech_sen'), [0, -2, -1, 0, -2, -1]);
+  assert.deepEqual(hop('heo_than'), [0, -1, 0, 0, -1, 0]);
+  assert.deepEqual(hop('boba'), [0, -1, 0, 0, -1, 0]);
+  for (const id of ['chuot_chuong', 'heo_than', 'ca_noc']) {
+    for (const st of ['baby', 'kid', 'adult']) {
+      for (const v of ['S', 'E', 'N']) {
+        const sk = rig.skeleton(rig.speciesOf(id), st, v, {});
+        assert.ok(sk.anchors.neck[1] <= sk.ground - 6 + 1e-9, `${id}/${st}/${v}: cổ ${sk.anchors.neck[1].toFixed(2)} sát đất`);
+      }
+    }
+  }
+  // Rồng tự vẽ đuôi (ownsTail): đổi kiểu đuôi trong dữ liệu không đổi điểm ảnh nào (index.js bỏ qua parts/tails.js).
+  assert.ok(rig.archetypeOf(rig.speciesOf('thanh_long')).ownsTail);
+  for (const id of ['thanh_long', 'ca_chep_rong', 'ky_nhong']) {
+    const sp = rig.speciesOf(id);
+    for (const v of ['S', 'E', 'N']) {
+      const a = rig.renderFrame(sp, 'adult', v, {}, {}, { marks: false }).img.data;
+      const b = rig.renderFrame({ ...sp, tail: 'fluffy' }, 'adult', v, {}, {}, { marks: false }).img.data;
+      assert.ok(a.every((c, k) => c === b[k]), `${id}/${v}: đuôi của tails.js lọt vào dáng rồng`);
+    }
+  }
 });
 
 /** Điểm neo nhìn ngang của skeleton.js khi chưa áp móc `anchors` của dáng khung. */

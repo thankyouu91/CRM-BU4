@@ -142,6 +142,9 @@ export function rigSheet(speciesId, stageKey, wear = {}, level = 1) {
     cols: RIG_COLS,
     anims: playTable(temp),
     pixelated: true,
+    // Vẽ theo điểm ảnh tròn số (petmotion.js PET_PX): mỗi điểm ảnh gốc là đúng N điểm màn hình ở mọi nơi hiện bé.
+    pixelPerfect: true,
+    artPx: ART_PX,
     bodyH: (RIG_PIVOT.y + 1 - top) * ART_PX,
     padBottom: RIG_PAD_BOTTOM * ART_PX,
     pending: true,
@@ -255,8 +258,8 @@ function guestAnchors(img, spec) {
 }
 
 const anchorCache = new Map();
-/** Hình món cổ cho bé khách mời: vẽ trên Boba to gấp 1.6 lần, dải khăn rộng chừng 18 điểm ảnh (hình cũ 16). */
-const GUEST_NECK = { grow: 1.6 };
+/** Bé khách mời nhìn trước: đồ lưng lấy hình S (dải ló quanh người), không lấy hình túi đồ (N, cả tấm áo choàng). */
+const GUEST_BACK = { view: 'S' };
 
 /** Spritesheet của bé khách mời kèm đồ đeo; không đeo gì thì dùng nguyên ảnh gốc. */
 export async function guestSheet(sprite, wear = {}) {
@@ -280,12 +283,11 @@ export async function guestSheet(sprite, wear = {}) {
       const x0 = f * PETDEX_SHEET.frameW;
       const y0 = a.row * PETDEX_SHEET.frameH;
       const cell = anchors[name][f];
-      // Ảnh vẽ sẵn thường có tay ôm đồ trước ngực (Boba ôm cốc trà sữa), nên đồ ở cổ vẽ sau người, chỉ lộ hai bên:
-      // món cổ vẽ theo bộ xương (khăn quàng) lấy hình trên Boba to hơn (GUEST_NECK) cho dải cổ rộng như hình cũ.
-      put(wear.back, cell, x0, y0);
-      put(wear.neck, cell, x0, y0, GUEST_NECK);
+      // Đồ lưng sau người (chỉ lộ hai bên). Đồ cổ vẽ SAU ảnh của bé, ngay dưới cằm (neo cổ dò từ ảnh): hình đồ cổ Rig 2.0
+      // là hình dán cố định cỡ Boba (khăn rộng chừng 12 điểm ảnh), vẽ sau người thì bị thân bé khách mời che mất.
+      put(wear.back, cell, x0, y0, GUEST_BACK);
       g.drawImage(img, x0, y0, PETDEX_SHEET.frameW, PETDEX_SHEET.frameH, x0, y0, PETDEX_SHEET.frameW, PETDEX_SHEET.frameH);
-      for (const slot of ['face', 'head', 'charm']) put(wear[slot], cell, x0, y0);
+      for (const slot of ['neck', 'face', 'head', 'charm']) put(wear[slot], cell, x0, y0);
     }
   }
   const blob = await new Promise((resolve) => c.toBlob(resolve));

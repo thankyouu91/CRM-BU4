@@ -379,7 +379,7 @@ const iconCache = new Map();
  * chốt như trên pet, nên side 0). Hàm vẽ món nhận đủ ctx như khi vẽ lên pet (makeCtx), trừ ctx.chin = null (hình biểu
  * tượng không bị cằm che). Món vẽ lỗi thì trả về null (túi đồ hiện ô trống), không ném lỗi.
  * opts.grow: vẽ trên Boba to hơn chừng ấy lần (cỡ người, như dáng theo cấp): món vẽ theo bộ xương rộng ra, hình dán cố
- * định thì không đổi (cả 55 món hiện nay). Bé khách mời Petdex dùng cho khe cổ (petsheet.js guestSheet).
+ * định thì không đổi (cả 55 món hiện nay). Bé khách mời Petdex vẽ đồ cổ đè lên ảnh của bé (petsheet.js guestSheet).
  */
 export function wearIcon(id, { grow = 1, view } = {}) {
   const slot = WEARABLES[id]?.slot;

@@ -10,7 +10,8 @@
 //   rig2-strip-<id>.png  with --species: every animation x direction for each listed species (one row per anim-dir)
 //   rig2-wear-<slot>.png with --only items (one sheet per wear slot): every item x boba / meo_bac / canh_cut / tho_la
 //                        x S E N W, an adult row and a baby row, plus the item's bag icon (wearIcon) at 1x and 3x;
-//                        --pose walk1 draws walk frame 1 (hop + scarf flutter), --ids a,b limits the items
+//                        --pose walk1 draws walk frame 1 (hop + scarf flutter), --ids a,b limits the items,
+//                        --wear-species a,b,c replaces the four bodies (e.g. add a round and a serpent species)
 // Cells are 48x48 on a cream card; a red cell border marks a frame that breaks the rules (off-palette pixel,
 // semi-transparent pixel, or a pixel touching the cell edge). Labels are a tiny 3x5 pixel font.
 import { mkdirSync, writeFileSync } from "node:fs";
@@ -199,7 +200,7 @@ function stripSheet(id) {
 
 /** Item sheets (one per slot): every item x 4 species x S E N W, adult and baby rows, plus the bag icon. */
 function itemSheets() {
-  const species = ["boba", "meo_bac", "canh_cut", "tho_la"];
+  const species = opt("wear-species", "boba,meo_bac,canh_cut,tho_la").split(",");
   const stages = ["adult", "baby"];
   const views = ["S", "E", "N", "W"];
   const walk = POSE === "walk1";
@@ -211,7 +212,7 @@ function itemSheets() {
     const gw = species.length * (views.length * (CELL + PAD) + 12);
     const rowH = CELL + PAD;
     const c = canvas(LABEL_W + iconW + gw + 16, HEAD_H + 20 + ids.length * (2 * rowH + 16));
-    text(c, `rig2 wear ${slot}: ${ids.length} items x boba meo_bac canh_cut tho_la x s e n w, adult + baby, ${walk ? "walk frame 1" : "idle 0"}, level ${LEVEL}`, 8, 8, INKC, 3);
+    text(c, `rig2 wear ${slot}: ${ids.length} items x ${species.join(" ")} x s e n w, adult + baby, ${walk ? "walk frame 1" : "idle 0"}, level ${LEVEL}`, 8, 8, INKC, 3);
     species.forEach((sp, si) => views.forEach((v, vi) => text(c, `${sp.slice(0, 8)} ${v}`, LABEL_W + iconW + si * (views.length * (CELL + PAD) + 12) + vi * (CELL + PAD), HEAD_H, MUTED)));
     ids.forEach((id, r) => {
       const y0 = HEAD_H + 20 + r * (2 * rowH + 16);

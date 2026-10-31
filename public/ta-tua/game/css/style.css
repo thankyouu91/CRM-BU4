@@ -656,3 +656,11 @@ img.px-icon { max-width: 100%; max-height: 100%; height: auto; }
 
 /* Thư viện icon (js/icons): emoji được thay bằng icon pixel SVG, to bằng chữ xung quanh như emoji cũ. */
 .ic { display: inline-block; width: 1.2em; height: 1.2em; vertical-align: -0.22em; flex: none; shape-rendering: crispEdges; }
+
+/* Điện thoại cảm ứng: mọi nút bấm cao (và rộng) ít nhất 40 px cho đầu ngón tay, kể cả nút nhỏ, chip trên thanh trên,
+   nút dạng liên kết, nút đóng hộp thoại và ô chọn (chia cho --zoom của cả game, để ra đúng 40 px trên màn hình). */
+@media (max-width: 767px) and (pointer: coarse) {
+  .btn.small, .chip, .link-btn, .link-back, .modal .close, select { min-height: calc(40px / var(--zoom, 1)); }
+  .btn.small, .chip, .link-btn, .modal .close { min-width: calc(40px / var(--zoom, 1)); justify-content: center; }
+  .link-btn, .modal .close { display: inline-flex; align-items: center; justify-content: center; }
+}
