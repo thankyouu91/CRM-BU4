@@ -49,6 +49,8 @@ export class Sprite {
     s.width = `${frameW * scale}px`;
     s.height = `${frameH * scale}px`;
     s.backgroundSize = `${cols * frameW * scale}px auto`;
+    // Ô của bộ khung Rig 2.0 còn vài hàng trống dưới chân: kéo hình xuống để chân chạm đất (bóng, chỗ đứng) như trước.
+    s.marginBottom = this.sheet.padBottom ? `${-this.sheet.padBottom * scale}px` : '';
     this.draw();
   }
 

@@ -2,21 +2,37 @@
 // - bé vẽ bằng bộ khung (rig.js): vẽ thẳng từ dữ liệu loài, đúng giai đoạn tuổi;
 // - bé khách mời Petdex (ảnh vẽ sẵn): dò điểm neo trên từng khung của ảnh rồi gắn đồ vào đó.
 import { makeCanvas } from './pixel.js';
-import { RIG_ANIMS, drawFrame, formStage, skeleton, wearImage, wearSpotAt } from './rig.js';
+import { RIG_ANIMS, RIG_PIVOT, animFrames, formStage, skeleton, wearImage, wearSpotAt } from './rig.js';
 import { SLOT_IDS, SPECIES_BY_ID, WEARABLES, formIndex } from './shared/pets.js';
 
 /** Cỡ một pixel nghệ thuật trên màn hình ở tỉ lệ 1 (bằng độ thô của Boba và cảnh pixel). */
 export const ART_PX = 4.8;
 
-// Khung hình bộ khung: 46×52 (đã viền), cắt bớt 3 hàng dưới để chân nằm sát đáy như ảnh Petdex.
-const RIG_FW = 46;
-const RIG_FH = 49;
+// Khung hình bộ khung Rig 2.0: ô 48×48, chân (viền dưới chân) ở hàng 44, nên dưới chân còn 3 hàng trống.
+const RIG_FW = 48;
+const RIG_FH = 48;
+/** Số hàng trống dưới chân trong mỗi ô (sprite.js kéo hình xuống chừng ấy để chân chạm đất như trước). */
+const RIG_PAD_BOTTOM = RIG_FH - 1 - RIG_PIVOT.y;
 
-/** Hàng của spritesheet bộ khung: tên hoạt ảnh ở app → hoạt ảnh của bộ khung (+ lật ngang). */
+/**
+ * Hàng của spritesheet bộ khung: [tên hàng, hoạt ảnh của bộ khung, hướng]. Bốn hướng cho đứng và đi
+ * (W là E lật, nhưng vẫn có hàng riêng để chạy như mọi hàng khác), rồi các hoạt ảnh cảm xúc nhìn trước (S).
+ */
 const RIG_ROWS = [
-  ['idle', 'idle'], ['runRight', 'run'], ['runLeft', 'run', true], ['wave', 'wave'], ['jump', 'jump'],
-  ['sad', 'sad'], ['wait', 'think'], ['busy', 'busy'], ['think', 'think'], ['spin', 'spin'],
+  ['idle-S', 'idle', 'S'], ['idle-E', 'idle', 'E'], ['idle-N', 'idle', 'N'], ['idle-W', 'idle', 'W'],
+  ['walk-S', 'walk', 'S'], ['walk-E', 'walk', 'E'], ['walk-N', 'walk', 'N'], ['walk-W', 'walk', 'W'],
+  ['wave', 'wave', 'S'], ['jump', 'jump', 'S'], ['sad', 'sad', 'S'], ['think', 'think', 'S'], ['busy', 'busy', 'S'], ['spin', 'spin', 'S'],
 ];
+/**
+ * Tên play() của sprite.js → [hàng, fps riêng (nếu khác)]. idle = idle-S; walkS/E/N/W đi bộ 4 hướng;
+ * runRight/runLeft (công viên, phố) = đi hướng E/W ở 14 fps; wait = think (như bản cũ).
+ */
+const RIG_PLAY = {
+  idle: ['idle-S'], idleS: ['idle-S'], idleE: ['idle-E'], idleN: ['idle-N'], idleW: ['idle-W'],
+  walkS: ['walk-S'], walkE: ['walk-E'], walkN: ['walk-N'], walkW: ['walk-W'],
+  runRight: ['walk-E', 14], runLeft: ['walk-W', 14],
+  wave: ['wave'], jump: ['jump'], sad: ['sad'], wait: ['think'], busy: ['busy'], think: ['think'], spin: ['spin'],
+};
 const RIG_COLS = Math.max(...RIG_ROWS.map(([, a]) => RIG_ANIMS[a].frames.length));
 
 /** Spritesheet Petdex/Codex v2: lưới 8 cột, khung 192×208, mỗi hàng một trạng thái. */
@@ -47,16 +63,25 @@ export function rigSheet(speciesId, stageKey, wear = {}, level = 1) {
   const key = `rig|${speciesId}|${stageKey}|${formIndex(level)}|${wearKey(wear)}`;
   if (cache.has(key)) return cache.get(key);
   const [c, g] = makeCanvas(RIG_COLS * RIG_FW, RIG_ROWS.length * RIG_FH);
-  const anims = {};
-  RIG_ROWS.forEach(([name, anim, mirror], row) => {
-    const def = RIG_ANIMS[anim];
-    def.frames.forEach((pose, i) => {
-      // Chỉ lấy RIG_FH hàng trên của khung (cao hơn ô), để 3 hàng bị cắt không lấn sang đầu ô hàng dưới.
-      const frame = drawFrame(speciesId, stageKey, { ...pose, mirror: mirror ? !pose.mirror : pose.mirror }, wear, i, { level });
-      g.drawImage(frame, 0, 0, RIG_FW, RIG_FH, i * RIG_FW, row * RIG_FH, RIG_FW, RIG_FH);
+  const rows = {};
+  const drawn = {};
+  RIG_ROWS.forEach(([name, anim, view], row) => {
+    // Hướng W là hướng E lật ngang: lật lại các khung E vừa vẽ thay vì vẽ lại.
+    const east = view === 'W' ? drawn[`${anim}-E`] : null;
+    const frames = east ?? animFrames(speciesId, stageKey, anim, wear, { level, view });
+    drawn[`${anim}-${view}`] = frames;
+    frames.forEach((frame, i) => {
+      if (!east) return g.drawImage(frame, i * RIG_FW, row * RIG_FH);
+      g.save();
+      g.translate((i + 1) * RIG_FW, row * RIG_FH);
+      g.scale(-1, 1);
+      g.drawImage(frame, 0, 0);
+      g.restore();
     });
-    anims[name] = { row, frames: def.frames.length, fps: def.fps };
+    rows[name] = { row, frames: frames.length, fps: RIG_ANIMS[anim].fps };
   });
+  const anims = { ...rows };
+  for (const [name, [rowName, fps]] of Object.entries(RIG_PLAY)) anims[name] = { ...rows[rowName], ...(fps ? { fps } : {}) };
   // Chiều cao phần thân bé (từ đỉnh đầu tới chân), để hiệu ứng bay lên đúng đầu bé.
   const top = skeleton(SPECIES_BY_ID[speciesId], formStage(stageKey, level)).head.top;
   const sheet = {
@@ -66,7 +91,8 @@ export function rigSheet(speciesId, stageKey, wear = {}, level = 1) {
     cols: RIG_COLS,
     anims,
     pixelated: true,
-    bodyH: (RIG_FH - 1 - top) * ART_PX,
+    bodyH: (RIG_PIVOT.y + 1 - top) * ART_PX,
+    padBottom: RIG_PAD_BOTTOM * ART_PX,
   };
   cache.set(key, sheet);
   return sheet;

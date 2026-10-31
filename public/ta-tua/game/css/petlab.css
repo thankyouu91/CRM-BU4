@@ -30,7 +30,7 @@
 .lab-card:hover { transform: translateY(-2px); }
 .lab-card.current { border-color: var(--el); box-shadow: 0 4px 0 var(--el); }
 .lab-card canvas, .stage-box canvas, .life-step canvas { image-rendering: pixelated; display: block; }
-.lab-card canvas { width: 138px; height: 156px; }
+.lab-card canvas { width: 144px; height: 144px; }
 .stars { letter-spacing: 1px; }
 
 .lab-detail { position: sticky; top: 12px; padding: 16px; max-height: calc(100vh - 24px); overflow: auto; border-top: 6px solid var(--el); }
@@ -45,7 +45,7 @@
     linear-gradient(180deg, transparent 78%, color-mix(in srgb, var(--el) 30%, #e9d8bd) 78%),
     radial-gradient(circle at 50% 40%, #fffaf3, color-mix(in srgb, var(--el) 14%, #fff3e3));
 }
-.stage-box canvas { width: 230px; height: 260px; }
+.stage-box canvas { width: 240px; height: 240px; }
 .anims { justify-content: center; }
 .wear-row { display: flex; flex-wrap: wrap; align-items: center; gap: 5px; margin: 6px 0; }
 .wear-slot { width: 64px; font-weight: 800; font-size: .85rem; }
@@ -54,7 +54,7 @@
 .outfit-sum.down b { color: var(--pink-deep); }
 .life-strip { display: grid; grid-template-columns: repeat(6, 1fr); gap: 4px; }
 .life-step { display: grid; justify-items: center; padding: 4px 0; border-radius: 12px; border: 2px solid transparent; background: var(--surface-2); cursor: pointer; font: 800 .65rem var(--font-body); color: var(--ink); }
-.life-step canvas { width: 46px; height: 52px; }
+.life-step canvas { width: 48px; height: 48px; }
 .life-step.on { border-color: var(--el); }
 .stage-note { margin: 8px 0 4px; font-size: .9rem; }
 .skill-bars { display: grid; gap: 4px; }
@@ -74,7 +74,7 @@
 @media (max-width: 520px) {
   .lab-head { flex-direction: column; }
   .lab-grid { grid-template-columns: repeat(2, 1fr); }
-  .lab-card canvas { width: 115px; height: 130px; }
+  .lab-card canvas { width: 120px; height: 120px; }
   .wear-slot { width: 100%; }
   .skill-bar { grid-template-columns: 100px 1fr 24px 40px; }
 }
