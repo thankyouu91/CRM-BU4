@@ -1,43 +1,52 @@
 // Tai (và sừng, gạc, vây, mào trên đầu): sổ đăng ký theo `ears` của từng loài trong shared/pets.js. Chủ sở hữu: họa sĩ tai.
 // Mỗi mục { S, E, N }: hàm vẽ nhận ctx, đẩy bộ phận tô bóng vào ctx.parts (và điểm vào ctx.pixels nếu cần).
 // Tai nằm sau đầu khi nhìn trước/ngang (z = 2) và trước đầu khi nhìn sau (z = 7). ctx.pose.ear = 1 thì tai cụp/giật.
-// Ngoại lệ nằm TRƯỚC đầu (z đầu + 0.05): tai cụp (cún, heo), đỉnh đầu đỏ của hạc, vây gần khi nhìn ngang; sừng mũi tê giác
-// z đầu + 0.2 (trên mõm).
+// Ngoại lệ nằm TRƯỚC đầu (z đầu + 0.05): tai cụp (cún, heo), đỉnh đầu đỏ của hạc, vây gần khi nhìn ngang.
+// Sừng, gạc, chỏm lông cú: lớn theo GIAI ĐOẠN TUỔI (ageOf: sơ sinh, nhí, từ thiếu niên), không theo cấp.
 // Loại lạ (không có trong EARS) thì không vẽ gì (không bao giờ lỗi).
 // TRẠNG THÁI: đủ 12 loại của shared/pets.js, không còn hình tạm (FALLBACK rỗng).
 //   round, cat, bunny: port nguyên từ pets-pilot (khớp từng điểm ảnh với ảnh mẫu, ĐỪNG sửa: ảnh mẫu kiểm thử khóa chúng).
 //   fox, tuft, mouse, floppy, horns, antler, crest, fin: vẽ mới cho Rig 2.0 (họa sĩ tai, 2026-10-31), xem từng hàm bên dưới.
-// Tinh chỉnh theo loài nằm trong TUNE (không sửa pets.js): đầu chóp tai cáo, kiểu tai cụp, kiểu sừng/mào/vây, màu sừng.
+//   Sửa sau duyệt (2026-10-31): sừng tê giác dựng cao (bỏ sừng mũi), gạc thành đôi chữ V tách hẳn, sừng rồng ngắn chừa khe
+//   cho lửa, chỏm cú chẻ ngọn chĩa ra ngoài, chóp tai cáo theo phần tai ló, mào gà mái cao hơn, chỏm chu tước vàng nghệ,
+//   lòng tai chuột, tai heo và vây cá nóc nhìn ngang ló khỏi mép đầu.
+// Tinh chỉnh theo loài nằm trong TUNE (không sửa pets.js): đầu chóp tai cáo, kiểu tai cụp, kiểu sừng/mào/vây, màu sừng/mào.
 import { mAbove, mAnd, mAndNot, mAny, mEllipse, mStamp, mTri, part } from '../core.js';
+import { LIFE_STAGES } from '../../shared/pets.js';
 
 /**
  * Tinh chỉnh theo loài.
  * - tai tròn: scale (cỡ), spread (độ xòe ngang), drop (độ thấp).
  * - fox: tip = [dải màu, bậc] của chóp tai sẫm.
  * - floppy: floppy = 'dog' (tai dài rủ hai bên má, mặc định) | 'pig' (tai ngắn xòe rủ ra hai bên, lòng hồng).
- * - horns: horn = 'calf' (sừng nghé cong, mặc định) | 'dragon' (sừng rồng vuốt ra sau) | 'nub' (u sừng tê giác); nose: sừng mũi.
+ * - horns: horn = 'calf' (sừng nghé cong, mặc định) | 'dragon' (sừng rồng cong ra rồi lên) | 'nub' (sừng chóp mập của tê giác).
  * - antler, horns: hornRamp = dải màu sừng/gạc (mặc định theo hành, xem hornRamp()).
- * - crest: crest = 'comb' (mào gà trống, mặc định) | 'hen' (mào gà mái nhỏ) | 'cap' (đỉnh đầu đỏ của hạc) | 'plume' (chỏm lông vũ).
+ * - crest: crest = 'comb' (mào gà trống, mặc định) | 'hen' (mào gà mái nhỏ) | 'cap' (đỉnh đầu đỏ của hạc) | 'plume' (chỏm lông vũ);
+ *   crestRamp = dải màu mào (mặc định: điểm nhấn của loài).
  * - fin: fin = 'fan' (vây quạt nhỏ, mặc định) | 'bigfan' (vây quạt lớn) | 'gills' (mang ngoài ba nhánh của kỳ giông).
  */
 const TUNE = {
   boba: { scale: 0.78, spread: 0.8, drop: 0.62 }, // tai rái cá nhỏ, thấp, sát hai bên
-  // ---- fox: chóp tai sẫm (sói xám: màu mặt nạ; cáo lửa: nâu gỗ như cáo đỏ thật; cáo lá: xanh rừng như chóp lá)
+  // ---- fox: chóp tai sẫm (sói xám: màu mặt nạ; cáo lửa: nâu gỗ như cáo đỏ thật; cáo lá: xanh rừng đậm, bậc 1 cho nổi trên thân cỏ)
   soi_bac: { tip: ['slate', 2] },
   cao_lua: { tip: ['wood', 2] },
-  cao_la: { tip: ['forest', 2] },
+  cao_la: { tip: ['forest', 1] },
   // ---- floppy: cún tai dài rủ (mặc định); hai bé heo tai ngắn xòe rủ ra hai bên
   heo_than: { floppy: 'pig' },
   heo_dat: { floppy: 'pig' },
   // ---- horns
   rong_lua: { horn: 'dragon' },
   huyen_vu: { horn: 'dragon' },
-  te_giac_da: { horn: 'nub', nose: true }, // tê giác: u sừng trên đầu + sừng mũi (nét nhận diện)
+  te_giac_da: { horn: 'nub' }, // tê giác: hai sừng chóp mập dựng thẳng (rig.js cũ không có sừng mũi)
+  // ---- antler: thân màu nhạt (kem, vàng) thì gạc màu nâu da bò cho nổi; hươu pha lê gạc xanh pha lê trên thân trắng tuyết
+  ky_lan: { hornRamp: 'tan' },
+  hoang_long: { hornRamp: 'tan' },
+  huou_pha_le: { hornRamp: 'sky' },
   // ---- crest
   ga_vang: { crest: 'hen' },
   hac_bac: { crest: 'cap' },
   ung_lua: { crest: 'plume' },
-  chu_tuoc: { crest: 'plume' },
+  chu_tuoc: { crest: 'plume', crestRamp: 'gold' }, // chỏm vàng nghệ: màu điểm nhấn 'butter' gần trắng, đọc thành nơ trắng
   // ---- fin
   ca_chep_rong: { fin: 'bigfan' },
   ky_giong: { fin: 'gills' },
@@ -177,8 +186,19 @@ function bunnyEars(ctx) {
 const kOf = (sk) => sk.hk / 0.92;
 const lerp = (p, q, t) => [p[0] + (q[0] - p[0]) * t, p[1] + (q[1] - p[1]) * t];
 
-/** Tuổi của sừng/gạc theo cỡ người: 0 sơ sinh, 1 nhí, 2 từ thiếu niên trở lên (bé lớn lên thì gạc cũng lớn). */
-const ageOf = (ctx) => (ctx.st.scale < 0.68 ? 0 : ctx.st.scale < 0.8 ? 1 : 2);
+/**
+ * Tuổi của sừng, gạc, chỏm lông: 0 sơ sinh, 1 nhí, 2 từ thiếu niên trở lên. Đọc giai đoạn từ dáng (head, eye, leg của
+ * LIFE_STAGES): cấp (LEVEL_FORMS.grow) chỉ nhân `scale`, nên bé sơ sinh cấp 50 vẫn mang sừng sơ sinh. Dáng lạ (không khớp
+ * giai đoạn nào): theo scale, mép nằm giữa các dải đã lớn theo cấp (sơ sinh 0.62..0.713, nhí 0.74..0.851, thiếu niên từ
+ * 0.86); đổi scale của LIFE_STAGES hay grow của LEVEL_FORMS thì xem lại hai mép 0.73 và 0.855.
+ */
+const AGE_OF_STAGE = { baby: 0, kid: 1 };
+function ageOf(ctx) {
+  const { st } = ctx;
+  const hit = LIFE_STAGES.find(({ look }) => look.head === st.head && look.eye === st.eye && look.leg === st.leg);
+  if (hit) return AGE_OF_STAGE[hit.key] ?? 2;
+  return st.scale < 0.73 ? 0 : st.scale < 0.855 ? 1 : 2;
+}
 
 /** Mép trên của khối đầu (siêu elip n = 2.25) ở cột lệch `dx` so với tâm đầu: gốc sừng/gạc cắm đúng vào đầu ở mọi tuổi. */
 function surfY(sk, dx) {
@@ -186,6 +206,9 @@ function surfY(sk, dx) {
   const u = Math.min(0.97, Math.abs(dx) / hrx);
   return hcy - hry * (1 - u ** 2.25) ** (1 / 2.25);
 }
+
+/** Hàng đầu tiên của khối đầu ở cột lệch `dx` (tâm điểm ảnh nằm dưới mép đầu): gốc cắm `sink` hàng vào đầu (1 = hàng đầu tiên). */
+const rootRow = (sk, dx, sink = 1) => Math.floor(surfY(sk, dx) + 0.5) + sink - 1;
 
 /** Cột điểm gốc bên phải (s = 1) hoặc bên trái (s = -1) cách tâm đầu `d`: hai bên đối xứng đúng từng điểm ảnh. */
 function pairCol(hcx, d, s) {
@@ -196,9 +219,10 @@ function pairCol(hcx, d, s) {
 /**
  * Hình vẽ tay → bộ phận tô bóng. art = { rows, ax, ay }: các hàng cùng độ dài, (ax, ay) = điểm gốc trong hình (chỗ mọc ra
  * khỏi đầu), đặt vào ô (col, row) của khung; flip = lật ngang. keys: ký tự → [dải màu, bậc cố định hoặc null = tô theo khối].
+ * clip: mặt nạ cắt bỏ (vd. phần nằm trong đầu khi bộ phận ở trước đầu).
  * Ánh sáng tính theo khối elip bao quanh hình (lệch lên-trái), nên hình lật vẫn sáng từ trên-trái như mọi bộ phận khác.
  */
-function stampAt(ctx, name, art, col, row, flip, z, keys, shade = 0) {
+function stampAt(ctx, name, art, col, row, flip, z, keys, shade = 0, clip = null) {
   const { rows, ax, ay } = art;
   const w = rows[0].length;
   const h = rows.length;
@@ -206,7 +230,8 @@ function stampAt(ctx, name, art, col, row, flip, z, keys, shade = 0) {
   const y0 = row - ay;
   const nrm = [x0 + w * 0.4, y0 + h * 0.35, w * 0.6 + 1.2, h * 0.6 + 1.2];
   for (const [ch, [ramp, flat]] of Object.entries(keys)) {
-    const m = mStamp(rows, ch, x0, y0, flip);
+    let m = mStamp(rows, ch, x0, y0, flip);
+    if (clip) m = mAndNot(m, clip);
     if (mAny(m)) ctx.parts.push(part(`${name}${ch}`, m, ramp, z, { group: name, normal: nrm, flat, shade }));
   }
 }
@@ -221,8 +246,9 @@ function hornRamp(ctx) {
 // ---------------------------------------------------------------- fox: tai cáo cao, nhọn, chóp sẫm (cáo lá, cáo lửa, sói bạc)
 
 /**
- * Cao và hẹp hơn tai mèo, dựng gần thẳng, lòng tai lông màu bụng (mèo: hồng), chóp tai sẫm (TUNE.tip, mặc định bậc tối của
- * thân). Nhìn sau: mặt lưng tai màu thân, chóp sẫm dài hơn. Giật tai (pose.ear): tai phải cụp xuống 1 px, chóp nghiêng ra.
+ * Cao và hẹp hơn tai mèo (10.4k so với 7.4k), dựng gần thẳng, lòng tai lông màu bụng (mèo: hồng), chóp tai sẫm (TUNE.tip,
+ * mặc định bậc tối của thân) dài chừng 38% phần tai ló khỏi đầu (tối đa 3k hàng). Nhìn sau: mặt lưng tai màu thân, chóp sẫm
+ * dài hơn. Giật tai (pose.ear): tai phải cụp xuống 1 px, chóp nghiêng ra.
  */
 function foxEars(ctx) {
   const { sk, view, pose, ramps } = ctx;
@@ -231,7 +257,7 @@ function foxEars(ctx) {
   const tw = pose.ear ?? 0;
   const zb = zBack(view);
   const k = kOf(sk);
-  const h = 11.2 * k;
+  const h = 10.4 * k;
   const w = 6.0 * k;
   const [tipRamp, tipStep] = t.tip ?? [ramps.main, 1];
   const sides = view !== 'E' ? [-1, 1] : [1, -1];
@@ -263,9 +289,12 @@ function foxEars(ctx) {
       const ia = lerp(a, c, 0.32);
       const ib = lerp(b, c, 0.32);
       const inner = mAnd(m, mTri([ia[0], ia[1] + 0.3], [ib[0], ib[1] + 0.3], [c[0], c[1] + 3.2 * k]));
-      ctx.parts.push(part(`${g}in`, inner, ramps.belly, z + 0.1, { group: g, flat: 2 }));
+      // line: false: lòng tai đè lên tai xa (nhìn ngang) không lấy nét trong bậc 0 của dải bụng (sói bạc: một chấm xanh)
+      ctx.parts.push(part(`${g}in`, inner, ramps.belly, z + 0.1, { group: g, flat: 2, line: false }));
     }
-    const tip = mAnd(m, mAbove(c[1] + (view === 'N' ? 3.8 : 3.0) * k));
+    // chóp sẫm theo phần tai ló khỏi đầu (sơ sinh, nhí nhìn ngang chỉ ló chừng 5 hàng: chóp dài thì thành hai sừng quỷ)
+    const vis = surfY(sk, c[0] - hcx) - c[1];
+    const tip = mAnd(m, mAbove(c[1] + Math.min((view === 'N' ? 3.8 : 3.0) * k, vis * (view === 'N' ? 0.5 : 0.38))));
     ctx.parts.push(part(`${g}tip`, tip, tipRamp, z + 0.2, { group: g, flat: tipStep, shade: sh }));
   }
 }
@@ -273,54 +302,47 @@ function foxEars(ctx) {
 // ---------------------------------------------------------------- tuft: chỏm lông tai của cú (cú ánh kim)
 
 /**
- * Hai chỏm lông nhọn ở hai góc đỉnh đầu, chĩa lên và xòe ra ngoài; mỗi chỏm có một ngọn lông ngắn phía trong (khía chữ V),
- * để nhìn là lông vũ chứ không phải tai mèo. Màu thân. Giật tai: chỏm phải rủ 1 px.
+ * Chỏm lông PHẢI nhìn trước (trái = lật): mọc ở góc trên của đầu, chĩa chéo ra ngoài, ngọn vượt mép đầu 1-2 px và chẻ
+ * hai (khía chữ V giữa hai ngọn lông) để đọc là lông vũ, không phải tai mèo. Sơ sinh và nhí thấp hơn một hàng.
+ * (ax, ay) = gốc phía trong, cắm sâu vào đầu: nhìn trước/ngang phần đó khuất sau đầu; nhìn sau chỉ chừa 1 hàng trên đầu.
  */
+const TUFT_ART = [
+  { rows: ['...a', '.a.a', 'aaaa', 'aaa.', 'aa..'], ax: 0, ay: 4 },
+  { rows: ['....a', '..a.a', '.aaaa', 'aaaa.', 'aaa..', 'aa...'], ax: 0, ay: 5 },
+  { rows: ['.....a', '...a.a', '..aaaa', '.aaaa.', 'aaaa..', 'aaa...', 'aa....'], ax: 0, ay: 6 },
+];
+
 function tuftEars(ctx) {
   const { sk, view, pose, ramps } = ctx;
-  const [hcx, , hrx] = sk.head;
+  const [hcx, hcy, hrx, hry] = sk.head;
   const tw = pose.ear ?? 0;
   const zb = zBack(view);
-  const k = kOf(sk);
-  const up = 4.6 * k;
-  const sides = view !== 'E' ? [-1, 1] : [1, -1];
-  for (const s of sides) {
-    let outer;
-    let inner;
-    let nrm;
-    let z = zb;
-    let sh = 0;
-    if (view === 'E') {
-      // chỏm gần ngả về gáy, có ngọn trong; chỏm xa (chỉ ngọn ngoài) ló phía trước một chút, tối hơn
-      const bx = hcx - hrx * (s > 0 ? 0.3 : 0.02);
-      const by = surfY(sk, bx - hcx) + 2.0;
-      const tip = [bx - 3.0 * k - (s > 0 ? tw : 0), sk.htop - up + (s > 0 ? 0.6 + tw : 1.8)];
-      outer = mTri([bx + 1.8 * k, by], [bx - 2.4 * k, by + 0.6], tip);
-      inner = s > 0 ? mTri([bx + 2.0 * k, by], [bx - 0.2, by], [bx + 0.6, sk.htop - up * 0.45]) : outer;
-      nrm = [tip[0] + 1, (by + tip[1]) / 2 - 1, 3.4 * k, up + 1];
-      if (s < 0) [z, sh] = [zb - 0.5, -1];
-    } else {
-      const hy = s > 0 ? tw : 0;
-      const tip = [hcx + s * (hrx * 0.96 + 0.4), sk.htop - up + hy];
-      const inA = hcx + s * hrx * 0.4;
-      const outB = hcx + s * hrx * 0.86;
-      const yA = surfY(sk, inA - hcx) + 1.6;
-      const yB = surfY(sk, outB - hcx) + 1.4;
-      outer = mTri([inA, yA], [outB, yB], tip);
-      inner = mTri([inA - s * 0.4, yA], [hcx + s * hrx * 0.66, yA], [hcx + s * hrx * 0.52, sk.htop - up * 0.5 + hy]);
-      nrm = [tip[0] - s * 1.5, (yA + tip[1]) / 2 - 1, hrx * 0.45, up + 1.5];
-    }
-    // ngọn ngoài dài màu thân; ngọn trong ngắn tối một bậc (lớp lông thứ hai), cùng nhóm nên không kẻ nét giữa hai ngọn
-    ctx.parts.push(part(`tuft${s}`, outer, ramps.main, z, { normal: nrm, shade: sh }));
-    ctx.parts.push(part(`tuft${s}b`, mAndNot(inner, outer), ramps.main, z, { group: `tuft${s}`, normal: nrm, shade: sh - 1 }));
+  const art = TUFT_ART[ageOf(ctx)];
+  const keys = { a: [ramps.main, null] };
+  if (view === 'E') {
+    // chỏm gần vuốt ra sau gáy (hình nhìn trước lật lại); chỏm xa ló phía trước một chút, thấp hơn một hàng, tối hơn
+    // gốc gần đỉnh đầu (mép đầu cao hơn ở góc): cắm sâu hơn để ngọn cao bằng nhìn trước
+    const col = Math.floor(hcx - hrx * 0.25);
+    const row = rootRow(sk, col + 0.5 - hcx, 4);
+    stampAt(ctx, 'tuftF', art, col + 3, row + 1, false, zb - 0.5, keys, -1);
+    stampAt(ctx, 'tuftN', art, col + (tw ? 1 : 0), row + tw, true, zb, keys);
+    return;
+  }
+  // nhìn sau chỏm nằm TRƯỚC đầu: bỏ phần gốc cắm trong đầu, chỉ chừa 1 hàng đè lên mép đầu
+  const clip = view === 'N' ? mEllipse(hcx, hcy + 1, hrx, hry, 0, 2.25) : null;
+  const d = hrx * 0.6;
+  for (const s of [-1, 1]) {
+    const col = pairCol(hcx, d, s);
+    stampAt(ctx, `tuft${s}`, art, col, rootRow(sk, d, 3) + (s > 0 ? tw : 0), s < 0, zb, keys, 0, clip);
   }
 }
 
 // ---------------------------------------------------------------- mouse: tai chuột to tròn (chuột chuông)
 
 /**
- * Tai tròn TO (gần gấp rưỡi tai tròn), đặt cao ở hai góc đầu kiểu chuột, lòng tai hồng rộng (vành mỏng). Nhìn ngang: tai
- * gần quay về trước (thấy lòng tai), tai xa ló sau gáy, tối hơn. Giật tai: tai phải hạ 1 px.
+ * Tai tròn TO (gần gấp rưỡi tai tròn), đặt cao ở hai góc đầu kiểu chuột, lòng tai hồng rộng (vành mỏng), lệch lên và ra
+ * ngoài để thành cái bát tròn trên phần tai ló. Nhìn ngang: tai gần quay về trước (thấy lòng tai), tai xa ló sau gáy, tối
+ * hơn. Giật tai: tai phải hạ 1 px.
  */
 function mouseEars(ctx) {
   const { sk, view, pose, ramps } = ctx;
@@ -337,9 +359,10 @@ function mouseEars(ctx) {
     const nrm = [ex - 0.8, ey - 0.8, r + 0.8, r + 0.8];
     ctx.parts.push(part(g, mEllipse(ex, ey, r, r), ramps.main, z, { normal: nrm, shade: sh }));
     if (view === 'S' || (view === 'E' && s > 0)) {
+      // lòng tai lệch lên và ra ngoài: đầu che nửa dưới của tai, lòng hồng vẫn hiện thành cái bát tròn
       const ir = r - 1.45;
-      const ix = view === 'E' ? ex + 0.45 : ex + s * 0.4;
-      ctx.parts.push(part(`${g}in`, mEllipse(ix, ey + 0.5, ir, ir), ramps.inner, z + 0.1, { group: g, normal: nrm }));
+      const [ix, iy] = view === 'E' ? [ex + 0.45, ey] : [ex + s * 0.8, ey - 0.5];
+      ctx.parts.push(part(`${g}in`, mEllipse(ix, iy, ir, ir), ramps.inner, z + 0.1, { group: g, normal: nrm }));
     }
   }
 }
@@ -369,9 +392,9 @@ function dogEars(ctx) {
 
 /**
  * Heo: tai ngắn, mềm, mọc ở hai góc đỉnh đầu rồi XÒE RỦ ra hai bên (chóp chúc xuống ra ngoài mép đầu), nằm trước
- * đầu, lòng tai hồng hé ở mép dưới. Khác tai cún (dài, rủ thẳng dọc má) và tai mèo (dựng). Nhìn ngang: một tai gần rủ
- * ra sau trên đỉnh đầu (tai xa khuất sau đầu: ló ra thì thành chỏm nhọn trên đỉnh). Nhìn sau: hai tai xòe, không có
- * lòng tai. Buồn/giật tai: tai rủ thấp và cụp xuống thêm.
+ * đầu, lòng tai hồng hé ở mép dưới. Khác tai cún (dài, rủ thẳng dọc má) và tai mèo (dựng). Nhìn ngang: một tai gần ở góc
+ * sau của đỉnh đầu, rủ ra sau, chóp ló khỏi mép đầu 1-2 px (nằm gọn trong đầu thì thành cái mũ) (tai xa khuất sau đầu).
+ * Nhìn sau: hai tai xòe, không có lòng tai. Buồn/giật tai: tai rủ thấp và cụp xuống thêm.
  */
 function pigEars(ctx) {
   const { sk, view, pose, ramps } = ctx;
@@ -382,7 +405,7 @@ function pigEars(ctx) {
   const ry = 4.1 * k;
   const z = view === 'N' ? 7 : ctx.zh + 0.05;
   const list = view === 'E'
-    ? [[1, hcx - hrx * 0.42, surfY(sk, -hrx * 0.42) + 1.6 + dr * 0.6, 0.75 + dr * 0.2]]
+    ? [[1, hcx - hrx * 0.72, surfY(sk, -hrx * 0.72) + 1.6 + dr * 0.6, 1.1 + dr * 0.2]]
     : [-1, 1].map((s) => [s, hcx + s * (hrx * 0.84 + 0.4), surfY(sk, hrx * 0.84) + 1.0 + dr * 0.6, -s * (0.95 + dr * 0.25)]);
   for (const [s, ex, ey, rot] of list) {
     const g = `ear${s}`;
@@ -399,11 +422,15 @@ function pigEars(ctx) {
 
 const floppyEars = (ctx) => (tune(ctx).floppy === 'pig' ? pigEars(ctx) : dogEars(ctx));
 
-// ---------------------------------------------------------------- horns: sừng nhỏ cong (nghé đất, tê giác đá, rồng lửa, huyền vũ)
+// ---------------------------------------------------------------- horns: sừng (nghé đất, tê giác đá, rồng lửa, huyền vũ)
 
 /**
- * Hình vẽ tay theo kiểu sừng (TUNE.horn) và tuổi (sơ sinh chỉ là hai u sừng). S: sừng PHẢI (bên trái là hình lật),
- * E: sừng gần (sừng xa = cùng hình, lệch theo far, tối hơn). (ax, ay) = gốc sừng, cắm 1 px vào mép đầu.
+ * Hình vẽ tay theo kiểu sừng (TUNE.horn) và tuổi (sơ sinh là hai u sừng). S: sừng PHẢI (bên trái là hình lật),
+ * E: sừng gần (sừng xa = cùng hình, lệch theo far, tối hơn). (ax, ay) = gốc sừng. sink: gốc cắm đúng `sink` hàng vào
+ * đầu (rootRow); không có sink: hàng floor(mép đầu) + 1 như bản đầu (sừng nghé).
+ * calf: sừng nghé cong ra rồi lên. dragon: sừng rồng ngắn (4-5 hàng), gốc ra ngoài để nhìn trước đọc được sừng, khe,
+ * lửa, khe, sừng; nhìn ngang vuốt ra sau gáy, sừng xa nằm sau sừng gần, cách lửa ít nhất 1 px.
+ * nub: sừng chóp mập của tê giác, dựng thẳng, ngọn cao hơn mép đầu 2-4 hàng ở mọi tuổi (rig.js cũ: sừng nhỏ 4 hàng).
  */
 const HORN_ART = {
   calf: {
@@ -422,49 +449,37 @@ const HORN_ART = {
     ],
   },
   dragon: {
-    d: 0.42,
-    dE: -0.3, // vuốt ra sau gáy, chừa đỉnh đầu cho lửa
-    far: [2, -1],
+    d: 0.55, // gốc ra ngoài: nhìn trước đọc được sừng, khe, lửa, khe, sừng
+    sink: 1,
+    dE: -0.42, // vuốt ra sau gáy, chừa đỉnh đầu cho lửa
+    far: [-2, -1], // sừng xa lùi sau sừng gần (cách xa ngọn lửa trên đỉnh đầu)
     S: [
       { rows: ['.a', 'aa', 'aa'], ax: 0, ay: 2 },
-      { rows: ['...a', '..aa', '.aa.', 'aaa.'], ax: 0, ay: 3 },
-      { rows: ['.....a', '....aa', '...aa.', '..aaa.', '.aaa..', 'aaa...'], ax: 0, ay: 5 },
+      { rows: ['..a', '..a', 'aaa', 'aa.'], ax: 0, ay: 3 },
+      { rows: ['...a', '...a', '..aa', 'aaa.', 'aa..'], ax: 0, ay: 4 },
     ],
     E: [
-      { rows: ['a.', 'aa', 'aa'], ax: 1, ay: 2 },
-      { rows: ['a...', '.aa.', '..aa', '..aa'], ax: 3, ay: 3 },
-      { rows: ['a.....', '.aa...', '..aaa.', '...aaa', '....aa'], ax: 5, ay: 4 },
+      { rows: ['a.', 'aa', '.a'], ax: 1, ay: 2 },
+      { rows: ['a..', '.aa', '..a', '..a'], ax: 2, ay: 3 },
+      { rows: ['a...', '.aa.', '..aa', '...a', '...a'], ax: 3, ay: 4 },
     ],
   },
   nub: {
-    d: 0.46,
-    dE: -0.15,
-    far: [-3, -1],
+    d: 0.5, // trên đỉnh đầu, gần giữa hơn tai (ở góc đầu thì hai sừng nhạt màu đọc thành tai mèo)
+    sink: 1,
+    dE: -0.12,
+    far: [-4, 0],
     S: [
-      { rows: ['aa', 'aa'], ax: 0, ay: 1 },
-      { rows: ['.a', 'aa', 'aa'], ax: 0, ay: 2 },
-      { rows: ['.a.', 'aaa', 'aaa'], ax: 1, ay: 2 },
+      { rows: ['.a.', 'aaa', 'aaa', 'aaa'], ax: 1, ay: 3 },
+      { rows: ['.a.', '.aa', 'aaa', 'aaa', 'aaa'], ax: 1, ay: 4 },
+      { rows: ['.a.', '.aa', 'aaa', 'aaa', 'aaa', 'aaa'], ax: 1, ay: 5 },
     ],
     E: [
-      { rows: ['aa', 'aa'], ax: 0, ay: 1 },
-      { rows: ['a.', 'aa', 'aa'], ax: 0, ay: 2 },
-      { rows: ['.a.', 'aaa', 'aaa'], ax: 1, ay: 2 },
+      { rows: ['.a.', 'aaa', 'aaa', 'aaa'], ax: 1, ay: 3 },
+      { rows: ['..a', '.aa', 'aaa', 'aaa', 'aaa'], ax: 1, ay: 4 },
+      { rows: ['..a', '.aa', 'aaa', 'aaa', 'aaa', 'aaa'], ax: 1, ay: 5 },
     ],
   },
-};
-
-/** Sừng mũi tê giác (TUNE.nose): nón ngà mọc từ sống mũi lên giữa hai mắt, trước mõm (z đầu + 0.2); nhìn trước và ngang. */
-const NOSE_HORN = {
-  S: [
-    { rows: ['.aa.', '.aa.', 'aaaa'], ax: 1, ay: 2 },
-    { rows: ['.aa.', '.aa.', 'aaaa', 'aaaa'], ax: 1, ay: 3 },
-    { rows: ['.aa.', '.aa.', '.aa.', 'aaaa', 'aaaa'], ax: 1, ay: 4 },
-  ],
-  E: [
-    { rows: ['.a', 'aa'], ax: 0, ay: 1 },
-    { rows: ['..a', '.aa', 'aaa'], ax: 0, ay: 2 },
-    { rows: ['...a', '..aa', '.aaa', 'aaa.'], ax: 0, ay: 3 },
-  ],
 };
 
 function hornEars(ctx) {
@@ -478,22 +493,14 @@ function hornEars(ctx) {
   if (view === 'E') {
     const art = set.E[age];
     const col = Math.floor(hcx + hrx * set.dE);
-    const row = Math.floor(surfY(sk, col + 0.5 - hcx)) + 1;
+    const row = set.sink ? rootRow(sk, col + 0.5 - hcx, set.sink) : Math.floor(surfY(sk, col + 0.5 - hcx)) + 1;
     stampAt(ctx, 'hornF', art, col + set.far[0], row + set.far[1], false, zb - 0.5, keys, -1);
     stampAt(ctx, 'hornN', art, col, row, false, zb, keys);
   } else {
     for (const s of [-1, 1]) {
       const col = pairCol(hcx, hrx * set.d, s);
-      const row = Math.floor(surfY(sk, hrx * set.d)) + 1;
+      const row = set.sink ? rootRow(sk, hrx * set.d, set.sink) : Math.floor(surfY(sk, hrx * set.d)) + 1;
       stampAt(ctx, `horn${s}`, set.S[age], col, row, s < 0, zb, keys);
-    }
-  }
-  if (t.nose && view !== 'N') {
-    const { eyeY } = sk;
-    if (view === 'S') {
-      stampAt(ctx, 'nosehorn', NOSE_HORN.S[age], Math.floor(hcx) - 1, Math.floor(eyeY + 0.3), false, ctx.zh + 0.2, keys);
-    } else {
-      stampAt(ctx, 'nosehorn', NOSE_HORN.E[age], Math.floor(hcx + hrx * 0.74), Math.floor(eyeY + 0.9), false, ctx.zh + 0.2, keys);
     }
   }
 }
@@ -501,22 +508,20 @@ function hornEars(ctx) {
 // ---------------------------------------------------------------- antler: gạc chẽ nhánh (hươu pha lê, hươu rêu, kỳ lân, thanh long, hoàng long)
 
 /**
- * Gạc lớn theo tuổi: sơ sinh là chạc nhỏ, nhí chẽ đôi, từ thiếu niên ba nhánh. S: gạc PHẢI (trái = lật), nhánh 1 px như
- * gạc thật, viền chen giữa các nhánh. E: gạc gần trên đỉnh đầu, nhánh chĩa lên trước; gạc xa nhỏ hơn một tuổi, lùi 3 px
- * về gáy, tối hơn.
+ * Gạc lớn theo tuổi: sơ sinh là chạc chữ V nhỏ, nhí chẽ đôi, từ thiếu niên ba nhánh. S/N: mỗi gạc là chữ V nghiêng ra ngoài
+ * (thân gạc chéo ra ngoài, nhánh dựng lên), gốc ở góc trên của đầu (như rig.js cũ), hai gạc cách nhau từ 8 px: nhìn là MỘT
+ * ĐÔI gạc chứ không thành vương miện. Nhánh 1 px như gạc thật, viền chen giữa các nhánh. E: một gạc (gạc xa khuất).
+ * Thân màu nhạt (kỳ lân, hoàng long) dùng gạc nâu da bò qua TUNE.hornRamp để gạc giữ độ đậm trên nền thân.
  */
 const ANTLER_ART = {
+  // gạc PHẢI nhìn trước: gốc ở cột 0 (phía trong), nhánh trong dựng thẳng, thân gạc chéo ra ngoài, nhánh giữa dựng lên từ thân
   S: [
-    { rows: ['a.a', '.a.', '.a.'], ax: 1, ay: 2 },
-    { rows: ['a..a.', 'a.a.a', '.aaa.', '..a..', '..a..'], ax: 2, ay: 4 },
-    { rows: ['.a...a.', '.a..a..', '..a.a.a', '..aaaa.', '...aa..', '...a...', '...a...'], ax: 3, ay: 6 },
+    { rows: ['a.a', 'aa.', 'a..'], ax: 0, ay: 2 },
+    { rows: ['...a', 'a.a.', 'aa..', 'a...', 'a...'], ax: 0, ay: 4 },
+    { rows: ['..a..a', '..a.a.', 'a.aa..', 'a.a...', 'aa....', 'a.....', 'a.....'], ax: 0, ay: 6 },
   ],
-  E: [
-    { rows: ['a.a', '.a.', '.a.'], ax: 1, ay: 2 },
-    { rows: ['.a..a', 'a.a.a', '.aaa.', '..a..', '..a..'], ax: 2, ay: 4 },
-    { rows: ['.a...a.', '..a..a.', 'a.a.a..', '.aaaa..', '..aa...', '...a...', '...a...'], ax: 3, ay: 6 },
-  ],
-  d: 0.4,
+  d: 0.62, // gốc cách tâm đầu (theo bề ngang đầu): hai gạc tách hẳn, chừa khe giữa
+  dE: -0.1, // gốc gạc gần khi nhìn ngang (âm = về phía gáy)
 };
 
 function antlerEars(ctx) {
@@ -526,17 +531,15 @@ function antlerEars(ctx) {
   const keys = { a: [hornRamp(ctx), null] };
   const zb = zBack(view);
   if (view === 'E') {
-    // gạc xa: nhỏ hơn một tuổi, lùi về gáy, tối hơn (đỡ rối hơn hai gạc cùng cỡ chồng lên nhau)
-    const col = Math.floor(hcx - hrx * 0.12);
-    const row = Math.floor(surfY(sk, col + 0.5 - hcx)) + 1;
-    stampAt(ctx, 'antlerF', ANTLER_ART.E[Math.max(0, age - 1)], col - 3, row - 1, false, zb - 0.5, keys, -1);
-    stampAt(ctx, 'antlerN', ANTLER_ART.E[age], col, row, false, zb, keys);
+    // một gạc: hình nhìn trước lật lại (nhánh trong thành nhánh trán dựng trước, thân gạc vuốt ra sau gáy). Gạc xa khuất
+    // sau gạc gần (như tai xa của heo): vẽ thêm thì thành một bụi nhánh rối.
+    const col = Math.floor(hcx + hrx * ANTLER_ART.dE);
+    stampAt(ctx, 'antler', ANTLER_ART.S[age], col, rootRow(sk, col + 0.5 - hcx), true, zb, keys);
     return;
   }
   for (const s of [-1, 1]) {
     const col = pairCol(hcx, hrx * ANTLER_ART.d, s);
-    const row = Math.floor(surfY(sk, hrx * ANTLER_ART.d)) + 1;
-    stampAt(ctx, `antler${s}`, ANTLER_ART.S[age], col, row, s < 0, zb, keys);
+    stampAt(ctx, `antler${s}`, ANTLER_ART.S[age], col, rootRow(sk, hrx * ANTLER_ART.d), s < 0, zb, keys);
   }
 }
 
@@ -549,20 +552,28 @@ function antlerEars(ctx) {
  * S/N: hình đối xứng, bề ngang chẵn, đặt giữa trục đầu. E: gốc ở đỉnh đầu, hơi về trước.
  */
 const CREST_ART = {
+  // sinkS/sinkE: hàng gốc so với floor(htop) (S) / với mép đầu ở cột gốc (E); số lớn = cắm sâu hơn vào đầu
   comb: {
     S: { rows: ['.aa.', 'aaaa', 'aaaa', 'aaaa'], ax: 1, ay: 3 },
     E: { rows: ['.a.a.a.', 'aaaaaaa', 'aaaaaaa', '.aaaaa.'], ax: 3, ay: 3 },
     dE: 0.12,
+    sinkS: 0,
+    sinkE: 1,
   },
+  // mào gà mái: ló 2 hàng khỏi đầu (như rig.js cũ), thấp hơn mào gà trống một hàng
   hen: {
     S: { rows: ['.aa.', 'aaaa', 'aaaa'], ax: 1, ay: 2 },
-    E: { rows: ['.a.a.', 'aaaaa', '.aaa.'], ax: 2, ay: 2 },
+    E: { rows: ['.a.a.', 'aaaaa', 'aaaaa'], ax: 2, ay: 2 },
     dE: 0.18,
+    sinkS: 0,
+    sinkE: 0,
   },
   plume: {
     S: { rows: ['a......a', 'aa.aa.aa', '.aaaaaa.', '..aaaa..'], ax: 3, ay: 3 },
     E: { rows: ['aa......', '.aaa....', 'a..aaa..', '.aaa.aaa', '...aaaaa'], ax: 6, ay: 4 },
     dE: -0.05,
+    sinkS: 1,
+    sinkE: 1,
   },
 };
 
@@ -581,13 +592,14 @@ function crestEars(ctx) {
     return;
   }
   const set = CREST_ART[kind] ?? CREST_ART.comb;
-  const keys = { a: [ramps.accent, null] };
+  const keys = { a: [tune(ctx).crestRamp ?? ramps.accent, null] };
   if (view === 'E') {
     const col = Math.floor(hcx + hrx * set.dE);
-    stampAt(ctx, 'crest', set.E, col, Math.floor(surfY(sk, col + 0.5 - hcx)) + 1, false, 2, keys);
+    stampAt(ctx, 'crest', set.E, col, Math.floor(surfY(sk, col + 0.5 - hcx)) + set.sinkE, false, 2, keys);
   } else {
+    // gốc ở hàng floor(htop): đầu chim tròn nhô cao hơn htop một chút, gốc thấp hơn thì đầu che gần hết mào
     const col = Math.floor(hcx) - 1;
-    stampAt(ctx, 'crest', set.S, col, Math.floor(sk.htop) + (view === 'N' ? 2 : 1), false, zBack(view), keys);
+    stampAt(ctx, 'crest', set.S, col, Math.floor(sk.htop) + (view === 'N' ? 1 : 0) + set.sinkS, false, zBack(view), keys);
   }
 }
 
@@ -596,12 +608,14 @@ function crestEars(ctx) {
 /**
  * Vây màu điểm nhấn (như rig.js cũ) ở hai bên đầu, sau đầu. fan: vây quạt ba tia nhỏ (cá nóc); bigfan: vây quạt bốn tia
  * (cá chép rồng); gills: mang ngoài ba nhánh xòe của kỳ giông (nét nhận diện của axolotl). S/N: vây PHẢI, bên trái lật.
- * E: vây gần cắm ở mép sau của đầu (trước đầu) rồi xòe ra sau gáy, vây xa ló cao hơn, tối hơn. Giật tai: vây phẩy lên 1 px.
+ * E: vây gần cắm ở mép sau của đầu (trước đầu) rồi xòe các tia ra hẳn sau gáy, vây xa ló cao hơn, tối hơn. Giật tai: vây
+ * phẩy lên 1 px.
  */
+// inE: số cột gốc vây gần cắm vào mép sau của đầu khi nhìn ngang (vây quạt nhỏ cắm nông để ba tia ló hẳn ra sau gáy)
 const FIN_ART = {
-  fan: { rows: ['..aa', '.aa.', 'aaaa', '.aa.', '..aa'], ax: 0, ay: 2, dy: 0.1 },
-  bigfan: { rows: ['...aa', '..aa.', '.aaaa', 'aaaa.', '.aaaa', '..aa.', '...aa'], ax: 0, ay: 3, dy: 0.25 },
-  gills: { rows: ['...aa', '..aa.', '.a...', 'aaaaa', '.a...', '..aa.', '...aa'], ax: 0, ay: 3, dy: 0.3 },
+  fan: { rows: ['..aa', '.aa.', 'aaaa', '.aa.', '..aa'], ax: 0, ay: 2, dy: 0.1, inE: 1 },
+  bigfan: { rows: ['...aa', '..aa.', '.aaaa', 'aaaa.', '.aaaa', '..aa.', '...aa'], ax: 0, ay: 3, dy: 0.25, inE: 2 },
+  gills: { rows: ['...aa', '..aa.', '.a...', 'aaaaa', '.a...', '..aa.', '...aa'], ax: 0, ay: 3, dy: 0.3, inE: 2 },
 };
 
 function finEars(ctx) {
@@ -613,7 +627,7 @@ function finEars(ctx) {
   const row = Math.floor(hcy - hry * art.dy);
   if (view === 'E') {
     // vây gần: gốc áp lên mép sau của đầu (trước đầu), quạt xòe ra sau gáy; vây xa ló cao hơn 2 px sau đầu, tối hơn
-    const col = Math.floor(hcx - hrx) + 2;
+    const col = Math.floor(hcx - hrx) + art.inE;
     stampAt(ctx, 'finF', art, col + 1, row - 2, true, 2, keys, -1);
     stampAt(ctx, 'finN', art, col, row - tw, true, ctx.zh + 0.05, keys);
     return;
