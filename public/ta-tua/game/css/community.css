@@ -120,3 +120,7 @@
   .menu-row { grid-template-columns: 1fr 70px; }
   .job-row .shift-buttons { min-width: 0; width: 100%; }
 }
+
+/* Dự án tuần: icon mặt hàng 16-bit (.px-atlas, 32 điểm) cạnh tên, số lô căn giữa theo icon. */
+.meter-head:has(.meter-good) { align-items: center; }
+.meter-good { display: inline-flex; align-items: center; gap: 6px; }

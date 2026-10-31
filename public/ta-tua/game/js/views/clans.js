@@ -12,6 +12,7 @@ import {
   ESSENTIALS, ESSENTIAL_CATS, GOODS, GOOD_ORDER, PRODUCTION_INDUSTRIES, SECTORS, STRATEGIC_INDUSTRIES, STRATEGIC_RULES, extractKindOf, lineOf, variantInfo, variantsFor,
 } from '../shared/industry.js';
 import { industryMarketText } from '../shared/industry-market.js';
+import { hasAtlasIcon, itemIcon } from '../itemart.js';
 
 /** Tên mặt hàng trên Sàn (lấy từ catalog khi mở màn). */
 let COMMODITY_NAMES = {};
@@ -50,28 +51,53 @@ function lerpColor(a, b, t) {
 }
 const heatColor = (t) => (t < 0.5 ? lerpColor('#e8665a', '#f4d35e', t * 2) : lerpColor('#f4d35e', '#5fbf77', (t - 0.5) * 2));
 
-const goodChip = (g, n) => `<span class="good-chip" title="${esc(GOODS[g].name)}">${GOODS[g].icon}${n != null ? `<b>${fmt(n)}</b>` : ''}</span>`;
-const chips = (map) => Object.entries(map).map(([g, n]) => goodChip(g, Math.round(n * 10) / 10)).join('');
+/** Icon 16-bit 32 điểm (1x) của hàng `g` (atlas assets/items, itemart.js); hàng chưa có hình thì emoji như cũ. */
+const goodIcon = (g) => itemIcon({ id: g, icon: GOODS[g].icon }, 3, 1);
+/** Icon và tên hàng cạnh nhau (ô bảng, ô giá, mỏ của lô): có icon 16-bit thì không chêm emoji cũ của chính hàng đó. */
+const goodCell = (g, extra = '') => `<span class="good-cell">${goodIcon(g)}<span>${esc(GOODS[g].name)}${extra}</span></span>`;
 
-/** Một dòng tóm tắt ngành sản xuất: khai thác gì, hoặc công thức một mẻ. */
-function recipeLine(id) {
+/**
+ * Chip hàng và số lượng. `art`: vẽ icon 16-bit 32 điểm (chuỗi ngành, khung xem trước của lô, nơi có chỗ);
+ * mặc định giữ emoji (bộ icon js/icons vẽ lại thành pixel 16 điểm) cho dòng công thức dày đặc trong thẻ ngành hẹp.
+ * Icon 16-bit ẩn với trình đọc màn hình nên chip đó đọc bằng aria-label.
+ */
+const goodChip = (g, n, art = false) => {
+  const name = esc(GOODS[g].name);
+  const count = n != null ? `<b>${fmt(n)}</b>` : '';
+  if (art && hasAtlasIcon(g)) return `<span class="good-chip art" title="${name}" role="img" aria-label="${name}${n != null ? ` ${fmt(n)}` : ''}">${goodIcon(g)}${count}</span>`;
+  return `<span class="good-chip" title="${name}">${GOODS[g].icon}${count}</span>`;
+};
+const chips = (map, art = false) => Object.entries(map).map(([g, n]) => goodChip(g, Math.round(n * 10) / 10, art)).join('');
+/** Mũi tên và thành phẩm của một công thức, gói chung một khối không ngắt dòng: dòng công thức dài (cột chuỗi ngành
+ *  hẹp, ngành nặng 4-5 nguyên liệu) xuống dòng thì cả "→ thành phẩm" sang dòng mới, không để mũi tên treo cuối dòng trên. */
+const recipeOut = (outHtml) => `<span class="recipe-out">→ ${outHtml}</span>`;
+/** Emoji của dây chuyền (hay nhà máy điện) đứng cạnh icon 16-bit của thành phẩm: dây chuyền lấy chính emoji cũ của thành
+ *  phẩm (🥫 Thực phẩm chế biến, 🔗 Luyện thép), nên thành phẩm có icon 16-bit thì bỏ emoji, để một hàng không ra hai hình. */
+const lineGlyph = (l) => (Object.keys(l.recipe?.out ?? l.out ?? {}).some((g) => GOODS[g]?.icon === l.icon && hasAtlasIcon(g)) ? '' : `${l.icon} `);
+
+/**
+ * Một dòng tóm tắt ngành sản xuất: khai thác gì, hoặc công thức một mẻ. `art`: icon 16-bit (chuỗi ngành, cột rộng);
+ * thẻ ngành ở tab Gia tộc chỉ rộng ~160 điểm, mỏ có tới 15 hàng, nên giữ emoji nhỏ để thẻ không cao gấp ba.
+ */
+function recipeLine(id, art = false) {
   const st = STRATEGIC_INDUSTRIES[id];
   if (st) return `<small class="recipe">${id === 'tax_office' ? 'Hoa hồng 10–40%' : 'Buff toàn server +10–40%'}: ${esc(st.effect)} · tối đa ${st.maxClans} gia tộc</small>`;
   const ind = PRODUCTION_INDUSTRIES[id];
   if (!ind) return '';
   if (ind.extracts) {
     const goods = GOOD_ORDER.filter((g) => ind.extracts.includes(extractKindOf(g)));
-    return `<small class="recipe">Khai thác ${goods.map((g) => GOODS[g].icon).join('')}</small>`;
+    return `<small class="recipe">Khai thác ${goods.map((g) => (art ? goodChip(g, null, true) : GOODS[g].icon)).join('')}</small>`;
   }
-  if (id === 'power') return `<small class="recipe">${Object.values(ind.plants).map((pl) => pl.icon).join('')} → ⚡</small>`;
-  // Nhà máy gộp: mỗi dây chuyền một dòng, mỗi lô chọn một dây chuyền.
+  if (id === 'power') return `<small class="recipe">${Object.values(ind.plants).map((pl) => pl.icon).join('')} ${recipeOut(art ? goodChip('power', null, true) : '⚡')}</small>`;
+  // Nhà máy gộp: mỗi dây chuyền một dòng (.recipe-line rộng 100%; <br> không ngắt dòng trong .recipe vì là flex),
+  // mỗi lô chọn một dây chuyền. Đường emoji giữ emoji của dây chuyền, đường icon 16-bit bỏ nếu trùng thành phẩm (lineGlyph).
   if (ind.lines) {
-    return `<small class="recipe">${Object.values(ind.lines).map((l) => `${l.icon} ${esc(l.name)}: ${chips(l.recipe.in)} → ${chips(l.recipe.out)}`).join('<br>')}</small>`;
+    return `<small class="recipe">${Object.values(ind.lines).map((l) => `<span class="recipe-line"><span class="recipe-name">${art ? lineGlyph(l) : `${l.icon} `}${esc(l.name)}:</span> ${chips(l.recipe.in, art)} ${recipeOut(chips(l.recipe.out, art))}</span>`).join('')}</small>`;
   }
-  return `<small class="recipe">${chips(ind.recipe.in)} → ${chips(ind.recipe.out)}</small>`;
+  return `<small class="recipe">${chips(ind.recipe.in, art)} ${recipeOut(chips(ind.recipe.out, art))}</small>`;
 }
 
-/** 2 tài nguyên nhiều nhất của lô, để hiện trên bản đồ. */
+/** 2 tài nguyên nhiều nhất của lô, để hiện trên bản đồ (chữ <text> trong SVG cỡ 9-13 điểm, nên giữ emoji). */
 const topDeposits = (deposits) => Object.entries(deposits ?? {}).sort((a, b) => GOODS[b[0]].base * b[1] - GOODS[a[0]].base * a[1]).slice(0, 2).map(([g]) => GOODS[g].icon).join('');
 
 function productionBox(pv) {
@@ -79,13 +105,13 @@ function productionBox(pv) {
   const ind = INDUSTRIES[pv.industry];
   let body;
   if (pr.kind === 'extract') {
-    body = Object.keys(pr.out).length ? `<p>Khai thác mỗi đêm: ${chips(pr.out)}</p>` : `<p class="warn">Lô này không có tài nguyên cho ngành ${esc(ind.name)}.</p>`;
+    body = Object.keys(pr.out).length ? `<p class="good-row">Khai thác mỗi đêm: ${chips(pr.out, true)}</p>` : `<p class="warn">Lô này không có tài nguyên cho ngành ${esc(ind.name)}.</p>`;
   } else if (pr.kind === 'power' && !pr.batches) {
     body = '<p class="warn">Chưa chọn loại nhà máy điện phù hợp với lô.</p>';
   } else {
     const line = pr.line && variantInfo(pv.industry, pr.line);
-    body = `${line ? `<p>Dây chuyền: <b>${line.icon} ${esc(line.name)}</b>${pr.lines?.length > 1 ? ' <small class="muted">(đổi ở ô Dây chuyền của lô)</small>' : ''}</p>` : ''}
-      <p>Tối đa ${fmt(pr.batches)} mẻ/đêm</p><p>Cần: ${chips(pr.in) || 'không cần nguyên liệu'}</p><p>Làm ra: ${chips(pr.out)}</p>`;
+    body = `${line ? `<p>Dây chuyền: <b>${lineGlyph(line)}${esc(line.name)}</b>${pr.lines?.length > 1 ? ' <small class="muted">(đổi ở ô Dây chuyền của lô)</small>' : ''}</p>` : ''}
+      <p>Tối đa ${fmt(pr.batches)} mẻ/đêm</p><p class="good-row">Cần: ${chips(pr.in, true) || 'không cần nguyên liệu'}</p><p class="good-row">Làm ra: ${chips(pr.out, true)}</p>`;
   }
   return `<div class="prod-preview">
       <p class="muted small">Hệ số sản xuất của lô (tốc độ, đất, khí hậu, thời tiết, chu kỳ, cấp, công trình): <b>×${pr.factor.toFixed(2)}</b></p>
@@ -589,7 +615,7 @@ export function renderClans(root, ctx) {
         ${info.industry ? `<dt>Ngành</dt><dd>${INDUSTRIES[info.industry].icon} ${esc(INDUSTRIES[info.industry].name)}</dd>` : ''}
       </dl>
       <div class="plot-deposits"><small class="muted">Tài nguyên mỗi đêm</small>
-        ${Object.keys(info.deposits).length ? Object.entries(info.deposits).map(([g, n]) => `<span title="${esc(GOODS[g].name)}">${GOODS[g].icon} ${esc(GOODS[g].name)} <b>${n}</b></span>`).join('') : '<span class="muted">Không có mỏ (nhà máy ở đây chạy nhanh hơn)</span>'}</div>
+        ${Object.keys(info.deposits).length ? Object.entries(info.deposits).map(([g, n]) => `<span title="${esc(GOODS[g].name)}">${goodCell(g, ` <b>${n}</b>`)}</span>`).join('') : '<span class="muted">Không có mỏ (nhà máy ở đây chạy nhanh hơn)</span>'}</div>
       ${info.mine && info.industry && variantsFor(info.industry, p).length ? `<label class="plot-industry">${info.industry === 'power' ? 'Loại nhà máy điện' : 'Dây chuyền của nhà máy'}
         <select data-plant="${p.id}" ${canManage ? '' : 'disabled'}>${variantsFor(info.industry, p).map((k) => {
           const v = variantInfo(info.industry, k);
@@ -830,7 +856,7 @@ export function renderClans(root, ctx) {
 
   function chainDiagram() {
     const col = (sector) => openIds(data?.config).filter((id) => INDUSTRIES[id].sector === sector).map((id) => `
-      <div class="chain-node ${data.clan?.industries.some((i) => i.id === id) ? 'held' : ''}"><b>${INDUSTRIES[id].icon} ${esc(INDUSTRIES[id].name)}</b>${recipeLine(id)}</div>`).join('');
+      <div class="chain-node ${data.clan?.industries.some((i) => i.id === id) ? 'held' : ''}"><b>${INDUSTRIES[id].icon} ${esc(INDUSTRIES[id].name)}</b>${recipeLine(id, true)}</div>`).join('');
     return `<div class="chain">
       ${['raw', 'energy', 'heavy', 'light'].map((sec) => `<div class="chain-col"><h4>${SECTORS[sec].icon} ${SECTORS[sec].name}</h4>${col(sec)}</div>`).join('<div class="chain-arrow">➜</div>')}
     </div>`;
@@ -852,7 +878,7 @@ export function renderClans(root, ctx) {
         : '<p class="muted small">Chưa có lệnh nào.</p>';
       return `
         <div class="shop-book">
-          <h4>${g.icon} ${esc(g.name)} → ${meta.icon} ${esc(meta.name)} <small class="muted">giá tham chiếu ${fmt(b.ref)} · trong kho ${fmt(b.have)}</small></h4>
+          <h4>${goodIcon(b.good)} ${esc(g.name)} → ${itemIcon({ id: meta.item, icon: meta.icon }, 3, 1)} ${esc(meta.name)} <small class="muted">giá tham chiếu ${fmt(b.ref)} · trong kho ${fmt(b.have)}</small></h4>
           ${b.ask ? `<p>Lệnh của gia tộc: <b>${fmt(b.ask.qty)}</b> đv ở <b>${b.ask.pct}%</b> (${fmt(Math.round((b.ref * b.ask.pct) / 100))} xu/đv).</p>` : ''}
           ${manage ? `<form class="row trade-form" data-form="shop-ask" data-cat="${c}">
             <label>Số lượng <input name="qty" type="number" min="0" value="${b.ask?.qty ?? (b.have || 10)}" title="Số đơn vị chào bán tối đa (0 = hủy lệnh)" /></label>
@@ -882,7 +908,7 @@ export function renderClans(root, ctx) {
           <div class="bar"><i style="width:${Math.min(100, (ind.used / ind.capacity) * 100)}%;background:var(--tea)"></i></div>
           ${goods.length ? `<table class="clan-table"><thead><tr><th>Hàng</th><th class="num">Tồn</th><th class="num">Giá NPC mua</th><th>Mỗi đêm</th><th>Bán / đăng sàn</th></tr></thead><tbody>
             ${goods.map((g) => `<tr>
-              <td>${GOODS[g.good].icon} ${esc(GOODS[g.good].name)}${g.input ? ' <small class="muted">(nguyên liệu)</small>' : ''}</td>
+              <td>${goodCell(g.good, g.input ? ' <small class="muted">(nguyên liệu)</small>' : '')}</td>
               <td class="num">${fmt(g.qty)}</td>
               <td class="num">${fmt(ind.prices[g.good].npc)}</td>
               <td><label class="check"><input type="checkbox" data-keep="${g.good}" ${g.keep ? 'checked' : ''} ${manage ? '' : 'disabled'}/> Giữ trong kho</label></td>
@@ -907,9 +933,9 @@ export function renderClans(root, ctx) {
         <section class="card clan-box">
           <h3>🌙 Sản xuất đêm qua ${ind.production ? `(${ind.production.day.slice(8)}/${ind.production.day.slice(5, 7)})` : ''}</h3>
           ${ind.production?.rows.length ? `<table class="clan-table"><thead><tr><th>Hàng</th><th class="num">Làm ra</th><th class="num">Dùng</th><th class="num">Bán NPC</th><th class="num">Tiền</th></tr></thead><tbody>
-            ${ind.production.rows.map((r) => `<tr><td>${GOODS[r.good].icon} ${esc(GOODS[r.good].name)}</td><td class="num">${fmt(r.produced)}</td><td class="num">${fmt(r.used)}</td><td class="num">${fmt(r.sold)}</td><td class="num">${fmt(r.revenue)}</td></tr>`).join('')}
+            ${ind.production.rows.map((r) => `<tr><td>${goodCell(r.good)}</td><td class="num">${fmt(r.produced)}</td><td class="num">${fmt(r.used)}</td><td class="num">${fmt(r.sold)}</td><td class="num">${fmt(r.revenue)}</td></tr>`).join('')}
           </tbody></table>` : '<p class="muted">Chưa có đêm sản xuất nào.</p>'}
-          ${ind.trades.length ? `<h4>Giao dịch gần đây</h4><ul class="refund-list">${ind.trades.map((t) => `<li>${t.side === 'sell' ? '📤 Bán' : '📥 Mua'} ${fmt(t.qty)} ${GOODS[t.good].icon} ${t.side === 'sell' ? 'cho' : 'của'} ${esc(t.other)} · ${fmt(t.price)}/đv</li>`).join('')}</ul>` : ''}
+          ${ind.trades.length ? `<h4>Giao dịch gần đây</h4><ul class="refund-list trade-list">${ind.trades.map((t) => `<li>${t.side === 'sell' ? '📤 Bán' : '📥 Mua'} ${fmt(t.qty)} ${goodCell(t.good)} ${t.side === 'sell' ? 'cho' : 'của'} ${esc(t.other)} · ${fmt(t.price)}/đv</li>`).join('')}</ul>` : ''}
         </section>
         <section class="card clan-box wide">
           <h3>🔗 Chuỗi ngành</h3>
@@ -941,7 +967,7 @@ export function renderClans(root, ctx) {
             Gia tộc bán quá ${pctInt(ind.rules.antitrustShare)} khối lượng một mặt hàng trên sàn trong ${ind.rules.windowDays} ngày thì phần vượt chịu thêm thuế chống độc quyền ${pctInt(ind.rules.antitrustRate)}.</p>
           ${byGood.length ? `<table class="clan-table"><thead><tr><th>Hàng</th><th>Gia tộc bán</th><th class="num">Còn</th><th class="num">Giá/đv</th><th class="num">Tham chiếu</th><th></th></tr></thead><tbody>
             ${byGood.flatMap((g) => ind.listings.filter((l) => l.good === g).map((l) => `<tr>
-              <td>${GOODS[g].icon} ${esc(GOODS[g].name)}</td>
+              <td>${goodCell(g)}</td>
               <td><span class="owner-tag" style="--clan:${esc(l.clan.color)}">${esc(l.clan.emblem)} ${esc(l.clan.name)}</span></td>
               <td class="num">${fmt(l.qty)}</td>
               <td class="num">${fmt(l.price)}</td>
@@ -953,7 +979,7 @@ export function renderClans(root, ctx) {
         </section>
         <section class="card clan-box wide">
           <h3>📈 Giá tham chiếu hôm nay</h3>
-          <div class="price-grid">${GOOD_ORDER.map((g) => `<span>${GOODS[g].icon} ${esc(GOODS[g].name)} <b>${fmt(ind.prices[g].ref)}</b></span>`).join('')}</div>
+          <div class="price-grid">${GOOD_ORDER.map((g) => `<span>${goodCell(g)} <b>${fmt(ind.prices[g].ref)}</b></span>`).join('')}</div>
           <p class="muted small">Giá = giá gốc × cầu của ngành làm ra hàng đó × chu kỳ kinh tế (xem tab Vĩ mô).</p>
         </section>
       </div>`;

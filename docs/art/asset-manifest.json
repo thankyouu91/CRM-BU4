@@ -10648,6 +10648,2695 @@
     "approved_by": "owner (design session, 2026-10-31)",
     "notes": "packed by scripts/art/build-items.py"
    }
+  },
+  {
+   "id": "good-bauxite",
+   "area": "items",
+   "role": "mineral ore icon: Bô-xít (GOODS id `bauxite`, group mineral)",
+   "path": "public/ta-tua/game/assets/items/items-0.webp#bauxite",
+   "status": "approved",
+   "technical": {
+    "dimensions": "32x32",
+    "content_bbox": [
+     3,
+     5,
+     28,
+     27
+    ],
+    "alpha": true,
+    "anchor": "centre (icon, content centred in canvas)",
+    "frames": 1,
+    "filtering": "nearest",
+    "scale": "integer: 1x (32 px) clan warehouse and production tables, price grid, trades, industry chain, plot panel, shop ask book; html zoom compensated",
+    "atlas_frame": [
+     "items-0.webp",
+     364,
+     67,
+     32,
+     32
+    ]
+   },
+   "visual_locks": [
+    "palette.json",
+    "view: low top-down",
+    "light: top-left",
+    "outline: #2e1d14 outer (uniform, checked)",
+    "icon canvas 32x32, centred"
+   ],
+   "provenance": {
+    "kind": "generated+edited",
+    "tool": "PixelLab MCP create_map_object + local PIL edits",
+    "mode": "basic",
+    "pixellab_id": "2be9445e-bc0b-470e-8d4c-a54d3c941772",
+    "prompt": "cute single rough irregular lump of bauxite rock, earthy rusty red-brown clay stone dotted all over with many small round dark red pellets, jagged rocky silhouette with a broken corner, matte texture, chunky simple shapes, soft light from top-left, dark brown outline",
+    "params": {
+     "view": "low top-down",
+     "outline": "single color outline",
+     "shading": "medium shading",
+     "detail": "medium detail",
+     "size": "32x32"
+    },
+    "created_at": "2026-10-31",
+    "generation_cost": 1,
+    "postprocess": [
+     "remap.py --outline: OKLab nearest, chroma x2, palette.json (48), alpha threshold 128, outer outline #2e1d14 + 1px pad",
+     "fit.py (items package): crop to bbox, centre in 32x32, never rescale",
+     "rev2_goods.py: angular clay lump gen; deep red-brown #b4643a/#8c3f2a/#6e2e24, face-like marks removed, round #6e2e24 pisolith pellets, inner cracks as #6e2e24 (not ink), #c88a62 top-left rim"
+    ],
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)",
+    "package": "goods-a",
+    "source": "phase1/goods-a/pal/bauxite.png"
+   },
+   "verification": {
+    "native_scale_reviewed": true,
+    "in_engine_reviewed": true,
+    "technical_checks_passed": true,
+    "approved_by": "owner (design session, 2026-10-31)",
+    "notes": "packed by scripts/art/build-items.py"
+   }
+  },
+  {
+   "id": "good-coal",
+   "area": "items",
+   "role": "mineral ore icon: Than đá (GOODS id `coal`, group mineral)",
+   "path": "public/ta-tua/game/assets/items/items-0.webp#coal",
+   "status": "approved",
+   "technical": {
+    "dimensions": "32x32",
+    "content_bbox": [
+     4,
+     7,
+     27,
+     25
+    ],
+    "alpha": true,
+    "anchor": "centre (icon, content centred in canvas)",
+    "frames": 1,
+    "filtering": "nearest",
+    "scale": "integer: 1x (32 px) clan warehouse and production tables, price grid, trades, industry chain, plot panel, shop ask book; html zoom compensated",
+    "atlas_frame": [
+     "items-0.webp",
+     397,
+     67,
+     32,
+     32
+    ]
+   },
+   "visual_locks": [
+    "palette.json",
+    "view: low top-down",
+    "light: top-left",
+    "outline: #2e1d14 outer (uniform, checked)",
+    "icon canvas 32x32, centred"
+   ],
+   "provenance": {
+    "kind": "generated+edited",
+    "tool": "PixelLab MCP create_map_object + local PIL edits",
+    "mode": "basic",
+    "pixellab_id": "e6a6126b-13be-4eef-af81-b9925a33500b",
+    "prompt": "cute small pile of three sharp angular black coal chunks, jagged broken faceted lumps with flat glossy faces and pointed corners, cool grey shine on the top facets, chunky simple shapes, soft light from top-left, dark brown outline",
+    "params": {
+     "view": "low top-down",
+     "outline": "single color outline",
+     "shading": "medium shading",
+     "detail": "medium detail",
+     "size": "32x32"
+    },
+    "created_at": "2026-10-31",
+    "generation_cost": 1,
+    "postprocess": [
+     "remap.py --outline: OKLab nearest, chroma x2, palette.json (48), alpha threshold 128, outer outline #2e1d14 + 1px pad",
+     "fit.py (items package): crop to bbox, centre in 32x32, never rescale",
+     "rev2_goods.py: heap of 3 angular black chunks gen; cool grey sheen #9c948a/#6e6660, one #bfe3f2 glint per chunk, no white"
+    ],
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)",
+    "package": "goods-a",
+    "source": "phase1/goods-a/pal/coal.png"
+   },
+   "verification": {
+    "native_scale_reviewed": true,
+    "in_engine_reviewed": true,
+    "technical_checks_passed": true,
+    "approved_by": "owner (design session, 2026-10-31)",
+    "notes": "packed by scripts/art/build-items.py"
+   }
+  },
+  {
+   "id": "good-copper",
+   "area": "items",
+   "role": "mineral ore icon: Đồng (GOODS id `copper`, group mineral)",
+   "path": "public/ta-tua/game/assets/items/items-0.webp#copper",
+   "status": "approved",
+   "technical": {
+    "dimensions": "32x32",
+    "content_bbox": [
+     2,
+     3,
+     29,
+     28
+    ],
+    "alpha": true,
+    "anchor": "centre (icon, content centred in canvas)",
+    "frames": 1,
+    "filtering": "nearest",
+    "scale": "integer: 1x (32 px) clan warehouse and production tables, price grid, trades, industry chain, plot panel, shop ask book; html zoom compensated",
+    "atlas_frame": [
+     "items-0.webp",
+     430,
+     67,
+     32,
+     32
+    ]
+   },
+   "visual_locks": [
+    "palette.json",
+    "view: low top-down",
+    "light: top-left",
+    "outline: #2e1d14 outer (uniform, checked)",
+    "icon canvas 32x32, centred"
+   ],
+   "provenance": {
+    "kind": "generated+edited",
+    "tool": "PixelLab MCP create_map_object + local PIL edits",
+    "mode": "basic",
+    "pixellab_id": "e2f4fa1a-d04d-4d26-b6bf-7e155b0e11f6",
+    "prompt": "cute single big lumpy native copper nugget, shiny bright orange metal with rounded bumps and knobs, a broad teal green verdigris patch on its lower right side, chunky simple shapes, soft light from top-left, dark brown outline",
+    "params": {
+     "view": "low top-down",
+     "outline": "single color outline",
+     "shading": "medium shading",
+     "detail": "medium detail",
+     "size": "32x32"
+    },
+    "created_at": "2026-10-31",
+    "generation_cost": 1,
+    "postprocess": [
+     "remap.py --outline: OKLab nearest, chroma x2, palette.json (48), alpha threshold 128, outer outline #2e1d14 + 1px pad",
+     "fit.py (items package): crop to bbox, centre in 32x32, never rescale",
+     "rev2_goods.py: native copper nugget gen; body pushed bright orange (#f2c49b/#f39b4a/#b4643a), grey rim removed, moss patch -> teal verdigris #8fd3bf/#4fae93/#2f7f73"
+    ],
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)",
+    "package": "goods-a",
+    "source": "phase1/goods-a/pal/copper.png"
+   },
+   "verification": {
+    "native_scale_reviewed": true,
+    "in_engine_reviewed": true,
+    "technical_checks_passed": true,
+    "approved_by": "owner (design session, 2026-10-31)",
+    "notes": "packed by scripts/art/build-items.py"
+   }
+  },
+  {
+   "id": "good-crude_oil",
+   "area": "items",
+   "role": "raw energy icon: Dầu thô (GOODS id `crude_oil`, group mineral)",
+   "path": "public/ta-tua/game/assets/items/items-0.webp#crude_oil",
+   "status": "approved",
+   "technical": {
+    "dimensions": "32x32",
+    "content_bbox": [
+     6,
+     3,
+     26,
+     28
+    ],
+    "alpha": true,
+    "anchor": "centre (icon, content centred in canvas)",
+    "frames": 1,
+    "filtering": "nearest",
+    "scale": "integer: 1x (32 px) clan warehouse and production tables, price grid, trades, industry chain, plot panel, shop ask book; html zoom compensated",
+    "atlas_frame": [
+     "items-0.webp",
+     463,
+     67,
+     32,
+     32
+    ]
+   },
+   "visual_locks": [
+    "palette.json",
+    "view: low top-down",
+    "light: top-left",
+    "outline: #2e1d14 outer (uniform, checked)",
+    "icon canvas 32x32, centred"
+   ],
+   "provenance": {
+    "kind": "hand-built",
+    "tool": "local PIL (scripts/barrel2.py)",
+    "mode": null,
+    "pixellab_id": null,
+    "prompt": null,
+    "params": {
+     "size": "32x32",
+     "method": "geometric ellipse/band drawing, palette colours only"
+    },
+    "created_at": "2026-10-31",
+    "generation_cost": 0,
+    "postprocess": [
+     "remap.py --outline: OKLab nearest, chroma x2, palette.json (48), alpha threshold 128, outer outline #2e1d14 + 1px pad",
+     "fit.py (items package): crop to bbox, centre in 32x32, never rescale",
+     "barrel2.py: hand-built 20 px drum, closed elliptical lid flooded with oil (#6e6660 + #58b9d6 gloss), oil brims over the front rim, 2 drips of different lengths with round bulbed ends, 3 body tones + broken specular, no puddle"
+    ],
+    "license": "original hand-built (team)",
+    "package": "goods-a",
+    "source": "phase1/goods-a/pal/crude_oil.png"
+   },
+   "verification": {
+    "native_scale_reviewed": true,
+    "in_engine_reviewed": true,
+    "technical_checks_passed": true,
+    "approved_by": "owner (design session, 2026-10-31)",
+    "notes": "packed by scripts/art/build-items.py"
+   }
+  },
+  {
+   "id": "good-diamond",
+   "area": "items",
+   "role": "precious metal / gem icon: Kim cương (GOODS id `diamond`, group mineral)",
+   "path": "public/ta-tua/game/assets/items/items-0.webp#diamond",
+   "status": "approved",
+   "technical": {
+    "dimensions": "32x32",
+    "content_bbox": [
+     1,
+     3,
+     30,
+     29
+    ],
+    "alpha": true,
+    "anchor": "centre (icon, content centred in canvas)",
+    "frames": 1,
+    "filtering": "nearest",
+    "scale": "integer: 1x (32 px) clan warehouse and production tables, price grid, trades, industry chain, plot panel, shop ask book; html zoom compensated",
+    "atlas_frame": [
+     "items-0.webp",
+     496,
+     67,
+     32,
+     32
+    ]
+   },
+   "visual_locks": [
+    "palette.json",
+    "view: low top-down",
+    "light: top-left",
+    "outline: #2e1d14 outer (uniform, checked)",
+    "icon canvas 32x32, centred"
+   ],
+   "provenance": {
+    "kind": "generated+edited",
+    "tool": "PixelLab MCP create_map_object + local PIL edits",
+    "mode": "basic",
+    "pixellab_id": "c7d5604a-34bd-449e-9f3f-f24a10ad75f9",
+    "prompt": "cute big sparkling cut diamond gemstone, classic brilliant cut with flat top table and pointed bottom, pale icy blue and white facets with bright shine, chunky simple shapes, soft light from top-left, dark brown outline",
+    "params": {
+     "view": "low top-down",
+     "outline": "single color outline",
+     "shading": "medium shading",
+     "detail": "medium detail",
+     "size": "32x32"
+    },
+    "created_at": "2026-10-31",
+    "generation_cost": 1,
+    "postprocess": [
+     "remap.py --outline: OKLab nearest, chroma x2, palette.json (48), alpha threshold 128, outer outline #2e1d14 + 1px pad",
+     "fit.py (items package): crop to bbox, centre in 32x32, never rescale",
+     "goods.py: inner facet lines brown -> #58b9d6 (selective line), + 1 sparkle (the only sparkle left in goods)"
+    ],
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)",
+    "package": "goods-a",
+    "source": "phase1/goods-a/pal/diamond.png"
+   },
+   "verification": {
+    "native_scale_reviewed": true,
+    "in_engine_reviewed": true,
+    "technical_checks_passed": true,
+    "approved_by": "owner (design session, 2026-10-31)",
+    "notes": "packed by scripts/art/build-items.py"
+   }
+  },
+  {
+   "id": "good-gas",
+   "area": "items",
+   "role": "raw energy icon: Khí đốt (GOODS id `gas`, group mineral)",
+   "path": "public/ta-tua/game/assets/items/items-0.webp#gas",
+   "status": "approved",
+   "technical": {
+    "dimensions": "32x32",
+    "content_bbox": [
+     5,
+     1,
+     27,
+     30
+    ],
+    "alpha": true,
+    "anchor": "centre (icon, content centred in canvas)",
+    "frames": 1,
+    "filtering": "nearest",
+    "scale": "integer: 1x (32 px) clan warehouse and production tables, price grid, trades, industry chain, plot panel, shop ask book; html zoom compensated",
+    "atlas_frame": [
+     "items-0.webp",
+     1,
+     100,
+     32,
+     32
+    ]
+   },
+   "visual_locks": [
+    "palette.json",
+    "view: low top-down",
+    "light: top-left",
+    "outline: #2e1d14 outer (uniform, checked)",
+    "icon canvas 32x32, centred"
+   ],
+   "provenance": {
+    "kind": "generated+edited",
+    "tool": "PixelLab MCP create_map_object + local PIL edits",
+    "mode": "basic",
+    "pixellab_id": "d914772b-394d-4e5c-ba7b-094bd9103ccc",
+    "prompt": "cute chubby round red cooking gas cylinder, short and wide, rounded shoulders, a grey metal handle ring on top around a small brass valve, foot ring at the bottom, chunky simple shapes, soft light from top-left, dark brown outline",
+    "params": {
+     "view": "low top-down",
+     "outline": "single color outline",
+     "shading": "medium shading",
+     "detail": "medium detail",
+     "size": "32x32"
+    },
+    "created_at": "2026-10-31",
+    "generation_cost": 1,
+    "postprocess": [
+     "remap.py --outline: OKLab nearest, chroma x2, palette.json (48), alpha threshold 128, outer outline #2e1d14 + 1px pad",
+     "fit.py (items package): crop to bbox, centre in 32x32, never rescale",
+     "goods.py (flip, gloss fix) + rev2_goods.py: guard redrawn as a solid grey collar (no see-through slots), round brass knob on top, soft shadow under the collar, foot ring lit left, gloss pale pink (no white/cream singletons)"
+    ],
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)",
+    "package": "goods-a",
+    "source": "phase1/goods-a/pal/gas.png"
+   },
+   "verification": {
+    "native_scale_reviewed": true,
+    "in_engine_reviewed": true,
+    "technical_checks_passed": true,
+    "approved_by": "owner (design session, 2026-10-31)",
+    "notes": "packed by scripts/art/build-items.py"
+   }
+  },
+  {
+   "id": "good-gold",
+   "area": "items",
+   "role": "precious metal / gem icon: Vàng (GOODS id `gold`, group mineral)",
+   "path": "public/ta-tua/game/assets/items/items-0.webp#gold",
+   "status": "approved",
+   "technical": {
+    "dimensions": "32x32",
+    "content_bbox": [
+     2,
+     6,
+     29,
+     26
+    ],
+    "alpha": true,
+    "anchor": "centre (icon, content centred in canvas)",
+    "frames": 1,
+    "filtering": "nearest",
+    "scale": "integer: 1x (32 px) clan warehouse and production tables, price grid, trades, industry chain, plot panel, shop ask book; html zoom compensated",
+    "atlas_frame": [
+     "items-0.webp",
+     34,
+     100,
+     32,
+     32
+    ]
+   },
+   "visual_locks": [
+    "palette.json",
+    "view: low top-down",
+    "light: top-left",
+    "outline: #2e1d14 outer (uniform, checked)",
+    "icon canvas 32x32, centred"
+   ],
+   "provenance": {
+    "kind": "generated",
+    "tool": "PixelLab MCP create_map_object",
+    "mode": "basic",
+    "pixellab_id": "1b5e6ec5-6558-43b9-ac85-ec4a2d6435ae",
+    "prompt": "cute small neat stack of three shiny gold ingot bars, trapezoid bullion bars stacked in a pyramid, bright warm yellow gold with light highlights, chunky simple shapes, soft light from top-left, dark brown outline",
+    "params": {
+     "view": "low top-down",
+     "outline": "single color outline",
+     "shading": "medium shading",
+     "detail": "medium detail",
+     "size": "32x32"
+    },
+    "created_at": "2026-10-31",
+    "generation_cost": 1,
+    "postprocess": [
+     "remap.py --outline: OKLab nearest, chroma x2, palette.json (48), alpha threshold 128, outer outline #2e1d14 + 1px pad",
+     "fit.py (items package): crop to bbox, centre in 32x32, never rescale"
+    ],
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)",
+    "package": "goods-a",
+    "source": "phase1/goods-a/pal/gold.png"
+   },
+   "verification": {
+    "native_scale_reviewed": true,
+    "in_engine_reviewed": true,
+    "technical_checks_passed": true,
+    "approved_by": "owner (design session, 2026-10-31)",
+    "notes": "packed by scripts/art/build-items.py"
+   }
+  },
+  {
+   "id": "good-iron_ore",
+   "area": "items",
+   "role": "mineral ore icon: Quặng sắt (GOODS id `iron_ore`, group mineral)",
+   "path": "public/ta-tua/game/assets/items/items-0.webp#iron_ore",
+   "status": "approved",
+   "technical": {
+    "dimensions": "32x32",
+    "content_bbox": [
+     4,
+     6,
+     28,
+     26
+    ],
+    "alpha": true,
+    "anchor": "centre (icon, content centred in canvas)",
+    "frames": 1,
+    "filtering": "nearest",
+    "scale": "integer: 1x (32 px) clan warehouse and production tables, price grid, trades, industry chain, plot panel, shop ask book; html zoom compensated",
+    "atlas_frame": [
+     "items-0.webp",
+     67,
+     100,
+     32,
+     32
+    ]
+   },
+   "visual_locks": [
+    "palette.json",
+    "view: low top-down",
+    "light: top-left",
+    "outline: #2e1d14 outer (uniform, checked)",
+    "icon canvas 32x32, centred"
+   ],
+   "provenance": {
+    "kind": "generated+edited",
+    "tool": "PixelLab MCP create_map_object + local PIL edits",
+    "mode": "basic",
+    "pixellab_id": "8f5fe010-3b4c-4b94-b68d-d0a5f45ff83c",
+    "prompt": "cute single chunky grey stone ore rock, rounded lumpy boulder chunk with bright golden yellow metal veins and a few small shiny nuggets embedded, mining resource, chunky simple shapes, soft light from top-left, dark brown outline",
+    "params": {
+     "view": "low top-down",
+     "outline": "single color outline",
+     "shading": "medium shading",
+     "detail": "medium detail",
+     "size": "32x32"
+    },
+    "created_at": "2026-10-31",
+    "generation_cost": 1,
+    "postprocess": [
+     "remap.py --outline: OKLab nearest, chroma x2, palette.json (48), alpha threshold 128, outer outline #2e1d14 + 1px pad",
+     "fit.py (items package): crop to bbox, centre in 32x32, never rescale",
+     "rev2_ores.py: ONE rock base (gen ore_vein-v1) two value steps darker (charcoal #6e6660/#4a3326 body, #9c948a top-left rim), nugget cluster -> red rust #d65f5f/#a84848/#8c3f2a, cracks -> rust streaks, 1 #eef8fb metallic glint; no crystals"
+    ],
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)",
+    "package": "goods-a",
+    "source": "phase1/goods-a/pal/iron_ore.png"
+   },
+   "verification": {
+    "native_scale_reviewed": true,
+    "in_engine_reviewed": true,
+    "technical_checks_passed": true,
+    "approved_by": "owner (design session, 2026-10-31)",
+    "notes": "packed by scripts/art/build-items.py"
+   }
+  },
+  {
+   "id": "good-rare_earth",
+   "area": "items",
+   "role": "mineral ore icon: Đất hiếm (GOODS id `rare_earth`, group mineral)",
+   "path": "public/ta-tua/game/assets/items/items-0.webp#rare_earth",
+   "status": "approved",
+   "technical": {
+    "dimensions": "32x32",
+    "content_bbox": [
+     2,
+     6,
+     30,
+     26
+    ],
+    "alpha": true,
+    "anchor": "centre (icon, content centred in canvas)",
+    "frames": 1,
+    "filtering": "nearest",
+    "scale": "integer: 1x (32 px) clan warehouse and production tables, price grid, trades, industry chain, plot panel, shop ask book; html zoom compensated",
+    "atlas_frame": [
+     "items-0.webp",
+     100,
+     100,
+     32,
+     32
+    ]
+   },
+   "visual_locks": [
+    "palette.json",
+    "view: low top-down",
+    "light: top-left",
+    "outline: #2e1d14 outer (uniform, checked)",
+    "icon canvas 32x32, centred"
+   ],
+   "provenance": {
+    "kind": "generated+edited",
+    "tool": "PixelLab MCP create_map_object + local PIL edits",
+    "mode": "basic",
+    "pixellab_id": "9e5a7a71-6521-4215-a6d6-6e67c71b35a7",
+    "prompt": "cute small heap of rough angular mineral chips in mixed colours, pink, mint green and pale yellow faceted stone fragments piled together, matte rocky texture with flat broken faces, chunky simple shapes, soft light from top-left, dark brown outline",
+    "params": {
+     "view": "low top-down",
+     "outline": "single color outline",
+     "shading": "medium shading",
+     "detail": "medium detail",
+     "size": "32x32"
+    },
+    "created_at": "2026-10-31",
+    "generation_cost": 1,
+    "postprocess": [
+     "remap.py --outline: OKLab nearest, chroma x2, palette.json (48), alpha threshold 128, outer outline #2e1d14 + 1px pad",
+     "fit.py (items package): crop to bbox, centre in 32x32, never rescale",
+     "rev2_goods.py: heap of mixed oxide pebbles gen; one value step deeper (teal / rose / ochre, less pastel), hard shadow side per pebble; no sparkle"
+    ],
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)",
+    "package": "goods-a",
+    "source": "phase1/goods-a/pal/rare_earth.png"
+   },
+   "verification": {
+    "native_scale_reviewed": true,
+    "in_engine_reviewed": true,
+    "technical_checks_passed": true,
+    "approved_by": "owner (design session, 2026-10-31)",
+    "notes": "packed by scripts/art/build-items.py"
+   }
+  },
+  {
+   "id": "good-salt",
+   "area": "items",
+   "role": "loose mineral icon: Muối (GOODS id `salt`, group mineral)",
+   "path": "public/ta-tua/game/assets/items/items-0.webp#salt",
+   "status": "approved",
+   "technical": {
+    "dimensions": "32x32",
+    "content_bbox": [
+     7,
+     3,
+     25,
+     29
+    ],
+    "alpha": true,
+    "anchor": "centre (icon, content centred in canvas)",
+    "frames": 1,
+    "filtering": "nearest",
+    "scale": "integer: 1x (32 px) clan warehouse and production tables, price grid, trades, industry chain, plot panel, shop ask book; html zoom compensated",
+    "atlas_frame": [
+     "items-0.webp",
+     133,
+     100,
+     32,
+     32
+    ]
+   },
+   "visual_locks": [
+    "palette.json",
+    "view: low top-down",
+    "light: top-left",
+    "outline: #2e1d14 outer (uniform, checked)",
+    "icon canvas 32x32, centred"
+   ],
+   "provenance": {
+    "kind": "generated+edited",
+    "tool": "PixelLab MCP create_map_object + local PIL edits",
+    "mode": "basic",
+    "pixellab_id": "7fb7ef4b-b1b1-434b-ba51-2fd8e0da6d8a",
+    "prompt": "cute small chubby round salt shaker jar, short clear glass body filled with white salt grains, domed grey metal cap on top with a row of tiny holes, chunky simple shapes, soft light from top-left, dark brown outline",
+    "params": {
+     "view": "low top-down",
+     "outline": "single color outline",
+     "shading": "medium shading",
+     "detail": "medium detail",
+     "size": "32x32"
+    },
+    "created_at": "2026-10-31",
+    "generation_cost": 1,
+    "postprocess": [
+     "remap.py --outline: OKLab nearest, chroma x2, palette.json (48), alpha threshold 128, outer outline #2e1d14 + 1px pad",
+     "fit.py (items package): crop to bbox, centre in 32x32, never rescale",
+     "rev2_goods.py: shaker-jar gen (round glass body of white salt, grey perforated cap); cap glint pink -> #eef8fb, glass edges #bfe3f2 left / #9c948a right"
+    ],
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)",
+    "package": "goods-a",
+    "source": "phase1/goods-a/pal/salt.png"
+   },
+   "verification": {
+    "native_scale_reviewed": true,
+    "in_engine_reviewed": true,
+    "technical_checks_passed": true,
+    "approved_by": "owner (design session, 2026-10-31)",
+    "notes": "packed by scripts/art/build-items.py"
+   }
+  },
+  {
+   "id": "good-silicon",
+   "area": "items",
+   "role": "loose mineral icon: Cát silic (GOODS id `silicon`, group mineral)",
+   "path": "public/ta-tua/game/assets/items/items-0.webp#silicon",
+   "status": "approved",
+   "technical": {
+    "dimensions": "32x32",
+    "content_bbox": [
+     1,
+     5,
+     31,
+     26
+    ],
+    "alpha": true,
+    "anchor": "centre (icon, content centred in canvas)",
+    "frames": 1,
+    "filtering": "nearest",
+    "scale": "integer: 1x (32 px) clan warehouse and production tables, price grid, trades, industry chain, plot panel, shop ask book; html zoom compensated",
+    "atlas_frame": [
+     "items-0.webp",
+     166,
+     100,
+     32,
+     32
+    ]
+   },
+   "visual_locks": [
+    "palette.json",
+    "view: low top-down",
+    "light: top-left",
+    "outline: #2e1d14 outer (uniform, checked)",
+    "icon canvas 32x32, centred"
+   ],
+   "provenance": {
+    "kind": "generated+edited",
+    "tool": "PixelLab MCP create_map_object + local PIL edits",
+    "mode": "basic",
+    "pixellab_id": "1d76cd68-d303-48df-b86e-de6187c6248e",
+    "prompt": "cute small heap of pale cream fine sand pile with a few clear glassy shiny crystal grains sparkling on top, soft rounded mound, chunky simple shapes, soft light from top-left, dark brown outline",
+    "params": {
+     "view": "low top-down",
+     "outline": "single color outline",
+     "shading": "medium shading",
+     "detail": "medium detail",
+     "size": "32x32"
+    },
+    "created_at": "2026-10-31",
+    "generation_cost": 1,
+    "postprocess": [
+     "remap.py --outline: OKLab nearest, chroma x2, palette.json (48), alpha threshold 128, outer outline #2e1d14 + 1px pad",
+     "fit.py (items package): crop to bbox, centre in 32x32, never rescale",
+     "goods.py + rev2_goods.py: sand ramp one step darker (#ecd2a2/#dcb07c body, #c8915f/#b87d4b shadow, #fbf1e3 top-left rim only), base flattened, right flank smoothed, 5 quartz grains 3x3 (#eef8fb/#bfe3f2 + #58b9d6 edge), sparkle removed"
+    ],
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)",
+    "package": "goods-a",
+    "source": "phase1/goods-a/pal/silicon.png"
+   },
+   "verification": {
+    "native_scale_reviewed": true,
+    "in_engine_reviewed": true,
+    "technical_checks_passed": true,
+    "approved_by": "owner (design session, 2026-10-31)",
+    "notes": "packed by scripts/art/build-items.py"
+   }
+  },
+  {
+   "id": "good-silver",
+   "area": "items",
+   "role": "precious metal / gem icon: Bạc (GOODS id `silver`, group mineral)",
+   "path": "public/ta-tua/game/assets/items/items-0.webp#silver",
+   "status": "approved",
+   "technical": {
+    "dimensions": "32x32",
+    "content_bbox": [
+     2,
+     6,
+     29,
+     26
+    ],
+    "alpha": true,
+    "anchor": "centre (icon, content centred in canvas)",
+    "frames": 1,
+    "filtering": "nearest",
+    "scale": "integer: 1x (32 px) clan warehouse and production tables, price grid, trades, industry chain, plot panel, shop ask book; html zoom compensated",
+    "atlas_frame": [
+     "items-0.webp",
+     199,
+     100,
+     32,
+     32
+    ]
+   },
+   "visual_locks": [
+    "palette.json",
+    "view: low top-down",
+    "light: top-left",
+    "outline: #2e1d14 outer (uniform, checked)",
+    "icon canvas 32x32, centred"
+   ],
+   "provenance": {
+    "kind": "generated+edited",
+    "tool": "PixelLab MCP create_map_object + local PIL edits",
+    "mode": "basic",
+    "pixellab_id": "1b5e6ec5-6558-43b9-ac85-ec4a2d6435ae",
+    "prompt": "cute small neat stack of three shiny gold ingot bars, trapezoid bullion bars stacked in a pyramid, bright warm yellow gold with light highlights, chunky simple shapes, soft light from top-left, dark brown outline",
+    "params": {
+     "view": "low top-down",
+     "outline": "single color outline",
+     "shading": "medium shading",
+     "detail": "medium detail",
+     "size": "32x32"
+    },
+    "created_at": "2026-10-31",
+    "generation_cost": 0,
+    "postprocess": [
+     "remap.py --outline: OKLab nearest, chroma x2, palette.json (48), alpha threshold 128, outer outline #2e1d14 + 1px pad",
+     "fit.py (items package): crop to bbox, centre in 32x32, never rescale",
+     "rev2_goods.py: gold ingot stack, cool ramp #bfe3f2 tops / #9c948a sides / #6e6660 shadow, #fffaf3 specular streak per bar"
+    ],
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)",
+    "package": "goods-a",
+    "source": "phase1/goods-a/pal/silver.png"
+   },
+   "verification": {
+    "native_scale_reviewed": true,
+    "in_engine_reviewed": true,
+    "technical_checks_passed": true,
+    "approved_by": "owner (design session, 2026-10-31)",
+    "notes": "packed by scripts/art/build-items.py"
+   }
+  },
+  {
+   "id": "good-tin",
+   "area": "items",
+   "role": "mineral ore icon: Thiếc (GOODS id `tin`, group mineral)",
+   "path": "public/ta-tua/game/assets/items/items-0.webp#tin",
+   "status": "approved",
+   "technical": {
+    "dimensions": "32x32",
+    "content_bbox": [
+     4,
+     3,
+     28,
+     28
+    ],
+    "alpha": true,
+    "anchor": "centre (icon, content centred in canvas)",
+    "frames": 1,
+    "filtering": "nearest",
+    "scale": "integer: 1x (32 px) clan warehouse and production tables, price grid, trades, industry chain, plot panel, shop ask book; html zoom compensated",
+    "atlas_frame": [
+     "items-0.webp",
+     232,
+     100,
+     32,
+     32
+    ]
+   },
+   "visual_locks": [
+    "palette.json",
+    "view: low top-down",
+    "light: top-left",
+    "outline: #2e1d14 outer (uniform, checked)",
+    "icon canvas 32x32, centred"
+   ],
+   "provenance": {
+    "kind": "generated+edited",
+    "tool": "PixelLab MCP create_map_object + local PIL edits",
+    "mode": "basic",
+    "pixellab_id": "8f5fe010-3b4c-4b94-b68d-d0a5f45ff83c",
+    "prompt": "cute single chunky grey stone ore rock, rounded lumpy boulder chunk with bright golden yellow metal veins and a few small shiny nuggets embedded, mining resource, chunky simple shapes, soft light from top-left, dark brown outline",
+    "params": {
+     "view": "low top-down",
+     "outline": "single color outline",
+     "shading": "medium shading",
+     "detail": "medium detail",
+     "size": "32x32"
+    },
+    "created_at": "2026-10-31",
+    "generation_cost": 0,
+    "postprocess": [
+     "remap.py --outline: OKLab nearest, chroma x2, palette.json (48), alpha threshold 128, outer outline #2e1d14 + 1px pad",
+     "fit.py (items package): crop to bbox, centre in 32x32, never rescale",
+     "rev2_ores.py: ONE rock base (gen ore_vein-v1) + cassiterite: 3 hand-drawn stubby brown-black crystals (#9c948a lit face, #4a3326/#3d2a1f) with their own ink outlines, 1 #eef8fb glint; dark grains in the rock"
+    ],
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)",
+    "package": "goods-a",
+    "source": "phase1/goods-a/pal/tin.png"
+   },
+   "verification": {
+    "native_scale_reviewed": true,
+    "in_engine_reviewed": true,
+    "technical_checks_passed": true,
+    "approved_by": "owner (design session, 2026-10-31)",
+    "notes": "packed by scripts/art/build-items.py"
+   }
+  },
+  {
+   "id": "good-titanium",
+   "area": "items",
+   "role": "mineral ore icon: Titan (GOODS id `titanium`, group mineral)",
+   "path": "public/ta-tua/game/assets/items/items-0.webp#titanium",
+   "status": "approved",
+   "technical": {
+    "dimensions": "32x32",
+    "content_bbox": [
+     4,
+     4,
+     28,
+     28
+    ],
+    "alpha": true,
+    "anchor": "centre (icon, content centred in canvas)",
+    "frames": 1,
+    "filtering": "nearest",
+    "scale": "integer: 1x (32 px) clan warehouse and production tables, price grid, trades, industry chain, plot panel, shop ask book; html zoom compensated",
+    "atlas_frame": [
+     "items-0.webp",
+     265,
+     100,
+     32,
+     32
+    ]
+   },
+   "visual_locks": [
+    "palette.json",
+    "view: low top-down",
+    "light: top-left",
+    "outline: #2e1d14 outer (uniform, checked)",
+    "icon canvas 32x32, centred"
+   ],
+   "provenance": {
+    "kind": "generated+edited",
+    "tool": "PixelLab MCP create_map_object + local PIL edits",
+    "mode": "basic",
+    "pixellab_id": [
+     "8f5fe010-3b4c-4b94-b68d-d0a5f45ff83c",
+     "356fb74e-e08c-4d46-b14f-a3bedcad395d"
+    ],
+    "prompt": [
+     "cute single chunky grey stone ore rock, rounded lumpy boulder chunk with bright golden yellow metal veins and a few small shiny nuggets embedded, mining resource, chunky simple shapes, soft light from top-left, dark brown outline",
+     "cute single chunky grey stone rock chunk with a small cluster of glowing bright green crystals growing out of its top, soft green glow, mining resource, chunky simple shapes, soft light from top-left, dark brown outline"
+    ],
+    "params": {
+     "view": "low top-down",
+     "outline": "single color outline",
+     "shading": "medium shading",
+     "detail": "medium detail",
+     "size": "32x32"
+    },
+    "created_at": "2026-10-31",
+    "generation_cost": 0,
+    "postprocess": [
+     "remap.py --outline: OKLab nearest, chroma x2, palette.json (48), alpha threshold 128, outer outline #2e1d14 + 1px pad",
+     "fit.py (items package): crop to bbox, centre in 32x32, never rescale",
+     "rev2_ores.py: ONE rock base (gen ore_vein-v1) + crystal cluster (gen ore_crystal-v1) in steel blue #2f6f9a..#bfe3f2, blue veins"
+    ],
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)",
+    "package": "goods-a",
+    "source": "phase1/goods-a/pal/titanium.png"
+   },
+   "verification": {
+    "native_scale_reviewed": true,
+    "in_engine_reviewed": true,
+    "technical_checks_passed": true,
+    "approved_by": "owner (design session, 2026-10-31)",
+    "notes": "packed by scripts/art/build-items.py"
+   }
+  },
+  {
+   "id": "good-uranium",
+   "area": "items",
+   "role": "mineral ore icon: Urani (GOODS id `uranium`, group mineral)",
+   "path": "public/ta-tua/game/assets/items/items-0.webp#uranium",
+   "status": "approved",
+   "technical": {
+    "dimensions": "32x32",
+    "content_bbox": [
+     4,
+     4,
+     28,
+     28
+    ],
+    "alpha": true,
+    "anchor": "centre (icon, content centred in canvas)",
+    "frames": 1,
+    "filtering": "nearest",
+    "scale": "integer: 1x (32 px) clan warehouse and production tables, price grid, trades, industry chain, plot panel, shop ask book; html zoom compensated",
+    "atlas_frame": [
+     "items-0.webp",
+     298,
+     100,
+     32,
+     32
+    ]
+   },
+   "visual_locks": [
+    "palette.json",
+    "view: low top-down",
+    "light: top-left",
+    "outline: #2e1d14 outer (uniform, checked)",
+    "icon canvas 32x32, centred"
+   ],
+   "provenance": {
+    "kind": "generated+edited",
+    "tool": "PixelLab MCP create_map_object + local PIL edits",
+    "mode": "basic",
+    "pixellab_id": [
+     "8f5fe010-3b4c-4b94-b68d-d0a5f45ff83c",
+     "356fb74e-e08c-4d46-b14f-a3bedcad395d"
+    ],
+    "prompt": [
+     "cute single chunky grey stone ore rock, rounded lumpy boulder chunk with bright golden yellow metal veins and a few small shiny nuggets embedded, mining resource, chunky simple shapes, soft light from top-left, dark brown outline",
+     "cute single chunky grey stone rock chunk with a small cluster of glowing bright green crystals growing out of its top, soft green glow, mining resource, chunky simple shapes, soft light from top-left, dark brown outline"
+    ],
+    "params": {
+     "view": "low top-down",
+     "outline": "single color outline",
+     "shading": "medium shading",
+     "detail": "medium detail",
+     "size": "32x32"
+    },
+    "created_at": "2026-10-31",
+    "generation_cost": 1,
+    "postprocess": [
+     "remap.py --outline: OKLab nearest, chroma x2, palette.json (48), alpha threshold 128, outer outline #2e1d14 + 1px pad",
+     "fit.py (items package): crop to bbox, centre in 32x32, never rescale",
+     "rev2_ores.py: ONE rock base (gen ore_vein-v1) as dark pitchblende (#6e6660..#3d2a1f), green crystal cluster + green veins, rock around the crystal base lit green (glow); no sparkles, no hazard symbol"
+    ],
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)",
+    "package": "goods-a",
+    "source": "phase1/goods-a/pal/uranium.png"
+   },
+   "verification": {
+    "native_scale_reviewed": true,
+    "in_engine_reviewed": true,
+    "technical_checks_passed": true,
+    "approved_by": "owner (design session, 2026-10-31)",
+    "notes": "packed by scripts/art/build-items.py"
+   }
+  },
+  {
+   "id": "good-beans",
+   "area": "items",
+   "role": "industry good icon: Đậu (GOODS id `beans`, group farm; public/ta-tua/game/js/shared/industry.js)",
+   "path": "public/ta-tua/game/assets/items/items-0.webp#beans",
+   "status": "approved",
+   "technical": {
+    "dimensions": "32x32",
+    "content_bbox": [
+     2,
+     3,
+     30,
+     28
+    ],
+    "alpha": true,
+    "anchor": "centre (icon, content centred in canvas)",
+    "frames": 1,
+    "filtering": "nearest",
+    "scale": "integer: 1x (32 px) clan warehouse and production tables, price grid, trades, industry chain, plot panel, shop ask book; html zoom compensated",
+    "atlas_frame": [
+     "items-0.webp",
+     331,
+     100,
+     32,
+     32
+    ]
+   },
+   "visual_locks": [
+    "palette.json",
+    "view: low top-down",
+    "light: top-left",
+    "outline: #2e1d14 outer (uniform, checked)",
+    "icon canvas 32x32, centred"
+   ],
+   "provenance": {
+    "kind": "generated+edited",
+    "tool": "PixelLab MCP create_map_object + local PIL edits",
+    "mode": "basic",
+    "pixellab_id": "8dc23ab6-4e5c-4bb2-9b92-b642684df8f6",
+    "prompt": "a long open green bean pod split along its seam, showing a neat row of four plump glossy brown beans inside, chunky simple shapes, soft light from top-left, dark brown outline",
+    "params": {
+     "view": "low top-down",
+     "outline": "single color outline",
+     "shading": "medium shading",
+     "detail": "medium detail",
+     "size": "32x32"
+    },
+    "created_at": "2026-10-31",
+    "generation_cost": 1,
+    "postprocess": [
+     "remap.py --outline: OKLab nearest, chroma x2, palette.json (48), alpha threshold 128, outer outline #2e1d14 + 1px pad",
+     "fit.py (phase1/items/scripts): crop to bbox, centre in 32x32 (never rescale)",
+     "scripts/fixes.py beans(): four lit beans; scripts/fixes2.py beans(): seam #3d2a1f -> #2f5a3a (own dark green step), four 3x3 round-shaded brown beans with #c8915f top-left light"
+    ],
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)",
+    "package": "goods-b",
+    "source": "phase1/goods-b/pal/beans.png"
+   },
+   "verification": {
+    "native_scale_reviewed": true,
+    "in_engine_reviewed": true,
+    "technical_checks_passed": true,
+    "approved_by": "owner (design session, 2026-10-31)",
+    "notes": "packed by scripts/art/build-items.py"
+   }
+  },
+  {
+   "id": "good-beef",
+   "area": "items",
+   "role": "industry good icon: Thịt bò (GOODS id `beef`, group farm; public/ta-tua/game/js/shared/industry.js)",
+   "path": "public/ta-tua/game/assets/items/items-0.webp#beef",
+   "status": "approved",
+   "technical": {
+    "dimensions": "32x32",
+    "content_bbox": [
+     2,
+     6,
+     30,
+     26
+    ],
+    "alpha": true,
+    "anchor": "centre (icon, content centred in canvas)",
+    "frames": 1,
+    "filtering": "nearest",
+    "scale": "integer: 1x (32 px) clan warehouse and production tables, price grid, trades, industry chain, plot panel, shop ask book; html zoom compensated",
+    "atlas_frame": [
+     "items-0.webp",
+     364,
+     100,
+     32,
+     32
+    ]
+   },
+   "visual_locks": [
+    "palette.json",
+    "view: low top-down",
+    "light: top-left",
+    "outline: #2e1d14 outer (uniform, checked)",
+    "icon canvas 32x32, centred"
+   ],
+   "provenance": {
+    "kind": "generated+edited",
+    "tool": "PixelLab MCP create_map_object + local PIL edits",
+    "mode": "basic",
+    "pixellab_id": "0293935f-55b6-495b-bfdc-5a3ab2cc4c91",
+    "prompt": "cute raw beef steak, thick deep red meat with fine white marbling streaks and a creamy fat rim along one side, fresh butcher cut, chunky simple shapes, soft light from top-left, dark brown outline",
+    "params": {
+     "view": "low top-down",
+     "outline": "single color outline",
+     "shading": "medium shading",
+     "detail": "medium detail",
+     "size": "32x32"
+    },
+    "created_at": "2026-10-31",
+    "generation_cost": 1,
+    "postprocess": [
+     "remap.py --outline: OKLab nearest, chroma x2, palette.json (48), alpha threshold 128, outer outline #2e1d14 + 1px pad",
+     "fit.py (phase1/items/scripts): crop to bbox, centre in 32x32 (never rescale)",
+     "scripts/fixes.py beef(): red meat, cream fat, marbling; scripts/fixes2.py beef(): 3 columns + 1 row removed across the left lobe (31x21 -> 28x20, off the left edge), no rescale"
+    ],
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)",
+    "package": "goods-b",
+    "source": "phase1/goods-b/pal/beef.png"
+   },
+   "verification": {
+    "native_scale_reviewed": true,
+    "in_engine_reviewed": true,
+    "technical_checks_passed": true,
+    "approved_by": "owner (design session, 2026-10-31)",
+    "notes": "packed by scripts/art/build-items.py"
+   }
+  },
+  {
+   "id": "good-chicken",
+   "area": "items",
+   "role": "industry good icon: Gà (GOODS id `chicken`, group farm; public/ta-tua/game/js/shared/industry.js)",
+   "path": "public/ta-tua/game/assets/items/items-0.webp#chicken",
+   "status": "approved",
+   "technical": {
+    "dimensions": "32x32",
+    "content_bbox": [
+     4,
+     5,
+     28,
+     27
+    ],
+    "alpha": true,
+    "anchor": "centre (icon, content centred in canvas)",
+    "frames": 1,
+    "filtering": "nearest",
+    "scale": "integer: 1x (32 px) clan warehouse and production tables, price grid, trades, industry chain, plot panel, shop ask book; html zoom compensated",
+    "atlas_frame": [
+     "items-0.webp",
+     397,
+     100,
+     32,
+     32
+    ]
+   },
+   "visual_locks": [
+    "palette.json",
+    "view: low top-down",
+    "light: top-left",
+    "outline: #2e1d14 outer (uniform, checked)",
+    "icon canvas 32x32, centred"
+   ],
+   "provenance": {
+    "kind": "generated+edited",
+    "tool": "PixelLab MCP create_map_object + local PIL edits",
+    "mode": "basic",
+    "pixellab_id": "4b9dfbf1-d023-47db-86a9-89d08fd05e00",
+    "prompt": "cute roasted chicken drumstick, plump golden brown crispy skin, short white bone end sticking out, appetising, chunky simple shapes, soft light from top-left, dark brown outline",
+    "params": {
+     "view": "low top-down",
+     "outline": "single color outline",
+     "shading": "medium shading",
+     "detail": "medium detail",
+     "size": "32x32"
+    },
+    "created_at": "2026-10-31",
+    "generation_cost": 1,
+    "postprocess": [
+     "remap.py --outline: OKLab nearest, chroma x2, palette.json (48), alpha threshold 128, outer outline #2e1d14 + 1px pad",
+     "fit.py (phase1/items/scripts): crop to bbox, centre in 32x32 (never rescale)",
+     "scripts/fixes.py chicken(): orange glaze; scripts/fixes2.py chicken(): bone end redrawn as a two-lobed cream knuckle (5x5, #9c948a shade), lit tan -> orange glaze / mid-orange"
+    ],
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)",
+    "package": "goods-b",
+    "source": "phase1/goods-b/pal/chicken.png"
+   },
+   "verification": {
+    "native_scale_reviewed": true,
+    "in_engine_reviewed": true,
+    "technical_checks_passed": true,
+    "approved_by": "owner (design session, 2026-10-31)",
+    "notes": "packed by scripts/art/build-items.py"
+   }
+  },
+  {
+   "id": "good-cotton",
+   "area": "items",
+   "role": "industry good icon: Bông (GOODS id `cotton`, group farm; public/ta-tua/game/js/shared/industry.js)",
+   "path": "public/ta-tua/game/assets/items/items-0.webp#cotton",
+   "status": "approved",
+   "technical": {
+    "dimensions": "32x32",
+    "content_bbox": [
+     3,
+     1,
+     28,
+     31
+    ],
+    "alpha": true,
+    "anchor": "centre (icon, content centred in canvas)",
+    "frames": 1,
+    "filtering": "nearest",
+    "scale": "integer: 1x (32 px) clan warehouse and production tables, price grid, trades, industry chain, plot panel, shop ask book; html zoom compensated",
+    "atlas_frame": [
+     "items-0.webp",
+     430,
+     100,
+     32,
+     32
+    ]
+   },
+   "visual_locks": [
+    "palette.json",
+    "view: low top-down",
+    "light: top-left",
+    "outline: #2e1d14 outer (uniform, checked)",
+    "icon canvas 32x32, centred"
+   ],
+   "provenance": {
+    "kind": "generated+edited",
+    "tool": "PixelLab MCP create_map_object + local PIL edits",
+    "mode": "basic",
+    "pixellab_id": "c64a79e4-96ba-4267-8187-d505e0be3b91",
+    "prompt": "fluffy white cotton boll, three round puffy white cotton lobes bursting from a dry brown star-shaped husk, on a short brown stem with one green leaf, plain plant with no face, chunky simple shapes, soft light from top-left, dark brown outline",
+    "params": {
+     "view": "low top-down",
+     "outline": "single color outline",
+     "shading": "medium shading",
+     "detail": "medium detail",
+     "size": "32x32"
+    },
+    "created_at": "2026-10-31",
+    "generation_cost": 1,
+    "postprocess": [
+     "remap.py --outline: OKLab nearest, chroma x2, palette.json (48), alpha threshold 128, outer outline #2e1d14 + 1px pad",
+     "fit.py (phase1/items/scripts): crop to bbox, centre in 32x32 (never rescale)",
+     "scripts/fixes.py cotton2(): pink -> cream bolls, leaves lifted 2 steps; scripts/fixes2.py cotton(): stem filled #3e7a3f to the tip (was pure ink rows 25-29), grey leaf fleck -> green"
+    ],
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)",
+    "package": "goods-b",
+    "source": "phase1/goods-b/pal/cotton.png"
+   },
+   "verification": {
+    "native_scale_reviewed": true,
+    "in_engine_reviewed": true,
+    "technical_checks_passed": true,
+    "approved_by": "owner (design session, 2026-10-31)",
+    "notes": "packed by scripts/art/build-items.py"
+   }
+  },
+  {
+   "id": "good-maize",
+   "area": "items",
+   "role": "industry good icon: Ngô (GOODS id `maize`, group farm; public/ta-tua/game/js/shared/industry.js)",
+   "path": "public/ta-tua/game/assets/items/items-0.webp#maize",
+   "status": "approved",
+   "technical": {
+    "dimensions": "32x32",
+    "content_bbox": [
+     5,
+     0,
+     27,
+     31
+    ],
+    "alpha": true,
+    "anchor": "centre (icon, content centred in canvas)",
+    "frames": 1,
+    "filtering": "nearest",
+    "scale": "integer: 1x (32 px) clan warehouse and production tables, price grid, trades, industry chain, plot panel, shop ask book; html zoom compensated",
+    "atlas_frame": [
+     "items-0.webp",
+     463,
+     100,
+     32,
+     32
+    ]
+   },
+   "visual_locks": [
+    "palette.json",
+    "view: low top-down",
+    "light: top-left",
+    "outline: #2e1d14 outer (uniform, checked)",
+    "icon canvas 32x32, centred"
+   ],
+   "provenance": {
+    "kind": "generated",
+    "tool": "PixelLab MCP create_map_object",
+    "mode": "basic",
+    "pixellab_id": "5e16d48e-c7c8-46ba-be6c-a86250ae783f",
+    "prompt": "cute ear of corn, plump bright yellow kernels in neat rows, green husk leaves peeled back at the bottom, chunky simple shapes, soft light from top-left, dark brown outline",
+    "params": {
+     "view": "low top-down",
+     "outline": "single color outline",
+     "shading": "medium shading",
+     "detail": "medium detail",
+     "size": "32x32"
+    },
+    "created_at": "2026-10-31",
+    "generation_cost": 1,
+    "postprocess": [
+     "remap.py --outline: OKLab nearest, chroma x2, palette.json (48), alpha threshold 128, outer outline #2e1d14 + 1px pad",
+     "fit.py (phase1/items/scripts): crop to bbox, centre in 32x32 (never rescale)"
+    ],
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)",
+    "package": "goods-b",
+    "source": "phase1/goods-b/pal/maize.png"
+   },
+   "verification": {
+    "native_scale_reviewed": true,
+    "in_engine_reviewed": true,
+    "technical_checks_passed": true,
+    "approved_by": "owner (design session, 2026-10-31)",
+    "notes": "packed by scripts/art/build-items.py"
+   }
+  },
+  {
+   "id": "good-potatoes",
+   "area": "items",
+   "role": "industry good icon: Khoai tây (GOODS id `potatoes`, group farm; public/ta-tua/game/js/shared/industry.js)",
+   "path": "public/ta-tua/game/assets/items/items-0.webp#potatoes",
+   "status": "approved",
+   "technical": {
+    "dimensions": "32x32",
+    "content_bbox": [
+     3,
+     8,
+     29,
+     24
+    ],
+    "alpha": true,
+    "anchor": "centre (icon, content centred in canvas)",
+    "frames": 1,
+    "filtering": "nearest",
+    "scale": "integer: 1x (32 px) clan warehouse and production tables, price grid, trades, industry chain, plot panel, shop ask book; html zoom compensated",
+    "atlas_frame": [
+     "items-0.webp",
+     496,
+     100,
+     32,
+     32
+    ]
+   },
+   "visual_locks": [
+    "palette.json",
+    "view: low top-down",
+    "light: top-left",
+    "outline: #2e1d14 outer (uniform, checked)",
+    "icon canvas 32x32, centred"
+   ],
+   "provenance": {
+    "kind": "generated+edited",
+    "tool": "PixelLab MCP create_map_object + local PIL edits",
+    "mode": "basic",
+    "pixellab_id": "7768f8de-3dfe-4a51-b776-5bafe897ebd7",
+    "prompt": "cute two round lumpy potatoes, one in front of the other, earthy golden-brown skin with a few tiny dark spots, fresh from the farm, chunky simple shapes, soft light from top-left, dark brown outline",
+    "params": {
+     "view": "low top-down",
+     "outline": "single color outline",
+     "shading": "medium shading",
+     "detail": "medium detail",
+     "size": "32x32"
+    },
+    "created_at": "2026-10-31",
+    "generation_cost": 1,
+    "postprocess": [
+     "remap.py --outline: OKLab nearest, chroma x2, palette.json (48), alpha threshold 128, outer outline #2e1d14 + 1px pad",
+     "fit.py (phase1/items/scripts): crop to bbox, centre in 32x32 (never rescale)",
+     "scripts/fixes.py potatoes(): yellow streaks removed, skin ramp one step browner, 7 potato eyes"
+    ],
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)",
+    "package": "goods-b",
+    "source": "phase1/goods-b/pal/potatoes.png"
+   },
+   "verification": {
+    "native_scale_reviewed": true,
+    "in_engine_reviewed": true,
+    "technical_checks_passed": true,
+    "approved_by": "owner (design session, 2026-10-31)",
+    "notes": "packed by scripts/art/build-items.py"
+   }
+  },
+  {
+   "id": "good-power",
+   "area": "items",
+   "role": "industry good icon: Điện (GOODS id `power`, group energy; public/ta-tua/game/js/shared/industry.js)",
+   "path": "public/ta-tua/game/assets/items/items-0.webp#power",
+   "status": "approved",
+   "technical": {
+    "dimensions": "32x32",
+    "content_bbox": [
+     6,
+     4,
+     26,
+     28
+    ],
+    "alpha": true,
+    "anchor": "centre (icon, content centred in canvas)",
+    "frames": 1,
+    "filtering": "nearest",
+    "scale": "integer: 1x (32 px) clan warehouse and production tables, price grid, trades, industry chain, plot panel, shop ask book; html zoom compensated",
+    "atlas_frame": [
+     "items-0.webp",
+     1,
+     133,
+     32,
+     32
+    ]
+   },
+   "visual_locks": [
+    "palette.json",
+    "view: low top-down",
+    "light: top-left",
+    "outline: #2e1d14 outer (uniform, checked)",
+    "icon canvas 32x32, centred"
+   ],
+   "provenance": {
+    "kind": "generated+edited",
+    "tool": "PixelLab MCP create_map_object + local PIL edits",
+    "mode": "basic",
+    "pixellab_id": "1bb97e7f-7567-4dc2-be0a-5952f169b38f",
+    "prompt": "cute small upright battery cell with a deep blue body and a silver metal cap, a big bright yellow lightning bolt in front of it, chunky simple shapes, soft light from top-left, dark brown outline",
+    "params": {
+     "view": "low top-down",
+     "outline": "single color outline",
+     "shading": "medium shading",
+     "detail": "medium detail",
+     "size": "32x32"
+    },
+    "created_at": "2026-10-31",
+    "generation_cost": 1,
+    "postprocess": [
+     "remap.py --outline: OKLab nearest, chroma x2, palette.json (48), alpha threshold 128, outer outline #2e1d14 + 1px pad",
+     "fit.py (phase1/items/scripts): crop to bbox, centre in 32x32 (never rescale)",
+     "scripts/fixes2.py power(): body water ramp -> teal accent ramp (#4fae93/#2f7f73/#8fd3bf), bolt redrawn 1-2 px bigger (gold ramp + light)"
+    ],
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)",
+    "package": "goods-b",
+    "source": "phase1/goods-b/pal/power.png"
+   },
+   "verification": {
+    "native_scale_reviewed": true,
+    "in_engine_reviewed": true,
+    "technical_checks_passed": true,
+    "approved_by": "owner (design session, 2026-10-31)",
+    "notes": "packed by scripts/art/build-items.py"
+   }
+  },
+  {
+   "id": "good-rice",
+   "area": "items",
+   "role": "industry good icon: Lúa gạo (GOODS id `rice`, group farm; public/ta-tua/game/js/shared/industry.js)",
+   "path": "public/ta-tua/game/assets/items/items-0.webp#rice",
+   "status": "approved",
+   "technical": {
+    "dimensions": "32x32",
+    "content_bbox": [
+     2,
+     2,
+     29,
+     29
+    ],
+    "alpha": true,
+    "anchor": "centre (icon, content centred in canvas)",
+    "frames": 1,
+    "filtering": "nearest",
+    "scale": "integer: 1x (32 px) clan warehouse and production tables, price grid, trades, industry chain, plot panel, shop ask book; html zoom compensated",
+    "atlas_frame": [
+     "items-0.webp",
+     34,
+     133,
+     32,
+     32
+    ]
+   },
+   "visual_locks": [
+    "palette.json",
+    "view: low top-down",
+    "light: top-left",
+    "outline: #2e1d14 outer (uniform, checked)",
+    "icon canvas 32x32, centred"
+   ],
+   "provenance": {
+    "kind": "generated+edited",
+    "tool": "PixelLab MCP create_map_object + local PIL edits",
+    "mode": "basic",
+    "pixellab_id": "e2734206-4bb0-4a9a-9eba-d0c28658eb7b",
+    "prompt": "cute small burlap sack open at the top, full of white rice grains, a golden rice stalk with drooping grain heads leaning on the sack, chunky simple shapes, soft light from top-left, dark brown outline",
+    "params": {
+     "view": "low top-down",
+     "outline": "single color outline",
+     "shading": "medium shading",
+     "detail": "medium detail",
+     "size": "32x32"
+    },
+    "created_at": "2026-10-31",
+    "generation_cost": 1,
+    "postprocess": [
+     "remap.py --outline: OKLab nearest, chroma x2, palette.json (48), alpha threshold 128, outer outline #2e1d14 + 1px pad",
+     "fit.py (phase1/items/scripts): crop to bbox, centre in 32x32 (never rescale)",
+     "scripts/fixes.py rice(): brighter grains, specks cleared, sack stains -> brown; scripts/fixes2.py rice(): white opening widened (dark back wall + top-left rim -> grains)"
+    ],
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)",
+    "package": "goods-b",
+    "source": "phase1/goods-b/pal/rice.png"
+   },
+   "verification": {
+    "native_scale_reviewed": true,
+    "in_engine_reviewed": true,
+    "technical_checks_passed": true,
+    "approved_by": "owner (design session, 2026-10-31)",
+    "notes": "packed by scripts/art/build-items.py"
+   }
+  },
+  {
+   "id": "good-rubber",
+   "area": "items",
+   "role": "industry good icon: Cao su (GOODS id `rubber`, group forest; public/ta-tua/game/js/shared/industry.js)",
+   "path": "public/ta-tua/game/assets/items/items-0.webp#rubber",
+   "status": "approved",
+   "technical": {
+    "dimensions": "32x32",
+    "content_bbox": [
+     3,
+     1,
+     29,
+     31
+    ],
+    "alpha": true,
+    "anchor": "centre (icon, content centred in canvas)",
+    "frames": 1,
+    "filtering": "nearest",
+    "scale": "integer: 1x (32 px) clan warehouse and production tables, price grid, trades, industry chain, plot panel, shop ask book; html zoom compensated",
+    "atlas_frame": [
+     "items-0.webp",
+     67,
+     133,
+     32,
+     32
+    ]
+   },
+   "visual_locks": [
+    "palette.json",
+    "view: low top-down",
+    "light: top-left",
+    "outline: #2e1d14 outer (uniform, checked)",
+    "icon canvas 32x32, centred"
+   ],
+   "provenance": {
+    "kind": "generated+edited",
+    "tool": "PixelLab MCP create_map_object + local PIL edits",
+    "mode": "basic",
+    "pixellab_id": "92d3bb20-0614-4e1f-a948-3dc316d9a6b0",
+    "prompt": "thick stubby brown tree trunk with three big bright green leaves sprouting from its top, a slanted white cut line on the bark dripping white milky sap into a round brown coconut half bowl tied with string near the bottom right of the trunk, chunky simple shapes, soft light from top-left, dark brown outline",
+    "params": {
+     "view": "low top-down",
+     "outline": "single color outline",
+     "shading": "medium shading",
+     "detail": "medium detail",
+     "size": "32x32"
+    },
+    "created_at": "2026-10-31",
+    "generation_cost": 1,
+    "postprocess": [
+     "remap.py --outline: OKLab nearest, chroma x2, palette.json (48), alpha threshold 128, outer outline #2e1d14 + 1px pad",
+     "fit.py (phase1/items/scripts): crop to bbox, centre in 32x32 (never rescale)",
+     "scripts/fixes2.py rubber(): spout stub removed, white diagonal tapping groove spilling into the coconut-shell cup, bark 1 step lighter, latex shade grey -> cream, crown 1 step lighter, 1 crown row + root tip removed (30 px tall)"
+    ],
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)",
+    "package": "goods-b",
+    "source": "phase1/goods-b/pal/rubber.png"
+   },
+   "verification": {
+    "native_scale_reviewed": true,
+    "in_engine_reviewed": true,
+    "technical_checks_passed": true,
+    "approved_by": "owner (design session, 2026-10-31)",
+    "notes": "packed by scripts/art/build-items.py"
+   }
+  },
+  {
+   "id": "good-timber",
+   "area": "items",
+   "role": "industry good icon: Gỗ (GOODS id `timber`, group forest; public/ta-tua/game/js/shared/industry.js)",
+   "path": "public/ta-tua/game/assets/items/items-0.webp#timber",
+   "status": "approved",
+   "technical": {
+    "dimensions": "32x32",
+    "content_bbox": [
+     2,
+     4,
+     29,
+     27
+    ],
+    "alpha": true,
+    "anchor": "centre (icon, content centred in canvas)",
+    "frames": 1,
+    "filtering": "nearest",
+    "scale": "integer: 1x (32 px) clan warehouse and production tables, price grid, trades, industry chain, plot panel, shop ask book; html zoom compensated",
+    "atlas_frame": [
+     "items-0.webp",
+     100,
+     133,
+     32,
+     32
+    ]
+   },
+   "visual_locks": [
+    "palette.json",
+    "view: low top-down",
+    "light: top-left",
+    "outline: #2e1d14 outer (uniform, checked)",
+    "icon canvas 32x32, centred"
+   ],
+   "provenance": {
+    "kind": "generated+edited",
+    "tool": "PixelLab MCP create_map_object + local PIL edits",
+    "mode": "basic",
+    "pixellab_id": "b7d8c034-ee4a-4776-9e3d-4bdb78fb9c19",
+    "prompt": "cute small stack of three cut wooden logs, round pale tree-ring ends facing the viewer, warm brown bark, chunky simple shapes, soft light from top-left, dark brown outline",
+    "params": {
+     "view": "low top-down",
+     "outline": "single color outline",
+     "shading": "medium shading",
+     "detail": "medium detail",
+     "size": "32x32"
+    },
+    "created_at": "2026-10-31",
+    "generation_cost": 1,
+    "postprocess": [
+     "remap.py --outline: OKLab nearest, chroma x2, palette.json (48), alpha threshold 128, outer outline #2e1d14 + 1px pad",
+     "fit.py (phase1/items/scripts): crop to bbox, centre in 32x32 (never rescale)",
+     "scripts/fixes.py timber(): tree rings + pith dot; scripts/fixes2.py timber(): rings rounded (inner corners filled), 2 stone-grey bark pixels -> bark brown"
+    ],
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)",
+    "package": "goods-b",
+    "source": "phase1/goods-b/pal/timber.png"
+   },
+   "verification": {
+    "native_scale_reviewed": true,
+    "in_engine_reviewed": true,
+    "technical_checks_passed": true,
+    "approved_by": "owner (design session, 2026-10-31)",
+    "notes": "packed by scripts/art/build-items.py"
+   }
+  },
+  {
+   "id": "good-wheat",
+   "area": "items",
+   "role": "industry good icon: Lúa mì (GOODS id `wheat`, group farm; public/ta-tua/game/js/shared/industry.js)",
+   "path": "public/ta-tua/game/assets/items/items-0.webp#wheat",
+   "status": "approved",
+   "technical": {
+    "dimensions": "32x32",
+    "content_bbox": [
+     6,
+     1,
+     26,
+     31
+    ],
+    "alpha": true,
+    "anchor": "centre (icon, content centred in canvas)",
+    "frames": 1,
+    "filtering": "nearest",
+    "scale": "integer: 1x (32 px) clan warehouse and production tables, price grid, trades, industry chain, plot panel, shop ask book; html zoom compensated",
+    "atlas_frame": [
+     "items-0.webp",
+     133,
+     133,
+     32,
+     32
+    ]
+   },
+   "visual_locks": [
+    "palette.json",
+    "view: low top-down",
+    "light: top-left",
+    "outline: #2e1d14 outer (uniform, checked)",
+    "icon canvas 32x32, centred"
+   ],
+   "provenance": {
+    "kind": "generated+edited",
+    "tool": "PixelLab MCP create_map_object + local PIL edits",
+    "mode": "basic",
+    "pixellab_id": "384eddd5-66ce-4e45-b653-fc9579564328",
+    "prompt": "golden wheat sheaf, many stalks tied tightly in the middle with a red ribbon, a fan of plump golden grain ears on top and the cut stalk ends splayed at the bottom, chunky simple shapes, soft light from top-left, dark brown outline",
+    "params": {
+     "view": "low top-down",
+     "outline": "single color outline",
+     "shading": "medium shading",
+     "detail": "medium detail",
+     "size": "32x32"
+    },
+    "created_at": "2026-10-31",
+    "generation_cost": 1,
+    "postprocess": [
+     "remap.py --outline: OKLab nearest, chroma x2, palette.json (48), alpha threshold 128, outer outline #2e1d14 + 1px pad",
+     "fit.py (phase1/items/scripts): crop to bbox, centre in 32x32 (never rescale)",
+     "scripts/fixes2.py wheat(): 2 rows of plain stalk under the tie removed (32 -> 30 px tall, 1 px margin top and bottom)"
+    ],
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)",
+    "package": "goods-b",
+    "source": "phase1/goods-b/pal/wheat.png"
+   },
+   "verification": {
+    "native_scale_reviewed": true,
+    "in_engine_reviewed": true,
+    "technical_checks_passed": true,
+    "approved_by": "owner (design session, 2026-10-31)",
+    "notes": "packed by scripts/art/build-items.py"
+   }
+  },
+  {
+   "id": "good-aircraft",
+   "area": "items",
+   "role": "heavy industry good icon: Máy bay (GOODS id `aircraft`, group heavy)",
+   "path": "public/ta-tua/game/assets/items/items-0.webp#aircraft",
+   "status": "approved",
+   "technical": {
+    "dimensions": "32x32",
+    "content_bbox": [
+     1,
+     4,
+     31,
+     27
+    ],
+    "alpha": true,
+    "anchor": "centre (icon, content centred in canvas)",
+    "frames": 1,
+    "filtering": "nearest",
+    "scale": "integer: 1x (32 px) clan warehouse and production tables, price grid, trades, industry chain, plot panel, shop ask book; html zoom compensated",
+    "atlas_frame": [
+     "items-0.webp",
+     166,
+     133,
+     32,
+     32
+    ]
+   },
+   "visual_locks": [
+    "palette.json",
+    "view: low top-down",
+    "light: top-left",
+    "outline: #2e1d14 outer (uniform, checked)",
+    "icon canvas 32x32, centred"
+   ],
+   "provenance": {
+    "kind": "hand-built",
+    "tool": "local PIL (scripts/plane.py)",
+    "mode": null,
+    "pixellab_id": null,
+    "prompt": null,
+    "params": {
+     "size": "32x32",
+     "method": "geometric drawing, palette colours only, outline added by gx.addoutline"
+    },
+    "created_at": "2026-10-31",
+    "generation_cost": 0,
+    "postprocess": [
+     "centre in 32x32 (gx.centre, never rescale)",
+     "hand-built in scripts/plane.py (0 gens): white passenger jet facing RIGHT, blue tail fin top-left, far wing + thick near wing (#c4bcb0/#9c948a thickness), one continuous #3f8fc0 cheat line, grey belly"
+    ],
+    "license": "original hand-built (team)",
+    "package": "goods-c",
+    "source": "phase1/goods-c/pal/aircraft.png"
+   },
+   "verification": {
+    "native_scale_reviewed": true,
+    "in_engine_reviewed": true,
+    "technical_checks_passed": true,
+    "approved_by": "owner (design session, 2026-10-31)",
+    "notes": "packed by scripts/art/build-items.py"
+   }
+  },
+  {
+   "id": "good-aluminium",
+   "area": "items",
+   "role": "heavy industry good icon: Nhôm (GOODS id `aluminium`, group heavy)",
+   "path": "public/ta-tua/game/assets/items/items-0.webp#aluminium",
+   "status": "approved",
+   "technical": {
+    "dimensions": "32x32",
+    "content_bbox": [
+     1,
+     5,
+     31,
+     27
+    ],
+    "alpha": true,
+    "anchor": "centre (icon, content centred in canvas)",
+    "frames": 1,
+    "filtering": "nearest",
+    "scale": "integer: 1x (32 px) clan warehouse and production tables, price grid, trades, industry chain, plot panel, shop ask book; html zoom compensated",
+    "atlas_frame": [
+     "items-0.webp",
+     199,
+     133,
+     32,
+     32
+    ]
+   },
+   "visual_locks": [
+    "palette.json",
+    "view: low top-down",
+    "light: top-left",
+    "outline: #2e1d14 outer (uniform, checked)",
+    "icon canvas 32x32, centred"
+   ],
+   "provenance": {
+    "kind": "hand-built",
+    "tool": "local PIL (scripts/coil.py)",
+    "mode": null,
+    "pixellab_id": null,
+    "prompt": null,
+    "params": {
+     "size": "32x32",
+     "method": "geometric drawing, palette colours only, outline added by gx.addoutline"
+    },
+    "created_at": "2026-10-31",
+    "generation_cost": 0,
+    "postprocess": [
+     "centre in 32x32 (gx.centre, never rescale)",
+     "hand-built in scripts/coil.py (0 gens): coil of sheet aluminium on its side, cool ramp only (#eef8fb/#bfe3f2 over #8fd0e8/#58b9d6), crisp #58b9d6 rings round a dark core hole, short tongue of sheet unrolled flat to the right with one straight #eef8fb specular stripe"
+    ],
+    "license": "original hand-built (team)",
+    "package": "goods-c",
+    "source": "phase1/goods-c/pal/aluminium.png"
+   },
+   "verification": {
+    "native_scale_reviewed": true,
+    "in_engine_reviewed": true,
+    "technical_checks_passed": true,
+    "approved_by": "owner (design session, 2026-10-31)",
+    "notes": "packed by scripts/art/build-items.py"
+   }
+  },
+  {
+   "id": "good-autos",
+   "area": "items",
+   "role": "heavy industry good icon: Ô tô (GOODS id `autos`, group heavy)",
+   "path": "public/ta-tua/game/assets/items/items-0.webp#autos",
+   "status": "approved",
+   "technical": {
+    "dimensions": "32x32",
+    "content_bbox": [
+     4,
+     5,
+     28,
+     27
+    ],
+    "alpha": true,
+    "anchor": "centre (icon, content centred in canvas)",
+    "frames": 1,
+    "filtering": "nearest",
+    "scale": "integer: 1x (32 px) clan warehouse and production tables, price grid, trades, industry chain, plot panel, shop ask book; html zoom compensated",
+    "atlas_frame": [
+     "items-0.webp",
+     232,
+     133,
+     32,
+     32
+    ]
+   },
+   "visual_locks": [
+    "palette.json",
+    "view: low top-down",
+    "light: top-left",
+    "outline: #2e1d14 outer (uniform, checked)",
+    "icon canvas 32x32, centred"
+   ],
+   "provenance": {
+    "kind": "generated+edited",
+    "tool": "PixelLab MCP create_map_object + local PIL edits (scripts/fixes.py + scripts/rev2.py)",
+    "mode": "basic",
+    "pixellab_id": "10a6b188-e314-4fa2-9ee5-f91baefeaa25",
+    "prompt": "cute small rounded toy car, chubby bubble-shaped bright red body, big round light blue windows, four chunky black wheels, tiny round headlights, shiny highlight on the roof, chunky simple shapes, soft light from top-left, dark brown outline",
+    "params": {
+     "view": "low top-down",
+     "outline": "single color outline",
+     "shading": "medium shading",
+     "detail": "medium detail",
+     "size": "32x32"
+    },
+    "created_at": "2026-10-31",
+    "generation_cost": 1,
+    "postprocess": [
+     "remap.py --outline (P0): OKLab nearest, chroma x2, palette.json (48), alpha threshold 128, outer outline #2e1d14 + 1px pad",
+     "fit.py (items package): crop to bbox, centre in 32x32, never rescale",
+     "rev1 edits + rev2: glass unified (#8fd3bf mint -> #8fd0e8, with #bfe3f2); front #f4a3b4 -> #e84a5f (redder, not pink); cream patch -> roof #f4a3b4 highlight + #fff3c4 headlights"
+    ],
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)",
+    "package": "goods-c",
+    "source": "phase1/goods-c/pal/autos.png"
+   },
+   "verification": {
+    "native_scale_reviewed": true,
+    "in_engine_reviewed": true,
+    "technical_checks_passed": true,
+    "approved_by": "owner (design session, 2026-10-31)",
+    "notes": "packed by scripts/art/build-items.py"
+   }
+  },
+  {
+   "id": "good-chemicals",
+   "area": "items",
+   "role": "heavy industry good icon: Hóa chất (GOODS id `chemicals`, group heavy)",
+   "path": "public/ta-tua/game/assets/items/items-0.webp#chemicals",
+   "status": "approved",
+   "technical": {
+    "dimensions": "32x32",
+    "content_bbox": [
+     4,
+     2,
+     28,
+     30
+    ],
+    "alpha": true,
+    "anchor": "centre (icon, content centred in canvas)",
+    "frames": 1,
+    "filtering": "nearest",
+    "scale": "integer: 1x (32 px) clan warehouse and production tables, price grid, trades, industry chain, plot panel, shop ask book; html zoom compensated",
+    "atlas_frame": [
+     "items-0.webp",
+     265,
+     133,
+     32,
+     32
+    ]
+   },
+   "visual_locks": [
+    "palette.json",
+    "view: low top-down",
+    "light: top-left",
+    "outline: #2e1d14 outer (uniform, checked)",
+    "icon canvas 32x32, centred"
+   ],
+   "provenance": {
+    "kind": "generated+edited",
+    "tool": "PixelLab MCP create_map_object + local PIL edits (scripts/fixes.py)",
+    "mode": "basic",
+    "pixellab_id": "cedb90b1-b22b-4c85-96cd-83b55b59fbd8",
+    "prompt": "cute conical glass laboratory flask with a narrow neck, half filled with bright mint green bubbling liquid, a few round bubbles rising from the top, clear pale blue glass with a white shine, chunky simple shapes, soft light from top-left, dark brown outline",
+    "params": {
+     "view": "low top-down",
+     "outline": "single color outline",
+     "shading": "medium shading",
+     "detail": "medium detail",
+     "size": "32x32"
+    },
+    "created_at": "2026-10-31",
+    "generation_cost": 1,
+    "postprocess": [
+     "remap.py --outline (P0): OKLab nearest, chroma x2, palette.json (48), alpha threshold 128, outer outline #2e1d14 + 1px pad",
+     "fit.py (items package): crop to bbox, centre in 32x32, never rescale",
+     "outlined floating bubbles removed (read as chain links); 4 green bubbles painted inside the glass"
+    ],
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)",
+    "package": "goods-c",
+    "source": "phase1/goods-c/pal/chemicals.png"
+   },
+   "verification": {
+    "native_scale_reviewed": true,
+    "in_engine_reviewed": true,
+    "technical_checks_passed": true,
+    "approved_by": "owner (design session, 2026-10-31)",
+    "notes": "packed by scripts/art/build-items.py"
+   }
+  },
+  {
+   "id": "good-chips",
+   "area": "items",
+   "role": "heavy industry good icon: Vi mạch (GOODS id `chips`, group heavy)",
+   "path": "public/ta-tua/game/assets/items/items-0.webp#chips",
+   "status": "approved",
+   "technical": {
+    "dimensions": "32x32",
+    "content_bbox": [
+     3,
+     4,
+     29,
+     28
+    ],
+    "alpha": true,
+    "anchor": "centre (icon, content centred in canvas)",
+    "frames": 1,
+    "filtering": "nearest",
+    "scale": "integer: 1x (32 px) clan warehouse and production tables, price grid, trades, industry chain, plot panel, shop ask book; html zoom compensated",
+    "atlas_frame": [
+     "items-0.webp",
+     298,
+     133,
+     32,
+     32
+    ]
+   },
+   "visual_locks": [
+    "palette.json",
+    "view: low top-down",
+    "light: top-left",
+    "outline: #2e1d14 outer (uniform, checked)",
+    "icon canvas 32x32, centred"
+   ],
+   "provenance": {
+    "kind": "hand-built",
+    "tool": "local PIL (scripts/chip2.py)",
+    "mode": null,
+    "pixellab_id": null,
+    "prompt": null,
+    "params": {
+     "size": "32x32",
+     "method": "geometric drawing, palette colours only, outline added by gx.addoutline"
+    },
+    "created_at": "2026-10-31",
+    "generation_cost": 0,
+    "postprocess": [
+     "centre in 32x32 (gx.centre, never rescale)",
+     "hand-built in scripts/chip2.py (0 gens): black chip in 3/4 (#4a3326 top, #6e6660 top-left bevel, #3d2a1f side, dark pin-1 dimple), silver legs sticking out on all visible sides, small green board tab under the lower-left corner"
+    ],
+    "license": "original hand-built (team)",
+    "package": "goods-c",
+    "source": "phase1/goods-c/pal/chips.png"
+   },
+   "verification": {
+    "native_scale_reviewed": true,
+    "in_engine_reviewed": true,
+    "technical_checks_passed": true,
+    "approved_by": "owner (design session, 2026-10-31)",
+    "notes": "packed by scripts/art/build-items.py"
+   }
+  },
+  {
+   "id": "good-clothing",
+   "area": "items",
+   "role": "light industry good icon: Quần áo (GOODS id `clothing`, group light)",
+   "path": "public/ta-tua/game/assets/items/items-0.webp#clothing",
+   "status": "approved",
+   "technical": {
+    "dimensions": "32x32",
+    "content_bbox": [
+     2,
+     3,
+     30,
+     29
+    ],
+    "alpha": true,
+    "anchor": "centre (icon, content centred in canvas)",
+    "frames": 1,
+    "filtering": "nearest",
+    "scale": "integer: 1x (32 px) clan warehouse and production tables, price grid, trades, industry chain, plot panel, shop ask book; html zoom compensated",
+    "atlas_frame": [
+     "items-0.webp",
+     331,
+     133,
+     32,
+     32
+    ]
+   },
+   "visual_locks": [
+    "palette.json",
+    "view: low top-down",
+    "light: top-left",
+    "outline: #2e1d14 outer (uniform, checked)",
+    "icon canvas 32x32, centred"
+   ],
+   "provenance": {
+    "kind": "generated+edited",
+    "tool": "PixelLab MCP create_map_object + local PIL edits (scripts/rev2.py)",
+    "mode": "basic",
+    "pixellab_id": "e07eb28a-f813-4341-83a3-b3f938eaffc4",
+    "prompt": "cute neatly folded t-shirt lying flat, soft bright mint teal cotton fabric folded into a tidy square, short sleeves tucked in, round collar neckline at the top, a small white stitched hem, chunky simple shapes, soft light from top-left, dark brown outline",
+    "params": {
+     "view": "low top-down",
+     "outline": "single color outline",
+     "shading": "medium shading",
+     "detail": "medium detail",
+     "size": "32x32"
+    },
+    "created_at": "2026-10-31",
+    "generation_cost": 1,
+    "postprocess": [
+     "remap.py --outline (P0): OKLab nearest, chroma x2, palette.json (48), alpha threshold 128, outer outline #2e1d14 + 1px pad",
+     "fit.py (items package): crop to bbox, centre in 32x32, never rescale",
+     "rev2: #4fae93 shade on the right body side, right sleeve, under the collar and above the hem; #eef8fb highlights on the left shoulder; body 2 rows shorter and 2 px narrower"
+    ],
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)",
+    "package": "goods-c",
+    "source": "phase1/goods-c/pal/clothing.png"
+   },
+   "verification": {
+    "native_scale_reviewed": true,
+    "in_engine_reviewed": true,
+    "technical_checks_passed": true,
+    "approved_by": "owner (design session, 2026-10-31)",
+    "notes": "packed by scripts/art/build-items.py"
+   }
+  },
+  {
+   "id": "good-computers",
+   "area": "items",
+   "role": "light industry good icon: Máy tính (GOODS id `computers`, group light)",
+   "path": "public/ta-tua/game/assets/items/items-0.webp#computers",
+   "status": "approved",
+   "technical": {
+    "dimensions": "32x32",
+    "content_bbox": [
+     4,
+     4,
+     28,
+     28
+    ],
+    "alpha": true,
+    "anchor": "centre (icon, content centred in canvas)",
+    "frames": 1,
+    "filtering": "nearest",
+    "scale": "integer: 1x (32 px) clan warehouse and production tables, price grid, trades, industry chain, plot panel, shop ask book; html zoom compensated",
+    "atlas_frame": [
+     "items-0.webp",
+     364,
+     133,
+     32,
+     32
+    ]
+   },
+   "visual_locks": [
+    "palette.json",
+    "view: low top-down",
+    "light: top-left",
+    "outline: #2e1d14 outer (uniform, checked)",
+    "icon canvas 32x32, centred"
+   ],
+   "provenance": {
+    "kind": "generated+edited",
+    "tool": "PixelLab MCP create_map_object + local PIL edits (scripts/rev2.py)",
+    "mode": "basic",
+    "pixellab_id": "42b8f76e-b318-4afa-8931-d36ea9e6f170",
+    "prompt": "cute small desktop computer, a chunky cream plastic monitor with a glowing pale blue blank screen on a short stand, a little cream keyboard with square keys lying in front of it, chunky simple shapes, soft light from top-left, dark brown outline",
+    "params": {
+     "view": "low top-down",
+     "outline": "single color outline",
+     "shading": "medium shading",
+     "detail": "medium detail",
+     "size": "32x32"
+    },
+    "created_at": "2026-10-31",
+    "generation_cost": 1,
+    "postprocess": [
+     "remap.py --outline (P0): OKLab nearest, chroma x2, palette.json (48), alpha threshold 128, outer outline #2e1d14 + 1px pad",
+     "fit.py (items package): crop to bbox, centre in 32x32, never rescale",
+     "rev2: monitor 4 px narrower and 2 px lower, keyboard -> one slim key strip; case #ecd8bf -> #dcc0a0 with #ecd8bf top/left edge and #c4bcb0 right side (no UI-cream #fbf1e3 left); blank mint screen kept"
+    ],
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)",
+    "package": "goods-c",
+    "source": "phase1/goods-c/pal/computers.png"
+   },
+   "verification": {
+    "native_scale_reviewed": true,
+    "in_engine_reviewed": true,
+    "technical_checks_passed": true,
+    "approved_by": "owner (design session, 2026-10-31)",
+    "notes": "packed by scripts/art/build-items.py"
+   }
+  },
+  {
+   "id": "good-fuel",
+   "area": "items",
+   "role": "heavy industry good icon: Xăng dầu (GOODS id `fuel`, group heavy)",
+   "path": "public/ta-tua/game/assets/items/items-0.webp#fuel",
+   "status": "approved",
+   "technical": {
+    "dimensions": "32x32",
+    "content_bbox": [
+     6,
+     1,
+     26,
+     30
+    ],
+    "alpha": true,
+    "anchor": "centre (icon, content centred in canvas)",
+    "frames": 1,
+    "filtering": "nearest",
+    "scale": "integer: 1x (32 px) clan warehouse and production tables, price grid, trades, industry chain, plot panel, shop ask book; html zoom compensated",
+    "atlas_frame": [
+     "items-0.webp",
+     397,
+     133,
+     32,
+     32
+    ]
+   },
+   "visual_locks": [
+    "palette.json",
+    "view: low top-down",
+    "light: top-left",
+    "outline: #2e1d14 outer (uniform, checked)",
+    "icon canvas 32x32, centred"
+   ],
+   "provenance": {
+    "kind": "generated+edited",
+    "tool": "PixelLab MCP create_map_object + local PIL edits (scripts/rev2.py)",
+    "mode": "basic",
+    "pixellab_id": "bb831807-8dc4-49d2-a922-b1824550ff03",
+    "prompt": "cute chunky red metal jerry can fuel canister standing upright, rectangular body with a raised rim panel on its side, a carry handle on top and a short dark spout cap at one top corner, glossy bright red, chunky simple shapes, soft light from top-left, dark brown outline",
+    "params": {
+     "view": "low top-down",
+     "outline": "single color outline",
+     "shading": "medium shading",
+     "detail": "medium detail",
+     "size": "32x32"
+    },
+    "created_at": "2026-10-31",
+    "generation_cost": 1,
+    "postprocess": [
+     "remap.py --outline (P0): OKLab nearest, chroma x2, palette.json (48), alpha threshold 128, outer outline #2e1d14 + 1px pad",
+     "fit.py (items package): crop to bbox, centre in 32x32, never rescale",
+     "rev2: flat side panel -> embossed X on the front face (2 px #a84848 diagonals, #e84a5f lit edges, shaded top lip); spout cap redrawn bigger (6 px wide, lit grey top)"
+    ],
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)",
+    "package": "goods-c",
+    "source": "phase1/goods-c/pal/fuel.png"
+   },
+   "verification": {
+    "native_scale_reviewed": true,
+    "in_engine_reviewed": true,
+    "technical_checks_passed": true,
+    "approved_by": "owner (design session, 2026-10-31)",
+    "notes": "packed by scripts/art/build-items.py"
+   }
+  },
+  {
+   "id": "good-furniture",
+   "area": "items",
+   "role": "light industry good icon: Nội thất (GOODS id `furniture`, group light)",
+   "path": "public/ta-tua/game/assets/items/items-0.webp#furniture",
+   "status": "approved",
+   "technical": {
+    "dimensions": "32x32",
+    "content_bbox": [
+     5,
+     2,
+     26,
+     30
+    ],
+    "alpha": true,
+    "anchor": "centre (icon, content centred in canvas)",
+    "frames": 1,
+    "filtering": "nearest",
+    "scale": "integer: 1x (32 px) clan warehouse and production tables, price grid, trades, industry chain, plot panel, shop ask book; html zoom compensated",
+    "atlas_frame": [
+     "items-0.webp",
+     430,
+     133,
+     32,
+     32
+    ]
+   },
+   "visual_locks": [
+    "palette.json",
+    "view: low top-down",
+    "light: top-left",
+    "outline: #2e1d14 outer (uniform, checked)",
+    "icon canvas 32x32, centred"
+   ],
+   "provenance": {
+    "kind": "generated+edited",
+    "tool": "PixelLab MCP create_map_object + local PIL edits (scripts/fixes.py)",
+    "mode": "basic",
+    "pixellab_id": "e7592e02-f6b0-4682-8cd6-21219e24ed84",
+    "prompt": "cute little wooden chair, warm honey brown wood, rounded back rest with two vertical slats, square seat, four short sturdy legs, chunky simple shapes, soft light from top-left, dark brown outline",
+    "params": {
+     "view": "low top-down",
+     "outline": "single color outline",
+     "shading": "medium shading",
+     "detail": "medium detail",
+     "size": "32x32"
+    },
+    "created_at": "2026-10-31",
+    "generation_cost": 1,
+    "postprocess": [
+     "remap.py --outline (P0): OKLab nearest, chroma x2, palette.json (48), alpha threshold 128, outer outline #2e1d14 + 1px pad",
+     "fit.py (items package): crop to bbox, centre in 32x32, never rescale",
+     "wood ramp one step darker (pale tan -> honey brown)"
+    ],
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)",
+    "package": "goods-c",
+    "source": "phase1/goods-c/pal/furniture.png"
+   },
+   "verification": {
+    "native_scale_reviewed": true,
+    "in_engine_reviewed": true,
+    "technical_checks_passed": true,
+    "approved_by": "owner (design session, 2026-10-31)",
+    "notes": "packed by scripts/art/build-items.py"
+   }
+  },
+  {
+   "id": "good-machinery",
+   "area": "items",
+   "role": "heavy industry good icon: Máy móc (GOODS id `machinery`, group heavy)",
+   "path": "public/ta-tua/game/assets/items/items-0.webp#machinery",
+   "status": "approved",
+   "technical": {
+    "dimensions": "32x32",
+    "content_bbox": [
+     1,
+     1,
+     31,
+     31
+    ],
+    "alpha": true,
+    "anchor": "centre (icon, content centred in canvas)",
+    "frames": 1,
+    "filtering": "nearest",
+    "scale": "integer: 1x (32 px) clan warehouse and production tables, price grid, trades, industry chain, plot panel, shop ask book; html zoom compensated",
+    "atlas_frame": [
+     "items-0.webp",
+     463,
+     133,
+     32,
+     32
+    ]
+   },
+   "visual_locks": [
+    "palette.json",
+    "view: low top-down",
+    "light: top-left",
+    "outline: #2e1d14 outer (uniform, checked)",
+    "icon canvas 32x32, centred"
+   ],
+   "provenance": {
+    "kind": "hand-built",
+    "tool": "local PIL (scripts/gears.py)",
+    "mode": null,
+    "pixellab_id": null,
+    "prompt": null,
+    "params": {
+     "size": "32x32",
+     "method": "geometric drawing, palette colours only, outline added by gx.addoutline"
+    },
+    "created_at": "2026-10-31",
+    "generation_cost": 0,
+    "postprocess": [
+     "centre in 32x32 (gx.centre, never rescale)",
+     "hand-built in scripts/gears.py (0 gens): two meshing gears; steel gear with 8 even teeth, flat #9c948a hub, #6e6660 ring, centred 4x4 axle hole; small brass gear (#f4c24f/#d79c1c) at the lower right; 1 px thickness; no interior outline ink"
+    ],
+    "license": "original hand-built (team)",
+    "package": "goods-c",
+    "source": "phase1/goods-c/pal/machinery.png"
+   },
+   "verification": {
+    "native_scale_reviewed": true,
+    "in_engine_reviewed": true,
+    "technical_checks_passed": true,
+    "approved_by": "owner (design session, 2026-10-31)",
+    "notes": "packed by scripts/art/build-items.py"
+   }
+  },
+  {
+   "id": "good-medicine",
+   "area": "items",
+   "role": "light industry good icon: Thuốc (GOODS id `medicine`, group light)",
+   "path": "public/ta-tua/game/assets/items/items-0.webp#medicine",
+   "status": "approved",
+   "technical": {
+    "dimensions": "32x32",
+    "content_bbox": [
+     3,
+     2,
+     29,
+     29
+    ],
+    "alpha": true,
+    "anchor": "centre (icon, content centred in canvas)",
+    "frames": 1,
+    "filtering": "nearest",
+    "scale": "integer: 1x (32 px) clan warehouse and production tables, price grid, trades, industry chain, plot panel, shop ask book; html zoom compensated",
+    "atlas_frame": [
+     "items-0.webp",
+     496,
+     133,
+     32,
+     32
+    ]
+   },
+   "visual_locks": [
+    "palette.json",
+    "view: low top-down",
+    "light: top-left",
+    "outline: #2e1d14 outer (uniform, checked)",
+    "icon canvas 32x32, centred"
+   ],
+   "provenance": {
+    "kind": "hand-built",
+    "tool": "local PIL (scripts/pill.py)",
+    "mode": null,
+    "pixellab_id": null,
+    "prompt": null,
+    "params": {
+     "size": "32x32",
+     "method": "geometric drawing, palette colours only, outline added by gx.addoutline"
+    },
+    "created_at": "2026-10-31",
+    "generation_cost": 0,
+    "postprocess": [
+     "centre in 32x32 (gx.centre, never rescale)",
+     "hand-built in scripts/pill.py (0 gens): the capsule motif the game already uses (pill emoji in industry.js): fat two-tone capsule (#fffaf3 white upper-left half + #4fae93 teal lower-right half, round shading, one straight specular) tilted \\ (opposite to items pork), plus a small round white tablet with a score groove"
+    ],
+    "license": "original hand-built (team)",
+    "package": "goods-c",
+    "source": "phase1/goods-c/pal/medicine.png"
+   },
+   "verification": {
+    "native_scale_reviewed": true,
+    "in_engine_reviewed": true,
+    "technical_checks_passed": true,
+    "approved_by": "owner (design session, 2026-10-31)",
+    "notes": "packed by scripts/art/build-items.py"
+   }
+  },
+  {
+   "id": "good-processed_food",
+   "area": "items",
+   "role": "light industry good icon: Thực phẩm chế biến (GOODS id `processed_food`, group light)",
+   "path": "public/ta-tua/game/assets/items/items-0.webp#processed_food",
+   "status": "approved",
+   "technical": {
+    "dimensions": "32x32",
+    "content_bbox": [
+     5,
+     6,
+     27,
+     26
+    ],
+    "alpha": true,
+    "anchor": "centre (icon, content centred in canvas)",
+    "frames": 1,
+    "filtering": "nearest",
+    "scale": "integer: 1x (32 px) clan warehouse and production tables, price grid, trades, industry chain, plot panel, shop ask book; html zoom compensated",
+    "atlas_frame": [
+     "items-0.webp",
+     1,
+     166,
+     32,
+     32
+    ]
+   },
+   "visual_locks": [
+    "palette.json",
+    "view: low top-down",
+    "light: top-left",
+    "outline: #2e1d14 outer (uniform, checked)",
+    "icon canvas 32x32, centred"
+   ],
+   "provenance": {
+    "kind": "generated+edited",
+    "tool": "PixelLab MCP create_map_object + local PIL edits (scripts/fixes.py + scripts/rev2.py)",
+    "mode": "basic",
+    "pixellab_id": "13a66c3a-1615-48b4-b71f-f9bff3aaab23",
+    "prompt": "cute stack of two short round tin cans of food, one standing on top of the other, shiny silver metal lids and rims, bright red paper labels with a plain blank cream band around the middle, no text, chunky simple shapes, soft light from top-left, dark brown outline",
+    "params": {
+     "view": "low top-down",
+     "outline": "single color outline",
+     "shading": "medium shading",
+     "detail": "medium detail",
+     "size": "32x32"
+    },
+    "created_at": "2026-10-31",
+    "generation_cost": 1,
+    "postprocess": [
+     "remap.py --outline (P0): OKLab nearest, chroma x2, palette.json (48), alpha threshold 128, outer outline #2e1d14 + 1px pad",
+     "fit.py (items package): crop to bbox, centre in 32x32, never rescale",
+     "rev1 edits + rev2: bottom label band 3 rows with a tiny tomato (#e84a5f, #f4a3b4 highlight, #6dbb5a leaf) = food, no text"
+    ],
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)",
+    "package": "goods-c",
+    "source": "phase1/goods-c/pal/processed_food.png"
+   },
+   "verification": {
+    "native_scale_reviewed": true,
+    "in_engine_reviewed": true,
+    "technical_checks_passed": true,
+    "approved_by": "owner (design session, 2026-10-31)",
+    "notes": "packed by scripts/art/build-items.py"
+   }
+  },
+  {
+   "id": "good-ships",
+   "area": "items",
+   "role": "heavy industry good icon: Tàu thủy (GOODS id `ships`, group heavy)",
+   "path": "public/ta-tua/game/assets/items/items-0.webp#ships",
+   "status": "approved",
+   "technical": {
+    "dimensions": "32x32",
+    "content_bbox": [
+     3,
+     8,
+     29,
+     24
+    ],
+    "alpha": true,
+    "anchor": "centre (icon, content centred in canvas)",
+    "frames": 1,
+    "filtering": "nearest",
+    "scale": "integer: 1x (32 px) clan warehouse and production tables, price grid, trades, industry chain, plot panel, shop ask book; html zoom compensated",
+    "atlas_frame": [
+     "items-0.webp",
+     34,
+     166,
+     32,
+     32
+    ]
+   },
+   "visual_locks": [
+    "palette.json",
+    "view: low top-down",
+    "light: top-left",
+    "outline: #2e1d14 outer (uniform, checked)",
+    "icon canvas 32x32, centred"
+   ],
+   "provenance": {
+    "kind": "generated+edited",
+    "tool": "PixelLab MCP create_map_object + local PIL edits (scripts/fixes.py + scripts/rev2.py)",
+    "mode": "basic",
+    "pixellab_id": "6f8bdeba-41d6-4a97-8e13-25039f5eaea6",
+    "prompt": "cute little cargo ship seen from the side, chubby dark blue hull with a red bottom stripe, a small white cabin with round windows at the back, three colourful stacked cargo containers in orange, green and yellow on the deck, chunky simple shapes, soft light from top-left, dark brown outline",
+    "params": {
+     "view": "low top-down",
+     "outline": "single color outline",
+     "shading": "medium shading",
+     "detail": "medium detail",
+     "size": "32x32"
+    },
+    "created_at": "2026-10-31",
+    "generation_cost": 1,
+    "postprocess": [
+     "remap.py --outline (P0): OKLab nearest, chroma x2, palette.json (48), alpha threshold 128, outer outline #2e1d14 + 1px pad",
+     "fit.py (items package): crop to bbox, centre in 32x32, never rescale",
+     "rev1 edits + rev2: 1 px diagonal mast dropped (broke up at 1x); hull 1 px taller"
+    ],
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)",
+    "package": "goods-c",
+    "source": "phase1/goods-c/pal/ships.png"
+   },
+   "verification": {
+    "native_scale_reviewed": true,
+    "in_engine_reviewed": true,
+    "technical_checks_passed": true,
+    "approved_by": "owner (design session, 2026-10-31)",
+    "notes": "packed by scripts/art/build-items.py"
+   }
+  },
+  {
+   "id": "good-steel",
+   "area": "items",
+   "role": "heavy industry good icon: Thép (GOODS id `steel`, group heavy)",
+   "path": "public/ta-tua/game/assets/items/items-0.webp#steel",
+   "status": "approved",
+   "technical": {
+    "dimensions": "32x32",
+    "content_bbox": [
+     5,
+     5,
+     26,
+     27
+    ],
+    "alpha": true,
+    "anchor": "centre (icon, content centred in canvas)",
+    "frames": 1,
+    "filtering": "nearest",
+    "scale": "integer: 1x (32 px) clan warehouse and production tables, price grid, trades, industry chain, plot panel, shop ask book; html zoom compensated",
+    "atlas_frame": [
+     "items-0.webp",
+     67,
+     166,
+     32,
+     32
+    ]
+   },
+   "visual_locks": [
+    "palette.json",
+    "view: low top-down",
+    "light: top-left",
+    "outline: #2e1d14 outer (uniform, checked)",
+    "icon canvas 32x32, centred"
+   ],
+   "provenance": {
+    "kind": "hand-built",
+    "tool": "local PIL (scripts/girder2.py)",
+    "mode": null,
+    "pixellab_id": null,
+    "prompt": null,
+    "params": {
+     "size": "32x32",
+     "method": "geometric drawing, palette colours only, outline added by gx.addoutline"
+    },
+    "created_at": "2026-10-31",
+    "generation_cost": 0,
+    "postprocess": [
+     "centre in 32x32 (gx.centre, never rescale)",
+     "hand-built in scripts/girder2.py (0 gens): ONE short fat I-beam in one blue metal; the 13 px I cross-section (#3f8fc0 face, #2f6f9a web, #bfe3f2 flange top edges) dominates; beam recedes back-up-left so the lit left faces show; 2 rivets; #2f6f9a seam"
+    ],
+    "license": "original hand-built (team)",
+    "package": "goods-c",
+    "source": "phase1/goods-c/pal/steel.png"
+   },
+   "verification": {
+    "native_scale_reviewed": true,
+    "in_engine_reviewed": true,
+    "technical_checks_passed": true,
+    "approved_by": "owner (design session, 2026-10-31)",
+    "notes": "packed by scripts/art/build-items.py"
+   }
+  },
+  {
+   "id": "good-trains",
+   "area": "items",
+   "role": "heavy industry good icon: Tàu hỏa (GOODS id `trains`, group heavy)",
+   "path": "public/ta-tua/game/assets/items/items-0.webp#trains",
+   "status": "approved",
+   "technical": {
+    "dimensions": "32x32",
+    "content_bbox": [
+     2,
+     3,
+     30,
+     29
+    ],
+    "alpha": true,
+    "anchor": "centre (icon, content centred in canvas)",
+    "frames": 1,
+    "filtering": "nearest",
+    "scale": "integer: 1x (32 px) clan warehouse and production tables, price grid, trades, industry chain, plot panel, shop ask book; html zoom compensated",
+    "atlas_frame": [
+     "items-0.webp",
+     100,
+     166,
+     32,
+     32
+    ]
+   },
+   "visual_locks": [
+    "palette.json",
+    "view: low top-down",
+    "light: top-left",
+    "outline: #2e1d14 outer (uniform, checked)",
+    "icon canvas 32x32, centred"
+   ],
+   "provenance": {
+    "kind": "generated+edited",
+    "tool": "PixelLab MCP create_map_object + local PIL edits (scripts/rev2.py)",
+    "mode": "basic",
+    "pixellab_id": "d0cd463a-5875-4788-bd3b-3c107cb5d73b",
+    "prompt": "cute chunky toy steam locomotive train engine, short rounded dark green boiler with a tall black chimney at the front, red cab roof at the back, gold trim bands, big red wheels, chunky simple shapes, soft light from top-left, dark brown outline",
+    "params": {
+     "view": "low top-down",
+     "outline": "single color outline",
+     "shading": "medium shading",
+     "detail": "medium detail",
+     "size": "32x32"
+    },
+    "created_at": "2026-10-31",
+    "generation_cost": 1,
+    "postprocess": [
+     "remap.py --outline (P0): OKLab nearest, chroma x2, palette.json (48), alpha threshold 128, outer outline #2e1d14 + 1px pad",
+     "fit.py (items package): crop to bbox, centre in 32x32, never rescale",
+     "rev2: boiler #2f5a3a -> #3e7a3f base, #4e9a45 top-left highlight, #2f5a3a shadow side only; chimney #9c948a/#6e6660 lit faces; smokebox #6e6660/#4a3326; interior ink -> ramp steps"
+    ],
+    "license": "PixelLab output owned by the creator, commercial use allowed (PixelLab ToS §1.3, §3.3, https://pixellab.ai/termsofservice); not to be used to train other models without written permission (§1.2, §3.3)",
+    "package": "goods-c",
+    "source": "phase1/goods-c/pal/trains.png"
+   },
+   "verification": {
+    "native_scale_reviewed": true,
+    "in_engine_reviewed": true,
+    "technical_checks_passed": true,
+    "approved_by": "owner (design session, 2026-10-31)",
+    "notes": "packed by scripts/art/build-items.py"
+   }
   }
  ],
  "builds": {
@@ -10670,15 +13359,30 @@
      "icons": 43,
      "inputs_sha1": "d1a82d00497fd36c3c38731e65cfcf5964d548f9",
      "approved_by": "owner (design session, 2026-10-31)"
+    },
+    "goods-a": {
+     "icons": 15,
+     "inputs_sha1": "c8960730deff59de63e01f2997b454fa2fc0417a",
+     "approved_by": "owner (design session, 2026-10-31)"
+    },
+    "goods-b": {
+     "icons": 11,
+     "inputs_sha1": "9b5609d2213543fdcef9a5baefc5d681b8a19d1d",
+     "approved_by": "owner (design session, 2026-10-31)"
+    },
+    "goods-c": {
+     "icons": 15,
+     "inputs_sha1": "102b45b55b0ee9dddd2fc3b7e9e0dd5465de2362",
+     "approved_by": "owner (design session, 2026-10-31)"
     }
    },
    "files": {
-    "items-0.webp": 6154,
-    "items.json": 1453
+    "items-0.webp": 12518,
+    "items.json": 2564
    },
-   "total_bytes": 7607,
-   "frames": 43,
-   "inputs_sha1": "d1a82d00497fd36c3c38731e65cfcf5964d548f9"
+   "total_bytes": 15082,
+   "frames": 84,
+   "inputs_sha1": "aadab0b2b16b1024b34e3a674ea92fd66c3bd0b9"
   }
  }
 }

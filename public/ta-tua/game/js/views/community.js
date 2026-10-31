@@ -1,5 +1,6 @@
 // Bạn bè và Hội: kết bạn, thăm nhà, thả tim, tặng quà; lập/gia nhập Hội, góp quỹ, nâng cấp, dự án tuần.
 import { api } from '../api.js';
+import { itemIcon } from '../itemart.js';
 import { createPetFigure } from '../sprite.js';
 import { busyOf, esc, fmt, openModal, closeModal, viewHead, ageText } from '../ui.js';
 
@@ -162,7 +163,8 @@ export function renderCommunity(root, ctx) {
           ${p.done ? '<p class="up"><b>✓ Đã hoàn thành tuần này!</b></p>' : '<p class="muted">Góp đủ nguyên liệu từ kho để hoàn thành.</p>'}
           ${Object.entries(p.needs).map(([c, lots]) => {
             const have = p.progress[c] ?? 0;
-            return `<div class="meter"><div class="meter-head"><span>${commodities[c].icon} ${commodities[c].name}</span><span>${have.toLocaleString('vi-VN')}/${lots} lô</span></div>
+            // Icon 16-bit 32 điểm của mặt hàng (atlas assets/items), thay emoji cũ; chưa có hình thì vẫn emoji.
+            return `<div class="meter"><div class="meter-head"><span class="meter-good">${itemIcon({ id: c, icon: commodities[c].icon }, 3, 1)} ${commodities[c].name}</span><span>${have.toLocaleString('vi-VN')}/${lots} lô</span></div>
               <div class="bar xp"><i style="width:${Math.min(100, (have / lots) * 100)}%"></i></div>
               ${p.done || have >= lots ? '' : `<div class="row"><button class="btn small" data-contribute="${c}:10">Góp 1 lô</button><button class="btn small" data-contribute="${c}:50">Góp 5 lô</button></div>`}</div>`;
           }).join('')}
