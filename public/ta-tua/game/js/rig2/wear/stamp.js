@@ -16,8 +16,9 @@
 //             liếc theo), không ở N.
 //      cổ   : (floor(x + .5), floor(y + .5)) của neo cổ; cằm che (ctx.chin) xóa cả hình lẫn viền ở S/E; E lay đuôi khăn:
 //             các hàng `flutter` của hướng E dời dọc pose.flutter px (WEAR-SPEC D3).
-//      lưng : (floor(x), floor(y)) của neo lưng; "over" (WEAR-SPEC D1: quai ba lô, dây áo choàng ôm trước ngực) đặt
-//             cùng neo, vẽ SAU thân pet (trước khăn, kính, mũ), có viền riêng, cằm che.
+//      lưng : (floor(x), floor(y)) của neo lưng; "over" (WEAR-SPEC D1: quai ba lô, dây áo choàng ôm trước ngực) vẽ SAU
+//             thân pet (trước khăn, kính, mũ), có viền riêng, cằm che; đặt cùng neo lưng ở E/N, nhưng ở S đặt theo neo
+//             CỔ (floor(x + .5), floor(y + .5)): nhìn trước neo lưng nằm sau đầu, phần ôm trước ngực bắt đầu ngay dưới cằm.
 //      bùa  : (pyRound(x), pyRound(y)) của neo bùa, nhún xuống 1 px khi tick % 4 ≥ 2.
 //  - "layer": front (vẽ trên pet), behind (vẽ dưới pet), behindNfront (dưới pet ở S/E, trên pet ở N). index.js đọc
 //    entry.layer cho MỌI khe (WEAR-SPEC D6). Thêm (bảng của build-wear.mjs): `drape` (áo choàng, áo tơi: thú bốn chân
@@ -130,7 +131,9 @@ export function drawItem(slot, id, item, ctx, img, part = 'main') {
   if (!vd) return false;
   const f = v === 'E' && vd.flutter ? Math.max(-1, Math.min(1, Math.round(pose.flutter ?? 0))) : 0;
   const { pic, pivot } = outlined(slot, id, vn, v, part, vd, item.keys, f);
-  const [px, py] = anchorPixel(slot, ctx);
+  // "over" nhìn trước (khóa áo choàng, quai ba lô) đặt ở NEO CỔ: neo lưng S nằm sau cái đầu to ở mọi dáng khung (ở dáng
+  // tròn còn lọt giữa khối), nên khóa đặt theo neo lưng bị cằm che hết. Nhìn ngang, nhìn sau vẫn theo neo lưng (D1).
+  const [px, py] = anchorPixel(part === 'over' && v === 'S' ? 'neck' : slot, ctx);
   let x = px - pivot[0];
   let y = py - pivot[1];
   if (slot === 'head') {

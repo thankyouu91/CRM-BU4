@@ -10,17 +10,16 @@
 // dưới đáy, tay là hai mẩu tròn hai bên khối. Đi: nảy như quả bóng (walkPose).
 // Điểm neo: đầu, mặt, bùa do skeleton.js tính từ `dims`; CỔ và LƯNG tính lại theo khối (ballAnchors): cổ không thấp hơn 3/4
 // khối và luôn cách đất ít nhất 6 px (khăn, chuông của bé nhỏ tuổi không chạm đất), lưng ở 1/3 trên của khối, nhìn ngang
-// thì nằm trên mép sau thật của khối. Móc `anchors(sk, sp)` ở cuối file dành cho skeleton.js; trong lúc chờ dev nối móc,
-// body() tự áp vào ctx.sk.anchors (kết quả y hệt, áp hai lần không đổi gì).
+// thì nằm trên mép sau thật của khối. skeleton.js gọi móc `anchors(sk, sp)` ở cuối file ngay khi dựng bộ xương, nên mọi
+// nơi đọc điểm neo (đồ đeo, hình túi đồ, kiểm thử) đều thấy cổ và lưng theo khối.
 // Trường ctx MỚI cho đồ đeo: ctx.ballRows[y] = [x trái, x phải] (điểm ảnh, tính cả hai đầu) của khối ở hàng y (chỉ có ở
 // dáng tròn, đặt trong body(), hướng E chưa lật): để khăn quàng nhìn ngang chạy hết bề ngang khối (việc của họa sĩ đồ cổ).
 // Phần riêng từng loài (TUNE bên dưới): tay chân hồng (chuột chuông), chân ếch + đùi gập + hai u mắt trên đỉnh, đầu vuông
 // vai (ếch sen), lớp gai rêu: mép răng cưa quanh mặt, vương miện gai, vân chữ V (nhím rêu), vây chèo trước thò qua mép
 // trước - dưới + đuôi thuôn (hải cẩu), gai + vây đuôi + vây lưng, không chân, đi là nảy (cá nóc), móng heo có kẽ (heo
 // than, heo đất), khe bỏ xu trên lưng (heo đất), bàn tay đào đất có ba móng kem dính liền bàn tay (chuột chũi).
-// Còn tạm / chờ người khác: nảy cao hơn cho cá nóc và ếch (HOP) chỉ chạy khi skeleton.animPoses truyền loài vào walkPose;
-// móc `anchors` (dev rig); cằm che khăn (index.js) vẫn tính từ elip đầu nên khi cổ của bé được nâng, dải khăn dưới cằm hẹp
-// lại còn 1 - 2 hàng: nhờ dev cho ctx.chin theo điểm neo cổ (neck[1] − 0.8, với dáng khác thì y hệt hiện nay).
+// Đã nối ở bước ghép: skeleton.animPoses truyền loài vào walkPose (cá nóc và ếch nảy cao hơn, HOP), skeleton.js gọi móc
+// `anchors`, và index.js tính cằm che khăn (ctx.chin) theo điểm neo cổ (neck[1] − 0.8; dáng khác y hệt trước).
 import { FH, FW, RAMPS, gait, mAbove, mAnd, mAndNot, mEllipse, mOr, mOrInto, mTri, newMask, part, pyRound } from '../core.js';
 
 // ---------------------------------------------------------------- tinh chỉnh theo loài (chỉ trong file này)
@@ -683,9 +682,8 @@ function coinSlot(ctx, g) {
 function body(ctx) {
   const g = geo(ctx);
   const t = tune(ctx);
-  // Điểm neo theo khối tròn (cổ, lưng): xem ballAnchors. Tạm áp ở đây cho tới khi skeleton.js gọi móc `anchors` của dáng
-  // khung (khi đó dòng này không đổi gì nữa: kết quả tính lại từ cùng khối nên y hệt). Mép từng hàng của khối cho đồ đeo.
-  Object.assign(ctx.sk.anchors, ballAnchors(ctx.sk, g));
+  // Điểm neo theo khối tròn (cổ, lưng) đã có sẵn trong ctx.sk.anchors (skeleton.js gọi móc `anchors`, xem ballAnchors).
+  // Mép từng hàng của khối cho đồ đeo.
   ctx.ballRows = g.rows;
   const p0 = ctx.parts.length;
   const q0 = ctx.pixels.length;
@@ -744,7 +742,7 @@ function ballAnchors(sk, g) {
 
 // Đi: nảy như quả bóng, bẹp một chút lúc chạm đất (khung 0 và 3); khung 1 và 4 đã nhún lên 1 px (skeleton.animPoses).
 const WALK_SQ = [-0.5, 0, 0, -0.5, 0, 0];
-// Loài nhảy cao hơn khi đi (cá nóc, ếch): chỉ dùng được khi skeleton.animPoses truyền loài vào walkPose (tham số thứ 3).
+// Loài nhảy cao hơn khi đi (cá nóc, ếch): skeleton.animPoses truyền loài vào walkPose (tham số thứ 3).
 const HOP = { ca_noc: [0, -2, -1, 0, -2, -1], ech_sen: [0, -2, -1, 0, -2, -1] };
 
 export default {
@@ -759,10 +757,7 @@ export default {
   headZ: (view) => (view === 'N' ? 6 : 8),
   body: { S: body, E: body, N: body },
   head: { S: head, E: head, N: head },
-  /**
-   * Móc cho skeleton.js (chưa nối: nhờ dev rig gọi `arch.anchors?.(sk, sp)` sau khi tính điểm neo): điểm neo cổ và lưng
-   * theo khối tròn (ballAnchors). Trong lúc chờ, body() tự áp kết quả này vào ctx.sk.anchors.
-   */
+  /** Móc của skeleton.js (gọi `arch.anchors?.(sk, sp)` sau khi tính điểm neo): điểm neo cổ và lưng theo khối tròn. */
   anchors: (sk, sp) => ballAnchors(sk, geo({ sk, sp, view: sk.view })),
   walkPose: (i, view, sp) => {
     const hop = sp && HOP[sp.id];

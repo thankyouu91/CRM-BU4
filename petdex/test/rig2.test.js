@@ -18,6 +18,20 @@ const GAME = '../../public/ta-tua/game/js/';
 const { LIFE_STAGES, MASCOTS, SPECIES, WEARABLES } = await import(`${GAME}shared/pets.js`);
 const rig = await import(`${GAME}rig2/index.js`);
 
+const { BACK } = await import(`${GAME}rig2/wear/back.js`);
+
+/** Gọi fn với món lưng `id` tạm bỏ phần "over" (WEAR-SPEC D1: khóa áo, quai ba lô trước ngực), để soát riêng phần chính. */
+function withoutOver(id, fn) {
+  const saved = BACK[id];
+  if (!saved?.over) return fn();
+  BACK[id] = { ...saved, over: undefined };
+  try {
+    return fn();
+  } finally {
+    BACK[id] = saved;
+  }
+}
+
 const GOLDEN = new URL('./golden/rig2/', import.meta.url);
 const UPDATE = process.env.RIG2_UPDATE_GOLDEN === '1';
 const VIEWS = ['S', 'E', 'N', 'W'];
@@ -244,7 +258,10 @@ test('lớp đồ đeo (WEAR-SPEC D6): lưng và bùa dưới pet ở S/E/W, tr�
           for (const v of ['S', 'E', 'W']) {
             if (quad && v !== 'S' && DRAPES.includes(id)) continue; // D4: áo choàng phủ lưng thú bốn chân nhìn ngang (test riêng)
             // Đồ lưng nhìn ngang được phủ lên phần đuôi thò ra ngoài thân (backOverTail), không bao giờ lên thân.
-            const c = slot === 'back' && v !== 'S' ? changedOnTail(sp, st, v, { [slot]: id }) : changed(sp, st, v, { [slot]: id });
+            // Nhìn trước: phần chính dưới pet; phần "over" (khóa áo, quai ba lô, D1) có kiểm thử riêng.
+            const c = slot === 'back' && v !== 'S'
+              ? changedOnTail(sp, st, v, { [slot]: id })
+              : withoutOver(slot === 'back' ? id : null, () => changed(sp, st, v, { [slot]: id }));
             const onPet = c.body ?? c.onPet;
             const off = c.off ?? c.offPet;
             if (onPet || !off) bad.push(`${id} ${sp}/${st}/${v}: ${onPet} điểm đè lên pet, ${off} điểm lộ ra`);
@@ -307,12 +324,16 @@ test('đồ lưng nhìn ngang nằm trên phần đuôi thò ra ngoài thân, kh
   let overTail = 0;
   for (const sp of ALL.filter((s) => TAILS.tailFor(s) !== TAILS.TAILS.none)) {
     for (const st of ['kid', 'adult']) {
+      // Ngoại lệ (index.js wearHidden): món vẽ dưới pet mà gần như khuất hết (dưới VISIBLE_MIN điểm, ví dụ ba lô, đèn lồng
+      // trên cá chép rồng nhí nhố) thì vẽ trên pet; khi đó chỉ cần món hiện ra.
       for (const id of ['angel', 'batwings', 'backpack', 'cape']) {
         if (sp.body === 'quad' && DRAPES.includes(id)) continue;
+        if (rig.wearHidden(sp.id, st, 'E', 'back', id)) continue;
         const c = changedOnTail(sp.id, st, 'E', { back: id });
         if (c.body) bad.push(`${id} ${sp.id}/${st}/E: ${c.body} điểm đè lên thân`);
         overTail += c.tail;
       }
+      if (rig.wearHidden(sp.id, st, 'E', 'charm', 'lantern')) continue;
       const c = changedOnTail(sp.id, st, 'E', { charm: 'lantern' });
       if (c.tail || c.body) bad.push(`lantern ${sp.id}/${st}/E: bùa đè ${c.tail} điểm đuôi, ${c.body} điểm thân`);
     }
@@ -459,12 +480,15 @@ function explain(got, ref, want) {
   }
   return { bad, exact };
 }
-/** Khung có món `id` và khung cùng món nhưng hàm vẽ rỗng (cùng ctx.wear, cùng lớp). */
+/**
+ * Khung có món `id` và khung cùng món nhưng hàm vẽ hình chính rỗng (cùng ctx.wear, cùng lớp; phần "over" D1 giữ nguyên
+ * ở cả hai khung, vì nó có luật đặt riêng, xem kiểm thử phần "over").
+ */
 function renderPair(regs, slot, id, sp, st, v, pose, opts) {
   const got = rig.renderFrame(sp, st, v, pose, { [slot]: id }, { marks: false, ...opts }).img.data;
   const saved = regs[slot][id];
   const noop = () => {};
-  regs[slot][id] = { ...saved, S: noop, E: noop, N: noop, over: undefined };
+  regs[slot][id] = { ...saved, S: noop, E: noop, N: noop };
   try {
     return [got, rig.renderFrame(sp, st, v, pose, { [slot]: id }, { marks: false, ...opts }).img.data];
   } finally {
@@ -554,6 +578,18 @@ test('ctx.headTopCovered: chỉ món đội đầu che đỉnh đầu (không ph
   assert.equal(covered({ face: 'glasses' }), false);
 });
 
+/** Điểm neo nhìn ngang của skeleton.js khi chưa áp móc `anchors` của dáng khung. */
+function anchorsBeforeHook(sp, stage) {
+  const arch = rig.archetypeOf(sp);
+  const hook = arch.anchors;
+  arch.anchors = undefined;
+  try {
+    return rig.skeleton(sp, stage, 'E', {}).anchors;
+  } finally {
+    arch.anchors = hook;
+  }
+}
+
 test('điểm neo đồ đeo: bùa E ngoài cả đầu (WEAR-SPEC D6), lưng E của thú bốn chân dời lên vai (D4)', () => {
   for (const sp of ALL) {
     for (const st of LIFE_STAGES) {
@@ -563,7 +599,13 @@ test('điểm neo đồ đeo: bùa E ngoài cả đầu (WEAR-SPEC D6), lưng E 
       assert.ok(Math.abs(sk.anchors.charm[0] - (Math.min(bcx - brx, hcx - hrx) - 2.5)) < 1e-9, `${sp.id}/${st.key}: neo bùa E`);
       const old = bcx - brx * 0.45;
       const want = sp.body === 'quad' ? Math.max(old, hcx - hrx * 0.8) : old;
-      assert.ok(Math.abs(sk.anchors.back[0] - want) < 1e-9, `${sp.id}/${st.key}: neo lưng E`);
+      // Dáng có móc `anchors` (tròn: lưng trên mép sau thật của khối; rồng: lùi về sau) thì skeleton.js dùng kết quả của móc.
+      const arch = rig.archetypeOf(sp);
+      if (arch.anchors) {
+        const hooked = arch.anchors({ ...sk, anchors: anchorsBeforeHook(sp, st.key) }, sp);
+        assert.deepEqual(sk.anchors.back, hooked.back, `${sp.id}/${st.key}: neo lưng E theo móc của dáng`);
+        assert.ok(sk.anchors.back[0] <= want + 1e-9 || sp.body === 'round', `${sp.id}/${st.key}: neo lưng E không tiến lên trước`);
+      } else assert.ok(Math.abs(sk.anchors.back[0] - want) < 1e-9, `${sp.id}/${st.key}: neo lưng E`);
     }
   }
   const cat = rig.skeleton(rig.speciesOf('meo_bac'), 'adult', 'E', {});
@@ -575,25 +617,37 @@ test('phần "over" của đồ lưng (WEAR-SPEC D1): vẽ sau thân pet, có vi
   const { dataEntry } = await import(`${GAME}rig2/wear/stamp.js`);
   const saved = BACK.backpack;
   const data = structuredClone(saved.data);
-  data.views.S.over = { pivot: [6, 0], rows: ['YY', 'YY', 'YY', 'YY', 'YY', 'YY'] }; // khóa vàng, cột x − 6, x − 5 của neo lưng
+  // khóa vàng 2 × 6, cột x − 6, x − 5 và hàng y − 3 .. y + 2 của neo cổ (S: over đặt theo neo cổ, ngay dưới cằm)
+  data.views.S.over = { pivot: [6, 3], rows: ['YY', 'YY', 'YY', 'YY', 'YY', 'YY'] };
   BACK.backpack = dataEntry('back', 'backpack', data);
   try {
     rig.clearWearIcons();
-    const plain = changed('boba', 'adult', 'S', { back: 'cape' });
+    const plain = changed('boba', 'adult', 'S', { back: 'batwings' });
     assert.equal(plain.onPet, 0);
     const c = changed('boba', 'adult', 'S', { back: 'backpack' });
     assert.ok(c.onPet >= 8, `over phải đè lên ngực pet (${c.onPet} điểm)`);
-    const [ax, ay] = rig.skeleton('boba', 'adult', 'S', {}).anchors.back;
+    const [ax, ay] = rig.skeleton('boba', 'adult', 'S', {}).anchors.neck;
     const got = rig.renderFrame('boba', 'adult', 'S', {}, { back: 'backpack' }, { marks: false }).img.data;
     const bare = rig.renderFrame('boba', 'adult', 'S', {}, {}, { marks: false }).img.data;
     const px = (img, x, y) => [...img.subarray((y * 48 + x) * 4, (y * 48 + x) * 4 + 4)].join();
-    const [x, y] = [Math.floor(ax) - 6, Math.floor(ay)];
+    const [x, y] = [Math.floor(ax + 0.5) - 6, Math.floor(ay + 0.5) - 3];
     assert.equal(px(got, x, y), px(bare, x, y), 'cằm phải che phần over');
-    assert.notEqual(px(got, x, y + 2), px(bare, x, y + 2), 'over dưới cằm phải hiện (trước ngực, trên thân pet)');
+    assert.notEqual(px(got, x, y + 4), px(bare, x, y + 4), 'over dưới cằm phải hiện (trước ngực, trên thân pet)');
     assert.ok(rig.wearIcon('backpack'), 'hình túi đồ của món có over');
   } finally {
     BACK.backpack = saved;
     rig.clearWearIcons();
+  }
+  // Khóa áo choàng, quai ba lô (bước ghép): nhìn trước hiện ngay dưới cằm cả trên thân tròn to và dáng rồng, nơi phần
+  // chính của món (dải ló quanh người) bị thân che hết.
+  for (const id of ['cape', 'wavecape', 'starcape', 'aotoi', 'backpack']) {
+    assert.ok(BACK[id].over, `${id}: thiếu phần over nhìn trước`);
+    for (const sp of ['chuot_chuong', 'heo_than', 'thanh_long', 'meo_bac']) {
+      for (const st of ['baby', 'adult']) {
+        const c = changed(sp, st, 'S', { back: id });
+        assert.ok(c.onPet >= 8, `${id} ${sp}/${st}/S: khóa / quai chỉ ${c.onPet} điểm trước ngực`);
+      }
+    }
   }
 });
 

@@ -95,11 +95,16 @@ export function skeleton(sp, stage, view, pose = {}) {
   if (view === 'S') charm = [Math.max(bcx + brx, hcx + hrx * 0.8) + 3.0, bcy - 2.0];
   else if (view === 'N') charm = [Math.min(bcx - brx, hcx - hrx * 0.8) - 3.0, bcy - 2.0];
   else charm = [Math.min(bcx - brx, hcx - hrx) - 2.5, bcy - 2.0];
-  return {
+  const result = {
     arch: arch.id, st, hk, bk, legH, ground, bob, by, view,
     body: [bcx, bcy, brx, bryEff], head: [hcx, hcy, hrx, hry], htop, btop, eyeY, eyeDx, big,
     anchors: { head: headA, face, neck, back, charm },
   };
+  // Móc của dáng khung: điểm neo theo hình thật của dáng (dáng tròn: cổ, lưng theo khối bóng; dáng rồng: lưng nhìn ngang
+  // lùi về sau). Hàm thuần, trả về bộ điểm neo mới (hoặc không trả gì thì giữ nguyên).
+  const a = arch.anchors?.(result, sp);
+  if (a) result.anchors = a;
+  return result;
 }
 
 // ---------------------------------------------------------------- hoạt ảnh (tên play() của sprite.js)
@@ -144,7 +149,8 @@ export const ANIMS = {
 
 /**
  * Dáng từng khung của hoạt ảnh `anim` ở hướng `view` cho loài `sp`: thêm nhún 1 px ở khung 1 và 4 của dáng đi,
- * và phần riêng của dáng khung (chim đi lạch bạch: archetype.walkPose). Khung có `view` riêng thì giữ nguyên.
+ * và phần riêng của dáng khung (chim đi lạch bạch, cá nóc và ếch nảy cao: archetype.walkPose(i, view, sp)).
+ * Khung có `view` riêng thì giữ nguyên.
  */
 export function animPoses(sp, anim, view) {
   const def = ANIMS[anim] ?? ANIMS.idle;
@@ -152,7 +158,7 @@ export function animPoses(sp, anim, view) {
   return def.frames.map((p, i) => {
     const pose = { ...p };
     if (anim === 'walk' && (i === 1 || i === 4)) pose.lift = -1;
-    if (anim === 'walk' && arch.walkPose) Object.assign(pose, arch.walkPose(i, view));
+    if (anim === 'walk' && arch.walkPose) Object.assign(pose, arch.walkPose(i, view, sp));
     return pose;
   });
 }

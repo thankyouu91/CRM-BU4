@@ -78,11 +78,17 @@ export function renderFrame(species, stage, view = 'S', pose = {}, wear = {}, op
   const st = fittedLook(sp, stage, level);
   let r = draw(sp, st, view, pose, wear, opts, level);
   // Nhảy cao (hoặc giãn người) mà chạm mép trên của ô (bé tai dài, bé lớn theo cấp): nhảy thấp lại, giãn ít lại cho vừa ô.
+  // Bẹp người (lấy đà, tiếp đất) mà chạm mép trái/phải (rồng dài nhìn ngang ở cấp cao): bẹp ít lại.
   let lift = pose.lift ?? 0;
   let sq = pose.sq ?? 0;
-  while (opts.fit !== false && (lift < 0 || sq > 0) && (bbox(r.img)?.y0 ?? 1) < 1) {
-    if (lift < 0) lift += 1;
-    else sq -= 1;
+  while (opts.fit !== false) {
+    const b = bbox(r.img);
+    if (b && b.y0 < 1 && (lift < 0 || sq > 0)) {
+      if (lift < 0) lift += 1;
+      else sq -= 1;
+    } else if (b && (b.x0 < 1 || b.x1 > FW - 2) && sq < 0) {
+      sq = Math.min(0, sq + 0.5);
+    } else break;
     r = draw(sp, st, view, { ...pose, lift, sq }, wear, opts, level);
   }
   return r;
@@ -147,7 +153,8 @@ function collectParts(ctx, marks) {
   const { sp, view: v } = ctx;
   const arch = archetypeOf(sp);
   const feature = featureFor(sp.feature);
-  tailFor(sp)[v](ctx);
+  // Dáng tự vẽ đuôi (rồng: thân nối liền thành đuôi, `ownsTail`) thì bỏ qua parts/tails.js (SERP-01).
+  if (!arch.ownsTail) tailFor(sp)[v](ctx);
   ctx.tailParts = [0, ctx.parts.length]; // để vẽ đồ lưng lên phần đuôi thò ra ngoài thân (backOverTail)
   const e0 = ctx.parts.length;
   earsFor(sp.ears)[v](ctx);
@@ -167,7 +174,6 @@ function draw(sp, st, view, pose, wear, opts, level) {
   const v = mirrorW ? 'E' : view;
   const sk = skeleton(sp, st, v, pose);
   const feature = featureFor(sp.feature);
-  const [, hcy, , hry] = sk.head;
   const ctx = makeCtx(sp, st, sk, v, pose, wear, { tick: opts.tick, level });
   const marks = opts.marks !== false;
 
@@ -177,8 +183,9 @@ function draw(sp, st, view, pose, wear, opts, level) {
   // 2) tô bóng, viền một lần cho cả khối
   const pet = outline(colourise(ctx.parts, ctx.pixels));
 
-  // Cằm che dải đồ cổ (chừa hàng cằm cuối để dải nhét dưới cằm).
-  if (v !== 'N') ctx.chin = mAnd(groupMask(ctx.parts, 'head'), mAbove(hcy + hry - 1.0));
+  // Cằm che dải đồ cổ (chừa hàng cằm cuối để dải nhét dưới cằm). Tính theo điểm neo cổ: dáng thường có cổ ở
+  // hcy + hry − 0.2 nên y hệt elip đầu (hcy + hry − 1.0); dáng tròn nâng cổ của bé nhỏ tuổi lên theo khối (round.js).
+  if (v !== 'N') ctx.chin = mAnd(groupMask(ctx.parts, 'head'), mAbove(sk.anchors.neck[1] - 0.8));
 
   // 3) ghép
   const img = newBuf();
@@ -188,7 +195,8 @@ function draw(sp, st, view, pose, wear, opts, level) {
     const e = WEARABLES[id]?.slot === slot ? wearEntry(slot, id) : null;
     if (e) worn[slot] = e;
   }
-  const front = (slot) => worn[slot] && wearInFront(slot, worn[slot], v, sk.arch);
+  const front = (slot) => worn[slot]
+    && (wearInFront(slot, worn[slot], v, sk.arch) || hiddenBehind(sp, st, v, slot, ctx.wear[slot], level));
   const drawSlot = (slot, dst = img) => {
     worn[slot][v](ctx, dst);
     if (slot === 'head' && v === 'S' && worn.head.earsOver && EARS_OVER.has(sp.ears)) earsOverHat(ctx, dst, pet);
@@ -231,6 +239,43 @@ function draw(sp, st, view, pose, wear, opts, level) {
   if (!mirrorW) return { img, anchors, sk };
   anchors = Object.fromEntries(Object.entries(anchors).map(([k, [x, y]]) => [k, [FW - x, y]]));
   return { img: mirror(img), anchors, sk };
+}
+
+/** Món đeo phải lộ ra ít nhất chừng này điểm (khớp kiểm thử "món nào đang đeo cũng hiện ra"). */
+export const VISIBLE_MIN = 8;
+const hiddenCache = new Map();
+/**
+ * Món bùa (S, E) hoặc đồ lưng (E) vốn vẽ DƯỚI pet nhưng gần như bị pet che hết (đuôi rồng cuộn, đuôi xòe của chim, thân
+ * cá chép to): vẽ lên TRÊN pet thay vì để món đã mua biến mất. "Gần như hết" = lộ ra ít hơn VISIBLE_MIN điểm (cánh nhìn
+ * ngang vốn chỉ ló chóp sau thân: vẫn đủ điểm, giữ dưới pet). Quyết theo dáng đứng yên (pose {}, tick 0) của loài, giai đoạn, cấp và hướng, rồi dùng
+ * cho mọi khung (đi, nhảy...): không nhấp nháy trước / sau giữa các khung. Bùa vẫn nấp sau đuôi khi còn lộ đủ (báo cáo
+ * khe bùa). Nhìn trước, đồ lưng dùng phần "over" (khóa áo, quai ba lô) thay cho luật này.
+ */
+function hiddenBehind(sp, st, v, slot, id, level = 1) {
+  if (!(slot === 'charm' && (v === 'S' || v === 'E')) && !(slot === 'back' && v === 'E')) return false;
+  const key = `${sp.id}|${st.scale}|${st.head}|${st.body}|${st.leg}|${st.eye}|${st.elder ? 1 : 0}|${v}|${slot}|${id}|${formIndex(level)}`;
+  if (hiddenCache.has(key)) return hiddenCache.get(key);
+  const o = { marks: false };
+  const bare = draw(sp, st, v, {}, {}, o, level).img;
+  hiddenCache.set(key, false);
+  const behind = draw(sp, st, v, {}, { [slot]: id }, o, level).img;
+  hiddenCache.set(key, true);
+  const ahead = draw(sp, st, v, {}, { [slot]: id }, o, level).img;
+  const diff = (a) => {
+    let n = 0;
+    for (let k = 0; k < NPX * 4; k += 4) if ([0, 1, 2, 3].some((c) => a.data[k + c] !== bare.data[k + c])) n++;
+    return n;
+  };
+  // Đồ đeo vẽ trước pet mà cũng không đổi gì (món rỗng, ngoài ô) thì giữ lớp của món.
+  const hidden = diff(behind) < VISIBLE_MIN && diff(ahead) >= VISIBLE_MIN;
+  hiddenCache.set(key, hidden);
+  return hidden;
+}
+
+/** Món `id` (khe `slot`) trên loài, giai đoạn, cấp này có bị kéo lên trên pet vì vẽ dưới pet thì gần như khuất hết không. */
+export function wearHidden(species, stage, view, slot, id, level = 1) {
+  const sp = speciesOf(species);
+  return hiddenBehind(sp, fittedLook(sp, stage, level), view === 'W' ? 'E' : view, slot, id, level);
 }
 
 /**
@@ -353,7 +398,8 @@ export function wearIcon(id, { grow = 1, view } = {}) {
       collectParts(ctx, false);
       const img = newBuf();
       e[v](ctx, img);
-      e.over?.(ctx, img);
+      // Phần "over" nhìn trước nằm ở neo cổ, xa hình chính (wear/stamp.js): hình túi đồ S chỉ là hình chính.
+      if (v !== 'S') e.over?.(ctx, img);
       const b = bbox(img);
       if (b) {
         const [ax, ay] = sk.anchors[slot];
@@ -378,6 +424,7 @@ export function wearIcon(id, { grow = 1, view } = {}) {
 /** Xóa bộ nhớ đệm hình món (kiểm thử, hoặc pet lab sau khi sửa nóng một món). */
 export const clearWearIcons = () => {
   iconCache.clear();
+  hiddenCache.clear();
   clearStampCache();
 };
 

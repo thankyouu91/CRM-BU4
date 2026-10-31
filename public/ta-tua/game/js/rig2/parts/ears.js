@@ -578,7 +578,7 @@ const CREST_ART = {
 };
 
 function crestEars(ctx) {
-  if (ctx.wear.head) return;
+  if (ctx.headTopCovered) return;
   const { sk, view, ramps } = ctx;
   const [hcx, hcy, hrx, hry] = sk.head;
   const kind = tune(ctx).crest ?? 'comb';

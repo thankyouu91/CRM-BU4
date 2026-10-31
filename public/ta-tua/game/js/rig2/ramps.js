@@ -58,7 +58,7 @@ export const SPECIES_RAMPS = {
   huou_reu: { main: 'tan', belly: 'wheat', accent: 'grass' }, // #b58a5e #f2e1c4 #7fae5d
   cao_la: { main: 'grass', belly: 'mint', accent: 'gold' }, // #7fbf6a #eef7dd #f4c45a
   rua_co_thu: { main: 'fur_green', belly: 'wheat', accent: 'fur_brown' }, // #9cc97a #efe6c5 #8a6a45 (mai nâu)
-  thanh_long: { main: 'aqua', belly: 'white', accent: 'teal' }, // #5fc79c #e6f7d9 #2f8f7a
+  thanh_long: { main: 'teal', belly: 'white', accent: 'lagoon' }, // #5fc79c #e6f7d9 #2f8f7a (aqua có bậc sáng gần trắng: rồng trông như phủ sương)
   // ---- Thủy: xanh nước, xanh đen
   rai_ca: { main: 'fur_brown', belly: 'wheat', accent: 'sky' }, // #a06e44 #f0d9b5 #5fb3e8
   canh_cut: { main: 'navy', belly: 'snow', accent: 'orange' }, // #3d4a6b #ffffff #f2a03d (sửa so với bản mẫu: xanh đen, không phải fur_blue)
@@ -73,17 +73,17 @@ export const SPECIES_RAMPS = {
   // ---- Hỏa: đỏ, cam, hồng
   cao_lua: { main: 'orange', belly: 'white', accent: 'flame' }, // #f08a4b #fff0dc #e2533b
   ga_trong: { main: 'orange', belly: 'butter', accent: 'red' }, // #f5a64a #ffe2b0 #e2493b
-  gau_meo_do: { main: 'flame', belly: 'charcoal', accent: 'white' }, // #d9643a #4a302c #fff2e0
-  ky_nhong: { main: 'flame', belly: 'cream', accent: 'charcoal' }, // #f26b3a #ffd38a #4a302c
-  heo_than: { main: 'salmon', belly: 'blossom', accent: 'flame' }, // #f29a7e #ffe0d2 #e2533b
+  gau_meo_do: { main: 'rust', belly: 'charcoal', accent: 'white' }, // #d9643a #4a302c #fff2e0 (flame: dải hồng ngang đầu)
+  ky_nhong: { main: 'orange', belly: 'cream', accent: 'charcoal' }, // #f26b3a #ffd38a #4a302c (flame: dải hồng ngang đầu)
+  heo_than: { main: 'piglet', belly: 'blossom', accent: 'flame' }, // #f29a7e #ffe0d2 #e2533b (salmon: bậc sáng màu đào, heo hai màu)
   lan_con: { main: 'gold', belly: 'butter', accent: 'red' }, // #f5c04a #fff3d0 #e2493b
-  rong_lua: { main: 'flame', belly: 'cream', accent: 'maroon' }, // #e2533b #ffd08a #7a2e2a
-  ung_lua: { main: 'brick', belly: 'gold', accent: 'maroon' }, // #c8402f #f5c04a #7a2e2a
+  rong_lua: { main: 'scarlet', belly: 'cream', accent: 'maroon' }, // #e2533b #ffd08a #7a2e2a (flame: dải hồng ngang đầu)
+  ung_lua: { main: 'vermilion', belly: 'gold', accent: 'maroon' }, // #c8402f #f5c04a #7a2e2a (brick: bậc sáng hồng)
   ngua_lua: { main: 'cream', belly: 'white', accent: 'flame' }, // #f6d4a6 #fff4e2 #f0663c
-  chu_tuoc: { main: 'red', belly: 'gold', accent: 'butter' }, // #e8403a #f8c25a #ffd75e
+  chu_tuoc: { main: 'scarlet', belly: 'gold', accent: 'butter' }, // #e8403a #f8c25a #ffd75e (red: bậc sáng hồng)
   // ---- Thổ: vàng đất, nâu, đất nung
-  chuot_chui: { main: 'stone', belly: 'latte', accent: 'pink' }, // #7d6253 #d8bfa5 #f3a7b5 (tự chọn ra slate: thân to nên nửa là bậc tối #4a3326, gần màu viền, ra gần đen)
-  heo_dat: { main: 'tan', belly: 'peach', accent: 'gold' }, // #d98a5f #f2c7a5 #f2c14e
+  chuot_chui: { main: 'taupe', belly: 'latte', accent: 'pink' }, // #7d6253 #d8bfa5 #f3a7b5 (slate: bậc tối #4a3326 sát màu viền, gần đen; stone: xám sáng quá, L 0.64 so với 0.52)
+  heo_dat: { main: 'terracotta', belly: 'peach', accent: 'gold' }, // #d98a5f #f2c7a5 #f2c14e (tan: vàng quá, không ra đất nung)
   nghe_dat: { main: 'stone', belly: 'latte', accent: 'white' }, // #8c7a6b #cdbba8 #efe6d8 (như chuot_chui: slate ra gần đen)
   lac_da: { main: 'sand', belly: 'wheat', accent: 'tan' }, // #e2c18c #f7e7c8 #b98a52
   cho_vang: { main: 'sand', belly: 'wheat', accent: 'fur_brown' }, // #e0b061 #fbeac8 #a8743c

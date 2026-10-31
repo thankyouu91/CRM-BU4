@@ -80,6 +80,19 @@ export const RAMPS = {
   maroon: ['#2e1d14', '#3d2a1f', '#6e2e24', '#8c3f2a', '#a84848'],
   flame: ['#6e2e24', '#b4643a', '#d65f5f', '#f39b4a', '#f4c24f'],
   salmon: ['#8c3f2a', '#d65f5f', '#f4a3b4', '#f2c49b', '#fbf1e3'],
+  // ---- thêm ở bước ghép (soát màu 51 loài so với shared/pets.js; vẫn đúng 48 màu, chỉ ghép bậc khác)
+  // Đỏ tươi lửa: bậc tối và giữa cùng sắc đỏ, bậc sáng cam (không có dải hồng giữa đầu như 'flame', 'red').
+  scarlet: ['#6e2e24', '#a84848', '#e84a5f', '#f39b4a', '#f4c24f'],
+  // Đỏ son sẫm (đại bàng lửa): như 'brick' nhưng bậc sáng đỏ tươi thay cho hồng.
+  vermilion: ['#6e2e24', '#8c3f2a', '#a84848', '#e84a5f', '#f39b4a'],
+  // Lợn hồng: như 'salmon' nhưng bậc sáng hồng nhạt thay cho màu đào (khối tròn to, vùng sáng rộng).
+  piglet: ['#8c3f2a', '#d65f5f', '#f4a3b4', '#ffd1dc', '#fffaf3'],
+  // Đất nung (heo đất): cam gạch, không vàng như 'tan'.
+  terracotta: ['#8c3f2a', '#b4643a', '#c88a62', '#f2c49b', '#fbf1e3'],
+  // Nâu xám chuột chũi: bậc tối nâu đậm #5c3a24 (không sát màu viền như 'slate'), bậc giữa và sáng xám.
+  taupe: ['#3d2a1f', '#5c3a24', '#6e6660', '#9c948a', '#c4bcb0'],
+  // Xanh ngọc đậm (điểm nhấn của Thanh Long khi thân đã dùng 'teal').
+  lagoon: ['#2e1d14', '#2f5a3a', '#2f7f73', '#4fae93', '#8fd3bf'],
 };
 
 // ---------------------------------------------------------------- màu

@@ -1,7 +1,7 @@
 // Đặc điểm riêng của loài: sổ đăng ký theo `feature` trong shared/pets.js. Chủ sở hữu: họa sĩ đặc điểm.
 // Mỗi mục { S, E, N } nhận ctx. Có năm chỗ để vẽ:
 //  - trên trán (crystal, drop, gem): điểm z 18, chỉ nhìn trước/ngang; luôn hiện, kể cả khi đội mũ (mũ lún 2 px, trán còn lộ);
-//  - trên đỉnh đầu (sprout, flame, pebble, mushroom, crest): điểm z 17, ngồi đúng mép đầu (topAt); đội mũ (ctx.wear.head) thì giấu;
+//  - trên đỉnh đầu (sprout, flame, pebble, mushroom, crest): điểm z 17, ngồi đúng mép đầu (topAt); đội món che đỉnh đầu (ctx.headTopCovered: mũ, vương miện; vầng hào quang, hoa cài, nơ thì không) thì giấu;
 //  - trên má (ember): điểm z 19.5 đè lên má hồng (blush) đã đổi màu cam;
 //  - quanh cổ (leafcollar): bộ phận tô bóng nằm trên thân, dưới tay và đầu (z 5.5), không xuống tới chân; đeo đồ cổ thì giấu;
 //  - đồ cầm tay (cup): `holds: true` (dáng biped thôi vẽ tay), vẽ vào ctx.held = { pixels, parts }: một lớp riêng,
@@ -141,7 +141,7 @@ function gem(ctx) {
 
 /** Mầm lá (thỏ lá, ếch sen...). */
 function sprout(ctx) {
-  if (ctx.wear.head) return;
+  if (ctx.headTopCovered) return;
   const { sk, view } = ctx;
   const [hcx] = sk.head;
   const x = pyRound(view !== 'E' ? hcx : hcx - 1);
@@ -169,7 +169,7 @@ const FLAME = [
   ['.R...', '.OR..', 'dOYR.', 'ROWYd', 'OYYOR', '.OYO.'],
 ];
 function flame(ctx) {
-  if (ctx.wear.head) return;
+  if (ctx.headTopCovered) return;
   const { sk, view } = ctx;
   const x = pyRound(view === 'E' ? sk.head[0] - 1 : sk.head[0]);
   const rows = FLAME[ctx.tick % 3];
@@ -190,7 +190,7 @@ const PEBBLE_SETS = [
 const PEBBLE = ['.LLM....', 'LHMMD.LM', 'MMMDDLMD', '.DDD..D.'];
 const PEBBLE_ONE = ['.LLM.', 'LHMMD', 'MMMDD', '.DDD.'];
 function pebble(ctx) {
-  if (ctx.wear.head) return;
+  if (ctx.headTopCovered) return;
   const { sk, view, sp } = ctx;
   const [hcx, , hrx] = sk.head;
   const keys = pick(ctx, PEBBLE_SETS.map((s) => [s.D, s.M, s.L, s.H]), 1, 0.25);
@@ -216,7 +216,7 @@ function pebble(ctx) {
  */
 const MUSHROOM = ['..lRR..', '.lWRRd.', 'lRRRWRd', '.ddddd.', '..sS...'];
 function mushroom(ctx) {
-  if (ctx.wear.head) return;
+  if (ctx.headTopCovered) return;
   const { sk, view } = ctx;
   const [hcx, , hrx] = sk.head;
   const R = RAMPS.red;
@@ -251,7 +251,7 @@ function spine(ctx, x, h, C, z = 17) {
 }
 const CREST_FIN = ['..l..', '.llm.', 'llmmd'];
 function crest(ctx) {
-  if (ctx.wear.head) return;
+  if (ctx.headTopCovered) return;
   const { sk, view } = ctx;
   const [hcx, hcy, hrx, hry] = sk.head;
   const C = RAMPS[ctx.ramps.accent];

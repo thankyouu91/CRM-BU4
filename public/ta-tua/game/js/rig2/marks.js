@@ -536,7 +536,9 @@ function browsAndBeard(ctx) {
   if (view === 'N') return;
   const [hcx, , hrx] = sk.head;
   if (sp.face !== 'beak') {
-    const top = view === 'S' ? pyRound(sk.eyeY + 1.6) + 4 : pyRound(sk.eyeY + 1.5) + 3;
+    // Mặt mõm heo (snout: đĩa mõm to, miệng ngay dưới đĩa): râu thấp thêm 2 hàng để nằm dưới mõm, không đè lên mõm và miệng.
+    const drop = sp.face === 'snout' ? 2 : 0;
+    const top = (view === 'S' ? pyRound(sk.eyeY + 1.6) + 4 : pyRound(sk.eyeY + 1.5) + 3) + drop;
     const x = view === 'S' ? pyRound(hcx) : pyRound(hcx + hrx * 0.62);
     const pts = [];
     BEARD[view].forEach(([a, b], j) => {

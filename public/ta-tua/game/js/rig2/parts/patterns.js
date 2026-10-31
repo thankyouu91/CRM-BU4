@@ -55,8 +55,10 @@ function bodyMask(ctx) {
 const bellyMask = (ctx) => partsMask(ctx, (p) => p.name === 'belly');
 /** Các mảng mặt (mõm, mặt nạ mỏ, má...): z = zh + 0.1 theo hợp đồng của parts/faces.js. */
 const faceMask = (ctx) => partsMask(ctx, (p) => Math.abs(p.z - (ctx.zh + 0.1)) < 1e-6);
-/** Vùng thân để vẽ hoa văn: thân trừ bụng. */
-const backMask = (ctx) => mAndNot(bodyMask(ctx), bellyMask(ctx));
+/** Vạch vảy bụng của dáng rồng (serpent.js 'splates'): hoa văn không vẽ đè lên (ngực rối, bước ghép). */
+const platesMask = (ctx) => partsMask(ctx, (p) => p.name === 'splates');
+/** Vùng thân để vẽ hoa văn: thân trừ bụng (và trừ vạch vảy bụng của dáng rồng). */
+const backMask = (ctx) => mAndNot(mAndNot(bodyMask(ctx), bellyMask(ctx)), platesMask(ctx));
 /** Vùng đầu để vẽ hoa văn: đầu trừ mảng mặt. */
 const headArea = (ctx) => (ctx.headMask ? mAndNot(ctx.headMask, faceMask(ctx)) : newMask());
 
@@ -544,7 +546,9 @@ function scales(ctx) {
   // thân: nhìn sau chừa cột sống lưng (đường gai/bờm, dải sáng của khối) để lưng không thành vải kẻ ô
   const skip = (x) => view === 'N' && Math.abs(x + 0.5 - bcx) < Math.max(1.5, brx * 0.2);
   scallops(ctx, backMask(ctx), { pw, ph, ramp, z: 4.2, prefix: 'scale', group: 'body', normal: nrm, skip });
-  if (t.belly) bellyBands(ctx);
+  // Dáng rồng (serpent.js) tự vẽ vạch vảy bụng ('splates', nhìn trước) và cố ý để bụng nhìn ngang trơn cho thân sau
+  // đọc thành một khối: khoanh bụng ở đây chồng lên đó thành ngực rối (bước ghép), nên chỉ vẽ cho dáng khác.
+  if (t.belly && ctx.sk.arch !== 'serpent') bellyBands(ctx);
   // đầu (tê tê): mũ vảy trên đỉnh và gáy; chừa mắt, mặt và vùng sáng nhất của đầu
   if (t.head && ctx.headMask) {
     const [, hcy, , hry] = sk.head;

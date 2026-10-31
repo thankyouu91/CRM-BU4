@@ -25,8 +25,8 @@
 //
 // ĐUÔI: dáng này TỰ VẼ đuôi (thân nối liền thành đuôi), `sp.tail` chỉ chọn CHÓP: 'dragon' → túm lông màu điểm nhấn
 // (Rồng Lửa: ngọn lửa; Kỳ Nhông: đốm lửa nhỏ vàng), 'fish' → vây đuôi cá chép xòe hai thùy. Dáng khai báo `ownsTail: true`
-// (đề nghị cho index.js: bỏ qua tails[...] với dáng này). Cho tới khi pipeline làm vậy, dropForeignTail() xóa trắng mặt nạ
-// mọi bộ phận parts/tails.js đã đẩy vào: chính xác theo ctx.earParts nếu pipeline có ghi (bản index.js của nhánh đồ đeo),
+// và index.js bỏ qua tails[...] với dáng này (đã nối ở bước ghép). dropForeignTail() chỉ còn là lưới an toàn: xóa trắng mặt nạ
+// mọi bộ phận parts/tails.js đã đẩy vào: chính xác theo ctx.earParts nếu pipeline có ghi (index.js có ghi),
 // không thì theo z của đuôi trong hợp đồng (ARTIST-GUIDE mục 8: 1 khi nhìn trước/ngang, 8 khi nhìn sau; tai 1.5, 2, 6-7),
 // không dựa vào tên bộ phận. Họa sĩ đuôi muốn đổi kiểu chóp thì sửa tailTip() ở đây (cùng chủ dáng serpent).
 //
@@ -41,8 +41,8 @@
 // ('s...' hoặc 'tailserp...': marks.js coi tên bắt đầu bằng 'tail' là đuôi) để không trùng nhóm với tai/đuôi/đặc điểm.
 //
 // Điểm neo: dims giữ đầu cỡ biped, ngực = sk.body, nên neo đầu/mặt/cổ/lưng/bùa của skeleton.js vẫn đúng; hoa văn (vảy, đốm),
-// dấu hiệu cấp (vằn hông), gậy lão làng, đồ cổ/lưng đều rơi lên ngực. anchors(sk, view, a) dưới đây là ĐỀ NGHỊ cho bộ xương
-// (SERP-03, chưa nối: skeleton.js cần gọi archetype.anchors?.(...)): nhìn ngang lùi neo lưng về sau cho đồ lưng lộ ra.
+// dấu hiệu cấp (vằn hông), gậy lão làng, đồ cổ/lưng đều rơi lên ngực. móc anchors(sk) dưới đây (skeleton.js gọi
+// arch.anchors?.(sk, sp) sau khi tính điểm neo, SERP-03): nhìn ngang lùi neo lưng về sau cho đồ lưng lộ ra.
 // Phụ thuộc của người khác: sừng/gạc/vây tai (parts/ears.js), mào/lửa/giọt/than hồng (parts/features.js), vảy/đốm
 // (parts/patterns.js), màu (ramps.js).
 // Hợp đồng (ARTIST-GUIDE mục 9): dims, headZ(view), body { S, E, N }(ctx), head { S, E, N }(ctx), walkPose(i, view).
@@ -585,7 +585,7 @@ function head(ctx) {
 const SWAY = [0, 1, 1, 0, -1, -1];
 
 /**
- * ĐỀ NGHỊ cho bộ xương (SERP-03, chưa nối): skeleton.js gọi `archetype.anchors?.(sk, view, anchors)` và dùng kết quả.
+ * Móc cho bộ xương (SERP-03): skeleton.js gọi `archetype.anchors?.(sk, sp)` và dùng kết quả (a = sk.anchors).
  * Nhìn ngang: neo lưng (đồ lưng vẽ SAU pet) lùi về sau 1.2-2.2 px dọc sống lưng, ra khỏi chỗ gáy to che, tới chỗ lưng
  * thấp trước gù: đo trên hình đồ đeo mới (nhánh đồ đeo), món lưng dưới 30% so với Boba giảm 40 → 32 trên 264 ô, tỉ lệ
  * trung bình 0.70 → 0.84 (đưa neo lên đỉnh gù làm cánh nấp sau đuôi cuộn: tệ hơn). Nhìn trước/sau giữ nguyên: nâng hay hạ
@@ -599,12 +599,12 @@ function anchors(sk, view, a) {
 export default {
   id: 'serpent',
   dims: { head: [11.4, 9.6], body: [5.4, 5.6], side: [5.4, 5.0], leg: 3.0, overlap: 3.6, fwd: 5.0, eShift: 2.0, neckE: 'head' },
-  /** Dáng tự vẽ đuôi (thân nối liền thành đuôi): đề nghị index.js bỏ qua tails[...] khi cờ này bật (SERP-01). */
+  /** Dáng tự vẽ đuôi (thân nối liền thành đuôi): index.js bỏ qua tails[...] khi cờ này bật (SERP-01). */
   ownsTail: true,
   headZ: (view) => (view === 'N' ? 6 : 8),
   /** Đi uốn lượn: nhìn trước/sau thân lắc ngang 1 px (như dáng chim), nhìn ngang thì sóng chạy dọc thân (sideBody). */
   walkPose: (i, view) => ({ sway: view === 'S' || view === 'N' ? SWAY[i] : 0 }),
-  anchors,
+  anchors: (sk) => anchors(sk, sk.view, sk.anchors),
   body: { S: (ctx) => frontBody(ctx, false), E: sideBody, N: (ctx) => frontBody(ctx, true) },
   head: { S: head, E: head, N: head },
 };

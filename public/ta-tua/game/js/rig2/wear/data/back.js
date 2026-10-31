@@ -151,6 +151,14 @@ export default {
           '..DDDDsDDDsDsDssgs..gDDDs.',
           'H.....D.......D.D...D...Dh',
         ],
+        over: {
+          pivot: [4, 0],
+          rows: [
+            'Hhh.g.hhs',
+            '.hhDgDhs.',
+            '...D.D...',
+          ],
+        },
       },
       E: {
         pivot: [13, 4],
@@ -197,6 +205,14 @@ export default {
           'HsDsDss..gs.DsDsDh',
           '...D.D...D...D....',
         ],
+        over: {
+          pivot: [3, 0],
+          rows: [
+            'Hh.g.hs',
+            '.hDgDs.',
+            '..D.D..',
+          ],
+        },
       },
       E: {
         pivot: [9, 2],
@@ -245,6 +261,15 @@ export default {
           '.ttrTTTTTTTTTTTTTTTtrtt.',
           '....tttttttttttttttt....',
         ],
+        over: {
+          pivot: [3, 0],
+          rows: [
+            'K.....K',
+            'k.....k',
+            'Y.....Y',
+            'k.....k',
+          ],
+        },
       },
       E: {
         pivot: [11, 4],
@@ -296,6 +321,14 @@ export default {
           'ttrTTTTTTTTTTTtrtt',
           '..rttttttttttttr..',
         ],
+        over: {
+          pivot: [2, 0],
+          rows: [
+            'K...K',
+            'Y...Y',
+            'k...k',
+          ],
+        },
       },
       E: {
         pivot: [8, 2],
@@ -601,6 +634,14 @@ export default {
           'TTToTTtTTTttTTttTTTtTTTTTT',
           '..TT..TTTTTTTTTTTTTT..TT..',
         ],
+        over: {
+          pivot: [4, 0],
+          rows: [
+            'TTt.Y.tTT',
+            '.tTYWyTt.',
+            '...tyt...',
+          ],
+        },
       },
       E: {
         pivot: [13, 4],
@@ -647,6 +688,14 @@ export default {
           'ToTTtTTtTTtTTtTTTT',
           '.T..TTTTTTTTTT..T.',
         ],
+        over: {
+          pivot: [3, 0],
+          rows: [
+            'Tt.Y.tT',
+            '.TYWyT.',
+            '...y...',
+          ],
+        },
       },
       E: {
         pivot: [9, 2],
@@ -1110,6 +1159,15 @@ export default {
           '.ybyynnyynnyynnyynnyyny.',
           '..Y..yy..yy..yy..yy..Y..',
         ],
+        over: {
+          pivot: [4, 0],
+          rows: [
+            'bnn.Y.nnb',
+            '.nnYWYnn.',
+            '...yYy...',
+            '....y....',
+          ],
+        },
       },
       E: {
         pivot: [13, 4],
@@ -1156,6 +1214,14 @@ export default {
           'ybyynyynyynyynyyny',
           '.Y..Y..Y..Y..Y..Y.',
         ],
+        over: {
+          pivot: [3, 0],
+          rows: [
+            'bn.Y.nb',
+            '.nYWYn.',
+            '...y...',
+          ],
+        },
       },
       E: {
         pivot: [9, 2],
@@ -1202,6 +1268,14 @@ export default {
           'lff.ltffltffltffltf.lTf.l',
           'f...ff..ff..ff..ff..ff..f',
         ],
+        over: {
+          pivot: [4, 0],
+          rows: [
+            'TTt.F.tTT',
+            '.tTfFfTt.',
+            '...lfl...',
+          ],
+        },
       },
       E: {
         pivot: [13, 4],
@@ -1248,6 +1322,14 @@ export default {
           'ffflffltfltflfflf.',
           '...f..ff.ff.f..f..',
         ],
+        over: {
+          pivot: [3, 0],
+          rows: [
+            'Tt.F.tT',
+            '.TfFfT.',
+            '...l...',
+          ],
+        },
       },
       E: {
         pivot: [9, 2],
