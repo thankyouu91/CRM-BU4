@@ -317,7 +317,8 @@ const rand = (lo, hi) => lo + Math.random() * (hi - lo);
 
 /**
  * Gắn cảnh 16-bit vào `world` (phần tử thế giới của park.js, đơn vị thế giới = data.px điểm ảnh gốc).
- * Trả về { nav, update(bodies), destroy() }: `update` làm mờ đồ vật đang che bé đứng sau nó.
+ * Trả về { nav, update(bodies), destroy() }: `update` làm mờ đồ vật che thân bé đứng sau nó, và cho biết bé nào
+ * cần nâng lên trên một đồ vật chỉ che bảng tên (thân không bị che) để tên luôn đọc được.
  */
 export function mountPark16(world, art) {
   const { data, ground, atlas } = art;
@@ -586,13 +587,22 @@ export function mountPark16(world, art) {
     nav,
     /** `bodies`: [{ x, y, h }] theo đơn vị thế giới (chân và chiều cao các bé). */
     update(bodies) {
+      const lifts = bodies.map(() => 0);
       for (const o of occluders) {
-        const hide = bodies.some((b) => b.y < o.y1 && b.y + 46 > o.y0 && b.x + 26 > o.x0 && b.x - 26 < o.x1 && b.y - b.h < o.y1);
+        let hide = false;
+        bodies.forEach((b, i) => {
+          if (b.y >= o.y1) return; // bé đứng trước đồ vật
+          const body = b.x + 24 > o.x0 && b.x - 24 < o.x1 && b.y > o.y0 && b.y - b.h < o.y1;
+          const tag = b.x + 60 > o.x0 && b.x - 60 < o.x1 && b.y + 50 > o.y0 && b.y + 4 < o.y1;
+          if (body) hide = true;
+          else if (tag) lifts[i] = Math.max(lifts[i], o.y1 + 1);
+        });
         if (hide !== o.faded) {
           o.faded = hide;
           o.el.classList.toggle('pk-fade', hide);
         }
       }
+      return lifts;
     },
     destroy() {
       cancelAnimationFrame(raf);

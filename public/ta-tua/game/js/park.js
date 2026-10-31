@@ -142,7 +142,7 @@ export function mountPark(root, ctx) {
   function place(e) {
     e.el.style.left = `${e.x}px`;
     e.el.style.top = `${e.y}px`;
-    e.el.style.zIndex = String(Math.round(e.y));
+    e.el.style.zIndex = String(Math.max(Math.round(e.y), e.lift ?? 0));
   }
 
   function setPet(e, player) {
@@ -297,7 +297,13 @@ export function mountPark(root, ctx) {
     // Đồ vật che bé đứng sau nó thì mờ đi, để vẫn thấy bé và tên.
     if (scene && now - occludedAt > 120) {
       occludedAt = now;
-      scene.update([...entities.values()].map((e) => ({ x: e.x, y: e.y, h: petHeight(e) })));
+      const list = [...entities.values()];
+      const lifts = scene.update(list.map((e) => ({ x: e.x, y: e.y, h: petHeight(e) })));
+      list.forEach((e, i) => {
+        if (lifts[i] === (e.lift ?? 0)) return;
+        e.lift = lifts[i];
+        place(e);
+      });
     }
     raf = requestAnimationFrame(step);
   }
