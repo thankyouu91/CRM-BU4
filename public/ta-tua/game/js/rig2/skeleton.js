@@ -83,12 +83,18 @@ export function skeleton(sp, stage, view, pose = {}) {
     headA = [hcx, htop];
     neck = [bcx + (hcx - bcx) * 0.5, hcy + hry - 0.2];
   }
-  const back = view === 'E' ? [bcx - brx * 0.45, btop + 1.5] : [bcx, btop + 1.0];
-  // Bùa lơ lửng bên hông, ngoài cả đầu lẫn thân: bên phải khi nhìn trước, bên trái khi nhìn sau, sau đuôi khi nhìn ngang.
+  // Vai. Nhìn ngang, thú bốn chân thân dài: neo dời lên phía vai, ngay sau gáy (hcx − hrx × 0.8), để áo choàng buộc ở
+  // đường cổ chứ không ở giữa lưng (WEAR-SPEC D4); dáng khác giữ chỗ cũ (bcx − brx × 0.45).
+  let back;
+  if (view !== 'E') back = [bcx, btop + 1.0];
+  else if (arch.id === 'quad') back = [Math.max(bcx - brx * 0.45, hcx - hrx * 0.8), btop + 1.5];
+  else back = [bcx - brx * 0.45, btop + 1.5];
+  // Bùa lơ lửng bên hông, ngoài cả đầu lẫn thân: bên phải khi nhìn trước, bên trái khi nhìn sau, sau mông khi nhìn ngang
+  // (ngoài cả bề ngang ĐẦY ĐỦ của đầu: WEAR-SPEC D6, đầu to của bé nhỏ tuổi không che bùa).
   let charm;
   if (view === 'S') charm = [Math.max(bcx + brx, hcx + hrx * 0.8) + 3.0, bcy - 2.0];
   else if (view === 'N') charm = [Math.min(bcx - brx, hcx - hrx * 0.8) - 3.0, bcy - 2.0];
-  else charm = [bcx - brx - 2.5, bcy - 2.0];
+  else charm = [Math.min(bcx - brx, hcx - hrx) - 2.5, bcy - 2.0];
   return {
     arch: arch.id, st, hk, bk, legH, ground, bob, by, view,
     body: [bcx, bcy, brx, bryEff], head: [hcx, hcy, hrx, hry], htop, btop, eyeY, eyeDx, big,

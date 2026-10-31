@@ -1,4 +1,6 @@
 // Đồ đeo, phần dùng chung cho 5 file khe (head, face, neck, back, charm). Chủ sở hữu: dev. Họa sĩ chỉ gọi, không sửa.
+// Từ gói vẽ phase 2, cả 55 món vẽ từ DỮ LIỆU (wear/data/*.js, luật đặt ở wear/stamp.js). File này giữ đường DỰ PHÒNG:
+// hình cũ của rig.js (LEGACY trong từng file khe) cho món nào chưa có dữ liệu, và blitClipped (dùng chung cho cả hai).
 //
 // Hợp đồng của một món trong sổ khe: { S(ctx, img), E(ctx, img), N(ctx, img) }.
 //  - img: bộ đệm 48×48 đang ghép (core.js newBuf); vẽ thẳng lên đó bằng blit / setPx / putPixels.
@@ -9,7 +11,7 @@
 //    ctx.pose, ctx.tick (số khung, cho món đung đưa), ctx.sk (đầu, thân, mắt, mặt đất: xem skeleton.js), ctx.ramps,
 //    ctx.chin (mặt nạ cằm, khe cổ; null ở hướng N và trong wearIcon).
 //  - Hình biểu tượng (túi đồ, cửa hàng, bé khách mời) luôn là hình S của món, do wearIcon() trong index.js tự cắt.
-// Món chưa vẽ lại dùng hình cũ của rig.js (LEGACY trong từng file khe), đã ép về bảng màu và viền #2e1d14,
+// Món chưa có dữ liệu dùng hình cũ của rig.js (LEGACY trong từng file khe), đã ép về bảng màu và viền #2e1d14,
 // hiện ở cả S và E (W = E lật) để bé đi bộ trong công viên vẫn mặc đủ đồ đã mua; luật từng khe xem legacyEntry.
 // Món lưng, cổ, bùa không bao giờ thò xuống dưới mặt đất (ctx.sk.ground): bé sơ sinh và nhí nhố người thấp; món lưng và
 // bùa không chạm mép trái/phải của ô.

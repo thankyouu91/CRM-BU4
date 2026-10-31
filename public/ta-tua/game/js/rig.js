@@ -94,8 +94,9 @@ export function animFrames(species, stageKey, anim, wear = {}, opts = {}) {
 
 const wearCanvas = new Map();
 /**
- * Hình món `id` đúng như vẽ lên người (hướng S), dạng canvas (Túi đồ, Siêu thị dùng làm biểu tượng); null nếu chưa có hình.
- * opts.grow: như wearIcon (bé khách mời Petdex dùng khăn rộng hơn để lộ ra hai bên người).
+ * Hình món `id` đúng như vẽ lên người (hướng S), dạng canvas cỡ 1x (Túi đồ, Siêu thị, Nhà/thay đồ dùng làm biểu tượng):
+ * với 55 món của gói vẽ phase 2 đó là hình dán S đã viền #2e1d14 (rig2/wear/data, wearIcon); null nếu chưa có hình.
+ * opts.grow: như wearIcon (món vẽ theo bộ xương thì rộng ra; hình dán cố định thì không đổi).
  */
 export function wearImage(id, opts = {}) {
   const key = `${id}|${opts.grow ?? 1}`;
