@@ -84,6 +84,11 @@ export function itemArt(id) {
   return cache.get(id);
 }
 
+/** Món `id` có icon 16-bit trong atlas không: dòng chữ cạnh icon đó thì bỏ emoji cũ, để một thứ không ra hai hình khác nhau. */
+export function hasAtlasIcon(id) {
+  return Object.hasOwn(ITEM_ATLAS.frames, id) && Boolean(ITEM_ATLAS.pages[ITEM_ATLAS.frames[id][0]]);
+}
+
 /**
  * HTML hình của món đồ (`item` cần `id`, và `icon` là emoji dự phòng); món chưa có hình thì trả về emoji.
  * - `scale`: icon atlas 32x32 phóng nguyên lần: 2 = 64 điểm (thẻ Siêu thị, Túi đồ, trứng), 1 = 32 điểm (danh sách).

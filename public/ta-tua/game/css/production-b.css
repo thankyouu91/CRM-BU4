@@ -316,6 +316,8 @@
 .flow-sub { color: var(--muted); }
 .flow-arrow { display: grid; justify-items: center; align-content: center; gap: 2px; font-weight: 800; font-size: .85rem; color: var(--muted); }
 .flow-arrow i { font-style: normal; font-size: 1.6rem; color: var(--tea-deep); }
+/* "2 [icon]" trong công thức xưởng: số lô và icon 16-bit đi liền nhau, không xuống dòng giữa chừng */
+.fx-spec { display: inline-flex; align-items: center; gap: 2px; white-space: nowrap; vertical-align: middle; }
 .factory-crew { display: grid; gap: 8px; padding: 12px; border-radius: 16px; background: #fffaf2; border: 2px solid var(--line); }
 .factory-toggle { display: flex; align-items: flex-start; gap: 10px; padding: 8px 10px; border-radius: 12px; background: #fff; border: 2px solid var(--line); cursor: pointer; }
 .factory-toggle input { width: 20px; height: 20px; margin-top: 2px; accent-color: var(--mint-deep); }

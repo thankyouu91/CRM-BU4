@@ -2,7 +2,7 @@
 import { api } from '../api.js';
 import { closeModal, countdown, esc, fmt, fmtLots, modalOpen, openModal, viewHead } from '../ui.js';
 import { sceneHdr } from '../scenes-hdr.js';
-import { itemIcon } from '../itemart.js';
+import { hasAtlasIcon, itemIcon } from '../itemart.js';
 
 let friendId = null; // vườn bạn đang mở để tưới hộ
 let lastAuto = 0; // lần tự tải lại gần nhất, tránh tải liên tục khi đồng hồ máy lệch giờ
@@ -30,9 +30,12 @@ export function renderGarden(root, ctx) {
   let timer = 0;
   let ticks = 0;
 
+  /** Tên nông sản cây cho ra. Dòng nào gọi hàm này cũng đã vẽ icon của chính nông sản đó (cropIcon), nên có icon
+   *  16-bit thì chỉ ghi tên, không chêm emoji cũ (hình khác hẳn) vào cùng dòng. */
   const commodityLabel = (id) => {
     const c = commodities[id];
-    return c ? `${esc(c.icon)} ${esc(c.name)}` : esc(id);
+    if (!c) return esc(id);
+    return hasAtlasIcon(id) ? esc(c.name) : `${esc(c.icon)} ${esc(c.name)}`;
   };
 
   /** Sản lượng dự kiến (phần) sau khi tính tưới hộ và sâu bệnh. */

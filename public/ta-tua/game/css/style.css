@@ -599,8 +599,12 @@ img.px-icon { max-width: 100%; max-height: 100%; height: auto; }
 .gear-lines li, .gear-lines-inline { overflow-wrap: break-word; }
 .gear-pool { line-height: 1.5; }
 .tier-chip { white-space: nowrap; }
-/* nhãn góc thẻ (Đang đeo · tên bé, Có N) không đè lên hình món */
-.item-card > .badge.owned { display: block; max-width: calc(100% - 104px); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+/* nhãn góc thẻ (Đang đeo · tên bé, Có N) không đè lên hình món: chừa đệm thẻ 16 + ô hình (72 điểm màn hình, đã bù zoom,
+   như .item-card .icon) + lề phải của nhãn 14 + khoảng hở 8 */
+.item-card > .badge.owned {
+  display: block; max-width: calc(100% - 38px - 72px / var(--zoom, 1));
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
 @media (max-width: 380px) {
   .item-grid { grid-template-columns: minmax(0, 1fr); }
   .tabs button { font-size: .68rem; padding: 4px 2px; white-space: normal; line-height: 1.1; text-align: center; }

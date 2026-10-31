@@ -1,4 +1,4 @@
-// Tự sinh bởi scripts/art/build-items.py, đừng sửa tay: đội vẽ giao icon mới thì chạy lại script.
+// Tự sinh bởi scripts/art/build-items.py, đừng sửa tay: có icon mới được duyệt thì chạy lại script.
 // Bảng khung icon đồ 32x32 trong atlas WebP (assets/items/). itemart.js đọc thẳng module này nên dựng icon
 // ngay khi vẽ màn, không phải tải JSON và không nháy. frames: id catalog -> [trang, x, y] (điểm ảnh gốc).
 // ?v= là mã băm nội dung trang, đổi ảnh thì trình duyệt tải lại.

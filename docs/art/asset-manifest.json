@@ -10666,9 +10666,11 @@
    "script": "scripts/art/build-items.py",
    "art_as_of": "2026-10-31",
    "packages": {
-    "items": 43,
-    "goods-a": 0,
-    "goods-b": 0
+    "items": {
+     "icons": 43,
+     "inputs_sha1": "d1a82d00497fd36c3c38731e65cfcf5964d548f9",
+     "approved_by": "owner (design session, 2026-10-31)"
+    }
    },
    "files": {
     "items-0.webp": 6154,

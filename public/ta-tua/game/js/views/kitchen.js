@@ -36,12 +36,13 @@ export function renderKitchen(root, ctx) {
   let timer = 0;
 
   const multText = (m) => `×${m.toLocaleString('vi-VN')}`;
-  const commodityLabel = (id) => {
-    const c = commodities[id];
-    return c ? `${esc(c.icon)} ${esc(c.name)}` : esc(id);
-  };
   /** Icon 16-bit 32 điểm của món nấu / nguyên liệu (id trong catalog); chưa có hình thì emoji như cũ. */
   const artIcon = (id, emoji) => itemIcon({ id, icon: esc(emoji) }, 3);
+  /** Nguyên liệu: icon (cùng hình với khung Thử công thức) rồi tên. */
+  const commodityLabel = (id) => {
+    const c = commodities[id];
+    return c ? `${artIcon(id, c.icon)} ${esc(c.name)}` : esc(id);
+  };
   const effectText = (effect = {}, mult = 1) => Object.entries(effect)
     .map(([k, v]) => `<span title="${esc(EFFECTS[k]?.name ?? k)}">${EFFECTS[k]?.icon ?? '✨'} +${Math.round(v * mult)}</span>`)
     .join(' ');
@@ -96,7 +97,7 @@ export function renderKitchen(root, ctx) {
         </header>
         <ul class="kitchen-inputs">${Object.entries(r.inputs).map(([c, n]) => {
           const have = data.goods[c] ?? 0;
-          return `<li class="${have >= n ? '' : 'down'}"><span>${commodityLabel(c)}</span><b>${have}/${n}</b></li>`;
+          return `<li class="${have >= n ? '' : 'down'}"><span class="kitchen-in-name">${commodityLabel(c)}</span><b>${have}/${n}</b></li>`;
         }).join('')}</ul>
         <p class="kitchen-effect">${effectText(r.effect)}</p>
         <p class="muted small">Giá tham chiếu ~${fmt(r.value)} 🪙 (loại ${esc(rules.quality[0].name)})</p>
