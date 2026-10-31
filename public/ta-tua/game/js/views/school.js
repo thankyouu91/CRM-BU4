@@ -1,6 +1,7 @@
 // Trường học: chọn bé, xem năng lượng và kỹ năng, vào lớp 30 phút để tăng kỹ năng.
 import { api } from '../api.js';
 import { countdown, esc, fmt, viewHead } from '../ui.js';
+import { sceneHdr } from '../scenes-hdr.js';
 
 let selectedPet = null;
 let flash = null; // { petId, skill, gain, at }: điểm vừa học được, hiện nổi trên thẻ lớp
@@ -17,6 +18,7 @@ const skillText = (v) => (Math.floor(v * 10 + 1e-6) / 10).toLocaleString('vi-VN'
 export function renderSchool(root, ctx) {
   root.innerHTML = `<div class="school-page">
     ${viewHead('🏫 Trường học', 'Cho bé đi học để lên kỹ năng: làm việc giỏi hơn, lương cao hơn, nấu ăn khéo hơn.')}
+    ${sceneHdr('school')}
     <div class="school-view"><div class="empty muted">Đang tải…</div></div></div>`;
   const page = root.querySelector('.school-page');
   const view = page.querySelector('.school-view');

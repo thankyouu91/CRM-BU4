@@ -1,6 +1,7 @@
 // Bếp: nấu món theo công thức, thử ghép nguyên liệu tìm món ẩn, tủ món đã nấu (cho bé ăn, bán cho quán, rao Chợ Phiên).
 import { api } from '../api.js';
 import { closeModal, countdown, esc, fmt, modalOpen, openModal, viewHead } from '../ui.js';
+import { sceneHdr } from '../scenes-hdr.js';
 
 const EFFECTS = {
   fullness: { icon: '🍙', name: 'No bụng' },
@@ -18,6 +19,7 @@ let lastAuto = 0;
 export function renderKitchen(root, ctx) {
   root.innerHTML = `<div class="kitchen-page">
     ${viewHead('🍳 Bếp', 'Nấu nguyên liệu trong kho thành món ngon cho bé ăn hoặc đem bán. Ghép thử để tìm món ẩn!')}
+    ${sceneHdr('kitchen')}
     <div class="kitchen-view"><div class="empty muted">Đang tải…</div></div></div>`;
   const page = root.querySelector('.kitchen-page');
   const view = page.querySelector('.kitchen-view');
