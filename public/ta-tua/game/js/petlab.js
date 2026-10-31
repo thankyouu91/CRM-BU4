@@ -5,6 +5,7 @@ import {
   wearLimit,
 } from './shared/pets.js';
 import { esc } from './ui.js';
+import { setFavicon, startIcons } from './icons/index.js';
 
 const SKILLS = {
   strength: { name: 'Sức mạnh', icon: '💪' },
@@ -285,3 +286,5 @@ $('#dress-all').addEventListener('change', (e) => {
 
 $('#dress-all').checked = state.dressAll;
 render();
+startIcons();
+setFavicon('🐾');

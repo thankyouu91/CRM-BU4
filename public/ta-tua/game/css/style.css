@@ -599,3 +599,6 @@ input:focus { border-color: var(--tea); box-shadow: 0 0 0 4px #c8915f33; }
 /* Thả bé: liên kết nhỏ, tách khỏi các nút chăm sóc để khỏi bấm nhầm. */
 .release-row { display: flex; justify-content: flex-end; margin-top: 6px; }
 .release-row .link-btn:disabled { opacity: .5; cursor: not-allowed; }
+
+/* Thư viện icon (js/icons): emoji được thay bằng icon pixel SVG, to bằng chữ xung quanh như emoji cũ. */
+.ic { display: inline-block; width: 1.2em; height: 1.2em; vertical-align: -0.22em; flex: none; shape-rendering: crispEdges; }

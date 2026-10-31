@@ -1,8 +1,13 @@
 import { api, embedded, session } from './api.js';
 import { io } from './socket.js';
+import { setFavicon, startIcons } from './icons/index.js';
 
 // park.js gọi window.io như với socket.io; đây là bản WebSocket thuần của game.
 window.io = io;
+
+// Emoji trong trang hiện bằng icon pixel của game (js/icons), máy nào trình duyệt nào cũng giống nhau.
+startIcons();
+setFavicon('🧋');
 
 // WorkHub đưa token phiên chơi vào #token=... (không qua query để không lọt vào log); đọc xong thì xóa khỏi URL.
 {
