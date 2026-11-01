@@ -106,6 +106,8 @@ export const article: WikiArticle = {
 
         { p: `**Công nghiệp nặng tạm đóng.** Mặc định ${heavyNames} đang đóng: không gia tộc nào thâu tóm mới được, không chọn được cho lô, và lô đang làm các ngành này không chạy. Khi đóng, gia tộc đang nắm được hoàn phí thâu tóm vào quỹ, ngành bị gỡ khỏi gia tộc, lô về trạng thái chưa chọn ngành (vẫn giữ công trình) và tộc trưởng nhận thư báo. Quản trị viên có thể mở lại; hàng hóa và công thức vẫn giữ nguyên. Trong lúc đóng, không gia tộc nào làm ra ${closedGoods()}.` },
 
+        { p: "**Tài nguyên trên lô.** Ô thông tin của lô liệt kê tài nguyên mỗi đêm. Tài nguyên có viền xanh là thứ ngành của gia tộc bạn khai thác hoặc chế biến được; tài nguyên hiện mờ là thứ chỉ công nghiệp nặng (đang tạm đóng) dùng, khai thác lên chỉ bán được cho hệ thống. Gà, ngô, lúa gạo, khoai tây, muối, cao su, bạc, thiếc, vàng và kim cương đều có dây chuyền nhận trong ngành Hàng tiêu dùng (thực phẩm chế biến, giày dép, trang sức). Chế độ tô màu Tài nguyên trên Bản đồ đất chỉ hiện những thứ có ngành đang mở dùng." },
+
         { p: "**Kho gia tộc và sàn công nghiệp.** Hàng làm ra vào kho gia tộc. Nguyên liệu mà các lô của gia tộc cần thì mặc định được giữ lại; hàng khác, điện thừa và phần tràn kho bán cho hệ thống ngay trong đêm. Với từng mặt hàng, gia tộc chỉnh được giữ lại trong kho hay để bán." },
         { table: { head: ["Luật", "Con số"], rows: [
           ["Sức chứa kho", `${num(INDUSTRIAL_MARKET.warehouseBase)} + ${num(INDUSTRIAL_MARKET.warehousePerLevel)} × cấp gia tộc (đơn vị hàng, không tính điện)`],

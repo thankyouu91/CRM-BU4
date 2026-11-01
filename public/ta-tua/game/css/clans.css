@@ -199,6 +199,12 @@
 .clan-table tr:has(.good-cell) > td { vertical-align: middle; }
 .plot-deposits { display: flex; flex-wrap: wrap; gap: 4px 8px; font-size: .85rem; }
 .plot-deposits small { width: 100%; }
+.plot-deposits .dep { border-radius: 8px; padding: 1px 4px; border: 1.5px solid transparent; }
+.plot-deposits .dep.use-mine { border-color: #3aa76d; background: #eaf7ef; }
+.plot-deposits .dep.use-heavy, .plot-deposits .dep.use-npc { opacity: .5; }
+.plot-deposits .dep-legend { font-size: .72rem; }
+.plot-deposits .dep-legend .use-mine { color: #2d8a57; }
+.plot-deposits .dep-legend .use-heavy { opacity: .6; }
 .prod-preview { display: grid; gap: 4px; font-size: .88rem; }
 .prod-preview p { margin: 0; }
 .trade-form { flex-wrap: nowrap; gap: 4px; }
