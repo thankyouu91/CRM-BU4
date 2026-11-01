@@ -3,7 +3,7 @@
 // cho chế độ "Ngành đang kinh doanh"; dải "Gia tộc của tôi"; chữ chú thích khi rê chuột lên lô.
 // Chỉ dùng dữ liệu sẵn có (/land và /clans), luật giống máy chủ: lô chỉ chạy khi công trình hoàn chỉnh, ngành khai
 // thác cần mỏ đúng loại trên lô, ngành điện cần chọn loại nhà máy, ngành tạm đóng thì không chạy.
-import { INDUSTRIES, INDUSTRY_ORDER, designComplete } from './shared/clan.js';
+import { DESIGN, INDUSTRIES, INDUSTRY_ORDER, designComplete } from './shared/clan.js';
 import { PRODUCTION_INDUSTRIES, extractable, recipeOf } from './shared/industry.js';
 
 const KIND_NAMES = { crop: 'nông sản', livestock: 'vật nuôi', mineral: 'khoáng sản', oilgas: 'dầu khí', forest: 'gỗ rừng' };
@@ -30,14 +30,18 @@ export function plotBusiness(info, { est = null, upkeep = 0, closed = [] } = {})
     return zero('Không có tài nguyên', `Lô không có mỏ ${kinds} cho ngành ${ind.name} nên sản lượng bằng 0. Nên đổi sang ngành hợp với lô.`);
   }
   if (prod?.plants && !recipeOf(info.industry, info.variant)) return zero('Chưa chọn nhà máy', 'Chưa chọn loại nhà máy điện hợp với lô nên chưa phát điện.');
-  if (!designComplete(info.design ?? [])) return zero('Chưa xây xong', 'Công trình chưa hoàn chỉnh (cần móng và ít nhất 3 mảnh) nên lô chưa chạy.');
-  if (ind.sector === 'strategic') return { state: 'ok', short: 'Hạ tầng', reason: 'Hạ tầng chiến lược: tạo hiệu ứng cho cả game thay vì doanh thu.' };
+  // Công trình chưa xong: lô vẫn chạy nhưng giảm công suất (DESIGN.unbuiltRate), nên chỉ nhắc chứ không báo sản lượng 0.
+  const unbuilt = designComplete(info.design ?? []) ? '' : ` Công trình chưa xong nên lô chạy ${Math.round(DESIGN.unbuiltRate * 100)}% công suất (cần móng và ít nhất 3 mảnh để chạy đủ).`;
+  if (ind.sector === 'strategic') {
+    if (unbuilt) return zero('Chưa xây xong', 'Hạ tầng chiến lược chỉ vận hành khi công trình hoàn chỉnh (cần móng và ít nhất 3 mảnh).');
+    return { state: 'ok', short: 'Hạ tầng', reason: 'Hạ tầng chiến lược: tạo hiệu ứng cho cả game thay vì doanh thu.' };
+  }
   if (est) {
     if (!est.operating || est.estimate <= 0) return zero('Sản lượng 0', 'Ước tính mỗi đêm lô này không làm ra gì.');
-    if (est.estimate < upkeep) return { state: 'low', short: `≈ ${num(est.estimate)}/đêm`, reason: `Doanh thu ước tính ≈ ${num(est.estimate)} xu/đêm, chưa đủ phí duy trì ≈ ${num(upkeep)} xu của lô.`, estimate: est.estimate };
-    return { state: 'ok', short: `≈ ${num(est.estimate)}/đêm`, reason: `Doanh thu ước tính ≈ ${num(est.estimate)} xu/đêm.`, estimate: est.estimate };
+    if (est.estimate < upkeep) return { state: 'low', short: `≈ ${num(est.estimate)}/đêm`, reason: `Doanh thu ước tính ≈ ${num(est.estimate)} xu/đêm, chưa đủ phí duy trì ≈ ${num(upkeep)} xu của lô.${unbuilt}`, estimate: est.estimate };
+    return { state: unbuilt ? 'low' : 'ok', short: `≈ ${num(est.estimate)}/đêm`, reason: `Doanh thu ước tính ≈ ${num(est.estimate)} xu/đêm.${unbuilt}`, estimate: est.estimate };
   }
-  return { state: 'ok', short: 'Đang kinh doanh', reason: 'Đang kinh doanh.' };
+  return { state: unbuilt ? 'low' : 'ok', short: unbuilt ? 'Chưa xây xong' : 'Đang kinh doanh', reason: `Đang kinh doanh.${unbuilt}` };
 }
 
 /** Lô có cần cảnh báo đỏ không (sản lượng 0). */
@@ -74,8 +78,10 @@ export function bizLegend(plots) {
  */
 export function myClanStrip(clan, rows, selected = null, open = false) {
   if (!clan) return '';
-  const earning = rows.filter((r) => r.biz?.state === 'ok').length;
+  // Có doanh thu: lô ước tính > 0 (kể cả lô chưa xây xong, chạy giảm công suất) hoặc hạ tầng đang vận hành.
+  const earning = rows.filter((r) => (r.biz?.estimate ?? 0) > 0 || r.biz?.state === 'ok').length;
   const idle = rows.length - earning;
+  const unbuilt = rows.filter((r) => r.info.industry && !designComplete(r.info.design ?? [])).length;
   const total = rows.reduce((s, r) => s + (r.biz?.estimate ?? 0), 0);
   const chip = ({ plot, info, biz }) => {
     const ind = INDUSTRIES[info.industry];
@@ -88,6 +94,7 @@ export function myClanStrip(clan, rows, selected = null, open = false) {
     <div class="biz-strip-head"><b>${esc(clan.emblem)} ${esc(clan.name)}</b>
       <span>${rows.length} lô</span>
       <span class="biz-good">✅ ${earning} lô có doanh thu ước tính${total ? ` ≈ ${num(total)}/đêm` : ''}</span>
+      ${unbuilt ? `<span class="biz-bad">🏗️ ${unbuilt} lô chưa xây xong (chạy ${Math.round(DESIGN.unbuiltRate * 100)}%)</span>` : ''}
       ${idle ? `<span class="biz-bad">⚠️ ${idle} lô chưa có doanh thu</span>` : ''}
       ${rows.length ? `<button type="button" class="biz-strip-toggle" data-strip-toggle aria-expanded="${open}" aria-controls="biz-chips">
         <span>${open ? 'Thu gọn' : 'Xem các lô'}</span><i aria-hidden="true"></i></button>` : ''}</div>

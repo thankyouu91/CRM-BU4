@@ -107,7 +107,11 @@ test('mua đất, xem trước theo môi trường, lắp ghép công trình r�
   assert.throws(() => clans.buyPlot(rival, fishPlot.id, T0), GameError);
   clans.setPlotIndustry(leader, fishPlot.id, 'fishery');
   assert.throws(() => clans.setPlotIndustry(leader, fishPlot.id, 'dairy'), /chưa thâu tóm/);
-  assert.equal(clans.clanView(leader, T0).clan.plots[0].operating, false);
+  // Chưa xây công trình: lô vẫn chạy nhưng chỉ ở mức DESIGN.unbuiltRate.
+  const unbuilt = clans.clanView(leader, T0).clan.plots[0];
+  assert.equal(unbuilt.operating, true);
+  assert.equal(unbuilt.built, false);
+  assert.ok(unbuilt.estimate > 0);
   const design = [
     { piece: 'base-3', x: 2, y: 19, color: '#8b5e3c' },
     { piece: 'wall_brick-8', x: 2, y: 15, color: '#e85d5d' },
@@ -124,7 +128,9 @@ test('mua đất, xem trước theo môi trường, lắp ghép công trình r�
   assert.equal(clans.clanView(leader, T0).clan.treasury, t1 - cost);
   const plot = clans.clanView(leader, T0).clan.plots[0];
   assert.equal(plot.operating, true);
-  assert.ok(plot.estimate > 0);
+  assert.equal(plot.built, true);
+  // Xây xong thì đủ công suất cộng thưởng mảnh: (1 + 1,5%) ÷ 50% ≈ gấp đôi lúc chưa xây.
+  assert.ok(Math.abs(plot.estimate / unbuilt.estimate - (1 + shared.designBonus(design)) / shared.DESIGN.unbuiltRate) < 0.01);
 });
 
 test('đêm: doanh thu vào quỹ, thuế 40% (3 ngành) trên phần khai báo; khai thiếu thì Sở thuế có hồ sơ, gia tộc không thấy', () => {

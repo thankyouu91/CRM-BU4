@@ -2,7 +2,9 @@ import type { WikiArticle } from "../types";
 import { CLAN } from "../rules";
 import { MACRO, servicePlotRevenue, weatherChance } from "../rules-macro";
 import { INDUSTRY_COUNT, phaseRows } from "../game-data";
-import { CLIMATES, INDUSTRIES, PHASES, PHASE_NEXT, PLOTS, WEATHER, ZONES } from "@/public/ta-tua/game/js/shared/clan.js";
+import { CLIMATES, DESIGN as DESIGN_RULES, INDUSTRIES, PHASES, PHASE_NEXT, PLOTS, WEATHER, ZONES } from "@/public/ta-tua/game/js/shared/clan.js";
+
+const DESIGN_UNBUILT = (DESIGN_RULES as { unbuiltRate: number }).unbuiltRate;
 import { COMMODITIES } from "@/petdex/server/rules/market.js";
 import { BANK, policy } from "@/petdex/server/rules/bank.js";
 
@@ -131,7 +133,7 @@ export const article: WikiArticle = {
           ["Cầu ngành", "Sàn Nguyên Liệu", `Cú sốc của ngành dịch vụ kéo giá hàng của ngành bằng ${pct(MACRO.demand.newsShare, 0)} cú sốc`],
           ["Giá tham chiếu", "[Siêu thị](sieu-thi)", "Giá Suất ăn gia tộc và Bộ chăm sóc gia tộc theo giá tham chiếu hôm nay của Thực phẩm chế biến và Thuốc"],
         ] } },
-        { p: `Doanh thu một đêm của một lô dịch vụ = giá gốc của lô × ${pct(CLAN.land.yieldRate)} × (1 + tốc độ của lô) × độ hợp đất × thời tiết × pha × cầu × cạnh tranh × cấp gia tộc × công trình. Lô chỉ có doanh thu khi công trình đã hoàn chỉnh.` },
+        { p: `Doanh thu một đêm của một lô dịch vụ = giá gốc của lô × ${pct(CLAN.land.yieldRate)} × (1 + tốc độ của lô) × độ hợp đất × thời tiết × pha × cầu × cạnh tranh × cấp gia tộc × công trình. Công trình chưa hoàn chỉnh thì lô vẫn có doanh thu nhưng chỉ ở mức ${pct(DESIGN_UNBUILT)} (hệ số công trình ${DESIGN_UNBUILT}); xây xong thì hệ số là 1 + thưởng mảnh.` },
         { p: `**Ví dụ minh họa công thức.** Lô **${PLOT.code}** (${zones[PLOT.zone].name}, ${climates[PLOT.climate].name}, giá gốc ${num(PLOT.basePrice)} xu) làm ${industries.fishery.icon} Thủy hải sản; gia tộc cấp 3, công trình 10 mảnh, chưa gia tộc nào khác cùng ngành. Cùng lô ấy ở hai bộ chỉ số khác nhau:` },
         { table: { head: ["Hệ số", `${phaseName(good_.phase)}, ${weathers[good_.weather].name}, cầu ${pct(good_.demand, 0)}`, `${phaseName(bad.phase)}, ${weathers[bad.weather].name}, cầu ${pct(bad.demand, 0)}`], rows: [
           [`Doanh thu gốc (giá lô × ${pct(CLAN.land.yieldRate)})`, `${num(GOOD.factors.base)} xu`, `${num(BAD.factors.base)} xu`],

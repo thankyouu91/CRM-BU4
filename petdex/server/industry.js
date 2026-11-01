@@ -12,7 +12,7 @@ import {
   ESSENTIALS, ESSENTIAL_CATS, GOODS, landYield, GOOD_INDUSTRY, GOOD_ORDER, MARKET_RULES, PRODUCTION_INDUSTRIES, RUN_STEPS, batchesOf, depositsOf,
   extractable, lineOf, plantsFor, qualityScore, recipeOf, variantInfo, variantsFor,
 } from '../../public/ta-tua/game/js/shared/industry.js';
-import { PHASES, PLOTS, clanLevelOf, clanPerks, designBonus, designComplete, envFactor, weatherFactor } from '../../public/ta-tua/game/js/shared/clan.js';
+import { PHASES, PLOTS, buildingFactor, clanLevelOf, clanPerks, designComplete, envFactor, weatherFactor } from '../../public/ta-tua/game/js/shared/clan.js';
 
 /** Ngành khai thác hưởng buff Trị thủy (trồng trọt, chăn nuôi, lâm nghiệp). */
 export const IRRIGATED = ['agriculture', 'forestry'];
@@ -116,7 +116,7 @@ function inputsNeeded(plots) {
 export function plotFactor(plot, row, { level, macro }) {
   const design = typeof row.design === 'string' ? JSON.parse(row.design) : row.design ?? [];
   return (1 + plot.prod) * envFactor(row.industry, plot.zone, plot.climate) * weatherFactor(macro.weather, plot.zone, plot.climate)
-    * (PHASES[macro.phase]?.factor ?? 1) * (1 + clanPerks(level).prodBonus) * (1 + designBonus(design)) * landYield(plot);
+    * (PHASES[macro.phase]?.factor ?? 1) * (1 + clanPerks(level).prodBonus) * buildingFactor(design) * landYield(plot);
 }
 
 /** Sản lượng dự kiến một đêm của một lô (để xem trước): đầu ra tối đa và nguyên liệu cần. */
@@ -171,7 +171,8 @@ export function runProduction(clan, plots, { day, macro, at, rand = Math.random,
   const wind = buffs.wind ?? 0;
   const extra = { irrigation: 0, wind: 0 };
   const level = clanLevelOf(clan.xp);
-  const rows = plots.filter((r) => PRODUCTION_INDUSTRIES[r.industry] && !industryClosed(r.industry) && designComplete(JSON.parse(r.design)));
+  // Lô chưa xây xong vẫn chạy, ở mức DESIGN.unbuiltRate (trong plotFactor).
+  const rows = plots.filter((r) => PRODUCTION_INDUSTRIES[r.industry] && !industryClosed(r.industry));
   if (!rows.length && !q.goods.all(clan.id).length) return { revenue: 0, extra };
   const log = new Map();
   const note = (good, field, n) => {

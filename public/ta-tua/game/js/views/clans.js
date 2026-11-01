@@ -276,7 +276,7 @@ export function renderClans(root, ctx) {
               <td><b>${p.code}</b></td>
               <td>${ZONES[p.zone].icon} ${ZONES[p.zone].name} · ${CLIMATES[p.climate].icon}</td>
               <td>${p.industry ? `${INDUSTRIES[p.industry].icon} ${esc(INDUSTRIES[p.industry].name)}` : '<span class="warn">Chưa chọn</span>'}</td>
-              <td>${p.operating ? `✅ ${p.pieces} mảnh` : `<span class="warn">${p.pieces ? `${p.pieces} mảnh, chưa đủ` : 'Chưa xây'}</span>`}</td>
+              <td>${p.built ? `✅ ${p.pieces} mảnh` : `<span class="warn">${p.pieces ? `${p.pieces} mảnh, chưa đủ` : 'Chưa xây'} · chạy ${pctInt(DESIGN.unbuiltRate)}</span>`}</td>
               <td class="num">${fmt(p.boughtPrice)}</td>
               <td class="num">${fmt(p.value)}</td>
               <td class="num">${p.operating ? fmt(p.estimate) : '–'}</td>
@@ -766,7 +766,7 @@ export function renderClans(root, ctx) {
         </section>
         <section class="card build-stage">
           <div class="row-between"><b>Lô ${PLOT_BY_ID.get(b.plotId).code} · ${b.design.length}/${DESIGN.maxPieces} mảnh</b>
-            <span class="${designComplete(b.design) ? 'ok' : 'warn'}">${designComplete(b.design) ? `✅ Đủ điều kiện vận hành · +${pctInt(designBonus(b.design))} sản lượng` : '⚠️ Cần ≥ 3 mảnh và có móng nền'}</span></div>
+            <span class="${designComplete(b.design) ? 'ok' : 'warn'}">${designComplete(b.design) ? `✅ Chạy đủ công suất · +${pctInt(designBonus(b.design))} sản lượng` : `⚠️ Chưa xong: lô chạy ${pctInt(DESIGN.unbuiltRate)} công suất. Cần ≥ 3 mảnh và có móng nền để chạy đủ`}</span></div>
           ${canvasSvg()}
           <div class="color-row">${PALETTE.map((c) => `<button class="swatch ${c === (layer?.color ?? b.color) ? 'current' : ''}" style="background:${c}" data-color="${c}" aria-label="Màu ${c}"></button>`).join('')}
             <input type="color" data-color-input value="${layer?.color ?? b.color}" title="Màu tùy chọn" /></div>

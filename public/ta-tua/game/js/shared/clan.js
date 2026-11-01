@@ -102,15 +102,22 @@ export const CLIMATES = {
 };
 
 /** Hệ số môi trường của một lô với một ngành: 1 + độ hợp địa hình + độ hợp khí hậu (không dưới 0,2). */
+/** Độ hợp đất của ngành với vùng: khu Trung tâm cho mọi ngành ít nhất `LAND.urbanBonus` (ngành vốn hợp hơn thì giữ mức cao hơn). */
+export const zoneFit = (industry, zone) => {
+  const own = INDUSTRIES[industry]?.zones[zone] ?? 0;
+  return zone === 'urban' ? Math.max(own, LAND.urbanBonus) : own;
+};
+
 export function envFactor(industry, zone, climate) {
   const ind = INDUSTRIES[industry];
   if (!ind) return 1;
-  return Math.max(0.2, 1 + (ind.zones[zone] ?? 0) + (ind.climates[climate] ?? 0));
+  return Math.max(0.2, 1 + zoneFit(industry, zone) + (ind.climates[climate] ?? 0));
 }
 
 // ---------------------------------------------------------------- 200 lô đất
 
-export const LAND = { cols: 20, rows: 10, count: 200, minPrice: 100_000, maxPrice: 2_000_000, maxGrowth: 0.18, maxProd: 0.18 };
+/** `urbanBonus`: lô khu Trung tâm hợp mọi ngành ở mức này (bằng mức tăng giá và tốc độ tối đa của một lô). */
+export const LAND = { cols: 20, rows: 10, count: 200, minPrice: 100_000, maxPrice: 2_000_000, maxGrowth: 0.18, maxProd: 0.18, urbanBonus: 0.18 };
 const ROW_LETTERS = 'ABCDEFGHIJ';
 
 /** PRNG có hạt giống (mulberry32): bản đồ giống hệt nhau ở mọi máy. */
@@ -196,7 +203,8 @@ export const CLAN_EMBLEMS = ['🏯', '🐉', '🦅', '🐯', '🌸', '⚓', '�
 
 // ---------------------------------------------------------------- 200 mẫu lắp ghép
 
-export const DESIGN = { cols: 24, rows: 20, maxPieces: 20, cell: 10, minPieces: 3 };
+/** `unbuiltRate`: lô đã chọn ngành nhưng công trình chưa hoàn chỉnh vẫn chạy ở mức này (xây xong thì đủ công suất + thưởng mảnh). */
+export const DESIGN = { cols: 24, rows: 20, maxPieces: 20, cell: 10, minPieces: 3, unbuiltRate: 0.5 };
 export const PALETTE = ['#e85d5d', '#f29c4b', '#f2cf4b', '#8cc56b', '#4bb3a1', '#4b8ff2', '#7a6cf2', '#c46cf2', '#f27ab8', '#8b5e3c', '#c9a27a', '#f5efe0', '#9aa3ad', '#4a4e57', '#2b2d33', '#ffffff'];
 const HEX = /^#[0-9a-f]{6}$/i;
 
@@ -539,6 +547,8 @@ export const designComplete = (design) => design.length >= DESIGN.minPieces && d
 
 /** Thưởng sản lượng của công trình: +0,5% mỗi mảnh, tối đa +10%. */
 export const designBonus = (design) => (designComplete(design) ? Math.min(0.1, 0.005 * design.length) : 0);
+/** Hệ số công trình lên sản lượng: chưa xong thì chạy `DESIGN.unbuiltRate`, xong thì 1 + thưởng mảnh. */
+export const buildingFactor = (design) => (designComplete(design) ? 1 + designBonus(design) : DESIGN.unbuiltRate);
 
 // ---------------------------------------------------------------- vĩ mô
 

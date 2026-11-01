@@ -3,7 +3,10 @@ import { CLAN } from "../rules";
 import { LAND_PRICE } from "../rules-business";
 import { DESIGN_RULES, GOODS_COUNT, INDUSTRIAL_MARKET, LAND_RULES, SERVICE_COUNT, climateNames, industryRows, zoneRows } from "../game-data";
 import { num, pct } from "./money";
-import { CLIMATES, INDUSTRIES, INDUSTRY_ORDER, LAND, PIECES, ZONES, clanPerks, designBonus, scarcityFactor } from "@/public/ta-tua/game/js/shared/clan.js";
+import { CLIMATES, DESIGN, INDUSTRIES, INDUSTRY_ORDER, LAND, PIECES, ZONES, clanPerks, designBonus, scarcityFactor } from "@/public/ta-tua/game/js/shared/clan.js";
+
+const UNBUILT = (DESIGN as { unbuiltRate: number }).unbuiltRate;
+const URBAN_BONUS = (LAND as { urbanBonus: number }).urbanBonus;
 import { GOODS, HEAVY_INDUSTRIES, PRODUCTION_INDUSTRIES, PRODUCTION_YIELD, batchesOf } from "@/public/ta-tua/game/js/shared/industry.js";
 
 // Sở Nhà Đất: lô đất, công trình và chuỗi sản xuất của gia tộc (petdex/server/clans.js, industry.js, heavy-industry.js;
@@ -87,8 +90,9 @@ export const article: WikiArticle = {
           `Mỗi lô tốn phí duy trì ${num(CLAN.upkeepPerPlot)} xu mỗi đêm từ quỹ gia tộc (xem [Gia tộc](gia-toc)).`,
         ] },
 
-        { p: `**Công trình.** Lắp từ các mảnh ghép, tối đa ${DESIGN_RULES.maxPieces} mảnh, giá mỗi mảnh ${num(Math.min(...pieceCosts))}–${num(Math.max(...pieceCosts))} xu tùy cỡ. Sửa công trình chỉ trả phần giá vượt quá số đã chi cho lô đó. Công trình **hoàn chỉnh** khi có ít nhất ${DESIGN_RULES.minPieces} mảnh, trong đó có móng nền; lô chỉ hoạt động khi công trình hoàn chỉnh. Công trình hoàn chỉnh cho thêm ${pct(PER_PIECE, 1)} sản lượng mỗi mảnh, tối đa +${pct(DESIGN_MAX, 0)}. Đổi ngành của lô không mất công trình.` },
+        { p: `**Công trình.** Lắp từ các mảnh ghép, tối đa ${DESIGN_RULES.maxPieces} mảnh, giá mỗi mảnh ${num(Math.min(...pieceCosts))}–${num(Math.max(...pieceCosts))} xu tùy cỡ. Sửa công trình chỉ trả phần giá vượt quá số đã chi cho lô đó. Công trình **hoàn chỉnh** khi có ít nhất ${DESIGN_RULES.minPieces} mảnh, trong đó có móng nền. Lô chạy ngay khi chọn ngành; công trình chưa hoàn chỉnh thì lô chạy ${pct(UNBUILT, 0)} công suất, hoàn chỉnh mới chạy đủ. Công trình hoàn chỉnh cho thêm ${pct(PER_PIECE, 1)} sản lượng mỗi mảnh, tối đa +${pct(DESIGN_MAX, 0)}. Đổi ngành của lô không mất công trình.` },
 
+        { p: `**Khu Trung tâm** hợp mọi ngành: độ hợp đất của lô Trung tâm ít nhất **+${pct(URBAN_BONUS, 0)}** với bất kỳ ngành nào (ngành vốn hợp Trung tâm hơn thì giữ mức cao hơn). Ngành khai thác vẫn cần mỏ trên lô, mà lô Trung tâm không có mỏ.` },
         { p: `**Ngành dịch vụ (${SERVICE_COUNT} ngành)** thu **xu** vào quỹ mỗi đêm: giá gốc lô × ${pct(CLAN.land.yieldRate, 1)} × tốc độ lô × độ hợp địa hình và khí hậu × thời tiết × pha kinh tế × nhu cầu của ngành × cạnh tranh (số gia tộc cùng ngành) × thưởng cấp gia tộc × thưởng công trình. Chi tiết các hệ số ở [Kinh tế vĩ mô](kinh-te-vi-mo).` },
         { table: { head: ["Ngành", "Bồi thường thị trường", "Hợp đất nào nhất"], rows: industryRows("service") } },
 
@@ -131,7 +135,7 @@ export const article: WikiArticle = {
         { list: [
           `Bán lại chỉ được ${pct(CLAN.land.resaleRate, 0)} giá trị, tiền xây công trình không được hoàn.`,
           "Giá trị lô đi theo chỉ số giá đất, nên có thể thấp hơn giá đã trả khi kinh tế suy thoái.",
-          "Lô có công trình chưa hoàn chỉnh, hoặc làm ngành đang tạm đóng, không thu được gì nhưng vẫn tốn phí duy trì.",
+          `Lô có công trình chưa hoàn chỉnh chỉ chạy ${pct(UNBUILT, 0)} công suất; lô làm ngành đang tạm đóng, hoặc ngành khai thác mà lô không có mỏ đúng loại, không thu được gì nhưng vẫn tốn phí duy trì.`,
           "Nhà máy thiếu nguyên liệu hay thiếu điện thì chạy ít mẻ hơn hoặc đứng yên.",
           `Kho đầy thì phần tràn bị bán ngay trong đêm, cho hệ thống chỉ ${pct(INDUSTRIAL_MARKET.npcBuy, 0)} giá tham chiếu.`,
         ] },

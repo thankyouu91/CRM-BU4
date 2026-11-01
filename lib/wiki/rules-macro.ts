@@ -2,7 +2,7 @@
 // inside modules that open the game database (petdex/server/macro.js, clans.js, commerce.js).
 // tests/petfarm-wiki-sync-macro.test.ts runs those modules on an in-memory database and fails when a
 // number or formula here no longer matches the game: fix it here and the articles follow.
-import { PHASES, WEATHER, clanPerks, competitionFactor, designBonus, designComplete, envFactor, weatherFactor } from "@/public/ta-tua/game/js/shared/clan.js";
+import { PHASES, WEATHER, buildingFactor, clanPerks, competitionFactor, envFactor, weatherFactor } from "@/public/ta-tua/game/js/shared/clan.js";
 import { ESSENTIALS, MARKET_RULES } from "@/public/ta-tua/game/js/shared/industry.js";
 import { CLAN } from "./rules";
 
@@ -79,10 +79,10 @@ export function servicePlotRevenue(plot: Plot, o: { industry: string; design: Pi
     demand: o.demand,
     competition: competitionFactor(o.clans) as number,
     level: 1 + (clanPerks(o.level) as { prodBonus: number }).prodBonus,
-    building: 1 + (designBonus(o.design) as number),
+    building: buildingFactor(o.design) as number,
   };
   const gross = Math.round(f.base * f.prod * f.env * f.weather * f.phase * f.demand * f.competition * f.level * f.building);
-  return { factors: f, gross, revenue: designComplete(o.design) ? gross : 0 };
+  return { factors: f, gross, revenue: gross };
 }
 
 /**

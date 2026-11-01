@@ -20,8 +20,8 @@ import { sharesDissolve } from './clan-shares.js';
 import { bondsDissolve } from './clan-bonds.js';
 import { collateralOf } from '../../public/ta-tua/game/js/shared/clan-bank.js';
 import {
-  CLAN_EMBLEMS, CLAN_LEVELS, INDUSTRIES, INDUSTRY_ORDER, LAND, PHASES, PLOTS, WEATHER, cleanDesign, clanLevelOf, clanPerks,
-  competitionFactor, designBonus, designComplete, designCost, envFactor, isProduction, isStrategic, scarcityFactor, weatherFactor,
+  CLAN_EMBLEMS, CLAN_LEVELS, DESIGN, INDUSTRIES, INDUSTRY_ORDER, LAND, PHASES, PLOTS, WEATHER, cleanDesign, clanLevelOf, clanPerks,
+  buildingFactor, competitionFactor, designComplete, designCost, envFactor, isProduction, isStrategic, scarcityFactor, weatherFactor, zoneFit,
 } from '../../public/ta-tua/game/js/shared/clan.js';
 
 // ---------------------------------------------------------------- cấu hình (quản trị viên chỉnh được)
@@ -255,16 +255,17 @@ export function plotRevenue(plot, { industry, design = [], level = 1, macro, cla
     base: Math.round(scaledBase(plot, cfg) * cfg.land.yieldRate),
     prod: 1 + plot.prod,
     env: envFactor(industry, plot.zone, plot.climate),
-    zone: INDUSTRIES[industry]?.zones[plot.zone] ?? 0,
+    zone: zoneFit(industry, plot.zone),
     climate: INDUSTRIES[industry]?.climates[plot.climate] ?? 0,
     weather: weatherFactor(macro.weather, plot.zone, plot.climate),
     phase: PHASES[macro.phase]?.factor ?? 1,
     demand: macro.demand?.[industry] ?? 1,
     competition: competitionFactor(clansInIndustry),
     level: 1 + clanPerks(level).prodBonus,
-    building: 1 + designBonus(design),
+    building: buildingFactor(design),
   };
-  const operating = Boolean(INDUSTRIES[industry]) && designComplete(design);
+  // Lô chạy ngay khi có ngành; công trình chưa hoàn chỉnh thì chạy giảm công suất (factors.building).
+  const operating = Boolean(INDUSTRIES[industry]);
   const gross = Math.round(factors.base * factors.prod * factors.env * factors.weather * factors.phase * factors.demand * factors.competition * factors.level * factors.building);
   return { factors, operating, gross, revenue: operating ? gross : 0 };
 }
@@ -618,7 +619,7 @@ export function saveDesign(userId, plotId, input, now = Date.now()) {
     clanSpend(clan.id, extra, 'clan_build', `Công trình lô ${plot.code}`, now);
     q.setDesign.run(JSON.stringify(design), Math.max(row.design_spent, cost), plot.id);
     const ready = designComplete(design);
-    return { message: `🏗️ Đã lưu công trình lô ${plot.code}${extra ? ` (chi ${fmt(extra)} xu)` : ''}.${ready ? '' : ' Cần ít nhất 3 mảnh, có móng nền thì lô mới hoạt động.'}` };
+    return { message: `🏗️ Đã lưu công trình lô ${plot.code}${extra ? ` (chi ${fmt(extra)} xu)` : ''}.${ready ? '' : ` Cần ít nhất 3 mảnh, có móng nền thì lô mới chạy đủ công suất (chưa xong thì chạy ${Math.round(DESIGN.unbuiltRate * 100)}%).`}` };
   });
 }
 
@@ -657,9 +658,9 @@ export function clanView(userId, now = Date.now()) {
     const plot = PLOT_BY_ID.get(row.id);
     const design = JSON.parse(row.design);
     const prod = row.industry && isStrategic(row.industry) ? { value: 0 } : row.industry && isProduction(row.industry) ? productionPreview(plot, { industry: row.industry, variant: row.variant, design, level, macro: stats.macro }) : null;
-    const rev = row.industry && !prod ? plotRevenue(plot, { industry: row.industry, design, level, macro: stats.macro, clansInIndustry: counts[row.industry] ?? 1 }) : prod && { operating: designComplete(design), revenue: designComplete(design) ? prod.value : 0 };
+    const rev = row.industry && !prod ? plotRevenue(plot, { industry: row.industry, design, level, macro: stats.macro, clansInIndustry: counts[row.industry] ?? 1 }) : prod && { operating: true, revenue: prod.value };
     return {
-      id: plot.id, code: plot.code, zone: plot.zone, climate: plot.climate, industry: row.industry, variant: row.variant, pieces: design.length,
+      id: plot.id, code: plot.code, zone: plot.zone, climate: plot.climate, industry: row.industry, variant: row.variant, pieces: design.length, built: designComplete(design),
       operating: Boolean(rev?.operating), estimate: rev?.revenue ?? 0, boughtPrice: row.bought_price,
       value: plotValue(plot, row, stats.landIndex, now),
     };
