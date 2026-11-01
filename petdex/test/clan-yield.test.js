@@ -68,3 +68,15 @@ test('lô dịch vụ chưa xây xong vẫn có doanh thu, bằng unbuiltRate so
   assert.ok(bare.revenue > 0);
   assert.equal(bare.factors.zone, Math.max(INDUSTRIES.tea.zones.urban ?? 0, 0.18));
 });
+
+test('xem trước lô với mọi ngành không lỗi (kể cả hạ tầng chiến lược như Năng lượng gió)', () => {
+  const sample = [PLOTS[9], PLOTS[31], PLOTS[39], PLOTS[52], PLOTS[53], PLOTS.find((p) => p.zone === 'urban'), PLOTS.find((p) => p.zone === 'sea')];
+  for (const plot of sample) {
+    for (const industry of Object.keys(INDUSTRIES)) {
+      const pv = clans.plotPreview(lead, plot.id, industry, T0);
+      assert.equal(pv.industry, industry);
+      assert.ok(Number.isFinite(pv.revenue) && Number.isFinite(pv.afterTax), `${plot.code} ${industry}`);
+      if (shared.isStrategic(industry)) assert.equal(pv.strategic, true, `${industry} là hạ tầng chiến lược`);
+    }
+  }
+});

@@ -664,6 +664,15 @@ export function renderClans(root, ctx) {
     api(`/land/${ui.plotId}/preview?industry=${ui.industry}`).then((pv) => {
       if (!alive || seq !== previewSeq || !box.isConnected) return;
       box.classList.remove('muted');
+      if (pv.strategic) {
+        box.innerHTML = `<p>${INDUSTRIES[pv.industry].icon} <b>Hạ tầng chiến lược</b>: không có doanh thu trên lô mà tạo hiệu ứng cho cả game (luật ở Sở Công Thương trên wiki).</p>
+          <p class="${pv.placeOk ? 'ok' : 'warn'}">${pv.placeOk ? '✅ Lô này dựng được hạ tầng này.' : '⚠️ Lô này không dựng được hạ tầng này.'}</p>`;
+        return;
+      }
+      if (pv.unavailable) {
+        box.innerHTML = '<p class="muted">Chưa xem trước được ngành này trên lô.</p>';
+        return;
+      }
       if (pv.production) {
         box.innerHTML = productionBox(pv);
         return;

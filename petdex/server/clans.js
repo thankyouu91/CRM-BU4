@@ -747,10 +747,16 @@ export function plotPreview(userId, plotId, industry, now = Date.now()) {
   const design = row?.clan_id && clan && row.clan_id === clan.id ? JSON.parse(row.design) : [];
   const clansInIndustry = (counts[industry] ?? 0) + (has ? 0 : 1);
   const rate = taxRate(Math.max(1, owned.length + (has ? 0 : 1)), cfg);
+  // Hạ tầng chiến lược (Trị thủy, Năng lượng gió, Ngân hàng nhà nước, Thuế vụ) không có sản lượng hay doanh thu trên lô:
+  // chỉ báo lô có dựng được không. Trước đây productionPreview trả null cho các ngành này và xem trước bị lỗi.
+  if (isStrategic(industry)) {
+    return { plotId: plot.id, industry, strategic: true, placeOk: strategicPlaceOk(industry, plot), revenue: 0, afterTax: 0, taxRate: rate, clansInIndustry };
+  }
   if (isProduction(industry)) {
     // Đang làm đúng ngành này thì xem trước theo lựa chọn hiện có, không thì lựa chọn đầu tiên hợp với lô.
     const variant = row?.industry === industry && row.variant ? row.variant : variantsFor(industry, plot)[0] ?? null;
     const prod = productionPreview(plot, { industry, variant, design, level, macro: stats.macro });
+    if (!prod) return { plotId: plot.id, industry, revenue: 0, afterTax: 0, taxRate: rate, clansInIndustry, unavailable: true };
     const margin = Math.max(0, prod.value - prod.cost);
     return { plotId: plot.id, industry, production: prod, variant, revenue: prod.value, afterTax: Math.round(margin * (1 - rate)), taxRate: rate, clansInIndustry };
   }
