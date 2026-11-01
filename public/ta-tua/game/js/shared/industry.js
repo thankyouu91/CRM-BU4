@@ -50,6 +50,7 @@ export const GOODS = {
   clothing: { name: 'Quần áo', icon: '👕', group: 'light', base: 160 },
   furniture: { name: 'Nội thất', icon: '🪑', group: 'light', base: 160 },
   processed_food: { name: 'Thực phẩm chế biến', icon: '🥫', group: 'light', base: 120 },
+  jewelry: { name: 'Trang sức', icon: '📿', group: 'light', base: 480 },
 };
 export const GOOD_ORDER = Object.keys(GOODS);
 
@@ -105,6 +106,13 @@ export const PRODUCTION_INDUSTRIES = {
       food_processing: { name: 'Thực phẩm chế biến', icon: '🥫', recipe: { in: { wheat: 1, beef: 1, power: 1 }, out: { processed_food: 2 } }, batches: 12 },
       textiles: { name: 'Dệt may', icon: '👕', recipe: { in: { cotton: 3, power: 1 }, out: { clothing: 1 } }, batches: 12 },
       furniture: { name: 'Đồ gỗ nội thất', icon: '🪑', recipe: { in: { timber: 3, power: 1 }, out: { furniture: 1 } }, batches: 12 },
+      // Các dây chuyền dưới cho những tài nguyên trên đất trước đây không ngành đang mở nào dùng (chỉ bán NPC):
+      // gà, ngô, lúa gạo, khoai tây, muối, cao su, bạc, thiếc, vàng, kim cương.
+      poultry_food: { name: 'Gà và ngô chế biến', icon: '🍗', recipe: { in: { chicken: 2, maize: 1, power: 1 }, out: { processed_food: 2 } }, batches: 12 },
+      staple_food: { name: 'Cơm, khoai đóng gói', icon: '🍙', recipe: { in: { rice: 2, potatoes: 2, salt: 1, power: 1 }, out: { processed_food: 2 } }, batches: 12 },
+      footwear: { name: 'Giày dép cao su', icon: '👕', recipe: { in: { rubber: 1, cotton: 1, power: 1 }, out: { clothing: 1 } }, batches: 12 },
+      jewelry: { name: 'Trang sức bạc', icon: '📿', recipe: { in: { silver: 1, tin: 2, power: 1 }, out: { jewelry: 1 } }, batches: 6 },
+      fine_jewelry: { name: 'Trang sức vàng, kim cương', icon: '👑', recipe: { in: { gold: 1, diamond: 1, power: 1 }, out: { jewelry: 4 } }, batches: 3 },
     },
   },
   pharma: {
@@ -243,6 +251,8 @@ export const RUN_STEPS = [
   ['mining', null], ['forestry', null], ['agriculture', null], ['power', null],
   ['metallurgy', 'steel'], ['metallurgy', 'aluminium'], ['petrochem', 'refinery'], ['petrochem', 'chemicals'], ['electronics', 'semiconductors'],
   ['consumer_goods', 'food_processing'], ['consumer_goods', 'textiles'], ['consumer_goods', 'furniture'],
+  ['consumer_goods', 'poultry_food'], ['consumer_goods', 'staple_food'], ['consumer_goods', 'footwear'],
+  ['consumer_goods', 'jewelry'], ['consumer_goods', 'fine_jewelry'],
   ['machinery', null], ['pharma', null], ['electronics', 'electronics'],
   ['vehicles', 'autos'], ['vehicles', 'trains'], ['vehicles', 'shipbuilding'], ['vehicles', 'aerospace'],
 ];
@@ -337,6 +347,27 @@ export function extractKindOf(g) {
   if (group === 'forest') return 'forest';
   if (g === 'beef' || g === 'chicken') return 'livestock';
   return group === 'farm' ? 'crop' : null;
+}
+
+/** Các ngành sản xuất lấy `good` làm nguyên liệu (công thức, dây chuyền, nhà máy điện), tách ngành đang mở và đang đóng. */
+export function goodConsumers(good, closed = []) {
+  const all = Object.entries(PRODUCTION_INDUSTRIES)
+    .filter(([, ind]) => [ind.recipe, ...Object.values(ind.lines ?? {}).map((l) => l.recipe), ...Object.values(ind.plants ?? {})].some((r) => r?.in?.[good]))
+    .map(([id]) => id);
+  return { open: all.filter((id) => !closed.includes(id)), closed: all.filter((id) => closed.includes(id)) };
+}
+
+/**
+ * Công dụng một tài nguyên trên lô với gia tộc đang xem: 'mine' (ngành gia tộc nắm khai thác hoặc dùng nó), 'open' (có
+ * ngành đang mở dùng), 'heavy' (chỉ công nghiệp nặng đang đóng dùng), 'npc' (không ngành nào dùng, chỉ bán NPC).
+ */
+export function depositUse(good, { closed = [], held = [] } = {}) {
+  const { open, closed: shut } = goodConsumers(good, closed);
+  const kind = extractKindOf(good);
+  if (held.some((id) => !closed.includes(id) && (open.includes(id) || PRODUCTION_INDUSTRIES[id]?.extracts?.includes(kind)))) return 'mine';
+  if (open.length) return 'open';
+  if (shut.length) return 'heavy';
+  return 'npc';
 }
 
 /** Tài nguyên mà ngành khai thác được lấy từ mỏ của lô (ngành gộp khai thác nhiều nhóm). */

@@ -89,6 +89,11 @@ PACKAGES = (
         'in_engine_reviewed': True,
         'inputs_sha1': '102b45b55b0ee9dddd2fc3b7e9e0dd5465de2362',   # 15 icon hàng công nghiệp
     }},
+    {'name': 'goods-d', 'prefix': 'good', 'approved': {
+        'by': 'owner (design session, 2026-10-31)',
+        'in_engine_reviewed': True,
+        'inputs_sha1': 'e77b8452f56235ea2ea8430fd4c0d0dd9aeeaed8',   # 1 icon trang sức (jewelry)
+    }},
 )
 
 args = [a for a in sys.argv[1:] if not a.startswith('--')]

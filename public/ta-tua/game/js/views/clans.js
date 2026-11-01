@@ -9,7 +9,7 @@ import {
   designBonus, designComplete, designCost, designSvg, envFactor, isStrategic, pieceById, pieceSvg,
 } from '../shared/clan.js';
 import {
-  ESSENTIALS, ESSENTIAL_CATS, GOODS, GOOD_ORDER, PRODUCTION_INDUSTRIES, SECTORS, STRATEGIC_INDUSTRIES, STRATEGIC_RULES, extractKindOf, lineOf, variantInfo, variantsFor,
+  ESSENTIALS, ESSENTIAL_CATS, GOODS, GOOD_ORDER, PRODUCTION_INDUSTRIES, SECTORS, STRATEGIC_INDUSTRIES, STRATEGIC_RULES, depositUse, extractKindOf, lineOf, variantInfo, variantsFor,
 } from '../shared/industry.js';
 import { industryMarketText } from '../shared/industry-market.js';
 import { hasAtlasIcon, itemIcon } from '../itemart.js';
@@ -98,7 +98,18 @@ function recipeLine(id, art = false) {
 }
 
 /** 2 tài nguyên nhiều nhất của lô, để hiện trên bản đồ (chữ <text> trong SVG cỡ 9-13 điểm, nên giữ emoji). */
-const topDeposits = (deposits) => Object.entries(deposits ?? {}).sort((a, b) => GOODS[b[0]].base * b[1] - GOODS[a[0]].base * a[1]).slice(0, 2).map(([g]) => GOODS[g].icon).join('');
+/** Hai tài nguyên đáng giá nhất của lô cho chế độ tô màu "Tài nguyên"; bỏ qua hàng chưa ngành đang mở nào dùng. */
+const topDeposits = (deposits, closed = []) => Object.entries(deposits ?? {})
+  .filter(([g]) => ['open', 'mine'].includes(depositUse(g, { closed })))
+  .sort((a, b) => GOODS[b[0]].base * b[1] - GOODS[a[0]].base * a[1]).slice(0, 2).map(([g]) => GOODS[g].icon).join('');
+
+/** Nhãn công dụng tài nguyên trên lô (xem depositUse). */
+const DEPOSIT_USE = {
+  mine: 'Ngành gia tộc bạn khai thác hoặc dùng được',
+  open: 'Có ngành đang mở dùng (cần thâu tóm ngành đó)',
+  heavy: 'Chỉ công nghiệp nặng dùng, đang tạm đóng: hiện chỉ bán được cho NPC',
+  npc: 'Chưa ngành nào dùng: chỉ bán được cho NPC',
+};
 
 function productionBox(pv) {
   const pr = pv.production;
@@ -513,7 +524,7 @@ export function renderClans(root, ctx) {
       infos: new Map(land.plots.map((x) => [x.id, x])),
       selected: ui.plotId,
       showClimate: ui.heat === 'climate',
-      resources: ui.heat === 'resource' ? new Map(land.plots.map((x) => [x.id, topDeposits(x.deposits)])) : null,
+      resources: ui.heat === 'resource' ? new Map(land.plots.map((x) => [x.id, topDeposits(x.deposits, data?.config?.closedIndustries ?? [])])) : null,
       business: showBiz ? business : null,
       tint: ui.heat !== 'business',
     });
@@ -617,7 +628,10 @@ export function renderClans(root, ctx) {
         ${info.industry ? `<dt>Ngành</dt><dd>${INDUSTRIES[info.industry].icon} ${esc(INDUSTRIES[info.industry].name)}</dd>` : ''}
       </dl>
       <div class="plot-deposits"><small class="muted">Tài nguyên mỗi đêm</small>
-        ${Object.keys(info.deposits).length ? Object.entries(info.deposits).map(([g, n]) => `<span title="${esc(GOODS[g].name)}">${goodCell(g, ` <b>${n}</b>`)}</span>`).join('') : '<span class="muted">Không có mỏ (nhà máy ở đây chạy nhanh hơn)</span>'}</div>
+        ${Object.keys(info.deposits).length ? Object.entries(info.deposits).map(([g, n]) => {
+          const use = depositUse(g, { closed: data?.config?.closedIndustries ?? [], held: myIndustries });
+          return `<span class="dep use-${use}" title="${esc(GOODS[g].name)}: ${DEPOSIT_USE[use]}">${goodCell(g, ` <b>${n}</b>`)}</span>`;
+        }).join('') + `<small class="dep-legend muted"><b class="use-mine">Viền xanh</b>: ngành gia tộc bạn dùng được · <b class="use-heavy">Mờ</b>: chưa ngành đang mở nào dùng, chỉ bán NPC</small>` : '<span class="muted">Không có mỏ (nhà máy ở đây chạy nhanh hơn)</span>'}</div>
       ${info.mine && info.industry && variantsFor(info.industry, p).length ? `<label class="plot-industry">${info.industry === 'power' ? 'Loại nhà máy điện' : 'Dây chuyền của nhà máy'}
         <select data-plant="${p.id}" ${canManage ? '' : 'disabled'}>${variantsFor(info.industry, p).map((k) => {
           const v = variantInfo(info.industry, k);

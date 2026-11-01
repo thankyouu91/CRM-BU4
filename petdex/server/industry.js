@@ -156,7 +156,9 @@ export function clanQuality(cat, rows, level) {
   const meta = ESSENTIALS.cats[cat];
   // Lô khớp "ngành" hoặc "ngành:dây chuyền" (nhà máy gộp nhiều dây chuyền).
   const runs = (r, industry, line = null) => r.industry === industry && (!line || lineOf(r.industry, r.variant) === line);
-  const pieces = Math.max(0, ...rows.filter((r) => runs(r, meta.industry, meta.line)).map((r) => JSON.parse(r.design).length));
+  // Nhà xưởng: mọi lô của ngành làm ra đúng hàng thiết yếu này (đồ ăn có nhiều dây chuyền cùng ra thực phẩm chế biến).
+  const makes = (r) => r.industry === meta.industry && Boolean(recipeOf(r.industry, r.variant)?.out?.[meta.good]);
+  const pieces = Math.max(0, ...rows.filter(makes).map((r) => JSON.parse(r.design).length));
   const upstream = meta.upstream.some((spec) => {
     const [industry, line] = spec.split(':');
     return rows.some((r) => runs(r, industry, line));
