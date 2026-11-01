@@ -612,7 +612,10 @@ export function renderClans(root, ctx) {
     const canManage = clan && info.mine && (clan.role === 'leader' || clan.role === 'elder');
     const canBuy = clan && !info.owner && (clan.role === 'leader' || clan.role === 'elder');
     const myIndustries = clan ? clan.industries.map((i) => i.id) : [];
-    if (info.mine && info.industry) ui.industry = info.industry;
+    // Mở một lô của mình thì ô "Xem trước với ngành" bắt đầu ở ngành hiện tại của lô; sau đó giữ lựa chọn của người chơi
+    // (trước đây mỗi lần vẽ lại đều kéo về ngành hiện tại, nên nút "Làm ngành này trên lô" không bao giờ hiện để đổi ngành).
+    if (info.mine && info.industry && ui.industryFor !== p.id) ui.industry = info.industry;
+    ui.industryFor = p.id;
     return `
       <div class="plot-head"><h3>Lô ${p.code}</h3>
         ${info.owner ? `<span class="owner-tag" style="--clan:${esc(info.owner.color)}">${esc(info.owner.emblem)} ${esc(info.owner.name)}</span>` : '<span class="badge star">Còn trống</span>'}</div>
@@ -644,7 +647,9 @@ export function renderClans(root, ctx) {
       <div class="plot-preview muted">Đang tính…</div>
       <div class="plot-actions">
         ${canBuy ? `<button class="btn primary" data-buy="${p.id}">Mua lô bằng quỹ · ${money(info.price)}</button>` : ''}
-        ${canManage && myIndustries.includes(ui.industry) && info.industry !== ui.industry ? `<button class="btn mint" data-set-industry="${p.id}">Làm ngành này trên lô</button>` : ''}
+        ${canManage && myIndustries.includes(ui.industry) && info.industry !== ui.industry ? `<button class="btn mint" data-set-industry="${p.id}">${info.industry ? `Đổi ngành lô sang ${INDUSTRIES[ui.industry].icon} ${esc(INDUSTRIES[ui.industry].name)}` : 'Làm ngành này trên lô'}</button>` : ''}
+        ${canManage && !myIndustries.includes(ui.industry) && info.industry !== ui.industry ? `<p class="muted small">Muốn làm ${esc(INDUSTRIES[ui.industry]?.name ?? '')} trên lô này, gia tộc cần thâu tóm ngành đó trước (tab 🏯 Gia tộc, mục Thâu tóm ngành nghề). Ngành có dấu ✓ là đã thâu tóm.</p>` : ''}
+        ${canManage && info.industry && myIndustries.length > 1 && info.industry === ui.industry ? `<p class="muted small">Đổi ngành: chọn ngành khác có dấu ✓ ở ô "Xem trước với ngành" rồi bấm nút đổi. Công trình trên lô được giữ.</p>` : ''}
         ${canManage ? `<button class="btn" data-build="${p.id}">🏗️ Lắp ghép công trình</button>` : ''}
         ${info.mine && clan.role === 'leader' ? `<button class="link-btn danger" data-sell="${p.id}">Bán lại cho Sở Nhà Đất (${pctInt(land.stats.resaleRate)} giá trị)</button>` : ''}
         ${!clan ? '<p class="muted small">Vào một gia tộc để mua đất.</p>' : ''}
