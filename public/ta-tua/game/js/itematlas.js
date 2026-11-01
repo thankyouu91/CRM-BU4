@@ -5,7 +5,7 @@
 export const ITEM_ATLAS = {
   size: 32,
   pages: [
-    { url: new URL('../assets/items/items-0.webp?v=2acdf67c65', import.meta.url).href, w: 529, h: 199 },
+    { url: new URL('../assets/items/items-0.webp?v=9f4cf17973', import.meta.url).href, w: 529, h: 199 },
   ],
   frames: {
     ball: [0, 1, 1], bath: [0, 34, 1], boba: [0, 67, 1], cake: [0, 100, 1], cane: [0, 133, 1], cassava: [0, 166, 1],
@@ -27,6 +27,6 @@ export const ITEM_ATLAS = {
     autos: [0, 232, 133], chemicals: [0, 265, 133], chips: [0, 298, 133], clothing: [0, 331, 133],
     computers: [0, 364, 133], fuel: [0, 397, 133], furniture: [0, 430, 133], machinery: [0, 463, 133],
     medicine: [0, 496, 133], processed_food: [0, 1, 166], ships: [0, 34, 166], steel: [0, 67, 166],
-    trains: [0, 100, 166],
+    trains: [0, 100, 166], jewelry: [0, 133, 166],
   },
 };
