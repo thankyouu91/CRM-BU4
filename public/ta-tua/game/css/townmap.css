@@ -188,7 +188,7 @@
 
 /* Nút "Phóng to" ở góc dưới phải khung, nằm trên mặt đường cuối (không che toà nào). */
 .t16-zoom {
-  position: absolute; right: 12px; bottom: 9px; z-index: 4; margin: 0; padding: 2px 11px; cursor: pointer;
+  position: absolute; right: 12px; bottom: 9px; z-index: 4; margin: 0; padding: 2px 12px; min-height: 40px; min-width: 40px; cursor: pointer;
   border: 2px solid var(--line-strong); border-radius: 999px; background: var(--surface); color: var(--ink);
   box-shadow: 0 2px 0 var(--line-strong); font: 800 12.5px/1.35 var(--font-body);
 }
@@ -205,7 +205,7 @@
 }
 .t16-jump button {
   display: flex; align-items: center; justify-content: center; gap: 4px; min-width: 0;
-  margin: 0; padding: 0 4px; min-height: 40px; cursor: pointer;
+  margin: 0; padding: 0 4px; min-height: calc(44px / var(--zoom, 1)); cursor: pointer;
   border: 2px solid #3d2a1f; border-radius: 8px; background: #7a4e33; color: #fff8ec; box-shadow: 0 2px 0 #3d2a1f;
   font: 800 12px/1.1 var(--font-display); white-space: nowrap; overflow: hidden;
 }
