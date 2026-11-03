@@ -35,13 +35,10 @@ it("hides menu items the person has no permission for", () => {
   expect(within(nav()).getByRole("link", { name: "Nhân sự" })).toBeTruthy();
 });
 
-it("puts Pet Town at the bottom for everyone, its management board for administrators only", () => {
-  render(<AppShell user={user()} feed={feed()}><p /></AppShell>);
-  expect(within(nav()).getByRole("link", { name: "Pet Town" }).getAttribute("href")).toBe("/ta-tua");
-  expect(within(nav()).queryByRole("link", { name: "Quản lý Pet Town" })).toBeNull();
-  cleanup();
+it("no longer links to Pet Town, which moved to its own site", () => {
   render(<AppShell user={user({ role: "ADMIN" })} feed={feed()}><p /></AppShell>);
-  expect(within(nav()).getByRole("link", { name: "Quản lý Pet Town" }).getAttribute("href")).toBe("/ta-tua/quan-ly");
+  expect(within(nav()).queryByRole("link", { name: "Pet Town" })).toBeNull();
+  expect(within(nav()).queryByRole("link", { name: "Quản lý Pet Town" })).toBeNull();
 });
 
 it("collapses to an icon bar, keeps names for screen readers and remembers the choice", () => {
