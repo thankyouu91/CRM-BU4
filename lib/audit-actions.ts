@@ -13,7 +13,6 @@ export const AUDIT_GROUPS = {
   share: "Chia sẻ ra ngoài",
   attendance: "Chấm công & nghỉ phép",
   system: "Hệ thống & sao lưu",
-  // Pet Town moved to its own app (thankyouu91/Petfarm.online); kept so older log entries keep their labels.
   tatua: "Pet Town",
 } as const;
 export type AuditGroup = keyof typeof AUDIT_GROUPS;

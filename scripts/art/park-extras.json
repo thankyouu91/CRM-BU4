@@ -1,0 +1,22 @@
+{
+ "comment": "Added on top of park-1/layout.json by build-park.py: park-2's fountain centrepiece, visitors, pet toys and ice-cream cart, ambient-1's pond fx and ambient-2's butterflies. Art px, x = centre, y = foot line; 'at' places an object on one of park-1's ambient_anchors. Entries are skipped while their art is missing; 'a|b' falls back to b (Phase 0).",
+ "objects": [
+  {"sprite": "fountain-lg-anim|fountain-anim", "at": "plaza_centre", "dx": 0, "dy": 16, "foot": {"ellipse": [0, -13, 38, 13]}, "anim": {"fps": 8, "mode": "pingpong"}},
+  {"sprite": "icecream-cart", "x": 506, "y": 194, "foot": "base", "optional": true},
+  {"sprite": "pet-ramp", "x": 44, "y": 192, "foot": "base", "optional": true},
+  {"sprite": "pet-tunnel", "x": 92, "y": 194, "foot": "base", "optional": true},
+  {"sprite": "pet-ball", "x": 214, "y": 186, "foot": "none", "optional": true},
+  {"sprite": "pet-bowl", "x": 238, "y": 192, "foot": [16, 6], "optional": true}
+ ],
+ "npcs": [
+  {"id": "visitor-woman", "sprite": "npc-woman|npc", "route": [[20, 150], [80, 137], [130, 127], [185, 129], [240, 141], [282, 126], [390, 126], [432, 142], [476, 156], [526, 166], [586, 158], [646, 145]], "speed": 15, "pause": [3, 7]},
+  {"id": "visitor-boy", "sprite": "npc-boy|shopkeeper", "route": [[628, 146], [586, 159], [526, 167], [476, 157], [436, 144], [392, 178], [282, 178], [236, 144]], "speed": 18, "pause": [4, 9], "start": 0.35}
+ ],
+ "fx": [
+  {"sprite": "fx-pond-sparkle", "count": 3},
+  {"sprite": "fx-pond-ripple", "count": 1},
+  {"sprite": "fx-butterfly-pink", "kind": "flutter", "around": "flowerbeds", "count": 1},
+  {"sprite": "fx-butterfly-yellow", "kind": "flutter", "around": "flowerbeds", "count": 1},
+  {"sprite": "fx-butterfly-blue", "kind": "flutter", "around": "flowerbeds", "count": 1}
+ ]
+}

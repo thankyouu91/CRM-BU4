@@ -1,0 +1,27 @@
+{
+  "collapse-filter": false,
+  "search": "-path:_Mẫu",
+  "showTags": false,
+  "showAttachments": false,
+  "showOrphans": true,
+  "collapse-color-groups": false,
+  "colorGroups": [
+    { "query": "path:\"10 Luật chơi\"", "color": { "a": 1, "rgb": 6732650 } },
+    { "query": "path:\"20 Kinh tế và cộng đồng\"", "color": { "a": 1, "rgb": 14725434 } },
+    { "query": "path:\"30 Máy chủ\"", "color": { "a": 1, "rgb": 5214934 } },
+    { "query": "path:\"40 Giao diện\"", "color": { "a": 1, "rgb": 13789287 } },
+    { "query": "path:\"50 Vận hành\" OR path:\"60 Thiết kế\"", "color": { "a": 1, "rgb": 10183760 } },
+    { "query": "path:\"00 Trang chủ\" OR path:\"90 Thuật ngữ\"", "color": { "a": 1, "rgb": 15426870 } }
+  ],
+  "collapse-display": false,
+  "showArrow": false,
+  "textFadeMultiplier": 0,
+  "nodeSizeMultiplier": 1.1,
+  "lineSizeMultiplier": 1,
+  "collapse-forces": true,
+  "centerStrength": 0.5,
+  "repelStrength": 12,
+  "linkStrength": 1,
+  "linkDistance": 220,
+  "scale": 0.6
+}

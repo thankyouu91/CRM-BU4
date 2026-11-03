@@ -9,6 +9,7 @@ import {
   ChartColumn,
   ChevronDown,
   FolderKanban,
+  Gamepad2,
   Inbox,
   KeyRound,
   LayoutDashboard,
@@ -18,6 +19,7 @@ import {
   PanelLeftClose,
   PanelLeftOpen,
   Settings,
+  SlidersHorizontal,
   Sparkles,
   Users,
   Wallet,
@@ -68,6 +70,9 @@ const NAV: { title: string; items: NavItem[] }[] = [
   },
 ];
 const SETTINGS: NavItem = { href: "/settings", label: "Cài đặt", icon: Settings };
+// Pet Town (the Petdex game) sits at the bottom with settings; its management board is for administrators.
+const GAME: NavItem = { href: "/ta-tua", label: "Pet Town", icon: Gamepad2 };
+const GAME_ADMIN: NavItem = { href: "/ta-tua/quan-ly", label: "Quản lý Pet Town", icon: SlidersHorizontal, adminOnly: true };
 
 function Brand({ collapsed }: { collapsed?: boolean }) {
   return (
@@ -170,6 +175,8 @@ function SidebarNav({ user, collapsed, onNavigate }: { user: CurrentUser; collap
         );
       })}
       <div className="mt-auto space-y-0.5 pt-4">
+        <NavLink item={GAME} active={isActive(GAME.href) && !isActive(GAME_ADMIN.href)} collapsed={collapsed} count={0} onNavigate={onNavigate} />
+        {allowed(GAME_ADMIN) && <NavLink item={GAME_ADMIN} active={isActive(GAME_ADMIN.href)} collapsed={collapsed} count={0} onNavigate={onNavigate} />}
         <NavLink item={SETTINGS} active={isActive(SETTINGS.href)} collapsed={collapsed} count={0} onNavigate={onNavigate} />
       </div>
     </nav>

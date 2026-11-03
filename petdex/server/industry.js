@@ -1,0 +1,548 @@
+// Chuỗi sản xuất của gia tộc: kho hàng, sản xuất mỗi đêm (khai thác mỏ trên lô → điện → nhà máy theo công thức),
+// bán hàng thừa cho NPC theo giá vĩ mô, sàn công nghiệp chung giữa các gia tộc, nhập khẩu nguyên liệu từ NPC.
+// Luật và số liệu ở public/ta-tua/game/js/shared/industry.js.
+import { db, transaction } from './db.js';
+import { dayKey } from './clock.js';
+import { DAY, GameError } from './game.js';
+import { antitrustTax, buyCapLeft, recordAntitrust } from './commerce.js';
+import { offerToShop } from './essentials.js';
+import { industryClosed } from './heavy-industry.js';
+import { post } from './ledger.js';
+import {
+  ESSENTIALS, ESSENTIAL_CATS, GOODS, landYield, GOOD_INDUSTRY, GOOD_ORDER, MARKET_RULES, PRODUCTION_INDUSTRIES, RUN_STEPS, batchesOf, depositsOf,
+  extractable, lineOf, plantsFor, qualityScore, recipeOf, variantInfo, variantsFor,
+} from '../../public/ta-tua/game/js/shared/industry.js';
+import { PHASES, PLOTS, buildingFactor, clanLevelOf, clanPerks, designComplete, envFactor, weatherFactor } from '../../public/ta-tua/game/js/shared/clan.js';
+
+/** Ngành khai thác hưởng buff Trị thủy (trồng trọt, chăn nuôi, lâm nghiệp). */
+export const IRRIGATED = ['agriculture', 'forestry'];
+
+const q = {
+  goods: db.prepare('SELECT * FROM clan_goods WHERE clan_id = ?'),
+  good: db.prepare('SELECT * FROM clan_goods WHERE clan_id = ? AND good = ?'),
+  addGood: db.prepare(`
+    INSERT INTO clan_goods (clan_id, good, qty) VALUES (?, ?, ?)
+    ON CONFLICT (clan_id, good) DO UPDATE SET qty = qty + excluded.qty`),
+  takeGood: db.prepare('UPDATE clan_goods SET qty = qty - ? WHERE clan_id = ? AND good = ? AND qty >= ?'),
+  setKeep: db.prepare(`
+    INSERT INTO clan_goods (clan_id, good, qty, keep) VALUES (?, ?, 0, ?)
+    ON CONFLICT (clan_id, good) DO UPDATE SET keep = excluded.keep`),
+  listings: db.prepare(`
+    SELECT l.*, c.name AS clan_name, c.emblem, c.color FROM goods_listings l JOIN clans c ON c.id = l.clan_id
+    WHERE l.closed_at IS NULL AND l.expires_at > ? ORDER BY l.good, l.price LIMIT 200`),
+  listing: db.prepare('SELECT * FROM goods_listings WHERE id = ?'),
+  myListings: db.prepare('SELECT COUNT(*) AS n FROM goods_listings WHERE clan_id = ? AND closed_at IS NULL'),
+  insertListing: db.prepare('INSERT INTO goods_listings (clan_id, good, qty, price, created_at, expires_at) VALUES (?, ?, ?, ?, ?, ?)'),
+  setListingQty: db.prepare('UPDATE goods_listings SET qty = ? WHERE id = ?'),
+  closeListing: db.prepare('UPDATE goods_listings SET closed_at = ? WHERE id = ?'),
+  expired: db.prepare('SELECT * FROM goods_listings WHERE closed_at IS NULL AND expires_at <= ?'),
+  insertTrade: db.prepare('INSERT INTO clan_trades (seller_id, buyer_id, good, qty, price, income, day, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)'),
+  tradeIncome: db.prepare('SELECT COALESCE(SUM(income), 0) AS total FROM clan_trades WHERE seller_id = ? AND day = ?'),
+  recentTrades: db.prepare(`
+    SELECT t.*, s.name AS seller_name, b.name AS buyer_name FROM clan_trades t JOIN clans s ON s.id = t.seller_id
+    LEFT JOIN clans b ON b.id = t.buyer_id WHERE t.seller_id = ? OR t.buyer_id = ? ORDER BY t.id DESC LIMIT 20`),
+  addProduction: db.prepare(`
+    INSERT INTO clan_production (clan_id, day, good, produced, used, sold, revenue) VALUES (?, ?, ?, ?, ?, ?, ?)
+    ON CONFLICT (clan_id, day, good) DO UPDATE SET produced = produced + excluded.produced, used = used + excluded.used,
+      sold = sold + excluded.sold, revenue = revenue + excluded.revenue`),
+  production: db.prepare('SELECT * FROM clan_production WHERE clan_id = ? AND day = ? ORDER BY good'),
+  lastDay: db.prepare('SELECT MAX(day) AS day FROM clan_production WHERE clan_id = ?'),
+  clan: db.prepare('SELECT * FROM clans WHERE id = ?'),
+  account: db.prepare('SELECT balance FROM accounts WHERE id = ?'),
+  setVariant: db.prepare('UPDATE land_plots SET variant = ? WHERE id = ?'),
+  asks: db.prepare(`
+    SELECT a.*, c.xp FROM essentials_asks a JOIN clans c ON c.id = a.clan_id
+    WHERE a.cat = ? AND a.qty > 0 AND c.dissolved_at IS NULL ORDER BY a.ratio, a.created_at`),
+  ask: db.prepare('SELECT * FROM essentials_asks WHERE clan_id = ? AND cat = ?'),
+  setAsk: db.prepare(`
+    INSERT INTO essentials_asks (clan_id, cat, qty, ratio, created_at) VALUES (?, ?, ?, ?, ?)
+    ON CONFLICT (clan_id, cat) DO UPDATE SET qty = excluded.qty, ratio = excluded.ratio, created_at = excluded.created_at`),
+  setAskQty: db.prepare('UPDATE essentials_asks SET qty = ? WHERE clan_id = ? AND cat = ?'),
+  dropAsk: db.prepare('DELETE FROM essentials_asks WHERE clan_id = ? AND cat = ?'),
+  clanPlots: db.prepare('SELECT * FROM land_plots WHERE clan_id = ?'),
+};
+/** Người mua 0 trong clan_trades: Siêu thị (sổ chào giá). NULL vẫn là NPC. */
+const SHOP_BUYER = 0;
+
+const PLOT_BY_ID = new Map(PLOTS.map((p) => [p.id, p]));
+const DEPOSITS = new Map(PLOTS.map((p) => [p.id, depositsOf(p)]));
+export const plotDeposits = (plotId) => DEPOSITS.get(Number(plotId)) ?? {};
+const clanAccount = (id) => `clan:${id}`;
+const balance = (id) => q.account.get(clanAccount(id))?.balance ?? 0;
+const fmt = (n) => Math.round(n).toLocaleString('vi-VN');
+const stochastic = (x, rand) => Math.floor(x) + (rand() < x - Math.floor(x) ? 1 : 0);
+
+// ---------------------------------------------------------------- giá & kho
+
+/** Giá tham chiếu hôm nay: giá gốc × cầu của ngành làm ra hàng đó × hệ số chu kỳ kinh tế. */
+export function refPrice(good, macro) {
+  const demand = macro?.demand?.[GOOD_INDUSTRY[good]] ?? 1;
+  return Math.max(1, Math.round(GOODS[good].base * demand * (PHASES[macro?.phase]?.factor ?? 1)));
+}
+/** Giá tham chiếu hôm nay của hàng mỗi nhóm thiết yếu, { food, care } (giá hàng gia tộc ở Siêu thị). */
+export const essentialRefs = (m) => Object.fromEntries(ESSENTIAL_CATS.map((c) => [c, refPrice(ESSENTIALS.cats[c].good, m)]));
+
+export const npcBuyPrice = (good, macro) => Math.max(1, Math.round(refPrice(good, macro) * MARKET_RULES.npcBuy));
+export const importPrice = (good, macro) => Math.round(refPrice(good, macro) * MARKET_RULES.importMarkup);
+
+export const warehouseCap = (level) => MARKET_RULES.warehouseBase + MARKET_RULES.warehousePerLevel * level;
+
+function stock(clanId) {
+  return Object.fromEntries(q.goods.all(clanId).map((r) => [r.good, r.qty]));
+}
+const used = (clanId) => q.goods.all(clanId).reduce((s, r) => s + (r.good === 'power' ? 0 : r.qty), 0);
+
+function addGoods(clanId, good, qty) {
+  if (qty > 0) q.addGood.run(clanId, good, qty);
+}
+function takeGoods(clanId, good, qty) {
+  if (qty <= 0) return;
+  if (q.takeGood.run(qty, clanId, good, qty).changes === 0) throw new GameError(`Kho không đủ ${GOODS[good].name}.`);
+}
+
+/** Hàng gia tộc dùng làm nguyên liệu cho các lô của mình (mặc định giữ lại, không tự bán). */
+function inputsNeeded(plots) {
+  const need = new Set();
+  for (const row of plots) {
+    const recipe = recipeOf(row.industry, row.variant);
+    for (const g of Object.keys(recipe?.in ?? {})) need.add(g);
+  }
+  return need;
+}
+
+// ---------------------------------------------------------------- sản xuất mỗi đêm
+
+/** Hệ số sản xuất của một lô (tốc độ lô, đất hợp ngành, thời tiết, chu kỳ, cấp gia tộc, công trình). */
+export function plotFactor(plot, row, { level, macro }) {
+  const design = typeof row.design === 'string' ? JSON.parse(row.design) : row.design ?? [];
+  return (1 + plot.prod) * envFactor(row.industry, plot.zone, plot.climate) * weatherFactor(macro.weather, plot.zone, plot.climate)
+    * (PHASES[macro.phase]?.factor ?? 1) * (1 + clanPerks(level).prodBonus) * buildingFactor(design) * landYield(plot);
+}
+
+/** Sản lượng dự kiến một đêm của một lô (để xem trước): đầu ra tối đa và nguyên liệu cần. */
+export function productionPreview(plot, { industry, variant, design = [], level = 1, macro }) {
+  const ind = PRODUCTION_INDUSTRIES[industry];
+  if (!ind) return null;
+  const factor = plotFactor(plot, { industry, design }, { level, macro });
+  const deposits = DEPOSITS.get(plot.id);
+  if (ind.extracts) {
+    const out = Object.fromEntries(Object.entries(extractable(industry, deposits)).map(([g, n]) => [g, Math.round(n * factor * 10) / 10]));
+    const value = Object.entries(out).reduce((s, [g, n]) => s + n * npcBuyPrice(g, macro), 0);
+    return { kind: 'extract', factor, deposits, out, in: {}, batches: 0, value: Math.round(value), cost: 0 };
+  }
+  const recipe = recipeOf(industry, variant);
+  if (!recipe) return { kind: 'power', factor, deposits, out: {}, in: {}, batches: 0, value: 0, cost: 0, plants: plantsFor(plot) };
+  const batches = Math.round(batchesOf(industry, variant) * factor * 10) / 10;
+  const out = Object.fromEntries(Object.entries(recipe.out).map(([g, n]) => [g, n * batches]));
+  const input = Object.fromEntries(Object.entries(recipe.in).map(([g, n]) => [g, n * batches]));
+  const value = Object.entries(out).reduce((s, [g, n]) => s + n * npcBuyPrice(g, macro), 0);
+  const cost = Object.entries(input).reduce((s, [g, n]) => s + n * refPrice(g, macro), 0);
+  return {
+    kind: industry === 'power' ? 'power' : 'factory', factor, deposits, out, in: input, batches, value: Math.round(value), cost: Math.round(cost),
+    plants: industry === 'power' ? plantsFor(plot) : undefined, lines: ind.lines ? variantsFor(industry, plot) : undefined, line: lineOf(industry, variant),
+  };
+}
+
+/**
+ * Chạy sản xuất một đêm cho gia tộc: khai thác, điện, nhà máy theo thứ tự thượng nguồn → hạ nguồn, rồi bán cho NPC
+ * điện thừa và hàng không giữ (hoặc tràn kho). Ghi tiền bán vào quỹ, trả về doanh thu để tính thuế.
+ * Lô chỉ chạy khi công trình đã hoàn chỉnh.
+ */
+/**
+ * Điểm chất lượng hàng thiết yếu của gia tộc: cấp gia tộc, nhà xưởng đẹp nhất của ngành chế biến (số mảnh),
+ * và gia tộc có tự chạy một ngành đầu vào không (Nông nghiệp/Chăn nuôi cho thực phẩm, Hóa chất/Nông nghiệp cho thuốc).
+ */
+export function clanQuality(cat, rows, level) {
+  const meta = ESSENTIALS.cats[cat];
+  // Lô khớp "ngành" hoặc "ngành:dây chuyền" (nhà máy gộp nhiều dây chuyền).
+  const runs = (r, industry, line = null) => r.industry === industry && (!line || lineOf(r.industry, r.variant) === line);
+  // Nhà xưởng: mọi lô của ngành làm ra đúng hàng thiết yếu này (đồ ăn có nhiều dây chuyền cùng ra thực phẩm chế biến).
+  const makes = (r) => r.industry === meta.industry && Boolean(recipeOf(r.industry, r.variant)?.out?.[meta.good]);
+  const pieces = Math.max(0, ...rows.filter(makes).map((r) => JSON.parse(r.design).length));
+  const upstream = meta.upstream.some((spec) => {
+    const [industry, line] = spec.split(':');
+    return rows.some((r) => runs(r, industry, line));
+  }) ? 1 : 0;
+  return qualityScore({ level, pieces, upstream });
+}
+
+export function runProduction(clan, plots, { day, macro, at, rand = Math.random, buffs = {} }) {
+  const irr = buffs.irrigation ?? 0;
+  const wind = buffs.wind ?? 0;
+  const extra = { irrigation: 0, wind: 0 };
+  const level = clanLevelOf(clan.xp);
+  // Lô chưa xây xong vẫn chạy, ở mức DESIGN.unbuiltRate (trong plotFactor).
+  const rows = plots.filter((r) => PRODUCTION_INDUSTRIES[r.industry] && !industryClosed(r.industry));
+  if (!rows.length && !q.goods.all(clan.id).length) return { revenue: 0, extra };
+  const log = new Map();
+  const note = (good, field, n) => {
+    if (!n) return;
+    const e = log.get(good) ?? { produced: 0, used: 0, sold: 0, revenue: 0 };
+    e[field] += n;
+    log.set(good, e);
+  };
+  const goods = stock(clan.id);
+  const have = (g) => goods[g] ?? 0;
+  const give = (g, n) => {
+    goods[g] = have(g) + n;
+    note(g, 'produced', n);
+  };
+  const take = (g, n) => {
+    goods[g] = have(g) - n;
+    note(g, 'used', n);
+  };
+
+  for (const [industry, line] of RUN_STEPS) {
+    for (const row of rows.filter((r) => r.industry === industry && (line === null || lineOf(industry, r.variant) === line))) {
+      const plot = PLOT_BY_ID.get(row.id);
+      const factor = plotFactor(plot, row, { level, macro });
+      const ind = PRODUCTION_INDUSTRIES[industry];
+      if (ind.extracts) {
+        // Trị thủy chỉ tăng trồng trọt, chăn nuôi, lâm nghiệp.
+        const boost = IRRIGATED.includes(industry) ? irr : 0;
+        for (const [g, n] of Object.entries(extractable(industry, DEPOSITS.get(plot.id)))) {
+          const made = stochastic(n * factor * (1 + boost), rand);
+          give(g, made);
+          extra.irrigation += (made * boost / (1 + boost)) * npcBuyPrice(g, macro);
+        }
+        continue;
+      }
+      const recipe = recipeOf(industry, row.variant);
+      if (!recipe) continue;
+      // Năng lượng gió tăng số mẻ của nhà máy và nhà máy điện.
+      const cap = stochastic(batchesOf(industry, row.variant) * factor * (1 + wind), rand);
+      const can = Math.min(cap, ...Object.entries(recipe.in).map(([g, n]) => Math.floor(have(g) / n)));
+      if (can <= 0) continue;
+      for (const [g, n] of Object.entries(recipe.in)) take(g, n * can);
+      for (const [g, n] of Object.entries(recipe.out)) {
+        give(g, n * can);
+        extra.wind += (n * can * wind / (1 + wind)) * npcBuyPrice(g, macro);
+      }
+    }
+  }
+
+  // Bán: điện thừa (không trữ được), hàng gia tộc chọn không giữ, và phần tràn kho.
+  const keepRows = new Map(q.goods.all(clan.id).map((r) => [r.good, r.keep]));
+  const needed = inputsNeeded(plots);
+  const sell = {};
+  for (const g of Object.keys(goods)) {
+    if (goods[g] <= 0) continue;
+    const keep = keepRows.get(g);
+    if (g === 'power' || keep === 0 || (keep == null && !needed.has(g))) sell[g] = goods[g];
+  }
+  let space = warehouseCap(level) - Object.entries(goods).reduce((s, [g, n]) => s + (g === 'power' || sell[g] ? 0 : Math.max(0, n)), 0);
+  for (const g of GOOD_ORDER.slice().reverse()) {
+    if (space >= 0) break;
+    const left = (goods[g] ?? 0) - (sell[g] ?? 0);
+    if (left <= 0 || g === 'power') continue;
+    const n = Math.min(left, -space);
+    sell[g] = (sell[g] ?? 0) + n;
+    space += n;
+  }
+  let revenue = 0;
+  // Hàng thiết yếu (Thực phẩm chế biến, Thuốc): Siêu thị mua trước theo giá tham chiếu × hệ số hạng chất lượng để bán
+  // lại thành hàng gia tộc, phần thừa mới bán NPC.
+  for (const cat of ESSENTIAL_CATS) {
+    const { good } = ESSENTIALS.cats[cat];
+    if (!(sell[good] > 0)) continue;
+    const byQ = offerToShop(clan.id, cat, sell[good], clanQuality(cat, rows, level), rand);
+    const units = byQ.reduce((a, n) => a + n, 0);
+    if (!units) continue;
+    const income = Math.round(byQ.reduce((a, n, i) => a + n * ESSENTIALS.qualities[i].mult, 0) * refPrice(good, macro));
+    goods[good] -= units;
+    sell[good] -= units;
+    note(good, 'sold', units);
+    log.get(good).revenue += income;
+    revenue += income;
+  }
+  for (const [g, n] of Object.entries(sell)) {
+    if (n <= 0) continue;
+    const income = n * npcBuyPrice(g, macro);
+    goods[g] -= n;
+    note(g, 'sold', n);
+    log.get(g).revenue += income;
+    revenue += income;
+  }
+
+  // Ghi kho (theo chênh lệch so với lúc đầu) và nhật ký.
+  const before = stock(clan.id);
+  for (const g of new Set([...Object.keys(before), ...Object.keys(goods)])) {
+    const diff = (goods[g] ?? 0) - (before[g] ?? 0);
+    if (diff > 0) addGoods(clan.id, g, diff);
+    else if (diff < 0) takeGoods(clan.id, g, -diff);
+  }
+  for (const [g, e] of log) q.addProduction.run(clan.id, day, g, e.produced, e.used, e.sold, e.revenue);
+  if (revenue > 0) post({ account: clanAccount(clan.id), delta: revenue, kind: 'clan_revenue', memo: `Bán hàng cho NPC ${day}`, now: at });
+  return { revenue, extra: { irrigation: Math.round(extra.irrigation), wind: Math.round(extra.wind) } };
+}
+
+/** Tiền bán hàng trên sàn chung (và bán NPC tức thì) trong ngày, đã vào quỹ, cần tính thuế. */
+export const tradeIncome = (clanId, day) => q.tradeIncome.get(clanId, day).total;
+
+/** Trả hàng của các tin đăng đã hết hạn về kho người bán. */
+// ---------------------------------------------------------------- Sổ chào giá cho Siêu thị (hàng thiết yếu)
+
+/** Sổ chào của mỗi nhóm thiết yếu: lệnh của gia tộc mình và các mức giá đang chờ (gộp theo giá, không lộ tên). */
+function shopBookView(clanId, macro) {
+  return Object.fromEntries(ESSENTIAL_CATS.map((cat) => {
+    const { good } = ESSENTIALS.cats[cat];
+    const mine = q.ask.get(clanId, cat);
+    const levels = new Map();
+    for (const a of q.asks.all(cat)) {
+      const key = Math.round(a.ratio * 100);
+      const e = levels.get(key) ?? { pct: key, qty: 0, orders: 0, mine: false };
+      e.qty += a.qty;
+      e.orders += 1;
+      e.mine ||= a.clan_id === clanId;
+      levels.set(key, e);
+    }
+    return [cat, {
+      good,
+      ref: refPrice(good, macro),
+      have: q.good.get(clanId, good)?.qty ?? 0,
+      ask: mine && mine.qty > 0 ? { qty: mine.qty, pct: Math.round(mine.ratio * 100) } : null,
+      book: [...levels.values()],
+    }];
+  }));
+}
+
+/**
+ * Đặt (hoặc sửa, hủy khi qty = 0) lệnh chào bán hàng thiết yếu cho Siêu thị. Hàng nằm trong kho tới khi khớp, nên
+ * mặt hàng được chuyển sang "Giữ trong kho". Đổi giá thì mất thứ tự thời gian.
+ */
+export function setShopAsk(userId, { cat, qty, pct }, now = Date.now()) {
+  return transaction(() => {
+    const clan = mustManage(userId);
+    const meta = ESSENTIALS.cats[cat];
+    if (!meta) throw new GameError('Không có nhóm hàng này.');
+    const n = Number(qty);
+    if (n === 0) {
+      if (!q.ask.get(clan.id, cat)) throw new GameError('Gia tộc chưa có lệnh chào bán nào để hủy.');
+      q.dropAsk.run(clan.id, cat);
+      return { message: `Đã hủy lệnh chào bán ${GOODS[meta.good].name} cho Siêu thị.` };
+    }
+    const amount = intQty(n);
+    const ratio = Math.round(Number(pct)) / 100;
+    if (!(ratio >= ESSENTIALS.askMin && ratio <= ESSENTIALS.askMax)) {
+      throw new GameError(`Giá chào phải từ ${ESSENTIALS.askMin * 100}% đến ${ESSENTIALS.askMax * 100}% giá tham chiếu.`);
+    }
+    const old = q.ask.get(clan.id, cat);
+    q.setAsk.run(clan.id, cat, amount, ratio, old && old.ratio === ratio ? old.created_at : now);
+    q.setKeep.run(clan.id, meta.good, 1);
+    return { message: `Chào bán tối đa ${fmt(amount)} ${GOODS[meta.good].name} cho Siêu thị ở ${Math.round(ratio * 100)}% giá tham chiếu. Siêu thị khớp lúc nửa đêm, giá thấp trước.` };
+  });
+}
+
+/**
+ * Khớp sổ chào lúc nửa đêm (sau openShopBuying, trước khi các gia tộc chạy sản xuất): mỗi nhóm, lệnh giá thấp trước,
+ * cùng giá thì hàng điểm chất lượng cao trước, rồi lệnh đặt trước. Hàng lấy từ kho; tiền vào quỹ và tính thuế đêm đó
+ * như giao dịch trên sàn. Trả về số đơn vị khớp theo nhóm.
+ */
+export function clearShopBook(day, macro, at, rand = Math.random) {
+  const out = {};
+  for (const cat of ESSENTIAL_CATS) {
+    const { good } = ESSENTIALS.cats[cat];
+    const ref = refPrice(good, macro);
+    const asks = q.asks.all(cat).map((a) => {
+      const rows = q.clanPlots.all(a.clan_id).filter((r) => PRODUCTION_INDUSTRIES[r.industry] && designComplete(JSON.parse(r.design)));
+      return { ...a, score: clanQuality(cat, rows, clanLevelOf(a.xp)) };
+    }).sort((x, y) => x.ratio - y.ratio || y.score - x.score || x.created_at - y.created_at);
+    out[cat] = 0;
+    for (const a of asks) {
+      const units = Math.min(a.qty, q.good.get(a.clan_id, good)?.qty ?? 0);
+      if (units <= 0) continue;
+      const byQ = offerToShop(a.clan_id, cat, units, a.score, rand);
+      const n = byQ.reduce((s, x) => s + x, 0);
+      if (!n) continue;
+      const income = Math.round(byQ.reduce((s, x, i) => s + x * ESSENTIALS.qualities[i].mult, 0) * ref * a.ratio);
+      takeGoods(a.clan_id, good, n);
+      q.setAskQty.run(a.qty - n, a.clan_id, cat);
+      post({ account: clanAccount(a.clan_id), delta: income, kind: 'goods_trade', memo: `Siêu thị mua ${n} ${GOODS[good].name} ${day}`, now: at });
+      q.insertTrade.run(a.clan_id, SHOP_BUYER, good, n, Math.round(ref * a.ratio), income, day, at);
+      out[cat] += n;
+    }
+  }
+  return out;
+}
+
+export function expireListings(now) {
+  for (const l of q.expired.all(now)) {
+    q.closeListing.run(now, l.id);
+    addGoods(l.clan_id, l.good, l.qty);
+  }
+}
+
+// ---------------------------------------------------------------- thao tác của người chơi
+
+function memberRole(userId) {
+  const m = db.prepare('SELECT * FROM clan_members WHERE user_id = ?').get(userId);
+  const clan = m && q.clan.get(m.clan_id);
+  if (!clan || clan.dissolved_at) throw new GameError('Bạn chưa ở gia tộc nào.');
+  return { clan, role: m.role };
+}
+function mustManage(userId) {
+  const ctx = memberRole(userId);
+  if (ctx.role !== 'leader' && ctx.role !== 'elder') throw new GameError('Chỉ tộc trưởng hoặc trưởng lão mới được giao dịch hàng của gia tộc.');
+  return ctx.clan;
+}
+const mustGood = (good, { power = false } = {}) => {
+  if (!GOODS[good] || (!power && good === 'power')) throw new GameError('Không có mặt hàng này.');
+  return GOODS[good];
+};
+const intQty = (v) => {
+  const n = Number(v);
+  if (!Number.isInteger(n) || n <= 0 || n > 100_000) throw new GameError('Số lượng không hợp lệ.');
+  return n;
+};
+
+export function industryView(userId, macro, now = Date.now()) {
+  const m = db.prepare('SELECT * FROM clan_members WHERE user_id = ?').get(userId);
+  const clan = m && q.clan.get(m.clan_id);
+  const prices = Object.fromEntries(GOOD_ORDER.map((g) => [g, { ref: refPrice(g, macro), npc: npcBuyPrice(g, macro), import: importPrice(g, macro) }]));
+  const listings = q.listings.all(now).map((l) => ({
+    id: l.id, good: l.good, qty: l.qty, price: l.price, clan: { id: l.clan_id, name: l.clan_name, emblem: l.emblem, color: l.color },
+    mine: Boolean(clan && l.clan_id === clan.id), expiresAt: l.expires_at,
+  }));
+  if (!clan || clan.dissolved_at) return { clan: null, prices, listings, rules: MARKET_RULES };
+  const level = clanLevelOf(clan.xp);
+  const plots = db.prepare('SELECT * FROM land_plots WHERE clan_id = ?').all(clan.id);
+  const needed = inputsNeeded(plots);
+  const last = q.lastDay.get(clan.id).day;
+  return {
+    clan: { id: clan.id, role: m.role, treasury: balance(clan.id) },
+    // Nguyên liệu của gia tộc luôn hiện (kể cả khi hết hàng) để vẫn chỉnh được "Giữ trong kho".
+    goods: (() => {
+      const rows = new Map(q.goods.all(clan.id).map((r) => [r.good, r]));
+      for (const g of needed) if (!rows.has(g)) rows.set(g, { good: g, qty: 0, keep: null });
+      return [...rows.values()].filter((r) => r.qty > 0 || r.keep != null || needed.has(r.good)).map((r) => ({
+        good: r.good, qty: r.qty, keep: r.keep == null ? needed.has(r.good) : Boolean(r.keep), input: needed.has(r.good),
+      }));
+    })(),
+    capacity: warehouseCap(level),
+    used: used(clan.id),
+    production: last ? { day: last, rows: q.production.all(clan.id, last) } : null,
+    trades: q.recentTrades.all(clan.id, clan.id).map((t) => ({
+      id: t.id, good: t.good, qty: t.qty, price: t.price, income: t.income, day: t.day, at: t.created_at,
+      side: t.seller_id === clan.id ? 'sell' : 'buy',
+      other: t.seller_id === clan.id ? t.buyer_name ?? (t.buyer_id === SHOP_BUYER ? 'Siêu thị' : 'NPC') : t.seller_name,
+    })),
+    prices,
+    listings,
+    rules: MARKET_RULES,
+    shopBook: shopBookView(clan.id, macro),
+    // Sở Công Thương (M8): số đơn vị gia tộc còn được mua của mỗi mặt hàng đang có tin bán, trong 24 giờ.
+    buyLeft: Object.fromEntries([...new Set(listings.filter((l) => !l.mine).map((l) => l.good))].map((g) => [g, buyCapLeft(clan.id, g, now)])),
+  };
+}
+
+export function setKeep(userId, good, keep) {
+  const clan = mustManage(userId);
+  mustGood(good);
+  q.setKeep.run(clan.id, good, keep ? 1 : 0);
+  return { message: keep ? `Giữ ${GOODS[good].name} trong kho.` : `${GOODS[good].name} sẽ tự bán cho NPC mỗi đêm.` };
+}
+
+export function listGoods(userId, { good, qty, price }, macro, now = Date.now()) {
+  return transaction(() => {
+    const clan = mustManage(userId);
+    mustGood(good);
+    const n = intQty(qty);
+    const ref = refPrice(good, macro);
+    const p = Number(price);
+    if (!Number.isInteger(p) || p < Math.ceil(ref * MARKET_RULES.band[0]) || p > Math.floor(ref * MARKET_RULES.band[1])) {
+      throw new GameError(`Giá phải từ ${fmt(Math.ceil(ref * MARKET_RULES.band[0]))} đến ${fmt(Math.floor(ref * MARKET_RULES.band[1]))} xu mỗi đơn vị.`);
+    }
+    if (q.myListings.get(clan.id).n >= MARKET_RULES.maxListings) throw new GameError(`Mỗi gia tộc đăng tối đa ${MARKET_RULES.maxListings} tin.`);
+    takeGoods(clan.id, good, n);
+    q.insertListing.run(clan.id, good, n, p, now, now + MARKET_RULES.listingDays * DAY);
+    return { message: `Đã đăng bán ${fmt(n)} ${GOODS[good].name} giá ${fmt(p)} xu/đơn vị.` };
+  });
+}
+
+export function cancelListing(userId, id, now = Date.now()) {
+  return transaction(() => {
+    const clan = mustManage(userId);
+    const l = q.listing.get(Number(id));
+    if (!l || l.clan_id !== clan.id || l.closed_at) throw new GameError('Không tìm thấy tin đăng của gia tộc.');
+    q.closeListing.run(now, l.id);
+    addGoods(clan.id, l.good, l.qty);
+    return { message: 'Đã gỡ tin, hàng về lại kho.' };
+  });
+}
+
+export function buyListing(userId, id, qty, now = Date.now()) {
+  return transaction(() => {
+    const clan = mustManage(userId);
+    const l = q.listing.get(Number(id));
+    if (!l || l.closed_at || l.expires_at <= now) throw new GameError('Tin này đã hết.');
+    if (l.clan_id === clan.id) throw new GameError('Không mua hàng của chính gia tộc mình.');
+    const n = Math.min(intQty(qty), l.qty);
+    // M8: không gom quá 30% hàng đang niêm yết của một mặt hàng trong 24 giờ.
+    const left = buyCapLeft(clan.id, l.good, now);
+    if (n > left) {
+      throw new GameError(left > 0
+        ? `Sở Công Thương: 24 giờ này gia tộc chỉ được mua thêm ${fmt(left)} ${GOODS[l.good].name} (tối đa ${Math.round(MARKET_RULES.buyCapShare * 100)}% hàng đang niêm yết).`
+        : `Sở Công Thương: gia tộc đã mua đủ hạn mức ${GOODS[l.good].name} trong 24 giờ.`);
+    }
+    const level = clanLevelOf(clan.xp);
+    if (used(clan.id) + n > warehouseCap(level)) throw new GameError('Kho gia tộc không đủ chỗ.');
+    const total = n * l.price;
+    if (balance(clan.id) < total) throw new GameError(`Quỹ gia tộc không đủ ${fmt(total)} xu.`);
+    const fee = Math.ceil(total * MARKET_RULES.fee);
+    // M6: người bán vượt 40% khối lượng 7 ngày của mặt hàng thì phần vượt chịu thêm 10% (vào ngân khố).
+    const anti = antitrustTax(l.clan_id, l.good, n, l.price, now);
+    post({ account: clanAccount(clan.id), delta: -total, kind: 'goods_trade', memo: `Mua ${n} ${GOODS[l.good].name}`, now });
+    post({ account: clanAccount(l.clan_id), delta: total - fee, kind: 'goods_trade', memo: `Bán ${n} ${GOODS[l.good].name}`, now });
+    if (fee > 0) post({ account: 'treasury', delta: Math.floor(fee / 2), kind: 'goods_trade', memo: 'Phí sàn công nghiệp', now });
+    if (anti.tax > 0) {
+      const memo = `Thuế chống độc quyền ${anti.taxedQty} ${GOODS[l.good].name}`;
+      post({ account: clanAccount(l.clan_id), delta: -anti.tax, kind: 'antitrust_tax', memo, now });
+      post({ account: 'treasury', delta: anti.tax, kind: 'antitrust_tax', memo, now });
+      recordAntitrust(l.clan_id, l.good, anti.taxedQty, anti.tax, anti.share, now);
+    }
+    addGoods(clan.id, l.good, n);
+    if (n === l.qty) q.closeListing.run(now, l.id);
+    else q.setListingQty.run(l.qty - n, l.id);
+    q.insertTrade.run(l.clan_id, clan.id, l.good, n, l.price, total - fee - anti.tax, dayKey(now), now);
+    return { message: `Đã mua ${fmt(n)} ${GOODS[l.good].name} với giá ${fmt(total)} xu.` };
+  });
+}
+
+export function importGoods(userId, good, qty, macro, now = Date.now()) {
+  return transaction(() => {
+    const clan = mustManage(userId);
+    mustGood(good);
+    const n = intQty(qty);
+    if (used(clan.id) + n > warehouseCap(clanLevelOf(clan.xp))) throw new GameError('Kho gia tộc không đủ chỗ.');
+    const total = n * importPrice(good, macro);
+    if (balance(clan.id) < total) throw new GameError(`Quỹ gia tộc không đủ ${fmt(total)} xu.`);
+    post({ account: clanAccount(clan.id), delta: -total, kind: 'goods_import', memo: `Nhập ${n} ${GOODS[good].name}`, now });
+    addGoods(clan.id, good, n);
+    return { message: `Đã nhập khẩu ${fmt(n)} ${GOODS[good].name} giá ${fmt(total)} xu.` };
+  });
+}
+
+export function sellToNpc(userId, good, qty, macro, now = Date.now()) {
+  return transaction(() => {
+    const clan = mustManage(userId);
+    mustGood(good);
+    const n = intQty(qty);
+    takeGoods(clan.id, good, n);
+    const income = n * npcBuyPrice(good, macro);
+    post({ account: clanAccount(clan.id), delta: income, kind: 'goods_trade', memo: `Bán ${n} ${GOODS[good].name} cho NPC`, now });
+    q.insertTrade.run(clan.id, null, good, n, npcBuyPrice(good, macro), income, dayKey(now), now);
+    return { message: `Đã bán ${fmt(n)} ${GOODS[good].name}, nhận ${fmt(income)} xu.` };
+  });
+}
+
+/** Chọn lựa chọn của lô: loại nhà máy điện (ngành Năng lượng) hoặc dây chuyền (nhà máy gộp nhiều dây chuyền). */
+export function setPlotVariant(plotId, variant, industry = 'power') {
+  const plot = PLOT_BY_ID.get(Number(plotId));
+  if (!plot) throw new GameError('Không có lô đất này.');
+  if (!variantsFor(industry, plot).includes(variant)) {
+    throw new GameError(industry === 'power' ? 'Lô này không dựng được loại nhà máy điện đó.' : 'Lô này không chạy được dây chuyền đó.');
+  }
+  q.setVariant.run(variant, plot.id);
+  return { message: `Lô ${plot.code}: ${variantInfo(industry, variant).name}.` };
+}
+
