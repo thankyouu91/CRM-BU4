@@ -82,6 +82,8 @@ export const createProjectSchema = z.object({
   dueDate: dateish,
   memberIds: z.array(z.string()).optional(),
   members: projectMembers.optional(),
+  /** Khách hàng của dự án (trang Khách hàng); null bỏ liên kết. */
+  customerId: z.string().max(64).nullable().optional(),
 });
 
 export const updateProjectSchema = z.object({
@@ -95,6 +97,8 @@ export const updateProjectSchema = z.object({
   memberIds: z.array(z.string()).optional(),
   /** Replace the member list with explicit project roles. */
   members: projectMembers.optional(),
+  /** Khách hàng của dự án; null bỏ liên kết, bỏ trống thì giữ nguyên. */
+  customerId: z.string().max(64).nullable().optional(),
 });
 
 // Project templates (lib/project-templates.ts)

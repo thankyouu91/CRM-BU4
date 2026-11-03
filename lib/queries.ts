@@ -41,6 +41,7 @@ export async function getProjectDetail(projectId: string) {
     where: { id: projectId },
     include: {
       owner: userBrief,
+      customer: { select: { id: true, name: true } },
       members: { include: { user: userBrief } },
       // id breaks ties between rows created in the same instant, so the order is stable.
       categories: { orderBy: [{ order: "asc" }, { createdAt: "asc" }, { id: "asc" }] },

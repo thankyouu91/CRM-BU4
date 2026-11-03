@@ -25,6 +25,8 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)("customers on PostgreSQL", () =>
     one: await import("../app/api/customers/[id]/route"),
     contacts: await import("../app/api/customers/[id]/contacts/route"),
     contact: await import("../app/api/customer-contacts/[id]/route"),
+    projects: await import("../app/api/projects/route"),
+    project: await import("../app/api/projects/[id]/route"),
   });
   const call = async (who: keyof typeof ids, fn: () => Promise<Response>) => {
     session.user = as(who);
@@ -45,6 +47,7 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)("customers on PostgreSQL", () =>
 
   afterAll(async () => {
     if (!db) return;
+    await db.project.deleteMany({ where: { name: { contains: run } } });
     await db.customer.deleteMany({ where: { name: { contains: run } } });
     await db.auditLog.deleteMany({ where: { actorId: { in: Object.values(ids) } } });
     await db.user.deleteMany({ where: { id: { in: Object.values(ids) } } });
@@ -66,7 +69,7 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)("customers on PostgreSQL", () =>
     expect(director.status).toBe(201);
     await call("sales", () => r.contacts.POST(req(`/api/customers/${id}/contacts`, "POST", { level: "STAFF", name: "Lê Thị B", department: "Nhân sự" }), params(id)));
 
-    const list = await call("staff", () => r.list.GET());
+    const list = await call("staff", () => r.list.GET(req("/api/customers", "GET")));
     const mine = list.body.customers.find((c: { id: string }) => c.id === id);
     expect(mine.contacts.map((c: { name: string; level: string }) => `${c.level}:${c.name}`).sort()).toEqual(["DIRECTOR:Nguyễn Văn A", "STAFF:Lê Thị B"]);
 
@@ -75,12 +78,31 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)("customers on PostgreSQL", () =>
     expect(moved.body.contact).toMatchObject({ level: "DEPUTY", phone: null, title: "Tổng giám đốc" });
     expect((await call("staff", () => r.contact.DELETE(req("/x", "DELETE"), params(director.body.contact.id)))).status).toBe(403);
 
+    // A project belongs to a customer: chosen when it is made or later; the customer's card lists the
+    // projects each viewer can see (the boss sees every project, the staff member none of these).
+    const project = await call("boss", () => r.projects.POST(req("/api/projects", "POST", { name: `Dự án ${run}`, customerId: id })));
+    expect(project.status).toBe(201);
+    expect(project.body.project.customerId).toBe(id);
+    const other = await call("boss", () => r.projects.POST(req("/api/projects", "POST", { name: `Dự án khác ${run}` })));
+    expect((await call("boss", () => r.project.PATCH(req("/x", "PATCH", { customerId: "khong-co" }), params(other.body.project.id)))).status).toBe(400);
+    expect((await call("boss", () => r.project.PATCH(req("/x", "PATCH", { customerId: id }), params(other.body.project.id)))).status).toBe(200);
+    const seen = async (who: keyof typeof ids) =>
+      (await call(who, () => r.list.GET(req("/api/customers", "GET")))).body.customers.find((c: { id: string }) => c.id === id).projects.map((p: { name: string }) => p.name).sort();
+    expect(await seen("boss")).toEqual([`Dự án ${run}`, `Dự án khác ${run}`].sort());
+    expect(await seen("staff")).toEqual([]);
+    const brief = await call("staff", () => r.list.GET(req("/api/customers?brief=1", "GET")));
+    expect(brief.body.customers.find((c: { id: string }) => c.id === id)).toEqual({ id, name });
+    // Unlinking with null.
+    await call("boss", () => r.project.PATCH(req("/x", "PATCH", { customerId: null }), params(other.body.project.id)));
+    expect(await seen("boss")).toEqual([`Dự án ${run}`]);
+
     const renamed = await call("sales", () => r.one.PATCH(req("/x", "PATCH", { industry: "Giáo dục" }), params(id)));
     expect(renamed.body.customer).toMatchObject({ name, industry: "Giáo dục" });
 
-    // Deleting the company takes its people with it.
+    // Deleting the company takes its people with it; its projects stay, without a customer.
     expect((await call("sales", () => r.one.DELETE(req("/x", "DELETE"), params(id)))).status).toBe(200);
     expect(await db.customerContact.count({ where: { customerId: id } })).toBe(0);
+    expect((await db.project.findUnique({ where: { id: project.body.project.id } }))?.customerId).toBeNull();
     expect((await call("sales", () => r.one.PATCH(req("/x", "PATCH", { industry: "X" }), params(id)))).status).toBe(404);
 
     const actions = (await db.auditLog.findMany({ where: { actorId: { in: Object.values(ids) }, entityType: "customer" }, select: { action: true } })).map((a) => a.action).sort();

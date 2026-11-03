@@ -27,6 +27,8 @@ export interface ProjectFormValues {
   startDate: string | null;
   dueDate: string | null;
   ownerId?: string;
+  /** Khách hàng của dự án (trang Khách hàng). */
+  customerId?: string | null;
   /** Members and their role in the project (the owner is always a manager). */
   members: { userId: string; role: ProjectRoleKey }[];
 }
@@ -89,6 +91,14 @@ export function ProjectFormModal({
   const [busy, setBusy] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const editing = !!initial?.id;
+  // The customer picker's list, loaded once the form opens.
+  const [customers, setCustomers] = useState<{ id: string; name: string }[] | null>(null);
+  useEffect(() => {
+    if (!open || customers) return;
+    api<{ customers: { id: string; name: string }[] }>("/api/customers?brief=1")
+      .then((res) => setCustomers(res.customers))
+      .catch(() => setCustomers([]));
+  }, [open, customers]);
 
   useEffect(() => {
     if (open) {
@@ -137,6 +147,7 @@ export function ProjectFormModal({
       startDate: v.startDate,
       dueDate: v.dueDate,
       members: v.members,
+      customerId: v.customerId ?? null,
     };
     try {
       let id: string;
@@ -225,6 +236,16 @@ export function ProjectFormModal({
         <div className="space-y-4">
           <Field label="Tên dự án" error={errors.name}>
             <Input value={v.name} onChange={(e) => setV({ ...v, name: e.target.value })} placeholder="VD: Ra mắt sản phẩm mới Q1" autoFocus />
+          </Field>
+          <Field label="Khách hàng" error={errors.customerId} hint={customers && customers.length === 0 ? "Chưa có khách hàng nào. Thêm ở trang Khách hàng." : undefined}>
+            <Select value={v.customerId ?? ""} onChange={(e) => setV({ ...v, customerId: e.target.value || null })} aria-label="Khách hàng" disabled={customers === null}>
+              <option value="">{customers === null ? "Đang tải…" : "Không gắn khách hàng"}</option>
+              {customers?.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.name}
+                </option>
+              ))}
+            </Select>
           </Field>
           <Field label="Mô tả">
             <Textarea

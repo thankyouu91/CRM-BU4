@@ -26,6 +26,7 @@ const company = (contacts: CustomerContactDto[]): CustomerDto => ({
   note: null,
   updatedAt: new Date(0).toISOString(),
   contacts,
+  projects: [{ id: "p1", name: "Đào tạo tiếng Anh lãnh đạo", status: "ACTIVE", color: "#000" }],
 });
 
 describe("customers", () => {
@@ -48,6 +49,7 @@ describe("customers", () => {
     expect(customerMatches(c, "tran thi hanh")).toBe(true);
     expect(customerMatches(c, "hanh@")).toBe(true);
     expect(customerMatches(c, "0901 234")).toBe(true);
+    expect(customerMatches(c, "tieng anh lanh dao")).toBe(true);
     expect(customerMatches(c, "khong co")).toBe(false);
   });
 

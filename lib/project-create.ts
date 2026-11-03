@@ -2,12 +2,21 @@ import type { Prisma } from "@prisma/client";
 import { resolveMemberRoles } from "./project-members";
 import type { CreateProjectInput } from "./validations";
 import { InputError } from "./errors";
+import { prisma } from "./prisma";
 
 /** A project cannot end before it starts (either date may be missing). */
 export function checkProjectDates(startDate: Date | null | undefined, dueDate: Date | null | undefined) {
   if (startDate && dueDate && dueDate.getTime() < startDate.getTime()) {
     throw new InputError("Hạn hoàn thành của dự án không được trước ngày bắt đầu");
   }
+}
+
+/** A customer id from a project form: it must exist (null or empty means none). */
+export async function checkCustomer(customerId: string | null | undefined): Promise<string | null> {
+  if (!customerId) return null;
+  const found = await prisma.customer.findUnique({ where: { id: customerId }, select: { id: true } });
+  if (!found) throw new InputError("Khách hàng đã chọn không còn trong danh sách, hãy chọn lại");
+  return found.id;
 }
 
 /**
@@ -17,10 +26,11 @@ export function checkProjectDates(startDate: Date | null | undefined, dueDate: D
  */
 export async function newProjectData(
   ownerId: string,
-  input: Pick<CreateProjectInput, "name" | "description" | "status" | "color" | "startDate" | "dueDate" | "members" | "memberIds">,
+  input: Pick<CreateProjectInput, "name" | "description" | "status" | "color" | "startDate" | "dueDate" | "members" | "memberIds" | "customerId">,
 ) {
   checkProjectDates(input.startDate, input.dueDate);
   const roles = await resolveMemberRoles(ownerId, input);
+  const customerId = await checkCustomer(input.customerId);
   const data = {
     name: input.name.trim(),
     description: input.description?.trim() || null,
@@ -29,6 +39,7 @@ export async function newProjectData(
     startDate: input.startDate,
     dueDate: input.dueDate,
     ownerId,
+    customerId,
     members: { create: [...roles].map(([userId, role]) => ({ userId, role })) },
   } satisfies Prisma.ProjectUncheckedCreateInput;
   return { data, roles };

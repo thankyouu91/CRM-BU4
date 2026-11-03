@@ -37,6 +37,15 @@ export interface CustomerDto {
   note: string | null;
   updatedAt: string;
   contacts: CustomerContactDto[];
+  /** The customer's projects the viewer can see. */
+  projects: CustomerProjectDto[];
+}
+
+export interface CustomerProjectDto {
+  id: string;
+  name: string;
+  status: string;
+  color: string;
 }
 
 /** Contacts grouped by level, in the order the page shows them (top position first). */
@@ -58,7 +67,8 @@ export function customerMatches(customer: CustomerDto, query: string): boolean {
   if (!q) return true;
   const own = [customer.name, customer.taxCode, customer.industry, customer.address, customer.phone, customer.email];
   const people = customer.contacts.flatMap((c) => [c.name, c.title, c.department, c.phone, c.email]);
-  return [...own, ...people].some((v) => v && fold(v).includes(q));
+  const projects = customer.projects.map((p) => p.name);
+  return [...own, ...people, ...projects].some((v) => v && fold(v).includes(q));
 }
 
 // ---- Validation (API) ----

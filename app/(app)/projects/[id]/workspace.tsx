@@ -186,6 +186,14 @@ export function ProjectWorkspace({
             </div>
             {p.description && <p className="mt-1.5 max-w-3xl text-sm text-muted-foreground">{p.description}</p>}
             <div className="mt-3 flex flex-wrap items-center gap-x-5 gap-y-2 text-sm">
+              {p.customer && (
+                <span className="text-muted-foreground">
+                  Khách hàng:{" "}
+                  <Link href={`/customers?open=${p.customer.id}`} className="font-medium text-foreground hover:underline">
+                    {p.customer.name}
+                  </Link>
+                </span>
+              )}
               <span className="text-muted-foreground">
                 Chủ dự án: <span className="font-medium text-foreground">{p.owner.name}</span>
               </span>
@@ -379,6 +387,7 @@ export function ProjectWorkspace({
             startDate: p.startDate,
             dueDate: p.dueDate,
             ownerId: p.ownerId,
+            customerId: p.customerId,
             members: p.members.map((m) => ({ userId: m.id, role: m.projectRole })),
           }}
         />

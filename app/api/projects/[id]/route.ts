@@ -9,7 +9,7 @@ import { updateProjectSchema } from "@/lib/validations";
 import { PROJECT_ROLE_INFO } from "@/lib/permissions";
 import { audit, changedFields } from "@/lib/audit";
 import { notify } from "@/lib/notifications";
-import { checkProjectDates } from "@/lib/project-create";
+import { checkCustomer, checkProjectDates } from "@/lib/project-create";
 import { taskCounts } from "@/lib/project-sync";
 
 type Ctx = { params: Promise<{ id: string }> };
@@ -34,7 +34,7 @@ export async function PATCH(req: NextRequest, ctx: Ctx) {
     const data = updateProjectSchema.parse(await req.json());
     const existing = await prisma.project.findUnique({
       where: { id: params.id },
-      select: { ownerId: true, name: true, description: true, status: true, color: true, startDate: true, dueDate: true },
+      select: { ownerId: true, name: true, description: true, status: true, color: true, startDate: true, dueDate: true, customerId: true },
     });
     if (!existing) return notFound("Không tìm thấy dự án");
     // Only when the dates are being changed: an older project saved with its dates the wrong
@@ -47,6 +47,7 @@ export async function PATCH(req: NextRequest, ctx: Ctx) {
       const { open } = await taskCounts(params.id);
       if (open) return badRequest(`Dự án còn ${open} công việc chưa hoàn thành. Hãy hoàn thành hoặc xoá các việc đó trước, hoặc chọn “Tạm dừng” / “Đã huỷ”.`);
     }
+    const customerId = data.customerId === undefined ? undefined : await checkCustomer(data.customerId);
 
     const { updated, memberDiff } = await prisma.$transaction(async (tx) => {
       const row = await tx.project.update({
@@ -58,6 +59,7 @@ export async function PATCH(req: NextRequest, ctx: Ctx) {
           color: data.color,
           startDate: data.startDate,
           dueDate: data.dueDate,
+          customerId,
         },
       });
 
@@ -79,7 +81,7 @@ export async function PATCH(req: NextRequest, ctx: Ctx) {
     });
 
     const actor = { id: me.id, name: me.name };
-    const changes = changedFields(existing, updated, ["name", "description", "status", "color", "startDate", "dueDate"]);
+    const changes = changedFields(existing, updated, ["name", "description", "status", "color", "startDate", "dueDate", "customerId"]);
     if (Object.keys(changes).length) {
       await audit(actor, {
         action: "project.update",

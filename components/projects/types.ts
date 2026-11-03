@@ -36,6 +36,9 @@ export interface ProjectDetailData {
   dueDate: string | null;
   ownerId: string;
   owner: UserBrief;
+  /** Khách hàng của dự án, nếu đã gắn. */
+  customer: { id: string; name: string } | null;
+  customerId: string | null;
   members: ProjectMemberBrief[];
   categories: ProjectCategory[];
   tasks: ProjectTask[];

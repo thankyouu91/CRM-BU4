@@ -4,7 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { auth, forbidden, handle, notFound, ok, unauthorized } from "@/lib/api";
 import { hasPermission } from "@/lib/permissions";
 import { updateCustomerSchema } from "@/lib/customers";
-import { customerDto, customerInclude } from "@/lib/customer-queries";
+import { customerDto, customerIncludeFor } from "@/lib/customer-queries";
 import { audit, changedFields } from "@/lib/audit";
 
 type Ctx = { params: Promise<{ id: string }> };
@@ -19,7 +19,7 @@ export async function PATCH(req: NextRequest, ctx: Ctx) {
     const before = await prisma.customer.findUnique({ where: { id } });
     if (!before) return notFound("Không tìm thấy khách hàng");
     const d = updateCustomerSchema.parse(await req.json());
-    const customer = await prisma.customer.update({ where: { id }, data: d, include: customerInclude });
+    const customer = await prisma.customer.update({ where: { id }, data: d, include: customerIncludeFor(me) });
     const changes = changedFields(before, customer, ["name", "taxCode", "industry", "address", "phone", "email", "website", "note"]);
     if (Object.keys(changes).length) {
       await audit(

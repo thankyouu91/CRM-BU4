@@ -1,7 +1,8 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import { Building2, ChevronDown, Mail, Pencil, Phone, Plus, Search, Trash2, UserRound } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import Link from "next/link";
+import { Building2, ChevronDown, FolderKanban, Mail, Pencil, Phone, Plus, Search, Trash2, UserRound } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { ConfirmDialog } from "@/components/ui/confirm";
@@ -9,6 +10,7 @@ import { Field, Input, Select, Textarea } from "@/components/ui/input";
 import { EmptyState, PageHeader } from "@/components/ui/misc";
 import { Modal } from "@/components/ui/modal";
 import { api, ApiError } from "@/lib/client";
+import { PROJECT_STATUS } from "@/lib/constants";
 import { cn } from "@/lib/utils";
 import {
   CONTACT_LEVELS,
@@ -18,6 +20,7 @@ import {
   type ContactLevel,
   type CustomerContactDto,
   type CustomerDto,
+  type CustomerProjectDto,
 } from "@/lib/customers";
 
 type CustomerForm = Pick<CustomerDto, "name" | "taxCode" | "industry" | "address" | "phone" | "email" | "website" | "note">;
@@ -34,16 +37,21 @@ const showDay = (day: string | null) => (day && /^\d{4}-\d{2}-\d{2}$/.test(day) 
 /** A website as a link: "abc.vn" opens https://abc.vn. */
 const siteHref = (site: string) => (/^https?:\/\//i.test(site) ? site : `https://${site}`);
 
-export function CustomersView({ initial, canManage }: { initial: CustomerDto[]; canManage: boolean }) {
+export function CustomersView({ initial, canManage, focus = null }: { initial: CustomerDto[]; canManage: boolean; focus?: string | null }) {
   const [customers, setCustomers] = useState(initial);
   const [query, setQuery] = useState("");
-  const [open, setOpen] = useState<Set<string>>(() => new Set(initial.length === 1 ? [initial[0].id] : []));
+  const [open, setOpen] = useState<Set<string>>(() => new Set(focus ? [focus] : initial.length === 1 ? [initial[0].id] : []));
+  // Opened from a project's header: bring that company into view.
+  useEffect(() => {
+    if (focus) document.getElementById(`customer-card-${focus}`)?.scrollIntoView({ block: "start" });
+  }, [focus]);
   const [editingCustomer, setEditingCustomer] = useState<{ id: string | null; form: CustomerForm } | null>(null);
   const [editingContact, setEditingContact] = useState<{ customerId: string; id: string | null; form: ContactForm } | null>(null);
   const [removing, setRemoving] = useState<{ kind: "customer"; customer: CustomerDto } | { kind: "contact"; customerId: string; contact: CustomerContactDto } | null>(null);
 
   const shown = useMemo(() => customers.filter((c) => customerMatches(c, query)), [customers, query]);
   const people = customers.reduce((n, c) => n + c.contacts.length, 0);
+  const projectCount = customers.reduce((n, c) => n + c.projects.length, 0);
   // While searching, every match is open so the person found is in view.
   const isOpen = (id: string) => (query.trim() ? true : open.has(id));
   const toggle = (id: string) =>
@@ -116,7 +124,7 @@ export function CustomersView({ initial, canManage }: { initial: CustomerDto[]; 
     <div>
       <PageHeader
         title="Khách hàng"
-        description={customers.length ? `${customers.length} doanh nghiệp · ${people} người liên hệ` : "Doanh nghiệp khách hàng và người liên hệ theo từng vị trí."}
+        description={customers.length ? `${customers.length} doanh nghiệp · ${people} người liên hệ · ${projectCount} dự án` : "Doanh nghiệp khách hàng và người liên hệ theo từng vị trí."}
         actions={
           canManage && (
             <Button onClick={() => setEditingCustomer({ id: null, form: EMPTY_CUSTOMER })}>
@@ -256,7 +264,7 @@ function CustomerCard({
   const sub = [customer.industry, customer.taxCode && `MST ${customer.taxCode}`].filter(Boolean).join(" · ");
   const panel = `customer-${customer.id}`;
   return (
-    <li className="overflow-hidden rounded-xl border bg-card">
+    <li id={`customer-card-${customer.id}`} className="scroll-mt-20 overflow-hidden rounded-xl border bg-card">
       <button type="button" onClick={onToggle} aria-expanded={open} aria-controls={panel} className="flex w-full items-center gap-3 px-4 py-3.5 text-left transition-colors hover:bg-muted/40 sm:px-5">
         <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-muted text-sm font-semibold text-foreground/80" aria-hidden>
           {customer.name.trim().charAt(0).toUpperCase()}
@@ -272,7 +280,12 @@ function CustomerCard({
             </span>
           ))}
         </span>
-        <span className="shrink-0 text-xs tabular-nums text-muted-foreground md:hidden">{customer.contacts.length} người</span>
+        <span className="hidden shrink-0 items-center gap-1 rounded-md border px-1.5 py-0.5 text-[11px] tabular-nums text-foreground/80 md:flex">
+          <FolderKanban className="h-3 w-3" aria-hidden /> {customer.projects.length} dự án
+        </span>
+        <span className="shrink-0 text-xs tabular-nums text-muted-foreground md:hidden">
+          {customer.contacts.length} người · {customer.projects.length} dự án
+        </span>
         <ChevronDown className={cn("h-4 w-4 shrink-0 text-muted-foreground transition-transform", open && "rotate-180")} aria-hidden />
       </button>
 
@@ -280,6 +293,7 @@ function CustomerCard({
         <div id={panel} className="border-t">
           <CompanyDetails customer={customer} canManage={canManage} onEdit={onEdit} onDelete={onDelete} />
           <div className="divide-y">
+            <ProjectsSection projects={customer.projects} />
             {groups.map((g) => (
               <LevelSection
                 key={g.level}
@@ -337,6 +351,31 @@ function CompanyDetails({ customer, canManage, onEdit, onDelete }: { customer: C
       )}
       {customer.note && <p className="mt-3 whitespace-pre-line text-sm text-foreground/80">{customer.note}</p>}
     </div>
+  );
+}
+
+function ProjectsSection({ projects }: { projects: CustomerProjectDto[] }) {
+  return (
+    <section className="px-4 py-4 sm:px-5" aria-label="Dự án">
+      <h3 className="mb-2 text-sm font-semibold">
+        Dự án <span className="font-normal text-muted-foreground">({projects.length})</span>
+      </h3>
+      {projects.length === 0 ? (
+        <p className="text-sm text-muted-foreground">Chưa có dự án nào gắn với khách hàng này. Chọn khách hàng trong phần sửa dự án.</p>
+      ) : (
+        <ul className="flex flex-wrap gap-2">
+          {projects.map((p) => (
+            <li key={p.id}>
+              <Link href={`/projects/${p.id}`} className="flex max-w-full items-center gap-2 rounded-lg border px-2.5 py-1.5 text-sm transition-colors hover:bg-muted/60">
+                <span aria-hidden className="h-2 w-2 shrink-0 rounded-sm" style={{ background: p.color }} />
+                <span className="truncate">{p.name}</span>
+                <span className="shrink-0 text-xs text-muted-foreground">{PROJECT_STATUS[p.status as keyof typeof PROJECT_STATUS]?.label ?? p.status}</span>
+              </Link>
+            </li>
+          ))}
+        </ul>
+      )}
+    </section>
   );
 }
 

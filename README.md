@@ -45,6 +45,8 @@ Mọi quyền được kiểm tra ở phía server cho từng API (`lib/permissi
 
 Mục **Khách hàng** trên thanh bên (nhóm *Quản lý*). Mỗi doanh nghiệp có tên, mã số thuế, lĩnh vực, điện thoại, email, website, địa chỉ và ghi chú; bấm vào tên doanh nghiệp để mở, cuộn xuống là người liên hệ chia theo vị trí từ trên xuống: **Giám đốc, Phó giám đốc, Trưởng phòng, Nhân viên** (`CONTACT_LEVELS` trong `lib/customers.ts`). Mỗi người có họ tên, chức danh, phòng ban, điện thoại, email, ngày sinh và ghi chú; điện thoại và email bấm vào là gọi hoặc soạn thư. Ô tìm kiếm không cần gõ dấu, tìm cả theo người, số điện thoại và email, và mở sẵn các doanh nghiệp khớp.
 
+Mỗi dự án gắn được với một khách hàng (ô **Khách hàng** khi tạo hoặc sửa dự án). Thẻ khách hàng có mục **Dự án** liệt kê các dự án của khách đó mà người xem được phép thấy, và đầu trang dự án có tên khách hàng dẫn về thẻ của họ. Lần đồng bộ đầu (gắn các dự án đã có với khách hàng) nằm ở `scripts/data/2026-11-03-customers-from-projects.sql`.
+
 Mọi người đăng nhập đều xem được; thêm, sửa, xoá cần quyền **Quản lý khách hàng** (`CUSTOMER_MANAGE`; quản trị viên và quản lý có sẵn, cấp thêm cho người khác ở trang Nhân sự). Xoá doanh nghiệp xoá luôn người liên hệ của nó. Mọi thay đổi ghi vào **Nhật ký thao tác** (nhóm *Khách hàng*).
 
 ### Hợp đồng & chi phí

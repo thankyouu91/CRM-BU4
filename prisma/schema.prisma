@@ -152,6 +152,9 @@ model Project {
   dueDate     DateTime?
   ownerId     String
   owner       User          @relation("ProjectOwner", fields: [ownerId], references: [id])
+  // Khách hàng của dự án (trang Khách hàng); xoá khách hàng thì dự án chỉ bỏ liên kết.
+  customerId  String?
+  customer    Customer?     @relation(fields: [customerId], references: [id], onDelete: SetNull)
   createdAt   DateTime      @default(now())
   updatedAt   DateTime      @updatedAt
 
@@ -163,6 +166,7 @@ model Project {
   deckShares DeckShare[]
 
   @@index([ownerId])
+  @@index([customerId])
 }
 
 model ProjectMember {
@@ -534,6 +538,7 @@ model Customer {
   createdAt   DateTime          @default(now())
   updatedAt   DateTime          @updatedAt
   contacts    CustomerContact[]
+  projects    Project[]
 
   @@index([name])
 }
