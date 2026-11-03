@@ -1,0 +1,220 @@
+// Sổ cái: nơi duy nhất được phép làm thay đổi xu. Mỗi dòng ghi số dư sau giao dịch để đối soát.
+import { db } from './db.js';
+import { GameError } from './game.js';
+import { FINANCE_TAX } from '../../public/ta-tua/game/js/shared/clan-bonds.js';
+
+const FINANCE_TAX_RATE = FINANCE_TAX.rate;
+
+/** Nhóm: income/expense được tính vào báo cáo thu chi; transfer chỉ là chuyển giữa các túi của cùng người chơi. */
+export const KINDS = {
+  opening: { group: 'transfer', label: 'Số dư ban đầu' },
+  daily: { group: 'income', label: 'Quà ngày' },
+  play: { group: 'income', label: 'Chơi với bé' },
+  level: { group: 'income', label: 'Thưởng lên cấp' },
+  cuddle: { group: 'income', label: 'Bạn bè công viên' },
+  salary: { group: 'income', label: 'Lương' },
+  minigame: { group: 'income', label: 'Mini-game' },
+  market_sell: { group: 'income', label: 'Bán trên Sàn' },
+  gear_trade: { group: 'income', label: 'Thưởng giao dịch (trang phục)' },
+  gift_code: { group: 'income', label: 'Mã quà' },
+  mail: { group: 'income', label: 'Quà trong hộp thư' },
+  interest: { group: 'income', label: 'Lãi ngân hàng' },
+  shop: { group: 'expense', label: 'Siêu thị' },
+  upkeep: { group: 'expense', label: 'Phí chăm nuôi' },
+  adopt: { group: 'expense', label: 'Nhận nuôi' },
+  market_buy: { group: 'expense', label: 'Mua trên Sàn' },
+  fee: { group: 'expense', label: 'Phí giao dịch' },
+  warehouse: { group: 'expense', label: 'Nâng cấp kho' },
+  savings_in: { group: 'transfer', label: 'Gửi tiết kiệm' },
+  savings_out: { group: 'transfer', label: 'Rút tiết kiệm' },
+  deposit_open: { group: 'transfer', label: 'Gửi kỳ hạn' },
+  deposit_close: { group: 'transfer', label: 'Tất toán kỳ hạn' },
+  escrow_lock: { group: 'transfer', label: 'Ký quỹ lệnh' },
+  escrow_release: { group: 'transfer', label: 'Hoàn ký quỹ' },
+  business_income: { group: 'income', label: 'Doanh thu quầy' },
+  tea_buy: { group: 'expense', label: 'Mua ở quầy trà sữa' },
+  license: { group: 'expense', label: 'Giấy phép quầy' },
+  rent: { group: 'expense', label: 'Thuê mặt bằng' },
+  wage: { group: 'expense', label: 'Trả lương nhân viên' },
+  biz_upgrade: { group: 'expense', label: 'Nâng cấp quầy' },
+  marketing: { group: 'expense', label: 'Quảng cáo' },
+  tax: { group: 'expense', label: 'Thuế' },
+  stipend: { group: 'income', label: 'Trợ cấp tân thủ' },
+  quest: { group: 'income', label: 'Nhiệm vụ' },
+  guild_create: { group: 'expense', label: 'Lập Hội' },
+  guild_donation: { group: 'expense', label: 'Góp quỹ Hội' },
+  guild_reward: { group: 'income', label: 'Thưởng dự án Hội' },
+  town_spend: { group: 'transfer', label: 'Chi ngân sách' },
+  guild_upgrade: { group: 'transfer', label: 'Chi quỹ Hội' },
+  clinic: { group: 'expense', label: 'Phòng khám' },
+  insurance: { group: 'expense', label: 'Bảo hiểm' },
+  school: { group: 'expense', label: 'Học phí' },
+  seeds: { group: 'expense', label: 'Hạt giống' },
+  garden_expand: { group: 'expense', label: 'Mở rộng vườn' },
+  garden_help: { group: 'income', label: 'Tưới vườn giúp bạn' },
+  kitchen_sale: { group: 'income', label: 'Bán món ăn' },
+  factory_build: { group: 'expense', label: 'Xây xưởng' },
+  factory_upgrade: { group: 'expense', label: 'Nâng cấp xưởng' },
+  toll_fee: { group: 'expense', label: 'Phí gia công' },
+  toll_income: { group: 'income', label: 'Thu phí gia công' },
+  contract_buy: { group: 'expense', label: 'Mua theo hợp đồng' },
+  contract_sell: { group: 'income', label: 'Bán theo hợp đồng' },
+  contract_penalty: { group: 'expense', label: 'Bồi thường hợp đồng' },
+  contract_comp: { group: 'income', label: 'Nhận bồi thường' },
+  bazaar_buy: { group: 'expense', label: 'Mua ở Chợ Phiên' },
+  bazaar_sale: { group: 'income', label: 'Bán ở Chợ Phiên' },
+  auction_buy: { group: 'expense', label: 'Thắng đấu giá' },
+  auction_sale: { group: 'income', label: 'Bán đấu giá' },
+  gear_quicksell: { group: 'income', label: 'Bán nhanh trang phục' },
+  gear_repair: { group: 'expense', label: 'Sửa trang phục (Lò rèn)' },
+  gear_upgrade: { group: 'expense', label: 'Nâng cấp trang phục (Lò rèn)' },
+  forge_materials: { group: 'expense', label: 'Mua vật liệu rèn' },
+  loan_in: { group: 'transfer', label: 'Giải ngân khoản vay' },
+  loan_repay: { group: 'transfer', label: 'Trả gốc vay' },
+  loan_interest: { group: 'expense', label: 'Lãi vay' },
+  loan_fee: { group: 'expense', label: 'Phí vay' },
+  town_seed: { group: 'transfer', label: 'Quỹ khởi tạo' },
+  slot_reopen: { group: 'expense', label: 'Mở lại ô tưởng niệm' },
+  admin: { group: 'transfer', label: 'Quản trị viên điều chỉnh' },
+  clan_create: { group: 'expense', label: 'Lập gia tộc' },
+  clan_donation: { group: 'expense', label: 'Góp quỹ gia tộc' },
+  clan_dividend: { group: 'income', label: 'Cổ tức gia tộc' },
+  // Các dòng dưới chỉ ghi trên tài khoản quỹ gia tộc (clan:<id>) và ngân sách thị trấn.
+  clan_comp: { group: 'transfer', label: 'Bồi thường thị trường (thâu tóm ngành)' },
+  clan_exit: { group: 'transfer', label: 'Phí bỏ ngành' },
+  clan_land: { group: 'transfer', label: 'Mua bán đất' },
+  clan_build: { group: 'transfer', label: 'Xây công trình' },
+  clan_revenue: { group: 'transfer', label: 'Doanh thu gia tộc' },
+  clan_upkeep: { group: 'transfer', label: 'Phí duy trì gia tộc' },
+  corp_tax: { group: 'transfer', label: 'Thuế doanh nghiệp' },
+  corp_tax_refund: { group: 'transfer', label: 'Hoàn thuế doanh nghiệp' },
+  corp_tax_collect: { group: 'transfer', label: 'Sở thuế truy thu' },
+  goods_trade: { group: 'transfer', label: 'Mua bán hàng công nghiệp' },
+  antitrust_tax: { group: 'transfer', label: 'Thuế chống độc quyền' },
+  arena_penalty: { group: 'transfer', label: 'Phạt thua Đấu trường' },
+  arena_prize: { group: 'transfer', label: 'Thưởng thắng Đấu trường' },
+  infra_bonus: { group: 'income', label: 'Buff hạ tầng chiến lược' },
+  infra_fee: { group: 'expense', label: 'Phí hạ tầng' },
+  tax_commission: { group: 'transfer', label: 'Hoa hồng truy thu thuế' },
+  goods_import: { group: 'transfer', label: 'Nhập khẩu nguyên liệu' },
+  clan_deposit: { group: 'transfer', label: 'Gia tộc gửi kỳ hạn' },
+  clan_deposit_close: { group: 'transfer', label: 'Gia tộc tất toán kỳ hạn' },
+  clan_interest: { group: 'transfer', label: 'Lãi tiền gửi gia tộc' },
+  clan_penalty: { group: 'transfer', label: 'Phạt rút trước hạn (gia tộc)' },
+  // Vay ngang hàng (p2p.js): tiền đi thẳng giữa người cho vay và người vay, ngân hàng giữ một phần lãi.
+  p2p_lend: { group: 'transfer', label: 'Cho vay ngang hàng' },
+  p2p_borrow: { group: 'transfer', label: 'Nhận khoản vay ngang hàng' },
+  p2p_repay: { group: 'transfer', label: 'Trả nợ vay ngang hàng' },
+  p2p_principal: { group: 'transfer', label: 'Thu gốc cho vay ngang hàng' },
+  p2p_interest: { group: 'income', label: 'Lãi cho vay ngang hàng' },
+  p2p_cost: { group: 'expense', label: 'Lãi và phí vay ngang hàng' },
+  p2p_bank_fee: { group: 'transfer', label: 'Ngân hàng trung gian thu phí P2P' },
+  // Hụi (hui.js): góp vào quỹ hụi:<id>, người hốt nhận lại; tiền thăm chia cho người góp.
+  hui_pay: { group: 'transfer', label: 'Góp hụi' },
+  hui_win: { group: 'transfer', label: 'Hốt hụi' },
+  hui_share: { group: 'income', label: 'Chia tiền thăm hụi' },
+  // Ngân hàng gia tộc (clan-bank.js): vốn và tiền gửi ở bank:<id>, quỹ bảo hiểm tiền gửi cbank_insurance, ký quỹ đấu giá cbank_escrow:<id>.
+  cbank_capital_in: { group: 'transfer', label: 'Góp vốn ngân hàng gia tộc' },
+  cbank_license: { group: 'expense', label: 'Giấy phép ngân hàng gia tộc' },
+  cbank_capital_out: { group: 'transfer', label: 'Rút vốn ngân hàng gia tộc' },
+  cbank_deposit: { group: 'transfer', label: 'Gửi ngân hàng gia tộc' },
+  cbank_withdraw: { group: 'transfer', label: 'Rút tiền gửi ngân hàng gia tộc' },
+  cbank_interest: { group: 'income', label: 'Lãi ngân hàng gia tộc' },
+  cbank_insurance: { group: 'transfer', label: 'Phí bảo hiểm tiền gửi' },
+  cbank_insurance_payout: { group: 'transfer', label: 'Bảo hiểm tiền gửi chi trả' },
+  cbank_loan: { group: 'transfer', label: 'Giải ngân vay ngân hàng gia tộc' },
+  cbank_loan_fee: { group: 'transfer', label: 'Phí giải ngân vay ngân hàng gia tộc' },
+  cbank_repay: { group: 'transfer', label: 'Trả nợ ngân hàng gia tộc' },
+  cbank_auction: { group: 'transfer', label: 'Đấu giá lô siết nợ' },
+  cbank_seize_sale: { group: 'transfer', label: 'Sở Nhà Đất mua lại lô siết nợ' },
+  // Cổ phần gia tộc (clan-shares.js): quỹ khớp lệnh ở shares_pool:<id>.
+  share_pool: { group: 'transfer', label: 'Quỹ khớp lệnh cổ phiếu' },
+  share_ipo: { group: 'transfer', label: 'Bán cổ phần IPO' },
+  share_underwrite: { group: 'transfer', label: 'Ngân hàng bảo lãnh IPO' },
+  share_buy: { group: 'transfer', label: 'Mua cổ phiếu gia tộc' },
+  share_sell: { group: 'transfer', label: 'Bán cổ phiếu gia tộc' },
+  share_fee: { group: 'expense', label: 'Phí giao dịch cổ phiếu' },
+  share_dividend: { group: 'income', label: 'Cổ tức cổ phiếu gia tộc' },
+  margin_loan: { group: 'transfer', label: 'Vay ký quỹ mua cổ phiếu' },
+  margin_repay: { group: 'transfer', label: 'Trả vay ký quỹ' },
+  // Trái phiếu và quyền lãi suất (clan-bonds.js).
+  bond_issue: { group: 'transfer', label: 'Phát hành trái phiếu' },
+  bond_buy: { group: 'transfer', label: 'Mua trái phiếu' },
+  bond_sell: { group: 'transfer', label: 'Bán trái phiếu' },
+  bond_fee: { group: 'expense', label: 'Phí trái phiếu' },
+  bond_coupon: { group: 'income', label: 'Lãi trái phiếu' },
+  bond_redeem: { group: 'transfer', label: 'Trái phiếu đáo hạn' },
+  finance_tax: { group: 'expense', label: 'Thuế lợi nhuận tài chính' },
+  rate_penalty: { group: 'transfer', label: 'Phạt điều hành lãi suất' },
+};
+
+/**
+ * Thuế lợi nhuận tài chính (10%): khấu trừ ngay trên lãi tiền gửi ngân hàng gia tộc, cổ tức và lãi trái phiếu của người
+ * chơi. Một nửa vào ngân sách thị trấn, một nửa bị hủy (như thuế thu nhập). Trả về số thuế. Gọi sau khi đã cộng khoản gộp.
+ */
+export function chargeFinanceTax(userId, gross, memo, now = Date.now()) {
+  const tax = Math.floor(Math.max(0, gross) * FINANCE_TAX_RATE);
+  if (!userId || tax <= 0) return 0;
+  post({ userId, delta: -tax, kind: 'finance_tax', memo, now });
+  const half = Math.floor(tax / 2);
+  if (half > 0) post({ account: 'treasury', delta: half, kind: 'finance_tax', memo, now });
+  return tax;
+}
+
+/** Thu thuế: một nửa vào ngân sách thị trấn, một nửa bị hủy (cùng tỉ lệ như phí). */
+export function chargeTax(userId, amount, memo, now = Date.now()) {
+  if (amount <= 0) return;
+  post({ userId, delta: -amount, kind: 'tax', memo, now });
+  const toTreasury = Math.floor(amount / 2);
+  if (toTreasury > 0) post({ account: 'treasury', delta: toTreasury, kind: 'tax', memo, now });
+}
+
+export const treasuryBalance = () => q.account.get('treasury')?.balance ?? 0;
+
+const q = {
+  addWallet: db.prepare('UPDATE users SET coins = coins + ? WHERE id = ? AND coins + ? >= 0'),
+  wallet: db.prepare('SELECT coins FROM users WHERE id = ?'),
+  ensureBank: db.prepare('INSERT OR IGNORE INTO bank_accounts (user_id, savings, accrued, updated_at) VALUES (?, 0, 0, ?)'),
+  addSavings: db.prepare('UPDATE bank_accounts SET savings = savings + ? WHERE user_id = ? AND savings + ? >= 0'),
+  savings: db.prepare('SELECT savings FROM bank_accounts WHERE user_id = ?'),
+  addAccount: db.prepare(`
+    INSERT INTO accounts (id, balance) VALUES (?, ?)
+    ON CONFLICT (id) DO UPDATE SET balance = balance + excluded.balance`),
+  account: db.prepare('SELECT balance FROM accounts WHERE id = ?'),
+  insert: db.prepare(`
+    INSERT INTO ledger (user_id, account, delta, balance_after, kind, memo, created_at)
+    VALUES (?, ?, ?, ?, ?, ?, ?)`),
+};
+
+/**
+ * Ghi một biến động xu. `account` là 'wallet' (mặc định) hoặc 'savings' của `userId`,
+ * hoặc một tài khoản chung như 'treasury' (khi đó userId = null).
+ * Ném GameError nếu số dư sẽ âm. Gọi bên trong transaction của nơi dùng.
+ */
+export function post({ userId = null, account = 'wallet', delta, kind, memo = null, now = Date.now() }) {
+  if (!Number.isInteger(delta)) throw new Error(`Số xu phải là số nguyên: ${delta}`);
+  if (!KINDS[kind]) throw new Error(`Loại giao dịch lạ: ${kind}`);
+  if (delta === 0) return null;
+  let balance;
+  if (account === 'wallet') {
+    if (q.addWallet.run(delta, userId, delta).changes === 0) throw new GameError('Không đủ xu.');
+    balance = q.wallet.get(userId).coins;
+  } else if (account === 'savings') {
+    q.ensureBank.run(userId, now);
+    if (q.addSavings.run(delta, userId, delta).changes === 0) throw new GameError('Tài khoản tiết kiệm không đủ tiền.');
+    balance = q.savings.get(userId).savings;
+  } else {
+    q.addAccount.run(account, delta);
+    balance = q.account.get(account).balance;
+  }
+  q.insert.run(userId, account, delta, balance, kind, memo, now);
+  return balance;
+}
+
+/** Thu phí: người chơi trả đủ, một nửa vào ngân sách thị trấn, nửa còn lại bị hủy khỏi nền kinh tế. */
+export function chargeFee(userId, amount, memo, now = Date.now()) {
+  if (amount <= 0) return;
+  post({ userId, delta: -amount, kind: 'fee', memo, now });
+  const toTreasury = Math.floor(amount / 2);
+  if (toTreasury > 0) post({ account: 'treasury', delta: toTreasury, kind: 'fee', memo, now });
+}

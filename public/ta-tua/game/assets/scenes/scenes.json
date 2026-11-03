@@ -1,0 +1,74 @@
+{
+ "size": [
+  320,
+  80
+ ],
+ "scale": {
+  "desktop": 3,
+  "narrow": 2,
+  "phone": 2
+ },
+ "note": "scripts/art/build-scenes.py; x/y/w/h tính theo điểm ảnh 1x của cảnh 320x80",
+ "scenes": {
+  "factory": {
+   "src": "factory.webp",
+   "w": 320,
+   "h": 80,
+   "status": "art",
+   "fx": []
+  },
+  "bank": {
+   "src": "bank.webp",
+   "w": 320,
+   "h": 80,
+   "status": "art",
+   "fx": []
+  },
+  "shop": {
+   "src": "shop.webp",
+   "w": 320,
+   "h": 80,
+   "status": "art",
+   "fx": []
+  },
+  "kitchen": {
+   "src": "kitchen.webp",
+   "w": 320,
+   "h": 80,
+   "status": "art",
+   "fx": [
+    {
+     "id": "fx-chimney-smoke",
+     "src": "fx-chimney-smoke.webp",
+     "x": 146,
+     "y": -12,
+     "w": 16,
+     "h": 32,
+     "frames": 8,
+     "ms": 130
+    }
+   ]
+  },
+  "garden": {
+   "src": "garden.webp",
+   "w": 320,
+   "h": 80,
+   "status": "art",
+   "fx": []
+  },
+  "school": {
+   "src": "school.webp",
+   "w": 320,
+   "h": 80,
+   "status": "art",
+   "fx": []
+  },
+  "clinic": {
+   "src": "clinic.webp",
+   "w": 320,
+   "h": 80,
+   "status": "art",
+   "fx": []
+  }
+ }
+}
