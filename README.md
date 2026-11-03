@@ -20,6 +20,7 @@ Dashboard quản lý dự án và công việc cho doanh nghiệp: giao việc t
 | 10 | Báo cáo tuần trước đã làm, tuần này / tuần tới (hoặc tháng) làm gì, gửi sếp | Tab **Báo cáo tuần / tháng** trong *Công việc của tôi*: ba mục lấy trực tiếp từ công việc và dự án của bạn, ghi chú tự lưu, gửi cấp trên, xuất Excel và in / lưu PDF; cấp trên xem cả đội trong *Hộp báo cáo*. Xem [Báo cáo công việc tuần / tháng](#báo-cáo-công-việc-tuần--tháng) |
 | 11 | Chấm công sáng / chiều, xin nghỉ, xuất Excel theo tháng, tồn phép năm | Trang **Chấm công**: mặc định đi làm đủ buổi (thứ 2 đến thứ 6 sáng và chiều, thứ 7 buổi sáng), bấm vào buổi bận để xin nghỉ và ghi lý do, buổi đã ghi chỉ quản lý sửa được; mọi người xem được lịch và bảng công tháng của cả công ty, **xuất Excel** theo mẫu bảng chấm công; phép năm được hưởng và tồn năm trước sửa được, số đã nghỉ và còn lại tự tính từ lịch. Xem [Chấm công & nghỉ phép](#chấm-công--nghỉ-phép) |
 | 12 | Game “Pet Town” cho mọi người trong công ty, khách mời không cần tài khoản, bảng quản lý cho quản trị viên | Mục **Pet Town** cuối thanh bên: game nuôi thú [Petdex Park](https://github.com/thankyouu91/Petdex) chạy ngay trong WorkHub. Xem mục [Pet Town](#pet-town-game-petdex-park) |
+| 13 | Quản lý khách hàng: doanh nghiệp và người liên hệ theo từng vị trí | Trang **Khách hàng**: mỗi doanh nghiệp một dòng, bấm vào tên để mở thông tin doanh nghiệp rồi cuộn xuống từng vị trí **Giám đốc, Phó giám đốc, Trưởng phòng, Nhân viên**. Xem mục [Khách hàng](#khách-hàng) |
 
 ### Phân quyền
 
@@ -39,6 +40,12 @@ Dashboard quản lý dự án và công việc cho doanh nghiệp: giao việc t
 **Quản lý trực tiếp:** trong hồ sơ nhân sự (trang **Nhân sự** → tạo mới hoặc sửa) chọn *Quản lý trực tiếp* của từng người. Người này nhận thông báo khi nhân sự xin nghỉ, và sửa hoặc xoá được chấm công của họ (kể cả tháng đã qua). Không chọn chính mình được, và không tạo được vòng quản lý (A quản lý B thì B không thể quản lý A, trực tiếp hay qua người khác). Mỗi lần đổi được ghi nhật ký.
 
 Mọi quyền được kiểm tra ở phía server cho từng API (`lib/permissions.ts`, `lib/rbac.ts`).
+
+### Khách hàng
+
+Mục **Khách hàng** trên thanh bên (nhóm *Quản lý*). Mỗi doanh nghiệp có tên, mã số thuế, lĩnh vực, điện thoại, email, website, địa chỉ và ghi chú; bấm vào tên doanh nghiệp để mở, cuộn xuống là người liên hệ chia theo vị trí từ trên xuống: **Giám đốc, Phó giám đốc, Trưởng phòng, Nhân viên** (`CONTACT_LEVELS` trong `lib/customers.ts`). Mỗi người có họ tên, chức danh, phòng ban, điện thoại, email, ngày sinh và ghi chú; điện thoại và email bấm vào là gọi hoặc soạn thư. Ô tìm kiếm không cần gõ dấu, tìm cả theo người, số điện thoại và email, và mở sẵn các doanh nghiệp khớp.
+
+Mọi người đăng nhập đều xem được; thêm, sửa, xoá cần quyền **Quản lý khách hàng** (`CUSTOMER_MANAGE`; quản trị viên và quản lý có sẵn, cấp thêm cho người khác ở trang Nhân sự). Xoá doanh nghiệp xoá luôn người liên hệ của nó. Mọi thay đổi ghi vào **Nhật ký thao tác** (nhóm *Khách hàng*).
 
 ### Hợp đồng & chi phí
 

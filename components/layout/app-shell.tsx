@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
 import {
+  Building2,
   CalendarCheck,
   ChartColumn,
   ChevronDown,
@@ -64,6 +65,7 @@ const NAV: { title: string; items: NavItem[] }[] = [
   {
     title: "Quản lý",
     items: [
+      { href: "/customers", label: "Khách hàng", icon: Building2 },
       { href: "/contracts", label: "Hợp đồng & chi phí", icon: Wallet, permission: "FINANCE_MANAGE" },
       { href: "/team", label: "Nhân sự", icon: Users },
     ],

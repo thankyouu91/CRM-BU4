@@ -22,7 +22,7 @@ it("groups the menu and marks the current page", () => {
   expect(groups).toEqual([
     ["Làm việc", ["Tổng quan", "Dự án", "Công việc của tôi", "Chấm công", "Trợ lý AI"]],
     ["Báo cáo", ["Hộp báo cáo3", "Trung tâm báo cáo"]],
-    ["Quản lý", ["Hợp đồng & chi phí", "Nhân sự"]],
+    ["Quản lý", ["Khách hàng", "Hợp đồng & chi phí", "Nhân sự"]],
   ]);
   expect(within(nav()).getByRole("link", { name: "Cài đặt" })).toBeTruthy();
   expect(within(nav()).getByRole("link", { name: "Trung tâm báo cáo" }).getAttribute("aria-current")).toBe("page");

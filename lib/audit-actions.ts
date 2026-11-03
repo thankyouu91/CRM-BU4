@@ -8,6 +8,7 @@ export const AUDIT_GROUPS = {
   project: "Dự án & hạng mục",
   task: "Công việc & báo cáo",
   contract: "Hợp đồng & hồ sơ",
+  customer: "Khách hàng",
   workReport: "Báo cáo tuần/tháng",
   ai: "Trợ lý AI",
   share: "Chia sẻ ra ngoài",
@@ -55,6 +56,13 @@ export const AUDIT_ACTIONS = {
   "contract.import": { label: "Nhập hợp đồng từ Excel", group: "contract" },
   "contract_file.upload": { label: "Tải lên file hợp đồng", group: "contract" },
   "contract_file.delete": { label: "Xoá file hợp đồng", group: "contract" },
+
+  "customer.create": { label: "Thêm khách hàng", group: "customer" },
+  "customer.update": { label: "Sửa khách hàng", group: "customer" },
+  "customer.delete": { label: "Xoá khách hàng", group: "customer" },
+  "customer_contact.create": { label: "Thêm người liên hệ", group: "customer" },
+  "customer_contact.update": { label: "Sửa người liên hệ", group: "customer" },
+  "customer_contact.delete": { label: "Xoá người liên hệ", group: "customer" },
 
   "work_report.submit": { label: "Nộp báo cáo tuần/tháng", group: "workReport" },
   "work_report.review": { label: "Đánh dấu đã xem báo cáo", group: "workReport" },

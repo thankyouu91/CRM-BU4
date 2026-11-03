@@ -35,6 +35,7 @@ enum Permission {
   PROJECT_MANAGE_ALL // quản lý mọi dự án, duyệt mọi báo cáo
   USER_MANAGE // thêm tài khoản, phân quyền, đặt lại mật khẩu cho cấp dưới
   FINANCE_MANAGE // xem & cập nhật hợp đồng, chi phí, lợi nhuận, công nợ
+  CUSTOMER_MANAGE // thêm, sửa, xoá khách hàng và người liên hệ
 }
 
 // Tiến độ thực hiện hợp đồng
@@ -137,6 +138,7 @@ model User {
   deckShares       DeckShare[]       @relation("DeckShareCreator")
   attendanceMarks  AttendanceMark[]  @relation("AttendanceOwner")
   attendanceSet    AttendanceMark[]  @relation("AttendanceAuthor")
+  customersCreated Customer[]        @relation("CustomerAuthor")
   leaveBalances    LeaveBalance[]    @relation("LeaveBalanceOwner")
 }
 
@@ -514,4 +516,44 @@ model Holiday {
   day       String   @id
   name      String
   createdAt DateTime @default(now())
+}
+
+// Khách hàng (doanh nghiệp) và người liên hệ theo từng vị trí trong doanh nghiệp đó.
+model Customer {
+  id          String            @id @default(cuid())
+  name        String // tên doanh nghiệp
+  taxCode     String? // mã số thuế
+  industry    String? // lĩnh vực
+  address     String?
+  phone       String?
+  email       String?
+  website     String?
+  note        String?
+  createdById String?
+  createdBy   User?             @relation("CustomerAuthor", fields: [createdById], references: [id], onDelete: SetNull)
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+  contacts    CustomerContact[]
+
+  @@index([name])
+}
+
+// Một người trong doanh nghiệp khách hàng. level: DIRECTOR (Giám đốc) | DEPUTY (Phó giám đốc) |
+// HEAD (Trưởng phòng) | STAFF (Nhân viên), xem CONTACT_LEVELS trong lib/customers.ts.
+model CustomerContact {
+  id         String   @id @default(cuid())
+  customerId String
+  customer   Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  level      String
+  name       String
+  title      String? // chức danh cụ thể, vd "Giám đốc kinh doanh"
+  department String? // phòng ban
+  phone      String?
+  email      String?
+  birthday   String? // ngày sinh YYYY-MM-DD (tuỳ chọn)
+  note       String?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([customerId, level])
 }

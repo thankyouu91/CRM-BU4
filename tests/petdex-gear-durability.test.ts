@@ -101,7 +101,8 @@ describe("Pet Town gear durability", () => {
     market.addGoods(p.userId, "cassava", 40 * 10);
     const cost = config.repair.gold;
     // a roll of 0.75 is above 70%: materials and coins are gone, the piece stays broken
-    const t0 = Date.parse("2026-11-01T08:00:00Z");
+    // the piece reports "usable" against the clock, so the repair starts now
+    const t0 = Date.now();
     const fail = forge.repairGear(p.userId, g.id, t0, rolls(0.75));
     expect(fail.ok).toBe(false);
     expect(fail.message).toMatch(/thất bại/);
