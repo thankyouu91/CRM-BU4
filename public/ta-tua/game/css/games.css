@@ -1,0 +1,116 @@
+/* Mini-game: khung chơi pixel, HUD, đếm ngược và bảng kết thúc (câu cá, hứng trân châu, ghép hình nhớ). */
+.mg-root { container-type: inline-size; width: 100%; max-width: 720px; margin: 0 auto; padding: 3px 3px 12px; }
+
+.mg-stage {
+  position: relative; isolation: isolate; overflow: hidden;
+  aspect-ratio: 16 / 10;
+  border-radius: 16px;
+  background: #2e1d14;
+  box-shadow: 0 0 0 3px var(--ink), 0 9px 0 3px var(--line-strong);
+  outline: none; cursor: pointer;
+  user-select: none; -webkit-user-select: none; -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+.mg-stage:focus-visible { box-shadow: 0 0 0 3px var(--ink), 0 0 0 7px #c8915f88, 0 9px 0 3px var(--line-strong); }
+.mg-pearls .mg-stage { cursor: none; touch-action: none; }
+.mg-memory .mg-stage { cursor: default; }
+.mg-canvas { position: absolute; inset: 0; display: block; width: 100%; height: 100%; image-rendering: pixelated; transition: filter .4s; }
+.mg-stage.is-over .mg-canvas { filter: brightness(.82) saturate(.85); }
+.mg-fx { position: absolute; inset: 0; z-index: 2; overflow: hidden; pointer-events: none; }
+
+/* ---------- HUD ---------- */
+.mg-hud {
+  position: absolute; z-index: 3; inset: 0 0 auto 0;
+  display: flex; align-items: flex-start; gap: 10px;
+  padding: 10px 12px; pointer-events: none;
+}
+.mg-box {
+  --mg-line: #4a3326;
+  --mg-w: 3px;
+  background: #fffaf0;
+  box-shadow:
+    0 calc(var(--mg-w) * -1) 0 0 var(--mg-line), 0 var(--mg-w) 0 0 var(--mg-line),
+    calc(var(--mg-w) * -1) 0 0 0 var(--mg-line), var(--mg-w) 0 0 0 var(--mg-line),
+    0 calc(var(--mg-w) + 4px) 0 0 #2e1d1433;
+}
+.mg-pill {
+  display: inline-flex; align-items: center; gap: 6px;
+  margin: 3px; padding: 1px 9px;
+  font-family: var(--font-display); font-weight: 800; font-size: 18px; line-height: 1.35;
+  color: var(--ink); white-space: nowrap;
+}
+.mg-pill i { display: none; font-style: normal; font-size: .85em; }
+.mg-pill .mg-ico { display: inline; }
+.mg-pill small { font-family: var(--font-body); font-weight: 800; font-size: .66em; letter-spacing: .4px; text-transform: uppercase; color: var(--muted); }
+.mg-pill b { min-width: 1.3em; text-align: center; font-variant-numeric: tabular-nums; }
+.mg-pill.warn { --mg-line: #b8322f; background: #ffe4df; color: #b8322f; animation: mg-tick .5s ease-in-out infinite alternate; }
+.mg-pill img { height: 1.05em; width: auto; image-rendering: pixelated; }
+.mg-last { max-width: 46cqw; }
+.mg-last b { overflow: hidden; text-overflow: ellipsis; }
+
+.mg-hud .mg-end {
+  margin-left: auto; pointer-events: auto; cursor: pointer;
+  padding: 4px 12px; font-family: var(--font-display); font-size: 15px; line-height: 1.2;
+}
+.mg-dock { position: absolute; z-index: 3; right: 12px; bottom: 12px; pointer-events: none; }
+
+/* Ghép hình nhớ: HUD xếp dọc ở cột trái, nút kết thúc ở cột phải, chừa chỗ cho lưới thẻ */
+.mg-memory .mg-hud { flex-direction: column; gap: 8px; }
+.mg-memory .mg-hud .mg-end { position: absolute; top: 12px; right: 12px; }
+
+/* ---------- Đếm ngược & kết thúc ---------- */
+.mg-count {
+  position: absolute; inset: 0; z-index: 4;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px;
+  padding: 0 16px; text-align: center; pointer-events: none;
+  background: radial-gradient(closest-side, #2e1d1466, #2e1d1422);
+  color: #fff6d8; font-family: var(--font-display); font-weight: 800; line-height: 1;
+  text-shadow: 2px 0 0 #2e1d14, -2px 0 0 #2e1d14, 0 2px 0 #2e1d14, 0 -2px 0 #2e1d14,
+    2px 2px 0 #2e1d14, -2px 2px 0 #2e1d14, 2px -2px 0 #2e1d14, -2px -2px 0 #2e1d14, 0 5px 0 #2e1d1466;
+}
+.mg-count span { font-size: clamp(18px, 4.6cqw, 30px); }
+.mg-count b { font-size: clamp(50px, 15cqw, 104px); color: var(--gold); }
+.mg-count small { max-width: 34em; font-family: var(--font-body); font-size: clamp(12px, 2.3cqw, 15px); line-height: 1.35; }
+.mg-count.go { background: none; animation: mg-fade .45s ease-in .35s forwards; }
+.mg-count.go span, .mg-count.go small { visibility: hidden; }
+.mg-count.go b { color: #fff6d8; font-size: clamp(36px, 10cqw, 72px); }
+
+.mg-banner {
+  position: absolute; z-index: 5; left: 50%; top: 50%; transform: translate(-50%, -50%);
+  padding: 8px 22px; white-space: nowrap; pointer-events: none;
+  font-family: var(--font-display); font-weight: 800; font-size: clamp(22px, 6cqw, 38px); color: var(--tea-deep);
+  animation: mg-pop .4s cubic-bezier(.2, 1.5, .4, 1);
+}
+
+/* Thẻ khoe cá vừa câu */
+.mg-catch {
+  position: absolute; z-index: 4; left: 50%; top: 15%;
+  display: flex; flex-direction: column; align-items: center; gap: 4px;
+  padding: 8px 16px 6px; pointer-events: none; opacity: 0;
+  font-family: var(--font-display); font-weight: 800; text-align: center;
+}
+.mg-catch img { image-rendering: pixelated; }
+.mg-catch b { font-size: 20px; line-height: 1.1; color: var(--ink); }
+.mg-catch small { font-size: 13px; color: var(--mint-deep); }
+.mg-catch.rare { --mg-line: #9a6410; background: #fff1c2; }
+.mg-catch.rare small { color: var(--gold-deep); }
+
+@keyframes mg-fade { to { opacity: 0; } }
+@keyframes mg-pop { from { opacity: 0; transform: translate(-50%, -50%) scale(.6); } }
+@keyframes mg-tick { to { transform: scale(1.08); } }
+
+/* Điện thoại: thu gọn HUD, giữ biểu tượng thay cho nhãn chữ */
+@container (max-width: 460px) {
+  .mg-hud { padding: 7px 8px; gap: 6px; }
+  .mg-box { --mg-w: 2px; }
+  .mg-pill { margin: 2px; padding: 0 6px; gap: 4px; font-size: 13px; }
+  .mg-pill small { display: none; }
+  .mg-pill i { display: inline; }
+  .mg-hud .mg-end { padding: 2px 8px; font-size: 12px; border-radius: 10px; box-shadow: 0 3px 0 var(--line-strong); }
+  .mg-memory .mg-hud { gap: 5px; }
+  .mg-memory .mg-hud .mg-end { top: 8px; right: 8px; }
+  .mg-dock { right: 8px; bottom: 8px; }
+  .mg-catch { padding: 5px 10px 4px; }
+  .mg-catch b { font-size: 15px; }
+  .mg-catch small { font-size: 11px; }
+}

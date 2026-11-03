@@ -1,0 +1,404 @@
+/* Gia tộc & Sở Nhà Đất: bản đồ 200 lô, xưởng lắp ghép, thuế, vĩ mô. */
+
+.clan-tabs { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; }
+.clan-tabs .btn.current, .family-chips .chip.current { background: var(--ink); border-color: var(--ink); color: #fff; box-shadow: 0 3px 0 #000; }
+.clan-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+.clan-box { padding: 16px 18px; display: grid; gap: 10px; align-content: start; min-width: 0; }
+.clan-box.wide, .clan-hero { grid-column: 1 / -1; }
+.clan-box h3 { font-size: 1.2rem; }
+.clan-box p { margin: 0; }
+.clan-box form.row input { flex: 1; min-width: 120px; }
+.small { font-size: .85rem; }
+.ok { color: var(--mint-deep); font-weight: 800; }
+.warn { color: #c0444f; font-weight: 800; }
+.up { color: var(--mint-deep); }
+.down { color: #c0444f; }
+.big { font-size: 1.6rem; font-family: var(--font-display); }
+
+.clan-hero { padding: 18px; display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 16px; align-items: center; border-top: 6px solid var(--clan); }
+.clan-hero h3 { font-size: 1.6rem; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.clan-hero p { margin: 4px 0 8px; }
+.clan-hero .bar { height: 12px; }
+.clan-emblem { font-size: 3rem; width: 76px; height: 76px; display: grid; place-items: center; border-radius: 22px; background: color-mix(in srgb, var(--clan) 18%, #fff); border: 3px solid var(--clan); }
+.clan-treasury { display: grid; justify-items: end; text-align: right; gap: 2px; }
+.clan-treasury b { font-size: 1.5rem; font-family: var(--font-display); }
+
+.clan-members, .clan-list, .refund-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.clan-members li { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 4px 10px; align-items: center; padding: 8px 10px; border-radius: 12px; background: var(--surface-2); }
+.clan-members li > span:first-child { display: grid; }
+.clan-members li .row { grid-column: 1 / -1; justify-content: flex-end; align-items: center; }
+.clan-members select, .land-tools select, .build-palette select, .plot-industry select {
+  padding: 5px 8px; border-radius: 10px; border: 2px solid var(--line-strong); background: #fff; font-weight: 700; max-width: 100%;
+}
+.clan-list li { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 10px; align-items: center; padding: 8px 10px; border-radius: 12px; background: var(--surface-2); border-left: 5px solid var(--clan); }
+.clan-list li > span:nth-child(2) { display: grid; }
+.clan-dot { font-size: 1.6rem; }
+.clan-create { display: grid; gap: 10px; }
+.emblem-row { display: flex; flex-wrap: wrap; gap: 6px; }
+.emblem-row .emblem { font-size: 1.4rem; width: 44px; height: 44px; border-radius: 12px; border: 2px solid var(--line); background: #fff; }
+.emblem-row .emblem.current { border-color: var(--tea); box-shadow: 0 3px 0 var(--tea-deep); }
+.clan-intro ul { margin: 0; padding-left: 20px; display: grid; gap: 4px; }
+
+.industry-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(170px, 100%), 1fr)); gap: 10px; }
+.industry { display: grid; gap: 4px; justify-items: center; text-align: center; padding: 12px 8px; border-radius: 16px; border: 2px solid var(--line); background: #fff; font-size: .88rem; }
+.industry.held { border-color: var(--mint-deep); background: #eef9f5; }
+.industry-icon { font-size: 1.8rem; }
+.industry .btn { white-space: normal; }
+.industry .exit-industry { font-size: .8rem; white-space: nowrap; }
+
+.clan-table { width: 100%; border-collapse: collapse; font-size: .88rem; }
+.clan-table th { text-align: left; color: var(--muted); font-weight: 800; padding: 6px; border-bottom: 2px solid var(--line); }
+.clan-table td { padding: 6px; border-bottom: 1px dashed var(--line); }
+.clan-table .num { text-align: right; font-variant-numeric: tabular-nums; }
+.clan-box:has(.clan-table) { overflow-x: auto; }
+
+/* ---------- bản đồ đất ---------- */
+.land-layout { display: grid; grid-template-columns: minmax(0, 1fr) 320px; gap: 16px; align-items: start; }
+.land-main { padding: 14px; display: grid; gap: 10px; min-width: 0; }
+.land-stats { display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: .88rem; }
+.land-tools { display: flex; flex-wrap: wrap; gap: 10px; font-size: .88rem; }
+.land-tools label { display: flex; align-items: center; gap: 6px; }
+.land-wrap { position: relative; min-width: 0; }
+.land-scroll { overflow-x: auto; border-radius: 12px; }
+.land-svg { display: block; width: 100%; min-width: 640px; height: auto; touch-action: manipulation; }
+.land-svg .lm-art { image-rendering: pixelated; }
+.land-svg .lm-art.faded { opacity: .42; filter: saturate(.55); }
+.land-svg .lm-heat polygon { fill-opacity: .8; }
+/* Lưới lô mảnh vẽ đè lên tranh: bóng sẫm dưới, vạch kem trên; điện thoại dày hơn để dễ chạm đúng ô. */
+.land-svg .lm-grid { fill: none; pointer-events: none; stroke-linejoin: round; }
+.land-svg .lm-grid-shade { stroke: #2e1d14; stroke-opacity: .16; stroke-width: 2.4; }
+.land-svg .lm-grid-line { stroke: #fff3e3; stroke-opacity: .5; stroke-width: 1.1; }
+.land-svg .plot { cursor: pointer; }
+.land-svg .hit { fill: transparent; stroke: transparent; stroke-width: 2; stroke-linejoin: round; transition: stroke .12s; }
+@media (hover: hover) { .land-svg .plot:hover .hit { stroke: #2e1d14aa; stroke-width: 2.5; } }
+.land-svg .plot.sel .hit { stroke: #2e1d14; stroke-width: 7; fill: #fff3e355; }
+.land-svg .ring, .land-svg .pin { display: none; pointer-events: none; }
+.land-svg .plot.sel .ring { display: inline; fill: none; stroke: var(--gold); stroke-width: 3.6; stroke-linejoin: round; }
+.land-svg .plot.sel .pin { display: inline; fill: var(--surface-2); stroke: #2e1d14; stroke-width: 2; stroke-linejoin: round; }
+.land-svg .code { font-size: 6.5px; font-weight: 800; fill: #00000066; pointer-events: none; }
+/* Chế độ địa hình: mã lô chỉ hiện khi rê chuột hoặc khi chọn (tranh đỡ rối); lô chọn có nhãn mã nổi phía trên. */
+.land-svg.terrain .code { opacity: 0; fill: #2e1d14; }
+@media (hover: hover) { .land-svg.terrain .plot:hover .code { opacity: 1; } }
+.land-svg .plot.sel .code { opacity: 1; fill: #2e1d14; font-size: 9px; transform: translateY(-21.5px); }
+/* Mây trôi chậm, không chặn bấm; mờ đi khi đang chọn lô để không che ô chọn. */
+.land-svg .lm-clouds { pointer-events: none; transition: opacity .3s; }
+.land-svg .lm-clouds image { image-rendering: pixelated; }
+.land-svg .lm-cloud-shadow { opacity: .17; }
+.land-svg .lm-cloud { animation: lm-drift var(--drift, 50s) ease-in-out var(--delay, 0s) infinite alternate; }
+.land-svg:has(.plot.sel) .lm-clouds { opacity: .3; }
+@keyframes lm-drift { from { transform: translateX(-36px); } to { transform: translateX(36px); } }
+@media (prefers-reduced-motion: reduce) { .land-svg .lm-cloud { animation: none; } }
+/* Bản đồ nhỏ "Xem nhanh": thẻ góc dưới phải của khung bản đồ (không ra ngoài khung, không che khung bên). */
+.lm-mini { position: absolute; right: 8px; bottom: 8px; width: 156px; max-width: calc(100% - 16px); background: var(--surface-2); border: 2px solid var(--pearl); border-radius: 12px; box-shadow: 0 3px 0 var(--pearl); overflow: hidden; z-index: 2; }
+.lm-mini.left { right: auto; left: 8px; }
+.lm-mini:not(.open) { width: auto; }
+.lm-mini-toggle { display: flex; align-items: center; gap: 6px; width: 100%; min-height: 28px; padding: 3px 8px; border: 0; background: var(--tea-deep); color: var(--surface-2); font-weight: 800; font-size: .78rem; white-space: nowrap; }
+.lm-mini.open .lm-mini-toggle { border-bottom: 2px solid var(--pearl); }
+.lm-mini-toggle span { flex: 1; text-align: left; }
+.lm-mini-toggle i { width: 16px; height: 16px; border: 1.5px solid var(--pearl); border-radius: 5px; background: var(--surface-2); position: relative; }
+.lm-mini-toggle i::after { content: ''; position: absolute; inset: 0; margin: auto; width: 0; height: 0; border: 4px solid transparent; border-bottom-color: var(--pearl); transform: translateY(-2px); }
+.lm-mini.open .lm-mini-toggle i::after { border-bottom-color: transparent; border-top-color: var(--pearl); transform: translateY(2px); }
+.lm-mini-body { display: none; position: relative; margin: 4px; border: 2px solid var(--tea-deep); border-radius: 6px; overflow: hidden; line-height: 0; cursor: pointer; }
+.lm-mini.open .lm-mini-body { display: block; }
+.lm-mini-map { width: 100%; height: auto; }
+.lm-mini-view { position: absolute; top: 0; bottom: 0; border: 2px solid var(--gold); box-shadow: 0 0 0 1px #2e1d14, inset 0 0 0 1px #2e1d14; border-radius: 2px; pointer-events: none; }
+@media (max-width: 720px) {
+  .land-svg .lm-grid-shade { stroke-width: 4; stroke-opacity: .2; }
+  .land-svg .lm-grid-line { stroke-width: 2; stroke-opacity: .62; }
+  .lm-mini { width: 132px; }
+  .lm-mini-toggle { min-height: 46px; } /* game thu nhỏ 10% (--zoom), 46px hiện ra khoảng 41px */
+  .lm-mini-toggle i { width: 22px; height: 22px; }
+}
+.land-legend { display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: .82rem; align-items: center; }
+.land-legend i { display: inline-block; width: 12px; height: 12px; border-radius: 3px; margin-right: 4px; vertical-align: -1px; border: 1px solid #0002; }
+.heat-scale { width: 120px; height: 10px; border-radius: 6px; background: linear-gradient(90deg, #e8665a, #f4d35e, #5fbf77); }
+.land-panel { padding: 16px; display: grid; gap: 10px; position: sticky; top: 12px; }
+.plot-head { display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap; }
+.plot-head h3 { font-size: 1.4rem; }
+.owner-tag { padding: 3px 10px; border-radius: 999px; border: 2px solid var(--clan); background: color-mix(in srgb, var(--clan) 15%, #fff); font-weight: 800; font-size: .85rem; }
+.plot-env { display: grid; gap: 6px; }
+.plot-env span { display: grid; grid-template-columns: auto 1fr; gap: 0 6px; }
+.plot-env small { grid-column: 2; }
+.plot-facts { display: grid; grid-template-columns: 1fr auto; gap: 4px 10px; margin: 0; font-size: .9rem; }
+.plot-facts dt { color: var(--muted); }
+.plot-facts dd { margin: 0; font-weight: 800; text-align: right; }
+.plot-building svg { width: 100%; height: auto; border-radius: 12px; border: 2px solid var(--line); }
+.plot-industry { display: grid; gap: 4px; font-size: .88rem; }
+.factor-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 3px; font-size: .84rem; }
+.factor-list li { display: flex; justify-content: space-between; gap: 8px; padding: 3px 8px; border-radius: 8px; background: var(--surface-2); }
+.preview-total { margin: 6px 0 0; font-size: .92rem; }
+.plot-actions { display: grid; gap: 8px; }
+
+/* ---------- xưởng lắp ghép ---------- */
+.build-layout { display: grid; grid-template-columns: 300px minmax(0, 1fr); gap: 16px; align-items: start; }
+.build-palette, .build-stage, .build-layers { padding: 14px; display: grid; gap: 10px; min-width: 0; }
+.build-layers { grid-column: 1 / -1; }
+.build-palette label { display: flex; align-items: center; gap: 8px; font-weight: 800; }
+.family-chips { display: flex; flex-wrap: wrap; gap: 4px; }
+.family-chips .chip { padding: 4px 8px; font-size: .8rem; gap: 4px; }
+.family-chips .chip span { display: none; }
+.family-chips .chip.current span { display: inline; }
+.piece-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; max-height: 420px; overflow-y: auto; }
+.piece { display: grid; gap: 2px; justify-items: center; padding: 6px; border-radius: 12px; border: 2px solid var(--line); background: #fff; font-size: .72rem; line-height: 1.15; text-align: center; }
+.piece svg { width: 100%; height: 54px; }
+.piece.current { border-color: var(--tea); box-shadow: 0 3px 0 var(--tea-deep); background: #fff6ea; }
+.build-svg { display: block; width: 100%; height: auto; border-radius: 12px; border: 2px solid var(--line-strong); touch-action: none; cursor: crosshair; }
+.build-svg .layer { cursor: grab; }
+.color-row { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.swatch { width: 26px; height: 26px; border-radius: 8px; border: 2px solid #0002; padding: 0; }
+.swatch.small { width: 14px; height: 14px; border-radius: 4px; display: inline-block; flex: none; }
+.swatch.current { outline: 3px solid var(--ink); outline-offset: 1px; }
+.color-row input[type="color"] { width: 40px; height: 30px; padding: 0; border: 0; background: none; }
+.build-save { gap: 10px; flex-wrap: wrap; font-size: .9rem; }
+.build-layers ol { margin: 0; padding: 0; list-style: none; display: grid; gap: 4px; grid-template-columns: repeat(auto-fill, minmax(min(260px, 100%), 1fr)); }
+.build-layers li { display: flex; align-items: center; gap: 8px; padding: 5px 8px; border-radius: 10px; background: var(--surface-2); font-size: .85rem; cursor: pointer; }
+.build-layers li > span:nth-child(2) { flex: 1; min-width: 0; }
+.build-layers li.current { outline: 2px solid var(--tea); }
+.layer-tools { display: flex; gap: 2px; }
+
+/* ---------- thuế & vĩ mô ---------- */
+.declare-form { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.declare-form input[type="range"] { flex: 1; min-width: 140px; }
+.declare-form output { font-weight: 800; min-width: 44px; }
+.macro-card { grid-template-columns: auto 1fr; align-items: center; }
+.macro-big { font-size: 3rem; }
+.macro-chart { width: 100%; height: 140px; background: var(--surface-2); border-radius: 12px; }
+.demand-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(260px, 100%), 1fr)); gap: 8px 16px; }
+.demand { display: grid; grid-template-columns: 170px 1fr 48px; align-items: center; gap: 8px; font-size: .85rem; }
+.demand .bar { height: 10px; }
+.demand b { text-align: right; }
+
+@media (max-width: 900px) {
+  .clan-grid, .land-layout, .build-layout { grid-template-columns: minmax(0, 1fr); }
+  .clan-hero { grid-template-columns: auto minmax(0, 1fr); }
+  .clan-treasury { grid-column: 1 / -1; justify-items: start; text-align: left; }
+  .land-panel { position: static; }
+  .demand { grid-template-columns: 130px 1fr 44px; }
+}
+.clan-create input[type="color"] { width: 56px; height: 34px; padding: 2px; border-radius: 10px; }
+
+/* ---------- chuỗi sản xuất ---------- */
+.sector-head { margin: 8px 0 0; font-size: 1rem; }
+.recipe { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 2px; color: var(--muted); }
+.good-chip { display: inline-flex; align-items: center; gap: 1px; padding: 0 4px; border-radius: 8px; background: var(--surface-2); font-size: .8rem; }
+.good-chip b { font-size: .75rem; }
+/* Icon hàng 16-bit (itemart.js, .px-atlas 32x32 phóng 1x, đúng 32 điểm màn hình): ô bảng, ô giá, mỏ của lô,
+   chuỗi ngành, khung xem trước của lô. Thẻ ngành ở tab Gia tộc giữ emoji nhỏ (xem recipeLine trong clans.js). */
+.good-cell { display: inline-flex; align-items: center; gap: 6px; vertical-align: middle; }
+.good-chip.art { gap: 0; padding: 0 6px 0 0; border-radius: 10px; }
+.good-chip.art:not(:has(b)) { padding: 0; background: none; }
+/* Một dây chuyền của nhà máy gộp: một dòng riêng, căn như .recipe chứa nó (giữa ở thẻ ngành, trái ở chuỗi ngành).
+   Chuỗi ngành (cột rộng, icon 32 điểm) cho tên dây chuyền một dòng riêng; thẻ ngành hẹp để tên chảy cùng chip emoji. */
+.recipe-line { display: flex; flex-wrap: wrap; justify-content: inherit; align-items: center; gap: 2px; width: 100%; }
+.chain .recipe-name { width: 100%; }
+/* "→ thành phẩm" của một công thức là một khối không ngắt: dòng dài xuống dòng thì mũi tên đi cùng thành phẩm (recipeOut). */
+.recipe-out { display: inline-flex; align-items: center; gap: 2px; white-space: nowrap; }
+.good-row { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; }
+.trade-list li { display: flex; flex-wrap: wrap; align-items: center; gap: 0 4px; }
+/* Dòng bảng có icon hàng cao 32 điểm: số liệu các cột khác căn giữa theo icon, không treo ở mép trên. */
+.clan-table tr:has(.good-cell) > td { vertical-align: middle; }
+.plot-deposits { display: flex; flex-wrap: wrap; gap: 4px 8px; font-size: .85rem; }
+.plot-deposits small { width: 100%; }
+.plot-deposits .dep { border-radius: 8px; padding: 1px 4px; border: 1.5px solid transparent; }
+.plot-deposits .dep.use-mine { border-color: #3aa76d; background: #eaf7ef; }
+.plot-deposits .dep.use-heavy, .plot-deposits .dep.use-npc { opacity: .5; }
+.plot-deposits .dep-legend { font-size: .72rem; }
+.plot-deposits .dep-legend .use-mine { color: #2d8a57; }
+.plot-deposits .dep-legend .use-heavy { opacity: .6; }
+.prod-preview { display: grid; gap: 4px; font-size: .88rem; }
+.prod-preview p { margin: 0; }
+.trade-form { flex-wrap: nowrap; gap: 4px; }
+.trade-form input { width: 76px; padding: 4px 6px; }
+.chain { display: grid; grid-template-columns: 1fr auto 1fr auto 1fr auto 1fr; gap: 8px; align-items: start; overflow-x: auto; }
+.chain-col { display: grid; gap: 6px; min-width: 150px; }
+.chain-col h4 { margin: 0; font-size: .95rem; }
+.chain-arrow { align-self: center; font-size: 1.4rem; color: var(--muted); }
+.chain-node { display: grid; gap: 2px; padding: 6px 8px; border-radius: 12px; border: 2px solid var(--line); background: #fff; font-size: .82rem; }
+.chain-node.held { border-color: var(--mint-deep); background: #eef9f5; }
+.chain-node .recipe { justify-content: flex-start; }
+.price-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(170px, 100%), 1fr)); gap: 4px 12px; font-size: .85rem; }
+.price-grid > span { display: flex; justify-content: space-between; align-items: center; gap: 6px; }
+/* Màn vừa (máy tính bảng ngang, cửa sổ hẹp): 4 cột chỉ còn ~210 điểm, công thức ngành nặng 4-5 nguyên liệu gãy 2-3 dòng.
+   Xếp 2x2: Khai thác ➜ Năng lượng, mũi tên xuống, Công nghiệp nặng ➜ Công nghiệp nhẹ (con thứ 4 là mũi tên giữa). */
+@media (min-width: 901px) and (max-width: 1100px) {
+  .chain { grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); }
+  .chain > .chain-arrow:nth-child(4) { grid-column: 1 / -1; transform: rotate(90deg); justify-self: center; }
+}
+@media (max-width: 900px) { .chain { grid-template-columns: minmax(0, 1fr); } .chain-arrow { transform: rotate(90deg); justify-self: center; } }
+.infra-mine { display: grid; gap: 6px; margin-top: 8px; padding: 12px; border-radius: 14px; background: #eef9f5; border: 2px solid var(--mint-deep); }
+.infra-mine h4, .infra-mine p { margin: 0; }
+.industry-market { color: #5b3a8f; font-size: .76rem; line-height: 1.3; }
+/* ---------- bảng quản trị tộc trưởng, bỏ phiếu phế truất ---------- */
+.admin-kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 8px; }
+.admin-kpis > div { display: grid; gap: 2px; padding: 10px 12px; border-radius: 12px; background: var(--surface-2); min-width: 0; }
+.clan-deposits, .clan-impact { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.clan-deposits li { display: flex; justify-content: space-between; align-items: center; gap: 8px; padding: 8px 10px; border-radius: 12px; background: var(--surface-2); }
+.clan-impact li { padding: 8px 10px; border-radius: 12px; background: var(--surface-2); }
+.vote-box { border-color: #f0b4c4; }
+.vote-box .row { flex-wrap: wrap; gap: 6px; }
+.demand-sector { margin: 4px 0; } .demand-sector summary { cursor: pointer; font-weight: 800; padding: 6px 0; }
+.demand .badge { display: inline; padding: 0 4px; font-size: .68rem; margin-left: 2px; white-space: nowrap; }
+
+/* Sổ chào giá cho Siêu thị */
+.shop-books { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; }
+.shop-book h4 { margin: 0 0 6px; }
+.shop-book .trade-form { align-items: center; flex-wrap: wrap; gap: 8px; }
+.shop-book .trade-form label { display: inline-flex; align-items: center; gap: 4px; }
+.shop-book .trade-form input { width: 84px; flex: 0 0 auto; }
+.shop-book .trade-form input[name="pct"] { width: 64px; }
+.clan-table tr.held td { background: #eef9f5; font-weight: 700; }
+
+/* Đấu trường gia tộc (views/arena.js) */
+.arena-page .card { margin-bottom: 14px; padding: 14px 16px; }
+.arena-page h3 { margin: 0 0 8px; }
+.arena-roster { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 6px 14px; counter-reset: rank; }
+.arena-roster li { counter-increment: rank; display: grid; grid-template-columns: 1fr auto; gap: 0 8px; padding: 6px 8px; border-radius: 10px; background: #fff8ee; }
+.arena-roster li::before { content: counter(rank); grid-row: span 2; display: none; }
+.arena-roster li.out { opacity: .55; }
+.arena-roster li .muted { grid-column: 1; }
+.arena-roster li .power { grid-row: 1 / span 2; grid-column: 2; align-self: center; font-weight: 800; }
+.arena-form { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px; align-items: end; }
+.arena-form label { display: flex; flex-direction: column; gap: 4px; font-weight: 700; }
+.arena-form select { min-width: 0; max-width: 100%; }
+.arena-form .row { display: flex; gap: 6px; }
+.arena-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.arena-war { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 12px; padding: 8px 10px; border-radius: 10px; background: #fff8ee; }
+.arena-war .vs { flex: 1 1 260px; min-width: 0; overflow-wrap: anywhere; }
+.arena-war .tag { font-size: .8rem; padding: 2px 8px; border-radius: 999px; background: #eee; }
+.arena-war .tag.wait { background: #fff1c9; }
+.arena-war .tag.set { background: #dff3ea; }
+.arena-war .tag.done { background: #e7e4f7; }
+.arena-war .row { display: flex; flex-wrap: wrap; gap: 6px; }
+.arena-stage { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.arena-side { min-width: 0; padding: 8px; border-radius: 12px; background: linear-gradient(#f5ecd8, #eadcbf); }
+.arena-side.side-1 { background: linear-gradient(#e6eef8, #d3e0ef); }
+.arena-side h4 { margin: 0 0 8px; font-size: .95rem; overflow-wrap: anywhere; }
+.arena-fighters { display: grid; grid-template-columns: repeat(auto-fill, minmax(64px, 1fr)); gap: 6px; }
+.fighter { display: flex; flex-direction: column; align-items: center; gap: 2px; min-width: 0; transition: transform .15s, opacity .3s; }
+.fighter .fig { height: 62px; width: 100%; overflow: hidden; display: flex; align-items: flex-end; justify-content: center; }
+.fighter .fig .flip { transform: scaleX(-1); }
+/* Bé pixelPerfect ở 2x (PET_PX.arena): khung chứa đủ 42 điểm ảnh gốc; hai bên nhìn nhau bằng hàng E / W, không lật ảnh.
+   Dáng nghiêng (E / W) rộng gần hết ô 48 điểm ảnh, nên mỗi cột rộng bằng cả ô (96 điểm màn hình): không cắt mất đuôi. */
+.fighter .fig:has(> .pet-figure.pp) { height: calc(84px / var(--zoom, 1)); }
+.arena-fighters:has(.pet-figure.pp) { grid-template-columns: repeat(auto-fill, minmax(calc(96px / var(--zoom, 1)), 1fr)); }
+.fighter .hp { width: 100%; height: 6px; border-radius: 4px; background: #c9b9a0; overflow: hidden; }
+.fighter .hp i { display: block; height: 100%; background: #3fa860; transition: width .4s; }
+.fighter small { font-size: .68rem; text-align: center; line-height: 1.1; overflow-wrap: anywhere; }
+.fighter.hit { transform: translateX(3px); }
+.fighter.down { opacity: .35; filter: grayscale(1); }
+.arena-result { margin: 10px 0 0; font-size: 1.05rem; }
+@media (max-width: 480px) {
+  .arena-stage { gap: 6px; }
+  .arena-side { padding: 6px; }
+  .arena-fighters { grid-template-columns: repeat(auto-fill, minmax(52px, 1fr)); gap: 4px; }
+  .fighter .fig { height: 56px; }
+  /* Bé pixelPerfect cần cột 96 điểm màn hình: hai bên xếp trên dưới để mỗi bên vẫn có vài bé một hàng. */
+  .arena-stage:has(.pet-figure.pp) { grid-template-columns: 1fr; }
+}
+
+/* ---------- bản đồ đất: kinh doanh trên từng lô ---------- */
+/* Dải "Gia tộc của tôi": mỗi lô một nút (chạm để chọn lô trên bản đồ). */
+.biz-strip { display: grid; gap: 8px; padding: 10px 12px; background: var(--surface-2); border: 2px solid var(--line); border-radius: 16px; }
+.biz-strip-head { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 14px; font-size: .88rem; }
+.biz-strip-head > b { font-family: var(--font-display); font-size: 1.05rem; }
+.biz-good { color: #2f6b45; font-weight: 800; }
+.biz-bad { color: #a8281c; font-weight: 800; }
+.biz-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.biz-chip { display: flex; align-items: center; gap: 8px; min-height: 46px; padding: 5px 12px 5px 8px; border: 2px solid var(--line-strong); border-radius: 14px;
+  background: #fff; box-shadow: 0 3px 0 var(--line-strong); text-align: left; font-size: .85rem; line-height: 1.2; transition: transform .08s, box-shadow .08s; }
+.biz-chip:active { transform: translateY(2px); box-shadow: 0 1px 0 var(--line-strong); }
+.biz-chip-icon { font-size: 1.35rem; line-height: 1; }
+.biz-chip-text { color: var(--ink); }
+.biz-chip-text small { display: block; font-weight: 800; color: #2f6b45; }
+.biz-chip.st-low small { color: #8a5300; }
+.biz-chip.st-idle small { color: var(--muted); }
+.biz-chip.st-zero { border-color: #d23b3b; background: #fff1ef; box-shadow: 0 3px 0 #f2b8b5; }
+.biz-chip.st-zero small { color: #a8281c; }
+.biz-chip.current { border-color: var(--pearl); background: #fff7da; box-shadow: 0 3px 0 var(--gold-deep); }
+/* Dòng "Đang làm gì" ở khung bên. */
+.biz-status { display: grid; gap: 2px; margin: 0; padding: 8px 10px; border-radius: 12px; border: 2px solid var(--line); background: var(--surface-2); font-size: .88rem; }
+.biz-status.st-ok { border-color: #b9dfc4; background: #eef8f0; color: #24563a; }
+.biz-status.st-low { border-color: #f1d29a; background: #fff6e5; color: #7a4a00; }
+.biz-status.st-zero { border-color: #f2b8b5; background: #fff1ef; color: #8f1d14; }
+/* Chú thích nổi khi rê chuột lên lô (máy có chuột). */
+.lm-tip { position: absolute; z-index: 3; max-width: 250px; padding: 7px 10px; background: var(--surface-2); border: 2px solid var(--pearl); border-radius: 10px;
+  box-shadow: 0 3px 0 var(--tea-deep); font-size: .8rem; line-height: 1.4; pointer-events: none; }
+.lm-tip .tip-owner { font-weight: 800; border-bottom: 3px solid var(--clan, var(--line)); }
+.lm-tip .tip-state { font-weight: 800; }
+.lm-tip .tip-state.st-ok { color: #2f6b45; }
+.lm-tip .tip-state.st-low { color: #8a5300; }
+.lm-tip .tip-state.st-zero { color: #a8281c; }
+.lm-tip .tip-state.st-idle { color: var(--muted); }
+.land-legend i.free { background: #f6efe4; }
+.land-legend b { font-weight: 800; }
+/* Lô của mình đang sản lượng 0: vòng đỏ lan nhẹ quanh dấu "!" (tắt khi người chơi chọn giảm chuyển động). */
+.land-svg .biz-ping { opacity: 0; }
+.land-svg .biz-mark.mine.warn .biz-ping { transform-box: fill-box; transform-origin: center; animation: biz-ping 1.8s ease-out infinite; }
+@keyframes biz-ping { from { transform: scale(1); opacity: .8; } to { transform: scale(2); opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { .land-svg .biz-mark.mine.warn .biz-ping { animation: none; } }
+/* Nút mở/thu dải chỉ có trên điện thoại; máy tính luôn hiện danh sách lô. */
+.biz-strip-toggle { display: none; }
+@media (max-width: 720px) {
+  .biz-chip { flex: 1 1 calc(50% - 8px); }
+  .biz-strip.collapsed .biz-chips { display: none; }
+  .biz-strip-toggle { display: inline-flex; align-items: center; gap: 8px; min-height: 46px; margin-left: auto; padding: 6px 14px; border: 2px solid var(--line-strong);
+    border-radius: 14px; background: #fff; box-shadow: 0 3px 0 var(--line-strong); font-weight: 800; color: var(--ink); }
+  .biz-strip-toggle i { width: 0; height: 0; border: 6px solid transparent; border-top-color: var(--pearl); transform: translateY(3px); }
+  .biz-strip-toggle[aria-expanded="true"] i { border-top-color: transparent; border-bottom-color: var(--pearl); transform: translateY(-3px); }
+}
+
+/* ---------- bản đồ đất 16-bit (landmap.js + assets/landmap/, dựng bằng scripts/art/build-landmap.py) ----------
+   Tranh 702 × 332 điểm ảnh = khung SVG 1053 × 498 (1 điểm ảnh = 1,5 đơn vị). Khối cuộn bù zoom 0,9 của game như phố
+   16-bit (.t16), nên 1×, 2×, 3× (--lmz) là nguyên lần thật: mỗi điểm ảnh tranh ra đúng 1, 2, 3 điểm màn hình.
+   Canvas mặt đất (tranh + hiệu ứng) dưới SVG trong suốt (lưới, lô, huy hiệu), canvas trời (mây, hải âu) trên cùng. */
+.land-scroll:has(> .lm16-stage) {
+  zoom: calc(1 / var(--zoom, 1));
+  /* chỉ chặn cuộn dây chuyền theo chiều ngang: vuốt dọc tới mép bản đồ thì trang cuộn tiếp (không kẹt ở 2× và 3×) */
+  overflow: auto; overscroll-behavior-x: contain; background: #3f8fc0; max-height: 332px; scrollbar-width: thin;
+}
+.land-scroll:has(> .lm16-stage):focus-visible { outline: 3px solid var(--pink-deep); outline-offset: 2px; }
+.land-wrap.zin .land-scroll:has(> .lm16-stage) { max-height: 440px; }
+.lm16-stage { position: relative; width: calc(702px * var(--lmz, 1)); height: calc(332px * var(--lmz, 1)); }
+.lm16-stage > canvas, .lm16-stage > .land-svg { position: absolute; inset: 0; width: 100%; height: 100%; min-width: 0; display: block; }
+.lm16-stage > canvas { image-rendering: pixelated; pointer-events: none; }
+.lm16-stage.heat > .lm16-ground { visibility: hidden; }
+.lm16-sky { transition: opacity .3s; }
+.lm16-stage:has(.plot.sel) .lm16-sky { opacity: .3; }
+/* Từ 2× mây to bằng vài lô: làm mờ để không che mã lô và huy hiệu. */
+.zin .lm16-sky { opacity: .45; }
+.zin .lm16-stage:has(.plot.sel) .lm16-sky { opacity: .25; }
+/* lưới: giữ độ đậm vạch kem như trước (.5 máy tính, .62 điện thoại); vạch 1 điểm và bóng mực 2 điểm ở 1× */
+.lm16-stage .land-svg .lm-grid-line { stroke-width: 1.5; }
+.lm16-stage .land-svg .lm-grid-shade { stroke-width: 3; stroke-opacity: .34; }
+/* mã lô hiện ở mọi ô từ 2×, 8,5 đơn vị (~11 điểm ở 2×), chữ mực quầng kem */
+.land-wrap.zin .land-svg.terrain .code { opacity: 1; fill: #2e1d14; font-size: 8.5px; paint-order: stroke; stroke: #fff3e3; stroke-width: 2.4px; stroke-linejoin: round; }
+.land-wrap.zin .land-svg .plot.sel .code { font-size: 9px; stroke: none; }
+/* lô có công trình biểu tượng: từ 2× huy hiệu thu thành ghim góc dưới phải (60 %), công trình lộ ra; 1× vẫn ở giữa */
+.land-svg .lmk-badge { transition: transform .15s; }
+.land-wrap.zin .land-svg .plot.lmk .lmk-badge { transform: translate(12px, 12px) scale(.6); }
+@media (prefers-reduced-motion: reduce) { .land-svg .lmk-badge, .lm16-sky { transition: none; } }
+/* nút phóng to: hàng riêng ngay trên bản đồ (không đè lô A01, A02, B01), cùng kiểu thẻ "Xem nhanh";
+   tranh lỗi tải thì landmap.js gỡ nút và khoảng trống cũng mất theo (:has) */
+.land-wrap:has(> .lm-zoom) { padding-top: 46px; }
+.lm-zoom {
+  position: absolute; left: 0; top: 0; z-index: 2; display: flex; align-items: center; gap: 2px; padding: 3px;
+  background: var(--surface-2); border: 2px solid var(--pearl); border-radius: 12px; box-shadow: 0 3px 0 var(--pearl);
+}
+.lm-zoom button {
+  width: 32px; height: 30px; border: 0; border-radius: 8px; background: var(--tea-deep); color: var(--surface-2);
+  font-weight: 800; font-size: 1.05rem; line-height: 1; cursor: pointer;
+}
+.lm-zoom button:disabled { opacity: .35; cursor: default; }
+.lm-zoom button:focus-visible { outline: 3px solid var(--pink-deep); outline-offset: 1px; }
+.lm-zoom b { min-width: 30px; text-align: center; font-size: .82rem; }
+/* máy tính: thẻ bớt 3 điểm lề mỗi bên để tranh 702 điểm vừa khung ở 1× */
+@media (min-width: 721px) { .land-main:has(.lm16-stage) { padding-left: 11px; padding-right: 11px; } }
+/* điện thoại (cùng ngưỡng 720 px): mặc định 2× (landmap.js), nút 46 điểm CSS (~41 thật sau zoom 0,9 của game) */
+@media (max-width: 720px) {
+  .lm-zoom button { width: 46px; height: 46px; font-size: 1.35rem; }
+  .land-wrap:has(> .lm-zoom) { padding-top: 62px; }
+  .lm-zoom b { min-width: 34px; font-size: .9rem; }
+  .lm16-stage .land-svg .lm-grid-line { stroke-width: 2; }
+  .lm16-stage .land-svg .lm-grid-shade { stroke-width: 4; stroke-opacity: .34; }
+  .land-wrap.zin .land-scroll:has(> .lm16-stage) { max-height: 400px; }
+}

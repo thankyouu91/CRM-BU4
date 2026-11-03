@@ -25,6 +25,14 @@ const contentSecurityPolicy = [
   ...(isProd ? ["upgrade-insecure-requests"] : []),
 ].join("; ");
 
+// The game (public/ta-tua/game, shown in an iframe on /ta-tua) is a separate document: it may be
+// framed by this origin and loads its two Google Fonts. In production these files are served as
+// static assets and carry no headers at all; this keeps `next dev` behaving the same way.
+const gameHeaders = [
+  { key: "Content-Security-Policy", value: "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob:; connect-src 'self' ws: wss:; frame-ancestors 'self'; base-uri 'self'" },
+  { key: "X-Content-Type-Options", value: "nosniff" },
+];
+
 const securityHeaders = [
   { key: "Content-Security-Policy", value: contentSecurityPolicy },
   { key: "X-Frame-Options", value: "DENY" },
@@ -48,12 +56,20 @@ const nextConfig = {
   },
   async headers() {
     return [
-      { source: "/:path*", headers: securityHeaders },
+      { source: "/((?!ta-tua/game/).*)", headers: securityHeaders },
+      { source: "/ta-tua/game/:path*", headers: gameHeaders },
       // Public presentation links carry their token in the path: send no Referer at all.
       { source: "/((?!share/).*)", headers: [{ key: "Referrer-Policy", value: "strict-origin-when-cross-origin" }] },
       { source: "/share/:token", headers: [{ key: "Referrer-Policy", value: "no-referrer" }] },
     ];
   },
 };
+
+// Local development: the game server runs separately (npm run petdex:dev, port 3200) and Next
+// proxies its API; on Cloudflare the Worker routes /ta-tua/api to the Durable Object instead.
+if (!isProd) {
+  const gameOrigin = process.env.PETDEX_URL ?? "http://127.0.0.1:3200";
+  nextConfig.rewrites = async () => [{ source: "/ta-tua/api/:path*", destination: `${gameOrigin}/ta-tua/api/:path*` }];
+}
 
 export default nextConfig;
