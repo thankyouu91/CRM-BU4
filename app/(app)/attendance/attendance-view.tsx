@@ -9,7 +9,7 @@ import { MarkModal } from "@/components/attendance/mark-modal";
 import { LeaveBalanceCard } from "@/components/attendance/leave-balance-card";
 import { TeamSheet } from "@/components/attendance/team-sheet";
 import { useApi } from "@/lib/client";
-import { formatDays, LEAVE_KINDS, LEAVE_KIND_KEYS, monthDays, monthLabel, SESSION_LABEL, shiftMonth, WEEKDAY_SHORT, weekdayOf, WORK_SCHEDULE_TEXT, type Session, type SessionCell } from "@/lib/attendance";
+import { formatDays, isLate, LEAVE_KINDS, LEAVE_KIND_KEYS, monthDays, monthLabel, SESSION_LABEL, shiftMonth, WEEKDAY_SHORT, weekdayOf, WORK_SCHEDULE_TEXT, type Session, type SessionCell } from "@/lib/attendance";
 import type { AttendanceView as View } from "@/lib/attendance-queries";
 import { cn } from "@/lib/utils";
 
@@ -43,8 +43,9 @@ export function AttendanceView({ initial, initialTab }: { initial: View; initial
 
   const summary = [
     { label: "Công chuẩn", value: t.standard, strong: false },
-    { label: current ? "Đi làm (đến hôm nay)" : "Đi làm", value: t.worked, strong: false },
-    ...LEAVE_KIND_KEYS.map((k) => ({ label: LEAVE_KINDS[k].label, value: t.leave[k], strong: false, kind: k })),
+    { label: current ? "Ngày công (đến hôm nay)" : "Ngày công", value: t.worked, strong: false },
+    { label: current ? "Ngày cơm (đến hôm nay)" : "Ngày cơm", value: t.meals, strong: false },
+    ...LEAVE_KIND_KEYS.filter((k) => t.leave[k]).map((k) => ({ label: `${LEAVE_KINDS[k].label}${isLate(k) ? " (lần)" : ""}`, value: t.leave[k], strong: false, kind: k })),
     { label: "Nghỉ lễ", value: t.holidays, strong: false },
     { label: "Công hưởng lương", value: t.paid, strong: true },
   ];

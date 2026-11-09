@@ -4,13 +4,25 @@ import { MessageSquareText } from "lucide-react";
 import { LEAVE_KINDS, SESSION_LABEL, WEEKDAY_SHORT, type DayCell, type LeaveKind, type Session, type SessionCell } from "@/lib/attendance";
 import { cn } from "@/lib/utils";
 
-/** Colour of each kind of session, shared by the calendar, the legend and the summary. */
+const SKY = "bg-sky-100 text-sky-800 ring-sky-300 dark:bg-sky-500/15 dark:text-sky-300 dark:ring-sky-500/30";
+const RED = "bg-red-100 text-red-800 ring-red-300 dark:bg-red-500/15 dark:text-red-300 dark:ring-red-500/30";
+const PLAIN = "bg-slate-50 text-slate-700 ring-slate-300 dark:bg-slate-500/10 dark:text-slate-300 dark:ring-slate-500/30";
+/**
+ * Colour of each kind of session, shared by the calendar, the legend and the summary;
+ * the company timesheet's colours (blue = có phép, red = không phép), so X and C read right.
+ */
 export const KIND_TONE: Record<LeaveKind, string> = {
-  ANNUAL: "bg-blue-50 text-blue-700 ring-blue-200 dark:bg-blue-500/10 dark:text-blue-300 dark:ring-blue-500/30",
-  SICK: "bg-red-50 text-red-700 ring-red-200 dark:bg-red-500/10 dark:text-red-300 dark:ring-red-500/30",
-  PERSONAL: "bg-violet-50 text-violet-700 ring-violet-200 dark:bg-violet-500/10 dark:text-violet-300 dark:ring-violet-500/30",
-  UNPAID: "bg-amber-50 text-amber-800 ring-amber-200 dark:bg-amber-500/10 dark:text-amber-300 dark:ring-amber-500/30",
-  BUSINESS: "bg-teal-50 text-teal-700 ring-teal-200 dark:bg-teal-500/10 dark:text-teal-300 dark:ring-teal-500/30",
+  ANNUAL: SKY,
+  UNPAID: RED,
+  LATE_OK: "bg-yellow-100 text-yellow-900 ring-yellow-300 dark:bg-yellow-500/15 dark:text-yellow-300 dark:ring-yellow-500/30",
+  LATE: "bg-pink-100 text-pink-800 ring-pink-300 dark:bg-pink-500/15 dark:text-pink-300 dark:ring-pink-500/30",
+  CUSTOMER: PLAIN,
+  INVENTORY: PLAIN,
+  ONLINE: PLAIN,
+  BUSINESS: "bg-green-100 text-green-800 ring-green-300 dark:bg-green-500/15 dark:text-green-300 dark:ring-green-500/30",
+  SICK: SKY,
+  PERSONAL: RED,
+  TRIP: "bg-lime-100 text-lime-800 ring-lime-300 dark:bg-lime-500/15 dark:text-lime-300 dark:ring-lime-500/30",
 };
 // A worked session is the normal case, so it stays neutral: only exceptions carry a colour.
 const WORK_TONE = "bg-muted/70 text-foreground/70 ring-transparent";
@@ -20,7 +32,7 @@ const HOLIDAY_TONE = "bg-orange-50 text-orange-700 ring-orange-200 dark:bg-orang
 function sessionText(c: SessionCell): { short: string; long: string } {
   if (c.state === "marked") return { short: LEAVE_KINDS[c.kind!].code, long: LEAVE_KINDS[c.kind!].short };
   if (c.state === "holiday") return { short: "L", long: "Nghỉ lễ" };
-  return { short: "X", long: "Đi làm" };
+  return { short: "✓", long: "Đi làm" };
 }
 
 function SessionButton({ day, cell, editable, onPick }: { day: DayCell; cell: SessionCell; editable: boolean; onPick: (day: string, session: Session) => void }) {
@@ -50,8 +62,8 @@ function SessionButton({ day, cell, editable, onPick }: { day: DayCell; cell: Se
 }
 
 /**
- * The month, Monday first; each working day split into morning and afternoon (Saturday:
- * morning). Worked is the default; a coloured session is a leave or a business trip.
+ * The month, Monday first; each working day (Monday to Friday) split into morning and
+ * afternoon. Worked is the default; a coloured session is a leave or a business trip.
  */
 export function AttendanceCalendar({
   days,
@@ -87,22 +99,21 @@ export function AttendanceCalendar({
               role="gridcell"
               className={cn(
                 "min-w-0 rounded-md border p-1 sm:p-1.5",
-                d.weekday === 7 ? "bg-muted/40" : "bg-card",
+                d.weekday >= 6 ? "bg-muted/40" : "bg-card",
                 d.day === today && "border-foreground/60",
               )}
             >
               <div className="mb-1 flex min-w-0 items-baseline gap-1">
-                <span className={cn("text-xs font-semibold tabular-nums", d.day === today ? "rounded bg-foreground px-1 text-background" : d.weekday === 7 ? "text-muted-foreground" : "")}>{Number(d.day.slice(8))}</span>
+                <span className={cn("text-xs font-semibold tabular-nums", d.day === today ? "rounded bg-foreground px-1 text-background" : d.weekday >= 6 ? "text-muted-foreground" : "")}>{Number(d.day.slice(8))}</span>
                 {d.holiday && <span className="hidden truncate text-xs font-medium text-orange-700 dark:text-orange-300 sm:inline" title={d.holiday}>{d.holiday}</span>}
               </div>
-              {d.weekday === 7 ? (
+              {!working.length ? (
                 <p className="py-2 text-center text-xs text-muted-foreground sm:py-3">Nghỉ</p>
               ) : (
                 <div className="space-y-1">
                   {working.map((s) => (
                     <SessionButton key={s.session} day={d} cell={s} editable={canPick(d.day, s)} onPick={onPick} />
                   ))}
-                  {working.length === 1 && <p className="flex h-7 items-center justify-center text-xs text-muted-foreground">Nghỉ chiều</p>}
                 </div>
               )}
             </div>
@@ -116,7 +127,7 @@ export function AttendanceCalendar({
 export function AttendanceLegend() {
   return (
     <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 text-xs text-muted-foreground">
-      <span className={cn("rounded px-1.5 py-0.5 ring-1 ring-inset", WORK_TONE)}>X Đi làm</span>
+      <span className={cn("rounded px-1.5 py-0.5 ring-1 ring-inset", WORK_TONE)}>Trống: đi làm</span>
       {(Object.keys(LEAVE_KINDS) as LeaveKind[]).map((k) => (
         <span key={k} className={cn("rounded px-1.5 py-0.5 ring-1 ring-inset", KIND_TONE[k])}>
           {LEAVE_KINDS[k].code} {LEAVE_KINDS[k].short}

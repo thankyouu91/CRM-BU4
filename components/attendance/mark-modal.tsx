@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Field, Textarea } from "@/components/ui/input";
 import { DateInput } from "@/components/ui/date-input";
 import { api, ApiError } from "@/lib/client";
-import { formatDays, LEAVE_KINDS, LEAVE_KIND_KEYS, scheduledSessions, SESSION_LABEL, WEEKDAY_SHORT, weekdayOf, type LeaveKind, type Session, type SessionCell } from "@/lib/attendance";
+import { formatDays, LEAVE_KINDS, LEAVE_KIND_KEYS, SESSION_LABEL, WEEKDAY_SHORT, weekdayOf, type LeaveKind, type Session, type SessionCell } from "@/lib/attendance";
 import type { AttendanceView } from "@/lib/attendance-queries";
 import { cn } from "@/lib/utils";
 import { KIND_TONE } from "./attendance-calendar";
@@ -51,7 +51,6 @@ export function MarkModal({
   onClose: () => void;
   onSaved: (view: AttendanceView | null) => void;
 }) {
-  const saturday = scheduledSessions(day).length === 1;
   const [scope, setScope] = useState<Scope>(session);
   const [to, setTo] = useState(day);
   const [kind, setKind] = useState<LeaveKind>(cell.kind ?? "ANNUAL");
@@ -84,12 +83,8 @@ export function MarkModal({
 
   const scopes: { value: Scope; label: string; disabled?: boolean }[] = [
     { value: "AM", label: "Buổi sáng", disabled: !correct && taken.includes("AM") },
-    ...(saturday
-      ? []
-      : [
-          { value: "PM" as Scope, label: "Buổi chiều", disabled: !correct && taken.includes("PM") },
-          { value: "DAY" as Scope, label: "Cả ngày", disabled: !correct && taken.length > 0 },
-        ]),
+    { value: "PM", label: "Buổi chiều", disabled: !correct && taken.includes("PM") },
+    { value: "DAY", label: "Cả ngày", disabled: !correct && taken.length > 0 },
     { value: "RANGE", label: "Nhiều ngày" },
   ];
 
@@ -139,7 +134,7 @@ export function MarkModal({
           </div>
         </Field>
         {scope === "RANGE" && (
-          <Field label="Đến hết ngày" hint="Mọi buổi làm việc từ ngày đã chọn tới ngày này; bỏ qua chủ nhật, chiều thứ 7 và ngày lễ.">
+          <Field label="Đến hết ngày" hint="Mọi buổi làm việc từ ngày đã chọn tới ngày này; bỏ qua thứ 7, chủ nhật và ngày lễ.">
             <DateInput value={to} onChange={setTo} min={day} max={maxDay} aria-label="Đến hết ngày" />
           </Field>
         )}

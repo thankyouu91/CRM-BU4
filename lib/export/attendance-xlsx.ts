@@ -1,10 +1,12 @@
 // Monthly timesheet (bảng chấm công) as .xlsx: one row per person, one column per day
-// with the usual symbols (X đi làm, P phép năm, Ô ốm, R việc riêng, KL không lương,
-// CT công tác, L lễ; "X/P" when morning and afternoon differ), the month totals and
+// with the company's symbols and colours (blank = đi làm, X nghỉ cả ngày, - nghỉ nửa
+// ngày, blue = có phép, red = không phép, #/? đi trễ, KH, KK, ONL, CT, C, DL, L lễ),
+// ngày công, ngày cơm and the other month totals, and
 // the annual leave balance; a second sheet lists every marked session with its note.
 // Loaded on demand in the browser.
 
-import { dayCode, LEAVE_KINDS, LEAVE_KIND_KEYS, SESSION_LABEL, WEEKDAY_SHORT, WORK_SCHEDULE_TEXT, weekdayOf } from "@/lib/attendance";
+import { dayCode, dayKind, isLate, LEAVE_KINDS, LEAVE_KIND_KEYS, SESSION_LABEL, WEEKDAY_SHORT, WORK_SCHEDULE_TEXT, weekdayOf } from "@/lib/attendance";
+import type { LeaveKind } from "@/lib/attendance";
 import type { TeamAttendance } from "@/lib/attendance-queries";
 import { ROLE_LABELS } from "@/lib/constants";
 
@@ -15,6 +17,11 @@ const border = { borderColor: "#cbd5e1", borderStyle: "thin" as const };
 const NAVY = "#1e3a8a";
 const OFF = "#e2e8f0";
 const HOLIDAY = "#fde68a";
+// The fills of the company timesheet (TNS chấm công).
+const KIND_FILL: Partial<Record<LeaveKind, string>> = {
+  ANNUAL: "#00B0F0", UNPAID: "#FF0000", SICK: "#00B0F0", PERSONAL: "#FF0000",
+  LATE_OK: "#FFFF00", LATE: "#FFCCCC", BUSINESS: "#B6D7A8", TRIP: "#C5E0B3",
+};
 const text = (v: string | null | undefined, extra: Record<string, unknown> = {}): Cell => ({ ...base, ...border, value: v ?? "", ...extra });
 const num = (n: number, extra: Record<string, unknown> = {}): Cell => ({ ...base, ...border, value: n, type: Number, format: Number.isInteger(n) ? "0" : "0.0", align: "center", ...extra });
 const headCell = (value: string, extra: Record<string, unknown> = {}): Cell => ({
@@ -23,10 +30,11 @@ const headCell = (value: string, extra: Record<string, unknown> = {}): Cell => (
 const blank = (n: number): Cell[] => Array.from({ length: n }, () => null);
 const dayText = (day: string) => `${day.slice(8)}/${day.slice(5, 7)}/${day.slice(0, 4)}`;
 
-const TOTALS = [
+const totalsOf = (kinds: LeaveKind[]) => [
+  { label: "Ngày công", width: 8 },
+  { label: "Ngày cơm", width: 8 },
   { label: "Công chuẩn", width: 8 },
-  { label: "Đi làm (X)", width: 8 },
-  ...LEAVE_KIND_KEYS.map((k) => ({ label: `${LEAVE_KINDS[k].short} (${LEAVE_KINDS[k].code})`, width: 9 })),
+  ...kinds.map((k) => ({ label: `${LEAVE_KINDS[k].short} (${LEAVE_KINDS[k].code})${isLate(k) ? " · lần" : ""}`, width: 9 })),
   { label: "Lễ (L)", width: 7 },
   { label: "Công hưởng lương", width: 10 },
   { label: "Phép năm được hưởng", width: 10 },
@@ -39,15 +47,18 @@ export async function exportAttendanceXlsx(team: TeamAttendance, filename: strin
   const { default: writeXlsxFile } = await import("write-excel-file/browser");
   const days = team.people[0]?.attendance.days.map((d) => d.day) ?? [];
   const holidayOf = new Map(team.holidays.map((h) => [h.day, h.name]));
+  const kinds = LEAVE_KIND_KEYS.filter((k) => team.people.some((p) => p.attendance.totals.leave[k]));
+  const TOTALS = totalsOf(kinds);
   const fixed = 3;
   const cols = fixed + days.length + TOTALS.length;
-  const shade = (day: string) => (holidayOf.has(day) ? HOLIDAY : weekdayOf(day) === 7 ? OFF : undefined);
+  const shade = (day: string) => (holidayOf.has(day) ? HOLIDAY : weekdayOf(day) >= 6 ? OFF : undefined);
 
   const legend = [
-    "X: đi làm",
-    ...LEAVE_KIND_KEYS.map((k) => `${LEAVE_KINDS[k].code}: ${LEAVE_KINDS[k].label.toLowerCase()}`),
+    "Trống: đi làm",
+    ...LEAVE_KIND_KEYS.map((k) => `${LEAVE_KINDS[k].code}${"half" in LEAVE_KINDS[k] ? ` (nửa ngày: ${LEAVE_KINDS[k].half})` : ""}: ${LEAVE_KINDS[k].label.toLowerCase()}`),
     "L: nghỉ lễ",
-    "X/P: sáng / chiều khác nhau",
+    "Ô xanh: có phép · ô đỏ: không phép",
+    "-/CT: sáng / chiều khác nhau",
   ].join(" · ");
   const sheet: Cell[][] = [
     [{ ...base, value: `BẢNG CHẤM CÔNG ${team.label.toUpperCase()}`, fontWeight: "bold", fontSize: 14, textColor: NAVY, columnSpan: cols, height: 28 }, ...blank(cols - 1)],
@@ -69,10 +80,14 @@ export async function exportAttendanceXlsx(team: TeamAttendance, filename: strin
       num(i + 1),
       text(p.person.name, { fontWeight: "bold" }),
       text(p.person.jobTitle ?? ROLE_LABELS[p.person.role] ?? p.person.role),
-      ...p.attendance.days.map((d) => text(dayCode(d), { align: "center", ...(shade(d.day) ? { backgroundColor: shade(d.day) } : {}) })),
+      ...p.attendance.days.map((d) => {
+        const fill = (dayKind(d) && KIND_FILL[dayKind(d)!]) || shade(d.day);
+        return text(dayCode(d), { align: "center", ...(fill ? { backgroundColor: fill } : {}) });
+      }),
+      num(t.worked, { fontWeight: "bold" }),
+      num(t.meals, { fontWeight: "bold" }),
       num(t.standard),
-      num(t.worked),
-      ...LEAVE_KIND_KEYS.map((k) => num(t.leave[k])),
+      ...kinds.map((k) => num(t.leave[k])),
       num(t.holidays),
       num(t.paid, { fontWeight: "bold" }),
       num(p.balance.entitlement),

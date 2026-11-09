@@ -6,7 +6,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Avatar } from "@/components/ui/avatar";
 import { useApi } from "@/lib/client";
-import { formatDays, LEAVE_KINDS, LEAVE_KIND_KEYS } from "@/lib/attendance";
+import { formatDays, isLate, LEAVE_KINDS, LEAVE_KIND_KEYS } from "@/lib/attendance";
 import type { TeamAttendance } from "@/lib/attendance-queries";
 import { cn } from "@/lib/utils";
 import { HolidaysModal } from "./holidays-modal";
@@ -35,6 +35,8 @@ export function TeamSheet({ month, canEditHolidays, onOpen }: { month: string; c
     }
   };
 
+  // Only the kinds someone in the team has this month: eleven mostly empty columns help nobody.
+  const kinds = LEAVE_KIND_KEYS.filter((k) => team?.people.some((p) => p.attendance.totals.leave[k]));
   const num = (n: number, strong = false) => <td className={cn("px-2 py-2.5 text-right tabular-nums", strong && "font-semibold", n === 0 && !strong && "text-muted-foreground/50")}>{formatDays(n)}</td>;
 
   return (
@@ -59,10 +61,11 @@ export function TeamSheet({ month, canEditHolidays, onOpen }: { month: string; c
             <tr>
               <th className="px-4 py-2.5 text-left font-medium">Nhân sự</th>
               <th className="px-2 py-2.5 text-right font-medium">Công chuẩn</th>
-              <th className="px-2 py-2.5 text-right font-medium">Đi làm</th>
-              {LEAVE_KIND_KEYS.map((k) => (
+              <th className="px-2 py-2.5 text-right font-medium">Ngày công</th>
+              <th className="px-2 py-2.5 text-right font-medium">Ngày cơm</th>
+              {kinds.map((k) => (
                 <th key={k} className="px-2 py-2.5 text-right font-medium" title={LEAVE_KINDS[k].label}>
-                  {LEAVE_KINDS[k].short}
+                  {LEAVE_KINDS[k].short} ({LEAVE_KINDS[k].code}){isLate(k) ? " · lần" : ""}
                 </th>
               ))}
               <th className="px-2 py-2.5 text-right font-medium">Lễ</th>
@@ -85,8 +88,9 @@ export function TeamSheet({ month, canEditHolidays, onOpen }: { month: string; c
                     </button>
                   </td>
                   {num(t.standard)}
-                  {num(t.worked)}
-                  {LEAVE_KIND_KEYS.map((k) => (
+                  {num(t.worked, true)}
+                  {num(t.meals)}
+                  {kinds.map((k) => (
                     <td key={k} className={cn("px-2 py-2.5 text-right tabular-nums", t.leave[k] === 0 && "text-muted-foreground/50")}>
                       {formatDays(t.leave[k])}
                     </td>
@@ -101,7 +105,7 @@ export function TeamSheet({ month, canEditHolidays, onOpen }: { month: string; c
         </table>
       </div>
       <p className="border-t px-4 py-2 text-xs text-muted-foreground">
-        Đi làm tính đến hôm nay với tháng hiện tại. Phép còn lại = được hưởng + tồn năm trước − đã nghỉ từ đầu năm đến hết tháng. File Excel có thêm từng ngày (X, P, Ô…) và trang chi tiết lý do nghỉ.
+        Ngày công, ngày cơm tính đến hôm nay với tháng hiện tại; ngày cơm không tính buổi công tác, online, du lịch. Phép còn lại = được hưởng + tồn năm trước − đã nghỉ từ đầu năm đến hết tháng. File Excel có thêm từng ngày (X, -, CT…) và trang chi tiết lý do nghỉ.
       </p>
       {holidays && <HolidaysModal year={Number(month.slice(0, 4))} onClose={() => setHolidays(false)} onChanged={() => void reload()} />}
     </section>

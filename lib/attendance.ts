@@ -1,5 +1,5 @@
 // Chấm công (timekeeping): the rules, no database. Everyone works every scheduled
-// session (Monday to Friday morning and afternoon, Saturday morning) unless a session
+// session (Monday to Friday morning and afternoon) unless a session
 // is marked otherwise; only those marks are stored (AttendanceMark). Days are
 // "YYYY-MM-DD" in APP_TIMEZONE, so the arithmetic below needs no time zone.
 // Shared by the API, the attendance page, the Excel export and the tests.
@@ -8,20 +8,30 @@ export const SESSIONS = ["AM", "PM"] as const;
 export type Session = (typeof SESSIONS)[number];
 export const SESSION_LABEL: Record<Session, string> = { AM: "Sáng", PM: "Chiều" };
 
-export const WORK_SCHEDULE_TEXT = "Thứ 2 – thứ 6: sáng và chiều · Thứ 7: buổi sáng (8:00 – 12:00) · Chủ nhật nghỉ";
+export const WORK_SCHEDULE_TEXT = "Thứ 2 – thứ 6: sáng và chiều · Thứ 7, chủ nhật nghỉ";
 
 /**
- * What a session can be marked as. code: the symbol on the timesheet (X = đi làm,
- * L = lễ). worked: counts as a session worked; paid: counts toward paid sessions;
- * annual: uses annual leave.
+ * What a session can be marked as, with the company timesheet's symbols (a normal
+ * worked day is left blank; L = lễ). X and C appear twice: the colour tells them apart.
+ * half: the symbol when only one session of the day is marked ("-" = nửa ngày nghỉ).
+ * worked: counts toward ngày công; meal: a worked session that also counts toward
+ * ngày cơm; paid: counts toward paid sessions; annual: uses annual leave; late: counted
+ * in times (lần), not days.
  */
+type KindDef = { label: string; short: string; code: string; half?: string; worked: boolean; meal: boolean; paid: boolean; annual: boolean; late?: boolean };
 export const LEAVE_KINDS = {
-  ANNUAL: { label: "Nghỉ phép năm", short: "Phép năm", code: "P", worked: false, paid: true, annual: true },
-  SICK: { label: "Nghỉ ốm", short: "Ốm", code: "Ô", worked: false, paid: false, annual: false },
-  PERSONAL: { label: "Việc riêng có lương (cưới, tang…)", short: "Việc riêng", code: "R", worked: false, paid: true, annual: false },
-  UNPAID: { label: "Nghỉ không lương", short: "Không lương", code: "KL", worked: false, paid: false, annual: false },
-  BUSINESS: { label: "Công tác / làm việc bên ngoài", short: "Công tác", code: "CT", worked: true, paid: true, annual: false },
-} as const;
+  ANNUAL: { label: "Nghỉ có phép", short: "Có phép", code: "X", half: "-", worked: false, meal: false, paid: true, annual: true },
+  UNPAID: { label: "Nghỉ không phép", short: "Không phép", code: "X", half: "-", worked: false, meal: false, paid: false, annual: false },
+  LATE_OK: { label: "Đi trễ có phép", short: "Trễ có phép", code: "#", worked: true, meal: true, paid: true, annual: false, late: true },
+  LATE: { label: "Đi trễ không phép", short: "Trễ không phép", code: "?", worked: true, meal: true, paid: true, annual: false, late: true },
+  CUSTOMER: { label: "Đi khách hàng", short: "Đi KH", code: "KH", worked: true, meal: true, paid: true, annual: false },
+  INVENTORY: { label: "Kiểm kê", short: "Kiểm kê", code: "KK", worked: true, meal: true, paid: true, annual: false },
+  ONLINE: { label: "Làm việc online", short: "Online", code: "ONL", worked: true, meal: false, paid: true, annual: false },
+  BUSINESS: { label: "Công tác", short: "Công tác", code: "CT", worked: true, meal: false, paid: true, annual: false },
+  SICK: { label: "Nghỉ bệnh", short: "Bệnh", code: "C", worked: false, meal: false, paid: false, annual: false },
+  PERSONAL: { label: "Nghỉ cưới hỏi / việc riêng", short: "Cưới hỏi", code: "C", worked: false, meal: false, paid: true, annual: false },
+  TRIP: { label: "Du lịch cùng công ty", short: "Du lịch", code: "DL", worked: true, meal: false, paid: true, annual: false },
+} as const satisfies Record<string, KindDef>;
 export type LeaveKind = keyof typeof LEAVE_KINDS;
 export const LEAVE_KIND_KEYS = Object.keys(LEAVE_KINDS) as LeaveKind[];
 export const isLeaveKind = (v: unknown): v is LeaveKind => typeof v === "string" && v in LEAVE_KINDS;
@@ -54,8 +64,7 @@ export const WEEKDAY_SHORT = ["", "T2", "T3", "T4", "T5", "T6", "T7", "CN"];
 /** The sessions the schedule has on a day, holidays aside. */
 export function scheduledSessions(day: string): Session[] {
   const w = weekdayOf(day);
-  if (w === 7) return [];
-  if (w === 6) return ["AM"];
+  if (w >= 6) return [];
   return ["AM", "PM"];
 }
 
@@ -88,7 +97,7 @@ export interface HolidayInput {
 }
 
 export type SessionState =
-  /** Not a working session: Sunday, Saturday afternoon. */
+  /** Not a working session: Saturday, Sunday. */
   | "off"
   | "holiday"
   /** Worked (the default), today or earlier. */
@@ -115,9 +124,12 @@ export interface DayCell {
 export interface MonthTotals {
   /** Công chuẩn: working sessions of the month, holidays excluded. */
   standard: number;
-  /** Đi làm: worked sessions up to today, plus business trips. */
+  /** Ngày công: worked sessions up to today, plus marks that count as worked (CT, KH…). */
   worked: number;
+  /** Ngày cơm: ngày công without the sessions spent away (CT, ONL, DL). */
+  meals: number;
   holidays: number;
+  /** Days per kind; late kinds (#, ?) in times. */
   leave: Record<LeaveKind, number>;
   /** Công hưởng lương: worked + paid leave + holidays. */
   paid: number;
@@ -130,12 +142,13 @@ export interface AttendanceMonth {
 }
 
 const half = (sessions: number) => sessions / 2;
+export const isLate = (k: LeaveKind) => "late" in LEAVE_KINDS[k];
 
 /** The month of one person. Days after today are "planned": not counted as worked yet. */
 export function buildAttendanceMonth(opts: { month: string; marks: MarkInput[]; holidays: HolidayInput[]; today: string }): AttendanceMonth {
   const holidays = new Map(opts.holidays.map((h) => [h.day, h.name]));
   const marks = new Map(opts.marks.filter((m) => isLeaveKind(m.kind)).map((m) => [`${m.day}|${m.session}`, m]));
-  const count = { standard: 0, worked: 0, holidays: 0 };
+  const count = { standard: 0, worked: 0, meals: 0, holidays: 0 };
   const leave = Object.fromEntries(LEAVE_KIND_KEYS.map((k) => [k, 0])) as Record<LeaveKind, number>;
 
   const days = monthDays(opts.month).map((day): DayCell => {
@@ -153,10 +166,12 @@ export function buildAttendanceMonth(opts: { month: string; marks: MarkInput[]; 
         const kind = mark.kind as LeaveKind;
         leave[kind]++;
         if (LEAVE_KINDS[kind].worked) count.worked++;
+        if (LEAVE_KINDS[kind].meal) count.meals++;
         return { session, state: "marked", kind, note: mark.note ?? null };
       }
       if (day > opts.today) return { session, state: "planned", kind: null, note: null };
       count.worked++;
+      count.meals++;
       return { session, state: "work", kind: null, note: null };
     });
     return { day, weekday: weekdayOf(day), holiday, sessions };
@@ -169,8 +184,9 @@ export function buildAttendanceMonth(opts: { month: string; marks: MarkInput[]; 
     totals: {
       standard: half(count.standard),
       worked: half(count.worked),
+      meals: half(count.meals),
       holidays: half(count.holidays),
-      leave: Object.fromEntries(LEAVE_KIND_KEYS.map((k) => [k, half(leave[k])])) as Record<LeaveKind, number>,
+      leave: Object.fromEntries(LEAVE_KIND_KEYS.map((k) => [k, isLate(k) ? leave[k] : half(leave[k])])) as Record<LeaveKind, number>,
       paid: half(count.worked + paidLeave + count.holidays),
     },
   };
@@ -207,11 +223,9 @@ export function leaveBalance(year: number, row: { entitlement: number; carriedOv
 /** Days are whole or half: 1, 1.5, 0.5. */
 export const formatDays = (n: number) => (Number.isInteger(n) ? String(n) : n.toFixed(1).replace(".", ","));
 
-/** The symbol of a session on the timesheet; empty when there is nothing to say yet. */
+/** The symbol of a session on the timesheet; empty for a normal worked session. */
 export function sessionCode(c: SessionCell): string {
   switch (c.state) {
-    case "work":
-      return "X";
     case "holiday":
       return "L";
     case "marked":
@@ -221,13 +235,19 @@ export function sessionCode(c: SessionCell): string {
   }
 }
 
-/** One timesheet cell per day: "X", "P", or "X/P" when the morning and afternoon differ. */
+/** One timesheet cell per day: "X" (cả ngày), "-" (nửa ngày nghỉ), "CT", or "-/CT" when the two sessions differ. */
 export function dayCode(d: DayCell): string {
-  const codes = d.sessions.filter((s) => s.state !== "off").map(sessionCode);
-  if (!codes.length) return "";
-  if (codes.length === 1 || codes[0] === codes[1]) return codes[0];
-  return `${codes[0] || "·"}/${codes[1] || "·"}`;
+  const cells = d.sessions.filter((s) => s.state !== "off");
+  const codes = cells.map(sessionCode);
+  if (codes.length === 2 && codes[0] === codes[1]) return codes[0];
+  return cells
+    .map((c, i) => (c.state === "marked" ? ((LEAVE_KINDS[c.kind!] as KindDef).half ?? codes[i]) : codes[i]))
+    .filter(Boolean)
+    .join("/");
 }
+
+/** The kind that colours a day on the timesheet: the first marked session's. */
+export const dayKind = (d: DayCell): LeaveKind | null => d.sessions.find((s) => s.state === "marked")?.kind ?? null;
 
 /**
  * Whether a session can be marked: a scheduled session on a day that is not a holiday.
@@ -236,7 +256,7 @@ export function dayCode(d: DayCell): string {
 export function markableReason(day: string, session: string, holidays: HolidayInput[]): string | null {
   if (!isDay(day)) return "Ngày không hợp lệ";
   if (!(SESSIONS as readonly string[]).includes(session)) return "Buổi không hợp lệ";
-  if (!(scheduledSessions(day) as string[]).includes(session)) return weekdayOf(day) === 7 ? "Chủ nhật không phải ngày làm việc" : "Chiều thứ 7 không phải buổi làm việc";
+  if (!(scheduledSessions(day) as string[]).includes(session)) return weekdayOf(day) === 7 ? "Chủ nhật không phải ngày làm việc" : "Thứ 7 không phải ngày làm việc";
   const h = holidays.find((x) => x.day === day);
   if (h) return `Ngày ${h.name} là ngày nghỉ lễ`;
   return null;

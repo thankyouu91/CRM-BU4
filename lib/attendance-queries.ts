@@ -182,8 +182,8 @@ export function slotsOf(input: { from: string; to?: string | null; sessions?: Se
 }
 
 /**
- * Mark sessions (kind) or put them back to worked (kind null). For a range, Sundays,
- * Saturday afternoons and holidays are skipped. A manager may do anything; people ask
+ * Mark sessions (kind) or put them back to worked (kind null). For a range, weekends
+ * and holidays are skipped. A manager may do anything; people ask
  * for their own leave on empty sessions only, and their direct manager is told.
  */
 export async function setAttendance(
