@@ -4,7 +4,7 @@ import { NextRequest } from "next/server";
 import type { PrismaClient } from "@prisma/client";
 import type { CurrentUser } from "../lib/session";
 import { effectivePermissions } from "../lib/permissions";
-import { scheduledSessions, shiftMonth, weekdayOf } from "../lib/attendance";
+import { scheduledSessions, shiftMonth } from "../lib/attendance";
 import { zonedDay } from "../lib/work-report";
 
 const session = vi.hoisted(() => ({ user: null as CurrentUser | null }));
@@ -27,7 +27,7 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)("attendance on PostgreSQL", () =
   const lastMonth = shiftMonth(month, -1);
   // The first weekday of a month, and that week's Monday and Sunday (all inside the month).
   const firstWeekday = (m: string) => [...Array(7)].map((_, i) => `${m}-0${i + 1}`).find((d) => scheduledSessions(d).length === 2)!;
-  const sunday = [...Array(7)].map((_, i) => `${month}-${String(i + 8).padStart(2, "0")}`).find((d) => weekdayOf(d) === 7)!;
+  const sunday = [...Array(7)].map((_, i) => `${month}-${String(i + 8).padStart(2, "0")}`).find((d) => scheduledSessions(d).length === 0)!;
   const monday = `${month}-${String(Number(sunday.slice(8)) - 6).padStart(2, "0")}`;
   const saturday = `${month}-${String(Number(sunday.slice(8)) - 1).padStart(2, "0")}`;
 
@@ -80,7 +80,7 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)("attendance on PostgreSQL", () =
 
     expect((await mark("an", { userId: ids.an, from: firstWeekday(lastMonth), kind: "SICK" })).status).toBe(403);
     expect((await mark("an", { userId: ids.an, from: sunday, kind: "ANNUAL" })).body.error).toMatch(/Chủ nhật/);
-    expect((await mark("an", { userId: ids.an, from: saturday, sessions: ["AM"], kind: "ANNUAL" })).body.error).toMatch(/Thứ 7/);
+    expect((await mark("an", { userId: ids.an, from: saturday, sessions: ["PM"], kind: "ANNUAL" })).body.error).toMatch(/Chiều thứ 7/);
     // Once recorded, only a manager changes or clears it; empty sessions stay open to them.
     const clear = await mark("an", { userId: ids.an, from: day, sessions: ["AM"], kind: null });
     expect(clear.status).toBe(403);
@@ -117,13 +117,13 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)("attendance on PostgreSQL", () =
     expect(seen.rights).toMatchObject({ correct: true, requestFrom: null, canEditBalance: false });
   });
 
-  it("marks every working session of a range, skipping Saturday and Sunday", async () => {
+  it("marks every working session of a range, skipping Sunday and Saturday afternoon", async () => {
     const res = await mark("hr", { userId: ids.an, from: monday, to: sunday, kind: "BUSINESS", note: "Đi Đà Nẵng" });
     expect(res.status).toBe(200);
-    expect(res.body.changed).toBe(10);
+    expect(res.body.changed).toBe(11);
     const rows = await db.attendanceMark.findMany({ where: { userId: ids.an, day: { gte: monday, lte: sunday } } });
     expect(rows.every((r) => r.kind === "BUSINESS")).toBe(true);
-    expect(rows.some((r) => r.day === saturday)).toBe(false);
+    expect(rows.some((r) => r.day === saturday && r.session === "PM")).toBe(false);
     await mark("hr", { userId: ids.an, from: monday, to: sunday, kind: null });
     expect(await db.attendanceMark.count({ where: { userId: ids.an, day: { gte: monday, lte: sunday } } })).toBe(0);
   });

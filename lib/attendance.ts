@@ -1,5 +1,5 @@
 // Chấm công (timekeeping): the rules, no database. Everyone works every scheduled
-// session (Monday to Friday morning and afternoon) unless a session
+// session (Monday to Friday morning and afternoon, Saturday morning) unless a session
 // is marked otherwise; only those marks are stored (AttendanceMark). Days are
 // "YYYY-MM-DD" in APP_TIMEZONE, so the arithmetic below needs no time zone.
 // Shared by the API, the attendance page, the Excel export and the tests.
@@ -8,7 +8,7 @@ export const SESSIONS = ["AM", "PM"] as const;
 export type Session = (typeof SESSIONS)[number];
 export const SESSION_LABEL: Record<Session, string> = { AM: "Sáng", PM: "Chiều" };
 
-export const WORK_SCHEDULE_TEXT = "Thứ 2 – thứ 6: sáng và chiều · Thứ 7, chủ nhật nghỉ";
+export const WORK_SCHEDULE_TEXT = "Thứ 2 – thứ 6: sáng và chiều · Thứ 7: buổi sáng (8:00 – 12:00) · Chủ nhật nghỉ";
 
 /**
  * What a session can be marked as, with the company timesheet's symbols (a normal
@@ -64,7 +64,8 @@ export const WEEKDAY_SHORT = ["", "T2", "T3", "T4", "T5", "T6", "T7", "CN"];
 /** The sessions the schedule has on a day, holidays aside. */
 export function scheduledSessions(day: string): Session[] {
   const w = weekdayOf(day);
-  if (w >= 6) return [];
+  if (w === 7) return [];
+  if (w === 6) return ["AM"];
   return ["AM", "PM"];
 }
 
@@ -97,7 +98,7 @@ export interface HolidayInput {
 }
 
 export type SessionState =
-  /** Not a working session: Saturday, Sunday. */
+  /** Not a working session: Sunday, Saturday afternoon. */
   | "off"
   | "holiday"
   /** Worked (the default), today or earlier. */
@@ -256,7 +257,7 @@ export const dayKind = (d: DayCell): LeaveKind | null => d.sessions.find((s) => 
 export function markableReason(day: string, session: string, holidays: HolidayInput[]): string | null {
   if (!isDay(day)) return "Ngày không hợp lệ";
   if (!(SESSIONS as readonly string[]).includes(session)) return "Buổi không hợp lệ";
-  if (!(scheduledSessions(day) as string[]).includes(session)) return weekdayOf(day) === 7 ? "Chủ nhật không phải ngày làm việc" : "Thứ 7 không phải ngày làm việc";
+  if (!(scheduledSessions(day) as string[]).includes(session)) return weekdayOf(day) === 7 ? "Chủ nhật không phải ngày làm việc" : "Chiều thứ 7 không phải buổi làm việc";
   const h = holidays.find((x) => x.day === day);
   if (h) return `Ngày ${h.name} là ngày nghỉ lễ`;
   return null;

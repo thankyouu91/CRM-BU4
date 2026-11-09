@@ -62,8 +62,8 @@ function SessionButton({ day, cell, editable, onPick }: { day: DayCell; cell: Se
 }
 
 /**
- * The month, Monday first; each working day (Monday to Friday) split into morning and
- * afternoon. Worked is the default; a coloured session is a leave or a business trip.
+ * The month, Monday first; each working day split into morning and afternoon (Saturday:
+ * morning). Worked is the default; a coloured session is a leave or a business trip.
  */
 export function AttendanceCalendar({
   days,
@@ -99,12 +99,12 @@ export function AttendanceCalendar({
               role="gridcell"
               className={cn(
                 "min-w-0 rounded-md border p-1 sm:p-1.5",
-                d.weekday >= 6 ? "bg-muted/40" : "bg-card",
+                d.weekday === 7 ? "bg-muted/40" : "bg-card",
                 d.day === today && "border-foreground/60",
               )}
             >
               <div className="mb-1 flex min-w-0 items-baseline gap-1">
-                <span className={cn("text-xs font-semibold tabular-nums", d.day === today ? "rounded bg-foreground px-1 text-background" : d.weekday >= 6 ? "text-muted-foreground" : "")}>{Number(d.day.slice(8))}</span>
+                <span className={cn("text-xs font-semibold tabular-nums", d.day === today ? "rounded bg-foreground px-1 text-background" : d.weekday === 7 ? "text-muted-foreground" : "")}>{Number(d.day.slice(8))}</span>
                 {d.holiday && <span className="hidden truncate text-xs font-medium text-orange-700 dark:text-orange-300 sm:inline" title={d.holiday}>{d.holiday}</span>}
               </div>
               {!working.length ? (
@@ -114,6 +114,7 @@ export function AttendanceCalendar({
                   {working.map((s) => (
                     <SessionButton key={s.session} day={d} cell={s} editable={canPick(d.day, s)} onPick={onPick} />
                   ))}
+                  {working.length === 1 && <p className="flex h-7 items-center justify-center text-xs text-muted-foreground">Nghỉ chiều</p>}
                 </div>
               )}
             </div>

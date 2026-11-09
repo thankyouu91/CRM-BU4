@@ -51,7 +51,7 @@ export async function exportAttendanceXlsx(team: TeamAttendance, filename: strin
   const TOTALS = totalsOf(kinds);
   const fixed = 3;
   const cols = fixed + days.length + TOTALS.length;
-  const shade = (day: string) => (holidayOf.has(day) ? HOLIDAY : weekdayOf(day) >= 6 ? OFF : undefined);
+  const shade = (day: string) => (holidayOf.has(day) ? HOLIDAY : weekdayOf(day) === 7 ? OFF : undefined);
 
   const legend = [
     "Trống: đi làm",
