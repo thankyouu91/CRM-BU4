@@ -46,9 +46,28 @@ export function expiredKeys(keys: string[], keep: number): string[] {
   return [...keys].sort().reverse().slice(keep);
 }
 
-async function gzip(text: string): Promise<Uint8Array> {
-  const stream = new Blob([text]).stream().pipeThrough(new CompressionStream("gzip"));
-  return new Uint8Array(await new Response(stream).arrayBuffer());
+/**
+ * A gzip writer: text goes in piece by piece and only the compressed bytes are held, so
+ * the backup never needs the whole database as one string in the Worker's 128 MB.
+ * (R2 needs the length up front, so the compressed result is still buffered.)
+ */
+function gzipWriter() {
+  const stream = new CompressionStream("gzip");
+  const writer = stream.writable.getWriter();
+  const encoder = new TextEncoder();
+  const done = new Response(stream.readable).arrayBuffer();
+  let pending: Promise<void> = Promise.resolve();
+  return {
+    write(text: string) {
+      pending = pending.then(() => writer.write(encoder.encode(text)));
+      return pending;
+    },
+    async close(): Promise<Uint8Array> {
+      await pending;
+      await writer.close();
+      return new Uint8Array(await done);
+    },
+  };
 }
 
 /**
@@ -57,14 +76,23 @@ async function gzip(text: string): Promise<Uint8Array> {
  * backup cannot leave a child without its parent and the file always restores.
  */
 export async function dumpDatabase(db: Client, createdAt: Date): Promise<{ json: string; counts: Record<string, number> }> {
+  const parts: string[] = [];
+  const counts = await writeDatabase(db, createdAt, (text) => void parts.push(text));
+  return { json: parts.join(""), counts };
+}
+
+/** The same JSON as dumpDatabase, handed to `write` one table at a time. */
+async function writeDatabase(db: Client, createdAt: Date, write: (text: string) => unknown): Promise<Record<string, number>> {
   await db.query("BEGIN ISOLATION LEVEL REPEATABLE READ READ ONLY");
   try {
     const tables = await db.query<{ name: string }>(
       "SELECT table_name AS name FROM information_schema.tables WHERE table_schema = 'public' AND table_type = 'BASE TABLE' ORDER BY table_name",
     );
-    const parts: string[] = [];
     const counts: Record<string, number> = {};
     const skipped: string[] = [];
+    // meta comes last in the file (key order does not matter to JSON), once counts are known.
+    await write(`{"tables":{`);
+    let first = true;
     for (const { name } of tables.rows) {
       if (SKIP_TABLES.has(name)) continue;
       const ident = `"${name.replace(/"/g, '""')}"`;
@@ -72,7 +100,8 @@ export async function dumpDatabase(db: Client, createdAt: Date): Promise<{ json:
       try {
         const r = await db.query<{ rows: string; n: number }>(`SELECT coalesce(json_agg(t), '[]'::json)::text AS rows, count(*)::int AS n FROM ${ident} t`);
         counts[name] = r.rows[0].n;
-        parts.push(`${JSON.stringify(name)}:${r.rows[0].rows}`);
+        await write(`${first ? "" : ","}${JSON.stringify(name)}:${r.rows[0].rows}`);
+        first = false;
         await db.query("RELEASE SAVEPOINT t");
       } catch (err) {
         // e.g. a table the app role may not read (_prisma_migrations on some setups)
@@ -82,7 +111,8 @@ export async function dumpDatabase(db: Client, createdAt: Date): Promise<{ json:
       }
     }
     const meta = { format: "crm-backup", version: 1, createdAt: createdAt.toISOString(), counts, skipped };
-    return { json: `{"meta":${JSON.stringify(meta)},"tables":{${parts.join(",")}}}`, counts };
+    await write(`},"meta":${JSON.stringify(meta)}}`);
+    return counts;
   } finally {
     await db.query("COMMIT").catch(() => undefined);
   }
@@ -110,11 +140,16 @@ export async function runMaintenance(env: MaintenanceEnv, now = new Date()): Pro
     if (!ending) console.error("[maintenance]", err);
   });
   await db.connect();
+  let backupError: unknown = null;
   try {
-    if (env.BACKUPS) {
+    // A failed backup must not stop the clean-up below (or every later backup grows), and it
+    // must not go unnoticed: admins get a notice in the bell, and the cron run ends in error.
+    if (!env.BACKUPS) console.warn("[maintenance] no BACKUPS bucket bound: backup skipped");
+    else try {
       const started = Date.now();
-      const { json, counts } = await dumpDatabase(db, now);
-      const body = await gzip(json);
+      const gz = gzipWriter();
+      const counts = await writeDatabase(db, now, (text) => gz.write(text));
+      const body = await gz.close();
       const day = localDay(now, env.APP_TIMEZONE);
       const meta = {
         httpMetadata: { contentType: "application/json", contentEncoding: "gzip" },
@@ -124,8 +159,17 @@ export async function runMaintenance(env: MaintenanceEnv, now = new Date()): Pro
       if (day.endsWith("-01")) await env.BACKUPS.put(`monthly/${day.slice(0, 7)}.json.gz`, body, meta);
       const pruned = (await prune(env.BACKUPS, "daily/", DAILY_KEEP)) + (await prune(env.BACKUPS, "monthly/", MONTHLY_KEEP));
       console.log(`[maintenance] backup daily/${day}.json.gz: ${body.byteLength} bytes, ${meta.customMetadata.rows} rows in ${Date.now() - started} ms; pruned ${pruned}`);
-    } else {
-      console.warn("[maintenance] no BACKUPS bucket bound: backup skipped");
+    } catch (err) {
+      backupError = err;
+      console.error("[maintenance] backup failed", err);
+      await db.query("ROLLBACK").catch(() => undefined);
+      await db
+        .query(
+          `INSERT INTO "Notification" (id, "userId", type, title, body, link, "createdAt")
+           SELECT 'bk' || md5(random()::text || id), id, 'maintenance.backup_failed', $1, $2, '/settings', now() FROM "User" WHERE role = 'ADMIN' AND active`,
+          [`Sao lưu tự động ngày ${localDay(now, env.APP_TIMEZONE)} không thành công`, String((err as Error)?.message ?? err).slice(0, 300)],
+        )
+        .catch((e) => console.error("[maintenance] could not notify admins", e));
     }
 
     const removed = await db.query(`DELETE FROM "AuditLog" WHERE "createdAt" < now() - make_interval(days => $1)`, [AUDIT_RETENTION_DAYS]);
@@ -143,4 +187,5 @@ export async function runMaintenance(env: MaintenanceEnv, now = new Date()): Pro
     ending = true;
     await db.end();
   }
+  if (backupError) throw backupError;
 }

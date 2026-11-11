@@ -4,9 +4,9 @@ import { randomUUID } from "node:crypto";
 import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { gzipSync } from "node:zlib";
+import { gunzipSync, gzipSync } from "node:zlib";
 import pg from "pg";
-import { dumpDatabase } from "../lib/maintenance";
+import { dumpDatabase, runMaintenance, type BackupBucket } from "../lib/maintenance";
 
 // A real round trip: back up the test database the way the daily job does, restore the
 // file with scripts/restore-backup.mjs into a fresh database, and compare. Proves the
@@ -87,5 +87,41 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)("backup and restore", () => {
     const second = restore();
     expect(second.status).toBe(1);
     expect(second.stderr).toMatch(/already has \d+ rows/);
+  }, 180_000);
+
+  it("writes the daily file piece by piece with the same content, and still cleans up and tells admins when the upload fails", async () => {
+    // On the restored copy: other test files write to the source database meanwhile, which
+    // would change counts between the two dumps and see the temporary admin below.
+    const url = target;
+    const copy = new pg.Client({ connectionString: target.href });
+    await copy.connect();
+    const stored = new Map<string, Uint8Array>();
+    const bucket = (fail: boolean): BackupBucket => ({
+      put: async (key, value) => {
+        if (fail) throw new Error("R2 unavailable");
+        stored.set(key, value as Uint8Array);
+      },
+      list: async ({ prefix } = {}) => ({ objects: [...stored.keys()].filter((k) => k.startsWith(prefix ?? "")).map((key) => ({ key, size: 0, uploaded: new Date() })), truncated: false }),
+      delete: async () => undefined,
+    });
+    const now = new Date("2026-11-10T20:00:00Z");
+    await runMaintenance({ DATABASE_URL: url.href, BACKUPS: bucket(false) }, now);
+    const file = JSON.parse(gunzipSync(stored.get("daily/2026-11-11.json.gz")!).toString("utf8"));
+    const { json } = await dumpDatabase(copy, now);
+    const direct = JSON.parse(json);
+    expect(file.meta).toEqual(direct.meta);
+    expect(Object.keys(file.tables).sort()).toEqual(Object.keys(direct.tables).sort());
+    expect(file.tables.Contract.find((c: { id: string }) => c.id === id).value).toBe(1234567890123);
+
+    const admin = `${id}-admin`;
+    await copy.query(`INSERT INTO "User" (id, email, name, "passwordHash", role, "updatedAt") VALUES ($1, $2, 'Admin sao lưu', 'test-only', 'ADMIN', now())`, [admin, `${admin}@example.test`]);
+    await copy.query(`INSERT INTO "Notification" (id, "userId", type, title, "createdAt") VALUES ($1, $2, 'task.assigned', 'cũ', now() - interval '400 days')`, [`${id}-old`, admin]);
+    try {
+      await expect(runMaintenance({ DATABASE_URL: url.href, BACKUPS: bucket(true) }, now)).rejects.toThrow("R2 unavailable");
+      const { rows } = await copy.query(`SELECT type, title FROM "Notification" WHERE "userId" = $1`, [admin]);
+      expect(rows).toEqual([{ type: "maintenance.backup_failed", title: "Sao lưu tự động ngày 2026-11-11 không thành công" }]); // the 400-day-old one was still removed
+    } finally {
+      await copy.end();
+    }
   }, 180_000);
 });
