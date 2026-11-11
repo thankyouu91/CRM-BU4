@@ -16,8 +16,10 @@ export interface SessionPayload {
 
 function getKey(): Uint8Array {
   const secret = process.env.JWT_SECRET;
-  if (!secret || secret.length < 32) {
-    throw new Error("JWT_SECRET must be set to at least 32 characters (see .env.example).");
+  // The placeholders of .env.example and .dev.vars.example are long enough, and public:
+  // fine on a developer's machine, never in production.
+  if (!secret || secret.length < 32 || (process.env.NODE_ENV === "production" && secret.startsWith("change-me"))) {
+    throw new Error("JWT_SECRET must be set to at least 32 random characters, not the example value (see .env.example).");
   }
   return new TextEncoder().encode(secret);
 }

@@ -13,6 +13,7 @@ import {
   normalizeGrants,
   roleLevel,
   seesTeamWorkReports,
+  takeoverBlockedBy,
   type Actor,
   type PermissionKey,
 } from "@/lib/permissions";
@@ -136,6 +137,16 @@ describe("canManageUser", () => {
 
   it.each(cases)("%s -> %s target: %s", (_name, a, target, expected) => {
     expect(canManageUser(a, targets[target])).toBe(expected);
+  });
+
+  it("keeps password and email resets away from accounts holding a permission the actor lacks", () => {
+    const member = { role: "MEMBER", permissions: [] as string[] };
+    const accountant = { role: "MEMBER", permissions: ["FINANCE_MANAGE"] };
+    expect(takeoverBlockedBy(leadWithUserManage, member)).toBeNull();
+    expect(takeoverBlockedBy(leadWithUserManage, accountant)).toBe("FINANCE_MANAGE");
+    expect(takeoverBlockedBy(actor("lead3", "LEAD", ["USER_MANAGE", "FINANCE_MANAGE"]), accountant)).toBeNull();
+    expect(takeoverBlockedBy(manager, { role: "LEAD", permissions: [] })).toBeNull();
+    expect(takeoverBlockedBy(admin, { role: "MANAGER", permissions: ["FINANCE_MANAGE"] })).toBeNull();
   });
 
   it("lets an admin manage their own account", () => {

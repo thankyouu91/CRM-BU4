@@ -8,10 +8,18 @@ import { Button } from "@/components/ui/button";
 import { Field, Input } from "@/components/ui/input";
 import { api, ApiError, clearApiCache } from "@/lib/client";
 
-/** Only allow same-site relative paths, to prevent open redirects via ?next=. */
+/**
+ * Only allow same-site paths, to prevent open redirects via ?next=. Parsed the way the
+ * browser will navigate: "/\t/evil.example" reads as a path but resolves to another site.
+ */
 function safeNext(next: string | null): string {
-  if (!next || !next.startsWith("/") || next.startsWith("//") || next.startsWith("/\\")) return "/dashboard";
-  return next;
+  if (!next?.startsWith("/")) return "/dashboard";
+  try {
+    const url = new URL(next, window.location.origin);
+    return url.origin === window.location.origin ? url.pathname + url.search + url.hash : "/dashboard";
+  } catch {
+    return "/dashboard";
+  }
 }
 
 export function LoginForm({ showDemoHint }: { showDemoHint: boolean }) {

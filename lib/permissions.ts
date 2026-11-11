@@ -77,6 +77,15 @@ export function canManageUser(actor: Actor, target: { id: string; role: string }
   return hasPermission(actor, "USER_MANAGE") && roleLevel(target.role) < roleLevel(actor.role);
 }
 
+/**
+ * Resetting a password or the login email hands the account over, so a non-admin may
+ * not do it to someone holding a permission they lack. Returns that permission.
+ */
+export function takeoverBlockedBy(actor: Actor, target: { role: string; permissions: readonly string[] }): PermissionKey | null {
+  if (actor.role === "ADMIN") return null;
+  return effectivePermissions(target.role, target.permissions).find((p) => !actor.permissions.includes(p)) ?? null;
+}
+
 /** Levels the actor may give to accounts they manage. */
 export function assignableRoles(actor: Actor): RoleKey[] {
   if (actor.role === "ADMIN") return [...ROLES];

@@ -32,9 +32,10 @@ export async function POST(req: NextRequest) {
     const { attachments, instruction } = inputSchema.parse(await readAiJson(req));
     const runtime = await getAiRuntime();
     if (!runtime) return badRequest("Trợ lý AI chưa được bật. Hãy cấu hình trong Cài đặt → Trợ lý AI.");
+    // Read the files first: one that cannot be read (password, scan…) must not cost a daily use.
+    const { blocks: content, notices } = await attachmentContent(attachments);
     const used = await reserveAiUse(me.id, runtime.dailyLimit);
     if (used === null) return NextResponse.json({ error: "Bạn đã dùng hết lượt AI hôm nay." }, { status: 429 });
-    const { blocks: content, notices } = await attachmentContent(attachments);
     try {
       const schema = z.toJSONSchema(aiIntakeSchema);
       // Opus 5.5 and Sonnet 5.5 reject a forced tool_choice: ask for the tool in the prompt

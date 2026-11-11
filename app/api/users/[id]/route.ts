@@ -10,6 +10,7 @@ import {
   normalizeGrants,
   PERMISSION_INFO,
   ROLE_INFO,
+  takeoverBlockedBy,
   type PermissionKey,
   type RoleKey,
 } from "@/lib/permissions";
@@ -85,6 +86,11 @@ export async function PATCH(req: NextRequest, ctx: Ctx) {
       return badRequest("Email đã được sử dụng", { email: "Email đã được sử dụng" });
     }
     const emailChanged = !!email && email !== target.email;
+
+    if (data.resetPassword || emailChanged) {
+      const beyond = takeoverBlockedBy(me, target);
+      if (beyond) return forbidden(`Tài khoản này có quyền "${PERMISSION_INFO[beyond].label}" mà bạn không có: chỉ quản trị viên đặt lại mật khẩu hoặc đổi email đăng nhập của họ được`);
+    }
 
     let passwordHash: string | undefined;
     if (data.resetPassword) {
