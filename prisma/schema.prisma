@@ -477,8 +477,8 @@ model DeckShare {
 }
 
 // Chấm công: mặc định ai cũng đi làm đủ các buổi làm việc (thứ 2 – thứ 6 sáng và chiều,
-// sáng thứ 7), nên chỉ lưu những buổi khác đi: nghỉ phép, nghỉ ốm, việc riêng, không lương,
-// công tác (lib/attendance.ts). Một dòng cho một buổi của một người.
+// sáng thứ 7), nên chỉ lưu những buổi khác đi: nghỉ có phép / không phép, đi trễ, đi khách hàng,
+// online, công tác… (LEAVE_KINDS trong lib/attendance.ts). Một dòng cho một buổi của một người.
 model AttendanceMark {
   id          String   @id @default(cuid())
   userId      String

@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Field, Textarea } from "@/components/ui/input";
 import { DateInput } from "@/components/ui/date-input";
 import { api, ApiError } from "@/lib/client";
-import { formatDays, LEAVE_KINDS, LEAVE_KIND_KEYS, scheduledSessions, SESSION_LABEL, WEEKDAY_SHORT, weekdayOf, type LeaveKind, type Session, type SessionCell } from "@/lib/attendance";
+import { formatDays, isLate, LEAVE_KINDS, LEAVE_KIND_KEYS, scheduledSessions, SESSION_LABEL, WEEKDAY_SHORT, weekdayOf, type LeaveKind, type Session, type SessionCell } from "@/lib/attendance";
 import type { AttendanceView } from "@/lib/attendance-queries";
 import { cn } from "@/lib/utils";
 import { KIND_TONE } from "./attendance-calendar";
@@ -17,7 +17,7 @@ type Scope = Session | "DAY" | "RANGE";
 const dayText = (day: string) => `${WEEKDAY_SHORT[weekdayOf(day)] === "CN" ? "Chủ nhật" : `Thứ ${weekdayOf(day) + 1}`}, ${day.slice(8)}/${day.slice(5, 7)}/${day.slice(0, 4)}`;
 
 /**
- * Mark a session (or a day, or several days) as leave or a business trip, with the reason.
+ * Mark a session (or a day, or several days) with one of LEAVE_KINDS (leave, late, trip…), with the reason.
  * A manager (`correct`) may change or clear what is there; anyone else asks for leave on
  * empty sessions only, and cannot change it afterwards.
  */
@@ -70,8 +70,8 @@ export function MarkModal({
         note: k ? note.trim() || null : null,
       };
       const r = await api<{ changed: number; view: AttendanceView | null }>("/api/attendance/marks", { method: "POST", body });
-      toast.success(k ? `Đã ghi ${LEAVE_KINDS[k].label.toLowerCase()} (${formatDays(r.changed / 2)} ngày công)` : "Đã chuyển về đi làm bình thường", {
-        description: k && isSelf && managerName && !LEAVE_KINDS[k].worked ? `Đã báo cho ${managerName} (quản lý trực tiếp).` : undefined,
+      toast.success(k ? `Đã ghi ${LEAVE_KINDS[k].label.toLowerCase()}${isLate(k) ? "" : ` (${formatDays(r.changed / 2)} ngày)`}` : "Đã chuyển về đi làm bình thường", {
+        description: k && isSelf && managerName ? `Đã báo cho ${managerName} (quản lý trực tiếp).` : undefined,
       });
       onSaved(r.view);
       onClose();
@@ -98,7 +98,7 @@ export function MarkModal({
       open
       onClose={onClose}
       size="sm"
-      title={isSelf && !correct ? "Xin nghỉ" : isSelf ? "Ghi nghỉ" : `Chấm công · ${personName}`}
+      title={isSelf ? "Ghi chấm công" : `Chấm công · ${personName}`}
       description={`${dayText(day)} · đang là: ${cell.state === "marked" ? LEAVE_KINDS[cell.kind!].label : "đi làm"} (${SESSION_LABEL[session].toLowerCase()})`}
       footer={
         <>

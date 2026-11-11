@@ -73,7 +73,7 @@ export async function exportAttendanceXlsx(team: TeamAttendance, filename: strin
 
   const sheet: Cell[][] = [
     [{ ...base, value: `BẢNG CHẤM CÔNG ${team.label.toUpperCase()}`, fontWeight: "bold", fontSize: 14, textColor: NAVY, columnSpan: cols, height: 28 }, ...blank(cols - 1)],
-    [{ ...base, value: `${WORK_SCHEDULE_TEXT}. Ngày làm việc chưa tới để trống.`, textColor: "#475569", columnSpan: cols }, ...blank(cols - 1)],
+    [{ ...base, value: `${WORK_SCHEDULE_TEXT}. Ngày công, ngày cơm tính đến hôm nay với tháng hiện tại.`, textColor: "#475569", columnSpan: cols }, ...blank(cols - 1)],
     [
       headCell("STT", { rowSpan: 2, backgroundColor: NAME_HEAD }),
       headCell("Họ và tên", { rowSpan: 2, backgroundColor: NAME_HEAD }),

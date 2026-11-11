@@ -74,7 +74,7 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)("attendance on PostgreSQL", () =
     expect(am).toMatchObject({ state: "marked", kind: "ANNUAL", note: "Đi khám" });
     expect(own.body.view.balance).toMatchObject({ entitlement: 12, used: 0.5, remaining: 11.5 });
     const notice = await db.notification.findFirst({ where: { userId: ids.boss, type: "attendance.leave" } });
-    expect(notice?.title).toContain("An xin nghỉ phép năm sáng");
+    expect(notice?.title).toContain("An xin nghỉ có phép sáng");
     expect(notice?.link).toBe(`/attendance?user=${ids.an}&month=${month}`);
     expect(await db.auditLog.count({ where: { actorId: ids.an, action: "attendance.mark" } })).toBe(1);
 
@@ -101,7 +101,7 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)("attendance on PostgreSQL", () =
     expect(fixed.status).toBe(200);
     expect(await db.attendanceMark.count({ where: { userId: ids.an, day: past } })).toBe(2);
     // The manager marking it is not a request: no notice to themselves.
-    expect(await db.notification.count({ where: { userId: ids.boss, title: { contains: "ốm" } } })).toBe(0);
+    expect(await db.notification.count({ where: { userId: ids.boss, title: { contains: "bệnh" } } })).toBe(0);
 
     const { view } = await routes();
     session.user = as("peer");

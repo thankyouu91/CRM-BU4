@@ -73,6 +73,26 @@ describe("attendance rules", () => {
     expect(m.totals.paid).toBe(23);
   });
 
+  it("counts work, meals and pay up to today only, lates once a day, and tells apart kinds sharing a symbol", () => {
+    const at = (today: string, ...marks: { day: string; session: string; kind: string }[][]) =>
+      buildAttendanceMonth({ month: "2026-06", today, holidays: [{ day: day(19), name: "Lễ" }], marks: marks.flat() });
+    // Through 10/6: 8 weekdays + sáng thứ 7 6/6 = 8,5. A trip, a customer visit, a leave and a holiday after today add nothing yet.
+    const ahead = at(day(10), full(15, "BUSINESS"), full(16, "CUSTOMER"), full(17, "ANNUAL"));
+    expect(ahead.totals).toMatchObject({ worked: 8.5, meals: 8.5, paid: 8.5, holidays: 1 });
+    expect(ahead.totals.leave).toMatchObject({ BUSINESS: 1, CUSTOMER: 1, ANNUAL: 1 });
+    // Once the month is over they count: 23 − 1 (X 17/6) = 22 công, 21 cơm (CT), 22 + 1 (X) + 1 (lễ) hưởng lương.
+    expect(at(day(30), full(15, "BUSINESS"), full(16, "CUSTOMER"), full(17, "ANNUAL")).totals).toMatchObject({ worked: 22, meals: 21, paid: 24 });
+
+    const m = at(day(30), full(1, "LATE"), [{ day: day(2), session: "AM", kind: "LATE" }], [
+      { day: day(3), session: "AM", kind: "ANNUAL" }, { day: day(3), session: "PM", kind: "UNPAID" },
+      { day: day(4), session: "AM", kind: "CUSTOMER" }, { day: day(4), session: "PM", kind: "UNPAID" },
+    ]);
+    expect(m.totals.leave.LATE).toBe(2); // cả ngày 1/6 is one late, not two
+    expect(dayCode(cell(m, day(3)))).toBe("-/-"); // not one blue X
+    expect(dayCode(cell(m, day(4)))).toBe("KH/-");
+    expect(dayKind(cell(m, day(4)))).toBe("UNPAID"); // the leave colours the cell
+  });
+
   it("leaves later days planned and keeps holidays out of the working days", () => {
     const later = buildAttendanceMonth({ month: "2026-06", today: "2026-06-10", holidays: [], marks: [{ day: day(12), session: "AM", kind: "ANNUAL" }] });
     expect(later.totals).toMatchObject({ standard: 24, worked: 8.5, meals: 8.5 });

@@ -14,7 +14,7 @@ const schema = z.object({
   note: z.string().max(500, "Ghi chú tối đa 500 ký tự").nullish(),
 });
 
-/** POST /api/attendance/marks: mark sessions as leave / business trip, or back to worked (kind null). */
+/** POST /api/attendance/marks: mark sessions with a LEAVE_KINDS kind (leave, late, trip…), or back to worked (kind null). */
 export async function POST(req: NextRequest) {
   return handle(async () => {
     const me = await auth();

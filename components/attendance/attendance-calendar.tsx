@@ -63,7 +63,7 @@ function SessionButton({ day, cell, editable, onPick }: { day: DayCell; cell: Se
 
 /**
  * The month, Monday first; each working day split into morning and afternoon (Saturday:
- * morning). Worked is the default; a coloured session is a leave or a business trip.
+ * morning). Worked is the default; a coloured session carries a mark (leave, late, trip…).
  */
 export function AttendanceCalendar({
   days,
@@ -128,7 +128,7 @@ export function AttendanceCalendar({
 export function AttendanceLegend() {
   return (
     <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 text-xs text-muted-foreground">
-      <span className={cn("rounded px-1.5 py-0.5 ring-1 ring-inset", WORK_TONE)}>Trống: đi làm</span>
+      <span className={cn("rounded px-1.5 py-0.5 ring-1 ring-inset", WORK_TONE)}>✓ Đi làm</span>
       {(Object.keys(LEAVE_KINDS) as LeaveKind[]).map((k) => (
         <span key={k} className={cn("rounded px-1.5 py-0.5 ring-1 ring-inset", KIND_TONE[k])}>
           {LEAVE_KINDS[k].code} {LEAVE_KINDS[k].short}

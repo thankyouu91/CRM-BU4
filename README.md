@@ -141,21 +141,28 @@ Thanh bên → **Chấm công** (`/attendance`). Lịch làm việc: thứ 2 đ�
 - **Mặc định đi làm:** không cần bấm gì cho những buổi đi làm bình thường. Chỉ những buổi khác thường mới được lưu (bảng `AttendanceMark`).
 - **Xin nghỉ:** bấm vào một buổi trên lịch, chọn *Buổi sáng*, *Buổi chiều*, *Cả ngày* hoặc *Nhiều ngày*, chọn loại và ghi lý do (VD: "Đưa con đi khám"). Nhiều ngày thì bỏ qua Chủ nhật, chiều thứ 7 và ngày lễ. Quản lý có thêm nút *Đi làm bình thường* để xoá ghi nhận.
 
-  | Loại | Ký hiệu | Tính công | Trừ phép năm |
-  |---|:-:|---|:-:|
-  | Nghỉ phép năm | P | Hưởng lương | ✓ |
-  | Nghỉ ốm | Ô | Không do công ty trả | |
-  | Nghỉ việc riêng có lương | R | Hưởng lương | |
-  | Nghỉ không lương | KL | Không lương | |
-  | Đi công tác | CT | Tính là đi làm | |
+  Ký hiệu và màu theo bảng chấm công của công ty (`LEAVE_KINDS` trong `lib/attendance.ts`):
 
-  Trên bảng công: X là đi làm, L là nghỉ lễ, buổi sáng và chiều khác nhau ghi dạng `X/P`.
+  | Loại | Ký hiệu (màu) | Ngày công | Ngày cơm | Ghi chú |
+  |---|:-:|:-:|:-:|---|
+  | Nghỉ có phép | X, nửa ngày `-` (xanh; nửa ngày cam trong Excel) | | | Trừ phép năm, hưởng lương |
+  | Nghỉ không phép | X, nửa ngày `-` (đỏ) | | | Không lương |
+  | Đi trễ có phép / không phép | `#` (vàng) / `?` (hồng) | ✓ | ✓ | Đếm theo lần (mỗi ngày một lần) |
+  | Đi khách hàng | KH | ✓ | ✓ | |
+  | Kiểm kê | KK (xanh nhạt) | ✓ | ✓ | |
+  | Làm việc online | ONL (hồng tím) | ✓ | | |
+  | Công tác | CT (xanh lá) | ✓ | | |
+  | Nghỉ bệnh | C (xanh) | | | Không do công ty trả |
+  | Nghỉ cưới hỏi / việc riêng | C (đỏ) | | | Hưởng lương |
+  | Du lịch cùng công ty | DL (xanh lá nhạt) | ✓ | | |
+
+  Trên bảng công: buổi đi làm bình thường để trống, L là nghỉ lễ, buổi sáng và chiều khác nhau ghi dạng `-/CT`.
 - **Ai xem được:** mọi người đã đăng nhập xem được lịch, lý do nghỉ, phép năm và bảng công tháng của mọi người, và xuất được file Excel.
 - **Ai sửa được:** chỉ quản lý, gồm quản lý trực tiếp của người đó và người có quyền *Quản lý nhân viên* với cấp thấp hơn (cấp Quản lý, Quản trị viên). Họ ghi, sửa hoặc xoá được mọi buổi, kể cả tháng đã qua.
-- **Nhân viên tự xin nghỉ:** mỗi người ghi được nghỉ cho chính mình trên những buổi **chưa có ghi nhận**, từ đầu tháng hiện tại trở đi. Đã ghi rồi thì không tự sửa hay xoá được; muốn đổi phải nhờ quản lý. Khi nhân sự tự xin nghỉ, quản lý trực tiếp nhận thông báo trên chuông. Không có bước duyệt: ghi là có hiệu lực, quản lý sửa lại nếu cần (`lib/attendance-access.ts`).
-- **Tổng công tháng:** công chuẩn (không tính ngày lễ), đi làm (tháng hiện tại tính đến hôm nay), từng loại nghỉ, nghỉ lễ, công hưởng lương. Mỗi buổi là nửa ngày công.
+- **Nhân viên tự xin nghỉ:** mỗi người ghi được nghỉ cho chính mình trên những buổi **chưa có ghi nhận**, từ đầu tháng hiện tại trở đi. Đã ghi rồi thì không tự sửa hay xoá được; muốn đổi phải nhờ quản lý. Khi nhân sự tự ghi (nghỉ, đi trễ, online, công tác…), quản lý trực tiếp nhận thông báo trên chuông. Không có bước duyệt: ghi là có hiệu lực, quản lý sửa lại nếu cần (`lib/attendance-access.ts`).
+- **Tổng công tháng:** công chuẩn (không tính ngày lễ), **ngày công** và **ngày cơm** (ngày công trừ các buổi công tác, online, du lịch), từng loại đã ghi, nghỉ lễ, công hưởng lương. Tháng hiện tại thì ngày công, ngày cơm và công hưởng lương tính đến hôm nay, kể cả buổi đã ghi trước cho ngày chưa tới. Mỗi buổi là nửa ngày công.
 - **Phép năm:** *Còn lại = được hưởng + tồn năm trước − đã nghỉ phép năm từ đầu năm đến hết tháng đang xem.* Mặc định được hưởng 12 ngày (Điều 113 Bộ luật Lao động). Người có quyền *Quản lý nhân viên* bấm **Sửa số** để đổi số được hưởng, tồn năm trước (theo nửa ngày, kèm ghi chú như "+1 ngày thâm niên"); số đã nghỉ và còn lại luôn tự tính lại từ lịch (bảng `LeaveBalance`). Còn lại âm hiện màu đỏ.
-- **Bảng công tháng** (tab thứ hai): tổng công từng người và phép còn lại; bấm tên để mở lịch người đó. **Xuất Excel** gồm trang *Bảng chấm công* (từng ngày trong tháng, Chủ nhật và ngày lễ tô màu, các cột tổng và phép năm) và trang *Chi tiết nghỉ* (ngày, buổi, loại, lý do) (`lib/export/attendance-xlsx.ts`).
+- **Bảng công tháng** (tab thứ hai): tổng công từng người và phép còn lại; bấm tên để mở lịch người đó. **Xuất Excel** gồm trang *Bảng chấm công* (từng ngày trong tháng tô màu theo ký hiệu, thứ 7, Chủ nhật và ngày lễ tô màu, các cột ngày công, ngày cơm, tổng và phép năm, kèm danh sách ghi chú ký hiệu) và trang *Chi tiết nghỉ* (ngày, buổi, loại, lý do) (`lib/export/attendance-xlsx.ts`).
 - **Ngày nghỉ lễ:** người có quyền *Quản lý nhân viên* nhập ở nút **Ngày nghỉ lễ** trong bảng công tháng (bảng `Holiday`). Ngày lễ không tính là ngày làm, ghi L và vẫn tính vào công hưởng lương.
 
 ### Tìm kiếm nhanh (Ctrl+K)

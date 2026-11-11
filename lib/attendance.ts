@@ -125,14 +125,14 @@ export interface DayCell {
 export interface MonthTotals {
   /** Công chuẩn: working sessions of the month, holidays excluded. */
   standard: number;
-  /** Ngày công: worked sessions up to today, plus marks that count as worked (CT, KH…). */
+  /** Ngày công: sessions up to today that were worked, marks that count as worked (CT, KH…) included. */
   worked: number;
   /** Ngày cơm: ngày công without the sessions spent away (CT, ONL, DL). */
   meals: number;
   holidays: number;
   /** Days per kind; late kinds (#, ?) in times. */
   leave: Record<LeaveKind, number>;
-  /** Công hưởng lương: worked + paid leave + holidays. */
+  /** Công hưởng lương: worked + paid leave + holidays, all up to today. */
   paid: number;
 }
 
@@ -149,7 +149,9 @@ export const isLate = (k: LeaveKind) => "late" in LEAVE_KINDS[k];
 export function buildAttendanceMonth(opts: { month: string; marks: MarkInput[]; holidays: HolidayInput[]; today: string }): AttendanceMonth {
   const holidays = new Map(opts.holidays.map((h) => [h.day, h.name]));
   const marks = new Map(opts.marks.filter((m) => isLeaveKind(m.kind)).map((m) => [`${m.day}|${m.session}`, m]));
-  const count = { standard: 0, worked: 0, meals: 0, holidays: 0 };
+  // worked, meals and paid run to today, marks included: a trip booked for next week is not ngày công yet.
+  const count = { standard: 0, worked: 0, meals: 0, holidays: 0, paidOff: 0 };
+  const lateDays = new Set<string>();
   const leave = Object.fromEntries(LEAVE_KIND_KEYS.map((k) => [k, 0])) as Record<LeaveKind, number>;
 
   const days = monthDays(opts.month).map((day): DayCell => {
@@ -157,20 +159,25 @@ export function buildAttendanceMonth(opts: { month: string; marks: MarkInput[]; 
     const scheduled = scheduledSessions(day);
     const sessions = SESSIONS.map((session): SessionCell => {
       if (!scheduled.includes(session)) return { session, state: "off", kind: null, note: null };
+      const due = day <= opts.today;
       if (holiday) {
         count.holidays++;
+        if (due) count.paidOff++;
         return { session, state: "holiday", kind: null, note: null };
       }
       count.standard++;
       const mark = marks.get(`${day}|${session}`);
       if (mark) {
         const kind = mark.kind as LeaveKind;
-        leave[kind]++;
-        if (LEAVE_KINDS[kind].worked) count.worked++;
-        if (LEAVE_KINDS[kind].meal) count.meals++;
+        // A late arrival is one time per day, however many sessions carry the mark.
+        if (!isLate(kind) || !lateDays.has(`${kind}|${day}`)) leave[kind]++;
+        lateDays.add(`${kind}|${day}`);
+        if (due && LEAVE_KINDS[kind].worked) count.worked++;
+        if (due && LEAVE_KINDS[kind].meal) count.meals++;
+        if (due && LEAVE_KINDS[kind].paid && !LEAVE_KINDS[kind].worked) count.paidOff++;
         return { session, state: "marked", kind, note: mark.note ?? null };
       }
-      if (day > opts.today) return { session, state: "planned", kind: null, note: null };
+      if (!due) return { session, state: "planned", kind: null, note: null };
       count.worked++;
       count.meals++;
       return { session, state: "work", kind: null, note: null };
@@ -178,7 +185,6 @@ export function buildAttendanceMonth(opts: { month: string; marks: MarkInput[]; 
     return { day, weekday: weekdayOf(day), holiday, sessions };
   });
 
-  const paidLeave = LEAVE_KIND_KEYS.filter((k) => LEAVE_KINDS[k].paid && !LEAVE_KINDS[k].worked).reduce((s, k) => s + leave[k], 0);
   return {
     month: opts.month,
     days,
@@ -188,7 +194,7 @@ export function buildAttendanceMonth(opts: { month: string; marks: MarkInput[]; 
       meals: half(count.meals),
       holidays: half(count.holidays),
       leave: Object.fromEntries(LEAVE_KIND_KEYS.map((k) => [k, isLate(k) ? leave[k] : half(leave[k])])) as Record<LeaveKind, number>,
-      paid: half(count.worked + paidLeave + count.holidays),
+      paid: half(count.worked + count.paidOff),
     },
   };
 }
@@ -240,15 +246,19 @@ export function sessionCode(c: SessionCell): string {
 export function dayCode(d: DayCell): string {
   const cells = d.sessions.filter((s) => s.state !== "off");
   const codes = cells.map(sessionCode);
-  if (codes.length === 2 && codes[0] === codes[1]) return codes[0];
+  // Same symbol is not enough: X sáng có phép + X chiều không phép is two half days ("-/-").
+  if (cells.length === 2 && cells[0].state === cells[1].state && cells[0].kind === cells[1].kind) return codes[0];
   return cells
     .map((c, i) => (c.state === "marked" ? ((LEAVE_KINDS[c.kind!] as KindDef).half ?? codes[i]) : codes[i]))
     .filter(Boolean)
     .join("/");
 }
 
-/** The kind that colours a day on the timesheet: the first marked session's. */
-export const dayKind = (d: DayCell): LeaveKind | null => d.sessions.find((s) => s.state === "marked")?.kind ?? null;
+/** The kind that colours a day on the timesheet: a leave before a worked kind (it is what costs công), else the first mark. */
+export function dayKind(d: DayCell): LeaveKind | null {
+  const marked = d.sessions.filter((s) => s.state === "marked");
+  return (marked.find((s) => !LEAVE_KINDS[s.kind!].worked) ?? marked[0])?.kind ?? null;
+}
 
 /**
  * Whether a session can be marked: a scheduled session on a day that is not a holiday.

@@ -177,7 +177,7 @@ export function slotsOf(input: { from: string; to?: string | null; sessions?: Se
     return out;
   }
   // A day with no working session still yields one, so the caller can say why (Sunday…).
-  const sessions = input.sessions?.length ? input.sessions : scheduledSessions(input.from).length ? scheduledSessions(input.from) : (["AM"] as Session[]);
+  const sessions = input.sessions?.length ? [...new Set(input.sessions)] : scheduledSessions(input.from).length ? scheduledSessions(input.from) : (["AM"] as Session[]);
   return sessions.map((session) => ({ day: input.from, session }));
 }
 
@@ -255,12 +255,14 @@ export async function setAttendance(
       details: { from: first.day, to: last.day, sessions: slots.length, kind: input.kind, note },
     },
   );
-  if (input.kind && !LEAVE_KINDS[input.kind].worked && person.id === viewer.id && person.managerId) {
+  // Everything people record for themselves reaches their manager: leave, and also đi trễ, online, công tác…
+  if (input.kind && person.id === viewer.id && person.managerId) {
+    const k = LEAVE_KINDS[input.kind];
     await notify(viewer, [
       {
         userId: person.managerId,
         type: "attendance.leave",
-        title: `${person.name} xin ${LEAVE_KINDS[input.kind].label.toLowerCase()} ${when}`,
+        title: `${person.name} ${k.paid && !k.worked ? "xin" : "báo"} ${k.label.toLowerCase()} ${when}`,
         body: note,
         link: `/attendance?user=${person.id}&month=${first.day.slice(0, 7)}`,
       },
