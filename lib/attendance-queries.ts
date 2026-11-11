@@ -9,6 +9,7 @@ import type { CurrentUser } from "./session";
 import {
   annualLeaveUsed,
   buildAttendanceMonth,
+  isEmployedOn,
   LEAVE_KINDS,
   leaveBalance,
   markableReason,
@@ -23,9 +24,10 @@ import {
   type LeaveKind,
   type Session,
 } from "./attendance";
+import { statutoryHolidays } from "./vn-holidays";
 import { canCorrectAttendance, canEditHolidays, canEditLeaveBalance, canRequestLeave } from "./attendance-access";
 
-const personSelect = { id: true, name: true, role: true, jobTitle: true, avatarColor: true, managerId: true, active: true, manager: { select: { name: true } } } as const;
+const personSelect = { id: true, name: true, role: true, jobTitle: true, avatarColor: true, managerId: true, active: true, startDay: true, endDay: true, manager: { select: { name: true } } } as const;
 
 export interface AttendancePerson {
   id: string;
@@ -34,6 +36,9 @@ export interface AttendancePerson {
   jobTitle: string | null;
   avatarColor: string;
   managerName: string | null;
+  /** Ngày vào làm / ngày nghỉ việc, when set. */
+  startDay: string | null;
+  endDay: string | null;
 }
 
 export interface AttendanceNote {
@@ -66,30 +71,51 @@ export interface AttendanceView extends PersonAttendance {
   people: AttendancePerson[];
 }
 
-type PersonRow = { id: string; name: string; role: string; jobTitle: string | null; avatarColor: string; managerId: string | null; active: boolean; manager: { name: string } | null };
+type PersonRow = {
+  id: string; name: string; role: string; jobTitle: string | null; avatarColor: string; managerId: string | null; active: boolean;
+  startDay: string | null; endDay: string | null; manager: { name: string } | null;
+};
 
-const toPerson = (u: PersonRow): AttendancePerson => ({ id: u.id, name: u.name, role: u.role, jobTitle: u.jobTitle, avatarColor: u.avatarColor, managerName: u.manager?.name ?? null });
+const toPerson = (u: PersonRow): AttendancePerson => ({
+  id: u.id, name: u.name, role: u.role, jobTitle: u.jobTitle, avatarColor: u.avatarColor, managerName: u.manager?.name ?? null, startDay: u.startDay, endDay: u.endDay,
+});
+
+/** A timesheet that may still be corrected: an active account, or one that left on a known day (its past months). */
+const correctable = (p: PersonRow) => p.active || !!p.endDay;
 
 const monthEnd = (month: string) => monthDays(month).at(-1)!;
 
 const holidaysIn = (from: string, to: string) => prisma.holiday.findMany({ where: { day: { gte: from, lte: to } }, orderBy: { day: "asc" }, select: { day: true, name: true } });
 
-/** Everyone active (every timesheet is open to everyone signed in), the viewer first, then by name. */
-async function visiblePeople(viewer: CurrentUser): Promise<PersonRow[]> {
-  const users = await prisma.user.findMany({ where: { active: true }, select: personSelect });
+/**
+ * Everyone active (every timesheet is open to everyone signed in), the viewer first, then by
+ * name. With a month: the people who worked in it, so someone who left on the 28th stays on
+ * that month's sheet even once their account is closed, and a newcomer is not on earlier ones.
+ */
+async function visiblePeople(viewer: CurrentUser, month?: string): Promise<PersonRow[]> {
+  const where = month
+    ? {
+        AND: [
+          { OR: [{ active: true }, { endDay: { gte: `${month}-01` } }] },
+          { OR: [{ endDay: null }, { endDay: { gte: `${month}-01` } }] },
+          { OR: [{ startDay: null }, { startDay: { lte: monthEnd(month) } }] },
+        ],
+      }
+    : { active: true };
+  const users = await prisma.user.findMany({ where, select: personSelect });
   return users.sort((a, b) => (a.id === viewer.id ? -1 : b.id === viewer.id ? 1 : a.name.localeCompare(b.name, "vi")));
 }
 
 function assemble(person: PersonRow, month: string, today: string, yearMarks: AttendanceNote[], yearHolidays: HolidayInput[], balanceRow: { entitlement: number; carriedOver: number; note: string | null } | null): PersonAttendance {
   const monthMarks = yearMarks.filter((m) => m.day.startsWith(month));
   const holidays = yearHolidays.filter((h) => h.day.startsWith(month));
-  const attendance = buildAttendanceMonth({ month, marks: monthMarks, holidays, today });
-  const used = annualLeaveUsed(yearMarks, yearHolidays, monthEnd(month));
+  const attendance = buildAttendanceMonth({ month, marks: monthMarks, holidays, today, employment: person });
+  const used = annualLeaveUsed(yearMarks, yearHolidays, monthEnd(month), person);
   return {
     person: toPerson(person),
     attendance,
     balance: leaveBalance(Number(month.slice(0, 4)), balanceRow, used),
-    notes: monthMarks.filter((m) => !holidays.some((h) => h.day === m.day) && (scheduledSessions(m.day) as string[]).includes(m.session)),
+    notes: monthMarks.filter((m) => !holidays.some((h) => h.day === m.day) && isEmployedOn(m.day, person) && (scheduledSessions(m.day) as string[]).includes(m.session)),
   };
 }
 
@@ -119,8 +145,8 @@ export async function attendanceView(viewer: CurrentUser, personId: string, mont
     prisma.leaveBalance.findUnique({ where: { userId_year: { userId: person.id, year } }, select: { entitlement: true, carriedOver: true, note: true } }),
   ]);
   const view = assemble(person, month, today, marks.get(person.id) ?? [], yearHolidays, balanceRow);
-  const correct = canCorrectAttendance(viewer, person);
-  const requestFrom = !correct && person.id === viewer.id ? ownEditFrom(today) : null;
+  const correct = correctable(person) && canCorrectAttendance(viewer, person);
+  const requestFrom = !correct && person.id === viewer.id && person.active ? ownEditFrom(today) : null;
   return {
     ...view,
     today,
@@ -142,7 +168,7 @@ export interface TeamAttendance {
 export async function teamAttendance(viewer: CurrentUser, month: string, now = new Date()): Promise<TeamAttendance> {
   const today = zonedDay(now);
   const year = Number(month.slice(0, 4));
-  const people = await visiblePeople(viewer);
+  const people = await visiblePeople(viewer, month);
   const ids = people.map((p) => p.id);
   const [marks, yearHolidays, balances] = await Promise.all([
     marksOf(ids, month),
@@ -192,18 +218,19 @@ export async function setAttendance(
   now = new Date(),
 ): Promise<{ changed: number }> {
   const person = await prisma.user.findUnique({ where: { id: input.userId }, select: personSelect });
-  if (!person || !person.active) throw refuse("Không tìm thấy nhân sự", 404);
-  const correct = canCorrectAttendance(viewer, person);
+  if (!person) throw refuse("Không tìm thấy nhân sự", 404);
+  const correct = correctable(person) && canCorrectAttendance(viewer, person);
+  if (!person.active && !correct) throw refuse("Tài khoản đã bị vô hiệu hoá: chỉ quản lý sửa được chấm công những ngày người này còn làm (cần có ngày nghỉ việc)", 403);
   if (!correct && person.id !== viewer.id) throw refuse("Chỉ quản lý mới sửa được chấm công của người khác", 403);
   if (!correct && !input.kind) throw refuse(TAKEN, 403);
   const today = zonedDay(now);
   const to = input.to && input.to > input.from ? input.to : null;
   const holidays = await holidaysIn(input.from, to ?? input.from);
   let slots = slotsOf({ ...input, to });
-  if (to) slots = slots.filter((s) => !holidays.some((h) => h.day === s.day));
+  if (to) slots = slots.filter((s) => !holidays.some((h) => h.day === s.day) && isEmployedOn(s.day, person));
   if (!slots.length) throw refuse("Khoảng ngày này không có buổi làm việc nào");
   for (const s of slots) {
-    const reason = markableReason(s.day, s.session, holidays);
+    const reason = markableReason(s.day, s.session, holidays, person);
     if (reason) throw refuse(reason);
     if (!correct && !canRequestLeave(viewer, person, s.day, today)) throw refuse("Tháng đã qua chỉ quản lý mới ghi được", 403);
   }
@@ -300,6 +327,18 @@ export async function addHoliday(viewer: CurrentUser, input: { day: string; name
   const name = input.name.trim();
   await prisma.holiday.upsert({ where: { day: input.day }, create: { day: input.day, name }, update: { name } });
   await audit({ id: viewer.id, name: viewer.name }, { action: "holiday.create", entityType: "holiday", entityId: input.day, summary: `Thêm ngày nghỉ lễ ${dayText(input.day)}: ${name}` });
+}
+
+/** Adds the public holidays the law gives for a year (lib/vn-holidays.ts); days already entered are kept as they are. */
+export async function addStatutoryHolidays(viewer: CurrentUser, year: number): Promise<number> {
+  if (!canEditHolidays(viewer)) throw refuse("Chỉ người quản lý nhân sự mới sửa được ngày lễ", 403);
+  const list = statutoryHolidays(year);
+  const { count } = await prisma.holiday.createMany({ data: list, skipDuplicates: true });
+  await audit(
+    { id: viewer.id, name: viewer.name },
+    { action: "holiday.create", entityType: "holiday", entityId: String(year), summary: `Thêm ${count} ngày nghỉ lễ, Tết năm ${year} theo luật`, details: { days: list.map((h) => h.day) } },
+  );
+  return count;
 }
 
 export async function removeHoliday(viewer: CurrentUser, day: string): Promise<boolean> {

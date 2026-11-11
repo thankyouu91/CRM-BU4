@@ -115,6 +115,10 @@ model User {
   managerId          String?
   manager            User?        @relation("DirectManager", fields: [managerId], references: [id], onDelete: SetNull)
   directReports      User[]       @relation("DirectManager")
+  // Ngày vào làm / ngày nghỉ việc (YYYY-MM-DD, tuỳ chọn): ngoài khoảng này không tính công
+  // và không hiện trên bảng công (lib/attendance.ts).
+  startDay           String?
+  endDay             String?
   lastLoginAt        DateTime?
   createdAt          DateTime     @default(now())
   updatedAt          DateTime     @updatedAt

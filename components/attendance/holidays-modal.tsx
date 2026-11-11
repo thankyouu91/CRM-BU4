@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Trash2 } from "lucide-react";
+import { Sparkles, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { Modal } from "@/components/ui/modal";
 import { Button } from "@/components/ui/button";
@@ -30,6 +30,19 @@ export function HolidaysModal({ year, onClose, onChanged }: { year: number; onCl
       setBusy(false);
     }
   };
+  const addStatutory = async () => {
+    setBusy(true);
+    try {
+      const r = await api<{ added: number }>("/api/attendance/holidays", { method: "POST", body: { statutoryYear: year } });
+      toast.success(r.added ? `Đã thêm ${r.added} ngày nghỉ lễ, Tết năm ${year}` : `Các ngày lễ, Tết năm ${year} đã có đủ`);
+      void list.reload();
+      onChanged();
+    } catch (e) {
+      toast.error(e instanceof ApiError ? e.message : "Không lưu được");
+    } finally {
+      setBusy(false);
+    }
+  };
   const add = () =>
     change(async () => {
       await api("/api/attendance/holidays", { method: "POST", body: { day, name } });
@@ -40,6 +53,18 @@ export function HolidaysModal({ year, onClose, onChanged }: { year: number; onCl
   return (
     <Modal open onClose={onClose} title={`Ngày nghỉ lễ ${year}`} description="Không tính là ngày làm việc; ghi L trên bảng công và tính vào công hưởng lương.">
       <div className="space-y-4">
+        <div className="rounded-xl border bg-muted/40 p-3 text-sm">
+          <div className="flex flex-wrap items-center gap-2">
+            <p className="mr-auto font-medium">Ngày lễ, Tết theo Bộ luật Lao động</p>
+            <Button size="sm" variant="outline" onClick={addStatutory} disabled={busy}>
+              <Sparkles className="h-4 w-4" /> Thêm ngày lễ, Tết {year}
+            </Button>
+          </div>
+          <p className="mt-1 text-xs text-muted-foreground">
+            Tết Dương lịch, 5 ngày Tết Nguyên đán (cuối năm Âm lịch đến mùng 4), Giỗ Tổ Hùng Vương, 30/4, 1/5, Quốc khánh 2/9 và một ngày liền kề, cộng ngày nghỉ bù khi lễ trùng Chủ nhật. Ngày đã nhập được giữ nguyên.
+            Chính phủ công bố lịch nghỉ Tết và 2/9 cụ thể mỗi năm: đối chiếu thông báo, xoá hoặc thêm ngày cho khớp.
+          </p>
+        </div>
         <div className="grid gap-2 sm:grid-cols-[160px_1fr_auto] sm:items-end">
           <Field label="Ngày">
             <DateInput value={day} onChange={setDay} min={`${year}-01-01`} max={`${year}-12-31`} aria-label="Ngày nghỉ lễ" />

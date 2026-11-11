@@ -158,9 +158,9 @@ export function AttendanceView({ initial, initialTab }: { initial: View; initial
                       <span className={cn("mt-0.5 h-fit w-8 shrink-0 rounded px-1 text-center text-xs font-semibold ring-1 ring-inset", KIND_TONE[n.kind])}>{LEAVE_KINDS[n.kind].code}</span>
                       <span className="min-w-0">
                         <span className="block text-xs text-muted-foreground">
-                          {WEEKDAY_SHORT[weekdayOf(n.day)]} {n.day.slice(8)}/{n.day.slice(5, 7)} · {SESSION_LABEL[n.session]}
+                          {WEEKDAY_SHORT[weekdayOf(n.day)]} {n.day.slice(8)}/{n.day.slice(5, 7)} · {SESSION_LABEL[n.session]} · {LEAVE_KINDS[n.kind].label}
                         </span>
-                        <span className="block break-words">{n.note || LEAVE_KINDS[n.kind].label}</span>
+                        {n.note && <span className="block break-words">{n.note}</span>}
                       </span>
                     </li>
                   ))}

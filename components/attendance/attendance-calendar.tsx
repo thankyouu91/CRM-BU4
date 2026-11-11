@@ -24,10 +24,13 @@ export const KIND_TONE: Record<LeaveKind, string> = {
   PERSONAL: RED,
   TRIP: "bg-lime-100 text-lime-800 ring-lime-300 dark:bg-lime-500/15 dark:text-lime-300 dark:ring-lime-500/30",
 };
+// X and C each stand for two kinds, told apart by colour; phones show only the symbol, so a
+// small letter says which without relying on colour: X^P có phép / X^K không phép, C^B bệnh / C^C cưới hỏi.
+const TWIN_MARK: Partial<Record<LeaveKind, string>> = { ANNUAL: "P", UNPAID: "K", SICK: "B", PERSONAL: "C" };
 // A worked session is the normal case, so it stays neutral: only exceptions carry a colour.
 const WORK_TONE = "bg-muted/70 text-foreground/70 ring-transparent";
 const PLANNED_TONE = "bg-card text-muted-foreground ring-border border-dashed";
-const HOLIDAY_TONE = "bg-orange-50 text-orange-700 ring-orange-200 dark:bg-orange-500/10 dark:text-orange-300 dark:ring-orange-500/30";
+export const HOLIDAY_TONE = "bg-orange-50 text-orange-700 ring-orange-200 dark:bg-orange-500/10 dark:text-orange-300 dark:ring-orange-500/30";
 
 function sessionText(c: SessionCell): { short: string; long: string } {
   if (c.state === "marked") return { short: LEAVE_KINDS[c.kind!].code, long: LEAVE_KINDS[c.kind!].short };
@@ -54,7 +57,7 @@ function SessionButton({ day, cell, editable, onPick }: { day: DayCell; cell: Se
       )}
     >
       <span className="hidden shrink-0 opacity-60 sm:inline">{cell.session === "AM" ? "S" : "C"}</span>
-      <span className="sm:hidden">{t.short}</span>
+      <span className="sm:hidden">{t.short}{cell.state === "marked" && TWIN_MARK[cell.kind!] ? <sup className="ml-px text-[9px] font-bold">{TWIN_MARK[cell.kind!]}</sup> : null}</span>
       <span className="hidden truncate sm:inline">{t.long}</span>
       {cell.note && <MessageSquareText className="ml-auto hidden h-3 w-3 shrink-0 sm:block" aria-hidden />}
     </button>
@@ -99,7 +102,7 @@ export function AttendanceCalendar({
               role="gridcell"
               className={cn(
                 "min-w-0 rounded-md border p-1 sm:p-1.5",
-                d.weekday === 7 ? "bg-muted/40" : "bg-card",
+                d.weekday === 7 || !d.employed ? "bg-muted/40" : "bg-card",
                 d.day === today && "border-foreground/60",
               )}
             >
@@ -108,7 +111,9 @@ export function AttendanceCalendar({
                 {d.holiday && <span className="hidden truncate text-xs font-medium text-orange-700 dark:text-orange-300 sm:inline" title={d.holiday}>{d.holiday}</span>}
               </div>
               {!working.length ? (
-                <p className="py-2 text-center text-xs text-muted-foreground sm:py-3">Nghỉ</p>
+                <p className="py-2 text-center text-xs text-muted-foreground sm:py-3" title={d.employed ? undefined : "Ngoài thời gian làm việc ở công ty"}>
+                  {d.employed ? "Nghỉ" : "—"}
+                </p>
               ) : (
                 <div className="space-y-1">
                   {working.map((s) => (
@@ -136,6 +141,7 @@ export function AttendanceLegend() {
       ))}
       <span className={cn("rounded px-1.5 py-0.5 ring-1 ring-inset", HOLIDAY_TONE)}>L Lễ</span>
       <span className={cn("rounded border border-dashed px-1.5 py-0.5")}>Ngày chưa tới</span>
+      <span className="rounded bg-[repeating-linear-gradient(135deg,transparent_0_4px,rgb(var(--border))_4px_8px)] px-1.5 py-0.5 ring-1 ring-inset ring-border">Ngoài thời gian làm việc</span>
     </div>
   );
 }

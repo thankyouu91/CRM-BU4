@@ -2,10 +2,14 @@ import type { NextRequest } from "next/server";
 import { z } from "zod";
 import { auth, handle, notFound, ok, unauthorized } from "@/lib/api";
 import { prisma } from "@/lib/prisma";
-import { addHoliday, removeHoliday } from "@/lib/attendance-queries";
+import { addHoliday, addStatutoryHolidays, removeHoliday } from "@/lib/attendance-queries";
 import { isDay } from "@/lib/attendance";
 
-const schema = z.object({ day: z.string().refine(isDay, "Ngày không hợp lệ"), name: z.string().trim().min(2, "Nhập tên ngày lễ").max(80) });
+const schema = z.union([
+  z.object({ day: z.string().refine(isDay, "Ngày không hợp lệ"), name: z.string().trim().min(2, "Nhập tên ngày lễ").max(80) }),
+  // Every holiday of the law for that year (Tết, Giỗ Tổ, 30/4, 1/5, Quốc khánh, nghỉ bù).
+  z.object({ statutoryYear: z.number().int().min(2000).max(2100) }),
+]);
 
 /** GET /api/attendance/holidays?year=2026 */
 export async function GET(req: NextRequest) {
@@ -18,12 +22,14 @@ export async function GET(req: NextRequest) {
   });
 }
 
-/** POST /api/attendance/holidays { day, name }: account managers. */
+/** POST /api/attendance/holidays { day, name } or { statutoryYear }: account managers. */
 export async function POST(req: NextRequest) {
   return handle(async () => {
     const me = await auth();
     if (!me) return unauthorized();
-    await addHoliday(me, schema.parse(await req.json()));
+    const body = schema.parse(await req.json());
+    if ("statutoryYear" in body) return ok({ ok: true, added: await addStatutoryHolidays(me, body.statutoryYear) });
+    await addHoliday(me, body);
     return ok({ ok: true });
   });
 }

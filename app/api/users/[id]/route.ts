@@ -39,6 +39,10 @@ export async function PATCH(req: NextRequest, ctx: Ctx) {
 
     const data = updateUserSchema.parse(await req.json());
     const isSelf = target.id === me.id;
+    // One of the two days may come alone: check it against the one already stored.
+    const startDay = data.startDay === undefined ? target.startDay : data.startDay;
+    const endDay = data.endDay === undefined ? target.endDay : data.endDay;
+    if (startDay && endDay && endDay < startDay) return badRequest("Ngày nghỉ việc không được trước ngày vào làm", { endDay: "Trước ngày vào làm" });
 
     if (data.role !== undefined && data.role !== target.role && !assignableRoles(me).includes(data.role)) {
       return forbidden(`Bạn không thể đặt cấp "${ROLE_INFO[data.role].label}"`);
@@ -116,12 +120,14 @@ export async function PATCH(req: NextRequest, ctx: Ctx) {
         role: data.role,
         permissions,
         jobTitle: data.jobTitle === undefined ? undefined : data.jobTitle?.trim() || null,
+        startDay: data.startDay,
+        endDay: data.endDay,
         active: data.active,
         ...(managerChanged ? { managerId: data.managerId || null } : {}),
         ...(passwordHash ? { passwordHash, mustChangePassword: true } : {}),
         ...(revoke ? { tokenVersion: { increment: 1 } } : {}),
       },
-      select: { id: true, email: true, name: true, role: true, permissions: true, jobTitle: true, avatarColor: true, active: true, managerId: true },
+      select: { id: true, email: true, name: true, role: true, permissions: true, jobTitle: true, avatarColor: true, active: true, managerId: true, startDay: true, endDay: true },
     });
 
     const actor = { id: me.id, name: me.name };
@@ -166,7 +172,7 @@ export async function PATCH(req: NextRequest, ctx: Ctx) {
         summary: `${user.active ? "Mở khoá" : "Khoá"} tài khoản ${user.name}`,
       });
     }
-    const changes = changedFields(target, user, ["name", "email", "jobTitle"]);
+    const changes = changedFields(target, user, ["name", "email", "jobTitle", "startDay", "endDay"]);
     if (Object.keys(changes).length) {
       await audit(actor, { ...base, action: "user.update", summary: `Sửa tài khoản ${user.name}`, details: changes as Prisma.InputJsonValue });
     }

@@ -91,6 +91,23 @@ describe("attendance rules", () => {
     expect(dayCode(cell(m, day(3)))).toBe("-/-"); // not one blue X
     expect(dayCode(cell(m, day(4)))).toBe("KH/-");
     expect(dayKind(cell(m, day(4)))).toBe("UNPAID"); // the leave colours the cell
+    const halves = at(day(30), [{ day: day(8), session: "PM", kind: "BUSINESS" }, { day: day(9), session: "AM", kind: "SICK" }, { day: day(10), session: "AM", kind: "LATE_OK" }]);
+    expect([8, 9, 10].map((d) => dayCode(cell(halves, day(d))))).toEqual(["½CT", "½C", "#"]);
+  });
+
+  it("counts only the days between a person's start and last day", () => {
+    // Joined Wednesday 10/6, left Friday 19/6: 8 weekdays + sáng thứ 7 13/6 = 8,5 công chuẩn.
+    const m = buildAttendanceMonth({
+      month: "2026-06", today: "2026-06-30", holidays: [], employment: { startDay: day(10), endDay: day(19) },
+      marks: [...full(5, "ANNUAL"), ...full(12, "ANNUAL"), ...full(22, "UNPAID")],
+    });
+    expect(m.totals).toMatchObject({ standard: 8.5, worked: 7.5, paid: 8.5 });
+    expect(m.totals.leave).toMatchObject({ ANNUAL: 1, UNPAID: 0 }); // 5/6 and 22/6 are outside
+    expect(cell(m, day(9)).employed).toBe(false);
+    expect(dayCode(cell(m, day(5)))).toBe("");
+    expect(annualLeaveUsed([...full(5, "ANNUAL"), ...full(12, "ANNUAL")], [], undefined, { startDay: day(10) })).toBe(1);
+    expect(markableReason(day(9), "AM", [], { startDay: day(10) })).toMatch(/Trước ngày vào làm 10\/06\/2026/);
+    expect(markableReason(day(22), "AM", [], { endDay: day(19) })).toMatch(/Sau ngày nghỉ việc 19\/06\/2026/);
   });
 
   it("leaves later days planned and keeps holidays out of the working days", () => {

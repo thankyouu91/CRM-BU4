@@ -27,6 +27,8 @@ export async function GET() {
       avatarColor: true,
       active: true,
       managerId: true,
+      startDay: true,
+      endDay: true,
       manager: { select: { id: true, name: true } },
       ...(managing ? { lastLoginAt: true, createdAt: true, mustChangePassword: true, permissions: true } : {}),
       _count: { select: { assignedTasks: true } },
@@ -71,6 +73,8 @@ export async function POST(req: NextRequest) {
         permissions,
         jobTitle: data.jobTitle?.trim() || null,
         managerId: data.managerId || null,
+        startDay: data.startDay ?? null,
+        endDay: data.endDay ?? null,
         passwordHash: await hashPassword(data.password),
         avatarColor: AVATAR_COLORS[Math.floor(Math.random() * AVATAR_COLORS.length)],
         // New accounts must set their own password on first sign-in.

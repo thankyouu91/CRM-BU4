@@ -8,6 +8,7 @@ import { Badge, RoleBadge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Field, Input, Select } from "@/components/ui/input";
 import { Modal } from "@/components/ui/modal";
+import { DateInput } from "@/components/ui/date-input";
 import { ConfirmDialog } from "@/components/ui/confirm";
 import { EmptyState, PageHeader, Segmented } from "@/components/ui/misc";
 import { api, ApiError, useApi } from "@/lib/client";
@@ -39,6 +40,9 @@ interface Member {
   active: boolean;
   managerId: string | null;
   manager: { id: string; name: string } | null;
+  /** Ngày vào làm / nghỉ việc (YYYY-MM-DD). */
+  startDay?: string | null;
+  endDay?: string | null;
   lastLoginAt?: string | null;
   createdAt?: string;
   mustChangePassword?: boolean;
@@ -252,6 +256,8 @@ function CreateMemberModal({
     password: "",
     permissions: [] as string[],
     managerId: "",
+    startDay: "",
+    endDay: "",
   });
   const [v, setV] = useState(blank);
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -261,7 +267,7 @@ function CreateMemberModal({
     setBusy(true);
     setErrors({});
     try {
-      await api("/api/users", { method: "POST", body: { ...v, jobTitle: v.jobTitle || null, managerId: v.managerId || null } });
+      await api("/api/users", { method: "POST", body: { ...v, jobTitle: v.jobTitle || null, managerId: v.managerId || null, startDay: v.startDay || null, endDay: v.endDay || null } });
       toast.success(`Đã tạo tài khoản cho ${v.name}`);
       onCreated(v.email.trim().toLowerCase(), v.password);
       setV(blank());
@@ -308,6 +314,7 @@ function CreateMemberModal({
           <Field label="Quản lý trực tiếp" error={errors.managerId} hint="Xem và duyệt chấm công, nhận thông báo khi người này xin nghỉ.">
             <ManagerSelect value={v.managerId} onChange={(managerId) => setV({ ...v, managerId })} people={people} />
           </Field>
+          <EmploymentFields startDay={v.startDay} endDay={v.endDay} errors={errors} onChange={(d) => setV({ ...v, ...d })} />
           <PasswordField label="Mật khẩu tạm thời" value={v.password} onChange={(password) => setV({ ...v, password })} error={errors.password} />
         </div>
         <div className="space-y-4">
@@ -382,7 +389,7 @@ function PermissionsModal({ member, actor, onClose, onSaved }: { member: Member;
 }
 
 function EditMemberModal({ member, people, onClose, onSaved, isSelf }: { member: Member; people: Member[]; onClose: () => void; onSaved: () => void; isSelf: boolean }) {
-  const [v, setV] = useState({ email: member.email, name: member.name, jobTitle: member.jobTitle ?? "", managerId: member.managerId ?? "" });
+  const [v, setV] = useState({ email: member.email, name: member.name, jobTitle: member.jobTitle ?? "", managerId: member.managerId ?? "", startDay: member.startDay ?? "", endDay: member.endDay ?? "" });
   const [busy, setBusy] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const submit = async () => {
@@ -391,7 +398,7 @@ function EditMemberModal({ member, people, onClose, onSaved, isSelf }: { member:
     try {
       await api(`/api/users/${member.id}`, {
         method: "PATCH",
-        body: { email: v.email, name: v.name, jobTitle: v.jobTitle || null, managerId: v.managerId || null },
+        body: { email: v.email, name: v.name, jobTitle: v.jobTitle || null, managerId: v.managerId || null, startDay: v.startDay || null, endDay: v.endDay || null },
       });
       toast.success(isSelf && v.email.trim().toLowerCase() !== member.email ? "Đã đổi email, vui lòng đăng nhập lại bằng email mới" : "Đã cập nhật");
       onSaved();
@@ -434,8 +441,23 @@ function EditMemberModal({ member, people, onClose, onSaved, isSelf }: { member:
         <Field label="Quản lý trực tiếp" error={errors.managerId} hint="Xem và sửa chấm công của người này, nhận thông báo khi họ xin nghỉ.">
           <ManagerSelect value={v.managerId} onChange={(managerId) => setV({ ...v, managerId })} people={people} selfId={member.id} />
         </Field>
+        <EmploymentFields startDay={v.startDay} endDay={v.endDay} errors={errors} onChange={(d) => setV({ ...v, ...d })} />
       </div>
     </Modal>
+  );
+}
+
+/** Ngày vào làm / nghỉ việc: chấm công counts only the days in between. */
+function EmploymentFields({ startDay, endDay, errors, onChange }: { startDay: string; endDay: string; errors: Record<string, string>; onChange: (d: { startDay?: string; endDay?: string }) => void }) {
+  return (
+    <div className="grid grid-cols-2 gap-3">
+      <Field label="Ngày vào làm" error={errors.startDay} hint="Trước ngày này không tính công.">
+        <DateInput aria-label="Ngày vào làm" value={startDay} onChange={(d) => onChange({ startDay: d })} />
+      </Field>
+      <Field label="Ngày nghỉ việc" error={errors.endDay} hint="Để trống nếu còn làm.">
+        <DateInput aria-label="Ngày nghỉ việc" value={endDay} min={startDay || undefined} onChange={(d) => onChange({ endDay: d })} />
+      </Field>
+    </div>
   );
 }
 

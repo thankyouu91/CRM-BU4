@@ -39,6 +39,14 @@ export const changePasswordSchema = z.object({
   newPassword: z.string().min(8, "Mật khẩu mới phải có ít nhất 8 ký tự"),
 });
 
+/** "YYYY-MM-DD" of a real calendar day, or null / "" to clear. */
+const employmentDay = z
+  .union([z.string().refine((v) => !v || dayNumber(v) !== null, "Ngày không hợp lệ"), z.null()])
+  .optional()
+  .transform((v) => (v === undefined ? undefined : v || null));
+const employmentRange = <T extends { startDay?: string | null; endDay?: string | null }>(v: T) => !v.startDay || !v.endDay || v.endDay >= v.startDay;
+const employmentError = { message: "Ngày nghỉ việc không được trước ngày vào làm", path: ["endDay"] };
+
 export const createUserSchema = z.object({
   email: loginId,
   name: z.string().min(2, "Tên quá ngắn"),
@@ -49,7 +57,10 @@ export const createUserSchema = z.object({
   jobTitle: z.string().optional().nullable(),
   /** Direct manager (quản lý trực tiếp). */
   managerId: z.string().min(1).max(100).nullish(),
-});
+  /** Ngày vào làm / ngày nghỉ việc: chấm công only counts the days in between. */
+  startDay: employmentDay,
+  endDay: employmentDay,
+}).refine(employmentRange, employmentError);
 
 export const updateUserSchema = z.object({
   email: loginId.optional(),
@@ -61,7 +72,9 @@ export const updateUserSchema = z.object({
   resetPassword: z.string().min(8).optional(),
   /** Direct manager; null clears it. */
   managerId: z.string().min(1).max(100).nullable().optional(),
-});
+  startDay: employmentDay,
+  endDay: employmentDay,
+}).refine(employmentRange, employmentError);
 
 // undefined -> leave unchanged; null or "" -> clear; ISO string -> Date.
 const dateish = z

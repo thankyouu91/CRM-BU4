@@ -19,6 +19,8 @@ const NAVY = "#1e3a8a";
 // Saturday and Sunday columns, the name header: as on the company timesheet.
 const WEEKEND = "#F8CBAD";
 const NAME_HEAD = "#FFD966";
+/** Days before someone's start or after their last day. */
+const OUTSIDE = "#D9D9D9";
 const HOLIDAY = "#fde68a";
 // The fills of the company timesheet (TNS chấm công).
 const KIND_FILL: Partial<Record<LeaveKind, string>> = {
@@ -38,7 +40,9 @@ const NOTES: { code: string; label: string; fill?: string }[] = [
     return rows;
   }),
   { code: "L", label: "Nghỉ lễ", fill: HOLIDAY },
+  { code: "½CT", label: "Nửa ngày công tác (tương tự ½ONL, ½C…)" },
   { code: "-/CT", label: "Sáng / chiều khác nhau" },
+  { code: "", label: "Ô xám: ngoài thời gian làm việc (trước ngày vào làm / sau ngày nghỉ việc)", fill: OUTSIDE },
 ];
 const text = (v: string | null | undefined, extra: Record<string, unknown> = {}): Cell => ({ ...base, ...border, value: v ?? "", ...extra });
 const num = (n: number, extra: Record<string, unknown> = {}): Cell => ({ ...base, ...border, value: n, type: Number, format: Number.isInteger(n) ? "0" : "0.0", align: "center", ...extra });
@@ -93,7 +97,7 @@ export async function exportAttendanceXlsx(team: TeamAttendance, filename: strin
       ...p.attendance.days.map((d) => {
         const code = dayCode(d);
         const kind = dayKind(d);
-        const fill = (kind && fillOf(kind, code)) || shade(d.day);
+        const fill = !d.employed ? OUTSIDE : (kind && fillOf(kind, code)) || shade(d.day);
         return text(code, { align: "center", ...(fill ? { backgroundColor: fill } : {}) });
       }),
       num(t.worked, { fontWeight: "bold" }),

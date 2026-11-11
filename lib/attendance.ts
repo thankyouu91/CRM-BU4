@@ -118,6 +118,8 @@ export interface DayCell {
   day: string;
   weekday: number;
   holiday: string | null;
+  /** False before the person's start day or after their last day: nothing is counted. */
+  employed: boolean;
   sessions: SessionCell[];
 }
 
@@ -145,8 +147,20 @@ export interface AttendanceMonth {
 const half = (sessions: number) => sessions / 2;
 export const isLate = (k: LeaveKind) => "late" in LEAVE_KINDS[k];
 
+/** Days a person works here: from their start day to their last day, either one open. */
+export interface Employment {
+  startDay?: string | null;
+  endDay?: string | null;
+}
+
+export const isEmployedOn = (day: string, e?: Employment | null) => !e || ((!e.startDay || day >= e.startDay) && (!e.endDay || day <= e.endDay));
+
+/** Whether a person works on any day of the month. */
+export const employedInMonth = (month: string, e?: Employment | null) =>
+  !e || ((!e.startDay || e.startDay <= `${month}-31`) && (!e.endDay || e.endDay >= `${month}-01`));
+
 /** The month of one person. Days after today are "planned": not counted as worked yet. */
-export function buildAttendanceMonth(opts: { month: string; marks: MarkInput[]; holidays: HolidayInput[]; today: string }): AttendanceMonth {
+export function buildAttendanceMonth(opts: { month: string; marks: MarkInput[]; holidays: HolidayInput[]; today: string; employment?: Employment | null }): AttendanceMonth {
   const holidays = new Map(opts.holidays.map((h) => [h.day, h.name]));
   const marks = new Map(opts.marks.filter((m) => isLeaveKind(m.kind)).map((m) => [`${m.day}|${m.session}`, m]));
   // worked, meals and paid run to today, marks included: a trip booked for next week is not ngày công yet.
@@ -156,7 +170,9 @@ export function buildAttendanceMonth(opts: { month: string; marks: MarkInput[]; 
 
   const days = monthDays(opts.month).map((day): DayCell => {
     const holiday = holidays.get(day) ?? null;
-    const scheduled = scheduledSessions(day);
+    const employed = isEmployedOn(day, opts.employment);
+    // Before the start day or after the last day: no working session, so nothing counts.
+    const scheduled = employed ? scheduledSessions(day) : [];
     const sessions = SESSIONS.map((session): SessionCell => {
       if (!scheduled.includes(session)) return { session, state: "off", kind: null, note: null };
       const due = day <= opts.today;
@@ -182,7 +198,7 @@ export function buildAttendanceMonth(opts: { month: string; marks: MarkInput[]; 
       count.meals++;
       return { session, state: "work", kind: null, note: null };
     });
-    return { day, weekday: weekdayOf(day), holiday, sessions };
+    return { day, weekday: weekdayOf(day), holiday, employed, sessions };
   });
 
   return {
@@ -200,10 +216,11 @@ export function buildAttendanceMonth(opts: { month: string; marks: MarkInput[]; 
 }
 
 /** Annual leave used: marked sessions on working days, holidays aside, in days. */
-export function annualLeaveUsed(marks: MarkInput[], holidays: HolidayInput[], through?: string): number {
+export function annualLeaveUsed(marks: MarkInput[], holidays: HolidayInput[], through?: string, employment?: Employment | null): number {
   const off = new Set(holidays.map((h) => h.day));
   const sessions = marks.filter(
-    (m) => m.kind === "ANNUAL" && !off.has(m.day) && (scheduledSessions(m.day) as string[]).includes(m.session) && (!through || m.day <= through),
+    (m) =>
+      m.kind === "ANNUAL" && !off.has(m.day) && isEmployedOn(m.day, employment) && (scheduledSessions(m.day) as string[]).includes(m.session) && (!through || m.day <= through),
   ).length;
   return half(sessions);
 }
@@ -242,12 +259,18 @@ export function sessionCode(c: SessionCell): string {
   }
 }
 
-/** One timesheet cell per day: "X" (cả ngày), "-" (nửa ngày nghỉ), "CT", or "-/CT" when the two sessions differ. */
+/** One timesheet cell per day: "X" (cả ngày), "-" (nửa ngày nghỉ), "CT", "½CT" (nửa ngày), or "-/CT" when the two sessions differ. */
 export function dayCode(d: DayCell): string {
   const cells = d.sessions.filter((s) => s.state !== "off");
   const codes = cells.map(sessionCode);
   // Same symbol is not enough: X sáng có phép + X chiều không phép is two half days ("-/-").
   if (cells.length === 2 && cells[0].state === cells[1].state && cells[0].kind === cells[1].kind) return codes[0];
+  // Half a day of CT, ONL, C… beside a worked half: "½CT", so it does not read as a whole day.
+  const marked = cells.filter((c) => c.state === "marked");
+  if (cells.length === 2 && marked.length === 1) {
+    const k = LEAVE_KINDS[marked[0].kind!] as KindDef;
+    if (!k.half && !k.late) return `½${k.code}`;
+  }
   return cells
     .map((c, i) => (c.state === "marked" ? ((LEAVE_KINDS[c.kind!] as KindDef).half ?? codes[i]) : codes[i]))
     .filter(Boolean)
@@ -264,10 +287,12 @@ export function dayKind(d: DayCell): LeaveKind | null {
  * Whether a session can be marked: a scheduled session on a day that is not a holiday.
  * Returns the reason when it cannot.
  */
-export function markableReason(day: string, session: string, holidays: HolidayInput[]): string | null {
+export function markableReason(day: string, session: string, holidays: HolidayInput[], employment?: Employment | null): string | null {
   if (!isDay(day)) return "Ngày không hợp lệ";
   if (!(SESSIONS as readonly string[]).includes(session)) return "Buổi không hợp lệ";
   if (!(scheduledSessions(day) as string[]).includes(session)) return weekdayOf(day) === 7 ? "Chủ nhật không phải ngày làm việc" : "Chiều thứ 7 không phải buổi làm việc";
+  if (employment?.startDay && day < employment.startDay) return `Trước ngày vào làm ${employment.startDay.split("-").reverse().join("/")}`;
+  if (employment?.endDay && day > employment.endDay) return `Sau ngày nghỉ việc ${employment.endDay.split("-").reverse().join("/")}`;
   const h = holidays.find((x) => x.day === day);
   if (h) return `Ngày ${h.name} là ngày nghỉ lễ`;
   return null;

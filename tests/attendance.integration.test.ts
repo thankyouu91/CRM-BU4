@@ -158,6 +158,36 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)("attendance on PostgreSQL", () =
     expect(seenIds).toEqual(expect.arrayContaining(Object.values(ids)));
   });
 
+  it("counts only the days between start and last day, keeps a leaver on their months and lets only a manager correct them", async () => {
+    const { user, team, view } = await routes();
+    const patch = (body: object) => {
+      session.user = as("hr");
+      return user(json(`/api/users/${ids.peer}`, "PATCH", body), { params: Promise.resolve({ id: ids.peer }) });
+    };
+    const prev = lastMonth;
+    const lastDay = `${prev}-15`;
+    expect((await patch({ startDay: `${prev}-20`, endDay: lastDay })).status).toBe(400); // left before joining
+    expect((await patch({ startDay: null, endDay: lastDay, active: false })).status).toBe(200);
+    try {
+      session.user = as("hr");
+      const sheet = async (m: string) => (await (await team(json(`/api/attendance/team?month=${m}`, "GET"))).json()).people.map((p: { person: { id: string } }) => p.person.id);
+      expect(await sheet(prev)).toContain(ids.peer); // still on the month they left in
+      expect(await sheet(month)).not.toContain(ids.peer); // not on later ones
+      const after = `${prev}-${String(Number(lastDay.slice(8)) + 1).padStart(2, "0")}`;
+      const seen = await (await view(json(`/api/attendance?user=${ids.peer}&month=${prev}`, "GET"))).json();
+      expect(seen.attendance.days.find((d: { day: string }) => d.day === after).employed).toBe(false);
+      expect(seen.rights.correct).toBe(true);
+      // A manager may still correct the days they worked, not later ones; they cannot record for themselves any more.
+      const firstDay = [...Array(15)].map((_, i) => `${prev}-${String(i + 1).padStart(2, "0")}`).find((d) => scheduledSessions(d).length === 2)!;
+      expect((await mark("hr", { userId: ids.peer, from: firstDay, sessions: ["AM"], kind: "SICK" })).status).toBe(200);
+      expect((await mark("hr", { userId: ids.peer, from: after, sessions: ["AM"], kind: "SICK" })).body.error ?? "").toMatch(/Sau ngày nghỉ việc|không phải/);
+      expect((await mark("peer", { userId: ids.peer, from: firstDay, sessions: ["PM"], kind: "SICK" })).status).toBe(403);
+      await mark("hr", { userId: ids.peer, from: firstDay, kind: null });
+    } finally {
+      await patch({ endDay: null, active: true });
+    }
+  });
+
   it("takes holidays out of the working days; only HR sets them", async () => {
     const { holidays } = await routes();
     const day = firstWeekday(shiftMonth(month, 1));
@@ -168,6 +198,20 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)("attendance on PostgreSQL", () =
     expect((await mark("hr", { userId: ids.an, from: day, kind: "ANNUAL" })).body.error).toMatch(/nghỉ lễ/);
     expect((await holidays.DELETE(json(`/api/attendance/holidays?day=${day}`, "DELETE"))).status).toBe(200);
     expect(await db.auditLog.count({ where: { actorId: ids.hr, action: { in: ["holiday.create", "holiday.delete"] } } })).toBe(2);
+
+    // The law's holidays of a year in one go; a day already entered keeps its name. 2099: no other test uses it.
+    await holidays.POST(json("/api/attendance/holidays", "POST", { day: "2099-01-01", name: `Tết riêng ${run}` }));
+    try {
+      const res = await holidays.POST(json("/api/attendance/holidays", "POST", { statutoryYear: 2099 }));
+      expect((await res.json()).added).toBeGreaterThanOrEqual(10);
+      const rows = await db.holiday.findMany({ where: { day: { startsWith: "2099-" } } });
+      expect(rows.find((h) => h.day === "2099-01-01")?.name).toBe(`Tết riêng ${run}`);
+      expect(rows.some((h) => h.name.startsWith("Tết Nguyên đán"))).toBe(true);
+      session.user = as("an");
+      expect((await holidays.POST(json("/api/attendance/holidays", "POST", { statutoryYear: 2099 }))).status).toBe(403);
+    } finally {
+      await db.holiday.deleteMany({ where: { day: { startsWith: "2099-" } } });
+    }
   });
 
   it("sets a direct manager on a staff profile, never oneself and never in a loop", async () => {

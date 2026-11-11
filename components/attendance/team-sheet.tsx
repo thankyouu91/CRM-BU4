@@ -10,10 +10,12 @@ import { formatDays, isLate, LEAVE_KINDS, LEAVE_KIND_KEYS } from "@/lib/attendan
 import type { TeamAttendance } from "@/lib/attendance-queries";
 import { cn } from "@/lib/utils";
 import { HolidaysModal } from "./holidays-modal";
+import { AttendanceLegend } from "./attendance-calendar";
+import { TeamSchedule } from "./team-schedule";
 
 /**
- * The month of everyone the viewer may see: totals per person, the annual leave
- * left, and the Excel timesheet. Choosing a person opens their calendar.
+ * The month of everyone the viewer may see: their work schedule day by day, totals per
+ * person, the annual leave left, and the Excel timesheet. Choosing a person opens their calendar.
  */
 export function TeamSheet({ month, canEditHolidays, onOpen }: { month: string; canEditHolidays: boolean; onOpen: (personId: string) => void }) {
   const { data, loading, reload } = useApi<TeamAttendance>(`/api/attendance/team?month=${month}`);
@@ -55,6 +57,16 @@ export function TeamSheet({ month, canEditHolidays, onOpen }: { month: string; c
           <FileSpreadsheet className="h-4 w-4" /> Xuất Excel
         </Button>
       </div>
+      {team && (
+        <div className="border-b">
+          <h3 className="px-4 pb-1 pt-3 text-sm font-semibold">Lịch làm việc</h3>
+          <TeamSchedule team={team} onOpen={onOpen} />
+          <div className="px-4 pb-3 pt-2">
+            <AttendanceLegend />
+          </div>
+        </div>
+      )}
+      <h3 className="px-4 pb-1 pt-3 text-sm font-semibold">Tổng công</h3>
       <div className="overflow-x-auto">
         <table className="w-full min-w-[900px] text-sm">
           <thead className="border-b bg-muted/50 text-xs text-muted-foreground">
