@@ -237,7 +237,10 @@ model Task {
 
   @@index([projectId])
   @@index([categoryId])
-  @@index([assigneeId])
+  // "Việc của tôi", chuông thông báo và lịch lọc theo người phụ trách + trạng thái + hạn.
+  @@index([assigneeId, status, dueDate])
+  // Báo cáo tuần lọc cả theo người tạo.
+  @@index([createdById])
   @@index([parentId])
 }
 

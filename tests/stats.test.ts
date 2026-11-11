@@ -138,6 +138,17 @@ describe("categorySchedules", () => {
     expect(byId.D.progress).toBe(100);
   });
 
+  it("gives a parent task its subtasks' average even when they sit in another category", () => {
+    const split = [
+      { ...node("p", null, "IN_PROGRESS", 0), categoryId: "D", dueDate: null },
+      { ...node("s1", "p", "DONE", 100), categoryId: "A", dueDate: null },
+      { ...node("s2", "p", "IN_PROGRESS", 60), categoryId: "A", dueDate: null },
+    ];
+    const cats = Object.fromEntries(categorySchedules(categories, split, day(2), now).map((c) => [c.id, c]));
+    expect(cats.D.progress).toBe(80); // not the parent's own unused 0
+    expect(cats.A.progress).toBe(80);
+  });
+
   it("keeps the input order and fields", () => {
     expect(result.map((c) => c.id)).toEqual(["A", "B", "C", "D"]);
     expect(byId.B.parentId).toBe("A");

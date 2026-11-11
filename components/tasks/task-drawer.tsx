@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import {
   ArrowLeft,
@@ -104,6 +104,16 @@ function TaskPanel({
       setTask(prev);
       toast.error(e instanceof ApiError ? e.message : "Không thể cập nhật");
     }
+  };
+  // A date typed digit by digit passes through other valid dates (25/12 over 10/11: 02/11,
+  // 25/11, 25/01…): save once the typing stops, not each of them.
+  const latestPatch = useRef(patch);
+  latestPatch.current = patch;
+  const dateTimers = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
+  const patchSoon = (fields: Record<string, unknown>) => {
+    const key = Object.keys(fields).join();
+    clearTimeout(dateTimers.current[key]);
+    dateTimers.current[key] = setTimeout(() => void latestPatch.current(fields), 700);
   };
 
   if (error) {
@@ -248,7 +258,7 @@ function TaskPanel({
               aria-label="Ngày bắt đầu"
               value={toInputDate(task.startDate)}
               disabled={!perms.manage}
-              onChange={(d) => patch({ startDate: fromInputDate(d, "start") })}
+              onChange={(d) => patchSoon({ startDate: fromInputDate(d, "start") })}
             />
           </Field>
           <Field label="Hạn chót">
@@ -256,7 +266,7 @@ function TaskPanel({
               aria-label="Hạn chót"
               value={toInputDate(task.dueDate)}
               disabled={!perms.manage}
-              onChange={(d) => patch({ dueDate: fromInputDate(d, "end") })}
+              onChange={(d) => patchSoon({ dueDate: fromInputDate(d, "end") })}
               className={cn(overdue && "border-danger/50 text-danger")}
             />
           </Field>
@@ -545,6 +555,8 @@ function Reports({
 }) {
   const [content, setContent] = useState("");
   const [progress, setProgress] = useState(task.status === "DONE" ? 100 : task.progress);
+  // Follow the task: a report sent after the main slider moved must not pull progress back.
+  useEffect(() => setProgress(task.status === "DONE" ? 100 : task.progress), [task.status, task.progress]);
   const [hours, setHours] = useState("");
   const [busy, setBusy] = useState(false);
   const totalHours = task.reports.reduce((a, r) => a + r.hoursSpent, 0);

@@ -73,17 +73,18 @@ export function projectProgress(tasks: ProgressNode[]): number {
 
 /**
  * Completion % of an arbitrary subset of tasks (e.g. one category): tasks whose
- * parent is outside the subset count as top-level.
+ * parent is outside the subset count as top-level. Pass `progress` computed over the
+ * whole project when subtasks may sit outside the subset (a parent moved to another
+ * category keeps its subtasks' average, not its own unused progress field).
  */
-export function subsetProgress(tasks: ProgressNode[]): number {
-  return rootProgress(tasks, true);
+export function subsetProgress(tasks: ProgressNode[], progress?: Map<string, number>): number {
+  return rootProgress(tasks, true, progress);
 }
 
-function rootProgress(tasks: ProgressNode[], includeOrphans: boolean): number {
+function rootProgress(tasks: ProgressNode[], includeOrphans: boolean, progress = progressIndex(tasks)): number {
   const ids = new Set(tasks.map((t) => t.id));
   const roots = tasks.filter((t) => !t.parentId || (includeOrphans && !ids.has(t.parentId)));
   if (roots.length === 0) return 0;
-  const progress = progressIndex(tasks);
   const sum = roots.reduce((acc, t) => acc + progress.get(t.id)!, 0);
   return Math.round(sum / roots.length);
 }

@@ -26,7 +26,7 @@ import { groupBy } from "./task-tree";
 
 export { effectiveProgress, indexChildren, projectProgress, subsetProgress } from "./task-progress";
 export type { ProgressNode } from "./task-progress";
-import { projectProgress, subsetProgress, type ProgressNode } from "./task-progress";
+import { progressIndex, projectProgress, subsetProgress, type ProgressNode } from "./task-progress";
 
 /**
  * Progress, workload and deadline status for each category. A main category
@@ -44,10 +44,11 @@ export function categorySchedules<
   const byId = new Map(categories.map((c) => [c.id, c]));
   const children = groupBy(categories, (c) => c.parentId);
   const tasksByCategory = groupBy(tasks, (t) => t.categoryId);
+  const progressOf = progressIndex(tasks);
   return categories.map((c) => {
     const scope = [c.id, ...(children.get(c.id) ?? []).map((child) => child.id)];
     const ct = scope.flatMap((id) => tasksByCategory.get(id) ?? []);
-    const progress = subsetProgress(ct);
+    const progress = subsetProgress(ct, progressOf);
     const workload = workloadOf(ct, now);
     const parent = c.parentId ? byId.get(c.parentId) : undefined;
     return {

@@ -30,6 +30,10 @@ export async function PATCH(req: NextRequest, ctx: Ctx) {
     }
 
     const data = reviewReportSchema.parse(await req.json());
+    // "Đánh dấu đã xem" from a stale inbox must not wipe a review someone else already wrote.
+    if (report.reviewedAt && !data.approveTask && !data.reviewNote?.trim()) {
+      return ok(await withWorkspace(req, me, report.task.projectId, { ok: true }));
+    }
 
     await prisma.$transaction(async (tx) => {
       await tx.taskReport.update({

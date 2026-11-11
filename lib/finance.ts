@@ -151,10 +151,14 @@ export function formatVnd(n: number | null | undefined, unit = true): string {
   return `${Math.round(n).toLocaleString("vi-VN")}${unit ? " đ" : ""}`;
 }
 
-/** Parse "62,601,000 đ", "62.601.000" or "62601000" to whole đồng; null when empty. */
+/**
+ * Parse "62,601,000 đ", "62.601.000" or "62601000" to whole đồng; null when empty.
+ * Excel often pastes "62,601,000.00": one or two digits after the last separator are
+ * a decimal part (thousands come in threes) and are dropped, not read as more digits.
+ */
 export function parseVnd(input: string): number | null {
   const negative = /^\s*[-−(]/.test(input);
-  const digits = input.replace(/[^\d]/g, "");
+  const digits = input.replace(/[.,]\d{1,2}(?=\D*$)/, "").replace(/[^\d]/g, "");
   if (!digits) return null;
   const n = Number(digits);
   return negative ? -n : n;
