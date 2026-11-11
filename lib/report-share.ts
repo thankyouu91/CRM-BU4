@@ -13,7 +13,7 @@ import type { DepartmentReport } from "./department-report";
 import { workPeriodOf } from "./work-report";
 import { deckWeekAnchor } from "./deck-model";
 import type { CurrentUser } from "./session";
-import { canSeeAllShares, hashShareToken, isShareToken, newShareToken, shareExpiry, shareStatus, SHARE_RETENTION_DAYS, type ShareDays, type ShareStatus } from "./report-share-rules";
+import { canSeeAllShares, canShareReports, hashShareToken, isShareToken, newShareToken, shareExpiry, shareStatus, SHARE_RETENTION_DAYS, type ShareDays, type ShareStatus } from "./report-share-rules";
 
 export interface SharePeriod {
   period: string;
@@ -148,7 +148,8 @@ export interface SharedDeck {
 
 /**
  * The deck behind a public link, or null when the link does not work: unknown token,
- * expired, revoked, creator deactivated, or the creator can no longer see the project.
+ * expired, revoked, creator deactivated or no longer allowed to share, or the creator can
+ * no longer see the project.
  * Every reason looks the same from outside.
  */
 export async function loadSharedDeck(token: string, now = new Date()): Promise<SharedDeck | null> {
@@ -160,7 +161,8 @@ export async function loadSharedDeck(token: string, now = new Date()): Promise<S
       createdBy: { select: { id: true, email: true, name: true, role: true, permissions: true, jobTitle: true, avatarColor: true, active: true } },
     },
   });
-  if (!share || shareStatus(share, now) !== "active" || !share.createdBy.active) return null;
+  // A creator who was deactivated, or demoted below the level that may share, takes their links with them.
+  if (!share || shareStatus(share, now) !== "active" || !share.createdBy.active || !canShareReports(share.createdBy)) return null;
 
   const c = share.createdBy;
   const viewer: CurrentUser = {

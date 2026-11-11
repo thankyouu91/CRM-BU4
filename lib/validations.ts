@@ -17,12 +17,14 @@ const noteTypeEnum = z.enum(["NOTE", "FEEDBACK"]);
 
 // Accounts sign in with an email address or a short username (e.g. "admin").
 const USERNAME = /^[a-z0-9._-]{3,32}$/;
+/** Whether text has the shape of a sign-in name (an email or a username). */
+export const looksLikeLoginId = (v: string) => USERNAME.test(v) || z.string().email().safeParse(v).success;
 const loginId = z
   .string()
   .trim()
   .toLowerCase()
   .refine(
-    (v) => USERNAME.test(v) || z.string().email().safeParse(v).success,
+    looksLikeLoginId,
     "Nhập email hợp lệ hoặc tên đăng nhập (3–32 ký tự: chữ thường, số, . _ -)",
   );
 

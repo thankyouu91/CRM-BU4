@@ -71,21 +71,23 @@ export async function PATCH(req: NextRequest, ctx: Ctx) {
  */
 export async function DELETE(_req: NextRequest, ctx: Ctx) {
   const params = await ctx.params;
-  const me = await auth();
-  if (!me) return unauthorized();
-  const category = await load(params.id);
-  if (!category) return notFound("Không tìm thấy hạng mục");
-  if (!(await canManageProject(me, category.projectId))) return forbidden();
-  await prisma.category.delete({ where: { id: params.id } });
-  await audit(
-    { id: me.id, name: me.name },
-    {
-      action: "category.delete",
-      entityType: "category",
-      entityId: category.id,
-      summary: `Xoá hạng mục “${category.name}”`,
-      details: { name: category.name, projectId: category.projectId },
-    },
-  );
-  return ok({ ok: true });
+  return handle(async () => {
+    const me = await auth();
+    if (!me) return unauthorized();
+    const category = await load(params.id);
+    if (!category) return notFound("Không tìm thấy hạng mục");
+    if (!(await canManageProject(me, category.projectId))) return forbidden();
+    await prisma.category.delete({ where: { id: params.id } });
+    await audit(
+      { id: me.id, name: me.name },
+      {
+        action: "category.delete",
+        entityType: "category",
+        entityId: category.id,
+        summary: `Xoá hạng mục “${category.name}”`,
+        details: { name: category.name, projectId: category.projectId },
+      },
+    );
+    return ok({ ok: true });
+  });
 }

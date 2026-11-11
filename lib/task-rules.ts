@@ -22,9 +22,13 @@ interface Patch {
 /**
  * Reconcile status, progress and completedAt for a task update:
  *  - Moving to DONE sets progress 100 and stamps completedAt.
- *  - Leaving DONE clears completedAt.
+ *  - Leaving DONE clears completedAt, and a progress left at 100 drops to 90: work that
+ *    is open again is not complete, whatever it was before it was closed.
  *  - Reporting progress on a TODO task (without an explicit status) starts it.
  */
+/** Progress of a task taken out of DONE without saying how far along it is. */
+export const REOPENED_PROGRESS = 90;
+
 export function resolveTaskState(current: Current, patch: Patch) {
   // Metadata-only edits must not write a snapshot of state read earlier.
   if (patch.status === undefined && patch.progress === undefined) return {};
@@ -39,6 +43,7 @@ export function resolveTaskState(current: Current, patch: Patch) {
     if (current.status !== "DONE" || !completedAt) completedAt = new Date();
   } else {
     completedAt = null;
+    if (current.status === "DONE" && patch.progress === undefined && progress >= 100) progress = REOPENED_PROGRESS;
   }
 
   return { status, progress, completedAt };

@@ -1,12 +1,9 @@
 "use client";
 
-import { useMemo } from "react";
 import { Presenter } from "@/components/deck/presenter";
-import { buildReportDeck, makeDeckMeta } from "@/lib/deck-model";
-import type { Summary } from "@/lib/stats";
-import type { DepartmentReport } from "@/lib/department-report";
+import type { Deck } from "@/lib/deck-model";
 
-export function ShareClient({ summary, week, projectName, creatorName }: { summary: Summary; week: DepartmentReport; projectName: string | null; creatorName: string }) {
-  const deck = useMemo(() => buildReportDeck(summary, makeDeckMeta(summary.period.label, projectName, creatorName), week), [summary, week, projectName, creatorName]);
+/** Only the finished slides reach the browser: the data they were built from stays on the server. */
+export function ShareClient({ deck }: { deck: Deck }) {
   return <Presenter deck={deck} />;
 }

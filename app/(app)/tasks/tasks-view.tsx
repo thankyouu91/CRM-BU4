@@ -2,7 +2,7 @@
 
 import { Pagination } from "@/components/ui/pagination";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { CalendarClock, CalendarX, CheckCircle2, ChevronRight, Clock, GitBranch, ListChecks, Loader2, Search, TriangleAlert, UserX } from "lucide-react";
 import { toast } from "sonner";
@@ -99,6 +99,11 @@ export function MyTasksView({
   const periods = useMemo(() => taskDeadlinePeriods(now), [now]);
   const period = deadline === "all" ? null : periods[deadline];
   const restart = () => { setCursors([null]); setSelected(new Set()); };
+  // The row this page starts after can be finished or deleted meanwhile: an empty later page goes back to the first.
+  const stranded = !!data && !data.tasks.length && cursors.length > 1;
+  useEffect(() => {
+    if (stranded) setCursors([null]);
+  }, [stranded]);
   const selectDeadline = (value: DeadlineFilter) => { setDeadline(value); restart(); };
   const selectIssue = (value: Issue | null) => {
     setIssue(value);

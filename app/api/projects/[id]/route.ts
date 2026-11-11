@@ -126,26 +126,28 @@ export async function PATCH(req: NextRequest, ctx: Ctx) {
 
 export async function DELETE(_req: NextRequest, ctx: Ctx) {
   const params = await ctx.params;
-  const me = await auth();
-  if (!me) return unauthorized();
-  const project = await prisma.project.findUnique({
-    where: { id: params.id },
-    select: { ownerId: true, name: true, status: true },
+  return handle(async () => {
+    const me = await auth();
+    if (!me) return unauthorized();
+    const project = await prisma.project.findUnique({
+      where: { id: params.id },
+      select: { ownerId: true, name: true, status: true },
+    });
+    if (!project || !(await projectAccess(me, params.id)).view) return notFound("Không tìm thấy dự án");
+    if (project.ownerId !== me.id && !canManageAllProjects(me)) {
+      return forbidden("Chỉ chủ dự án hoặc người có quyền quản lý mọi dự án mới được xoá dự án");
+    }
+    await prisma.project.delete({ where: { id: params.id } });
+    await audit(
+      { id: me.id, name: me.name },
+      {
+        action: "project.delete",
+        entityType: "project",
+        entityId: params.id,
+        summary: `Xoá dự án “${project.name}”`,
+        details: { name: project.name, status: project.status },
+      },
+    );
+    return ok({ ok: true });
   });
-  if (!project || !(await projectAccess(me, params.id)).view) return notFound("Không tìm thấy dự án");
-  if (project.ownerId !== me.id && !canManageAllProjects(me)) {
-    return forbidden("Chỉ chủ dự án hoặc người có quyền quản lý mọi dự án mới được xoá dự án");
-  }
-  await prisma.project.delete({ where: { id: params.id } });
-  await audit(
-    { id: me.id, name: me.name },
-    {
-      action: "project.delete",
-      entityType: "project",
-      entityId: params.id,
-      summary: `Xoá dự án “${project.name}”`,
-      details: { name: project.name, status: project.status },
-    },
-  );
-  return ok({ ok: true });
 }

@@ -3,7 +3,7 @@ import { assignability, resolveTaskState } from "../lib/task-rules";
 import { joinHint, personLabel, projectPeople } from "../components/tasks/types";
 
 describe("task state writes", () => {
-  const current = { status: "IN_PROGRESS" as const, progress: 20, completedAt: null };
+  const current = { status: "IN_PROGRESS" as const, progress: 20, completedAt: null as Date | null };
   it("does not overwrite concurrent progress when only metadata changes", () => {
     const persisted = { ...current, progress: 80 };
     Object.assign(persisted, resolveTaskState(current, {}));
@@ -13,6 +13,10 @@ describe("task state writes", () => {
     const done = resolveTaskState(current, { status: "DONE" });
     expect(done).toMatchObject({ status: "DONE", progress: 100, completedAt: expect.any(Date) });
     expect(resolveTaskState({ ...current, status: "DONE", completedAt: new Date() }, { status: "IN_PROGRESS" }).completedAt).toBeNull();
+    // Reopened work is not complete: 100% left over from DONE drops, an explicit value is kept.
+    const closed = { ...current, status: "DONE" as const, progress: 100, completedAt: new Date() };
+    expect(resolveTaskState(closed, { status: "IN_PROGRESS" })).toMatchObject({ status: "IN_PROGRESS", progress: 90, completedAt: null });
+    expect(resolveTaskState(closed, { status: "IN_PROGRESS", progress: 40 }).progress).toBe(40);
   });
 });
 

@@ -2,7 +2,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { verifyPassword } from "@/lib/password";
 import { attachSession } from "@/lib/issue-session";
-import { loginSchema } from "@/lib/validations";
+import { loginSchema, looksLikeLoginId } from "@/lib/validations";
 import { clientIp, rateLimit, resetRateLimit } from "@/lib/rate-limit";
 import { zodErrors } from "@/lib/api";
 import { audit } from "@/lib/audit";
@@ -10,6 +10,10 @@ import { audit } from "@/lib/audit";
 // Cost-12 bcrypt hash of a discarded random string: compared against when the
 // email is unknown so response timing does not reveal which accounts exist.
 const DUMMY_HASH = "$2b$12$UbZ8e75LXICwRQfH1QetrOZuwsuMzxhVHLqIkkmmF9Fn7ov6JXQCO";
+
+// Wrong passwords one sign-in name may collect before it is paused, across all addresses.
+const ACCOUNT_MAX_FAILURES = 10;
+const ACCOUNT_WINDOW_MS = 15 * 60_000;
 
 export async function POST(req: NextRequest) {
   const body = await req.json().catch(() => null);
@@ -20,8 +24,9 @@ export async function POST(req: NextRequest) {
 
   const email = parsed.data.email.trim().toLowerCase();
   const ip = clientIp(req.headers);
-  // Never the password: only the name that was typed and why it failed.
-  const typed = parsed.data.email.trim().slice(0, 120);
+  // Never the password: only the name that was typed and why it failed. Text that is not
+  // shaped like a sign-in name is not kept: it is often a password typed in the wrong box.
+  const typed = looksLikeLoginId(email) ? parsed.data.email.trim().slice(0, 120) : "(không phải tên đăng nhập)";
   const failed = (reason: "wrong_password" | "unknown_user" | "inactive", userId?: string) =>
     audit(
       { name: typed },
@@ -30,7 +35,7 @@ export async function POST(req: NextRequest) {
         entityType: "session",
         entityId: userId,
         summary: `Đăng nhập thất bại: ${typed}`,
-        details: { reason },
+        details: { reason, login: email.slice(0, 120) },
       },
     );
 
@@ -45,6 +50,18 @@ export async function POST(req: NextRequest) {
     return NextResponse.json(
       { error: `Bạn đã thử đăng nhập quá nhiều lần. Vui lòng thử lại sau ${Math.ceil(retry / 60)} phút.` },
       { status: 429, headers: { "Retry-After": String(retry) } },
+    );
+  }
+
+  // Per account, whatever the address: the limits above are per IP, and addresses are cheap.
+  // Counted by the name typed, so a blocked name says nothing about whether the account exists.
+  const recentFailures = await prisma.auditLog.count({
+    where: { action: "auth.login_failed", createdAt: { gte: new Date(Date.now() - ACCOUNT_WINDOW_MS) }, details: { path: ["login"], equals: email.slice(0, 120) } },
+  });
+  if (recentFailures >= ACCOUNT_MAX_FAILURES) {
+    return NextResponse.json(
+      { error: `Tài khoản này vừa bị nhập sai mật khẩu quá nhiều lần. Vui lòng thử lại sau ${ACCOUNT_WINDOW_MS / 60_000} phút.` },
+      { status: 429, headers: { "Retry-After": String(ACCOUNT_WINDOW_MS / 1000) } },
     );
   }
 

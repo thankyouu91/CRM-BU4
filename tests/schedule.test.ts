@@ -92,7 +92,14 @@ describe("scheduleOf", () => {
     expect(s.achievement).toBe(999);
   });
 
-  it("rounds daysLeft up to whole days", () => {
+  it("counts daysLeft in calendar days of the business time zone", () => {
+    // A deadline is the end of its day (23:59:59 in Việt Nam = 16:59:59Z).
+    const due = "2026-11-10T16:59:59.000Z";
+    const left = (now: string) => scheduleOf({ start: day(0), due, actual: 0, now: new Date(now) }).daysLeft;
+    expect(left("2026-11-10T03:00:00Z")).toBe(0); // 10:00 on the day itself: "đến hạn hôm nay", not "còn 1 ngày"
+    expect(left("2026-11-09T16:00:00Z")).toBe(1); // 23:00 the evening before
+    expect(left("2026-11-11T03:00:00Z")).toBe(-1); // the morning after: "trễ 1 ngày", not "hôm nay"
+
     expect(scheduleOf({ start: day(0), due: day(10), actual: 0, now: day(8.5) }).daysLeft).toBe(2);
     expect(scheduleOf({ start: day(0), due: day(10), actual: 0, now: day(12.5) }).daysLeft).toBe(-2);
   });

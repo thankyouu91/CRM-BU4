@@ -7,7 +7,7 @@ const me = { id: "u", role: "MEMBER", permissions: [] } as unknown as CurrentUse
 afterEach(() => vi.useRealTimers());
 beforeEach(() => {
   vi.clearAllMocks();
-  db.task.findMany.mockResolvedValue(Array.from({ length: 101 }, (_, i) => ({ id: `t${i}`, createdById: "other", assigneeId: "u", project: { id: "p", ownerId: "other", members: [{ role: "VIEWER" }] } })));
+  db.task.findMany.mockResolvedValue(Array.from({ length: 101 }, (_, i) => ({ id: `t${i}`, createdById: "other", assigneeId: "u", _count: { subtasks: 0, reports: 0 }, project: { id: "p", ownerId: "other", members: [{ role: "VIEWER" }] } })));
   db.task.groupBy.mockResolvedValue([{ status: "IN_PROGRESS", _count: { _all: 401 } }, { status: "DONE", _count: { _all: 200 } }]);
   db.task.count.mockResolvedValue(601);
   db.taskReport.findMany.mockResolvedValue(Array.from({ length: 101 }, (_, i) => ({ id: `r${i}` })));

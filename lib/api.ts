@@ -58,6 +58,8 @@ export async function handle<T>(fn: () => Promise<T>): Promise<T | NextResponse>
     if (err instanceof ConflictError) return NextResponse.json({ error: err.message }, { status: 409 });
     if (err instanceof InputError) return badRequest(err.message);
     if (err instanceof StatusError) return NextResponse.json({ error: err.message }, { status: err.status });
+    // Prisma "record not found": someone else deleted it first (a double click, two tabs).
+    if ((err as { code?: string } | null)?.code === "P2025") return notFound("Mục này không còn tồn tại");
     if (err instanceof ZodError) {
       return NextResponse.json(
         { error: "Dữ liệu không hợp lệ", fields: zodErrors(err) },

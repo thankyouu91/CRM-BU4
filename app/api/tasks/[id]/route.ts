@@ -155,24 +155,26 @@ export async function PATCH(req: NextRequest, ctx: Ctx) {
 
 export async function DELETE(req: NextRequest, ctx: Ctx) {
   const params = await ctx.params;
-  const me = await auth();
-  if (!me) return unauthorized();
-  const loaded = await loadTaskForUser(me, params.id);
-  if (!loaded) return notFound("Không tìm thấy công việc");
-  if (!loaded.perms.manage) return forbidden();
+  return handle(async () => {
+    const me = await auth();
+    if (!me) return unauthorized();
+    const loaded = await loadTaskForUser(me, params.id);
+    if (!loaded) return notFound("Không tìm thấy công việc");
+    if (!loaded.perms.manage) return forbidden();
 
-  // Subtasks and reports cascade with the task.
-  await prisma.task.delete({ where: { id: loaded.task.id } });
-  await audit(
-    { id: me.id, name: me.name },
-    {
-      action: "task.delete",
-      entityType: "task",
-      entityId: loaded.task.id,
-      summary: `Xoá công việc “${loaded.task.title}”`,
-      details: { title: loaded.task.title, projectId: loaded.task.projectId, status: loaded.task.status },
-    },
-  );
-  await syncProjectStatus({ id: me.id, name: me.name }, [loaded.task.projectId]);
-  return ok(await withWorkspace(req, me, loaded.task.projectId, { ok: true }));
+    // Subtasks and reports cascade with the task.
+    await prisma.task.delete({ where: { id: loaded.task.id } });
+    await audit(
+      { id: me.id, name: me.name },
+      {
+        action: "task.delete",
+        entityType: "task",
+        entityId: loaded.task.id,
+        summary: `Xoá công việc “${loaded.task.title}”`,
+        details: { title: loaded.task.title, projectId: loaded.task.projectId, status: loaded.task.status },
+      },
+    );
+    await syncProjectStatus({ id: me.id, name: me.name }, [loaded.task.projectId]);
+    return ok(await withWorkspace(req, me, loaded.task.projectId, { ok: true }));
+  });
 }

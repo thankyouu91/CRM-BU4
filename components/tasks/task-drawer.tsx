@@ -375,6 +375,7 @@ function ProgressField({
   const shown = task.status === "DONE" ? 100 : (computed ?? task.progress);
   const [draft, setDraft] = useState(shown);
   useEffect(() => setDraft(shown), [shown]);
+  const keyTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
 
   return (
     <section>
@@ -398,7 +399,11 @@ function ProgressField({
           value={draft}
           onChange={(e) => setDraft(Number(e.target.value))}
           onPointerUp={() => draft !== shown && onCommit(draft)}
-          onKeyUp={() => draft !== shown && onCommit(draft)}
+          // Arrow keys: save where they stop, not one overlapping request per key.
+          onKeyUp={() => {
+            clearTimeout(keyTimer.current);
+            if (draft !== shown) keyTimer.current = setTimeout(() => onCommit(draft), 400);
+          }}
           className="w-full accent-[rgb(var(--primary))]"
           aria-label="Tiến độ (%)"
         />

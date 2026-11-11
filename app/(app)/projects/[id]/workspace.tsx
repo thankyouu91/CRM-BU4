@@ -40,6 +40,7 @@ import type { Directory, ProjectCategory } from "@/components/projects/types";
 import { api, ApiError, useApi } from "@/lib/client";
 import { formatDate } from "@/lib/utils";
 import { isOverdue } from "@/lib/dates";
+import { calendarDaysLeft, daysLeftLabel } from "@/lib/schedule";
 import { PROJECT_ROLE_INFO } from "@/lib/permissions";
 
 // Load secondary panels and dialogs only when opened.
@@ -167,7 +168,7 @@ export function ProjectWorkspace({
   const { project: p, canManage, canContribute, canDelete, projectRole } = data;
   const done = p.tasks.filter((t) => t.status === "DONE").length;
   const overdue = p.tasks.filter((t) => isOverdue(t.dueDate, t.status)).length;
-  const daysLeft = p.dueDate ? Math.ceil((new Date(p.dueDate).getTime() - Date.now()) / 86_400_000) : null;
+  const daysLeft = p.dueDate ? calendarDaysLeft(p.dueDate) : null;
 
   return (
     <div>
@@ -216,7 +217,7 @@ export function ProjectWorkspace({
                   {formatDate(p.startDate) || "Chưa có"} → {formatDate(p.dueDate) || "Chưa có"}
                   {daysLeft !== null && p.status !== "COMPLETED" && (
                     <span className={daysLeft < 0 ? "font-medium text-danger" : "font-medium text-foreground"}>
-                      ({daysLeft < 0 ? `trễ ${-daysLeft} ngày` : `còn ${daysLeft} ngày`})
+                      ({daysLeftLabel(daysLeft)})
                     </span>
                   )}
                 </span>

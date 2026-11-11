@@ -4,7 +4,22 @@
 // completion you would expect today if work progressed evenly. Comparing it with
 // actual completion tells whether an item is on schedule.
 
+import { TZDate } from "@date-fns/tz";
+import { APP_TIMEZONE } from "./period";
+
 const DAY = 86_400_000;
+
+/**
+ * Calendar days from now to a deadline in the business time zone: 0 on the deadline's own
+ * day whatever the hour (deadlines are stored at 23:59:59), -1 the day after.
+ */
+export function calendarDaysLeft(due: Date | string | number, now: Date | string | number = Date.now()): number {
+  const dayOf = (t: Date | string | number) => {
+    const d = new TZDate(new Date(t).getTime(), APP_TIMEZONE);
+    return Date.UTC(d.getFullYear(), d.getMonth(), d.getDate());
+  };
+  return Math.round((dayOf(due) - dayOf(now)) / DAY);
+}
 
 export type ScheduleStatus = "DONE" | "ON_TRACK" | "AT_RISK" | "BEHIND" | "OVERDUE" | "NO_DEADLINE";
 
@@ -58,7 +73,7 @@ export function scheduleOf(input: {
   if (due === null) {
     return { status: finished ? "DONE" : "NO_DEADLINE", planned: null, achievement: null, variance: null, daysLeft: null };
   }
-  const daysLeft = Math.ceil((due - now) / DAY);
+  const daysLeft = calendarDaysLeft(due, now);
   if (finished) return { status: "DONE", planned: 100, achievement: 100, variance: 0, daysLeft };
 
   const start = ms(input.start) ?? ms(input.fallbackStart) ?? due;

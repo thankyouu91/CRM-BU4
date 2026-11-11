@@ -268,7 +268,8 @@ export function instantiateTemplate(
   const dues = [...data.categories, ...data.tasks].map((x) => x.dueOffset).filter((o): o is number => o !== null);
   return {
     startDate: dayEdge(start, "start"),
-    dueDate: dues.length ? dayEdge(start + Math.max(...dues), "end") : null,
+    // Never before the start, even when every deadline of the source project was (bad data there).
+    dueDate: dues.length ? dayEdge(start + Math.max(0, ...dues), "end") : null,
     color: data.color,
     categories,
     tasks,

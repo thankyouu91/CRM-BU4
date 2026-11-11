@@ -1,4 +1,5 @@
 import type { Prisma } from "@prisma/client";
+import { withTaskProgress } from "./task-progress-queries";
 import { prisma } from "./prisma";
 import { accessFrom, accessSelect, taskRights, canManageAllProjects, managedProjectsWhere, projectVisibilityWhere } from "./rbac";
 import { categorySchedules, projectSchedule } from "./stats";
@@ -126,8 +127,10 @@ const TASK_STATUSES = ["TODO", "IN_PROGRESS", "REVIEW", "DONE", "BLOCKED"] as co
 export const TASK_ISSUES = ["unassigned", "nodue", "overdue"] as const;
 export type TaskIssue = (typeof TASK_ISSUES)[number];
 export const parseTaskIssue = (v: string | null | undefined): TaskIssue | null => ((TASK_ISSUES as readonly string[]).includes(v ?? "") ? (v as TaskIssue) : null);
+// Overdue as the bell counts it (lib/notifications.ts): work in a cancelled or finished project is not late.
+const overdueWhere = (now: Date): Prisma.TaskWhereInput => ({ status: { not: "DONE" }, dueDate: { lt: now }, project: { status: { notIn: ["CANCELLED", "COMPLETED"] } } });
 const issueWhere = (issue: TaskIssue, now: Date): Prisma.TaskWhereInput =>
-  issue === "unassigned" ? { status: { not: "DONE" }, assigneeId: null } : issue === "nodue" ? { status: { not: "DONE" }, dueDate: null } : { status: { not: "DONE" }, dueDate: { lt: now } };
+  issue === "unassigned" ? { status: { not: "DONE" }, assigneeId: null } : issue === "nodue" ? { status: { not: "DONE" }, dueDate: null } : overdueWhere(now);
 
 /** Tasks across visible projects (GET /api/tasks and the "Công việc của tôi" page). */
 export async function listTasks(
@@ -168,7 +171,7 @@ export async function listTasks(
     }),
     prisma.task.groupBy({ by: ["status"], where, _count: { _all: true } }),
     issue ? prisma.task.groupBy({ by: ["status"], where: base, _count: { _all: true } }) : null,
-    countBase({ status: { not: "DONE" }, dueDate: { lt: now } }),
+    countBase(overdueWhere(now)),
     countBase({ status: "DONE", completedAt: { gte: new Date(now.getTime() - 7 * 86_400_000) } }),
     countBase(issueWhere("unassigned", now)),
     countBase(issueWhere("nodue", now)),
@@ -180,11 +183,13 @@ export async function listTasks(
   const done = totals.get("DONE") ?? 0;
   const open = summary.reduce((sum, row) => sum + row._count._all, 0) - done;
   const active = (totals.get("IN_PROGRESS") ?? 0) + (totals.get("REVIEW") ?? 0);
+  // A task with subtasks shows their average, as the project view does, not its own unused field.
+  const computed = new Map((await withTaskProgress(rows.slice(0, 100).filter((r) => r._count.subtasks > 0))).map((t) => [t.id, t.effectiveProgress]));
   const tasks = rows.slice(0, 100).map(({ project, ...task }) => {
     const { ownerId, members, ...brief } = project;
     const access = accessFrom(user, ownerId, members[0]?.role ?? null);
     const rights = taskRights(user, access, task);
-    return { ...task, project: brief, canReport: rights.report, canManage: rights.manage };
+    return { ...task, progress: computed.get(task.id) ?? task.progress, project: brief, canReport: rights.report, canManage: rights.manage };
   });
   return {
     tasks, nextCursor: rows.length > 100 ? rows[99].id : null, total, stats: { open, active, overdue, doneWeek, done },
