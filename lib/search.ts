@@ -95,6 +95,7 @@ export const PAGE_SHORTCUTS: PageShortcut[] = [
   { href: "/dashboard", label: "Tổng quan", keywords: "dashboard trang chủ kpi biểu đồ" },
   { href: "/projects", label: "Dự án", keywords: "projects lịch hoạt động" },
   { href: "/tasks", label: "Công việc của tôi", keywords: "tasks việc được giao báo cáo tuần tháng" },
+  { href: "/chat", label: "Trao đổi chung", keywords: "chat nhắn tin kênh giao việc tag" },
   { href: "/ai", label: "Trợ lý AI", keywords: "claude chat prompt" },
   { href: "/inbox", label: "Hộp báo cáo", keywords: "inbox duyệt báo cáo" },
   { href: "/reports", label: "Trung tâm báo cáo", keywords: "reports trình chiếu pdf powerpoint" },

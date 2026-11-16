@@ -14,7 +14,7 @@ import { managedProjectsWhere } from "./rbac";
 import type { CurrentUser } from "./session";
 import { shiftWorkPeriod, workPeriodOf, type WorkPeriod } from "./work-report";
 
-export const NOTIFICATION_TYPES = ["task.assigned", "task_report.reviewed", "work_report.reviewed", "project.member_added", "attendance.leave"] as const;
+export const NOTIFICATION_TYPES = ["task.assigned", "task_report.reviewed", "work_report.reviewed", "project.member_added", "attendance.leave", "chat.mention"] as const;
 export type NotificationType = (typeof NOTIFICATION_TYPES)[number];
 
 export interface NewNotification {
@@ -76,7 +76,8 @@ export async function notify(actor: { id: string; name: string }, notices: NewNo
   }
 }
 
-export const taskLink = (projectId: string, taskId: string) => `/projects/${projectId}?task=${taskId}`;
+import { taskLink } from "./constants";
+export { taskLink };
 
 /** Notices for tasks given to people: one per task, or one per person for a large batch. */
 export function assignmentNotices(tasks: { id: string; title: string; projectId: string; projectName: string; assigneeId: string | null }[]): NewNotification[] {

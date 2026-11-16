@@ -71,7 +71,7 @@ describe("page shortcuts", () => {
   const hrefs = (user: Viewer, text: string) => matchPages(user, text).map((p) => p.href);
 
   it("lists the pages the user may open when nothing is typed", () => {
-    expect(hrefs(member, "")).toEqual(["/dashboard", "/projects", "/tasks", "/ai", "/inbox", "/reports", "/team", "/settings"]);
+    expect(hrefs(member, "")).toEqual(["/dashboard", "/projects", "/tasks", "/chat", "/ai", "/inbox", "/reports", "/team", "/settings"]);
     expect(hrefs(finance, " ")).toContain("/contracts");
   });
 

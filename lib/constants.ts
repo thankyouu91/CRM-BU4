@@ -41,3 +41,6 @@ export const SIDEBAR_COOKIE = "sidebar";
 export type ProjectStatusKey = keyof typeof PROJECT_STATUS;
 export type TaskStatusKey = keyof typeof TASK_STATUS;
 export type PriorityKey = keyof typeof PRIORITY;
+
+/** Where a task opens: its project with the task drawer open (bell, chat, links). */
+export const taskLink = (projectId: string, taskId: string) => `/projects/${projectId}?task=${taskId}`;

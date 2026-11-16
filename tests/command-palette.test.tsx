@@ -40,7 +40,7 @@ it("opens with Ctrl+K or Cmd+K from anywhere, lists page shortcuts and gives foc
   expect(document.activeElement).toBe(combobox());
   expect(combobox().getAttribute("aria-expanded")).toBe("true");
   expect(combobox().getAttribute("aria-controls")).toBe(screen.getByRole("listbox").id);
-  expect(labels()).toEqual(["Tổng quan", "Dự án", "Công việc của tôi", "Trợ lý AI", "Hộp báo cáo", "Trung tâm báo cáo", "Nhân sự", "Cài đặt"]);
+  expect(labels()).toEqual(["Tổng quan", "Dự án", "Công việc của tôi", "Trao đổi chung", "Trợ lý AI", "Hộp báo cáo", "Trung tâm báo cáo", "Nhân sự", "Cài đặt"]);
   expect(combobox().getAttribute("aria-activedescendant")).toBe(options()[0].id);
   const drawerEscape = vi.fn(); // a drawer or dialog underneath listens on the document
   document.addEventListener("keydown", drawerEscape);

@@ -166,6 +166,16 @@ Thanh bên → **Chấm công** (`/attendance`). Lịch làm việc: thứ 2 đ�
 - **Ngày vào làm / ngày nghỉ việc:** nhập trong hồ sơ nhân sự (trang **Nhân sự**). Ngoài khoảng này không tính công chuẩn, ngày công hay phép năm, và không ghi chấm công được (ô gạch chéo trên web, ô xám trong Excel). Người đã nghỉ vẫn có trên bảng công những tháng họ còn làm, kể cả khi tài khoản đã khoá; quản lý vẫn sửa được những ngày đó. **Xuất Excel** gồm trang *Bảng chấm công* (từng ngày trong tháng tô màu theo ký hiệu, thứ 7, Chủ nhật và ngày lễ tô màu, các cột ngày công, ngày cơm, tổng và phép năm, kèm danh sách ghi chú ký hiệu) và trang *Chi tiết nghỉ* (ngày, buổi, loại, lý do) (`lib/export/attendance-xlsx.ts`).
 - **Ngày nghỉ lễ:** người có quyền *Quản lý nhân viên* nhập ở nút **Ngày nghỉ lễ** trong bảng công tháng (bảng `Holiday`). Nút **Thêm ngày lễ, Tết** điền sẵn các ngày nghỉ theo Điều 112 Bộ luật Lao động cho cả năm: Tết Dương lịch, 5 ngày Tết Nguyên đán (cuối năm Âm lịch đến mùng 4, tính theo lịch Âm Việt Nam), Giỗ Tổ Hùng Vương 10/3 Âm lịch, 30/4, 1/5, 2/9 và một ngày liền kề, cùng ngày nghỉ bù khi lễ trùng Chủ nhật (`lib/vn-holidays.ts`); ngày đã nhập giữ nguyên. Lịch nghỉ Tết và 2/9 cụ thể do Chính phủ công bố mỗi năm, nên đối chiếu rồi chỉnh lại nếu khác. Ngày lễ không tính là ngày làm, ghi L và vẫn tính vào công hưởng lương.
 
+### Trao đổi chung
+
+Thanh bên → **Trao đổi chung** (`/chat`): một kênh chat cho cả công ty, ai đăng nhập cũng đọc và nhắn được.
+
+- **@ nhắc người:** gõ `@` rồi vài chữ của tên (không cần dấu), chọn trong danh sách. Người được nhắc nhận thông báo trên chuông; bấm vào là tới đúng tin nhắn.
+- **# gắn công việc:** gõ `#` rồi vài chữ của tên công việc. Tin nhắn hiện thẻ công việc với trạng thái, % tiến độ, bấm để mở. Người không xem được dự án đó chỉ thấy tên công việc, không mở được; không gắn được công việc của dự án mình không xem được.
+- **Giao việc:** bấm **Giao việc** cạnh ô soạn (giao từ nội dung đang gõ) hoặc trên một tin nhắn. Chọn dự án; tên việc, người phụ trách (người được @ đầu tiên làm trong dự án) và nội dung gốc được điền sẵn. Công việc được tạo đúng như tạo trong dự án (cùng quy tắc ai giao được cho ai), người nhận nhận thông báo "Bạn được giao…", và kênh có dòng "➜ Đã giao #… cho @…".
+- **Thu hồi:** người viết thu hồi được tin của mình; quản trị viên thu hồi được mọi tin (ghi nhật ký thao tác).
+- Tin mới tự hiện sau vài giây khi trang đang mở; tin nhắn được giữ lâu dài (bảng `ChatMessage`, có trong bản sao lưu hằng ngày). Mã nguồn: `lib/chat.ts`, `lib/chat-queries.ts`, `app/api/chat`, `components/chat`.
+
 ### Tìm kiếm nhanh (Ctrl+K)
 
 Bấm **Ctrl K** (⌘ K trên Mac) ở bất kỳ trang nào, kể cả khi đang gõ trong một ô nhập, hoặc nút **Tìm kiếm…** trên thanh đầu trang (trên điện thoại là biểu tượng kính lúp).

@@ -141,6 +141,7 @@ model User {
   aiQuotas         AiQuota[]
   deckShares       DeckShare[]       @relation("DeckShareCreator")
   attendanceMarks  AttendanceMark[]  @relation("AttendanceOwner")
+  chatMessages     ChatMessage[]     @relation("ChatAuthor")
   attendanceSet    AttendanceMark[]  @relation("AttendanceAuthor")
   customersCreated Customer[]        @relation("CustomerAuthor")
   leaveBalances    LeaveBalance[]    @relation("LeaveBalanceOwner")
@@ -568,4 +569,20 @@ model CustomerContact {
   updatedAt  DateTime @updatedAt
 
   @@index([customerId, level])
+}
+
+// Kênh Trao đổi chung: một kênh cho cả công ty. Nội dung giữ @[Tên](u:id) và #[Tiêu đề](t:id)
+// để nhắc người và gắn công việc (lib/chat.ts); mentions/taskIds là các id đã kiểm tra khi gửi.
+model ChatMessage {
+  id        String    @id @default(cuid())
+  authorId  String
+  author    User      @relation("ChatAuthor", fields: [authorId], references: [id], onDelete: Cascade)
+  content   String
+  mentions  String[]  @default([])
+  taskIds   String[]  @default([])
+  createdAt DateTime  @default(now())
+  // Thu hồi: giữ dòng để thứ tự và liên kết không gãy, nội dung bị xoá.
+  deletedAt DateTime?
+
+  @@index([createdAt])
 }

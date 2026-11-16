@@ -76,6 +76,7 @@ export const AUDIT_ACTIONS = {
   "deck_share.revoke": { label: "Thu hồi link trình chiếu công khai", group: "share" },
 
   "attendance.mark": { label: "Ghi chấm công / nghỉ", group: "attendance" },
+  "chat.delete": { label: "Thu hồi tin nhắn của người khác", group: "user" },
   "leave_balance.update": { label: "Sửa số phép năm", group: "attendance" },
   "holiday.create": { label: "Thêm ngày nghỉ lễ", group: "attendance" },
   "holiday.delete": { label: "Xoá ngày nghỉ lễ", group: "attendance" },
