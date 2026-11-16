@@ -265,6 +265,8 @@ Database Supabase `crm-bu4` đã có schema, đã khoá Data API công khai (`pr
 
 ### Cách 2 — Workers Builds (tự deploy mỗi lần push)
 
+**Đang dùng (từ 16/11/2026):** Worker `crm` nối với nhánh `claude/determined-keller-9miebn`; mỗi commit đẩy lên nhánh này được Cloudflare build và deploy (build variables `NODE_VERSION=22`, `NEXT_TELEMETRY_DISABLED=1`; build nhánh khác tắt). Chạy migration database **trước** khi đẩy commit có migration mới. Lỗi thì *Deployments → Rollback* về bản trước. Tắt: *Settings → Build → Disconnect*.
+
 Sau khi đã có Hyperdrive và ID trong `wrangler.jsonc` (cách 1, hoặc tạo trên dashboard *Storage & Databases → Hyperdrive* với **Caching tắt**): *Workers & Pages → Create → Import a repository* → `thankyouu91/CRM-BU4`, project name `crm`, build command `npx opennextjs-cloudflare build`, deploy command `npx opennextjs-cloudflare deploy`. Thêm secret `JWT_SECRET` (≥ 32 ký tự ngẫu nhiên) trong *Settings → Variables and Secrets* nếu chưa có.
 
 ### Vận hành
