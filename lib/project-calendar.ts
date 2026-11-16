@@ -36,8 +36,11 @@ export function moveCalendar(view: CalendarView, anchor: string, direction: numb
   return addMonths(period.from, direction * (view === "year" ? 12 : view === "quarter" ? 3 : 1)).toISOString();
 }
 
-/** Only supplied business dates determine scheduling; createdAt is never invented as a start. */
-export function projectTiming(project: { startDate: string | null; dueDate: string | null }): ProjectTiming | null {
+/**
+ * Only supplied business dates determine scheduling; createdAt is never invented as a start.
+ * A finished project ends on the day it was finished, not at its due date or open-ended.
+ */
+export function projectTiming(project: { startDate: string | null; dueDate: string | null; completedAt?: string | null }): ProjectTiming | null {
   const day = (value: string | null) => {
     if (!value) return null;
     const date = new Date(value);
@@ -48,6 +51,12 @@ export function projectTiming(project: { startDate: string | null; dueDate: stri
   if ((project.startDate && start === null) || (project.dueDate && due === null)) return null;
   if (start === null && due === null) return null;
   if (start !== null && due !== null && due < start) return null;
+  const done = day(project.completedAt ?? null);
+  if (done !== null) {
+    // Finished before its own start (dates entered late) counts as finished on the start day.
+    const doneDay = Math.max(done, start ?? done);
+    return { start: start ?? doneDay, end: addDays(zoned(new Date(doneDay)), 1).getTime(), kind: start === null ? "deadline" : "range" };
+  }
   return {
     start: start ?? due!,
     end: due === null ? Infinity : addDays(zoned(new Date(due)), 1).getTime(),

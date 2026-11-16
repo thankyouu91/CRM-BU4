@@ -14,6 +14,8 @@ export interface CalendarProject {
 }
 
 export function projectDateLabel(project: ProjectListItemData) {
+  const done = project.completedAt ? `Hoàn thành ${calendarDate(project.completedAt)}` : null;
+  if (done) return project.startDate ? `${calendarDate(project.startDate)} → ${done}` : done;
   if (project.startDate && project.dueDate) return `${calendarDate(project.startDate)} → ${calendarDate(project.dueDate)}`;
   if (project.startDate) return `Từ ${calendarDate(project.startDate)} · Chưa có hạn kết thúc`;
   if (project.dueDate) return `Hạn ${calendarDate(project.dueDate)} · Chưa có ngày bắt đầu`;

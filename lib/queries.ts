@@ -9,6 +9,16 @@ import { parseDeadlineFilter, taskDeadlinePeriods } from "./task-deadlines";
 
 const userBrief = { select: { id: true, name: true, avatarColor: true, jobTitle: true } } as const;
 
+/**
+ * When a finished project was finished: its last task's completion, or (no task carries one)
+ * the last change to the project, which is when it was marked done. Null while not finished.
+ */
+function completionOf(p: { status: string; updatedAt: Date }, tasks: { completedAt: Date | null }[]): Date | null {
+  if (p.status !== "COMPLETED") return null;
+  const last = Math.max(...tasks.map((t) => t.completedAt?.getTime() ?? 0));
+  return last > 0 ? new Date(last) : p.updatedAt;
+}
+
 /** Project list with computed progress, for the projects grid and pickers. */
 export async function listProjects(user: CurrentUser) {
   const projects = await prisma.project.findMany({
@@ -17,7 +27,7 @@ export async function listProjects(user: CurrentUser) {
     include: {
       owner: userBrief,
       members: { include: { user: userBrief } },
-      tasks: { select: { id: true, parentId: true, status: true, progress: true, dueDate: true } },
+      tasks: { select: { id: true, parentId: true, status: true, progress: true, dueDate: true, completedAt: true } },
       _count: { select: { notes: true, categories: true } },
     },
   });
@@ -26,6 +36,7 @@ export async function listProjects(user: CurrentUser) {
     const { progress, schedule } = projectSchedule(p, tasks, now);
     return {
       ...p,
+      completedAt: completionOf(p, tasks),
       members: members.map((m) => ({ ...m.user, projectRole: m.role })),
       progress,
       schedule,

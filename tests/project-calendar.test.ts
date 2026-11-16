@@ -36,6 +36,27 @@ describe("project activity calendar", () => {
     expect(timelineSpan(ongoing, calendarPeriod("year", "2027-01-01"))?.width).toBe(100);
   });
 
+  it("ends a finished project on the day it was finished, not at its due date or open-ended", () => {
+    const period = calendarPeriod("month", "2026-11-15T00:00:00Z");
+    const done = "2026-11-05T09:00:00.000Z"; // 16:00 on 5/11 in Việt Nam
+    const open = projectTiming({ startDate: "2026-11-01", dueDate: null, completedAt: done })!;
+    expect(open.kind).toBe("range");
+    expect(timelineSpan(open, period)).toMatchObject({ continuesAfter: false });
+    expect(timelineSpan(open, period)?.width).toBeCloseTo((5 / 30) * 100); // 1/11 – 5/11
+    // Finished before its due date: still 1/11 – 5/11, not to the 30th.
+    expect(timelineSpan(projectTiming({ startDate: "2026-11-01", dueDate: "2026-11-30", completedAt: done })!, period)?.width).toBeCloseTo((5 / 30) * 100);
+    // Finished after its due date: up to the day it was finished.
+    expect(timelineSpan(projectTiming({ startDate: "2026-11-01", dueDate: "2026-11-03", completedAt: done })!, period)?.width).toBeCloseTo((5 / 30) * 100);
+    // Only a deadline: the flag stands on the finishing day.
+    const flag = projectTiming({ startDate: null, dueDate: "2026-11-20", completedAt: done })!;
+    expect(flag.kind).toBe("deadline");
+    expect(timelineSpan(flag, period)?.left).toBeCloseTo((4 / 30) * 100);
+    // Finished "before" its start (dates typed later): one day on the start.
+    expect(timelineSpan(projectTiming({ startDate: "2026-11-10", dueDate: null, completedAt: done })!, period)?.width).toBeCloseTo(100 / 30);
+    // Not finished: unchanged.
+    expect(projectTiming({ startDate: "2026-11-01", dueDate: null, completedAt: null })?.kind).toBe("open");
+  });
+
   it("validates URL selection instead of normalizing impossible dates", () => {
     const now = "2026-10-11T00:00:00Z";
     expect(calendarSelection("quarter", "2026-07", now)).toEqual({ view: "quarter", anchor: "2026-07-01" });

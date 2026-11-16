@@ -57,6 +57,8 @@ export interface ProjectListItemData {
   color: string;
   startDate: string | null;
   dueDate: string | null;
+  /** When a finished project was finished (null while it is not): its bar on the calendar ends there. */
+  completedAt: string | null;
   ownerId: string;
   owner: UserBrief;
   members: ProjectMemberBrief[];
