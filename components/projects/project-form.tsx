@@ -1,5 +1,6 @@
 "use client";
 
+import { CustomerInput, type CustomerOption } from "./customer-input";
 import { useEffect, useMemo, useState } from "react";
 import { Check, Search, Wallet } from "lucide-react";
 import { toast } from "sonner";
@@ -29,6 +30,8 @@ export interface ProjectFormValues {
   ownerId?: string;
   /** Khách hàng của dự án (trang Khách hàng). */
   customerId?: string | null;
+  /** What the customer box shows: the chosen company's name, or a new name to add on save. */
+  customerName?: string;
   /** Members and their role in the project (the owner is always a manager). */
   members: { userId: string; role: ProjectRoleKey }[];
 }
@@ -92,13 +95,15 @@ export function ProjectFormModal({
   const [errors, setErrors] = useState<Record<string, string>>({});
   const editing = !!initial?.id;
   // The customer picker's list, loaded once the form opens.
-  const [customers, setCustomers] = useState<{ id: string; name: string }[] | null>(null);
+  const [customers, setCustomers] = useState<CustomerOption[] | null>(null);
   useEffect(() => {
     if (!open || customers) return;
-    api<{ customers: { id: string; name: string }[] }>("/api/customers?brief=1")
+    api<{ customers: CustomerOption[] }>("/api/customers?brief=1")
       .then((res) => setCustomers(res.customers))
       .catch(() => setCustomers([]));
   }, [open, customers]);
+  // An existing project's customer shows by name once the list is in.
+  const customerText = v.customerName ?? customers?.find((c) => c.id === v.customerId)?.name ?? "";
 
   useEffect(() => {
     if (open) {
@@ -148,6 +153,8 @@ export function ProjectFormModal({
       dueDate: v.dueDate,
       members: v.members,
       customerId: v.customerId ?? null,
+      // Not picked from the list: the typed name, reused if listed or added as a new customer.
+      ...(v.customerId ? {} : { customerName: customerText.trim() || null }),
     };
     try {
       let id: string;
@@ -237,15 +244,13 @@ export function ProjectFormModal({
           <Field label="Tên dự án" error={errors.name}>
             <Input value={v.name} onChange={(e) => setV({ ...v, name: e.target.value })} placeholder="VD: Ra mắt sản phẩm mới Q1" autoFocus />
           </Field>
-          <Field label="Khách hàng" error={errors.customerId} hint={customers && customers.length === 0 ? "Chưa có khách hàng nào. Thêm ở trang Khách hàng." : undefined}>
-            <Select value={v.customerId ?? ""} onChange={(e) => setV({ ...v, customerId: e.target.value || null })} aria-label="Khách hàng" disabled={customers === null}>
-              <option value="">{customers === null ? "Đang tải…" : "Không gắn khách hàng"}</option>
-              {customers?.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.name}
-                </option>
-              ))}
-            </Select>
+          <Field label="Khách hàng (doanh nghiệp)" error={errors.customerId ?? errors.customerName}>
+            <CustomerInput
+              customers={customers}
+              customerId={v.customerId ?? null}
+              text={customerText}
+              onChange={({ customerId, text }) => setV((s) => ({ ...s, customerId, customerName: text }))}
+            />
           </Field>
           <Field label="Mô tả">
             <Textarea

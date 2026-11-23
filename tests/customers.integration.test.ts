@@ -12,9 +12,9 @@ vi.mock("../lib/session", () => ({ getCurrentUser: async () => session.user }));
 describe.skipIf(!process.env.TEST_DATABASE_URL)("customers on PostgreSQL", () => {
   let db: PrismaClient;
   const run = randomUUID().slice(0, 8);
-  const ids = { boss: `cboss-${run}`, sales: `csales-${run}`, staff: `cstaff-${run}` };
-  const roles = { boss: "MANAGER", sales: "MEMBER", staff: "MEMBER" } as const;
-  const grants: Record<keyof typeof ids, string[]> = { boss: [], sales: ["CUSTOMER_MANAGE"], staff: [] };
+  const ids = { boss: `cboss-${run}`, sales: `csales-${run}`, staff: `cstaff-${run}`, lead: `clead-${run}` };
+  const roles = { boss: "MANAGER", sales: "MEMBER", staff: "MEMBER", lead: "LEAD" } as const;
+  const grants: Record<keyof typeof ids, string[]> = { boss: [], sales: ["CUSTOMER_MANAGE"], staff: [], lead: [] };
   const as = (key: keyof typeof ids): CurrentUser =>
     ({ id: ids[key], email: `${ids[key]}@example.test`, name: key, role: roles[key], permissions: effectivePermissions(roles[key], grants[key]), jobTitle: null, avatarColor: "#000", mustChangePassword: false }) as CurrentUser;
 
@@ -107,5 +107,31 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)("customers on PostgreSQL", () =>
 
     const actions = (await db.auditLog.findMany({ where: { actorId: { in: Object.values(ids) }, entityType: "customer" }, select: { action: true } })).map((a) => a.action).sort();
     expect(actions).toEqual(["customer.create", "customer.delete", "customer.update", "customer_contact.create", "customer_contact.create", "customer_contact.update"]);
+  });
+
+  it("takes a typed company name on a project: reuses a listed one, adds a new one to the list", async () => {
+    const r = await routes();
+    const listed = `Đại học Thử ${run}`;
+    const existing = await db.customer.create({ data: { name: listed } });
+    // Same name in other letters: the listed company, nothing new.
+    const p1 = await call("lead", () => r.projects.POST(req("/api/projects", "POST", { name: `Dự án A ${run}`, customerName: `  ${listed.toUpperCase()} ` })));
+    expect(p1.status).toBe(201);
+    expect(p1.body.project.customerId).toBe(existing.id);
+    // A new name: added to the customer list by a team lead (who may make projects, not manage customers), logged.
+    const fresh = `Công ty Mới ${run}`;
+    const p2 = await call("lead", () => r.projects.POST(req("/api/projects", "POST", { name: `Dự án B ${run}`, customerName: fresh })));
+    const added = await db.customer.findFirst({ where: { name: fresh } });
+    expect(p2.body.project.customerId).toBe(added?.id);
+    expect(await db.auditLog.count({ where: { actorId: ids.lead, action: "customer.create", entityId: added?.id } })).toBe(1);
+    // Editing: a chosen id wins over a name; an empty name unlinks; leaving both out keeps it.
+    const id = p2.body.project.id;
+    await call("lead", () => r.project.PATCH(req("/x", "PATCH", { customerId: existing.id, customerName: "bỏ qua" }), params(id)));
+    expect((await db.project.findUnique({ where: { id } }))?.customerId).toBe(existing.id);
+    await call("lead", () => r.project.PATCH(req("/x", "PATCH", { description: "giữ khách hàng" }), params(id)));
+    expect((await db.project.findUnique({ where: { id } }))?.customerId).toBe(existing.id);
+    await call("lead", () => r.project.PATCH(req("/x", "PATCH", { customerId: null, customerName: "  " }), params(id)));
+    expect((await db.project.findUnique({ where: { id } }))?.customerId).toBeNull();
+    expect(await db.customer.count({ where: { name: { contains: run } } })).toBe(2);
+    await db.customer.deleteMany({ where: { name: { contains: run } } });
   });
 });

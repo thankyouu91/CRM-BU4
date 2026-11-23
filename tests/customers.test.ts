@@ -64,3 +64,24 @@ describe("customers", () => {
     expect(updateContactSchema.parse({ note: "Gọi lại thứ Hai" })).toEqual({ note: "Gọi lại thứ Hai" });
   });
 });
+
+describe("customer picker on the project form", async () => {
+  const { matchCustomers, exactCustomer } = await import("../components/projects/customer-input");
+  const list = [
+    { id: "1", name: "Trường Đại học Thương mại" },
+    { id: "2", name: "Trường Đại học Nha Trang" },
+    { id: "3", name: "Thương mại Dịch vụ Á Châu" },
+    { id: "4", name: "WayUp" },
+  ];
+  it("suggests listed companies holding every word typed, accents and case ignored, closest first", () => {
+    expect(matchCustomers(list, "thuong mai").map((c) => c.id)).toEqual(["3", "1"]);
+    expect(matchCustomers(list, "dai hoc nha").map((c) => c.id)).toEqual(["2"]);
+    expect(matchCustomers(list, "")).toHaveLength(4);
+    expect(matchCustomers(list, "xyz")).toEqual([]);
+  });
+  it("treats typing an exact listed name as choosing it", () => {
+    expect(exactCustomer(list, "  wayup ")?.id).toBe("4");
+    expect(exactCustomer(list, "Truong Dai hoc Thuong Mai")?.id).toBe("1");
+    expect(exactCustomer(list, "WayUp Việt Nam")).toBeUndefined();
+  });
+});

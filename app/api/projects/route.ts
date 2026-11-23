@@ -3,7 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { auth, created, forbidden, handle, ok, unauthorized } from "@/lib/api";
 import { canCreateProject } from "@/lib/rbac";
 import { listProjects } from "@/lib/queries";
-import { newProjectData } from "@/lib/project-create";
+import { newProjectData, resolveCustomer } from "@/lib/project-create";
 import { createProjectSchema } from "@/lib/validations";
 import { audit } from "@/lib/audit";
 import { notify } from "@/lib/notifications";
@@ -22,7 +22,9 @@ export async function POST(req: NextRequest) {
       return forbidden("Bạn chưa được cấp quyền tạo dự án. Hãy nhờ quản lý cấp quyền “Tạo dự án”.");
     }
 
-    const { data, roles } = await newProjectData(me.id, createProjectSchema.parse(await req.json()));
+    const input = createProjectSchema.parse(await req.json());
+    const customerId = await resolveCustomer({ id: me.id, name: me.name }, input, input.name);
+    const { data, roles } = await newProjectData(me.id, { ...input, customerId });
     const project = await prisma.project.create({ data });
     await audit(
       { id: me.id, name: me.name },

@@ -3,6 +3,7 @@ import { resolveMemberRoles } from "./project-members";
 import type { CreateProjectInput } from "./validations";
 import { InputError } from "./errors";
 import { prisma } from "./prisma";
+import { audit } from "./audit";
 
 /** A project cannot end before it starts (either date may be missing). */
 export function checkProjectDates(startDate: Date | null | undefined, dueDate: Date | null | undefined) {
@@ -17,6 +18,32 @@ export async function checkCustomer(customerId: string | null | undefined): Prom
   const found = await prisma.customer.findUnique({ where: { id: customerId }, select: { id: true } });
   if (!found) throw new InputError("Khách hàng đã chọn không còn trong danh sách, hãy chọn lại");
   return found.id;
+}
+
+/**
+ * The customer a project form asks for: the one chosen from the list, or the company named in
+ * the box. A name already in the list (ignoring case) is reused; a new one is added to the
+ * customer list, logged. undefined: leave the project's customer as it is.
+ */
+export async function resolveCustomer(
+  actor: { id: string; name: string },
+  input: { customerId?: string | null; customerName?: string | null },
+  projectName: string,
+): Promise<string | null | undefined> {
+  if (input.customerId) return checkCustomer(input.customerId);
+  const name = input.customerName?.trim();
+  if (!name) return input.customerId === undefined && input.customerName === undefined ? undefined : null;
+  const existing = await prisma.customer.findFirst({ where: { name: { equals: name, mode: "insensitive" } }, orderBy: { createdAt: "asc" }, select: { id: true } });
+  if (existing) return existing.id;
+  const customer = await prisma.customer.create({ data: { name, createdById: actor.id }, select: { id: true } });
+  await audit(actor, {
+    action: "customer.create",
+    entityType: "customer",
+    entityId: customer.id,
+    summary: `Thêm khách hàng “${name}” (khi lưu dự án “${projectName.trim()}”)`,
+    details: { name, fromProject: projectName.trim() },
+  });
+  return customer.id;
 }
 
 /**

@@ -9,7 +9,7 @@ import { updateProjectSchema } from "@/lib/validations";
 import { PROJECT_ROLE_INFO } from "@/lib/permissions";
 import { audit, changedFields } from "@/lib/audit";
 import { notify } from "@/lib/notifications";
-import { checkCustomer, checkProjectDates } from "@/lib/project-create";
+import { checkProjectDates, resolveCustomer } from "@/lib/project-create";
 import { taskCounts } from "@/lib/project-sync";
 
 type Ctx = { params: Promise<{ id: string }> };
@@ -47,7 +47,7 @@ export async function PATCH(req: NextRequest, ctx: Ctx) {
       const { open } = await taskCounts(params.id);
       if (open) return badRequest(`Dự án còn ${open} công việc chưa hoàn thành. Hãy hoàn thành hoặc xoá các việc đó trước, hoặc chọn “Tạm dừng” / “Đã huỷ”.`);
     }
-    const customerId = data.customerId === undefined ? undefined : await checkCustomer(data.customerId);
+    const customerId = await resolveCustomer({ id: me.id, name: me.name }, data, data.name ?? existing.name);
 
     const { updated, memberDiff } = await prisma.$transaction(async (tx) => {
       const row = await tx.project.update({

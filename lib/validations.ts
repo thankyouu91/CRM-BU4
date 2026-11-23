@@ -99,6 +99,8 @@ export const createProjectSchema = z.object({
   members: projectMembers.optional(),
   /** Khách hàng của dự án (trang Khách hàng); null bỏ liên kết. */
   customerId: z.string().max(64).nullable().optional(),
+  /** Tên doanh nghiệp gõ tay khi không chọn trong danh sách: dùng lại nếu đã có, chưa có thì thêm mới. */
+  customerName: z.string().trim().max(200, "Tên doanh nghiệp tối đa 200 ký tự").nullable().optional(),
 });
 
 export const updateProjectSchema = z.object({
@@ -114,6 +116,7 @@ export const updateProjectSchema = z.object({
   members: projectMembers.optional(),
   /** Khách hàng của dự án; null bỏ liên kết, bỏ trống thì giữ nguyên. */
   customerId: z.string().max(64).nullable().optional(),
+  customerName: z.string().trim().max(200, "Tên doanh nghiệp tối đa 200 ký tự").nullable().optional(),
 });
 
 // Project templates (lib/project-templates.ts)
