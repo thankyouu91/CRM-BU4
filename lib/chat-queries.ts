@@ -34,6 +34,10 @@ export interface ChatPage {
   tasks: Record<string, ChatTaskView>;
   /** Older messages exist before the first one. */
   hasMore: boolean;
+  /** Messages withdrawn since `since` (polling), so open tabs drop them too. */
+  withdrawn: string[];
+  /** Server time of this answer: the next poll's `since`. */
+  asOf: string;
 }
 
 const authorSelect = { select: { id: true, name: true, avatarColor: true, jobTitle: true } } as const;
@@ -54,7 +58,8 @@ async function visibleTasks(viewer: CurrentUser, ids: string[]): Promise<ChatTas
  * Messages oldest first: the latest page, the page before `before`, or everything after
  * `after` (what polling picks up). Cursors are message ids.
  */
-export async function chatPage(viewer: CurrentUser, opts: { before?: string | null; after?: string | null } = {}): Promise<ChatPage> {
+export async function chatPage(viewer: CurrentUser, opts: { before?: string | null; after?: string | null; since?: Date | null } = {}): Promise<ChatPage> {
+  const asOf = new Date();
   const cursorId = opts.after ?? opts.before;
   const cursor = cursorId ? await prisma.chatMessage.findUnique({ where: { id: cursorId }, select: { id: true, createdAt: true } }) : null;
   if (cursorId && !cursor) throw new StatusError("Không tìm thấy tin nhắn", 404);
@@ -72,8 +77,13 @@ export async function chatPage(viewer: CurrentUser, opts: { before?: string | nu
   });
   const page = rows.slice(0, CHAT_PAGE);
   if (!newer) page.reverse();
-  const tasks = await visibleTasks(viewer, [...new Set(page.flatMap((m) => m.taskIds))]);
+  const [tasks, withdrawn] = await Promise.all([
+    visibleTasks(viewer, [...new Set(page.flatMap((m) => m.taskIds))]),
+    opts.since ? prisma.chatMessage.findMany({ where: { deletedAt: { gte: opts.since } }, select: { id: true } }) : [],
+  ]);
   return {
+    withdrawn: withdrawn.map((m) => m.id),
+    asOf: asOf.toISOString(),
     messages: page.map((m) => ({ id: m.id, content: m.deletedAt ? "" : m.content, createdAt: m.createdAt.toISOString(), deleted: !!m.deletedAt, author: m.author })),
     tasks: Object.fromEntries(tasks.map((t) => [t.id, t])),
     hasMore: !newer && rows.length > CHAT_PAGE,
@@ -84,17 +94,18 @@ export async function chatPage(viewer: CurrentUser, opts: { before?: string | nu
 export async function postChatMessage(viewer: CurrentUser, raw: string, now = new Date()): Promise<ChatMessageView> {
   const text = raw.trim();
   if (!text) throw new StatusError("Tin nhắn trống", 400);
-  if (text.length > CHAT_MAX) throw new StatusError(`Tin nhắn dài quá ${CHAT_MAX} ký tự`, 400);
+  // The limit is on what people read; the tokens behind @names and #tasks do not count.
+  if (chatPlain(text).length > CHAT_MAX) throw new StatusError(`Tin nhắn dài quá ${CHAT_MAX} ký tự`, 400);
   const refs = chatRefs(text);
   const [users, tasks] = await Promise.all([
-    refs.users.length ? prisma.user.findMany({ where: { id: { in: refs.users }, active: true }, select: { id: true } }) : [],
+    refs.users.length ? prisma.user.findMany({ where: { id: { in: refs.users }, active: true }, select: { id: true, name: true } }) : [],
     refs.tasks.length
-      ? prisma.task.findMany({ where: { id: { in: refs.tasks }, project: projectVisibilityWhere(viewer) }, select: { id: true, assigneeId: true, createdById: true, createdAt: true } })
+      ? prisma.task.findMany({ where: { id: { in: refs.tasks }, project: projectVisibilityWhere(viewer) }, select: { id: true, title: true, assigneeId: true, createdById: true, createdAt: true } })
       : [],
   ]);
   const userIds = new Set(users.map((u) => u.id));
   const taskIds = new Set(tasks.map((t) => t.id));
-  const content = keepRefs(text, userIds, taskIds);
+  const content = keepRefs(text, new Map(users.map((u) => [u.id, u.name])), new Map(tasks.map((t) => [t.id, t.title])));
   const message = await prisma.chatMessage.create({
     data: { authorId: viewer.id, content, mentions: [...userIds], taskIds: [...taskIds] },
     include: { author: authorSelect },

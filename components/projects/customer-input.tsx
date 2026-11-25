@@ -23,10 +23,14 @@ export function matchCustomers(customers: CustomerOption[], text: string, limit 
     .map(({ c }) => c);
 }
 
-/** The listed customer with exactly this name (case and accents ignored), if any. */
+/**
+ * The listed customer with exactly this name, case ignored, if any. Accents count: "Lam" and
+ * "Lâm" are different companies (the server compares the same way).
+ */
 export const exactCustomer = (customers: CustomerOption[], text: string) => {
-  const q = fold(text.trim());
-  return q ? customers.find((c) => fold(c.name) === q) : undefined;
+  const same = (s: string) => s.normalize("NFC").trim().toLocaleLowerCase("vi");
+  const q = same(text);
+  return q ? customers.find((c) => same(c.name) === q) : undefined;
 };
 
 /**

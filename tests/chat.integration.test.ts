@@ -58,7 +58,8 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)("company chat on PostgreSQL", ()
     expect(sent.body.message.content).toContain("cc @Đã nghỉ");
     const notice = await db.notification.findFirst({ where: { userId: ids.binh, type: "chat.mention" } });
     expect(notice).toMatchObject({ title: "Người lead nhắc bạn trong Trao đổi chung", link: `/chat?m=${sent.body.message.id}` });
-    expect(notice?.body).toContain(`@Bình xem giúp #${task.title}`);
+    // The label typed ("Bình") gives way to the person's real name.
+    expect(notice?.body).toContain(`@Người binh xem giúp #${task.title}`);
     expect(await db.notification.count({ where: { userId: ids.gone } })).toBe(0);
 
     const mine = await read("binh");
@@ -89,9 +90,12 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)("company chat on PostgreSQL", ()
   it("lets authors withdraw their messages and an administrator any, with a log entry", async () => {
     const { one } = await routes();
     const msg = (await post("binh", "Tin cần thu hồi")).body.message;
+    const since = (await read("out")).body.asOf;
     const del = (who: keyof typeof ids, id: string) => call(who, () => one.DELETE(req(`/api/chat/${id}`, "DELETE"), { params: Promise.resolve({ id }) }));
     expect((await del("out", msg.id)).status).toBe(403);
     expect((await del("admin", msg.id)).status).toBe(200);
+    // A tab that already shows it learns of the withdrawal on its next poll.
+    expect((await read("out", `?after=${msg.id}&since=${since}`)).body.withdrawn).toContain(msg.id);
     expect(await db.auditLog.count({ where: { actorId: ids.admin, action: "chat.delete", entityId: msg.id } })).toBe(1);
     expect((await del("binh", msg.id)).status).toBe(404); // already withdrawn
     const shown = (await read("out")).body.messages.find((m: { id: string }) => m.id === msg.id);

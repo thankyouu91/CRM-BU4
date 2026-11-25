@@ -52,7 +52,8 @@ export interface AttendanceNote {
 export interface PersonAttendance {
   person: AttendancePerson;
   attendance: AttendanceMonth;
-  balance: LeaveBalanceView;
+  /** Sổ phép, with nghỉ âm (a pay deduction): only for the person, their managers and HR; null otherwise. */
+  balance: LeaveBalanceView | null;
   /** Marked sessions of the month, for the notes list and the Excel sheet. */
   notes: AttendanceNote[];
 }
@@ -127,11 +128,14 @@ function assemble(person: PersonRow, month: string, today: string, marks: Attend
   const holidays = allHolidays.filter((h) => h.day.startsWith(month));
   const attendance = buildAttendanceMonth({ month, marks: monthMarks, holidays, today, employment: person });
   const balance = leaveLedger({ month, marks, holidays: allHolidays, employment: person, adjustments });
-  // Nghỉ âm is unpaid: payroll deducts it, so it is not công hưởng lương. Paid counts leave up to
-  // today only, so take off the part of the deficit that falls on those days (latest days overspend).
-  const usedSoFar = annualLeaveUsed(monthMarks, holidays, today, person);
-  const unpaidSoFar = Math.max(0, usedSoFar - (balance.used - balance.negative));
-  attendance.totals.paid = Math.max(0, attendance.totals.paid - unpaidSoFar);
+  // Nghỉ âm is unpaid: payroll deducts it, so it is not công hưởng lương. Only leave can make it
+  // (a negative HR adjustment alone takes no paid day), only in months the ledger covers, and
+  // paid counts leave up to today, so the leave days beyond what was available are taken off.
+  if (balance.counted) {
+    const available = Math.max(0, balance.opening + balance.earned + balance.adjustment);
+    const unpaidSoFar = Math.max(0, annualLeaveUsed(monthMarks, holidays, today, person) - available);
+    attendance.totals.paid = Math.max(0, attendance.totals.paid - unpaidSoFar);
+  }
   return {
     person: toPerson(person),
     attendance,
@@ -140,17 +144,30 @@ function assemble(person: PersonRow, month: string, today: string, marks: Attend
   };
 }
 
+/** Timesheets are open to everyone, but a leave balance with nghỉ âm is pay: the person, their managers and HR only. */
+function withoutLeave(viewer: CurrentUser, person: PersonRow, row: PersonAttendance): PersonAttendance {
+  const sees = viewer.id === person.id || canExportTimesheet(viewer) || canCorrectAttendance(viewer, person);
+  return sees ? row : { ...row, balance: null };
+}
+
+/** Every mark of the month, plus the annual leave of earlier months the leave ledger needs. */
 const marksOf = async (userIds: string[], month: string) => {
+  const from = `${month}-01`;
   const rows = await prisma.attendanceMark.findMany({
-    // The leave ledger needs every month from its start.
-    where: { userId: { in: userIds }, day: { gte: [`${LEAVE_LEDGER_FROM}-01`, `${month}-01`].sort()[0], lte: monthEnd(month) } },
+    where: {
+      userId: { in: userIds },
+      day: { lte: monthEnd(month) },
+      OR: [{ day: { gte: from } }, { kind: "ANNUAL", day: { gte: `${LEAVE_LEDGER_FROM}-01` } }],
+    },
     orderBy: [{ day: "asc" }, { session: "asc" }],
     select: { userId: true, day: true, session: true, kind: true, note: true },
   });
   const byUser = new Map<string, AttendanceNote[]>();
   for (const r of rows) {
     if (!(r.kind in LEAVE_KINDS)) continue;
-    byUser.set(r.userId, [...(byUser.get(r.userId) ?? []), { day: r.day, session: r.session as Session, kind: r.kind as LeaveKind, note: r.note }]);
+    const list = byUser.get(r.userId) ?? [];
+    if (!list.length) byUser.set(r.userId, list);
+    list.push({ day: r.day, session: r.session as Session, kind: r.kind as LeaveKind, note: r.note });
   }
   return byUser;
 };
@@ -161,7 +178,7 @@ export async function attendanceView(viewer: CurrentUser, personId: string, mont
   if (!person) return null;
   const today = zonedDay(now);
   const [marks, allHolidays, adjustments] = await Promise.all([marksOf([person.id], month), holidaysUpTo(month), adjustmentsOf([person.id])]);
-  const view = assemble(person, month, today, marks.get(person.id) ?? [], allHolidays, adjustments.get(person.id));
+  const view = withoutLeave(viewer, person, assemble(person, month, today, marks.get(person.id) ?? [], allHolidays, adjustments.get(person.id)));
   const correct = correctable(person) && canCorrectAttendance(viewer, person);
   const requestFrom = !correct && person.id === viewer.id && person.active ? ownEditFrom(today) : null;
   return {
@@ -192,7 +209,7 @@ export async function teamAttendance(viewer: CurrentUser, month: string, now = n
     label: monthLabel(month),
     today,
     holidays: allHolidays.filter((h) => h.day.startsWith(month)),
-    people: people.map((p) => assemble(p, month, today, marks.get(p.id) ?? [], allHolidays, adjustments.get(p.id))),
+    people: people.map((p) => withoutLeave(viewer, p, assemble(p, month, today, marks.get(p.id) ?? [], allHolidays, adjustments.get(p.id)))),
   };
 }
 

@@ -81,7 +81,9 @@ describe("customer picker on the project form", async () => {
   });
   it("treats typing an exact listed name as choosing it", () => {
     expect(exactCustomer(list, "  wayup ")?.id).toBe("4");
-    expect(exactCustomer(list, "Truong Dai hoc Thuong Mai")?.id).toBe("1");
+    expect(exactCustomer(list, "trường đại học THƯƠNG MẠI")?.id).toBe("1");
+    // Without accents it is another name: suggested, but not picked by itself.
+    expect(exactCustomer(list, "Truong Dai hoc Thuong Mai")).toBeUndefined();
     expect(exactCustomer(list, "WayUp Việt Nam")).toBeUndefined();
   });
 });

@@ -57,7 +57,10 @@ export function ChatView({ initial, me, isAdmin, people, focusId }: { initial: C
     setMessages((cur) => {
       const known = new Set(cur.map((m) => m.id));
       const fresh = page.messages.filter((m) => !known.has(m.id));
-      return where === "end" ? [...cur, ...fresh] : [...fresh, ...cur];
+      const gone = new Set(page.withdrawn);
+      const next = (where === "end" ? [...cur, ...fresh] : [...fresh, ...cur]).map((m) => (gone.has(m.id) ? { ...m, deleted: true, content: "" } : m));
+      // Own messages are appended on send; others' that arrived meanwhile go back into time order.
+      return next.sort((a, b) => a.createdAt.localeCompare(b.createdAt) || a.id.localeCompare(b.id));
     });
   }, []);
 
@@ -65,10 +68,14 @@ export function ChatView({ initial, me, isAdmin, people, focusId }: { initial: C
     lastId.current = messages.at(-1)?.id ?? null;
   }, [messages]);
 
+  /** Server time of the last answer: what was withdrawn since then comes with the next poll. */
+  const since = useRef(new Date().toISOString());
   const poll = useCallback(async () => {
     try {
-      const page = await api<ChatPage>(`/api/chat${lastId.current ? `?after=${lastId.current}` : ""}`);
-      if (page.messages.length) merge(page, "end");
+      const q = new URLSearchParams({ since: since.current, ...(lastId.current ? { after: lastId.current } : {}) });
+      const page = await api<ChatPage>(`/api/chat?${q}`);
+      since.current = page.asOf;
+      if (page.messages.length || page.withdrawn.length) merge(page, "end");
     } catch {
       // A missed poll is retried on the next tick.
     }
@@ -143,6 +150,8 @@ export function ChatView({ initial, me, isAdmin, people, focusId }: { initial: C
     const line = a.assignee ? `➜ Đã giao ${taskToken(a.task)} cho ${mentionToken(a.assignee)}${due}` : `➜ Đã tạo việc ${taskToken(a.task)} (chưa có người phụ trách)${due}`;
     try {
       await send(draft ? `${draft}\n${line}` : line);
+      // The draft is cleared only once it is in the channel; if posting fails it stays to send again.
+      if (draft !== null) setSentDraft((n) => n + 1);
       toast.success("Đã giao việc");
     } catch (e) {
       toast.error(e instanceof ApiError ? `Đã tạo công việc, nhưng chưa báo được vào kênh: ${e.message}` : "Đã tạo công việc, nhưng chưa báo được vào kênh");
@@ -207,7 +216,6 @@ export function ChatView({ initial, me, isAdmin, people, focusId }: { initial: C
                   ) : (
                     <MessageContent content={m.content} tasks={tasks} meId={me.id} />
                   )}
-                </div>
                 {!m.deleted && (
                   <MessageActions
                     canWithdraw={mine || isAdmin}
@@ -223,6 +231,7 @@ export function ChatView({ initial, me, isAdmin, people, focusId }: { initial: C
                     onWithdraw={() => withdraw(m)}
                   />
                 )}
+                </div>
               </div>
             </div>
           );
@@ -247,7 +256,6 @@ export function ChatView({ initial, me, isAdmin, people, focusId }: { initial: C
         onAssigned={(a) => {
           const draft = assign?.fromDraft ? pendingDraft.current : null;
           pendingDraft.current = null;
-          if (assign?.fromDraft) setSentDraft((n) => n + 1);
           void assigned(a, draft);
         }}
       />
@@ -259,7 +267,8 @@ const EMPTY: { id: string; name: string }[] = [];
 
 function MessageActions({ canWithdraw, onAssign, onWithdraw }: { canWithdraw: boolean; onAssign: () => void; onWithdraw: () => void }) {
   return (
-    <div className="absolute -top-3 right-2 hidden items-center gap-0.5 rounded-lg border bg-card p-0.5 shadow-sm group-focus-within:flex group-hover:flex">
+    // Phones and keyboards: always there under the message; with a mouse, shown on hover or focus.
+    <div className="mt-1 flex w-fit items-center gap-0.5 rounded-lg border bg-card p-0.5 shadow-sm sm:absolute sm:-top-3 sm:right-2 sm:mt-0 sm:opacity-0 sm:transition-opacity sm:focus-within:opacity-100 sm:group-hover:opacity-100">
       <button type="button" onClick={onAssign} className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs hover:bg-muted" title="Tạo công việc từ tin nhắn này">
         <ClipboardPlus className="h-3.5 w-3.5" /> Giao việc
       </button>

@@ -112,6 +112,7 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)("attendance on PostgreSQL", () =
     const peerSees = await peerView.json();
     expect(peerSees.notes).toHaveLength(2);
     expect(peerSees.rights).toMatchObject({ correct: false, requestFrom: null, canEditBalance: false, canExport: false });
+    expect(peerSees.balance).toBeNull(); // someone else's sổ phép (nghỉ âm = pay) is private
     expect((await mark("peer", { userId: ids.an, from: firstWeekday(month), kind: "UNPAID" })).status).toBe(403);
     session.user = as("boss");
     const seen = await (await view(json(`/api/attendance?user=${ids.an}&month=${month}`, "GET"))).json();
@@ -217,6 +218,27 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)("attendance on PostgreSQL", () =
     } finally {
       await db.attendanceMark.deleteMany({ where: { userId: ids.peer, day: later } });
       await user(json(`/api/users/${ids.peer}`, "PATCH", { startDay: null }), { params: Promise.resolve({ id: ids.peer }) });
+    }
+  });
+
+  it("keeps công hưởng lương whole outside the leave ledger and when only an HR adjustment is negative", async () => {
+    const { view, balance } = await routes();
+    // October 2026, before the ledger: a day of annual leave is paid as it always was.
+    const oct = "2026-10-05"; // Monday
+    await db.attendanceMark.createMany({ data: [{ userId: ids.peer, day: oct, session: "AM", kind: "ANNUAL" }, { userId: ids.peer, day: oct, session: "PM", kind: "ANNUAL" }] });
+    session.user = as("hr");
+    expect((await balance(json("/api/attendance/balance", "PUT", { userId: ids.peer, year: 2026, adjustment: -5 }))).status).toBe(200);
+    try {
+      const before = await (await view(json(`/api/attendance?user=${ids.peer}&month=2026-10`, "GET"))).json();
+      expect(before.balance.counted).toBe(false);
+      expect(before.attendance.totals.paid).toBe(before.attendance.totals.worked + before.attendance.totals.holidays + 1);
+      // November 2026: −5 with no leave taken shows as nghỉ âm, but takes no paid day.
+      const nov = await (await view(json(`/api/attendance?user=${ids.peer}&month=2026-11`, "GET"))).json();
+      expect(nov.balance).toMatchObject({ counted: true, used: 0, negative: 4 });
+      expect(nov.attendance.totals.paid).toBe(nov.attendance.totals.worked + nov.attendance.totals.holidays);
+    } finally {
+      await db.attendanceMark.deleteMany({ where: { userId: ids.peer, day: oct } });
+      await db.leaveBalance.deleteMany({ where: { userId: ids.peer } });
     }
   });
 

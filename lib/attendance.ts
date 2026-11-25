@@ -264,6 +264,8 @@ export interface LeaveBalanceView {
   remaining: number;
   /** Nghỉ âm: the days payroll deducts this month (0 unless remaining < 0). */
   negative: number;
+  /** Whether the ledger covers this month (false before LEAVE_LEDGER_FROM or the start day). */
+  counted: boolean;
   /** First day after probation, while it is this month or later (null otherwise). */
   officialFrom: string | null;
 }
@@ -295,15 +297,17 @@ export function leaveLedger(opts: {
     closing = round1(opening + earned + adjustment - used);
     row = { opening, earned, adjustment, used };
   }
-  const remaining = opts.month < first ? 0 : closing;
+  const counted = opts.month >= first;
+  const remaining = counted ? closing : 0;
   return {
     month: opts.month,
     year,
-    ...(opts.month < first ? { opening: 0, earned: 0, adjustment: 0, used: 0 } : row),
+    ...(counted ? row : { opening: 0, earned: 0, adjustment: 0, used: 0 }),
     yearAdjustment: yearAdj?.amount ?? 0,
     note: yearAdj?.note ?? null,
     remaining,
     negative: remaining < 0 ? -remaining : 0,
+    counted,
     officialFrom: official && official.slice(0, 7) >= opts.month ? official : null,
   };
 }

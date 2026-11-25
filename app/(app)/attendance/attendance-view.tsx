@@ -142,14 +142,16 @@ export function AttendanceView({ initial, initialTab }: { initial: View; initial
               </dl>
             </section>
 
-            <LeaveBalanceCard
-              personId={shown.person.id}
-              personName={shown.person.name}
-              balance={shown.balance}
-              month={month}
-              canEdit={shown.rights.canEditBalance}
-              onSaved={() => void reload()}
-            />
+            {shown.balance && (
+              <LeaveBalanceCard
+                personId={shown.person.id}
+                personName={shown.person.name}
+                balance={shown.balance}
+                month={month}
+                canEdit={shown.rights.canEditBalance}
+                onSaved={() => void reload()}
+              />
+            )}
 
             <section className="rounded-2xl border bg-card p-4" aria-labelledby="month-notes">
               <h2 id="month-notes" className="mb-2 flex items-center gap-2 text-sm font-semibold">

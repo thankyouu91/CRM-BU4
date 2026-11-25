@@ -109,11 +109,16 @@ export async function exportAttendanceXlsx(team: TeamAttendance, filename: strin
       ...kinds.map((k) => num(t.leave[k])),
       num(t.holidays),
       num(t.paid, { fontWeight: "bold" }),
-      num(p.balance.opening),
-      num(p.balance.earned + p.balance.adjustment),
-      num(p.balance.used),
-      num(p.balance.remaining, { fontWeight: "bold", textColor: p.balance.remaining < 0 ? "#b91c1c" : NAVY }),
-      num(p.balance.negative, p.balance.negative ? { fontWeight: "bold", textColor: "#b91c1c", backgroundColor: "#FDE2E2" } : {}),
+      // Only managers export, and they see everyone's leave; a hidden one stays empty.
+      ...(p.balance
+        ? [
+            num(p.balance.opening),
+            num(p.balance.earned + p.balance.adjustment),
+            num(p.balance.used),
+            num(p.balance.remaining, { fontWeight: "bold", textColor: p.balance.remaining < 0 ? "#b91c1c" : NAVY }),
+            num(p.balance.negative, p.balance.negative ? { fontWeight: "bold", textColor: "#b91c1c", backgroundColor: "#FDE2E2" } : {}),
+          ]
+        : blank(5).map(() => text(""))),
     ]);
   });
   if (team.holidays.length) {

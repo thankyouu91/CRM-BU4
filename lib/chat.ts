@@ -41,11 +41,18 @@ export function chatRefs(content: string): { users: string[]; tasks: string[] } 
   };
 }
 
-/** Turns references that may not stay (unknown person, task the author cannot see) back into plain text. */
-export function keepRefs(content: string, users: Set<string>, tasks: Set<string>): string {
+/**
+ * Turns references that may not stay (unknown person, task the author cannot see) back into
+ * plain text, and gives the others their real name or title, so "@[Giám đốc](u:<anyone>)" cannot pass.
+ */
+export function keepRefs(content: string, users: ReadonlyMap<string, string>, tasks: ReadonlyMap<string, string>): string {
   return chatParts(content)
     .map((p) =>
-      p.kind === "text" ? p.text : p.kind === "mention" ? (users.has(p.id) ? token("@", p.name, "u", p.id) : `@${p.name}`) : tasks.has(p.id) ? token("#", p.title, "t", p.id) : `#${p.title}`,
+      p.kind === "text"
+        ? p.text
+        : p.kind === "mention"
+          ? users.has(p.id) ? token("@", users.get(p.id)!, "u", p.id) : `@${p.name}`
+          : tasks.has(p.id) ? token("#", tasks.get(p.id)!, "t", p.id) : `#${p.title}`,
     )
     .join("");
 }

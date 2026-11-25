@@ -92,8 +92,16 @@ export function TeamSheet({ month, canEditHolidays, onOpen }: { month: string; c
                   ))}
                   {num(t.holidays)}
                   {num(t.paid, true)}
-                  <td className={cn("px-2 py-2.5 text-right font-semibold tabular-nums", p.balance.remaining < 0 ? "text-danger" : "text-primary")}>{formatDays(p.balance.remaining)}</td>
-                  <td className={cn("px-4 py-2.5 text-right tabular-nums", p.balance.negative ? "font-semibold text-danger" : "text-muted-foreground/50")}>{formatDays(p.balance.negative)}</td>
+                  {p.balance ? (
+                    <>
+                      <td className={cn("px-2 py-2.5 text-right font-semibold tabular-nums", p.balance.remaining < 0 ? "text-danger" : "text-primary")}>{formatDays(p.balance.remaining)}</td>
+                      <td className={cn("px-4 py-2.5 text-right tabular-nums", p.balance.negative ? "font-semibold text-danger" : "text-muted-foreground/50")}>{formatDays(p.balance.negative)}</td>
+                    </>
+                  ) : (
+                    <td colSpan={2} className="px-4 py-2.5 text-right text-xs text-muted-foreground" title="Chỉ người đó, quản lý và nhân sự xem được">
+                      Riêng tư
+                    </td>
+                  )}
                 </tr>
               );
             })}

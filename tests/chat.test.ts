@@ -24,7 +24,11 @@ describe("chat messages", () => {
 
   it("keeps only the references that may stay, the rest becomes text", () => {
     const content = `${mentionToken(binh)} ${mentionToken(an)} ${taskToken(task)}`;
-    expect(keepRefs(content, new Set(["u1"]), new Set())).toBe(`${mentionToken(binh)} @An #Báo giá khách A`);
+    expect(keepRefs(content, new Map([["u1", "Trần Thị Bình"]]), new Map())).toBe(`${mentionToken(binh)} @An #Báo giá khách A`);
+    // A label that is not the person's name gives way to the real one.
+    expect(keepRefs(`${mentionToken({ id: "u1", name: "Giám đốc" })} ${taskToken({ id: "t1", title: "Việc khác" })}`, new Map([["u1", "Trần Thị Bình"]]), new Map([["t1", task.title]]))).toBe(
+      `${mentionToken(binh)} ${taskToken(task)}`,
+    );
     // Brackets in a name cannot break the token.
     expect(chatParts(mentionToken({ id: "u9", name: "Lan [HR]" }))).toEqual([{ kind: "mention", id: "u9", name: "Lan  HR" }]);
   });

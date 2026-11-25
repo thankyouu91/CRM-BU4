@@ -3,7 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { auth, created, forbidden, handle, ok, unauthorized } from "@/lib/api";
 import { canCreateProject } from "@/lib/rbac";
 import { listProjects } from "@/lib/queries";
-import { newProjectData, resolveCustomer } from "@/lib/project-create";
+import { checkProjectDates, newProjectData, resolveCustomer } from "@/lib/project-create";
 import { createProjectSchema } from "@/lib/validations";
 import { audit } from "@/lib/audit";
 import { notify } from "@/lib/notifications";
@@ -23,6 +23,7 @@ export async function POST(req: NextRequest) {
     }
 
     const input = createProjectSchema.parse(await req.json());
+    checkProjectDates(input.startDate, input.dueDate); // before a new customer is written
     const customerId = await resolveCustomer({ id: me.id, name: me.name }, input, input.name);
     const { data, roles } = await newProjectData(me.id, { ...input, customerId });
     const project = await prisma.project.create({ data });
