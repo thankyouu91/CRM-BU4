@@ -109,12 +109,15 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)("attendance on PostgreSQL", () =
     expect(peerView.status).toBe(200);
     const peerSees = await peerView.json();
     expect(peerSees.notes).toHaveLength(2);
-    expect(peerSees.rights).toMatchObject({ correct: false, requestFrom: null, canEditBalance: false });
+    expect(peerSees.rights).toMatchObject({ correct: false, requestFrom: null, canEditBalance: false, canExport: false });
     expect((await mark("peer", { userId: ids.an, from: firstWeekday(month), kind: "UNPAID" })).status).toBe(403);
     session.user = as("boss");
     const seen = await (await view(json(`/api/attendance?user=${ids.an}&month=${month}`, "GET"))).json();
     expect(seen.person).toMatchObject({ name: "An", managerName: "Trưởng nhóm" });
-    expect(seen.rights).toMatchObject({ correct: true, requestFrom: null, canEditBalance: false });
+    // A team lead corrects their own people but does not export everyone's month; a manager does.
+    expect(seen.rights).toMatchObject({ correct: true, requestFrom: null, canEditBalance: false, canExport: false });
+    session.user = as("hr");
+    expect((await (await view(json(`/api/attendance?month=${month}`, "GET"))).json()).rights.canExport).toBe(true);
   });
 
   it("marks every working session of a range, skipping Sunday and Saturday afternoon", async () => {

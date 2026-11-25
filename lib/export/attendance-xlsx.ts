@@ -88,7 +88,9 @@ export async function exportAttendanceXlsx(team: TeamAttendance, filename: strin
     [...blank(fixed), ...days.map((d) => headCell(WEEKDAY_SHORT[weekdayOf(d)], { fontWeight: "normal", ...(shade(d) ? { backgroundColor: shade(d) } : {}) })), ...blank(TOTALS.length)],
   ];
 
-  team.people.forEach((p, i) => {
+  // A file for the whole company lists people by name, not with whoever exported it first.
+  const people = [...team.people].sort((a, b) => a.person.name.localeCompare(b.person.name, "vi"));
+  people.forEach((p, i) => {
     const t = p.attendance.totals;
     sheet.push([
       num(i + 1),
@@ -125,7 +127,7 @@ export async function exportAttendanceXlsx(team: TeamAttendance, filename: strin
     ["STT", "Họ và tên", "Ngày", "Thứ", "Buổi", "Loại", "Ký hiệu", "Ghi chú / lý do"].map((h) => headCell(h)),
   ];
   let n = 0;
-  for (const p of team.people) {
+  for (const p of people) {
     for (const m of p.notes) {
       details.push([
         num(++n),

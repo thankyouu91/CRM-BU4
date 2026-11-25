@@ -7,8 +7,9 @@
 //    your account (USER_MANAGE over lower levels, administrators).
 //  - Change the annual leave numbers: the people whose accounts you manage (HR).
 //  - Holidays: account managers (USER_MANAGE) and administrators.
+//  - Export the month's timesheet of everyone to Excel: managers and above, and account managers.
 
-import { canManageUser, hasPermission, type Actor } from "./permissions";
+import { canManageUser, hasPermission, roleLevel, ROLE_LEVEL, type Actor } from "./permissions";
 import { ownEditFrom } from "./attendance";
 
 export type Viewer = Actor;
@@ -38,6 +39,11 @@ export function canEditLeaveBalance(viewer: Viewer, person: Person): boolean {
 
 export function canEditHolidays(viewer: Viewer): boolean {
   return hasPermission(viewer, "USER_MANAGE");
+}
+
+/** Xuất Excel chấm công tháng của toàn bộ nhân viên: cấp Quản lý trở lên, và người quản lý nhân sự. */
+export function canExportTimesheet(viewer: Viewer): boolean {
+  return roleLevel(viewer.role) >= ROLE_LEVEL.MANAGER || hasPermission(viewer, "USER_MANAGE");
 }
 
 /**

@@ -25,7 +25,7 @@ import {
   type Session,
 } from "./attendance";
 import { statutoryHolidays } from "./vn-holidays";
-import { canCorrectAttendance, canEditHolidays, canEditLeaveBalance, canRequestLeave } from "./attendance-access";
+import { canCorrectAttendance, canEditHolidays, canExportTimesheet, canEditLeaveBalance, canRequestLeave } from "./attendance-access";
 
 const personSelect = { id: true, name: true, role: true, jobTitle: true, avatarColor: true, managerId: true, active: true, startDay: true, endDay: true, manager: { select: { name: true } } } as const;
 
@@ -66,6 +66,8 @@ export interface AttendanceView extends PersonAttendance {
     requestFrom: string | null;
     canEditBalance: boolean;
     canEditHolidays: boolean;
+    /** Export everyone's month to Excel (managers and above). */
+    canExport: boolean;
   };
   /** Everyone active (the viewer first). */
   people: AttendancePerson[];
@@ -151,7 +153,7 @@ export async function attendanceView(viewer: CurrentUser, personId: string, mont
     ...view,
     today,
     holidays: yearHolidays.filter((h) => h.day.startsWith(month)),
-    rights: { correct, requestFrom, canEditBalance: canEditLeaveBalance(viewer, person), canEditHolidays: canEditHolidays(viewer) },
+    rights: { correct, requestFrom, canEditBalance: canEditLeaveBalance(viewer, person), canEditHolidays: canEditHolidays(viewer), canExport: canExportTimesheet(viewer) },
     people: people.map(toPerson),
   };
 }

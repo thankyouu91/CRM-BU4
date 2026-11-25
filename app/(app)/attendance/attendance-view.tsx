@@ -7,7 +7,7 @@ import { Select } from "@/components/ui/input";
 import { AttendanceCalendar, AttendanceLegend, KIND_TONE } from "@/components/attendance/attendance-calendar";
 import { MarkModal } from "@/components/attendance/mark-modal";
 import { LeaveBalanceCard } from "@/components/attendance/leave-balance-card";
-import { TeamSheet } from "@/components/attendance/team-sheet";
+import { ExportTimesheetButton, TeamSheet } from "@/components/attendance/team-sheet";
 import { useApi } from "@/lib/client";
 import { formatDays, isLate, LEAVE_KINDS, LEAVE_KIND_KEYS, monthDays, monthLabel, SESSION_LABEL, shiftMonth, WEEKDAY_SHORT, weekdayOf, WORK_SCHEDULE_TEXT, type Session, type SessionCell } from "@/lib/attendance";
 import type { AttendanceView as View } from "@/lib/attendance-queries";
@@ -52,7 +52,11 @@ export function AttendanceView({ initial, initialTab }: { initial: View; initial
 
   return (
     <div>
-      <PageHeader title="Chấm công" description={`${WORK_SCHEDULE_TEXT}. Mặc định đi làm đủ buổi; bấm vào buổi bận để xin nghỉ và ghi lý do. Buổi đã ghi chỉ quản lý sửa được.`} />
+      <PageHeader
+        title="Chấm công"
+        description={`${WORK_SCHEDULE_TEXT}. Mặc định đi làm đủ buổi; bấm vào buổi bận để xin nghỉ và ghi lý do. Buổi đã ghi chỉ quản lý sửa được.`}
+        actions={initial.rights.canExport ? <ExportTimesheetButton month={month} /> : undefined}
+      />
 
       <div className="mb-4 flex flex-wrap items-center gap-2">
         {teamTab && (

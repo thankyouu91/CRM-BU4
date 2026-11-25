@@ -148,3 +148,14 @@ describe("attendance rules", () => {
     expect(ownEditFrom("2026-10-23")).toBe("2026-10-01");
   });
 });
+
+describe("who exports the month's timesheet", async () => {
+  const { canExportTimesheet } = await import("../lib/attendance-access");
+  const { effectivePermissions } = await import("../lib/permissions");
+  const as = (role: string, granted: string[] = []) => ({ id: role, role, permissions: effectivePermissions(role, granted) });
+  it("is managers and above, and whoever manages accounts", () => {
+    expect(["ADMIN", "MANAGER", "LEAD", "MEMBER"].map((r) => canExportTimesheet(as(r)))).toEqual([true, true, false, false]);
+    expect(canExportTimesheet(as("LEAD", ["USER_MANAGE"]))).toBe(true);
+    expect(canExportTimesheet(as("MEMBER", ["PROJECT_CREATE"]))).toBe(false);
+  });
+});

@@ -5,7 +5,7 @@ import { CalendarDays, FileSpreadsheet, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Avatar } from "@/components/ui/avatar";
-import { useApi } from "@/lib/client";
+import { api, ApiError, useApi } from "@/lib/client";
 import { formatDays, isLate, LEAVE_KINDS, LEAVE_KIND_KEYS } from "@/lib/attendance";
 import type { TeamAttendance } from "@/lib/attendance-queries";
 import { cn } from "@/lib/utils";
@@ -20,22 +20,7 @@ import { TeamSchedule } from "./team-schedule";
 export function TeamSheet({ month, canEditHolidays, onOpen }: { month: string; canEditHolidays: boolean; onOpen: (personId: string) => void }) {
   const { data, loading, reload } = useApi<TeamAttendance>(`/api/attendance/team?month=${month}`);
   const team = data?.month === month ? data : null;
-  const [exporting, setExporting] = useState(false);
   const [holidays, setHolidays] = useState(false);
-
-  const exportExcel = async () => {
-    if (!team) return;
-    setExporting(true);
-    try {
-      const [{ exportAttendanceXlsx }, { fileSlug }] = await Promise.all([import("@/lib/export/attendance-xlsx"), import("@/lib/export/save")]);
-      await exportAttendanceXlsx(team, `cham-cong-${fileSlug(team.label)}.xlsx`);
-    } catch (e) {
-      console.error(e);
-      toast.error("Không xuất được file Excel");
-    } finally {
-      setExporting(false);
-    }
-  };
 
   // Only the kinds someone in the team has this month: eleven mostly empty columns help nobody.
   const kinds = LEAVE_KIND_KEYS.filter((k) => team?.people.some((p) => p.attendance.totals.leave[k]));
@@ -53,9 +38,6 @@ export function TeamSheet({ month, canEditHolidays, onOpen }: { month: string; c
             <CalendarDays className="h-4 w-4" /> Ngày nghỉ lễ
           </Button>
         )}
-        <Button size="sm" onClick={exportExcel} disabled={!team || exporting} loading={exporting}>
-          <FileSpreadsheet className="h-4 w-4" /> Xuất Excel
-        </Button>
       </div>
       {team && (
         <div className="border-b">
@@ -117,9 +99,39 @@ export function TeamSheet({ month, canEditHolidays, onOpen }: { month: string; c
         </table>
       </div>
       <p className="border-t px-4 py-2 text-xs text-muted-foreground">
-        Ngày công, ngày cơm tính đến hôm nay với tháng hiện tại; ngày cơm không tính buổi công tác, online, du lịch. Phép còn lại = được hưởng + tồn năm trước − đã nghỉ từ đầu năm đến hết tháng. File Excel có thêm từng ngày (X, -, CT…) và trang chi tiết lý do nghỉ.
+        Ngày công, ngày cơm tính đến hôm nay với tháng hiện tại; ngày cơm không tính buổi công tác, online, du lịch. Phép còn lại = được hưởng + tồn năm trước − đã nghỉ từ đầu năm đến hết tháng. Cấp quản lý xuất file Excel (từng ngày X, -, CT…, kèm trang chi tiết lý do nghỉ) bằng nút ở đầu trang.
       </p>
       {holidays && <HolidaysModal year={Number(month.slice(0, 4))} onClose={() => setHolidays(false)} onChanged={() => void reload()} />}
     </section>
+  );
+}
+
+/**
+ * Xuất Excel chấm công tháng của toàn bộ nhân viên (only shown to people allowed to, see
+ * canExportTimesheet). Reads the month's timesheet when clicked, so it works from either tab.
+ */
+export function ExportTimesheetButton({ month }: { month: string }) {
+  const [busy, setBusy] = useState(false);
+  const run = async () => {
+    setBusy(true);
+    try {
+      const [team, { exportAttendanceXlsx }, { fileSlug }] = await Promise.all([
+        api<TeamAttendance>(`/api/attendance/team?month=${month}`),
+        import("@/lib/export/attendance-xlsx"),
+        import("@/lib/export/save"),
+      ]);
+      await exportAttendanceXlsx(team, `cham-cong-${fileSlug(team.label)}.xlsx`);
+      toast.success(`Đã xuất bảng chấm công ${team.label.toLowerCase()} (${team.people.length} người)`);
+    } catch (e) {
+      console.error(e);
+      toast.error(e instanceof ApiError ? e.message : "Không xuất được file Excel");
+    } finally {
+      setBusy(false);
+    }
+  };
+  return (
+    <Button onClick={run} loading={busy} disabled={busy}>
+      <FileSpreadsheet className="h-4 w-4" /> Xuất Excel chấm công tháng
+    </Button>
   );
 }

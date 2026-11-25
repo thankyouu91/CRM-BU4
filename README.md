@@ -157,7 +157,8 @@ Thanh bên → **Chấm công** (`/attendance`). Lịch làm việc: thứ 2 đ�
   | Du lịch cùng công ty | DL (xanh lá nhạt) | ✓ | | |
 
   Trên bảng công: buổi đi làm bình thường để trống, L là nghỉ lễ, buổi sáng và chiều khác nhau ghi dạng `-/CT`.
-- **Ai xem được:** mọi người đã đăng nhập xem được lịch, lý do nghỉ, phép năm và bảng công tháng của mọi người, và xuất được file Excel.
+- **Ai xem được:** mọi người đã đăng nhập xem được lịch, lý do nghỉ, phép năm và bảng công tháng của mọi người.
+- **Xuất Excel chấm công tháng (toàn bộ nhân viên):** nút **Xuất Excel chấm công tháng** ở đầu trang Chấm công, xuất tháng đang xem; chỉ cấp **Quản lý**, **Quản trị viên** và người có quyền *Quản lý nhân viên* thấy nút này (`canExportTimesheet` trong `lib/attendance-access.ts`). Nhân viên và trưởng nhóm vẫn xem bảng công trên web nhưng không xuất file.
 - **Ai sửa được:** chỉ quản lý, gồm quản lý trực tiếp của người đó và người có quyền *Quản lý nhân viên* với cấp thấp hơn (cấp Quản lý, Quản trị viên). Họ ghi, sửa hoặc xoá được mọi buổi, kể cả tháng đã qua.
 - **Nhân viên tự xin nghỉ:** mỗi người ghi được nghỉ cho chính mình trên những buổi **chưa có ghi nhận**, từ đầu tháng hiện tại trở đi. Đã ghi rồi thì không tự sửa hay xoá được; muốn đổi phải nhờ quản lý. Khi nhân sự tự ghi (nghỉ, đi trễ, online, công tác…), quản lý trực tiếp nhận thông báo trên chuông. Không có bước duyệt: ghi là có hiệu lực, quản lý sửa lại nếu cần (`lib/attendance-access.ts`).
 - **Tổng công tháng:** công chuẩn (không tính ngày lễ), **ngày công** và **ngày cơm** (ngày công trừ các buổi công tác, online, du lịch), từng loại đã ghi, nghỉ lễ, công hưởng lương. Tháng hiện tại thì ngày công, ngày cơm và công hưởng lương tính đến hôm nay, kể cả buổi đã ghi trước cho ngày chưa tới. Mỗi buổi là nửa ngày công.
