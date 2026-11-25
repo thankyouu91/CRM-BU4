@@ -8,6 +8,7 @@ import { ProgressBar } from "@/components/ui/progress";
 import { KpiTile } from "@/components/kpi";
 import { ProjectProgressCard } from "@/components/dashboard/project-progress-card";
 import { RecentReportsCard, UpcomingCard } from "@/components/dashboard/activity-cards";
+import { TeamWeekCard } from "@/components/dashboard/team-week-card";
 import {
   ChartCard,
   DataTable,
@@ -33,7 +34,7 @@ const PERIODS: { value: Period; label: string }[] = [
   { value: "year", label: "Năm nay" },
 ];
 
-export function DashboardView({ initial }: { initial: Summary }) {
+export function DashboardView({ initial, showTeam = false }: { initial: Summary; showTeam?: boolean }) {
   const [period, setPeriod] = useState<Period>("month");
   const [data, setData] = useState(initial);
   const [loading, setLoading] = useState(false);
@@ -97,6 +98,9 @@ export function DashboardView({ initial }: { initial: Summary }) {
           />
           <KpiTile label="Giờ công đã ghi" value={k.hoursLogged} sub={`${k.reportsCount} báo cáo tiến độ`} icon={Timer} />
         </div>
+
+        {/* Managers: the team's week, deadlines and giving out work */}
+        {showTeam && <TeamWeekCard />}
 
         {/* Trend + status */}
         <div className="grid grid-cols-1 gap-4 xl:grid-cols-3">

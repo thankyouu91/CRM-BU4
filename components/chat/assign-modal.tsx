@@ -21,6 +21,8 @@ interface ProjectOption {
   members: (Person & { projectRole: string })[];
 }
 
+const NO_ONE: Person[] = [];
+
 export interface Assigned {
   task: { id: string; title: string };
   assignee: Person | null;
@@ -28,26 +30,32 @@ export interface Assigned {
 }
 
 /**
- * Turns a chat message into a task: the same POST /api/tasks as anywhere else, so the
- * project's rules decide who may give work to whom. Title and assignee come from the
- * message (the first @mentioned person who works in the chosen project).
+ * Gives work to someone: the same POST /api/tasks as anywhere else, so the project's rules
+ * decide who may give work to whom. From a chat message, title and assignee come from the
+ * message (the first @mentioned person who works in the chosen project). From the dashboard
+ * (`assignTo`), the person is set; when they are not in the chosen project, a project manager
+ * brings them in.
  */
 export function AssignModal({
   open,
   onClose,
-  text,
-  mentioned,
-  author,
+  text = "",
+  mentioned = NO_ONE,
+  author = "",
+  assignTo,
   onAssigned,
 }: {
   open: boolean;
   onClose: () => void;
-  /** The message as read: "@Bình làm báo giá…". */
-  text: string;
-  mentioned: Person[];
-  author: string;
+  /** The chat message as read: "@Bình làm báo giá…". */
+  text?: string;
+  mentioned?: Person[];
+  author?: string;
+  /** Give the work to this person (dashboard). */
+  assignTo?: Person;
   onAssigned: (a: Assigned) => void;
 }) {
+  const [description, setDescription] = useState("");
   const projects = useApi<{ projects: ProjectOption[] }>(open ? "/api/projects" : null);
   const open_ = useMemo(() => (projects.data?.projects ?? []).filter((p) => p.status !== "COMPLETED" && p.status !== "CANCELLED"), [projects.data]);
   const [projectId, setProjectId] = useState("");
@@ -67,6 +75,7 @@ export function AssignModal({
 
   // People @mentioned in the message who cannot take work in the chosen project.
   const outside = mentioned.filter((m) => !people.some((u) => u.id === m.id)).map((m) => m.name);
+  const assignToOutside = !!assignTo && !!projectId && !people.some((u) => u.id === assignTo.id);
 
   useEffect(() => {
     if (!open) return;
@@ -77,12 +86,14 @@ export function AssignModal({
     setProjectId("");
     setAssigneeId("");
     setDueDate("");
+    setDescription("");
     setErrors({});
   }, [open, text, mentioned]);
 
   useEffect(() => {
+    if (assignTo) return setAssigneeId(assignTo.id);
     setAssigneeId((cur) => (people.some((u) => u.id === cur) ? cur : (mentioned.find((m) => people.some((u) => u.id === m.id))?.id ?? "")));
-  }, [people, mentioned]);
+  }, [people, mentioned, assignTo]);
 
   const submit = async () => {
     setBusy(true);
@@ -93,12 +104,13 @@ export function AssignModal({
         body: {
           projectId,
           title,
-          description: `Giao từ Trao đổi chung (${author}):\n${text}`.slice(0, 4000),
+          description: (assignTo ? description.trim() || null : `Giao từ Trao đổi chung (${author}):\n${text}`.slice(0, 4000)),
           assigneeId: assigneeId || null,
           dueDate: fromInputDate(dueDate, "end"),
+          ...(assignToOutside ? { addAssignee: true } : {}),
         },
       });
-      onAssigned({ task: res.task, assignee: people.find((u) => u.id === assigneeId) ?? null, dueDate });
+      onAssigned({ task: res.task, assignee: assignTo ?? people.find((u) => u.id === assigneeId) ?? null, dueDate });
       onClose();
     } catch (e) {
       if (e instanceof ApiError) setErrors(e.fields ?? {});
@@ -112,8 +124,8 @@ export function AssignModal({
     <Modal
       open={open}
       onClose={onClose}
-      title="Giao việc"
-      description="Tạo công việc trong dự án và báo vào Trao đổi chung."
+      title={assignTo ? `Giao việc cho ${assignTo.name}` : "Giao việc"}
+      description={assignTo ? "Tạo công việc trong dự án; người nhận được thông báo ngay." : "Tạo công việc trong dự án và báo vào Trao đổi chung."}
       footer={
         <>
           <Button variant="outline" onClick={onClose}>
@@ -137,8 +149,18 @@ export function AssignModal({
           </Select>
         </Field>
         <Field label="Công việc" error={errors.title}>
-          <Input value={title} maxLength={200} onChange={(e) => setTitle(e.target.value)} aria-label="Tên công việc" />
+          <Input value={title} maxLength={200} onChange={(e) => setTitle(e.target.value)} aria-label="Tên công việc" placeholder="VD: Chuẩn bị báo giá cho khách hàng ABC" />
         </Field>
+        {assignTo ? (
+          <div className="grid gap-4 sm:grid-cols-2">
+            <Field label="Người phụ trách" hint={assignToOutside ? `${assignTo.name} chưa thuộc dự án này: sẽ được thêm vào làm thành viên (cần quyền quản lý dự án).` : undefined}>
+              <Input value={assignTo.name} readOnly aria-label="Người phụ trách" />
+            </Field>
+            <Field label="Hạn chót" error={errors.dueDate}>
+              <DateInput aria-label="Hạn chót" value={dueDate} onChange={setDueDate} />
+            </Field>
+          </div>
+        ) : (
         <div className="grid gap-4 sm:grid-cols-2">
           <Field label="Người phụ trách" error={errors.assigneeId} hint={projectId ? (!people.length ? "Dự án chưa có thành viên" : outside.length ? `${outside.join(", ")} không làm trong dự án này: thêm vào dự án trước, hoặc chọn dự án khác` : undefined) : undefined}>
             <Select value={assigneeId} onChange={(e) => setAssigneeId(e.target.value)} disabled={!projectId} aria-label="Người phụ trách">
@@ -154,9 +176,16 @@ export function AssignModal({
             <DateInput aria-label="Hạn chót" value={dueDate} onChange={setDueDate} />
           </Field>
         </div>
-        <Field label="Nội dung gốc">
-          <Textarea value={text} readOnly rows={3} className="text-muted-foreground" />
-        </Field>
+        )}
+        {assignTo ? (
+          <Field label="Mô tả (tuỳ chọn)">
+            <Textarea value={description} maxLength={4000} rows={3} onChange={(e) => setDescription(e.target.value)} placeholder="Yêu cầu, kết quả cần có…" />
+          </Field>
+        ) : (
+          <Field label="Nội dung gốc">
+            <Textarea value={text} readOnly rows={3} className="text-muted-foreground" />
+          </Field>
+        )}
       </div>
     </Modal>
   );

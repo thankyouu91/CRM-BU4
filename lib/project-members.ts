@@ -50,6 +50,25 @@ export async function logJoin(me: { id: string; name: string }, projectId: strin
   );
 }
 
+/** A project manager brings someone into the project to give them a task, with a log entry and a notice. */
+export async function addForTask(me: { id: string; name: string }, projectId: string, userId: string): Promise<boolean> {
+  const user = await prisma.user.findFirst({ where: { id: userId, active: true }, select: { id: true, name: true } });
+  if (!user) return false;
+  await joinProject(prisma, projectId, user.id);
+  const project = await prisma.project.findUnique({ where: { id: projectId }, select: { name: true } });
+  await audit(
+    { id: me.id, name: me.name },
+    {
+      action: "project.members_change",
+      entityType: "project",
+      entityId: projectId,
+      summary: `Thêm ${user.name} vào dự án “${project?.name ?? ""}” để giao việc`,
+      details: { added: [{ name: user.name, role: "Thành viên" }], reason: "assign" },
+    },
+  );
+  return true;
+}
+
 /** The person joins the project as a member to take a task in it, with a log entry. */
 export async function joinSelf(me: { id: string; name: string }, projectId: string) {
   await joinProject(prisma, projectId, me.id);

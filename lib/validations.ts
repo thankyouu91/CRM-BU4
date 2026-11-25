@@ -159,6 +159,8 @@ export const createTaskSchema = z.object({
   progress: z.number().int().min(0).max(100).default(0),
   startDate: dateish,
   dueDate: dateish,
+  /** The assignee is not in the project yet: add them as a member (project managers only). */
+  addAssignee: z.boolean().optional(),
 });
 
 export const updateTaskSchema = z.object({

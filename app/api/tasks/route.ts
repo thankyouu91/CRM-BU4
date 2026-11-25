@@ -7,7 +7,7 @@ import { assignability, checkTaskDates, resolveTaskState } from "@/lib/task-rule
 import { createTaskSchema } from "@/lib/validations";
 import { audit } from "@/lib/audit";
 import { assignmentNotices, notify } from "@/lib/notifications";
-import { joinSelf } from "@/lib/project-members";
+import { addForTask, joinSelf } from "@/lib/project-members";
 import { syncProjectStatus } from "@/lib/project-sync";
 
 export async function GET(req: NextRequest) {
@@ -43,7 +43,9 @@ export async function POST(req: NextRequest) {
       const category = await prisma.category.findUnique({ where: { id: categoryId }, select: { projectId: true } });
       if (!category || category.projectId !== data.projectId) return badRequest("Hạng mục không hợp lệ");
     }
-    const assign = data.assigneeId ? assignability(memberIds!, data.assigneeId, me, access.contribute) : null;
+    let assign = data.assigneeId ? assignability(memberIds!, data.assigneeId, me, access.contribute) : null;
+    // A project manager giving work to someone outside the project brings them in (asked for explicitly).
+    if (data.assigneeId && !assign && data.addAssignee && access.manage && (await addForTask(me, data.projectId, data.assigneeId))) assign = "member";
     if (data.assigneeId && !assign) {
       return badRequest("Người phụ trách phải là thành viên dự án (không phải người chỉ xem)", { assigneeId: "Không phải thành viên dự án" });
     }

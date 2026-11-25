@@ -170,6 +170,12 @@ Thanh bên → **Chấm công** (`/attendance`). Lịch làm việc: thứ 2 đ�
 - **Ngày vào làm / ngày nghỉ việc:** nhập trong hồ sơ nhân sự (trang **Nhân sự**). Ngoài khoảng này không tính công chuẩn, ngày công hay phép năm, và không ghi chấm công được (ô gạch chéo trên web, ô xám trong Excel). Người đã nghỉ vẫn có trên bảng công những tháng họ còn làm, kể cả khi tài khoản đã khoá; quản lý vẫn sửa được những ngày đó. **Xuất Excel** gồm trang *Bảng chấm công* (từng ngày trong tháng tô màu theo ký hiệu, thứ 7, Chủ nhật và ngày lễ tô màu, các cột ngày công, ngày cơm, tổng và phép năm, kèm danh sách ghi chú ký hiệu) và trang *Chi tiết nghỉ* (ngày, buổi, loại, lý do) (`lib/export/attendance-xlsx.ts`).
 - **Ngày nghỉ lễ:** người có quyền *Quản lý nhân viên* nhập ở nút **Ngày nghỉ lễ** trong bảng công tháng (bảng `Holiday`). Nút **Thêm ngày lễ, Tết** điền sẵn các ngày nghỉ theo Điều 112 Bộ luật Lao động cho cả năm: Tết Dương lịch, 5 ngày Tết Nguyên đán (cuối năm Âm lịch đến mùng 4, tính theo lịch Âm Việt Nam), Giỗ Tổ Hùng Vương 10/3 Âm lịch, 30/4, 1/5, 2/9 và một ngày liền kề, cùng ngày nghỉ bù khi lễ trùng Chủ nhật (`lib/vn-holidays.ts`); ngày đã nhập giữ nguyên. Lịch nghỉ Tết và 2/9 cụ thể do Chính phủ công bố mỗi năm, nên đối chiếu rồi chỉnh lại nếu khác. Ngày lễ không tính là ngày làm, ghi L và vẫn tính vào công hưởng lương.
 
+### Công việc của đội trên trang Tổng quan (cấp Quản lý trở lên)
+
+Trang **Tổng quan** của cấp **Quản lý** và **Quản trị viên** có thêm thẻ **Công việc của đội tuần này**: mỗi nhân sự cấp dưới một dòng với trạng thái báo cáo tuần (Đã gửi / Nháp / Chưa có, bấm để mở báo cáo), số việc xong trong tuần, đang làm, có hạn trong tuần, quá hạn, và 3 hạn chót gần nhất (việc quá hạn lên đầu, bấm để mở công việc). Chỉ tính việc trong dự án đang chạy (`lib/team-overview.ts`, `GET /api/dashboard/team`).
+
+Nút **Giao việc** trên mỗi dòng mở hộp thoại tạo công việc cho người đó: chọn dự án, tên việc, hạn chót, mô tả. Người nhận nhận thông báo "Bạn được giao…". Nếu người đó chưa thuộc dự án, người quản lý dự án (chủ dự án, quản lý dự án, hoặc quyền *Quản lý mọi dự án*) thêm họ vào làm thành viên ngay khi giao (ghi nhật ký); người không quản lý dự án thì không giao được cho người ngoài dự án.
+
 ### Trao đổi chung
 
 Thanh bên → **Trao đổi chung** (`/chat`): một kênh chat cho cả công ty, ai đăng nhập cũng đọc và nhắn được.
