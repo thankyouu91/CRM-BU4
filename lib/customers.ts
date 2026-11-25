@@ -39,7 +39,56 @@ export interface CustomerDto {
   contacts: CustomerContactDto[];
   /** The customer's projects the viewer can see. */
   projects: CustomerProjectDto[];
+  /** Loại khách hàng shown: the manual choice if set, else worked out from projects and contracts. */
+  kind: CustomerKind;
+  /** What the projects and contracts say, whatever was chosen by hand. */
+  kindAuto: CustomerKind;
+  kindManual: boolean;
+  /** Size by the total value of the company's contracts; null before any contract. */
+  size: CustomerSize | null;
+  /** That total in VND, only for people with "Hợp đồng & chi phí". */
+  contractValue: number | null;
 }
+
+export const CUSTOMER_KINDS = ["NEW", "LEAD", "DONE"] as const;
+export type CustomerKind = (typeof CUSTOMER_KINDS)[number];
+export const CUSTOMER_KIND_INFO: Record<CustomerKind, { label: string; hint: string }> = {
+  NEW: { label: "Mới", hint: "Chưa có dự án hay hợp đồng nào" },
+  LEAD: { label: "Lead", hint: "Chỉ có dự án đang lên kế hoạch / hợp đồng chưa triển khai" },
+  DONE: { label: "Đã làm", hint: "Đã có dự án triển khai hoặc hợp đồng" },
+};
+
+/**
+ * Loại khách hàng from what the company has with us: any project under way or finished, or any
+ * contract past "chưa triển khai" → Đã làm; only planned work → Lead; nothing → Mới.
+ * Cancelled projects count for nothing.
+ */
+export function autoKind(projectStatuses: string[], contractStatuses: string[]): CustomerKind {
+  if (projectStatuses.some((s) => s === "ACTIVE" || s === "ON_HOLD" || s === "COMPLETED") || contractStatuses.some((s) => s !== "PLANNED")) return "DONE";
+  if (projectStatuses.includes("PLANNING") || contractStatuses.length) return "LEAD";
+  return "NEW";
+}
+
+export const CUSTOMER_SIZES = ["SMALL", "MEDIUM", "LARGE"] as const;
+export type CustomerSize = (typeof CUSTOMER_SIZES)[number];
+export const CUSTOMER_SIZE_INFO: Record<CustomerSize, { label: string; range: string }> = {
+  SMALL: { label: "Nhỏ", range: "dưới 50 triệu" },
+  MEDIUM: { label: "Vừa", range: "50 – 500 triệu" },
+  LARGE: { label: "Lớn", range: "từ 500 triệu" },
+};
+
+/** Size by the total contract value (VND); null when there is no contract yet. */
+export function customerSize(total: number, contracts: number): CustomerSize | null {
+  if (!contracts) return null;
+  return total >= 500_000_000 ? "LARGE" : total >= 50_000_000 ? "MEDIUM" : "SMALL";
+}
+
+/** The customer page's three project groups: done, under way, planned. Cancelled ones are left out. */
+export const PROJECT_STAGES = [
+  { key: "done", label: "Đã làm", statuses: ["COMPLETED"] },
+  { key: "doing", label: "Đang làm", statuses: ["ACTIVE", "ON_HOLD"] },
+  { key: "planned", label: "Dự định làm", statuses: ["PLANNING"] },
+] as const;
 
 export interface CustomerProjectDto {
   id: string;
@@ -104,9 +153,14 @@ const customerFields = {
   note: text(2000),
 };
 
-export const createCustomerSchema = z.object({
+export const customerBaseSchema = z.object({
   name: z.string().trim().min(1, "Nhập tên doanh nghiệp").max(200, "Tối đa 200 ký tự"),
   ...customerFields,
+});
+
+export const createCustomerSchema = customerBaseSchema.extend({
+  /** Loại chosen by hand; null or left out: worked out from projects and contracts. */
+  kind: z.enum(CUSTOMER_KINDS).nullish(),
 });
 
 export const updateCustomerSchema = createCustomerSchema.partial();

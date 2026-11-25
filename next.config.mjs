@@ -50,8 +50,9 @@ const nextConfig = {
     return [
       { source: "/:path*", headers: securityHeaders },
       // Public presentation links carry their token in the path: send no Referer at all.
-      { source: "/((?!share/).*)", headers: [{ key: "Referrer-Policy", value: "strict-origin-when-cross-origin" }] },
+      { source: "/((?!share/|form/).*)", headers: [{ key: "Referrer-Policy", value: "strict-origin-when-cross-origin" }] },
       { source: "/share/:token", headers: [{ key: "Referrer-Policy", value: "no-referrer" }] },
+      { source: "/form/:token", headers: [{ key: "Referrer-Policy", value: "no-referrer" }] },
     ];
   },
 };

@@ -64,6 +64,11 @@ export const AUDIT_ACTIONS = {
   "customer_contact.create": { label: "Thêm người liên hệ", group: "customer" },
   "customer_contact.update": { label: "Sửa người liên hệ", group: "customer" },
   "customer_contact.delete": { label: "Xoá người liên hệ", group: "customer" },
+  "customer_intake.link_create": { label: "Tạo link form thông tin doanh nghiệp", group: "customer" },
+  "customer_intake.link_revoke": { label: "Thu hồi link form thông tin doanh nghiệp", group: "customer" },
+  "customer_intake.approve": { label: "Duyệt thêm khách hàng từ form", group: "customer" },
+  "customer_intake.merge": { label: "Gộp thông tin form vào khách hàng", group: "customer" },
+  "customer_intake.reject": { label: "Từ chối thông tin gửi qua form", group: "customer" },
 
   "work_report.submit": { label: "Nộp báo cáo tuần/tháng", group: "workReport" },
   "work_report.review": { label: "Đánh dấu đã xem báo cáo", group: "workReport" },

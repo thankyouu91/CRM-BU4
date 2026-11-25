@@ -44,3 +44,6 @@ export type PriorityKey = keyof typeof PRIORITY;
 
 /** Where a task opens: its project with the task drawer open (bell, chat, links). */
 export const taskLink = (projectId: string, taskId: string) => `/projects/${projectId}?task=${taskId}`;
+
+/** Longest checklist item (lib/checklist.ts, components/dashboard/checklist-card.tsx). */
+export const CHECKLIST_TEXT_MAX = 300;

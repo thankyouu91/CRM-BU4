@@ -4,7 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { auth, forbidden, handle, notFound, ok, unauthorized } from "@/lib/api";
 import { hasPermission } from "@/lib/permissions";
 import { updateCustomerSchema } from "@/lib/customers";
-import { customerDto, customerIncludeFor } from "@/lib/customer-queries";
+import { customerFor } from "@/lib/customer-queries";
 import { audit, changedFields } from "@/lib/audit";
 
 type Ctx = { params: Promise<{ id: string }> };
@@ -19,15 +19,15 @@ export async function PATCH(req: NextRequest, ctx: Ctx) {
     const before = await prisma.customer.findUnique({ where: { id } });
     if (!before) return notFound("Không tìm thấy khách hàng");
     const d = updateCustomerSchema.parse(await req.json());
-    const customer = await prisma.customer.update({ where: { id }, data: d, include: customerIncludeFor(me) });
-    const changes = changedFields(before, customer, ["name", "taxCode", "industry", "address", "phone", "email", "website", "note"]);
+    const after = await prisma.customer.update({ where: { id }, data: d });
+    const changes = changedFields(before, after, ["name", "taxCode", "industry", "address", "phone", "email", "website", "note", "kind"]);
     if (Object.keys(changes).length) {
       await audit(
         { id: me.id, name: me.name },
-        { action: "customer.update", entityType: "customer", entityId: id, summary: `Sửa khách hàng “${customer.name}”`, details: changes as Prisma.InputJsonValue },
+        { action: "customer.update", entityType: "customer", entityId: id, summary: `Sửa khách hàng “${after.name}”`, details: changes as Prisma.InputJsonValue },
       );
     }
-    return ok({ customer: customerDto(customer) });
+    return ok({ customer: await customerFor(id, me) });
   });
 }
 

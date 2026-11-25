@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { Building2, ChevronDown, FolderKanban, Mail, Pencil, Phone, Plus, Search, Trash2, UserRound } from "lucide-react";
+import { Building2, ChevronDown, ClipboardList, FolderKanban, Mail, Pencil, Phone, Plus, Search, Trash2, UserRound } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { ConfirmDialog } from "@/components/ui/confirm";
@@ -11,22 +11,37 @@ import { EmptyState, PageHeader } from "@/components/ui/misc";
 import { Modal } from "@/components/ui/modal";
 import { api, ApiError } from "@/lib/client";
 import { PROJECT_STATUS } from "@/lib/constants";
+import { formatVnd } from "@/lib/finance";
 import { cn } from "@/lib/utils";
+import { Segmented } from "@/components/ui/misc";
+import { IntakePanel } from "@/components/customers/intake-panel";
 import {
   CONTACT_LEVELS,
   CONTACT_LEVEL_INFO,
+  CUSTOMER_KINDS,
+  CUSTOMER_KIND_INFO,
+  CUSTOMER_SIZE_INFO,
+  PROJECT_STAGES,
   contactsByLevel,
   customerMatches,
   type ContactLevel,
+  type CustomerKind,
   type CustomerContactDto,
   type CustomerDto,
   type CustomerProjectDto,
 } from "@/lib/customers";
 
-type CustomerForm = Pick<CustomerDto, "name" | "taxCode" | "industry" | "address" | "phone" | "email" | "website" | "note">;
+type CustomerForm = Pick<CustomerDto, "name" | "taxCode" | "industry" | "address" | "phone" | "email" | "website" | "note"> & { kind: CustomerKind | null };
 type ContactForm = Omit<CustomerContactDto, "id">;
 
-const EMPTY_CUSTOMER: CustomerForm = { name: "", taxCode: "", industry: "", address: "", phone: "", email: "", website: "", note: "" };
+const EMPTY_CUSTOMER: CustomerForm = { name: "", taxCode: "", industry: "", address: "", phone: "", email: "", website: "", note: "", kind: null };
+
+// Mới / Lead / Đã làm read from their color; the size chip stays neutral.
+const KIND_CHIP: Record<CustomerKind, string> = {
+  NEW: "bg-muted text-foreground/80",
+  LEAD: "bg-warning/15 text-warning",
+  DONE: "bg-success/15 text-success",
+};
 const emptyContact = (level: ContactLevel): ContactForm => ({ level, name: "", title: "", department: "", phone: "", email: "", birthday: "", note: "" });
 
 const failure = (e: unknown, fallback: string) => (e instanceof ApiError ? e.message : fallback);
@@ -37,9 +52,25 @@ const showDay = (day: string | null) => (day && /^\d{4}-\d{2}-\d{2}$/.test(day) 
 /** A website as a link: "abc.vn" opens https://abc.vn. */
 const siteHref = (site: string) => (/^https?:\/\//i.test(site) ? site : `https://${site}`);
 
-export function CustomersView({ initial, canManage, focus = null }: { initial: CustomerDto[]; canManage: boolean; focus?: string | null }) {
+export function CustomersView({
+  initial,
+  canManage,
+  focus = null,
+  pendingIntake = 0,
+}: {
+  initial: CustomerDto[];
+  canManage: boolean;
+  focus?: string | null;
+  /** Answers from the company form waiting for review. */
+  pendingIntake?: number;
+}) {
   const [customers, setCustomers] = useState(initial);
+  const [intakeOpen, setIntakeOpen] = useState(false);
+  const [pending, setPending] = useState(pendingIntake);
+  const upsertCustomer = (c: CustomerDto) =>
+    setCustomers((list) => (list.some((x) => x.id === c.id) ? list.map((x) => (x.id === c.id ? c : x)) : [...list, c].sort((a, b) => a.name.localeCompare(b.name, "vi"))));
   const [query, setQuery] = useState("");
+  const [kind, setKind] = useState<CustomerKind | "ALL">("ALL");
   const [open, setOpen] = useState<Set<string>>(() => new Set(focus ? [focus] : initial.length === 1 ? [initial[0].id] : []));
   // Opened from a project's header: bring that company into view.
   useEffect(() => {
@@ -49,7 +80,8 @@ export function CustomersView({ initial, canManage, focus = null }: { initial: C
   const [editingContact, setEditingContact] = useState<{ customerId: string; id: string | null; form: ContactForm } | null>(null);
   const [removing, setRemoving] = useState<{ kind: "customer"; customer: CustomerDto } | { kind: "contact"; customerId: string; contact: CustomerContactDto } | null>(null);
 
-  const shown = useMemo(() => customers.filter((c) => customerMatches(c, query)), [customers, query]);
+  const shown = useMemo(() => customers.filter((c) => (kind === "ALL" || c.kind === kind) && customerMatches(c, query)), [customers, query, kind]);
+  const kindCount = (k: CustomerKind) => customers.filter((c) => c.kind === k).length;
   const people = customers.reduce((n, c) => n + c.contacts.length, 0);
   const projectCount = customers.reduce((n, c) => n + c.projects.length, 0);
   // While searching, every match is open so the person found is in view.
@@ -127,17 +159,34 @@ export function CustomersView({ initial, canManage, focus = null }: { initial: C
         description={customers.length ? `${customers.length} doanh nghiệp · ${people} người liên hệ · ${projectCount} dự án` : "Doanh nghiệp khách hàng và người liên hệ theo từng vị trí."}
         actions={
           canManage && (
-            <Button onClick={() => setEditingCustomer({ id: null, form: EMPTY_CUSTOMER })}>
-              <Plus className="h-4 w-4" /> Thêm khách hàng
-            </Button>
+            <>
+              <Button variant="outline" onClick={() => setIntakeOpen(true)}>
+                <ClipboardList className="h-4 w-4" /> Form thông tin
+                {pending > 0 && <span className="rounded-full bg-danger px-1.5 text-[11px] font-semibold leading-4 text-white">{pending}</span>}
+              </Button>
+              <Button onClick={() => setEditingCustomer({ id: null, form: EMPTY_CUSTOMER })}>
+                <Plus className="h-4 w-4" /> Thêm khách hàng
+              </Button>
+            </>
           )
         }
       />
+      {canManage && <IntakePanel open={intakeOpen} onClose={() => setIntakeOpen(false)} customers={customers} onCustomer={upsertCustomer} onDecided={() => setPending((n) => Math.max(0, n - 1))} />}
 
       {customers.length > 0 && (
-        <div className="relative mb-4 max-w-md">
-          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" aria-hidden />
-          <Input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Tìm doanh nghiệp, người, số điện thoại, email" aria-label="Tìm khách hàng" className="pl-9" />
+        <div className="mb-4 flex flex-wrap items-center gap-3">
+          <div className="relative w-full max-w-md">
+            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" aria-hidden />
+            <Input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Tìm doanh nghiệp, người, số điện thoại, email" aria-label="Tìm khách hàng" className="pl-9" />
+          </div>
+          <Segmented
+            value={kind}
+            onChange={setKind}
+            options={[
+              { value: "ALL" as const, label: `Tất cả ${customers.length}` },
+              ...CUSTOMER_KINDS.map((k) => ({ value: k, label: `${CUSTOMER_KIND_INFO[k].label} ${kindCount(k)}` })),
+            ]}
+          />
         </div>
       )}
 
@@ -158,7 +207,7 @@ export function CustomersView({ initial, canManage, focus = null }: { initial: C
         </div>
       ) : shown.length === 0 ? (
         <div className="rounded-xl border bg-card">
-          <EmptyState icon={Search} title="Không tìm thấy" description={`Không có doanh nghiệp hay người liên hệ nào khớp “${query.trim()}”.`} />
+          <EmptyState icon={Search} title="Không tìm thấy" description={query.trim() ? `Không có doanh nghiệp hay người liên hệ nào khớp “${query.trim()}”.` : "Không có khách hàng nào thuộc loại này."} />
         </div>
       ) : (
         <ul className="space-y-3">
@@ -226,6 +275,7 @@ const pickCustomer = (c: CustomerDto): CustomerForm => ({
   email: c.email ?? "",
   website: c.website ?? "",
   note: c.note ?? "",
+  kind: c.kindManual ? c.kind : null,
 });
 
 const pickContact = (c: CustomerContactDto): ContactForm => ({
@@ -273,7 +323,15 @@ function CustomerCard({
           <span className="block truncate text-sm font-semibold">{customer.name}</span>
           {sub && <span className="block truncate text-xs text-muted-foreground">{sub}</span>}
         </span>
-        <span className="hidden shrink-0 items-center gap-1.5 md:flex">
+        <span className={cn("shrink-0 rounded-md px-1.5 py-0.5 text-[11px] font-medium", KIND_CHIP[customer.kind])} title={CUSTOMER_KIND_INFO[customer.kind].hint}>
+          {CUSTOMER_KIND_INFO[customer.kind].label}
+        </span>
+        {customer.size && (
+          <span className="hidden shrink-0 rounded-md border px-1.5 py-0.5 text-[11px] text-foreground/80 sm:inline" title={`Theo tổng giá trị hợp đồng: ${CUSTOMER_SIZE_INFO[customer.size].range}`}>
+            Size {CUSTOMER_SIZE_INFO[customer.size].label}
+          </span>
+        )}
+        <span className="hidden shrink-0 items-center gap-1.5 lg:flex">
           {groups.map((g) => (
             <span key={g.level} className={cn("rounded-md border px-1.5 py-0.5 text-[11px] tabular-nums", g.contacts.length ? "text-foreground/80" : "text-muted-foreground/60")}>
               {CONTACT_LEVEL_INFO[g.level].label} {g.contacts.length}
@@ -313,7 +371,29 @@ function CustomerCard({
 }
 
 function CompanyDetails({ customer, canManage, onEdit, onDelete }: { customer: CustomerDto; canManage: boolean; onEdit: () => void; onDelete: () => void }) {
+  const size = customer.size && CUSTOMER_SIZE_INFO[customer.size];
   const rows: { label: string; value: React.ReactNode }[] = [
+    {
+      label: "Loại khách hàng",
+      value: (
+        <>
+          {CUSTOMER_KIND_INFO[customer.kind].label}
+          <span className="text-xs text-muted-foreground">
+            {customer.kindManual ? ` · chọn tay (tự tính: ${CUSTOMER_KIND_INFO[customer.kindAuto].label})` : " · tự tính theo dự án, hợp đồng"}
+          </span>
+        </>
+      ),
+    },
+    {
+      label: "Size khách hàng",
+      value: size ? (
+        <>
+          {size.label} <span className="text-xs text-muted-foreground">· {customer.contractValue != null ? `tổng hợp đồng ${formatVnd(customer.contractValue)}` : `hợp đồng ${size.range}`}</span>
+        </>
+      ) : (
+        <span className="text-muted-foreground">Chưa có hợp đồng</span>
+      ),
+    },
     { label: "Mã số thuế", value: customer.taxCode },
     { label: "Lĩnh vực", value: customer.industry },
     { label: "Điện thoại", value: customer.phone && <a href={`tel:${customer.phone.replace(/\s+/g, "")}`} className="hover:underline">{customer.phone}</a> },
@@ -363,22 +443,37 @@ function ProjectsSection({ projects }: { projects: CustomerProjectDto[] }) {
       {projects.length === 0 ? (
         <p className="text-sm text-muted-foreground">Chưa có dự án nào gắn với khách hàng này. Chọn khách hàng trong phần sửa dự án.</p>
       ) : (
-        <ul className="flex flex-wrap gap-2">
-          {projects.map((p) => (
-            <li key={p.id}>
-              <Link href={`/projects/${p.id}`} className="flex max-w-full items-center gap-2 rounded-lg border px-2.5 py-1.5 text-sm transition-colors hover:bg-muted/60">
-                <span aria-hidden className="h-2 w-2 shrink-0 rounded-sm" style={{ background: p.color }} />
-                <span className="truncate">{p.name}</span>
-                <span className="shrink-0 text-xs text-muted-foreground">{PROJECT_STATUS[p.status as keyof typeof PROJECT_STATUS]?.label ?? p.status}</span>
-              </Link>
-            </li>
-          ))}
-        </ul>
+        <div className="grid gap-3 md:grid-cols-3">
+          {PROJECT_STAGES.map((stage) => {
+            const list = projects.filter((p) => (stage.statuses as readonly string[]).includes(p.status));
+            return (
+              <div key={stage.key} className="min-w-0">
+                <p className="mb-1.5 text-xs font-medium text-muted-foreground">
+                  {stage.label} ({list.length})
+                </p>
+                {list.length ? (
+                  <ul className="space-y-1.5">
+                    {list.map((p) => (
+                      <li key={p.id}>
+                        <Link href={`/projects/${p.id}`} className="flex max-w-full items-center gap-2 rounded-lg border px-2.5 py-1.5 text-sm transition-colors hover:bg-muted/60">
+                          <span aria-hidden className="h-2 w-2 shrink-0 rounded-sm" style={{ background: p.color }} />
+                          <span className="truncate">{p.name}</span>
+                          {p.status === "ON_HOLD" && <span className="shrink-0 text-xs text-muted-foreground">{PROJECT_STATUS.ON_HOLD.label}</span>}
+                        </Link>
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p className="text-xs text-muted-foreground/70">Không có</p>
+                )}
+              </div>
+            );
+          })}
+        </div>
       )}
     </section>
   );
 }
-
 function LevelSection({
   level,
   contacts,
@@ -512,6 +607,16 @@ function CustomerModal({ title, form, onChange, onClose, onSave }: { title: stri
         </Field>
         <Field label="Địa chỉ">
           <Input value={form.address ?? ""} onChange={set("address")} maxLength={300} />
+        </Field>
+        <Field label="Loại khách hàng" hint="Để “Tự tính” thì CRM xếp theo dự án và hợp đồng của doanh nghiệp.">
+          <Select value={form.kind ?? ""} onChange={(e) => onChange({ ...form, kind: (e.target.value || null) as CustomerKind | null })}>
+            <option value="">Tự tính</option>
+            {CUSTOMER_KINDS.map((k) => (
+              <option key={k} value={k}>
+                {CUSTOMER_KIND_INFO[k].label}
+              </option>
+            ))}
+          </Select>
         </Field>
         <Field label="Ghi chú" className="sm:col-span-2">
           <Textarea value={form.note ?? ""} onChange={set("note")} maxLength={2000} />

@@ -7,8 +7,9 @@ import { SESSION_COOKIE, verifyToken } from "@/lib/jwt";
 
 // Routes reachable without a session. /share/<token> is a public presentation link:
 // the page checks the token itself (lib/report-share.ts).
-const PUBLIC_PATHS = ["/login", "/api/auth/login", "/share"];
-const SHARE_PATH = "/share";
+const PUBLIC_PATHS = ["/login", "/api/auth/login", "/share", "/form", "/api/form"];
+// Public pages kept out of search engines and caches: report links and company form links.
+const SHARE_PATHS = ["/share", "/form"];
 // Routes a session flagged "must change password" may still reach.
 const PASSWORD_CHANGE_PATHS = ["/change-password", "/api/auth/change-password", "/api/auth/logout", "/api/auth/me"];
 
@@ -27,7 +28,7 @@ export async function middleware(req: NextRequest) {
     }
   }
 
-  if (matches(pathname, [SHARE_PATH])) {
+  if (matches(pathname, SHARE_PATHS)) {
     // Keep shared reports out of search engines and caches (no-referrer: next.config.mjs).
     const res = NextResponse.next();
     res.headers.set("X-Robots-Tag", "noindex, nofollow");

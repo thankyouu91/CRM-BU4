@@ -49,6 +49,14 @@ Mỗi dự án gắn được với một khách hàng (ô **Khách hàng** khi 
 
 Mọi người đăng nhập đều xem được; thêm, sửa, xoá cần quyền **Quản lý khách hàng** (`CUSTOMER_MANAGE`; quản trị viên và quản lý có sẵn, cấp thêm cho người khác ở trang Nhân sự). Xoá doanh nghiệp xoá luôn người liên hệ của nó. Mọi thay đổi ghi vào **Nhật ký thao tác** (nhóm *Khách hàng*).
 
+**Loại khách hàng** (lọc ở đầu trang): **Đã làm** khi có dự án đang làm, tạm dừng hoặc hoàn thành, hoặc có hợp đồng đã triển khai; **Lead** khi chỉ có dự án lên kế hoạch / hợp đồng chưa triển khai; **Mới** khi chưa có gì (dự án huỷ không tính). CRM tự tính theo *mọi* dự án và hợp đồng của doanh nghiệp; người có quyền *Quản lý khách hàng* chọn tay được trong ô **Loại khách hàng** khi sửa (để “Tự tính” là quay lại cách tự tính). **Size khách hàng** theo tổng giá trị hợp đồng với công ty: Nhỏ dưới 50 triệu, Vừa 50–500 triệu, Lớn từ 500 triệu (`customerSize` trong `lib/customers.ts`); con số tổng chỉ người có quyền *Hợp đồng & chi phí* thấy. Mục **Dự án** của thẻ chia ba cột **Đã làm / Đang làm / Dự định làm**.
+
+#### Form thông tin doanh nghiệp
+
+Nút **Form thông tin** (người có quyền *Quản lý khách hàng*) → tab **Link form**: đặt tên link, chọn thời hạn 7/30/90 ngày, bấm **Tạo link** rồi sao chép gửi cho doanh nghiệp (link chỉ hiện một lần; trong CSDL chỉ lưu mã băm; **Thu hồi** để ngừng nhận). Doanh nghiệp mở `/form/<mã>` không cần đăng nhập, điền thông tin công ty và tối đa 10 người liên hệ. Mỗi link nhận tối đa 200 lượt; mỗi IP 5 lượt/phút (`INTAKE_LIMITER` trong `wrangler.jsonc`); có ô bẫy bot.
+
+Thông tin gửi về nằm ở tab **Chờ duyệt** (số trên nút), **chưa** vào danh sách khách hàng. Mỗi bản có **Kiểm tra tự động** (mã số thuế 10 số / 10+3, số điện thoại Việt Nam, thiếu địa chỉ hay liên hệ, trùng doanh nghiệp đã có theo MST hoặc theo tên bỏ “Công ty TNHH/CP…”) và nút **AI kiểm tra** (tốn 1 lượt AI; Claude rà tính hợp lý và nhất quán, không tra cứu cơ quan thuế; kết quả lưu lại). Người duyệt chọn **Thêm mới** (tạo khách hàng kèm người liên hệ), **Gộp** vào một khách hàng có sẵn (chỉ điền ô còn trống và thêm người chưa có, không ghi đè dữ liệu nhân viên đã nhập) hoặc **Từ chối**. Mỗi bản chỉ xử lý được một lần; mọi thao tác ghi nhật ký.
+
 ### Hợp đồng & chi phí
 
 Chỉ người có quyền **Hợp đồng & chi phí** thấy mục này (quản lý có thể cấp cho nhân viên kế toán ở trang Nhân sự). Cách tính (`lib/finance.ts`):
@@ -169,6 +177,10 @@ Thanh bên → **Chấm công** (`/attendance`). Lịch làm việc: thứ 2 đ�
 - **Bảng công tháng** (tab thứ hai): **lịch làm việc** của mọi nhân sự theo từng ngày (ký hiệu và màu như bảng công, rê chuột vào ô để xem chi tiết và lý do), rồi tổng công từng người và phép còn lại; bấm tên để mở lịch người đó.
 - **Ngày vào làm / ngày nghỉ việc:** nhập trong hồ sơ nhân sự (trang **Nhân sự**). Ngoài khoảng này không tính công chuẩn, ngày công hay phép năm, và không ghi chấm công được (ô gạch chéo trên web, ô xám trong Excel). Người đã nghỉ vẫn có trên bảng công những tháng họ còn làm, kể cả khi tài khoản đã khoá; quản lý vẫn sửa được những ngày đó. **Xuất Excel** gồm trang *Bảng chấm công* (từng ngày trong tháng tô màu theo ký hiệu, thứ 7, Chủ nhật và ngày lễ tô màu, các cột ngày công, ngày cơm, tổng và phép năm, kèm danh sách ghi chú ký hiệu) và trang *Chi tiết nghỉ* (ngày, buổi, loại, lý do) (`lib/export/attendance-xlsx.ts`).
 - **Ngày nghỉ lễ:** người có quyền *Quản lý nhân viên* nhập ở nút **Ngày nghỉ lễ** trong bảng công tháng (bảng `Holiday`). Nút **Thêm ngày lễ, Tết** điền sẵn các ngày nghỉ theo Điều 112 Bộ luật Lao động cho cả năm: Tết Dương lịch, 5 ngày Tết Nguyên đán (cuối năm Âm lịch đến mùng 4, tính theo lịch Âm Việt Nam), Giỗ Tổ Hùng Vương 10/3 Âm lịch, 30/4, 1/5, 2/9 và một ngày liền kề, cùng ngày nghỉ bù khi lễ trùng Chủ nhật (`lib/vn-holidays.ts`); ngày đã nhập giữ nguyên. Lịch nghỉ Tết và 2/9 cụ thể do Chính phủ công bố mỗi năm, nên đối chiếu rồi chỉnh lại nếu khác. Ngày lễ không tính là ngày làm, ghi L và vẫn tính vào công hưởng lương.
+
+### Checklist cá nhân trên trang Tổng quan
+
+Thẻ **Checklist của tôi** trên trang Tổng quan, ai cũng có, **chỉ chủ nhân xem được**. Gõ việc rồi Enter để thêm, tích để đánh dấu xong. Việc chưa xong tự chuyển sang ngày hôm sau (ghi “từ dd/mm”); việc đã xong chỉ còn ở ngày hoàn thành. Nút ‹ › xem lại checklist các ngày trước đúng như hôm đó (chỉ xem, không sửa). Ngày tính theo giờ Việt Nam (`lib/checklist.ts`).
 
 ### Công việc của đội trên trang Tổng quan (cấp Quản lý trở lên)
 

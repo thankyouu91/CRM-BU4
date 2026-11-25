@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { CONTACT_LEVELS, contactsByLevel, createContactSchema, createCustomerSchema, customerMatches, updateContactSchema, type CustomerContactDto, type CustomerDto } from "@/lib/customers";
+import { autoKind, CONTACT_LEVELS, customerSize, contactsByLevel, createContactSchema, createCustomerSchema, customerMatches, updateContactSchema, type CustomerContactDto, type CustomerDto } from "@/lib/customers";
 
 const person = (over: Partial<CustomerContactDto>): CustomerContactDto => ({
   id: Math.random().toString(36).slice(2),
@@ -27,6 +27,29 @@ const company = (contacts: CustomerContactDto[]): CustomerDto => ({
   updatedAt: new Date(0).toISOString(),
   contacts,
   projects: [{ id: "p1", name: "Đào tạo tiếng Anh lãnh đạo", status: "ACTIVE", color: "#000" }],
+  kind: "DONE",
+  kindAuto: "DONE",
+  kindManual: false,
+  size: null,
+  contractValue: null,
+});
+
+describe("customer kind and size", () => {
+  it("is Đã làm once anything is under way or done, Lead with only planned work, Mới otherwise", () => {
+    expect(autoKind([], [])).toBe("NEW");
+    expect(autoKind(["PLANNING"], [])).toBe("LEAD");
+    expect(autoKind([], ["PLANNED"])).toBe("LEAD");
+    expect(autoKind(["PLANNING", "ON_HOLD"], [])).toBe("DONE");
+    expect(autoKind(["COMPLETED"], [])).toBe("DONE");
+    expect(autoKind(["PLANNING"], ["IN_PROGRESS"])).toBe("DONE");
+  });
+  it("sizes by total contract value, none before a contract", () => {
+    expect(customerSize(0, 0)).toBeNull();
+    expect(customerSize(0, 1)).toBe("SMALL");
+    expect(customerSize(49_999_999, 2)).toBe("SMALL");
+    expect(customerSize(50_000_000, 1)).toBe("MEDIUM");
+    expect(customerSize(500_000_000, 3)).toBe("LARGE");
+  });
 });
 
 describe("customers", () => {

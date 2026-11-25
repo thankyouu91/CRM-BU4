@@ -9,6 +9,7 @@ import { KpiTile } from "@/components/kpi";
 import { ProjectProgressCard } from "@/components/dashboard/project-progress-card";
 import { RecentReportsCard, UpcomingCard } from "@/components/dashboard/activity-cards";
 import { TeamWeekCard } from "@/components/dashboard/team-week-card";
+import { ChecklistCard } from "@/components/dashboard/checklist-card";
 import {
   ChartCard,
   DataTable,
@@ -98,6 +99,9 @@ export function DashboardView({ initial, showTeam = false }: { initial: Summary;
           />
           <KpiTile label="Giờ công đã ghi" value={k.hoursLogged} sub={`${k.reportsCount} báo cáo tiến độ`} icon={Timer} />
         </div>
+
+        {/* Everyone: their own checklist for the day */}
+        <ChecklistCard />
 
         {/* Managers: the team's week, deadlines and giving out work */}
         {showTeam && <TeamWeekCard />}

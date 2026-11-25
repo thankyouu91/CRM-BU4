@@ -123,28 +123,31 @@ model User {
   createdAt          DateTime     @default(now())
   updatedAt          DateTime     @updatedAt
 
-  ownedProjects    Project[]         @relation("ProjectOwner")
+  ownedProjects    Project[]            @relation("ProjectOwner")
   memberships      ProjectMember[]
-  assignedTasks    Task[]            @relation("TaskAssignee")
-  createdTasks     Task[]            @relation("TaskCreator")
-  taskReports      TaskReport[]      @relation("ReportAuthor")
-  reviewedReports  TaskReport[]      @relation("ReportReviewer")
+  assignedTasks    Task[]               @relation("TaskAssignee")
+  createdTasks     Task[]               @relation("TaskCreator")
+  taskReports      TaskReport[]         @relation("ReportAuthor")
+  reviewedReports  TaskReport[]         @relation("ReportReviewer")
   notes            Note[]
   contracts        Contract[]
-  workReports      WorkReport[]      @relation("WorkReportAuthor")
-  reviewedWork     WorkReport[]      @relation("WorkReportReviewer")
+  workReports      WorkReport[]         @relation("WorkReportAuthor")
+  reviewedWork     WorkReport[]         @relation("WorkReportReviewer")
   contractFiles    ContractFile[]
-  auditLogs        AuditLog[]        @relation("AuditActor")
-  settingsChanged  AppSetting[]      @relation("SettingUpdater")
-  projectTemplates ProjectTemplate[] @relation("TemplateCreator")
-  notifications    Notification[]    @relation("NotificationRecipient")
+  auditLogs        AuditLog[]           @relation("AuditActor")
+  settingsChanged  AppSetting[]         @relation("SettingUpdater")
+  projectTemplates ProjectTemplate[]    @relation("TemplateCreator")
+  notifications    Notification[]       @relation("NotificationRecipient")
   aiQuotas         AiQuota[]
-  deckShares       DeckShare[]       @relation("DeckShareCreator")
-  attendanceMarks  AttendanceMark[]  @relation("AttendanceOwner")
-  chatMessages     ChatMessage[]     @relation("ChatAuthor")
-  attendanceSet    AttendanceMark[]  @relation("AttendanceAuthor")
-  customersCreated Customer[]        @relation("CustomerAuthor")
-  leaveBalances    LeaveBalance[]    @relation("LeaveBalanceOwner")
+  deckShares       DeckShare[]          @relation("DeckShareCreator")
+  attendanceMarks  AttendanceMark[]     @relation("AttendanceOwner")
+  chatMessages     ChatMessage[]        @relation("ChatAuthor")
+  checklistItems   ChecklistItem[]      @relation("ChecklistOwner")
+  intakeLinks      CustomerIntakeLink[] @relation("IntakeLinkCreator")
+  reviewedIntakes  CustomerSubmission[] @relation("SubmissionReviewer")
+  attendanceSet    AttendanceMark[]     @relation("AttendanceAuthor")
+  customersCreated Customer[]           @relation("CustomerAuthor")
+  leaveBalances    LeaveBalance[]       @relation("LeaveBalanceOwner")
 }
 
 model Project {
@@ -532,7 +535,7 @@ model Holiday {
 
 // Khách hàng (doanh nghiệp) và người liên hệ theo từng vị trí trong doanh nghiệp đó.
 model Customer {
-  id          String            @id @default(cuid())
+  id          String               @id @default(cuid())
   name        String // tên doanh nghiệp
   taxCode     String? // mã số thuế
   industry    String? // lĩnh vực
@@ -541,14 +544,50 @@ model Customer {
   email       String?
   website     String?
   note        String?
+  // Loại khách hàng chọn tay: NEW (Mới) | LEAD | DONE (Đã làm); null = tự tính từ dự án, hợp đồng (lib/customers.ts).
+  kind        String?
   createdById String?
-  createdBy   User?             @relation("CustomerAuthor", fields: [createdById], references: [id], onDelete: SetNull)
-  createdAt   DateTime          @default(now())
-  updatedAt   DateTime          @updatedAt
+  createdBy   User?                @relation("CustomerAuthor", fields: [createdById], references: [id], onDelete: SetNull)
+  createdAt   DateTime             @default(now())
+  updatedAt   DateTime             @updatedAt
   contacts    CustomerContact[]
   projects    Project[]
+  submissions CustomerSubmission[]
 
   @@index([name])
+}
+
+// Link form để doanh nghiệp tự điền thông tin (trang công khai /form/<token>). Chỉ lưu SHA-256 của token.
+model CustomerIntakeLink {
+  id          String               @id @default(cuid())
+  tokenHash   String               @unique
+  label       String
+  createdById String
+  createdBy   User                 @relation("IntakeLinkCreator", fields: [createdById], references: [id], onDelete: Cascade)
+  expiresAt   DateTime
+  revokedAt   DateTime?
+  createdAt   DateTime             @default(now())
+  submissions CustomerSubmission[]
+}
+
+// Một bài điền form: chờ người có quyền Quản lý khách hàng duyệt (thêm mới / gộp / từ chối).
+// data: các trường doanh nghiệp và người liên hệ đã điền; aiReview: nhận xét của AI (lib/customer-intake.ts).
+model CustomerSubmission {
+  id           String             @id @default(cuid())
+  linkId       String
+  link         CustomerIntakeLink @relation(fields: [linkId], references: [id], onDelete: Cascade)
+  data         Json
+  // PENDING | APPROVED | MERGED | REJECTED
+  status       String             @default("PENDING")
+  aiReview     Json?
+  customerId   String?
+  customer     Customer?          @relation(fields: [customerId], references: [id], onDelete: SetNull)
+  reviewedById String?
+  reviewedBy   User?              @relation("SubmissionReviewer", fields: [reviewedById], references: [id], onDelete: SetNull)
+  reviewedAt   DateTime?
+  createdAt    DateTime           @default(now())
+
+  @@index([status, createdAt])
 }
 
 // Một người trong doanh nghiệp khách hàng. level: DIRECTOR (Giám đốc) | DEPUTY (Phó giám đốc) |
@@ -585,4 +624,18 @@ model ChatMessage {
   deletedAt DateTime?
 
   @@index([createdAt])
+}
+
+// Daily checklist cá nhân (trang Tổng quan): chỉ chủ nhân xem được. Việc chưa xong hiện tiếp ở
+// các ngày sau; createdDay / doneDay là ngày "YYYY-MM-DD" theo APP_TIMEZONE.
+model ChecklistItem {
+  id         String   @id @default(cuid())
+  userId     String
+  user       User     @relation("ChecklistOwner", fields: [userId], references: [id], onDelete: Cascade)
+  text       String
+  createdDay String
+  doneDay    String?
+  createdAt  DateTime @default(now())
+
+  @@index([userId, createdDay])
 }
