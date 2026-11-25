@@ -11,7 +11,8 @@ import {
   buildAttendanceMonth,
   isEmployedOn,
   LEAVE_KINDS,
-  leaveBalance,
+  LEAVE_LEDGER_FROM,
+  leaveLedger,
   markableReason,
   monthDays,
   monthLabel,
@@ -87,6 +88,9 @@ const correctable = (p: PersonRow) => p.active || !!p.endDay;
 
 const monthEnd = (month: string) => monthDays(month).at(-1)!;
 
+/** Holidays from the leave ledger's start (or the month, if earlier) to the end of the month. */
+const holidaysUpTo = (month: string) => holidaysIn([`${LEAVE_LEDGER_FROM}-01`, `${month}-01`].sort()[0], monthEnd(month));
+
 const holidaysIn = (from: string, to: string) => prisma.holiday.findMany({ where: { day: { gte: from, lte: to } }, orderBy: { day: "asc" }, select: { day: true, name: true } });
 
 /**
@@ -108,22 +112,38 @@ async function visiblePeople(viewer: CurrentUser, month?: string): Promise<Perso
   return users.sort((a, b) => (a.id === viewer.id ? -1 : b.id === viewer.id ? 1 : a.name.localeCompare(b.name, "vi")));
 }
 
-function assemble(person: PersonRow, month: string, today: string, yearMarks: AttendanceNote[], yearHolidays: HolidayInput[], balanceRow: { entitlement: number; carriedOver: number; note: string | null } | null): PersonAttendance {
-  const monthMarks = yearMarks.filter((m) => m.day.startsWith(month));
-  const holidays = yearHolidays.filter((h) => h.day.startsWith(month));
+type Adjustments = Map<number, { amount: number; note: string | null }>;
+
+/** HR adjustments to the leave ledger (LeaveBalance.carriedOver of each year), per person. */
+async function adjustmentsOf(userIds: string[]): Promise<Map<string, Adjustments>> {
+  const rows = await prisma.leaveBalance.findMany({ where: { userId: { in: userIds } }, select: { userId: true, year: true, carriedOver: true, note: true } });
+  const out = new Map<string, Adjustments>();
+  for (const r of rows) out.set(r.userId, (out.get(r.userId) ?? new Map()).set(r.year, { amount: r.carriedOver, note: r.note }));
+  return out;
+}
+
+function assemble(person: PersonRow, month: string, today: string, marks: AttendanceNote[], allHolidays: HolidayInput[], adjustments: Adjustments | undefined): PersonAttendance {
+  const monthMarks = marks.filter((m) => m.day.startsWith(month));
+  const holidays = allHolidays.filter((h) => h.day.startsWith(month));
   const attendance = buildAttendanceMonth({ month, marks: monthMarks, holidays, today, employment: person });
-  const used = annualLeaveUsed(yearMarks, yearHolidays, monthEnd(month), person);
+  const balance = leaveLedger({ month, marks, holidays: allHolidays, employment: person, adjustments });
+  // Nghỉ âm is unpaid: payroll deducts it, so it is not công hưởng lương. Paid counts leave up to
+  // today only, so take off the part of the deficit that falls on those days (latest days overspend).
+  const usedSoFar = annualLeaveUsed(monthMarks, holidays, today, person);
+  const unpaidSoFar = Math.max(0, usedSoFar - (balance.used - balance.negative));
+  attendance.totals.paid = Math.max(0, attendance.totals.paid - unpaidSoFar);
   return {
     person: toPerson(person),
     attendance,
-    balance: leaveBalance(Number(month.slice(0, 4)), balanceRow, used),
+    balance,
     notes: monthMarks.filter((m) => !holidays.some((h) => h.day === m.day) && isEmployedOn(m.day, person) && (scheduledSessions(m.day) as string[]).includes(m.session)),
   };
 }
 
 const marksOf = async (userIds: string[], month: string) => {
   const rows = await prisma.attendanceMark.findMany({
-    where: { userId: { in: userIds }, day: { gte: `${month.slice(0, 4)}-01-01`, lte: monthEnd(month) } },
+    // The leave ledger needs every month from its start.
+    where: { userId: { in: userIds }, day: { gte: [`${LEAVE_LEDGER_FROM}-01`, `${month}-01`].sort()[0], lte: monthEnd(month) } },
     orderBy: [{ day: "asc" }, { session: "asc" }],
     select: { userId: true, day: true, session: true, kind: true, note: true },
   });
@@ -140,19 +160,14 @@ export async function attendanceView(viewer: CurrentUser, personId: string, mont
   const [person, people] = await Promise.all([prisma.user.findUnique({ where: { id: personId }, select: personSelect }), visiblePeople(viewer)]);
   if (!person) return null;
   const today = zonedDay(now);
-  const year = Number(month.slice(0, 4));
-  const [marks, yearHolidays, balanceRow] = await Promise.all([
-    marksOf([person.id], month),
-    holidaysIn(`${year}-01-01`, `${year}-12-31`),
-    prisma.leaveBalance.findUnique({ where: { userId_year: { userId: person.id, year } }, select: { entitlement: true, carriedOver: true, note: true } }),
-  ]);
-  const view = assemble(person, month, today, marks.get(person.id) ?? [], yearHolidays, balanceRow);
+  const [marks, allHolidays, adjustments] = await Promise.all([marksOf([person.id], month), holidaysUpTo(month), adjustmentsOf([person.id])]);
+  const view = assemble(person, month, today, marks.get(person.id) ?? [], allHolidays, adjustments.get(person.id));
   const correct = correctable(person) && canCorrectAttendance(viewer, person);
   const requestFrom = !correct && person.id === viewer.id && person.active ? ownEditFrom(today) : null;
   return {
     ...view,
     today,
-    holidays: yearHolidays.filter((h) => h.day.startsWith(month)),
+    holidays: allHolidays.filter((h) => h.day.startsWith(month)),
     rights: { correct, requestFrom, canEditBalance: canEditLeaveBalance(viewer, person), canEditHolidays: canEditHolidays(viewer), canExport: canExportTimesheet(viewer) },
     people: people.map(toPerson),
   };
@@ -169,21 +184,15 @@ export interface TeamAttendance {
 /** Everyone's month (the timesheet and its Excel file). */
 export async function teamAttendance(viewer: CurrentUser, month: string, now = new Date()): Promise<TeamAttendance> {
   const today = zonedDay(now);
-  const year = Number(month.slice(0, 4));
   const people = await visiblePeople(viewer, month);
   const ids = people.map((p) => p.id);
-  const [marks, yearHolidays, balances] = await Promise.all([
-    marksOf(ids, month),
-    holidaysIn(`${year}-01-01`, `${year}-12-31`),
-    prisma.leaveBalance.findMany({ where: { userId: { in: ids }, year }, select: { userId: true, entitlement: true, carriedOver: true, note: true } }),
-  ]);
-  const balanceOf = new Map(balances.map((b) => [b.userId, b]));
+  const [marks, allHolidays, adjustments] = await Promise.all([marksOf(ids, month), holidaysUpTo(month), adjustmentsOf(ids)]);
   return {
     month,
     label: monthLabel(month),
     today,
-    holidays: yearHolidays.filter((h) => h.day.startsWith(month)),
-    people: people.map((p) => assemble(p, month, today, marks.get(p.id) ?? [], yearHolidays, balanceOf.get(p.id) ?? null)),
+    holidays: allHolidays.filter((h) => h.day.startsWith(month)),
+    people: people.map((p) => assemble(p, month, today, marks.get(p.id) ?? [], allHolidays, adjustments.get(p.id))),
   };
 }
 
@@ -300,7 +309,8 @@ export async function setAttendance(
   return { changed: slots.length };
 }
 
-export async function setLeaveBalance(viewer: CurrentUser, input: { userId: string; year: number; entitlement: number; carriedOver: number; note?: string | null }): Promise<void> {
+/** HR's + / − adjustment to someone's leave ledger for a year (added in that year's first month). */
+export async function setLeaveBalance(viewer: CurrentUser, input: { userId: string; year: number; adjustment: number; note?: string | null }): Promise<void> {
   const person = await prisma.user.findUnique({ where: { id: input.userId }, select: personSelect });
   if (!person) throw refuse("Không tìm thấy nhân sự", 404);
   if (!canEditLeaveBalance(viewer, person)) throw refuse("Chỉ người quản lý tài khoản này mới sửa được số phép năm", 403);
@@ -308,18 +318,19 @@ export async function setLeaveBalance(viewer: CurrentUser, input: { userId: stri
   const note = input.note?.trim() || null;
   await prisma.leaveBalance.upsert({
     where: { userId_year: { userId: person.id, year: input.year } },
-    create: { userId: person.id, year: input.year, entitlement: input.entitlement, carriedOver: input.carriedOver, note, updatedById: viewer.id },
-    update: { entitlement: input.entitlement, carriedOver: input.carriedOver, note, updatedById: viewer.id },
+    // entitlement belongs to the old yearly rule and is no longer read.
+    create: { userId: person.id, year: input.year, entitlement: 0, carriedOver: input.adjustment, note, updatedById: viewer.id },
+    update: { carriedOver: input.adjustment, note, updatedById: viewer.id },
   });
-  const was = before ? `${before.entitlement} + ${before.carriedOver}` : "mặc định";
+  const was = before ? String(before.carriedOver) : "0";
   await audit(
     { id: viewer.id, name: viewer.name },
     {
       action: "leave_balance.update",
       entityType: "user",
       entityId: person.id,
-      summary: `Sửa phép năm ${input.year} của ${person.name}: được hưởng ${input.entitlement}, tồn năm trước ${input.carriedOver} (trước: ${was})`,
-      details: { year: input.year, entitlement: input.entitlement, carriedOver: input.carriedOver, before: before ? { entitlement: before.entitlement, carriedOver: before.carriedOver } : null, note },
+      summary: `Điều chỉnh phép năm ${input.year} của ${person.name}: ${input.adjustment > 0 ? "+" : ""}${input.adjustment} ngày (trước: ${was})`,
+      details: { year: input.year, adjustment: input.adjustment, before: before ? { carriedOver: before.carriedOver } : null, note },
     },
   );
 }

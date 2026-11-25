@@ -64,7 +64,8 @@ export function TeamSheet({ month, canEditHolidays, onOpen }: { month: string; c
               ))}
               <th className="px-2 py-2.5 text-right font-medium">Lễ</th>
               <th className="px-2 py-2.5 text-right font-medium">Hưởng lương</th>
-              <th className="px-4 py-2.5 text-right font-medium">Phép còn lại</th>
+              <th className="px-2 py-2.5 text-right font-medium">Phép còn lại</th>
+              <th className="px-4 py-2.5 text-right font-medium" title="Nghỉ phép quá số phép đang có: trừ lương tháng này">Nghỉ âm</th>
             </tr>
           </thead>
           <tbody>
@@ -91,7 +92,8 @@ export function TeamSheet({ month, canEditHolidays, onOpen }: { month: string; c
                   ))}
                   {num(t.holidays)}
                   {num(t.paid, true)}
-                  <td className={cn("px-4 py-2.5 text-right font-semibold tabular-nums", p.balance.remaining < 0 ? "text-danger" : "text-primary")}>{formatDays(p.balance.remaining)}</td>
+                  <td className={cn("px-2 py-2.5 text-right font-semibold tabular-nums", p.balance.remaining < 0 ? "text-danger" : "text-primary")}>{formatDays(p.balance.remaining)}</td>
+                  <td className={cn("px-4 py-2.5 text-right tabular-nums", p.balance.negative ? "font-semibold text-danger" : "text-muted-foreground/50")}>{formatDays(p.balance.negative)}</td>
                 </tr>
               );
             })}
@@ -99,7 +101,7 @@ export function TeamSheet({ month, canEditHolidays, onOpen }: { month: string; c
         </table>
       </div>
       <p className="border-t px-4 py-2 text-xs text-muted-foreground">
-        Ngày công, ngày cơm tính đến hôm nay với tháng hiện tại; ngày cơm không tính buổi công tác, online, du lịch. Phép còn lại = được hưởng + tồn năm trước − đã nghỉ từ đầu năm đến hết tháng. Cấp quản lý xuất file Excel (từng ngày X, -, CT…, kèm trang chi tiết lý do nghỉ) bằng nút ở đầu trang.
+        Ngày công, ngày cơm tính đến hôm nay với tháng hiện tại; ngày cơm không tính buổi công tác, online, du lịch. Phép: mỗi tháng sau thử việc +1 ngày, phép dư cộng dồn; còn lại = đầu tháng + cộng trong tháng − nghỉ phép trong tháng. Âm thì là nghỉ âm, trừ lương tháng đó (không tính vào công hưởng lương), tháng sau bắt đầu lại. Cấp quản lý xuất file Excel (từng ngày X, -, CT…, kèm trang chi tiết lý do nghỉ) bằng nút ở đầu trang.
       </p>
       {holidays && <HolidaysModal year={Number(month.slice(0, 4))} onClose={() => setHolidays(false)} onChanged={() => void reload()} />}
     </section>

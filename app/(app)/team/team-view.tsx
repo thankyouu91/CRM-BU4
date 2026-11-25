@@ -451,7 +451,7 @@ function EditMemberModal({ member, people, onClose, onSaved, isSelf }: { member:
 function EmploymentFields({ startDay, endDay, errors, onChange }: { startDay: string; endDay: string; errors: Record<string, string>; onChange: (d: { startDay?: string; endDay?: string }) => void }) {
   return (
     <div className="grid grid-cols-2 gap-3">
-      <Field label="Ngày vào làm" error={errors.startDay} hint="Trước ngày này không tính công.">
+      <Field label="Ngày vào làm" error={errors.startDay} hint="Trước ngày này không tính công; 2 tháng đầu là thử việc (chưa có phép năm).">
         <DateInput aria-label="Ngày vào làm" value={startDay} onChange={(d) => onChange({ startDay: d })} />
       </Field>
       <Field label="Ngày nghỉ việc" error={errors.endDay} hint="Để trống nếu còn làm.">

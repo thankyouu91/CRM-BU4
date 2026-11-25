@@ -36,9 +36,6 @@ export type LeaveKind = keyof typeof LEAVE_KINDS;
 export const LEAVE_KIND_KEYS = Object.keys(LEAVE_KINDS) as LeaveKind[];
 export const isLeaveKind = (v: unknown): v is LeaveKind => typeof v === "string" && v in LEAVE_KINDS;
 
-/** Annual leave a person gets when nobody has set another number (Bộ luật Lao động, Điều 113). */
-export const DEFAULT_ANNUAL_DAYS = 12;
-
 const DAY = /^(\d{4})-(\d{2})-(\d{2})$/;
 const MONTH = /^(\d{4})-(0[1-9]|1[0-2])$/;
 const pad = (n: number) => String(n).padStart(2, "0");
@@ -215,6 +212,18 @@ export function buildAttendanceMonth(opts: { month: string; marks: MarkInput[]; 
   };
 }
 
+/** Thử việc: the first months from the start day; no annual leave is earned during them. */
+export const PROBATION_MONTHS = 2;
+
+/** First day after probation: the start day PROBATION_MONTHS later (31/12 → 28 or 29/02). */
+export function officialFrom(startDay: string): string {
+  const [y, m, d] = startDay.split("-").map(Number);
+  const i = y * 12 + (m - 1) + PROBATION_MONTHS;
+  const year = Math.floor(i / 12);
+  const month = (i % 12) + 1;
+  return `${year}-${pad(month)}-${pad(Math.min(d, new Date(Date.UTC(year, month, 0)).getUTCDate()))}`;
+}
+
 /** Annual leave used: marked sessions on working days, holidays aside, in days. */
 export function annualLeaveUsed(marks: MarkInput[], holidays: HolidayInput[], through?: string, employment?: Employment | null): number {
   const off = new Set(holidays.map((h) => h.day));
@@ -225,23 +234,78 @@ export function annualLeaveUsed(marks: MarkInput[], holidays: HolidayInput[], th
   return half(sessions);
 }
 
+/**
+ * Sổ phép theo tháng (company rule): every month after probation adds MONTHLY_LEAVE day;
+ * what is left carries on, over year ends too. A month that ends below zero is "nghỉ âm":
+ * payroll deducts those days from that month's salary, so the next month starts again from
+ * zero (plus its new day). HR adjustments (LeaveBalance.carriedOver of a year, + or −) are
+ * added in the first month of that year the ledger covers.
+ */
+export const MONTHLY_LEAVE = 1;
+/** The ledger starts here; earlier months (the old yearly rule) are not counted. */
+export const LEAVE_LEDGER_FROM = "2026-11";
+
 export interface LeaveBalanceView {
+  month: string;
+  /** Year whose HR adjustment the card edits. */
   year: number;
-  /** Được hưởng trong năm (set by a manager). */
-  entitlement: number;
-  /** Tồn năm trước chuyển sang (set by a manager). */
-  carriedOver: number;
-  /** Đã nghỉ / đã đăng ký: from the calendar. */
-  used: number;
-  /** Còn lại: entitlement + carried over − used. */
-  remaining: number;
+  /** Phép đầu tháng: what was left (never below zero: a deficit was paid from salary). */
+  opening: number;
+  /** Cộng trong tháng: the month's new day (0 on probation, before the start or after the last day). */
+  earned: number;
+  /** HR adjustment added this month (the year's first month in the ledger), + or −. */
+  adjustment: number;
+  /** The year's adjustment as HR set it, and its note (for the edit form). */
+  yearAdjustment: number;
   note: string | null;
+  /** Nghỉ phép trong tháng: "Nghỉ có phép" days marked in the month. */
+  used: number;
+  /** Phép còn lại cuối tháng: opening + earned + adjustment − used (negative when overspent). */
+  remaining: number;
+  /** Nghỉ âm: the days payroll deducts this month (0 unless remaining < 0). */
+  negative: number;
+  /** First day after probation, while it is this month or later (null otherwise). */
+  officialFrom: string | null;
 }
 
-export function leaveBalance(year: number, row: { entitlement: number; carriedOver: number; note?: string | null } | null, used: number): LeaveBalanceView {
-  const entitlement = row?.entitlement ?? DEFAULT_ANNUAL_DAYS;
-  const carriedOver = row?.carriedOver ?? 0;
-  return { year, entitlement, carriedOver, used, remaining: Math.round((entitlement + carriedOver - used) * 10) / 10, note: row?.note ?? null };
+const round1 = (n: number) => Math.round(n * 10) / 10;
+
+export function leaveLedger(opts: {
+  month: string;
+  marks: MarkInput[];
+  holidays: HolidayInput[];
+  employment?: Employment | null;
+  /** HR adjustment per year. */
+  adjustments?: ReadonlyMap<number, { amount: number; note: string | null }>;
+}): LeaveBalanceView {
+  const e = opts.employment;
+  const official = e?.startDay ? officialFrom(e.startDay) : null;
+  const first = [LEAVE_LEDGER_FROM, e?.startDay?.slice(0, 7) ?? ""].sort().at(-1)!;
+  const year = Number(opts.month.slice(0, 4));
+  const yearAdj = opts.adjustments?.get(year);
+  let closing = 0;
+  let row = { opening: 0, earned: 0, adjustment: 0, used: 0 };
+  for (let m = first; m <= opts.month; m = shiftMonth(m, 1)) {
+    const end = monthDays(m).at(-1)!;
+    const opening = Math.max(closing, 0);
+    const employed = (!e?.startDay || e.startDay <= end) && (!e?.endDay || e.endDay >= `${m}-01`);
+    const earned = employed && (!official || official <= end) ? MONTHLY_LEAVE : 0;
+    const adjustment = m === first || m.endsWith("-01") ? (opts.adjustments?.get(Number(m.slice(0, 4)))?.amount ?? 0) : 0;
+    const used = annualLeaveUsed(opts.marks.filter((x) => x.day.startsWith(m)), opts.holidays, undefined, e);
+    closing = round1(opening + earned + adjustment - used);
+    row = { opening, earned, adjustment, used };
+  }
+  const remaining = opts.month < first ? 0 : closing;
+  return {
+    month: opts.month,
+    year,
+    ...(opts.month < first ? { opening: 0, earned: 0, adjustment: 0, used: 0 } : row),
+    yearAdjustment: yearAdj?.amount ?? 0,
+    note: yearAdj?.note ?? null,
+    remaining,
+    negative: remaining < 0 ? -remaining : 0,
+    officialFrom: official && official.slice(0, 7) >= opts.month ? official : null,
+  };
 }
 
 /** Days are whole or half: 1, 1.5, 0.5. */

@@ -6,7 +6,6 @@ import {
   dayKind,
   formatDays,
   isDay,
-  leaveBalance,
   markableReason,
   monthDays,
   ownEditFrom,
@@ -122,7 +121,7 @@ describe("attendance rules", () => {
     expect(m.totals).toMatchObject({ standard: 23, worked: 23, holidays: 1, paid: 24 });
   });
 
-  it("keeps the annual leave balance from the numbers set and the calendar", () => {
+  it("counts annual leave taken on working sessions only", () => {
     const marks = [
       { day: "2026-03-02", session: "AM", kind: "ANNUAL" },
       { day: "2026-03-02", session: "PM", kind: "ANNUAL" },
@@ -135,8 +134,6 @@ describe("attendance rules", () => {
     const holidays = [{ day: "2026-04-30", name: "Giải phóng miền Nam" }];
     expect(annualLeaveUsed(marks, holidays)).toBe(2);
     expect(annualLeaveUsed(marks, holidays, "2026-10-31")).toBe(1.5);
-    expect(leaveBalance(2026, null, 1.5)).toMatchObject({ entitlement: 12, carriedOver: 0, used: 1.5, remaining: 10.5 });
-    expect(leaveBalance(2026, { entitlement: 14, carriedOver: 2.5 }, 3)).toMatchObject({ remaining: 13.5 });
     expect(formatDays(10.5)).toBe("10,5");
   });
 
@@ -157,5 +154,52 @@ describe("who exports the month's timesheet", async () => {
     expect(["ADMIN", "MANAGER", "LEAD", "MEMBER"].map((r) => canExportTimesheet(as(r)))).toEqual([true, true, false, false]);
     expect(canExportTimesheet(as("LEAD", ["USER_MANAGE"]))).toBe(true);
     expect(canExportTimesheet(as("MEMBER", ["PROJECT_CREATE"]))).toBe(false);
+  });
+});
+
+describe("leave ledger: one day a month, overspending is deducted from pay", async () => {
+  const { officialFrom, leaveLedger } = await import("../lib/attendance");
+  const off = (d: string) => [{ day: d, session: "AM", kind: "ANNUAL" }, { day: d, session: "PM", kind: "ANNUAL" }];
+  const at = (month: string, marks: { day: string; session: string; kind: string }[] = [], employment: { startDay?: string | null } | null = null, adjustments?: Map<number, { amount: number; note: string | null }>) =>
+    leaveLedger({ month, marks, holidays: [], employment, adjustments });
+
+  it("ends probation two months after the start day, on the same day of the month", () => {
+    expect(officialFrom("2026-07-10")).toBe("2026-09-10");
+    expect(officialFrom("2026-11-15")).toBe("2027-01-15");
+    expect(officialFrom("2026-12-31")).toBe("2027-02-28"); // no 31/02
+    expect(officialFrom("2027-12-31")).toBe("2028-02-29");
+  });
+
+  it("adds a day each month from the start of the ledger and carries what is left, over year ends too", () => {
+    expect(at("2026-10")).toMatchObject({ opening: 0, earned: 0, remaining: 0 }); // before the ledger
+    expect(at("2026-11")).toMatchObject({ opening: 0, earned: 1, used: 0, remaining: 1, negative: 0 });
+    expect(at("2027-02")).toMatchObject({ opening: 3, earned: 1, remaining: 4 });
+    expect(at("2027-02", [...off("2026-12-03")]).remaining).toBe(3); // one day in December: 1+1−1+1+1
+  });
+
+  it("reports a month that ends below zero as nghỉ âm, and starts the next month again from one day", () => {
+    const marks = [...off("2026-11-03"), ...off("2026-11-04"), ...off("2026-11-05")]; // 3 days with 1 day earned
+    expect(at("2026-11", marks)).toMatchObject({ opening: 0, earned: 1, used: 3, remaining: -2, negative: 2 });
+    expect(at("2026-12", marks)).toMatchObject({ opening: 0, earned: 1, used: 0, remaining: 1, negative: 0 });
+    // Half days count as halves.
+    expect(at("2026-11", [{ day: "2026-11-03", session: "AM", kind: "ANNUAL" }])).toMatchObject({ used: 0.5, remaining: 0.5 });
+  });
+
+  it("gives nothing on probation: leave then is that month's nghỉ âm", () => {
+    const kimmy = { startDay: "2026-11-15" }; // probation to 14/01/2027
+    expect(at("2026-11", [], kimmy)).toMatchObject({ earned: 0, remaining: 0, officialFrom: "2027-01-15" });
+    expect(at("2026-12", [...off("2026-12-10")], kimmy)).toMatchObject({ earned: 0, used: 1, remaining: -1, negative: 1 });
+    // January: probation ends on the 15th, so the month earns its day; February adds another.
+    expect(at("2027-01", [...off("2026-12-10")], kimmy)).toMatchObject({ opening: 0, earned: 1, remaining: 1, officialFrom: "2027-01-15" });
+    expect(at("2027-02", [...off("2026-12-10")], kimmy)).toMatchObject({ opening: 1, earned: 1, remaining: 2, officialFrom: null });
+    // Someone who joins later starts their ledger in their own month.
+    expect(at("2027-03", [], { startDay: "2027-03-02" })).toMatchObject({ earned: 0, remaining: 0 });
+  });
+
+  it("adds HR's adjustment in the year's first month of the ledger", () => {
+    const adj = new Map([[2026, { amount: 4, note: "Phép tồn trước khi dùng sổ" }], [2027, { amount: -1, note: null }]]);
+    expect(at("2026-11", [], null, adj)).toMatchObject({ opening: 0, earned: 1, adjustment: 4, remaining: 5, yearAdjustment: 4, note: "Phép tồn trước khi dùng sổ" });
+    expect(at("2026-12", [], null, adj)).toMatchObject({ opening: 5, adjustment: 0, remaining: 6 });
+    expect(at("2027-01", [], null, adj)).toMatchObject({ opening: 6, adjustment: -1, remaining: 6, yearAdjustment: -1 });
   });
 });

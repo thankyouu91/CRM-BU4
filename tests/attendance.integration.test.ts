@@ -72,7 +72,9 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)("attendance on PostgreSQL", () =
     expect(own.body.changed).toBe(1);
     const am = own.body.view.attendance.days.find((d: { day: string }) => d.day === day).sessions[0];
     expect(am).toMatchObject({ state: "marked", kind: "ANNUAL", note: "Đi khám" });
-    expect(own.body.view.balance).toMatchObject({ entitlement: 12, used: 0.5, remaining: 11.5 });
+    const ledger = own.body.view.balance;
+    expect(ledger).toMatchObject({ earned: 1, used: 0.5 });
+    expect(ledger.remaining).toBe(ledger.opening + ledger.earned + ledger.adjustment - 0.5);
     const notice = await db.notification.findFirst({ where: { userId: ids.boss, type: "attendance.leave" } });
     expect(notice?.title).toContain("An xin nghỉ có phép sáng");
     expect(notice?.link).toBe(`/attendance?user=${ids.an}&month=${month}`);
@@ -131,21 +133,23 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)("attendance on PostgreSQL", () =
     expect(await db.attendanceMark.count({ where: { userId: ids.an, day: { gte: monday, lte: sunday } } })).toBe(0);
   });
 
-  it("keeps the annual leave numbers with HR and works out what is left from the calendar", async () => {
+  it("lets HR adjust someone's leave ledger and works out what is left from the calendar", async () => {
     const { balance, view, team } = await routes();
     const put = (who: keyof typeof ids, body: object) => {
       session.user = as(who);
       return balance(json("/api/attendance/balance", "PUT", body));
     };
     const year = Number(month.slice(0, 4));
-    expect((await put("an", { userId: ids.an, year, entitlement: 30, carriedOver: 0 })).status).toBe(403);
-    expect((await put("boss", { userId: ids.an, year, entitlement: 30, carriedOver: 0 })).status).toBe(403);
-    expect((await put("hr", { userId: ids.an, year, entitlement: 12.3, carriedOver: 0 })).status).toBe(400);
-    expect((await put("hr", { userId: ids.an, year, entitlement: 14, carriedOver: 2.5, note: "Thâm niên" })).status).toBe(200);
+    expect((await put("an", { userId: ids.an, year, adjustment: 30 })).status).toBe(403);
+    expect((await put("boss", { userId: ids.an, year, adjustment: 30 })).status).toBe(403);
+    expect((await put("hr", { userId: ids.an, year, adjustment: 0.3 })).status).toBe(400);
+    expect((await put("hr", { userId: ids.an, year, adjustment: 2.5, note: "Thâm niên" })).status).toBe(200);
     await mark("an", { userId: ids.an, from: firstWeekday(month), kind: "ANNUAL" });
     session.user = as("an");
     const mine = await (await view(json(`/api/attendance?month=${month}`, "GET"))).json();
-    expect(mine.balance).toMatchObject({ entitlement: 14, carriedOver: 2.5, used: 1, remaining: 15.5, note: "Thâm niên" });
+    expect(mine.balance).toMatchObject({ yearAdjustment: 2.5, used: 1, note: "Thâm niên" });
+    const b = mine.balance;
+    expect(b.remaining).toBe(b.opening + b.earned + b.adjustment - 1);
     expect(mine.rights).toMatchObject({ correct: false, requestFrom: `${month}-01` });
     expect(await db.auditLog.count({ where: { actorId: ids.hr, action: "leave_balance.update" } })).toBe(1);
 
@@ -188,6 +192,31 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)("attendance on PostgreSQL", () =
       await mark("hr", { userId: ids.peer, from: firstDay, kind: null });
     } finally {
       await patch({ endDay: null, active: true });
+    }
+  });
+
+  it("gives no leave on probation: leave then is that month's nghỉ âm, and the next month starts again", async () => {
+    const { view, user, team } = await routes();
+    const start = firstWeekday(month);
+    const later = [...Array(20)].map((_, i) => `${month}-${String(8 + i).padStart(2, "0")}`).find((d) => scheduledSessions(d).length === 2)!;
+    session.user = as("hr");
+    expect((await user(json(`/api/users/${ids.peer}`, "PATCH", { startDay: start }), { params: Promise.resolve({ id: ids.peer }) })).status).toBe(200);
+    await db.attendanceMark.createMany({ data: [{ userId: ids.peer, day: later, session: "AM", kind: "ANNUAL" }, { userId: ids.peer, day: later, session: "PM", kind: "ANNUAL" }] });
+    try {
+      const now = await (await view(json(`/api/attendance?user=${ids.peer}&month=${month}`, "GET"))).json();
+      expect(now.balance).toMatchObject({ opening: 0, earned: 0, used: 1, remaining: -1, negative: 1 });
+      expect(now.balance.officialFrom).toBeTruthy();
+      const row = (await (await team(json(`/api/attendance/team?month=${month}`, "GET"))).json()).people.find((p: { person: { id: string } }) => p.person.id === ids.peer);
+      expect(row.balance.negative).toBe(1);
+      // A day of nghỉ âm already past is not paid: paid = worked + paid leave + holidays − that day.
+      const t = now.attendance.totals;
+      const past = later <= now.today;
+      expect(t.paid).toBe(t.worked + t.holidays + (past ? 1 : 0) - (past ? 1 : 0));
+      const next = await (await view(json(`/api/attendance?user=${ids.peer}&month=${shiftMonth(month, 1)}`, "GET"))).json();
+      expect(next.balance).toMatchObject({ opening: 0, earned: 0, used: 0, remaining: 0, negative: 0 }); // the deficit was paid from salary
+    } finally {
+      await db.attendanceMark.deleteMany({ where: { userId: ids.peer, day: later } });
+      await user(json(`/api/users/${ids.peer}`, "PATCH", { startDay: null }), { params: Promise.resolve({ id: ids.peer }) });
     }
   });
 

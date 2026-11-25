@@ -59,10 +59,11 @@ const totalsOf = (kinds: LeaveKind[]) => [
   ...kinds.map((k) => ({ label: `${LEAVE_KINDS[k].short} (${LEAVE_KINDS[k].code})${isLate(k) ? " · lần" : ""}`, width: 9 })),
   { label: "Lễ (L)", width: 7 },
   { label: "Công hưởng lương", width: 10 },
-  { label: "Phép năm được hưởng", width: 10 },
-  { label: "Tồn năm trước", width: 9 },
-  { label: "Phép đã nghỉ (từ đầu năm)", width: 11 },
-  { label: "Phép còn lại", width: 9 },
+  { label: "Phép đầu tháng", width: 9 },
+  { label: "Phép cộng trong tháng", width: 10 },
+  { label: "Nghỉ phép trong tháng", width: 10 },
+  { label: "Phép còn lại cuối tháng", width: 10 },
+  { label: "Nghỉ âm (trừ lương)", width: 10 },
 ];
 
 export async function exportAttendanceXlsx(team: TeamAttendance, filename: string) {
@@ -108,10 +109,11 @@ export async function exportAttendanceXlsx(team: TeamAttendance, filename: strin
       ...kinds.map((k) => num(t.leave[k])),
       num(t.holidays),
       num(t.paid, { fontWeight: "bold" }),
-      num(p.balance.entitlement),
-      num(p.balance.carriedOver),
+      num(p.balance.opening),
+      num(p.balance.earned + p.balance.adjustment),
       num(p.balance.used),
       num(p.balance.remaining, { fontWeight: "bold", textColor: p.balance.remaining < 0 ? "#b91c1c" : NAVY }),
+      num(p.balance.negative, p.balance.negative ? { fontWeight: "bold", textColor: "#b91c1c", backgroundColor: "#FDE2E2" } : {}),
     ]);
   });
   if (team.holidays.length) {
