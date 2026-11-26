@@ -53,7 +53,7 @@ export function IntakeForm({ token }: { token: string }) {
 
   if (sent)
     return (
-      <div className="mt-8 rounded-xl border bg-card p-8 text-center">
+      <div className="mt-8 rounded-xl border border-white/10 bg-black/45 backdrop-blur-[6px] p-8 text-center">
         <CheckCircle2 className="mx-auto h-10 w-10 text-success" aria-hidden />
         <h2 className="mt-3 text-lg font-semibold">Đã gửi thông tin</h2>
         <p className="mt-1 text-sm text-muted-foreground">Cảm ơn quý công ty. Chúng tôi sẽ kiểm tra và liên hệ lại khi cần.</p>
@@ -63,7 +63,7 @@ export function IntakeForm({ token }: { token: string }) {
   const err = (k: string) => fields[k];
   return (
     <form onSubmit={submit} className="mt-6 space-y-6">
-      <section className="grid gap-4 rounded-xl border bg-card p-5 sm:grid-cols-2">
+      <section className="grid gap-4 rounded-xl border border-white/10 bg-black/45 backdrop-blur-[6px] p-5 sm:grid-cols-2">
         <Field htmlFor={fid("name")} label="Tên doanh nghiệp *" className="sm:col-span-2" error={err("name")}>
           <Input id={fid("name")} value={form.name} onChange={set("name")} required maxLength={200} placeholder="VD: Công ty TNHH ABC" autoComplete="organization" />
         </Field>
@@ -92,11 +92,11 @@ export function IntakeForm({ token }: { token: string }) {
         <input value={trap} onChange={(e) => setTrap(e.target.value)} name="website2" tabIndex={-1} autoComplete="off" aria-hidden className="hidden" />
       </section>
 
-      <section className="rounded-xl border bg-card p-5">
+      <section className="rounded-xl border border-white/10 bg-black/45 backdrop-blur-[6px] p-5">
         <h2 className="text-sm font-semibold">Người liên hệ</h2>
         <ul className="mt-3 space-y-4">
           {contacts.map((c, i) => (
-            <li key={i} className="grid gap-3 rounded-lg border p-3 sm:grid-cols-2">
+            <li key={i} className="grid gap-3 rounded-lg border border-white/10 p-3 sm:grid-cols-2">
               <Field htmlFor={fid(`c${i}-name`)} label="Họ tên *" error={err(`contacts.${i}.name`)}>
                 <Input id={fid(`c${i}-name`)} value={c.name} onChange={(e) => setContact(i, { name: e.target.value })} maxLength={120} required={i === 0} />
               </Field>

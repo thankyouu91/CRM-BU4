@@ -5,10 +5,15 @@ import { CONTACT_LEVELS, customerBaseSchema, fold } from "./customers";
 // waits in "Chờ duyệt" on the Khách hàng page until someone with "Quản lý khách hàng" adds it,
 // merges it into a listed company, or turns it down. Shared by the API, the pages and the tests.
 
-export const INTAKE_DAYS = [7, 30, 90] as const;
+/** How long a new link takes answers, in days; 0 = until revoked. */
+export const INTAKE_DAYS = [7, 30, 90, 0] as const;
 export type IntakeDays = (typeof INTAKE_DAYS)[number];
+export const intakeDaysLabel = (d: IntakeDays) => (d ? `${d} ngày` : "Không thời hạn");
+/** The expiry stored for a link without one (the column is required): far enough to never come. */
+export const INTAKE_NEVER = new Date("9999-12-31T00:00:00Z");
+export const isNeverExpiring = (expiresAt: Date | string) => new Date(expiresAt).getUTCFullYear() >= 9999;
 export const INTAKE_CONTACTS_MAX = 10;
-/** Answers one link takes; a link sent to many companies still cannot fill the queue. */
+/** Answers waiting for review per link: a leaked link cannot flood the queue (a permanent link keeps working once they are handled). */
 export const INTAKE_SUBMISSIONS_MAX = 200;
 
 export const intakePath = (token: string) => `/form/${token}`;

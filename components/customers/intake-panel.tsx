@@ -9,7 +9,7 @@ import { Segmented } from "@/components/ui/misc";
 import { Modal } from "@/components/ui/modal";
 import { api, ApiError, useApi } from "@/lib/client";
 import { CONTACT_LEVEL_INFO, type CustomerDto } from "@/lib/customers";
-import { INTAKE_DAYS, INTAKE_STATUS, type IntakeAiReview } from "@/lib/customer-intake";
+import { INTAKE_DAYS, INTAKE_STATUS, intakeDaysLabel, isNeverExpiring, type IntakeAiReview } from "@/lib/customer-intake";
 import type { IntakeLinkView, IntakeSubmissionView } from "@/lib/customer-intake-queries";
 import { SHARE_STATUS_LABEL } from "@/lib/report-share-rules";
 import { cn, formatDate, formatDateTime } from "@/lib/utils";
@@ -306,7 +306,7 @@ function Links() {
           <Select value={days} onChange={(e) => setDays(Number(e.target.value))}>
             {INTAKE_DAYS.map((d) => (
               <option key={d} value={d}>
-                {d} ngày
+                {intakeDaysLabel(d)}
               </option>
             ))}
           </Select>
@@ -332,7 +332,7 @@ function Links() {
             <span className="font-medium">{l.label}</span>
             <span className={cn("text-xs", l.status === "active" ? "text-success" : "text-muted-foreground")}>{SHARE_STATUS_LABEL[l.status]}</span>
             <span className="text-xs text-muted-foreground">
-              {l.submissions} lượt gửi · hạn {formatDate(l.expiresAt)} · {l.createdBy}
+              {l.submissions} lượt gửi · {isNeverExpiring(l.expiresAt) ? "không thời hạn" : `hạn ${formatDate(l.expiresAt)}`} · {l.createdBy}
             </span>
             {l.status === "active" && (
               <Button size="sm" variant="ghost" className="ml-auto" onClick={() => revoke(l)}>

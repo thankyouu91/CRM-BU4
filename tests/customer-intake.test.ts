@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { companyKey, intakeChecks, intakeSchema, possibleDuplicates, validPhone, validTaxCode } from "@/lib/customer-intake";
+import { companyKey, createIntakeLinkSchema, intakeChecks, isNeverExpiring, intakeSchema, possibleDuplicates, validPhone, validTaxCode } from "@/lib/customer-intake";
 
 const base = intakeSchema.parse({ name: "Công ty TNHH Đông Á", taxCode: "0312345678", address: "Q1", contacts: [{ level: "DIRECTOR", name: "An", phone: "0901 234 567" }] });
 
@@ -34,5 +34,12 @@ describe("customer form rules", () => {
   it("refuses unknown positions and too many people", () => {
     expect(intakeSchema.safeParse({ name: "X", contacts: [{ level: "BOSS", name: "B" }] }).success).toBe(false);
     expect(intakeSchema.safeParse({ name: "X", contacts: Array.from({ length: 11 }, () => ({ level: "STAFF", name: "B" })) }).success).toBe(false);
+  });
+
+  it("offers links without an end date", () => {
+    expect(createIntakeLinkSchema.parse({ label: "Mãi mãi", days: 0 }).days).toBe(0);
+    expect(createIntakeLinkSchema.safeParse({ label: "x", days: 5 }).success).toBe(false);
+    expect(isNeverExpiring("9999-12-31T00:00:00.000Z")).toBe(true);
+    expect(isNeverExpiring(new Date())).toBe(false);
   });
 });

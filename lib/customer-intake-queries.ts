@@ -7,6 +7,7 @@ import { anthropicClient, describeAnthropicError, getAiRuntime, releaseAiUse, re
 import { notify } from "./notifications";
 import { hashShareToken, isShareToken, newShareToken, shareStatus, type ShareStatus } from "./report-share-rules";
 import {
+  INTAKE_NEVER,
   INTAKE_SUBMISSIONS_MAX,
   intakeChecks,
   possibleDuplicates,
@@ -49,7 +50,7 @@ export interface IntakeSubmissionView {
 export async function createIntakeLink(actor: Actor, input: { label: string; days: IntakeDays }, now = new Date()) {
   const token = newShareToken();
   const link = await prisma.customerIntakeLink.create({
-    data: { tokenHash: await hashShareToken(token), label: input.label, createdById: actor.id, expiresAt: new Date(now.getTime() + input.days * 86_400_000) },
+    data: { tokenHash: await hashShareToken(token), label: input.label, createdById: actor.id, expiresAt: input.days ? new Date(now.getTime() + input.days * 86_400_000) : INTAKE_NEVER },
   });
   await audit(actor, { action: "customer_intake.link_create", entityType: "customer_intake", entityId: link.id, summary: `Tạo link form thông tin doanh nghiệp “${link.label}”`, details: { days: input.days } });
   return { token, id: link.id };
@@ -85,7 +86,7 @@ export async function revokeIntakeLink(actor: Actor, id: string): Promise<boolea
 /** The link behind a token while it still takes answers, else null. */
 export async function openIntakeLink(token: string, now = new Date()) {
   if (!isShareToken(token)) return null;
-  const link = await prisma.customerIntakeLink.findUnique({ where: { tokenHash: await hashShareToken(token) }, include: { _count: { select: { submissions: true } } } });
+  const link = await prisma.customerIntakeLink.findUnique({ where: { tokenHash: await hashShareToken(token) }, include: { _count: { select: { submissions: { where: { status: "PENDING" } } } } } });
   if (!link || shareStatus(link, now) !== "active" || link._count.submissions >= INTAKE_SUBMISSIONS_MAX) return null;
   return link;
 }

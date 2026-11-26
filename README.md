@@ -53,7 +53,7 @@ Mọi người đăng nhập đều xem được; thêm, sửa, xoá cần quy�
 
 #### Form thông tin doanh nghiệp
 
-Nút **Form thông tin** (người có quyền *Quản lý khách hàng*) → tab **Link form**: đặt tên link, chọn thời hạn 7/30/90 ngày, bấm **Tạo link** rồi sao chép gửi cho doanh nghiệp (link chỉ hiện một lần; trong CSDL chỉ lưu mã băm; **Thu hồi** để ngừng nhận). Doanh nghiệp mở `/form/<mã>` không cần đăng nhập, điền thông tin công ty và tối đa 10 người liên hệ. Mỗi link nhận tối đa 200 lượt; mỗi IP 5 lượt/phút (`INTAKE_LIMITER` trong `wrangler.jsonc`); có ô bẫy bot.
+Nút **Form thông tin** (người có quyền *Quản lý khách hàng*) → tab **Link form**: đặt tên link, chọn thời hạn 7/30/90 ngày hoặc **Không thời hạn** (link dùng mãi đến khi bấm Thu hồi), bấm **Tạo link** rồi sao chép gửi cho doanh nghiệp (link chỉ hiện một lần; trong CSDL chỉ lưu mã băm; **Thu hồi** để ngừng nhận). Doanh nghiệp mở `/form/<mã>` không cần đăng nhập, điền thông tin công ty và tối đa 10 người liên hệ. Trang form có nền hố đen động (`components/form/black-hole-background.tsx`, three.js, đứng yên khi máy bật giảm chuyển động). Mỗi link giữ tối đa 200 bản chờ duyệt (duyệt xong là nhận tiếp); mỗi IP 5 lượt/phút (`INTAKE_LIMITER` trong `wrangler.jsonc`); có ô bẫy bot.
 
 Thông tin gửi về nằm ở tab **Chờ duyệt** (số trên nút), **chưa** vào danh sách khách hàng. Ngay khi khách bấm gửi, **AI tự kiểm tra** (Claude rà tính hợp lý và nhất quán, không tra cứu cơ quan thuế; tính 1 lượt AI của người tạo link; AI chưa bật hoặc hết lượt thì người duyệt bấm **Kiểm tra** sau), rồi mọi người có quyền *Quản lý khách hàng* nhận **thông báo**: “Khách mới gửi thông tin: …” hoặc “Khách cũ “…” gửi thông tin: cập nhật liên hệ”, kèm kết luận của AI; bấm thông báo là mở thẳng hàng Chờ duyệt.
 

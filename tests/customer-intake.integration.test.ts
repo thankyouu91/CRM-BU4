@@ -89,7 +89,9 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)("customer form, kind and checkli
     expect((await answer(`Công ty Muộn ${run}`)).status).toBe(410);
     // Each answer tells everyone with "Quản lý khách hàng" whether it is a new or a listed company.
     const { submitIntake } = await import("../lib/customer-intake-queries");
-    const fresh = await call("sales", () => links.POST(req("/x", "POST", { label: "Báo tin", days: 7 })));
+    const fresh = await call("sales", () => links.POST(req("/x", "POST", { label: "Báo tin", days: 0 })));
+    // days 0: a link without an end date.
+    expect((await db.customerIntakeLink.findUniqueOrThrow({ where: { id: fresh.body.id } })).expiresAt.getUTCFullYear()).toBe(9999);
     const sent = await submitIntake(fresh.body.path.split("/").pop(), { name: `Cty Mới ${run}`, taxCode: null, industry: null, address: null, phone: null, email: null, website: null, note: null, contacts: [] });
     await sent!.followUp;
     const notes = await db.notification.findMany({ where: { type: "customer.intake", userId: { in: Object.values(ids) } }, select: { userId: true, title: true, link: true } });

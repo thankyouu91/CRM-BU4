@@ -29,7 +29,7 @@ export function GalaxyBackground({ className }: { className?: string }) {
 }
 
 /** Soft round sprite drawn on a canvas, so nothing is fetched (CSP: self only). */
-function roundSprite(THREE: Three, inner: string, size = 64) {
+export function roundSprite(THREE: Three, inner: string, size = 64) {
   const canvas = document.createElement("canvas");
   canvas.width = canvas.height = size;
   const g = canvas.getContext("2d")!;
@@ -50,7 +50,7 @@ function roundSprite(THREE: Three, inner: string, size = 64) {
  * so tens of thousands of faint, overlapping discs blend into smooth haze
  * instead of a grain of hard dots. `scale` keeps sizes stable across pixel ratios.
  */
-function softPoints(THREE: Three, geometry: InstanceType<Three["BufferGeometry"]>, opacity: number, scale: number) {
+export function softPoints(THREE: Three, geometry: InstanceType<Three["BufferGeometry"]>, opacity: number, scale: number) {
   const material = new THREE.ShaderMaterial({
     transparent: true,
     depthWrite: false,
