@@ -14,7 +14,7 @@ import { managedProjectsWhere } from "./rbac";
 import type { CurrentUser } from "./session";
 import { shiftWorkPeriod, workPeriodOf, type WorkPeriod } from "./work-report";
 
-export const NOTIFICATION_TYPES = ["task.assigned", "task_report.reviewed", "work_report.reviewed", "project.member_added", "attendance.leave", "chat.mention"] as const;
+export const NOTIFICATION_TYPES = ["task.assigned", "task_report.reviewed", "work_report.reviewed", "project.member_added", "attendance.leave", "chat.mention", "customer.intake"] as const;
 export type NotificationType = (typeof NOTIFICATION_TYPES)[number];
 
 export interface NewNotification {

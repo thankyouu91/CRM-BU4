@@ -87,8 +87,17 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)("customer form, kind and checkli
     // A revoked link takes nothing more.
     expect((await call("sales", () => link.DELETE(req("/x", "DELETE"), p("id", made.body.id)))).status).toBe(200);
     expect((await answer(`Công ty Muộn ${run}`)).status).toBe(410);
+    // Each answer tells everyone with "Quản lý khách hàng" whether it is a new or a listed company.
+    const { submitIntake } = await import("../lib/customer-intake-queries");
+    const fresh = await call("sales", () => links.POST(req("/x", "POST", { label: "Báo tin", days: 7 })));
+    const sent = await submitIntake(fresh.body.path.split("/").pop(), { name: `Cty Mới ${run}`, taxCode: null, industry: null, address: null, phone: null, email: null, website: null, note: null, contacts: [] });
+    await sent!.followUp;
+    const notes = await db.notification.findMany({ where: { type: "customer.intake", userId: { in: Object.values(ids) } }, select: { userId: true, title: true, link: true } });
+    expect(notes).toContainEqual({ userId: ids.sales, title: `Khách cũ “Công ty TNHH Mới ${run}” gửi thông tin: cập nhật liên hệ`, link: "/customers?intake=1" });
+    expect(notes.filter((n) => n.userId !== ids.sales)).toEqual([]);
+
     const actions = await db.auditLog.findMany({ where: { actorId: ids.sales, action: { startsWith: "customer_intake." } }, select: { action: true } });
-    expect(actions.map((a) => a.action).sort()).toEqual(["customer_intake.approve", "customer_intake.link_create", "customer_intake.link_revoke", "customer_intake.merge"]);
+    expect(actions.map((a) => a.action).sort()).toEqual(["customer_intake.approve", "customer_intake.link_create", "customer_intake.link_create", "customer_intake.link_revoke", "customer_intake.merge"]);
   });
 
   it("works out kind and size from every project and contract, amounts only for finance", async () => {

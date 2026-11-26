@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
-import { AtSign, Bell, CalendarCheck, CheckCheck, ClipboardList, Info, TriangleAlert, UserPlus } from "lucide-react";
+import { AtSign, Bell, Building2, CalendarCheck, CheckCheck, ClipboardList, Info, TriangleAlert, UserPlus } from "lucide-react";
 import { api } from "@/lib/client";
 import type { NotificationAlert, NotificationItem } from "@/lib/notifications";
 import { cn } from "@/lib/utils";
@@ -143,6 +143,8 @@ export function NotificationBell() {
                                 <CalendarCheck className="h-3.5 w-3.5" />
                               ) : n.type === "chat.mention" ? (
                                 <AtSign className="h-3.5 w-3.5" />
+                              ) : n.type === "customer.intake" ? (
+                                <Building2 className="h-3.5 w-3.5" />
                               ) : (
                                 <CheckCheck className="h-3.5 w-3.5" />
                               )}

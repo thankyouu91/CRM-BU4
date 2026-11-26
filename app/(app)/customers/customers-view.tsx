@@ -57,15 +57,22 @@ export function CustomersView({
   canManage,
   focus = null,
   pendingIntake = 0,
+  openIntake = false,
 }: {
   initial: CustomerDto[];
   canManage: boolean;
   focus?: string | null;
   /** Answers from the company form waiting for review. */
   pendingIntake?: number;
+  /** Opened from a "Form thông tin" notice: show the review queue at once. */
+  openIntake?: boolean;
 }) {
   const [customers, setCustomers] = useState(initial);
   const [intakeOpen, setIntakeOpen] = useState(false);
+  // Opened after hydration: the dialog only exists in the browser (Modal renders nothing on the server).
+  useEffect(() => {
+    if (openIntake && canManage) setIntakeOpen(true);
+  }, [openIntake, canManage]);
   const [pending, setPending] = useState(pendingIntake);
   const upsertCustomer = (c: CustomerDto) =>
     setCustomers((list) => (list.some((x) => x.id === c.id) ? list.map((x) => (x.id === c.id ? c : x)) : [...list, c].sort((a, b) => a.name.localeCompare(b.name, "vi"))));

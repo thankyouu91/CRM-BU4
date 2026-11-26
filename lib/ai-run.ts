@@ -19,7 +19,7 @@ const FALLBACK_MODELS = new Set(["claude-opus-5-5", "claude-sonnet-5-5"]);
  * On Workers, a request's work stops when the browser disconnects (the person pressed
  * "Dừng"); waitUntil lets the generation finish recording itself first. No-op in Node.
  */
-function keepAlive(work: Promise<unknown>) {
+export function keepAlive(work: Promise<unknown>) {
   if (isWorkers) (getCloudflareContext().ctx as { waitUntil(p: Promise<unknown>): void }).waitUntil(work);
 }
 

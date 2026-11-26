@@ -109,7 +109,8 @@ describe.skipIf(!process.env.TEST_DATABASE_URL)("bulk edits, notifications and A
     expect(joined).toHaveLength(1);
     expect(joined[0]).toMatchObject({ summary: "Tham gia dự án “Dự án khác” để nhận việc", details: { reason: "self-assign" } });
     // Nobody is notified of giving work to themselves.
-    expect(await db.notification.count({ where: { userId: ids.admin } })).toBe(0);
+    // Company-form notices go to every administrator in the database (other test files send some).
+    expect(await db.notification.count({ where: { userId: ids.admin, type: { not: "customer.intake" } } })).toBe(0);
 
     // Taking an existing task as a viewer of the project makes the administrator a member too.
     await db.projectMember.update({ where: { projectId_userId: { projectId: other, userId: ids.admin } }, data: { role: "VIEWER" } });

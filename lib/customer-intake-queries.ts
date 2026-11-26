@@ -4,6 +4,7 @@ import { prisma } from "./prisma";
 import { audit } from "./audit";
 import { asJson } from "./json";
 import { anthropicClient, describeAnthropicError, getAiRuntime, releaseAiUse, reserveAiUse } from "./ai-settings";
+import { notify } from "./notifications";
 import { hashShareToken, isShareToken, newShareToken, shareStatus, type ShareStatus } from "./report-share-rules";
 import {
   INTAKE_SUBMISSIONS_MAX,
@@ -89,13 +90,37 @@ export async function openIntakeLink(token: string, now = new Date()) {
   return link;
 }
 
-/** A company's answer, waiting for review. False when the link no longer takes answers. */
-export async function submitIntake(token: string, data: IntakeData): Promise<boolean> {
+/**
+ * A company's answer, waiting for review; null when the link no longer takes answers.
+ * followUp (AI check, then the notice to reviewers) runs after the reply to the company.
+ */
+export async function submitIntake(token: string, data: IntakeData): Promise<{ id: string; followUp: Promise<void> } | null> {
   const link = await openIntakeLink(token);
-  if (!link) return false;
-  await prisma.customerSubmission.create({ data: { linkId: link.id, data: data as unknown as Prisma.InputJsonValue } });
-  return true;
+  if (!link) return null;
+  const s = await prisma.customerSubmission.create({ data: { linkId: link.id, data: data as unknown as Prisma.InputJsonValue } });
+  const followUp = afterIntake(s.id, data, { id: link.createdById, name: "Form thông tin doanh nghiệp" }).catch((err) => console.error("[intake]", err));
+  return { id: s.id, followUp };
 }
+
+/** People who review the form: everyone active with "Quản lý khách hàng" (admins and managers have it). */
+const reviewers = () =>
+  prisma.user.findMany({ where: { active: true, OR: [{ role: { in: ["ADMIN", "MANAGER"] } }, { permissions: { has: "CUSTOMER_MANAGE" } }] }, select: { id: true } });
+
+/**
+ * AI checks the answer at once (one AI use of the link's creator; skipped when AI is off or
+ * the uses are spent: the reviewer can still ask), then reviewers are told whether it is a
+ * new company or one already listed.
+ */
+async function afterIntake(id: string, data: IntakeData, creator: Actor) {
+  const ai = await aiReviewSubmission(creator, id);
+  const [dup] = possibleDuplicates(data, await listed());
+  const verdict = "review" in ai ? `AI: ${AI_VERDICT[ai.review.verdict]} · ${ai.review.summary}` : "Chờ duyệt";
+  const title = dup ? `Khách cũ “${dup.name}” gửi thông tin: cập nhật liên hệ` : `Khách mới gửi thông tin: ${data.name}`;
+  // The form has no signed-in author: the id matches nobody, so every reviewer is told.
+  await notify({ id: "", name: "Form thông tin doanh nghiệp" }, (await reviewers()).map((u) => ({ userId: u.id, type: "customer.intake" as const, title, body: verdict, link: "/customers?intake=1" })));
+}
+
+const AI_VERDICT: Record<IntakeAiReview["verdict"], string> = { ok: "hợp lý", check: "cần xem lại", suspicious: "đáng ngờ" };
 
 const listed = () => prisma.customer.findMany({ select: { id: true, name: true, taxCode: true } });
 

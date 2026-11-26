@@ -99,8 +99,9 @@ function Queue({ customers, onCustomer, onDecided }: { customers: CustomerDto[];
 
 function SubmissionCard({ s, customers, onChange, onCustomer }: { s: IntakeSubmissionView; customers: CustomerDto[]; onChange: (s: IntakeSubmissionView) => void; onCustomer: (c: CustomerDto) => void }) {
   const [busy, setBusy] = useState<string | null>(null);
-  const [mergeId, setMergeId] = useState(s.duplicates[0]?.id ?? "");
+  const [mergeId, setMergeId] = useState("");
   const d = s.data;
+  const dup = s.duplicates[0];
   const rows = [
     ["Mã số thuế", d.taxCode],
     ["Lĩnh vực", d.industry],
@@ -143,6 +144,11 @@ function SubmissionCard({ s, customers, onChange, onCustomer }: { s: IntakeSubmi
     <article className="rounded-xl border">
       <header className="flex flex-wrap items-baseline gap-x-2 border-b px-4 py-3">
         <h3 className="font-semibold">{d.name}</h3>
+        {dup ? (
+          <span className="rounded-md bg-primary/10 px-1.5 py-0.5 text-[11px] font-medium text-primary">Khách cũ: {dup.name}</span>
+        ) : (
+          <span className="rounded-md bg-success/15 px-1.5 py-0.5 text-[11px] font-medium text-success">Khách mới</span>
+        )}
         <span className="text-xs text-muted-foreground">
           qua “{s.linkLabel}” · {formatDateTime(s.createdAt)}
         </span>
@@ -212,17 +218,23 @@ function SubmissionCard({ s, customers, onChange, onCustomer }: { s: IntakeSubmi
               <p className="mt-1 text-muted-foreground">AI chỉ xét tính hợp lý, không tra cứu cơ quan thuế · {formatDateTime(s.aiReview.at)}</p>
             </div>
           ) : (
-            <p className="mt-1 text-xs text-muted-foreground">Bấm “Kiểm tra” để AI rà tính hợp lý của thông tin (tốn 1 lượt AI).</p>
+            <p className="mt-1 text-xs text-muted-foreground">Chưa có kết quả (AI tự kiểm tra khi khách gửi; nếu AI chưa bật hoặc hết lượt, bấm “Kiểm tra”).</p>
           )}
         </div>
       </div>
       <footer className="flex flex-wrap items-center gap-2 border-t px-4 py-3">
-        <Button size="sm" onClick={() => decide({ action: "approve" }, `Đã thêm “${d.name}” vào Khách hàng`)} disabled={!!busy}>
-          {busy === "approve" ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Plus className="h-3.5 w-3.5" />} Thêm mới
+        {/* The suggested step first: a listed company gets the new people, a new one is added. */}
+        {dup && (
+          <Button size="sm" onClick={() => decide({ action: "merge", customerId: dup.id }, `Đã cập nhật liên hệ cho “${dup.name}”`)} disabled={!!busy}>
+            {busy === "merge" && <Loader2 className="h-3.5 w-3.5 animate-spin" />} Cập nhật vào “{dup.name}”
+          </Button>
+        )}
+        <Button size="sm" variant={dup ? "outline" : "primary"} onClick={() => decide({ action: "approve" }, `Đã thêm “${d.name}” vào Khách hàng`)} disabled={!!busy}>
+          {busy === "approve" ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Plus className="h-3.5 w-3.5" />} {dup ? "Vẫn thêm mới" : "Thêm khách mới"}
         </Button>
         <span className="flex items-center gap-1.5">
           <Select value={mergeId} onChange={(e) => setMergeId(e.target.value)} aria-label="Gộp vào khách hàng" className="h-8 max-w-[14rem] text-xs">
-            <option value="">Gộp vào khách hàng…</option>
+            <option value="">{dup ? "Gộp vào khách khác…" : "Gộp vào khách hàng…"}</option>
             {customers.map((c) => (
               <option key={c.id} value={c.id}>
                 {c.name}
