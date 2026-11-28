@@ -229,8 +229,9 @@ function startBlackHole(THREE: Three, el: HTMLElement): () => void {
   const gas = [disk, flares, haze, halo, photon, ringGlow];
 
   // Wide screens: a big hole to the right of the form, its disk sweeping left behind it.
-  // Narrow screens: centred, seen from further back so the disk still fits across.
-  const base = { y: 0.8, z: 8.5 };
+  // Narrow screens (phone, tablet): the hole is the page's cover, in the top quarter of the
+  // screen above the form (the page leaves that space empty); the view is lowered, not tilted.
+  const base = { y: 0.8, z: 8.5, look: 0 };
   const layout = () => {
     const w = el.clientWidth;
     const h = el.clientHeight;
@@ -238,9 +239,11 @@ function startBlackHole(THREE: Three, el: HTMLElement): () => void {
     camera.aspect = w / h;
     camera.updateProjectionMatrix();
     const wide = w >= 1024;
-    base.z = wide ? 8.5 : 10 * Math.max(1, 1.1 / camera.aspect);
+    base.z = wide ? 8.5 : 13;
+    // Half the view's height at the hole's distance: lowering the view by half of it puts the hole a quarter down.
+    base.look = wide ? 0 : -0.5 * base.z * Math.tan(THREE.MathUtils.degToRad(camera.fov / 2));
     system.position.x = wide ? 3.5 : 0;
-    system.position.y = wide ? 0.4 : 1.2;
+    system.position.y = wide ? 0.4 : 0;
     for (const layer of [...gas, far]) layer.material.uniforms.uScale.value = h * pixelRatio * 0.9;
   };
   layout();
@@ -253,7 +256,7 @@ function startBlackHole(THREE: Three, el: HTMLElement): () => void {
     target.y = (e.clientY / window.innerHeight - 0.5) * 0.25;
   };
   window.addEventListener("pointermove", onPointer);
-  camera.position.set(0, base.y, base.z);
+  camera.position.set(0, base.y + base.look, base.z);
 
   const still = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
   const clock = new THREE.Clock();
@@ -261,7 +264,7 @@ function startBlackHole(THREE: Three, el: HTMLElement): () => void {
   let time = 0;
   let frame = 0;
   const render = () => {
-    camera.lookAt(0, 0, 0);
+    camera.lookAt(0, base.look, 0);
     lensed.quaternion.copy(camera.quaternion).multiply(faceCamera);
     // Just in front of the hole, so the ring's light spills over the black edge (no hard rim).
     toCamera.copy(camera.position).sub(system.position).normalize();
@@ -273,7 +276,7 @@ function startBlackHole(THREE: Three, el: HTMLElement): () => void {
     time += Math.min(clock.getDelta(), 0.05);
     far.points.rotation.y += 0.0003;
     camera.position.x += (target.x - camera.position.x) * 0.03;
-    camera.position.y += (base.y + target.y - camera.position.y) * 0.03;
+    camera.position.y += (base.y + base.look + target.y - camera.position.y) * 0.03;
     camera.position.z += (base.z - camera.position.z) * 0.05;
     render();
     frame = requestAnimationFrame(draw);

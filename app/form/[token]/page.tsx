@@ -19,7 +19,8 @@ export default async function IntakePage(props: { params: Promise<{ token: strin
       <div aria-hidden className="fixed inset-0 bg-[radial-gradient(ellipse_40%_12%_at_50%_50%,rgba(255,160,80,0.28),transparent),radial-gradient(ellipse_70%_45%_at_50%_50%,rgba(120,40,120,0.18),transparent)]" />
       <BlackHoleBackground className="fixed inset-0" />
       <div aria-hidden className="fixed inset-0 bg-[radial-gradient(ellipse_at_center,transparent_30%,rgba(0,0,0,0.65))]" />
-      <main className="relative z-10 px-4 py-10 sm:py-14">
+      {/* Phones and tablets: the top of the screen is left to the black hole, the form scrolls up over it. */}
+      <main className="relative z-10 px-4 pb-10 pt-[46vh] lg:py-14">
         <div className="mx-auto max-w-2xl">
           <div className="rounded-xl border border-white/10 bg-black/45 p-5 backdrop-blur-[6px]">
             <h1 className="text-xl font-semibold tracking-tight">Thông tin doanh nghiệp</h1>
